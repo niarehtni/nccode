@@ -1,0 +1,2 @@
+insert into md_component(createtime,creator,description,displayname,dr,fromsourcebmf,help,id,industry,isbizmodel,modifier,modifytime,name,namespace,ownmodule,preload,resid,resmodule,ts,version,versiontype) values( '2012-11-23 16:50:25',null,null,'人力地图',0,'Y',null,'99a14456-dc04-4954-9199-1c7fc9213f7b','0','N','YONYOU NC','2018-08-20 13:28:22','psnmap','hrss','hrss',null,'md_psnmap','hrss','2018-08-20 13:29:42','32',0)
+go

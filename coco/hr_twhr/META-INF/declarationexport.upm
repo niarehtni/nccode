@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="gbk"?>
+<module name="twhr">
+	<public>
+		    <!-- 接口 -->
+		<component priority="0" singleton="true" remote="true" tx="CMT" supportAlias="true">
+	      <interface>nc.itf.twhr.IDeclarationExportService</interface>
+	      <implementation>nc.bs.twhr.twhr_declaration.impl.DeclarationExportServiceImpl</implementation>
+	    </component>
+	</public>
+</module>
+ 

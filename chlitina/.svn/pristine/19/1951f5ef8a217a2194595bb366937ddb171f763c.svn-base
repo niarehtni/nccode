@@ -1,0 +1,96 @@
+package nc.ui.ta.psndocwadoc.view.labourjoin;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import nc.bs.framework.common.NCLocator;
+import nc.desktop.ui.WorkbenchEnvironment;
+import nc.itf.om.IAOSQueryService;
+import nc.itf.ta.IPsnCalendarManageMaintain;
+import nc.itf.ta.IPsnCalendarQueryMaintain;
+import nc.pub.fa.common.util.StringUtils;
+import nc.ui.hr.uif2.model.HRWizardModel;
+import nc.ui.pub.beans.MessageDialog;
+import nc.ui.pub.beans.wizard.IWizardDialogListener;
+import nc.ui.pub.beans.wizard.WizardActionException;
+import nc.ui.pub.beans.wizard.WizardEvent;
+import nc.ui.querytemplate.querytree.FromWhereSQL;
+import nc.ui.wa.psndocwadoc.model.PsndocwadocAppModel;
+import nc.vo.logging.Debug;
+import nc.vo.pub.BusinessException;
+import nc.vo.pub.lang.UFLiteralDate;
+import nc.vo.ta.psncalendar.PsnJobCalendarVO;
+
+@SuppressWarnings("restriction")
+public class WizardListenerForQuitJoin implements IWizardDialogListener {
+
+	@Override
+	public void wizardCancel(WizardEvent event) throws WizardActionException {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void wizardFinish(WizardEvent event) throws WizardActionException {
+		String error = WorkbenchEnvironment.getInstance().getClientCache("Quiterror") == null ? "" : 
+			           WorkbenchEnvironment.getInstance().getClientCache("Quiterror").toString();
+		if(!StringUtils.isEmpty(error)){
+			WorkbenchEnvironment.getInstance().removeClientCache("Quiterror");
+			MessageDialog.showErrorDlg(null, "错误信息", error);
+		}
+		HRWizardModel wizardModel = (HRWizardModel)event.getModel();
+		//取出日期范围
+		SelPsnStepForQuitJoin step1 = (SelPsnStepForQuitJoin)wizardModel.getSteps().get(0);
+		SelPsnPanelForQuitJoin pane1 = step1.getSelPsnPanelForQuitJoin();
+		String pk_org = pane1.getPK_BU();
+		
+		//取出人员主键
+		ConfirmPsnStepForQuitJoin step2 = (ConfirmPsnStepForQuitJoin)wizardModel.getSteps().get(1);
+		ConfirmPsnPanelForQuitJoin pane2 = step2.getConfirmPsnPanelForQuitJoin();
+		String[] pk_psndocs = pane2.getSelPkPsndocs();
+		
+		//去除设置信息
+		JoinSetStepForQuitJoin step3 = (JoinSetStepForQuitJoin) wizardModel.getSteps().get(2);
+		JoinSetPanelForQuitJoin pane3 = step3.getJoinSetPanelForQuitJoin();
+		String date = pane3.getRefBeginDate().getValueObj() == null ? "" : 
+			          pane3.getRefBeginDate().getValueObj().toString();
+		//劳保
+		Boolean baoSelected = pane3.getBaoCheckBox().isSelected();
+		//劳退
+		Boolean tuiSelected = pane3.getTuiCheckBox().isSelected();
+		//健保
+		Boolean jianSelected = pane3.getJianCheckBox().isSelected();
+		//异动类型/投保形态（默认为退保）
+		String yiDong = "2";
+		Map<String,String> quitMap = new HashMap<String,String>();
+		quitMap.put("laobao", baoSelected == true ? "Y" : "N");
+		quitMap.put("jianbao", jianSelected == true ? "Y" : "N");
+		quitMap.put("tuibao", tuiSelected == true ? "Y" : "N");
+		quitMap.put("toubaotype",yiDong);
+		quitMap.put("date",date);
+		
+//		//取出遇假日排班取消标志
+//		IPsnCalendarQueryMaintain queryMaintain = NCLocator.getInstance().lookup(IPsnCalendarQueryMaintain.class);
+//		PsnJobCalendarVO[] calendarVOs = null;
+//		try {
+//			String pk_hrorg = NCLocator.getInstance().lookup(IAOSQueryService.class).queryHROrgByOrgPK(pk_org).getPk_org();
+//		} catch (BusinessException e) {
+//			Debug.error(e.getMessage(), e);
+//			WizardActionException wae = new WizardActionException(e);
+//			wae.addMsg("1", e.getMessage());
+//			throw wae;
+//		}
+//		PsndocwadocAppModel appModel = (PsndocwadocAppModel)wizardModel.getModel();
+////		appModel.setBeginEndDate(beginDate, endDate);
+//		appModel.initModel(calendarVOs);
+		event.getModel().gotoStepForwardNoValidate(0);
+	}
+
+	@Override
+	public void wizardFinishAndContinue(WizardEvent event)
+			throws WizardActionException {
+		// TODO Auto-generated method stub
+
+	}
+
+}

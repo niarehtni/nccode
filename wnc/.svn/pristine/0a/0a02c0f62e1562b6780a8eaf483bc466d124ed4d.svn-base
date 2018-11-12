@@ -1,0 +1,112 @@
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '03800bab-d1f2-4139-bce9-609eb8863e8f','2647561e-c913-4684-a64a-60564842d702','om_deptadj@@@adj_code',0,'om_deptadj','2018-11-04 18:58:52')
+/
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '06206c7c-ad63-475f-bfe5-0245c074c603','2647561e-c913-4684-a64a-60564842d702','om_deptadj@@@orgtype17',0,'om_deptadj','2018-11-04 18:58:52')
+/
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '09e5337d-b514-4a4d-9bdf-d247d4a07cc9','2647561e-c913-4684-a64a-60564842d702','om_deptadj@@@enablestate',0,'om_deptadj','2018-11-04 18:58:52')
+/
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '0a093ab0-2298-4bdd-82c8-6cdfac520159','2647561e-c913-4684-a64a-60564842d702','om_deptadj@@@def19',0,'om_deptadj','2018-11-04 18:58:52')
+/
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '0c2599bc-5b6c-4dc7-abde-e9e5f3f1ac68','2647561e-c913-4684-a64a-60564842d702','om_deptadj@@@modifier',0,'om_deptadj','2018-11-04 18:58:52')
+/
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '0faf99d5-3b4a-42cd-83ee-edc0ede01c60','2647561e-c913-4684-a64a-60564842d702','om_deptadj@@@deptduty',0,'om_deptadj','2018-11-04 18:58:52')
+/
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '0fcb14a6-1289-4778-8843-d11082da6e74','2647561e-c913-4684-a64a-60564842d702','om_deptadj@@@pk_dept',0,'om_deptadj','2018-11-04 18:58:52')
+/
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '274b660c-2642-441f-9cdc-1491538352d6','2647561e-c913-4684-a64a-60564842d702','om_deptadj@@@pk_org_v',0,'om_deptadj','2018-11-04 18:58:52')
+/
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '288da78e-d716-4ff3-93c1-d1aecff3e355','2647561e-c913-4684-a64a-60564842d702','om_deptadj@@@pk_group',0,'om_deptadj','2018-11-04 18:58:52')
+/
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '291284b5-7dc3-4236-b647-48008bd48903','2647561e-c913-4684-a64a-60564842d702','om_deptadj@@@def10',0,'om_deptadj','2018-11-04 18:58:52')
+/
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '2a1777e4-fd63-4a57-9bbd-488906016592','2647561e-c913-4684-a64a-60564842d702','om_deptadj@@@shortname',0,'om_deptadj','2018-11-04 18:58:52')
+/
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '2c2da503-2570-436a-9826-82697232bac9','2647561e-c913-4684-a64a-60564842d702','om_deptadj@@@def6',0,'om_deptadj','2018-11-04 18:58:52')
+/
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '383be595-f74c-484a-92e9-a32db1693186','2647561e-c913-4684-a64a-60564842d702','om_deptadj@@@def5',0,'om_deptadj','2018-11-04 18:58:52')
+/
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '42f0d803-1ea0-47bb-ba1a-a047dc009796','2647561e-c913-4684-a64a-60564842d702','om_deptadj@@@islastversion',0,'om_deptadj','2018-11-04 18:58:52')
+/
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '46d1f811-f6db-4b2f-a3c3-746d781859f7','2647561e-c913-4684-a64a-60564842d702','om_deptadj@@@def13',0,'om_deptadj','2018-11-04 18:58:52')
+/
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '47105b38-b776-42f1-a23e-8489e0a76766','2647561e-c913-4684-a64a-60564842d702','om_deptadj@@@address',0,'om_deptadj','2018-11-04 18:58:52')
+/
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '47a197c6-750f-4087-8b02-ef9241e81199','2647561e-c913-4684-a64a-60564842d702','om_deptadj@@@mnecode',0,'om_deptadj','2018-11-04 18:58:52')
+/
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '4e1a95a6-2bad-4f79-b705-b242b15ceb2b','2647561e-c913-4684-a64a-60564842d702','om_deptadj@@@dataoriginflag',0,'om_deptadj','2018-11-04 18:58:52')
+/
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '52fc20c1-916a-4735-9cf7-a8de1b35111b','2647561e-c913-4684-a64a-60564842d702','om_deptadj@@@principal',0,'om_deptadj','2018-11-04 18:58:52')
+/
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '5c73f8f0-89f4-43a3-8a98-c20904f4fb04','2647561e-c913-4684-a64a-60564842d702','om_deptadj@@@pk_org',0,'om_deptadj','2018-11-04 18:58:52')
+/
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '628f9dad-d92b-4388-bbe8-ac392737710a','2647561e-c913-4684-a64a-60564842d702','om_deptadj@@@iseffective',0,'om_deptadj','2018-11-04 18:58:52')
+/
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '6e75faea-6c70-42e3-a26d-8f1e490d37f1','2647561e-c913-4684-a64a-60564842d702','om_deptadj@@@memo',0,'om_deptadj','2018-11-04 18:58:52')
+/
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '750cda82-c773-46d1-b628-b8eb15109239','2647561e-c913-4684-a64a-60564842d702','om_deptadj@@@def8',0,'om_deptadj','2018-11-04 18:58:52')
+/
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '7fe55a37-6217-4061-ba99-352363239ac2','2647561e-c913-4684-a64a-60564842d702','om_deptadj@@@deptlevel',0,'om_deptadj','2018-11-04 18:58:52')
+/
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '8285f96e-4dd9-483a-8d4a-8c7ee6659c4e','2647561e-c913-4684-a64a-60564842d702','om_deptadj@@@creationtime',0,'om_deptadj','2018-11-04 18:58:52')
+/
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '832ce303-e8b7-48ac-8d9f-dcefa57cdfd8','2647561e-c913-4684-a64a-60564842d702','om_deptadj@@@def17',0,'om_deptadj','2018-11-04 18:58:52')
+/
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '86538957-e49c-468a-8f0f-038230746619','2647561e-c913-4684-a64a-60564842d702','om_deptadj@@@def15',0,'om_deptadj','2018-11-04 18:58:52')
+/
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '9892ffd7-b7fe-4ec8-a8e1-5ec12a9b362b','2647561e-c913-4684-a64a-60564842d702','om_deptadj@@@creator',0,'om_deptadj','2018-11-04 18:58:52')
+/
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '9f6e4803-b043-4e6c-ba4b-7fdfe6e907fa','2647561e-c913-4684-a64a-60564842d702','om_deptadj@@@def1',0,'om_deptadj','2018-11-04 18:58:52')
+/
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'a0872c3c-f51a-4351-8832-c413fd546cd3','2647561e-c913-4684-a64a-60564842d702','om_deptadj@@@pk_dept_v',0,'om_deptadj','2018-11-04 18:58:52')
+/
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'a1df16b2-0822-4f44-8b6f-9cd52fe85b96','2647561e-c913-4684-a64a-60564842d702','om_deptadj@@@effectivedate',0,'om_deptadj','2018-11-04 18:58:52')
+/
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'a5194556-09ac-4670-8870-95aef69fdd45','2647561e-c913-4684-a64a-60564842d702','om_deptadj@@@def4',0,'om_deptadj','2018-11-04 18:58:52')
+/
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'a6cf7b5d-e9c3-4152-9604-b6cbd077736d','2647561e-c913-4684-a64a-60564842d702','om_deptadj@@@deptcanceldate',0,'om_deptadj','2018-11-04 18:58:52')
+/
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'a71197ee-ed7d-4bf1-8edb-7961495244e4','2647561e-c913-4684-a64a-60564842d702','om_deptadj@@@def18',0,'om_deptadj','2018-11-04 18:58:52')
+/
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'abd1bce8-934e-45b4-85d6-d00091434e40','2647561e-c913-4684-a64a-60564842d702','om_deptadj@@@pk_fatherorg',0,'om_deptadj','2018-11-04 18:58:52')
+/
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'aecebb7f-9d10-425f-aa4a-12c5c4469afd','2647561e-c913-4684-a64a-60564842d702','om_deptadj@@@innercode',0,'om_deptadj','2018-11-04 18:58:52')
+/
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'b6ffe977-8854-4abb-9f38-d31393c8286f','2647561e-c913-4684-a64a-60564842d702','om_deptadj@@@def3',0,'om_deptadj','2018-11-04 18:58:52')
+/
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'baf632d8-f410-4272-bd78-33a3ea9096bb','2647561e-c913-4684-a64a-60564842d702','om_deptadj@@@def11',0,'om_deptadj','2018-11-04 18:58:52')
+/
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'be4bdd47-2453-425b-b524-fb739b3737d4','2647561e-c913-4684-a64a-60564842d702','om_deptadj@@@displayorder',0,'om_deptadj','2018-11-04 18:58:52')
+/
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'bf338523-cec0-4bd4-9827-7b48194d4177','2647561e-c913-4684-a64a-60564842d702','om_deptadj@@@name',0,'om_deptadj','2018-11-04 18:58:52')
+/
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'c3620535-ebe8-47d1-a655-ff68b903e148','2647561e-c913-4684-a64a-60564842d702','om_deptadj@@@def12',0,'om_deptadj','2018-11-04 18:58:52')
+/
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'c68bd651-b844-41b4-9d32-a19954e6f320','2647561e-c913-4684-a64a-60564842d702','om_deptadj@@@modifiedtime',0,'om_deptadj','2018-11-04 18:58:52')
+/
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'c6c444dc-ae85-42c5-99ef-e882132a9d5a','2647561e-c913-4684-a64a-60564842d702','om_deptadj@@@def7',0,'om_deptadj','2018-11-04 18:58:52')
+/
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'c809abea-52d9-4dfa-9516-351fca4dd214','2647561e-c913-4684-a64a-60564842d702','om_deptadj@@@tel',0,'om_deptadj','2018-11-04 18:58:52')
+/
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'cd0f0865-1a79-4c2f-8728-b1c6a9599b99','2647561e-c913-4684-a64a-60564842d702','om_deptadj@@@orgtype13',0,'om_deptadj','2018-11-04 18:58:52')
+/
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'd6978bf2-69fd-42b0-bb89-efc1dd8741ac','2647561e-c913-4684-a64a-60564842d702','om_deptadj@@@depttype',0,'om_deptadj','2018-11-04 18:58:52')
+/
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'de185d00-4d45-4cb4-9aff-ed3926a29e78','2647561e-c913-4684-a64a-60564842d702','om_deptadj@@@code',0,'om_deptadj','2018-11-04 18:58:52')
+/
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'df29e6e7-5ac7-4239-a53d-48090b1f3e21','2647561e-c913-4684-a64a-60564842d702','om_deptadj@@@createdate',0,'om_deptadj','2018-11-04 18:58:52')
+/
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'e0f7aa25-d6ef-4728-aa48-150cd50f6d02','2647561e-c913-4684-a64a-60564842d702','om_deptadj@@@billdate',0,'om_deptadj','2018-11-04 18:58:52')
+/
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'e8356345-ffc0-4709-b5a7-b77a119d8ea0','2647561e-c913-4684-a64a-60564842d702','om_deptadj@@@def16',0,'om_deptadj','2018-11-04 18:58:52')
+/
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'eab20ac0-6e4f-44c5-bfbf-12bf9798fb72','2647561e-c913-4684-a64a-60564842d702','om_deptadj@@@hrcanceled',0,'om_deptadj','2018-11-04 18:58:52')
+/
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'eb16c8b0-fed4-4d1d-b0aa-73ed23d31fee','2647561e-c913-4684-a64a-60564842d702','om_deptadj@@@def20',0,'om_deptadj','2018-11-04 18:58:52')
+/
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'ec4d2607-5ad6-4c23-ab88-f4844c4368d8','2647561e-c913-4684-a64a-60564842d702','om_deptadj@@@def14',0,'om_deptadj','2018-11-04 18:58:52')
+/
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'ef8c80b2-91c8-45b0-b0c2-cf4b44d80c53','2647561e-c913-4684-a64a-60564842d702','om_deptadj@@PK@@',0,'om_deptadj','2018-11-04 18:58:52')
+/
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'f95e5f06-c736-4e81-9ab6-ae4dee68563c','2647561e-c913-4684-a64a-60564842d702','om_deptadj@@@def2',0,'om_deptadj','2018-11-04 18:58:52')
+/
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'fe29e860-0aa6-44c9-a3b4-386547dafef1','2647561e-c913-4684-a64a-60564842d702','om_deptadj@@@def9',0,'om_deptadj','2018-11-04 18:58:52')
+/

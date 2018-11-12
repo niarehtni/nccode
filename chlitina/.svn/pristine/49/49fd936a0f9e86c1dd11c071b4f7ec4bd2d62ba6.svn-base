@@ -1,0 +1,115 @@
+package nc.impl.wa.psndocwadoc;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import nc.bs.dao.BaseDAO;
+import nc.hr.utils.InSQLCreator;
+import nc.itf.hr.wa.IPsndocwadocLabourService;
+import nc.jdbc.framework.processor.ArrayListProcessor;
+import nc.jdbc.framework.processor.ColumnProcessor;
+import nc.vo.hi.psndoc.PsnJobVO;
+import nc.vo.pub.BusinessException;
+import nc.vo.pub.lang.UFLiteralDate;
+import org.springframework.util.CollectionUtils;
+
+@SuppressWarnings({"unchecked"})
+public class PsndocwadocLabourImpl implements IPsndocwadocLabourService {
+	
+	@Override
+	public PsnJobVO[] queryPsnJobVOsByConditionAndOverrideOrg(List<String> pk_psndocs, String pk_org, String pk_dept)
+			throws BusinessException {
+//		String pk_hrorg = null;
+		String sql = " select job.pk_psndoc,dept.pk_vid,job.pk_psnjob " +
+					 " from (select pk_psndoc,max(begindate)begindate,pk_dept,pk_psnjob " +
+				     " from hi_psnjob where enddate is null and endflag = 'N' ";
+		
+		if (!CollectionUtils.isEmpty(pk_psndocs)){
+			InSQLCreator insql = new InSQLCreator(); 
+			String psndocsInSQL = insql.getInSQL(pk_psndocs.toArray(new String[0]));
+			sql += " and pk_psndoc in ("+psndocsInSQL + ")";
+		}
+		if(!"".equals(pk_org)){
+			sql += " and pk_org = '"+pk_org+"' ";
+		}
+		if(!"".equals(pk_dept)){
+			sql += " and pk_dept = '"+pk_dept+"' ";
+		}
+		
+		sql += " group by pk_psndoc,pk_dept,pk_psnjob) job " +
+		       " left join org_dept_v dept on job.pk_dept = dept.pk_dept ";
+
+		List<Object[]> psndocList = (List<Object[]>) new BaseDAO().executeQuery(sql, new ArrayListProcessor());
+		if (CollectionUtils.isEmpty(psndocList))
+			return null;
+		PsnJobVO[] returnVOs = new PsnJobVO[psndocList.size()];
+		for (int i = 0; i < psndocList.size(); i++) {
+			if(null != psndocList.get(i)){
+				String pk_psndoc = psndocList.get(i)[0] == null ? "" : psndocList.get(i)[0].toString();
+				String pk_vid    = psndocList.get(i)[1] == null ? "" : psndocList.get(i)[1].toString();
+				String pk_psnjob = psndocList.get(i)[2] == null ? "" : psndocList.get(i)[2].toString();
+				returnVOs[i] = new PsnJobVO();
+				returnVOs[i].setPk_psndoc(pk_psndoc);
+				returnVOs[i].setPk_psnjob(pk_psnjob);
+				returnVOs[i].setPk_dept_v(pk_vid);
+//				returnVOs[i].setPk_org_v(psndocvos[i].getPk_org_v());
+			}
+		}
+
+		return returnVOs;
+	}
+	
+	@Override
+	public Map<String,String[]> queryLabour(List<String> pk_psndocs, String laoJiJu, String tuiJiJu, String jianJiJu) throws BusinessException{
+		if(CollectionUtils.isEmpty(pk_psndocs)){
+			return null;
+		}
+		Map<String,String[]> labourMap = new HashMap<String,String[]>();
+		String newdate = new UFLiteralDate().toString();
+		InSQLCreator insql = new InSQLCreator(); 
+		String psndocsInSQL = insql.getInSQL(pk_psndocs.toArray(new String[0]));
+		String sql = " select bb.pk_psndoc,bb.glbdef4,bb.glbdef7,jian.glbdef16 " +
+				     " from (select aa.pk_psndoc,aa.glbdef4,tui.glbdef7 " +
+				     " from (select doc.pk_psndoc,lao.glbdef4 " +
+				     " from (select pk_psndoc " +
+				     " from bd_psndoc where pk_psndoc in ("+psndocsInSQL+")) doc" +
+				     " left join (select pk_psndoc,glbdef4 from hi_psndoc_glbdef8 where (enddate is null or enddate > '"+newdate+"') ";
+		if(!"".equals(laoJiJu)){
+			sql += " and glbdef4 = '"+laoJiJu+"' ";
+		}
+		sql += " )lao on doc.pk_psndoc = lao.pk_psndoc)aa ";
+		sql += " left join (select pk_psndoc,glbdef7 from hi_psndoc_glbdef8 where (glbdef15 is null or glbdef15 > '"+newdate+"') ";
+		if(!"".equals(tuiJiJu)){
+			sql += " and glbdef7 = '"+tuiJiJu+"' ";
+		}
+		sql += " )tui on aa.pk_psndoc = tui.pk_psndoc)bb ";
+		sql += " left join (select pk_psndoc,glbdef16 from hi_psndoc_glbdef9 where (enddate is null or enddate > '"+newdate+"') ";
+	    if(!"".equals(jianJiJu)){
+			sql += " and glbdef16 = '"+jianJiJu+"' ";
+		}
+		sql += " )jian on bb.pk_psndoc = jian.pk_psndoc ";
+		List<Object[]> labourList = (List<Object[]>) new BaseDAO().executeQuery(sql, new ArrayListProcessor());
+		if (CollectionUtils.isEmpty(labourList))
+			return null;
+		for (int i = 0; i < labourList.size(); i++) {
+			if(null != labourList.get(i)){
+				String pk_psndoc = labourList.get(i)[0] == null ? "" : labourList.get(i)[0].toString();
+				String glbdef4   = labourList.get(i)[1] == null ? "" : labourList.get(i)[1].toString();
+				String glbdef7   = labourList.get(i)[2] == null ? "" : labourList.get(i)[2].toString();
+				String glbdef16  = labourList.get(i)[3] == null ? "" : labourList.get(i)[3].toString();
+				labourMap.put(pk_psndoc, new String[]{glbdef4,glbdef7,glbdef16});
+			}
+		}
+		return labourMap;
+	}
+	
+	//MOD 张恒   根据code找到自定义档案参照的name值   2018/9/17
+	@Override
+	public String queryRefNameByCode(String code) throws BusinessException {
+		// TODO Auto-generated method stub
+		String sql = " select pk_defdoclist from bd_defdoclist where code = '"+code+"'";
+		String pk_defdoclist = new BaseDAO().executeQuery(sql, new ColumnProcessor()) == null ? "" : new BaseDAO().executeQuery(sql, new ColumnProcessor()).toString();
+		return pk_defdoclist;
+	}
+	
+}

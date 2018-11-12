@@ -1,0 +1,282 @@
+package nc.pub.smart.model;
+
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
+
+import nc.itf.smart.ISmartService;
+import nc.pub.encryption.util.SalaryDecryptUtil;
+import nc.pub.smart.cache.SmartDefCache;
+import nc.pub.smart.context.SmartContext;
+import nc.pub.smart.data.DataSet;
+import nc.pub.smart.data.DataSetRequest;
+import nc.pub.smart.data.DbTable;
+import nc.pub.smart.exception.SmartException;
+import nc.pub.smart.metadata.Field;
+import nc.pub.smart.metadata.MetaData;
+import nc.pub.smart.model.descriptor.ConfigDescriptor;
+import nc.pub.smart.model.descriptor.Descriptor;
+import nc.pub.smart.util.DescriptorUtil;
+import nc.pub.smart.util.SmartUtilities;
+import nc.vo.ml.NCLangRes4VoTransl;
+import nc.vo.pub.BusinessRuntimeException;
+import uap.pub.ae.meta.util.MetaUtilities;
+import uap.pub.ae.permission.smart.SmartPermissionContext;
+
+import com.ufida.dataset.IContext;
+import com.ufida.iufo.pub.tools.AppDebug;
+import com.ufida.zior.perfwatch.PerfWatch;
+
+public class DefaultExecStrategy extends AbsSmartExecStrategy {
+	public DefaultExecStrategy(SmartModel model) {
+		super(model);
+	}
+
+	public int provideCount(IContext context, Descriptor[] descs)
+			throws SmartException {
+		String code = SmartDefCache.getInstance().getNameWithCode(getId());
+
+		PerfWatch pw = new PerfWatch("DefaultExecStrategy.provideCount: "
+				+ code);
+		try {
+			SmartContext smartContext = prepareContext(context);
+
+			String sql = provideSQL(smartContext, descs);
+			pw.appendMessage("orgin sql: " + sql);
+
+			String dsName = provideDsName4Exec(smartContext);
+
+			pw.appendMessage("dsName: " + dsName);
+
+			return SmartUtilities.getSmartService().fetchRecordCount(sql,
+					dsName);
+		} catch (BusinessRuntimeException e) {
+			throw e;
+		} catch (SmartException e) {
+			throw e;
+		} catch (Exception e) {
+			throw new SmartException(e.getMessage(), e);
+		} finally {
+			pw.stop();
+		}
+	}
+
+	protected SmartContext prepareContext(IContext context)
+			throws SmartException {
+		SmartContext smartContext = new SmartContext(context);
+
+		String dsName = provideDsName4Exec(context);
+
+		if (!SmartUtilities.isValidDsName(dsName)) {
+			String msg = NCLangRes4VoTransl.getNCLangRes()
+					.getStrByID("1413002_0", "01413002-1021", null,
+							new String[] { dsName });
+			throw new SmartException(msg);
+		}
+		smartContext.setDsName4Exec(dsName);
+
+		return smartContext;
+	}
+
+	protected String provideSQL_internal(IContext context, Descriptor[] descs)
+			throws SmartException {
+		String code = SmartDefCache.getInstance().getNameWithCode(getId());
+		PerfWatch pw = new PerfWatch("DefaultExecStrategy.provideSQL: " + code);
+		try {
+			SmartContext smartContext = prepareContext(context);
+
+			SmartScriptModel sm = getModel().getScriptModel();
+
+			String sql = sm.buildSQL(smartContext, descs);
+			pw.appendMessage(sql);
+			return sql;
+		} catch (BusinessRuntimeException e) {
+			throw e;
+		} catch (SmartException e) {
+			throw e;
+		} catch (Exception e) {
+			throw new SmartException(e.getMessage(), e);
+		} finally {
+			pw.stop();
+		}
+	}
+
+	protected DataSet provideData_internal(IContext context, Descriptor[] descs)
+			throws SmartException {
+		String code = SmartDefCache.getInstance().getNameWithCode(getId());
+
+		PerfWatch pw = new PerfWatch("DefaultExecStrategy.provideData: " + code);
+		try {
+			SmartContext smartContext = prepareContext(context);
+			String dsName = provideDsName4Exec(smartContext);
+
+			pw.appendMessage("dsName: " + dsName);
+
+			ISmartService service = SmartUtilities.getSmartService();
+			DataSet dataset = null;
+			String sql = provideSQL(smartContext, descs);
+			pw.appendMessage("SQL: " + sql);
+			AppDebug.debug(sql);
+
+			int maxRows = getMaxRows(descs);
+			DataSetRequest request = new DataSetRequest(getModel()
+					.getMetaData(), sql, dsName, maxRows, true, false);
+			try {
+				setNoPermFields2DataSetRequest(smartContext, request);
+			} catch (Exception e) {
+				AppDebug.error(e);
+			}
+
+			Object obj = smartContext
+					.getAttribute("key_resultset_processor_class");
+			if (obj != null) {
+				request.setRsProcessorClzName((String) obj);
+			}
+
+			dataset = service.fetchDataSet(request);
+			pw.appendMessage("fetchDataSet Count: " + dataset.getCount());
+
+			// 2017-08-14 zhousze 薪资加密：针对薪资预置非薪资变动报表处理数据解密 begin
+			if (dataset != null && code != null && !code.contains("薪资变动")) {
+				MetaData metaData = dataset.getMetaData();
+				Object[][] datas = dataset.getDatas();
+				if(metaData!=null){
+					Field[] fields = metaData.getFields();
+					List<Integer> positions = new ArrayList<>();
+					if(fields!=null){
+						for (int i = 0; i < fields.length; i++) {
+							String fieldName = fields[i].getFldname();
+							if (fieldName!=null&&(fieldName.equalsIgnoreCase("SUM_sumje")
+									|| fieldName.equalsIgnoreCase("SUM_total_sumje")
+									|| fieldName.equalsIgnoreCase("SUM_sumje_f")
+									|| fieldName.equalsIgnoreCase("SUM_sumje1"))) {
+								positions.add(i);
+							}
+						}
+						for (int i = 0; i < positions.size(); i++) {
+							for (int j = 0; j < datas.length; j++) {
+								int position = positions.get(i);
+								BigDecimal data = (BigDecimal) datas[j][position];
+								double result = SalaryDecryptUtil.decrypt(data
+										.doubleValue());
+								datas[j][position] = new BigDecimal(result);
+							}
+						}
+					}
+				}
+			}
+			// end
+
+			return dataset;
+		} catch (BusinessRuntimeException e) {
+			throw e;
+		} catch (SmartException e) {
+			throw e;
+		} catch (Exception e) {
+			throw new SmartException(e.getMessage(), e);
+		} finally {
+			pw.stop();
+		}
+	}
+
+	protected void setNoPermFields2DataSetRequest(IContext context,
+			DataSetRequest request) {
+		SmartPermissionContext permContext = SmartPermissionContext
+				.getFromContext(context);
+		if (permContext != null) {
+			List noPermFieldList = permContext.getNoPermFields(MetaUtilities
+					.genMetaID("SmartModel", getId()));
+			if ((noPermFieldList != null) && (noPermFieldList.size() > 0)) {
+				request.setNoPermFields((String[]) noPermFieldList
+						.toArray(new String[noPermFieldList.size()]));
+			}
+
+		}
+
+		Object obj = context.getAttribute("COL_PERMISSION_ISREMOVED");
+		boolean isRemoved = false;
+		if (obj != null) {
+			isRemoved = ((Boolean) obj).booleanValue();
+		}
+		request.setRemoveNoPermField(isRemoved);
+
+		Object object = context.getAttribute("SPECIAL_CHAR_FOR_NOPERMISSION");
+		String specChar = null;
+
+		if (object != null) {
+			specChar = object.toString();
+		}
+		request.setMaskStringForNoPerm(specChar);
+	}
+
+	public String provideDsName4Exec(IContext context) {
+		String execDsName = SmartDefCache.getInstance().getDsName4Exec(getId());
+
+		if ((execDsName == null) && (context != null)) {
+			execDsName = new SmartContext(context).getDsName4Exec();
+		}
+
+		if ((execDsName == null) || (execDsName.trim().length() == 0)) {
+			execDsName = SmartUtilities.getCurrentDsName();
+		}
+		return execDsName;
+	}
+
+	protected DbTable provideView_internal(IContext context, Descriptor[] descs)
+			throws SmartException {
+		String code = SmartDefCache.getInstance().getNameWithCode(getId());
+		PerfWatch pw = new PerfWatch("DefaultExecStrategy.provideView: " + code);
+		try {
+			SmartContext sc = prepareContext(context);
+
+			String sql = provideSQL(context, descs);
+
+			pw.appendMessage(sql);
+
+			if ((sql == null) || (sql.length() < 1)) {
+				throw new IllegalArgumentException("sql is null.");
+			}
+
+			String dsName = provideDsName4Exec(sc);
+
+			DbTable table = null;
+
+			MetaData metadata = getModel().getMetaData();
+
+			if ((metadata == null) || (metadata.getFieldNum() == 0)
+					|| ((descs != null) && (descs.length > 0))) {
+				metadata = SmartUtilities.getSmartService().fetchMetaData(sql,
+						dsName);
+			}
+
+			table = DbTable.generateTempView(metadata, dsName);
+			table = SmartUtilities.getDDCService().createView(table, sql);
+
+			return table;
+		} catch (BusinessRuntimeException e) {
+			throw e;
+		} catch (SmartException e) {
+			throw e;
+		} catch (Exception e) {
+			throw new SmartException(e.getMessage(), e);
+		} finally {
+			pw.stop();
+		}
+	}
+
+	protected int getMaxRows(Descriptor[] descs) {
+		int maxRows = getModel().getPreferences().getConfigItem().getMaxRows();
+		ConfigDescriptor config = (ConfigDescriptor) DescriptorUtil
+				.getDescriptorByType(ConfigDescriptor.class, descs);
+		if (config != null) {
+			int r_maxRows = config.getMaxRows();
+			if ((r_maxRows > 0) && (maxRows <= 0))
+				maxRows = r_maxRows;
+			else if ((r_maxRows > 0) && (maxRows > 0)) {
+				maxRows = Math.min(maxRows, r_maxRows);
+			}
+		}
+
+		return maxRows >= 0 ? maxRows : 0;
+	}
+}

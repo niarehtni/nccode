@@ -1,0 +1,208 @@
+/**
+ * @(#)SelectBmWizardStep.java 1.0 2018Äê1ÔÂ17ÈÕ
+ *
+ * Copyright (c) 2013, Yonyou. All rights reserved.
+ * YONYOU PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
+ */
+package nc.ui.bm.bmfile.view.dialog;
+
+import java.awt.Component;
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.swing.JMenuItem;
+
+import nc.bs.logging.Logger;
+import nc.hr.utils.ResHelper;
+import nc.itf.bm.pub.BMDelegator;
+import nc.ui.ml.NCLangRes;
+import nc.ui.pub.beans.wizard.IWizardStepListener;
+import nc.ui.pub.beans.wizard.WizardStep;
+import nc.ui.pub.beans.wizard.WizardStepEvent;
+import nc.ui.pub.beans.wizard.WizardStepException;
+import nc.ui.pub.beans.wizard.WizardStepValidateException;
+import nc.ui.pub.bill.BillItem;
+import nc.ui.pub.bill.BillModel;
+import nc.ui.pub.bill.BillModelCellEditableController;
+import nc.vo.bm.data.BmDataVO;
+import nc.vo.bm.pub.BmLoginContext;
+import nc.vo.pub.BusinessException;
+
+import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang.StringUtils;
+
+/**
+ * @author niehg
+ * @since 6.3
+ */
+@SuppressWarnings("restriction")
+public class SelectBmWizardStep extends WizardStep implements IWizardStepListener {
+	private BmLoginContext context = null;
+	private BmDataVO[] vos = null;
+
+	private BMSelecttableBillPanel psnBillScrollPane = null;
+
+	public SelectBmWizardStep(BmLoginContext context) {
+		setTitle(ResHelper.getString("60150bmfile", "060150bmfile0075"));
+		setDescription(ResHelper.getString("60150bmfile", "060150bmfile0076"));
+
+		this.context = context;
+		setComp(getPsnBillScrollPane());
+		initTableModel();
+		addListener(this);
+	}
+
+	@SuppressWarnings("deprecation")
+	private void initTableModel() {
+		try {
+			String[] saBodyColName = { ResHelper.getString("common", "UC000-0004044"),
+					ResHelper.getString("60150bmfile", "060150bmfile0017"),
+					ResHelper.getString("common", "UC000-0001403"), ResHelper.getString("6007psn", "06007psn0229"),
+					ResHelper.getString("6007psn", "06007psn0230"),
+					ResHelper.getString("60150bmdata", "160150bmdata0005"),
+					ResHelper.getString("60150bmdata", "160150bmdata0006"),
+					ResHelper.getString("common", "UC000-0000140"),
+					ResHelper.getString("60150bmfile", "160150bmfile0031"),
+					ResHelper.getString("bmdata", "2bmdata-000000"),
+					ResHelper.getString("60150bmdata", "060150bmdata0029"),
+					ResHelper.getString("60150bmdata", "060150bmdata0030"),
+					ResHelper.getString("60150bmdata", "160150bmdata0017"),
+					ResHelper.getString("bmdata", "2bmdata-000009"), ResHelper.getString("bmdata", "2bmdata-000011"),
+					ResHelper.getString("60150bmfile", "160150bmfile0032"),
+					ResHelper.getString("60150bmfile", "160150bmfile0033"), "pk_bm_data", "pk_psndoc", "pk_psnjob",
+					"pk_group", "pk_org", "pk_bm_class" };
+
+			String[] saBodyColKeyName = { "selectflag", "psncode", "psnname", "idtype", "id", "orgname", "deptname",
+					"psnclname", "agentcomp", "accno", "classcode", "classname", "paylocation", "accstate", "acctype",
+					"vendercomp", "venderpsn", "pk_bm_data", "pk_psndoc", "pk_psnjob", "pk_group", "pk_org",
+					"pk_bm_class" };
+
+			List<BillItem> bodyList = new ArrayList<BillItem>();
+			BillItem biaBody = null;
+
+			for (int i = 0; i < saBodyColName.length; ++i) {
+				biaBody = new BillItem();
+				biaBody.setName(saBodyColName[i]);
+				biaBody.setKey(saBodyColKeyName[i]);
+				biaBody.setWidth(100);
+				biaBody.setNull(false);
+				biaBody.setEnabled(false);
+				biaBody.setEdit(false);
+				biaBody.setDataType(0);
+				if ("selectflag".equals(saBodyColKeyName[i])) {
+					biaBody.setWidth(70);
+					biaBody.setEdit(true);
+					biaBody.setEnabled(true);
+					biaBody.setDataType(4);
+				}
+				if (i > 16) {
+					biaBody.setShow(false);
+				}
+				bodyList.add(biaBody);
+			}
+
+			BillModel billModel = new BillModel();
+			billModel.setBodyItems((BillItem[]) bodyList.toArray(new BillItem[0]));
+			getPsnBillScrollPane().setTableModel(billModel);
+			getPsnBillScrollPane().setSelectRowCode("selectflag");
+			getPsnBillScrollPane().setRowNOShow(true);
+
+			Component[] comps = getPsnBillScrollPane().getTable().getHeaderPopupMenu().getComponents();
+			for (int i = 0; (null != comps) && (i < comps.length); ++i) {
+				if (comps[i] instanceof JMenuItem) {
+					JMenuItem jpm = (JMenuItem) comps[i];
+					if ((null == jpm.getLabel())
+							|| (!(jpm.getLabel().equals(NCLangRes.getInstance().getStrByID("_Bill", "UPP_Bill-000009"))))) {
+						continue;
+					}
+
+					getPsnBillScrollPane().getTable().getHeaderPopupMenu().remove(comps[i]);
+				}
+			}
+		} catch (Exception e) {
+			Logger.error(e);
+		}
+	}
+
+	@Override
+	public void stepActived(WizardStepEvent paramWizardStepEvent) throws WizardStepException {
+		String whereSql = "";
+		String powerSql = "";
+		if (getModel().getAttr("whereSql") != null) {
+			whereSql = getModel().getAttr("whereSql").toString();
+
+			if (!(StringUtils.isBlank(powerSql))) {
+				whereSql = whereSql + " and " + powerSql;
+			}
+		} else {
+			whereSql = powerSql;
+		}
+
+		try {
+			this.vos = BMDelegator.getBmfileQueryService().queryBmForEdit(getBmLoginContext(), whereSql);
+
+			getPsnBillScrollPane().getTableModel().setBodyDataVO(this.vos);
+			getPsnBillScrollPane().getTableModel().setCellEditableController(new BillModelCellEditableController() {
+				public boolean isCellEditable(boolean blIsEditable, int iRowIndex, String strItemKey) {
+					if ("selectflag".equals(strItemKey)) {
+						return Boolean.TRUE;
+					}
+					return Boolean.FALSE;
+				}
+			});
+
+			getPsnBillScrollPane().getTableModel().setBodyDataVO(this.vos);
+		} catch (BusinessException e) {
+			throw new WizardStepException(e);
+		}
+
+		getPsnBillScrollPane().setSelectedRowCode("selectflag");
+		getPsnBillScrollPane().selectAllRows();
+	}
+
+	@Override
+	public void stepDisactived(WizardStepEvent paramWizardStepEvent) throws WizardStepException {
+		getModel().putAttr("selectedBmData", getSelectedBmDataVOs());
+	}
+
+	public BmDataVO[] getSelectedBmDataVOs() {
+		List<BmDataVO> selectVoList = new ArrayList<BmDataVO>();
+		int rowCount = getPsnBillScrollPane().getTable().getRowCount();
+		if (rowCount <= 0) {
+			return null;
+		}
+
+		for (int i = 0; i < rowCount; ++i) {
+			if (getPsnBillScrollPane().isSelected(i)) {
+				BmDataVO vo = (BmDataVO) getPsnBillScrollPane().getTableModel().getBodyValueRowVO(i,
+						BmDataVO.class.getName());
+				selectVoList.add(vo);
+			}
+		}
+		return ((BmDataVO[]) selectVoList.toArray(new BmDataVO[0]));
+	}
+
+	public void validate() throws WizardStepValidateException {
+		super.validate();
+		BmDataVO[] selectedVOs = getSelectedBmDataVOs();
+		if (ArrayUtils.isEmpty(selectedVOs)) {
+			WizardStepValidateException e = new WizardStepValidateException();
+			e.addMsg(ResHelper.getString("60150bmfile", "060150bmfile0014"),
+					ResHelper.getString("60150bmfile", "060150bmfile0077"));
+
+			throw e;
+		}
+	}
+
+	public BMSelecttableBillPanel getPsnBillScrollPane() {
+		if (this.psnBillScrollPane == null) {
+			this.psnBillScrollPane = new BMSelecttableBillPanel();
+			this.psnBillScrollPane.setName("psnBillScrollPane");
+		}
+		return this.psnBillScrollPane;
+	}
+
+	private BmLoginContext getBmLoginContext() {
+		return this.context;
+	}
+}

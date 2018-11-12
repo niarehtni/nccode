@@ -1,0 +1,2 @@
+alter  table tbm_psndoc add overtimecontrol VARCHAR(20)
+alter  table org_dept add overtimecontrol VARCHAR(20)

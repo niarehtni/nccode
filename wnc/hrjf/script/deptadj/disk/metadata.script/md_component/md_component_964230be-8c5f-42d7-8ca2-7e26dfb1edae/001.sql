@@ -1,0 +1,2 @@
+insert into md_component(createtime,creator,description,displayname,dr,fromsourcebmf,help,id,industry,isbizmodel,modifier,modifytime,name,namespace,ownmodule,preload,resid,resmodule,ts,version,versiontype) values( '2018-11-03 12:38:55','YONYOU NC',null,'deptadj',0,'Y',null,'964230be-8c5f-42d7-8ca2-7e26dfb1edae','0','N','YONYOU NC','2018-11-04 12:05:38','deptadj','hrjf','hrjf',null,null,'deptadj','2018-11-04 18:58:52','23',0)
+/

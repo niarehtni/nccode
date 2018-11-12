@@ -1,0 +1,100 @@
+package nc.ui.twhr.nhicalc.model;
+
+import nc.bs.framework.common.NCLocator;
+import nc.itf.hr.frame.IHrBillCode;
+import nc.pub.billcode.itf.IBillcodeManage;
+import nc.pub.billcode.vo.BillCodeContext;
+import nc.ui.uif2.model.BillManageModel;
+import nc.vo.logging.Debug;
+import nc.vo.pub.BusinessException;
+
+
+
+
+
+
+
+public class NhicalcAppModel extends BillManageModel
+{
+  private BillCodeContext billCodeContext;
+
+//  public void doBatchDirectApprove(int directApproveResult, String approveNote, Object[] selData)
+//    throws BusinessException
+//  {
+//    if (ArrayUtils.isEmpty(selData)) {
+//      throw new BusinessException(ResHelper.getString("6017away", "06017away0014"));
+//    }
+//
+//    AggAwayVO[] billvos = (AggAwayVO[])ArrayClassConvertUtil.convert(selData, AggAwayVO.class);
+//
+//
+//    AggAwayVO[] retObjs = (AggAwayVO[])((IAwayApplyApproveManageMaintain)NCLocator.getInstance().lookup(IAwayApplyApproveManageMaintain.class)).directApprove(directApproveResult, approveNote, billvos);
+//    if (retObjs != null)
+//      directMultiUpdate(retObjs);
+//  }
+
+
+//  private BillCodeContext getBillCodeContext()
+//  {
+//    if (this.billCodeContext == null) {
+//      try {
+//        this.billCodeContext = ((IBillcodeManage)NCLocator.getInstance().lookup(IBillcodeManage.class)).getBillCodeContext(getBillType(), getContext().getPk_group(), getContext().getPk_org());
+//      }
+//      catch (BusinessException e) {
+//        Debug.error(e.getMessage(), e);
+//      }
+//    }
+//    return this.billCodeContext;
+//  }
+
+
+
+
+  public void resetBillCodeContext()
+  {
+    this.billCodeContext = null;
+  }
+
+
+//  public boolean isAutoGenerateBillCode()
+//  {
+//    BillCodeContext bcc = getBillCodeContext();
+//
+//
+//    return (bcc != null);
+//  }
+
+
+
+
+//  protected PfProcessBatchRetObject batchDirectApprove(AggregatedValueObject[] billvos, String approveNote, int directApproveResult)
+//    throws BusinessException
+//  {
+//	  AggNhiCalcVO[] aggVOs = new AggNhiCalcVO[billvos.length];
+//    for (int i = 0; i < billvos.length; ++i)
+//    {
+//      aggVOs[i] = ((AggNhiCalcVO)billvos[i]);
+//    }
+//    aggVOs = (AggNhiCalcVO[])((IAwayApplyApproveManageMaintain)NCLocator.getInstance().lookup(IAwayApplyApproveManageMaintain.class)).directApprove(directApproveResult, approveNote, aggVOs);
+//    return new PfProcessBatchRetObject(aggVOs, null);
+//  }
+
+
+
+
+
+//
+//  public boolean isBillCodeEditable()
+//  {
+//    BillCodeContext bcc = getBillCodeContext();
+//    if (bcc == null) {
+//      return true;
+//    }
+//    return bcc.isEditable();
+//  }
+
+//  public void rollbackBillcode(String billcode) throws BusinessException {
+//    if (isAutoGenerateBillCode())
+//      ((IHrBillCode)NCLocator.getInstance().lookup(IHrBillCode.class)).rollbackPreBillCode(getBillType(), getContext().getPk_group(), getContext().getPk_org(), billcode);
+//  }
+}

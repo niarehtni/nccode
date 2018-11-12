@@ -1,0 +1,2 @@
+insert into pub_billtemplet(bill_templetcaption,bill_templetname,devorg,dividerproportion,dr,funccode,layer,metadataclass,model_type,modulecode,nodecode,options,pk_billtemplet,pk_billtypecode,pk_corp,pk_org,resid,shareflag,ts,validateformula) values( '转正申请','SYSTEM',null,null,0,null,0,'hrtrn.hi_regapply',null,null,'6009reg',null,'1001Z710000000005HJB','6009reg','@@@@',null,'16009reg0017',null,'2018-09-16 13:59:26',null)
+go

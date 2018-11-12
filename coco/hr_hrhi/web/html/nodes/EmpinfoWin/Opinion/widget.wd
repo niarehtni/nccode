@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding='UTF-8'?>
+<Widget controllerClazz="nc.bs.hrsms.hi.employ.ctrl.OpinionView" canFreeDesign="false" i18nName="a_pub-000055" langDir="node_pub-res" caption="我的档案审核意见界面" id="Opinion" refId="Opinion" sourcePackage="src/public/">
+    <Attributes>
+        <Attribute>
+            <Key>$QueryTemplate</Key>
+            <Value>
+            </Value>
+        </Attribute>
+    </Attributes>
+    <PageMetas>
+    </PageMetas>
+    <PlugoutDescs>
+    </PlugoutDescs>
+    <PluginDescs>
+        <PluginDesc id="OpinionView">
+            <PluginDescItem clazztype="java.lang.String" id="inOpiCon">
+            </PluginDescItem>
+        </PluginDesc>
+    </PluginDescs>
+    <Events>
+        <Event async="true" methodName="pluginOpinionView" onserver="true">
+            <SubmitRule>
+                <Widget id="Opinion">
+                </Widget>
+            </SubmitRule>
+            <Params>
+                <Param>
+                    <Name>keys</Name>
+                    <Value>
+                    </Value>
+                    <Desc>                        <![CDATA[]]>
+                    </Desc>
+                </Param>
+            </Params>
+            <Action>
+            </Action>
+        </Event>
+        <Event async="true" methodName="beforeShow" name="beforeShow" onserver="true">
+            <SubmitRule>
+            </SubmitRule>
+            <Params>
+                <Param>
+                    <Name>dialogEvent</Name>
+                    <Value>
+                    </Value>
+                    <Desc>                        <![CDATA[nc.uap.lfw.core.event.DialogEvent]]>
+                    </Desc>
+                </Param>
+            </Params>
+            <Action>
+            </Action>
+        </Event>
+    </Events>
+    <Models>
+        <Datasets>
+            <RefMdDataset i18nName="w_psninfo-000005" langDir="hi_nodes" caption="信息集" controlwidgetopeStatus="false" enabled="true" id="$refds_hrpub_InfoSet" lazyLoad="true" notNullBody="false" objMeta="hrpub.InfoSet" voMeta="nc.vo.hr.infoset.InfoSetVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset i18nName="w_psninfo-000006" langDir="hi_nodes" caption="HR部门" controlwidgetopeStatus="false" enabled="true" id="$refds_hrjf_hrdept" lazyLoad="true" notNullBody="false" objMeta="hrjf.hrdept" voMeta="nc.vo.om.hrdept.HRDeptVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset i18nName="w_psninfo-000007" langDir="hi_nodes" caption="用户" controlwidgetopeStatus="false" enabled="true" id="$refds_uap_user" lazyLoad="true" notNullBody="false" objMeta="uap.user" voMeta="nc.vo.sm.UserVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset i18nName="w_psninfo-000008" langDir="hi_nodes" caption="人员基本信息" controlwidgetopeStatus="false" enabled="true" id="$refds_hrhi_bd_psndoc" lazyLoad="false" notNullBody="false" objMeta="hrhi.bd_psndoc" voMeta="nc.vo.hi.psndoc.PsndocVO">
+            </RefMdDataset>
+            <MdDataset i18nName="w_psninfo-000009" langDir="hi_nodes" caption="自助信息变更记录" controlwidgetopeStatus="false" enabled="false" id="OpinionDS" lazyLoad="true" notNullBody="false" objMeta="hrss.hrsssetalter" voMeta="nc.vo.hrss.hi.setalter.HrssSetalterVO">
+                <FieldRelations>
+                    <FieldRelation id="pk_psndoc_rel" needProcess="true" refDataset="$refds_hrhi_bd_psndoc" useCache="false">
+                        <MatchFields>
+                            <Field readField="name" writeField="pk_psndoc_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_psndoc" value="pk_psndoc">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_infoset_rel" needProcess="true" refDataset="$refds_hrpub_InfoSet" useCache="false">
+                        <MatchFields>
+                            <Field readField="infoset_name" writeField="pk_infoset_infoset_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_infoset" value="pk_infoset">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_checker_rel" needProcess="true" refDataset="$refds_uap_user" useCache="false">
+                        <MatchFields>
+                            <Field readField="user_name" writeField="pk_checker_user_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="cuserid" value="pk_checker">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_checkername_rel" needProcess="true" refDataset="$refds_uap_user" useCache="false">
+                        <MatchFields>
+                            <Field readField="pk_base_doc" writeField="pk_base_doc">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="cuserid" value="pk_checker">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_checkerpsndoc_rel" needProcess="true" refDataset="$refds_hrhi_bd_psndoc" useCache="false">
+                        <MatchFields>
+                            <Field readField="name" writeField="pk_checkerpsndoc_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_psndoc" value="pk_base_doc">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_dept_rel" needProcess="true" refDataset="$refds_hrjf_hrdept" useCache="false">
+                        <MatchFields>
+                            <Field readField="name" writeField="pk_dept_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_dept" value="pk_dept">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                </FieldRelations>
+                <Fields>
+                    <Field i18nName="w_psninfo-000010" langDir="hi_nodes" dataType="String" id="pk_base_doc" nullAble="true" primaryKey="false" sourceField="pk_checker" text="1名称">
+                    </Field>
+                    <Field i18nName="w_psninfo-000010" langDir="hi_nodes" dataType="String" id="pk_checkerpsndoc_name" nullAble="true" primaryKey="false" sourceField="pk_base_doc" text="1名称">
+                    </Field>
+                </Fields>
+            </MdDataset>
+        </Datasets>
+        <ComboDatas>
+            <MDComboDataConf i18nName="w_psninfo-000009" langDir="hi_nodes" caption="自助信息变更记录" fullclassName="0db62bd8-613d-409f-8c2b-756fcc58d543" id="combo_OpinionDS_data_status">
+            </MDComboDataConf>
+        </ComboDatas>
+        <RefNodes>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" hrOrgs="false" i18nName="w_psninfo-000001" id="refnode_OpinionDS_pk_infoset_infoset_name" langDir="hi_nodes" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" read="false" readDs="masterDs" readFields="pk_infoset,infoset_name" refId="" refcode="信息集" refnodeDelegator="" relationRefNodeId="" selLeafOnly="false" text="自助信息变更记录_信息集" usePower="false" writeDs="OpinionDS" writeFields="pk_infoset,pk_infoset_infoset_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" hrOrgs="false" i18nName="w_psninfo-000002" id="refnode_OpinionDS_pk_dept_name" langDir="hi_nodes" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" read="false" readDs="masterDs" readFields="pk_dept,name" refId="" refcode="部门HR" refnodeDelegator="" relationRefNodeId="" selLeafOnly="false" text="自助信息变更记录_部门HR" usePower="false" writeDs="OpinionDS" writeFields="pk_dept,pk_dept_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" hrOrgs="false" i18nName="w_psninfo-000003" id="refnode_OpinionDS_pk_checker_user_name" langDir="hi_nodes" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" read="false" readDs="masterDs" readFields="cuserid,user_name" refId="" refcode="用户" refnodeDelegator="" relationRefNodeId="" selLeafOnly="false" text="自助信息变更记录_用户" usePower="false" writeDs="OpinionDS" writeFields="pk_checker,pk_checker_user_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" hrOrgs="false" i18nName="w_psninfo-000004" id="refnode_OpinionDS_pk_psndoc_name" langDir="hi_nodes" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" read="false" readDs="masterDs" readFields="pk_psndoc,name" refId="" refcode="HR人员" refnodeDelegator="" relationRefNodeId="" selLeafOnly="false" text="自助信息变更记录_HR人员" usePower="false" writeDs="OpinionDS" writeFields="pk_psndoc,pk_psndoc_name">
+            </NCRefNode>
+        </RefNodes>
+    </Models>
+    <Components>
+        <LabelComp enabled="true" id="vvv" text="vv" visible="true">
+        </LabelComp>
+        <FormComp i18nName="w_psninfo-000009" langDir="hi_nodes" caption="自助信息变更记录" columnCount="1" dataset="OpinionDS" eleWidth="260" ellipsis="false" enabled="true" id="OpinionForm" labelMinWidth="0" renderType="1" rowHeight="22" visible="true">
+            <Element i18nName="w_psninfo-000011" langDir="hi_nodes" allowExtendValue="false" attachNext="false" colSpan="1" editable="true" editorType="StringText" enabled="true" field="pk_hrss_setalter" height="" id="pk_hrss_setalter" imageOnly="false" nextLine="false" nullAble="false" rowSpan="1" selectOnly="true" text="变更记录主键" toolbarType="Custom" visible="false" width="">
+            </Element>
+            <Element i18nName="w_psninfo-000012" langDir="hi_nodes" allowExtendValue="false" attachNext="false" colSpan="1" editable="true" editorType="StringText" enabled="true" field="pk_psndoc" height="" id="pk_psndoc" imageOnly="false" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" text="变更人员档案主键" toolbarType="Custom" visible="false" width="">
+            </Element>
+            <Element i18nName="w_psninfo-000007" langDir="hi_nodes" allowExtendValue="false" attachNext="false" colSpan="1" editable="true" editorType="Reference" enabled="true" field="pk_psndoc_name" height="" id="pk_psndoc_name" imageOnly="false" nextLine="false" nullAble="true" refNode="refnode_OpinionDS_pk_psndoc_name" rowSpan="1" selectOnly="true" text="用户" toolbarType="Custom" visible="false" width="">
+            </Element>
+            <Element i18nName="w_psninfo-000013" langDir="hi_nodes" allowExtendValue="false" attachNext="false" colSpan="1" editable="true" editorType="StringText" enabled="true" field="pk_infoset" height="" id="pk_infoset" imageOnly="false" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" text="信息集主键" toolbarType="Custom" visible="false" width="">
+            </Element>
+            <Element i18nName="w_psninfo-000013" langDir="hi_nodes" allowExtendValue="false" attachNext="false" colSpan="1" editable="true" editorType="Reference" enabled="true" field="pk_infoset_infoset_name" height="" id="pk_infoset_infoset_name" imageOnly="false" nextLine="false" nullAble="true" refNode="refnode_OpinionDS_pk_infoset_infoset_name" rowSpan="1" selectOnly="true" text="信息集主键" toolbarType="Custom" visible="false" width="">
+            </Element>
+            <Element i18nName="w_psninfo-000684" langDir="hi_nodes" allowExtendValue="false" attachNext="false" colSpan="1" editable="true" editorType="ComboBox" enabled="true" field="data_status" height="" id="data_status" imageOnly="false" nextLine="false" nullAble="true" refComboData="combo_OpinionDS_data_status" rowSpan="1" selectOnly="true" text="审批状态" toolbarType="Custom" visible="true" width="">
+            </Element>
+            <Element i18nName="w_psninfo-000015" langDir="hi_nodes" allowExtendValue="false" attachNext="false" colSpan="1" editable="true" editorType="TextArea" enabled="true" field="alter_context" height="60" id="alter_context" imageOnly="false" nextLine="true" nullAble="true" rowSpan="1" selectOnly="true" text="变更内容" toolbarType="Custom" visible="false" width="">
+            </Element>
+            <Element i18nName="w_psninfo-000016" langDir="hi_nodes" allowExtendValue="false" attachNext="false" colSpan="1" editable="true" editorType="StringText" enabled="true" field="pk_operator" height="" id="pk_operator" imageOnly="false" nextLine="true" nullAble="true" rowSpan="1" selectOnly="true" text="变更用户" toolbarType="Custom" visible="false" width="">
+            </Element>
+            <Element i18nName="w_psninfo-000017" langDir="hi_nodes" allowExtendValue="false" attachNext="false" colSpan="1" editable="true" editorType="DateText" enabled="true" field="alter_date" height="" id="alter_date" imageOnly="false" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" text="变更时间" toolbarType="Custom" visible="false" width="">
+            </Element>
+            <Element i18nName="w_psninfo-000018" langDir="hi_nodes" allowExtendValue="false" attachNext="false" colSpan="1" editable="true" editorType="TextArea" enabled="true" field="check_note" height="60" id="check_note" imageOnly="false" nextLine="true" nullAble="true" rowSpan="1" selectOnly="true" text="审核意见" toolbarType="Custom" visible="true" width="">
+            </Element>
+            <Element i18nName="w_psninfo-000019" langDir="hi_nodes" allowExtendValue="false" attachNext="false" colSpan="1" editable="true" editorType="StringText" enabled="true" field="pk_checker" height="" id="pk_checker" imageOnly="false" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" text="审核人" toolbarType="Custom" visible="false" width="">
+            </Element>
+            <Element i18nName="w_psninfo-000019" langDir="hi_nodes" allowExtendValue="false" attachNext="false" colSpan="1" editable="true" editorType="Reference" enabled="true" field="pk_checker_user_name" height="" id="pk_checker_user_name" imageOnly="false" nextLine="true" nullAble="true" refNode="refnode_OpinionDS_pk_checker_user_name" rowSpan="1" selectOnly="true" text="审核人" toolbarType="Custom" visible="true" width="">
+            </Element>
+            <Element i18nName="w_psninfo-000020" langDir="hi_nodes" allowExtendValue="false" attachNext="false" colSpan="1" editable="true" editorType="StringText" enabled="true" field="pk_checkerpsndoc_name" height="" id="pk_checkerpsndoc_name" imageOnly="false" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" text="审核人身份" toolbarType="Custom" visible="true" width="">
+            </Element>
+            <Element i18nName="w_psninfo-000021" langDir="hi_nodes" allowExtendValue="false" attachNext="false" colSpan="1" editable="true" editorType="DateText" enabled="true" field="check_date" height="" id="check_date" imageOnly="false" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" text="审核日期" toolbarType="Custom" visible="true" width="">
+            </Element>
+            <Element i18nName="w_psninfo-000022" langDir="hi_nodes" allowExtendValue="false" attachNext="false" colSpan="1" editable="true" editorType="StringText" enabled="true" field="pk_group" height="" id="pk_group" imageOnly="false" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" text="所属集团" toolbarType="Custom" visible="false" width="">
+            </Element>
+            <Element i18nName="w_psninfo-000023" langDir="hi_nodes" allowExtendValue="false" attachNext="false" colSpan="1" editable="true" editorType="StringText" enabled="true" field="pk_org" height="" id="pk_org" imageOnly="false" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" text="所属组织" toolbarType="Custom" visible="false" width="">
+            </Element>
+            <Element i18nName="w_psninfo-000024" langDir="hi_nodes" allowExtendValue="false" attachNext="false" colSpan="1" editable="true" editorType="StringText" enabled="true" field="pk_dept" height="" id="pk_dept" imageOnly="false" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" text="所属部门" toolbarType="Custom" visible="false" width="">
+            </Element>
+            <Element i18nName="w_psninfo-000024" langDir="hi_nodes" allowExtendValue="false" attachNext="false" colSpan="1" editable="true" editorType="Reference" enabled="true" field="pk_dept_name" height="" id="pk_dept_name" imageOnly="false" nextLine="false" nullAble="true" refNode="refnode_OpinionDS_pk_dept_name" rowSpan="1" selectOnly="true" text="所属部门" toolbarType="Custom" visible="false" width="">
+            </Element>
+            <Element allowExtendValue="false" attachNext="false" colSpan="1" editable="true" editorType="IntegerText" enabled="true" field="status" height="" id="status" imageOnly="false" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" text="vostatus" toolbarType="Custom" visible="false" width="">
+            </Element>
+        </FormComp>
+    </Components>
+    <Menus>
+    </Menus>
+</Widget>

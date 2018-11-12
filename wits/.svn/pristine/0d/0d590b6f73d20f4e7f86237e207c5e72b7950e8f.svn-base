@@ -1,0 +1,221 @@
+package nc.vo.wa.formula;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
+
+import nc.bs.framework.common.NCLocator;
+import nc.bs.logging.Logger;
+import nc.itf.hr.wa.IGlobalCountryQueryService;
+import nc.itf.hr.wa.IHrXmlReader;
+import nc.vo.bd.countryzone.CountryZoneVO;
+import nc.vo.hr.formula.ConfigFileDescriptor;
+import nc.vo.hr.formula.FormulaXmlHelper;
+import nc.vo.hr.func.FunctionVO;
+import nc.vo.pub.BusinessException;
+
+public class HrWaXmlReader implements IHrXmlReader {
+	private static HrWaXmlReader instance = new HrWaXmlReader();
+
+	public static final synchronized HrWaXmlReader getInstance() {
+		return instance;
+	}
+
+	private Map<ConfigFileDescriptor, Map<String, FunctionVO>> mapcfd = new HashMap();
+
+	private Map<String, Map<String, FunctionVO>> mapstr = new HashMap();
+
+	private static final String configdir = "/hr/wa/formula/";
+
+	private static final String dot = "\\.";
+
+	private static final String xml = "xml";
+
+	private static final String taxrate = "taxrate_";
+	private static final String CN = "CN";
+	private static final String DEFAULT = "DEFAULT";
+	public static final HashMap<String, CountryZoneVO> hashCountryZone = new HashMap();
+
+	public Map<String, FunctionVO> getFormulaParser() {
+		Map<String, FunctionVO> mfunc = (Map) mapstr.get("DEFAULT");
+		if (mfunc == null) {
+			mfunc = getFormulaParser2();
+			mapstr.put("DEFAULT", mfunc);
+		}
+		return mfunc;
+	}
+
+	private Map<String, FunctionVO> getFormulaParser2() {
+		Map<String, FunctionVO> localmap = getFormulaParser(getAllConfigFileDescriptor());
+		HrWaXmlReader reader = getInstance();
+		ConfigFileDescriptor cfd = reader.getTaxRateConfigFileDescriptor("CN");
+		Map<String, FunctionVO> map2 = reader.getFormulaParser(cfd);
+		localmap.putAll(map2);
+		return localmap;
+	}
+
+	public Map<String, FunctionVO> getFormulaParser(ConfigFileDescriptor para1) {
+		Map<String, FunctionVO> mfunc = (Map) mapcfd.get(para1);
+		if (mfunc == null) {
+			mfunc = FormulaXmlHelper.parseXmlFile(para1);
+			mapcfd.put(para1, mfunc);
+		}
+		return mfunc;
+	}
+
+	public Map<String, FunctionVO> getFormulaParser(String zoncode) {
+		Map<String, FunctionVO> mfunc = (Map) mapstr.get(zoncode);
+		if (mfunc == null) {
+			mfunc = getFormulaParser2(zoncode);
+			mapstr.put(zoncode, mfunc);
+		}
+		return mfunc;
+	}
+
+	private Map<String, FunctionVO> getFormulaParser2(String zoncode) {
+		Map<String, FunctionVO> map = getFormulaParser(getAllConfigFileDescriptor());
+		HrWaXmlReader reader = getInstance();
+		ConfigFileDescriptor cfd = reader
+				.getTaxRateConfigFileDescriptor(zoncode);
+		Map<String, FunctionVO> map2 = reader.getFormulaParser(cfd);
+		map.putAll(map2);
+		return map;
+	}
+
+	private ConfigFileDescriptor getAllConfigFileDescriptor() {
+		ConfigFileDescriptor cfd = new ConfigFileDescriptor();
+		cfd.setDestDir("/hr/wa/formula/");
+		return cfd;
+	}
+
+	public Map<String, FunctionVO> getFormulaParserByzonePK(String pk_country) {
+		// Map<String, FunctionVO> mfunc = (Map) mapstr.get(pk_country);
+		// if (mfunc == null) {
+		// mfunc = getFormulaParserByzonePK2(pk_country);
+		// mapstr.put(pk_country, mfunc);
+		// }
+		// return mfunc;
+		return getFormulaParserByzonePK2(pk_country);
+	}
+
+	private Map<String, FunctionVO> getFormulaParserByzonePK2(String pk_country) {
+		Map<String, FunctionVO> map = getFormulaParser(getAllConfigFileDescriptor());
+		HrWaXmlReader reader = getInstance();
+		String zoncode = "CN";
+		CountryZoneVO zonvoe = null;
+		try {
+			zonvoe = ((IGlobalCountryQueryService) NCLocator.getInstance()
+					.lookup(IGlobalCountryQueryService.class))
+					.getCountryZoneByPK(pk_country);
+		} catch (Exception e) {
+			Logger.error(e.getMessage(), e);
+			zoncode = "CN";
+		}
+
+		if (zonvoe != null) {
+			zoncode = zonvoe.getCode();
+		}
+
+		ConfigFileDescriptor cfd = reader
+				.getTaxRateConfigFileDescriptor(zoncode);
+
+		Map<String, FunctionVO> map2 = reader.getFormulaParser(cfd);
+
+		map.putAll(map2);
+		return map;
+	}
+
+	public FunctionVO getTaxrateFunctionVO(String pk_country) {
+		HrWaXmlReader reader = getInstance();
+		String zoncode = "CN";
+		CountryZoneVO zonvoe = null;
+		try {
+			zonvoe = ((IGlobalCountryQueryService) NCLocator.getInstance()
+					.lookup(IGlobalCountryQueryService.class))
+					.getCountryZoneByPK(pk_country);
+		} catch (Exception e) {
+			Logger.error(e.getMessage(), e);
+			zoncode = "CN";
+		}
+
+		if (zonvoe != null) {
+			zoncode = zonvoe.getCode();
+		}
+
+		ConfigFileDescriptor cfd = reader
+				.getTaxRateConfigFileDescriptor(zoncode);
+
+		Map<String, FunctionVO> map = reader.getFormulaParser(cfd);
+
+		return (FunctionVO) map.get("TAXRATE");
+	}
+
+	public FunctionVO getTaxrateDefaultFunctionVO() {
+		HrWaXmlReader reader = getInstance();
+		String zoncode = "CN";
+		ConfigFileDescriptor cfd = reader
+				.getTaxRateConfigFileDescriptor(zoncode);
+
+		Map<String, FunctionVO> map = reader.getFormulaParser(cfd);
+
+		return (FunctionVO) map.get("TAXRATE");
+	}
+
+	public ConfigFileDescriptor getTaxRateConfigFileDescriptor(String ctrycode) {
+		ConfigFileDescriptor cfd = new ConfigFileDescriptor();
+
+		cfd.setDestDir("/hr/wa/formula/");
+		Set<String> includeset = new HashSet();
+		if (ctrycode.isEmpty()) {
+			ctrycode = "CN";
+		} else if ((!ctrycode.equals("CN"))
+				&& (!hashCountryZone.containsKey(ctrycode))) {
+
+			CountryZoneVO zonevo = null;
+			try {
+				zonevo = ((IGlobalCountryQueryService) NCLocator.getInstance()
+						.lookup(IGlobalCountryQueryService.class))
+						.getDefutCountryZone(ctrycode);
+			} catch (BusinessException e) {
+				Logger.error(e.getMessage(), e);
+			}
+			if (zonevo != null) {
+				ctrycode = zonevo.getCode();
+				hashCountryZone.put(ctrycode, zonevo);
+			}
+		}
+		String taxratexml = "taxrate_" + ctrycode + "\\." + "xml";
+		includeset.add(taxratexml);
+		cfd.setIncludePatterns(includeset);
+
+		return cfd;
+	}
+
+	public FunctionVO getFunctionVO(String key) {
+		return (FunctionVO) getFormulaParser().get(key);
+	}
+
+	public FunctionVO[] getFunctionVOByGroup(String group) {
+		FunctionVO[] vos = new FunctionVO[0];
+		if (getFormulaParser() == null) {
+			return vos;
+		}
+
+		ArrayList<FunctionVO> list = new ArrayList();
+
+		Collection<FunctionVO> collection = getFormulaParser().values();
+		for (Iterator<FunctionVO> iterator = collection.iterator(); iterator
+				.hasNext();) {
+			FunctionVO functionVO = (FunctionVO) iterator.next();
+			if (functionVO.getGroup().equals(group)) {
+				list.add(functionVO);
+			}
+		}
+
+		return (FunctionVO[]) list.toArray(vos);
+	}
+}

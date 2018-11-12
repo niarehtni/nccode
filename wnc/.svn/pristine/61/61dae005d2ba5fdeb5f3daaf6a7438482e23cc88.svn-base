@@ -1,0 +1,84 @@
+package nc.impl.ta.formula.parser.func;
+
+import nc.hr.frame.persistence.BaseDAOManager;
+import nc.hr.utils.PubEnv;
+import nc.impl.hr.formula.parser.AbstractParaFuncParser;
+import nc.pubitf.para.SysInitQuery;
+import nc.vo.pub.BusinessException;
+import nc.vo.pub.lang.UFBoolean;
+
+public class HolidayParser extends AbstractParaFuncParser {
+
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 2520082539561016487L;
+	private String psndocField;
+	private BaseDAOManager daoManager = null;
+
+	public HolidayParser() {
+		setFuncName("holiday");
+	}
+
+	@Override
+	protected String translateFunc2SQL(String pk_org, String formula, String funcStr, String[] funcArgs,
+			Object... params) throws BusinessException {
+		// MOD (台灣新法令) ssx added on 2018-05-30
+		UFBoolean isEnabled = new UFBoolean(SysInitQuery.getParaString(pk_org, "TWHR01"));
+		// end
+
+		String date = funcArgs[0];
+		String retStr = "isnull(" + "(select calendar_type from tbm_holidayenjoyb hb where hb.pk_org='" + pk_org
+				+ "' and hb.calendar=" + date + " and hb.pk_psndoc=" + getPsndocField() + ")," + "isnull("
+				+ "	(select calendar_type from tbm_holidayenjoyh hh where hh.pk_user='" + PubEnv.getPk_user()
+				+ "' and hh.pk_org='" + pk_org + "' and hh.calendar=" + date + " and hh.isallenjoy='Y')," +
+
+				// " (case when (datediff(day,'1980-01-06',"+date+")%7+7)%7 in(0,6) then 1 else 0 end)"
+				// +
+
+				// MOD (台灣新法令) ssx modified on 2018-05-30
+				(isEnabled.booleanValue() ? getModSQL4TW(date) : getModSql(date))
+				// end
+
+				+ ")" + ")";
+
+		return retStr;
+	}
+
+	public String getPsndocField() {
+		return psndocField;
+	}
+
+	public void setPsndocField(String psndocField) {
+		this.psndocField = psndocField;
+	}
+
+	/**
+	 * 因为sql和oracle处理求余的函数不同，且平台不提供转换，只能在此自个修改了
+	 * 
+	 * @param date
+	 * @return
+	 * @throws BusinessException
+	 */
+	public String getModSql(String date) throws BusinessException {
+		if (getDaoManager().isSqlDbs()) {
+			return " (case when (datediff(day,'1980-01-06'," + date + ")%7+7)%7 in(0,6) then 1 else 0 end) ";
+		} else {
+			return " (case when mod(mod(datediff(day,'1980-01-06'," + date + "),7)+7,7) in(0,6) then 1 else 0 end) ";
+		}
+	}
+
+	// MOD (台灣新法令) ssx added on 2018-05-30
+	// 應台灣法規需求，不再以日曆週六日為休息日，而是以排班平日為工作日，其餘國假、例假、休息日及特殊假作為返回值
+	public String getModSQL4TW(String date) throws BusinessException {
+		return "(select date_daytype from tbm_psncalendar where calendar = " + date + " and pk_psndoc = "
+				+ getPsndocField() + " and isnull(dr,0)=0)";
+	} // end
+
+	public BaseDAOManager getDaoManager() {
+		if (daoManager == null) {
+			daoManager = new BaseDAOManager();
+		}
+		return daoManager;
+	}
+}

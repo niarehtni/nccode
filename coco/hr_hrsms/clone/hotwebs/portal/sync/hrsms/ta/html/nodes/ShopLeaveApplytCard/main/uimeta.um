@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding='UTF-8'?>
+<UIMeta flowmode="true" id="main_um" jquery="0">
+    <FlowvLayout autoFill="0" id="flowvlayout7501" widgetId="main">
+      <FlowvPanel id="panelv_operate" widgetId="main">
+         <CanvasLayout className="rightcanvas" id="menucanvas" widgetId="main">
+           <CanvasPanel id="canvasp1" widgetId="main">
+       	  	 <Menubar height="100%" id="menu_operate" left="0" position="relative" top="0" widgetId="main" width="100%">
+             </Menubar>
+           </CanvasPanel>
+         </CanvasLayout>
+        </FlowvPanel>
+        <FlowvPanel id="panelv01888" widgetId="main">
+            <PanelLayout i18nName="w_ta-000583" langDir="node_ta-res" id="panellayout8644" title="单据信息" widgetId="main" className="small_panel_div">
+                <PanelPanel id="panelpanel8644" topPadding="20" widgetId="main">
+                    <FormComp height="100%" id="headTab_card_pk_leaveh_form" label_position="" left="0" position="relative" top="0" widgetId="main" width="100%">
+                    </FormComp>
+                </PanelPanel>
+            </PanelLayout>
+        </FlowvPanel>
+        <FlowvPanel id="panelv11888" widgetId="main">
+            <PanelLayout i18nName="w_ta-000585" langDir="node_ta-res" id="panellayout1475" title="人员信息" widgetId="main" className="small_panel_div" expand="true">
+                <PanelPanel id="panelpanel1475" topPadding="20" widgetId="main">
+                    <FormComp height="100%" id="headTab_card_psninfo_form" label_position="" left="0" position="relative" top="0" widgetId="main" width="100%">
+                    </FormComp>
+                </PanelPanel>
+            </PanelLayout>
+        </FlowvPanel>
+        <FlowvPanel id="panelv21888" widgetId="main">
+            <PanelLayout i18nName="w_ta-000586" langDir="node_ta-res" id="panellayout6666" title="休假信息" widgetId="main" className="small_panel_div">
+                <PanelPanel id="panelpanel6666" topPadding="20" widgetId="main">
+                    <FormComp height="100%" id="headTab_card_leaveinf_form" label_position="" left="0" position="relative" top="0" widgetId="main" width="100%">
+                    </FormComp>
+                </PanelPanel>
+            </PanelLayout>
+        </FlowvPanel>
+        <FlowvPanel id="panelv41888" widgetId="main">          
+	        <PanelLayout i18nName="w_ta-001275" langDir="node_ta-res" id="panellayout6903" title="单据明细" widgetId="main" className="small_panel_div">
+	            <PanelPanel bottomPadding="10" id="panelpanel6902" topPadding="20" widgetId="main">
+			        <GridComp height="100%" id="bodyTab_card_leaveb_sub_grid" left="0" position="relative" top="0" widgetId="main" width="100%">
+			        </GridComp>
+	            </PanelPanel>
+	        </PanelLayout>
+        </FlowvPanel>
+        <FlowvPanel id="panelv51888" widgetId="main">
+            <PanelLayout i18nName="w_ta-000649" langDir="node_ta-res" id="panellayout0920" title="审计信息" widgetId="main" className="small_panel_div" expand="false">
+                <PanelPanel id="panelpanel0920" topPadding="20" widgetId="main">
+                    <FormComp height="100%" id="tailTab_card_audition_form" label_position="" left="0" position="relative" top="0" widgetId="main" width="100%">
+                    </FormComp>
+                </PanelPanel>
+            </PanelLayout>
+        </FlowvPanel>
+    </FlowvLayout>
+</UIMeta>

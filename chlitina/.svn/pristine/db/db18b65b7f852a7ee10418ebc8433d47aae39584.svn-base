@@ -1,0 +1,6 @@
+insert into md_enumvalue(description,dr,enumsequence,hidden,id,industry,name,resid,ts,value,versiontype) values( null,0,0,'N','09180c4d-fd76-483e-8477-07ae3258af40','0','保薪基数','2_GROUPINS-0002','2018-09-17 13:23:17','1',0)
+/
+insert into md_enumvalue(description,dr,enumsequence,hidden,id,industry,name,resid,ts,value,versiontype) values( null,0,1,'N','09180c4d-fd76-483e-8477-07ae3258af40','0','定额','2_GROUPINS-0006','2018-09-17 13:23:17','2',0)
+/
+insert into md_enumvalue(description,dr,enumsequence,hidden,id,industry,name,resid,ts,value,versiontype) values( null,0,2,'N','09180c4d-fd76-483e-8477-07ae3258af40','0','公式','2_GROUPINS-0004','2018-09-17 13:23:17','3',0)
+/

@@ -1,0 +1,42 @@
+insert into md_enumvalue(description,dr,enumsequence,hidden,id,industry,name,resid,ts,value,versiontype) values( 'formula',0,0,'N','28b94d24-6d65-4cc5-b6ac-ca1b638b0da3','0','由公式计算','2waitem-000011','2018-08-14 16:03:21','0',0)
+go
+insert into md_enumvalue(description,dr,enumsequence,hidden,id,industry,name,resid,ts,value,versiontype) values( 'wa_wageform',0,1,'N','28b94d24-6d65-4cc5-b6ac-ca1b638b0da3','0','按薪资规则表','2waitem-000010','2018-08-14 16:03:21','1',0)
+go
+insert into md_enumvalue(description,dr,enumsequence,hidden,id,industry,name,resid,ts,value,versiontype) values( 'bm',0,10,'N','28b94d24-6d65-4cc5-b6ac-ca1b638b0da3','0','其他系统社保','2waitem-000052','2018-08-14 16:03:21','10',0)
+go
+insert into md_enumvalue(description,dr,enumsequence,hidden,id,industry,name,resid,ts,value,versiontype) values( 'pe',0,11,'N','28b94d24-6d65-4cc5-b6ac-ca1b638b0da3','0','其他系统绩效','2waitem-000053','2018-08-14 16:03:21','11',0)
+go
+insert into md_enumvalue(description,dr,enumsequence,hidden,id,industry,name,resid,ts,value,versiontype) values( 'othersource',0,12,'N','28b94d24-6d65-4cc5-b6ac-ca1b638b0da3','0','外部数据源',null,'2018-08-14 16:03:21','12',0)
+go
+insert into md_enumvalue(description,dr,enumsequence,hidden,id,industry,name,resid,ts,value,versiontype) values( 'twhr',0,13,'N','28b94d24-6d65-4cc5-b6ac-ca1b638b0da3','0','劳健保参数',null,'2018-08-14 16:03:21','13',0)
+go
+insert into md_enumvalue(description,dr,enumsequence,hidden,id,industry,name,resid,ts,value,versiontype) values( 'user_input',0,2,'N','28b94d24-6d65-4cc5-b6ac-ca1b638b0da3','0','手工输入','2waitem-000031','2018-08-14 16:03:21','2',0)
+go
+insert into md_enumvalue(description,dr,enumsequence,hidden,id,industry,name,resid,ts,value,versiontype) values( 'fix_value',0,3,'N','28b94d24-6d65-4cc5-b6ac-ca1b638b0da3','0','固定值','2waitem-000042','2018-08-14 16:03:21','3',0)
+go
+insert into md_enumvalue(description,dr,enumsequence,hidden,id,industry,name,resid,ts,value,versiontype) values( 'wa_grade',0,4,'N','28b94d24-6d65-4cc5-b6ac-ca1b638b0da3','0','按薪资标准表','2waitem-000038','2018-08-14 16:03:21','4',0)
+go
+insert into md_enumvalue(description,dr,enumsequence,hidden,id,industry,name,resid,ts,value,versiontype) values( 'other_system',0,5,'N','28b94d24-6d65-4cc5-b6ac-ca1b638b0da3','0','其他系统(组)','2waitem-000000','2018-08-14 16:03:21','5',0)
+go
+insert into md_enumvalue(description,dr,enumsequence,hidden,id,industry,name,resid,ts,value,versiontype) values( 'waorther',0,6,'N','28b94d24-6d65-4cc5-b6ac-ca1b638b0da3','0','其他系统','2waitem-000039','2018-08-14 16:03:21','6',0)
+go
+insert into md_enumvalue(description,dr,enumsequence,hidden,id,industry,name,resid,ts,value,versiontype) values( 'hi',0,7,'N','28b94d24-6d65-4cc5-b6ac-ca1b638b0da3','0','其他系统人事','2waitem-000037','2018-08-14 16:03:21','7',0)
+go
+insert into md_enumvalue(description,dr,enumsequence,hidden,id,industry,name,resid,ts,value,versiontype) values( 'timescollect',0,8,'N','28b94d24-6d65-4cc5-b6ac-ca1b638b0da3','0','发放次数汇总','2waitem-000043','2018-08-14 16:03:21','8',0)
+go
+insert into md_enumvalue(description,dr,enumsequence,hidden,id,industry,name,resid,ts,value,versiontype) values( 'ta',0,9,'N','28b94d24-6d65-4cc5-b6ac-ca1b638b0da3','0','其他系统考勤','2waitem-000048','2018-08-14 16:03:21','9',0)
+go
+insert into md_enumvalue(description,dr,enumsequence,hidden,id,industry,name,resid,ts,value,versiontype) values( 'floatType',0,0,'N','857905ba-ebee-418d-870b-9ad15119e091','0','数值型','2waitem-000024','2018-08-14 16:03:21','0',0)
+go
+insert into md_enumvalue(description,dr,enumsequence,hidden,id,industry,name,resid,ts,value,versiontype) values( 'charType',0,1,'N','857905ba-ebee-418d-870b-9ad15119e091','0','字符型','2waitem-000034','2018-08-14 16:03:21','1',0)
+go
+insert into md_enumvalue(description,dr,enumsequence,hidden,id,industry,name,resid,ts,value,versiontype) values( 'dateType',0,2,'N','857905ba-ebee-418d-870b-9ad15119e091','0','日期型','2waitem-000001','2018-08-14 16:03:21','2',0)
+go
+insert into md_enumvalue(description,dr,enumsequence,hidden,id,industry,name,resid,ts,value,versiontype) values( 'add',0,0,'N','e18475d0-13d8-4a62-b4ea-51959399fa36','0','增项','2waitem-000016','2018-08-14 16:03:21','0',0)
+go
+insert into md_enumvalue(description,dr,enumsequence,hidden,id,industry,name,resid,ts,value,versiontype) values( 'minus',0,1,'N','e18475d0-13d8-4a62-b4ea-51959399fa36','0','减项','2waitem-000008','2018-08-14 16:03:21','1',0)
+go
+insert into md_enumvalue(description,dr,enumsequence,hidden,id,industry,name,resid,ts,value,versiontype) values( 'other',0,2,'N','e18475d0-13d8-4a62-b4ea-51959399fa36','0','其它项','2waitem-000040','2018-08-14 16:03:21','2',0)
+go
+insert into md_enumvalue(description,dr,enumsequence,hidden,id,industry,name,resid,ts,value,versiontype) values( 'system',0,3,'N','e18475d0-13d8-4a62-b4ea-51959399fa36','0','系统项','2waitem-000032','2018-08-14 16:03:21','3',0)
+go

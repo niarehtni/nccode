@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding='UTF-8'?>
+<UIMeta flowmode="true" id="main_um" preferredHeight="0" preferredWidth="0">
+    <FlowvLayout autoFill="0" id="flowvlayout7501" widgetId="main">
+        <FlowvPanel id="panelv_operate" widgetId="main">
+         <CanvasLayout className="rightcanvas" id="menucanvas" widgetId="main">
+           <CanvasPanel id="canvasp1" widgetId="main">
+       	  	 <Menubar height="100%" id="menu_card" left="0" position="relative" top="0" widgetId="main" width="100%">
+              </Menubar> 
+           </CanvasPanel>
+         </CanvasLayout>
+        </FlowvPanel>
+        <FlowvPanel id="panelv06429" widgetId="main">
+             <PanelLayout i18nName="w_ta-000852" langDir="node_ta-res" id="panellayout1247" title="单据信息" widgetId="main" className="small_panel_div">
+                <PanelPanel bottomPadding="0" id="panelpanel1247" topPadding="20" widgetId="main">
+                    <FormComp id="headTab_card_stapply_form" widgetId="main">
+                    </FormComp>
+                </PanelPanel>
+            </PanelLayout>
+        </FlowvPanel>
+        <FlowvPanel id="panelv16429" widgetId="main">
+            <PanelLayout i18nName="w_ta-000853" langDir="node_ta-res" id="panellayout1248" title="人员信息" widgetId="main" className="small_panel_div">
+                <PanelPanel bottomPadding="0" id="panelpanel1248" topPadding="0" widgetId="main">
+                   <FormComp id="headTab_card_psninfo_form" widgetId="main">
+                   </FormComp>
+                </PanelPanel>
+            </PanelLayout>
+        </FlowvPanel>
+        <FlowvPanel id="panelv26429" widgetId="main">
+            <PanelLayout id="panellayout1249" i18nName="w_trn-000022" langDir="node_hi-res" title="调配前信息" widgetId="main" className="small_panel_div">
+                <PanelPanel bottomPadding="0" id="panelpanel1249" topPadding="0" widgetId="main">
+                   <FormComp id="headTab_card_before_form" widgetId="main">
+                   </FormComp>
+                </PanelPanel>
+            </PanelLayout>
+        </FlowvPanel>
+        <FlowvPanel id="panelv36429" widgetId="main">
+            <PanelLayout id="panellayout1250" i18nName="w_trn-000023" langDir="node_hi-res" title="调配后信息" widgetId="main" className="small_panel_div">
+                <PanelPanel bottomPadding="0" id="panelpanel1250" topPadding="0" widgetId="main">
+                    <FormComp id="headTab_card_after_form" widgetId="main">
+                    </FormComp>
+                </PanelPanel>
+            </PanelLayout>
+        </FlowvPanel>
+        <FlowvPanel id="panelv46429" widgetId="main">
+            <PanelLayout id="panellayout1251" i18nName="w_trn-000024" langDir="node_hi-res" title="调配后管理组织" widgetId="main" className="small_panel_div">
+                <PanelPanel bottomPadding="0" id="panelpanel1251" topPadding="0" widgetId="main">
+                    <FormComp id="headTab_card_hiorg_form" widgetId="main">
+                    </FormComp>
+                </PanelPanel>
+            </PanelLayout>
+        </FlowvPanel>
+    </FlowvLayout>
+</UIMeta>

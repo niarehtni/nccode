@@ -1,0 +1,109 @@
+package nc.pubimpl.ta.overtime;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import nc.bs.dao.BaseDAO;
+import nc.bs.framework.common.NCLocator;
+import nc.hr.utils.InSQLCreator;
+import nc.itf.ta.IPeriodQueryService;
+import nc.jdbc.framework.processor.MapListProcessor;
+import nc.pubitf.ta.overtime.ISegRuleService;
+import nc.vo.pub.BusinessException;
+import nc.vo.pub.lang.UFLiteralDate;
+import nc.vo.ta.overtime.AggSegRuleVO;
+import nc.vo.ta.period.PeriodVO;
+
+public class SegRuleServiceImpl implements ISegRuleService {
+	private BaseDAO baseDAO = null;
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public Map<String, Map<UFLiteralDate, AggSegRuleVO>> querySegRulesByPsn(
+			UFLiteralDate[] otDates, String[] pk_psndocs)
+			throws BusinessException {
+		Map<String, Map<UFLiteralDate, AggSegRuleVO>> ret = new HashMap<String, Map<UFLiteralDate, AggSegRuleVO>>();
+		// 業務邏輯：根據給定的日期範圍及員工範圍，查詢所有引用了加班分段依據的加班登記單，返回人員、日期對應的加班分段依據Map
+		if (pk_psndocs != null && pk_psndocs.length > 0) {
+			List<String> dateList = new ArrayList<String>();
+			if (otDates != null && otDates.length > 0) {
+				for (UFLiteralDate date : otDates) {
+					if (!dateList.contains(date.toString())) {
+						dateList.add(date.toString());
+					}
+				}
+			}
+
+			InSQLCreator insql = new InSQLCreator();
+			String inSQL = insql.createTempTable(dateList
+					.toArray(new String[0]));
+			for (String pk_psndoc : pk_psndocs) {
+				String strSQL = "select distinct ov.overtimebegindate, sr.pk_segrule from tbm_overtimereg ov "
+						+ " inner join tbm_timeitemcopy cp on ov.pk_overtimetypecopy=cp.pk_timeitemcopy "
+						+ " inner join hrta_segrule sr on cp.pk_segrule=sr.pk_segrule "
+						+ " where overtimebegindate in (select in_pk from "
+						+ inSQL
+						+ ") and pk_psndoc='"
+						+ pk_psndoc
+						+ "' order by ov.overtimebegindate";
+				List<Map<String, Object>> segrules = (List<Map<String, Object>>) this
+						.getBaseDAO().executeQuery(strSQL,
+								new MapListProcessor());
+				if (segrules != null && segrules.size() > 0) {
+					for (Map<String, Object> segrule : segrules) {
+						String ovdate = (String) segrule
+								.get("overtimebegindate");
+						String pk_segrule = (String) segrule.get("pk_segrule");
+						AggSegRuleVO segruleaggvo = (AggSegRuleVO) this
+								.getBaseDAO().retrieveByPK(AggSegRuleVO.class,
+										pk_segrule);
+						if (!ret.containsKey(pk_psndoc)) {
+							ret.put(pk_psndoc,
+									new HashMap<UFLiteralDate, AggSegRuleVO>());
+						}
+
+						ret.get(pk_psndoc).put(new UFLiteralDate(ovdate),
+								segruleaggvo);
+					}
+				}
+			}
+		}
+		return null;
+	}
+
+	@Override
+	public Map<String, Map<UFLiteralDate, AggSegRuleVO>> querySegRulesByPsn(
+			String pk_org, String cyear, String cperiod, String[] pk_psndocs)
+			throws BusinessException {
+		// 業務邏輯：根據給定的考勤年及期間，取出該期間下所有日期，並同人員PK數組調用方法1，並返回方法1結果
+
+		if (pk_psndocs != null && pk_psndocs.length > 0) {
+			PeriodVO period = ((IPeriodQueryService) NCLocator.getInstance()
+					.lookup(IPeriodQueryService.class)).queryByYearMonth(
+					pk_org, cyear, cperiod);
+
+			List<UFLiteralDate> dateList = new ArrayList<UFLiteralDate>();
+			if (period != null) {
+				UFLiteralDate beginDate = period.getBegindate();
+				while (!beginDate.after(period.getEnddate())) {
+					dateList.add(beginDate);
+					beginDate = beginDate.getDateAfter(1);
+				}
+
+				return querySegRulesByPsn(
+						dateList.toArray(new UFLiteralDate[0]), pk_psndocs);
+			}
+		}
+		return null;
+	}
+
+	public BaseDAO getBaseDAO() {
+		if (baseDAO == null) {
+			baseDAO = new BaseDAO();
+		}
+		return baseDAO;
+	}
+
+}

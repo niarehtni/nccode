@@ -1,0 +1,193 @@
+package nc.ui.hrwa.sumincometax.action;
+
+import java.awt.event.ActionEvent;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.swing.Action;
+import javax.swing.JComponent;
+import javax.swing.JFileChooser;
+
+import nc.bs.framework.common.NCLocator;
+import nc.itf.wa.datainterface.IReportExportService;
+import nc.ui.hr.uif2.action.HrAction;
+import nc.ui.pub.beans.UIDialog;
+import nc.ui.pub.beans.UIFileChooser;
+import nc.ui.pubapp.uif2app.model.BillManageModel;
+import nc.ui.pubapp.uif2app.query2.model.IModelDataManager;
+import nc.ui.pubapp.uif2app.view.ShowUpableBillForm;
+import nc.ui.wa.datainterface.TextFileFilter4TW;
+import nc.vo.hrwa.sumincometax.AggSumIncomeTaxVO;
+import nc.vo.pub.BusinessException;
+import nc.vo.pub.lang.UFLiteralDate;
+
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang.StringUtils;
+
+public class ExportApplyAction extends HrAction {
+	/**
+	 * serial no
+	 */
+	private static final long serialVersionUID = 5099334079859001851L;
+	private IReportExportService service = null;
+	List<String> dataPKs = new ArrayList<String>();
+	private IModelDataManager dataManager;
+	private ShowUpableBillForm billForm;
+
+	public ExportApplyAction() {
+		super();
+		super.setBtnName("生成申報檔");
+		super.setCode("ExportApplyAction");
+		super.putValue(Action.SHORT_DESCRIPTION, "生成申報檔");
+	}
+
+	@Override
+	public void doAction(ActionEvent arg0) throws Exception {
+		JComponent parentUi = getModel().getContext().getEntranceUI();
+		ExportIndividualTaxDlg dlg = new ExportIndividualTaxDlg(parentUi,
+				this.getContext());
+
+		int isGen = dlg.showModal();
+		if (isGen == UIDialog.ID_OK) {
+			String applyFormat = "";
+			int applyCount = 0;
+			String applyReason = "";
+
+			AggSumIncomeTaxVO aggvo = ((AggSumIncomeTaxVO) this.getModel()
+					.getSelectedData());
+			String vatNumber = this.getService().getOrgVATNumber(
+					aggvo.getParentVO().getPk_hrorg());
+			String twYear = String
+					.valueOf(new UFLiteralDate().getYear() - 1911);
+
+			applyFormat = (String) dlg.getCboApplyFormat()
+					.getSelectdItemValue();
+			applyCount = StringUtils.isEmpty(dlg.getTxtApplyCount().getText()) ? 0
+					: Integer.parseInt(dlg.getTxtApplyCount().getText());
+			if (dlg.getCboApplyReason().getSelectedIndex() == 0) {
+				applyReason = "  ";
+			} else if (dlg.getCboApplyReason().getSelectedIndex() == 1) {
+				applyReason = "01";
+			} else if (dlg.getCboApplyReason().getSelectedIndex() == 2) {
+				applyReason = "02";
+			}
+
+			if (!checkData(applyFormat)) {
+				throw new BusinessException("申報資料中存在格式不為 [" + applyFormat
+						+ "] 的資料，請重新過濾後再次執行生成申報檔作業。");
+			}
+
+			String[] textArr = getService().getIITXTextReport(
+					this.getContext().getPk_org(),
+					dataPKs.toArray(new String[0]),
+					new UFLiteralDate().getYear(), applyFormat, applyCount,
+					applyReason, vatNumber);
+
+			if (textArr != null && textArr.length > 2) {
+				UIFileChooser fileChooser = new UIFileChooser();
+				fileChooser.setDialogTitle("請指定要匯出的文檔名稱");
+				TextFileFilter4TW filter = new TextFileFilter4TW();
+				filter.setFilterString("*." + twYear);
+				filter.setDescription("生成綜所稅申報檔");
+				fileChooser.addChoosableFileFilter(filter);
+				fileChooser.setSelectedFile(new File(fileChooser
+						.getCurrentDirectory().getAbsolutePath()
+						+ "\\"
+						+ vatNumber + "." + twYear));
+				int userSelection = fileChooser.showSaveDialog(parentUi);
+
+				String filename = "";
+				File fileToSave = null;
+				if (userSelection == JFileChooser.APPROVE_OPTION) {
+					if (!fileChooser.getSelectedFile().getAbsoluteFile()
+							.toString().toUpperCase().endsWith("." + twYear)) {
+						filename = fileChooser.getSelectedFile()
+								.getAbsolutePath() + "." + twYear;
+					} else {
+						filename = fileChooser.getSelectedFile()
+								.getAbsolutePath();
+					}
+
+					this.getService().writeBackFlags(
+							dataPKs.toArray(new String[0]),
+							String.valueOf(applyCount), applyReason);
+					fileToSave = new File(filename);
+					this.getDataManager().refresh();
+				} else {
+					this.putValue("message_after_action", "申請已取消");
+					return;
+				}
+
+				StringBuilder sb = new StringBuilder();
+				for (String txt : textArr) {
+					sb.append(txt + "\r\n");
+				}
+
+				if (fileToSave != null) {
+					// 讀取報表文本
+					FileUtils.writeStringToFile(fileToSave, sb.toString(),
+							"Big5");
+				}
+
+				this.putValue("message_after_action", "");
+			} else {
+				this.putValue("message_after_action", "指定的條件沒找到可生成的申報資料。");
+			}
+		} else {
+			this.putValue("message_after_action", "生成申報檔作業已取消。");
+		}
+
+	}
+
+	private boolean checkData(String checkFormat) throws BusinessException {
+		Object[] data = ((BillManageModel) this.getModel())
+				.getSelectedOperaDatas();
+		if (data != null && data.length > 0) {
+			dataPKs.clear();
+			String pk_format = this.getService().getIITXTFormat(checkFormat);
+			for (Object line : data) {
+				AggSumIncomeTaxVO aggvo = (AggSumIncomeTaxVO) line;
+				String pk_defdoc = aggvo.getParentVO().getDeclaretype();
+				if (!pk_defdoc.equals(pk_format)) {
+					return false;
+				} else {
+					dataPKs.add(aggvo.getPrimaryKey());
+				}
+			}
+		} else {
+			throw new BusinessException("請勾選要產生申報檔的人員");
+		}
+		return true;
+	}
+
+	private IReportExportService getService() {
+		if (service == null) {
+			service = (IReportExportService) NCLocator.getInstance().lookup(
+					IReportExportService.class);
+		}
+		return service;
+	}
+
+	protected boolean isActionEnable() {
+		List data = ((BillManageModel) this.getModel()).getData();
+
+		return data != null && data.size() > 0;
+	}
+
+	public IModelDataManager getDataManager() {
+		return dataManager;
+	}
+
+	public void setDataManager(IModelDataManager dataManager) {
+		this.dataManager = dataManager;
+	}
+
+	public ShowUpableBillForm getBillForm() {
+		return billForm;
+	}
+
+	public void setBillForm(ShowUpableBillForm billForm) {
+		this.billForm = billForm;
+	}
+}

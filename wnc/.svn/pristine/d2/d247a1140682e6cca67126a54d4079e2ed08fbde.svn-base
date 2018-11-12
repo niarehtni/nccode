@@ -1,0 +1,355 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE beans PUBLIC "-//SPRING//DTD BEAN//EN" "http://www.springframework.org/dtd/spring-beans.dtd">
+<beans>
+
+	<import resource="keypsn_button_config.xml" />
+	<import resource="keypsn_validator_config.xml" />
+
+	<!-- 环境变量 -->
+	<bean id="context" class="nc.vo.uif2.LoginContext" />
+
+	<bean id="psndocModelService" class="nc.ui.hi.keypsn.model.KeyPsnModelService">
+		<property name="treeModel" ref="groupModel" />
+	</bean>
+
+	<bean id="defaultValueProvider" class="nc.ui.hi.register.model.RegisterDefaultValueProvider">
+		<property name="modelDataManager" ref="psndocDataManager" />
+	</bean>
+
+	<bean id="subDefaultValueProvider" class="nc.ui.hi.register.model.SubDefaultValueProvider">
+		<property name="formEditor" ref="psndocFormEditor" />
+	</bean>
+
+	<!--业务子集 -->
+	<bean id="businessInfoSet" class="java.util.HashSet">
+		<constructor-arg>
+			<list>
+				<value>hi_psnorg</value>
+				<value>hi_psnjob</value>
+				<value>hi_psndoc_parttime</value>
+				<value>hi_psndoc_trial</value>
+				<value>hi_psndoc_psnchg</value>
+				<value>hi_psndoc_ctrt</value>
+				<value>hi_psndoc_retire</value>
+				<value>hi_psndoc_train</value>
+				<value>hi_psndoc_ass</value>
+				<value>hi_psndoc_capa</value>
+				<value>hi_psndoc_keypsn</value>
+				<value>hi_psndoc_qulify</value>
+			</list>
+		</constructor-arg>
+	</bean>
+
+	<bean id="disableTabSet" class="java.util.HashSet">
+		<constructor-arg>
+			<list>
+				<value>hi_psnorg</value>
+			</list>
+		</constructor-arg>
+	</bean>
+
+	<bean id="toftpanelActionContributors" class="nc.ui.uif2.actions.ActionContributors">
+		<property name="contributors">
+			<list>
+				<ref bean="listViewActions" />
+				<ref bean="formEditorActions" />
+			</list>
+		</property>
+	</bean>
+
+	<bean id="InitDataListener" class="nc.ui.hi.keypsn.model.KeyPsnInitDataListener">
+		<property name="context" ref="context" />
+		<property name="model" ref="manageAppModel" />
+		<property name="leftModel" ref="groupModel" />
+	</bean>
+
+	<bean id="ClosingListener" class="nc.ui.uif2.FunNodeClosingHandler">
+		<property name="model" ref="manageAppModel" />
+		<property name="saveaction" ref="savePsndocAction" />
+		<property name="cancelaction" ref="cancelPsndocAction" />
+	</bean>
+
+	<!-- 左树构造策略 -->
+	<bean id="treeCreateStrategy" class="nc.vo.bd.meta.BDObjectTreeCreateStrategy">
+		<property name="factory" ref="boadatorfactory" />
+		<property name="rootName">
+			<bean class="nc.ui.uif2.I18nFB">
+				<property name="resDir" value="6007psn" />
+				<property name="resId" value="06007psn0357" />
+				<property name="defaultValue" value="关键人员组" />
+			</bean>
+		</property>
+	</bean>
+
+	<!-- 左树应用模型 -->
+	<bean id="groupModel" class="nc.ui.hi.keypsn.model.KeyPsnGrpAppModel">
+		<property name="service" ref="groupModelService" />
+		<property name="treeCreateStrategy" ref="treeCreateStrategy" />
+		<property name="businessObjectAdapterFactory" ref="boadatorfactory" />
+		<property name="context" ref="context" />
+	</bean>
+
+	<bean id="groupModelService" class="nc.ui.hi.keypsn.model.KeyPsnGrpModelService" />
+
+	<bean id="groupDataManager" class="nc.ui.hi.keypsn.model.KeyPsnGrpModelDataManager">
+		<property name="context" ref="context" />
+		<property name="model" ref="groupModel" />
+		<property name="service" ref="groupModelService" />
+		<property name="queryDelegater" ref="groupModelService" />
+		<property name="showSealDataFlag" value="false" />
+	</bean>
+
+
+	<!-- 对象转换器工厂，由此获取操作对象的特征信息 -->
+	<bean id="boadatorfactory" class="nc.vo.bd.meta.BDObjectAdpaterFactory" />
+
+	<bean id="manageAppModel" class="nc.ui.hi.keypsn.model.KeypsnPsndocModel">
+		<property name="context" ref="context" />
+		<property name="nodeCode" value="60070employee" />
+		<property name="service" ref="psndocModelService" />
+		<property name="businessInfoSet" ref="businessInfoSet" />
+		<property name="businessObjectAdapterFactory" ref="boadatorfactory" />
+		<property name="resourceCode" ref="resourceCode" />
+	</bean>
+
+	<bean id="psndocDataManager" class="nc.ui.hi.psndoc.model.PsndocDataManager">
+		<property name="context" ref="context" />
+		<property name="model" ref="manageAppModel" />
+		<property name="service" ref="psndocModelService" />
+		<property name="paginationModel" ref="paginationModel" />
+		<property name="paginationBar" ref="paginationBar" />
+	</bean>
+
+	<bean id="psndocMediator" class="nc.ui.hi.psndoc.model.PsndocMediator">
+		<property name="typeAppModel" ref="groupModel" />
+		<property name="docModel" ref="manageAppModel" />
+		<property name="docModelDataManager" ref="psndocDataManager" />
+	</bean>
+
+	<!-- 分页面板 -->
+	<bean id="paginationBar" class="nc.ui.uif2.components.pagination.PaginationBar">
+		<property name="paginationModel" ref="paginationModel" />
+	</bean>
+
+	<bean id="paginationModel" class="nc.ui.uif2.components.pagination.PaginationModel"
+		init-method="init">
+		<property name="paginationQueryService" ref="psndocModelService" />
+	</bean>
+
+	<!-- 列表视图 -->
+	<bean id="psndocListView" class="nc.ui.hi.psndoc.view.PsndocListView"
+		init-method="initUI">
+		<property name="pos" value="head" />
+		<property name="model" ref="manageAppModel" />
+		<property name="multiSelectionMode" value="1" />
+		<property name="multiSelectionEnable" value="true" />
+		<property name="dataManger" ref="psndocDataManager" />
+		<property name="paginationBar" ref="paginationBar" />
+		<property name="nodekey" value="bd_psndoc" />
+		<property name="dealHyperlink" value="true" />
+	</bean>
+
+	<!--卡控件 -->
+	<bean id="psndocFormEditor" class="nc.ui.hi.psndoc.view.PsndocFormEditor"
+		init-method="initUI">
+		<property name="model" ref="manageAppModel" />
+		<property name="superValidator" ref="SuperValidationConfig" />
+		<property name="dataManger" ref="psndocDataManager" />
+		<property name="templateContainer" ref="templateContainer" />
+		<property name="nodekey" value="bd_psndoc" />
+		<property name="tabActions">
+			<list>
+				<ref bean="addSubSetAction" />
+				<ref bean="insertSubSetAction" />
+				<ref bean="deleteSubSetAction" />				
+				<ref bean="copySubSetAction" />
+				<ref bean="pasteSubSetAction" />
+				<ref bean="ActionsBarSeparator" />
+				<ref bean="adjustSubReordUpAction" />
+				<ref bean="adjustSubReordDownAction" />
+				<ref bean="bodyMaxAction" />
+			</list>
+		</property>
+		<property name="componentValueManager" ref="valueManager" />
+		<property name="dealHyperlink" value="true" />
+	</bean>
+
+	<bean id="mouseClickShowPanelMediator" class="nc.ui.hr.uif2.mediator.HyperLinkClickMediator">
+		<property name="model" ref="manageAppModel" />
+		<property name="showUpComponent" ref="psndocFormEditor" />
+		<property name="hyperLinkColumn" value="code" />
+	</bean>
+
+	<bean name="valueManager" class="nc.ui.hi.psndoc.view.PsndocMetaDataValueAdapter" />
+
+	<!-- 卡片工具栏 -->
+	<bean id="editorToolBarPanel" class="nc.ui.uif2.tangramlayout.CardLayoutToolbarPanel">
+		<property name="model" ref="manageAppModel" />
+		<property name="titleAction" ref="editorReturnAction" />
+		<property name="actions">
+			<list>
+				<ref bean="fileAction" />
+				<ref bean="ActionsBarSeparator" />
+				<ref bean="firstLineAction" />
+				<ref bean="preLineAction" />
+				<ref bean="nextLineAction" />
+				<ref bean="lastLineAction" />
+				<ref bean="headMaxAction" />
+			</list>
+		</property>
+	</bean>
+
+	<!-- 返回按钮 -->
+	<bean id="editorReturnAction" class="nc.ui.uif2.actions.ShowMeUpAction">
+		<property name="goComponent" ref="psndocListView" />
+	</bean>
+
+	<bean id="templateContainer" class="nc.ui.hr.uif2.view.HrPsnclTemplateContainer"
+		init-method="load">
+		<property name="context" ref="context" />
+		<property name="nodeKeies">
+			<list>
+				<value>bd_psndoc</value>
+				<value>group</value>
+			</list>
+		</property>
+	</bean>
+
+	<!--树控件 nc.ui.uif2.components.TreePanel -->
+	<bean id="treePanel" class="nc.ui.hi.keypsn.view.KeyPsnGroupTreePanel"
+		init-method="initUI">
+		<property name="model" ref="groupModel" />
+		<property name="rootvisibleflag" value="true" />
+	</bean>
+
+	<bean id="groupToolbar" class="nc.ui.hi.pub.HIToolBarPanel">
+		<property name="model" ref="groupModel" />
+		<property name="actions">
+			<list>
+				<ref bean="groupNewAction" />
+				<ref bean="groupEditAction" />
+				<ref bean="groupDelAction" />
+				<ref bean="groupRefreshAction" />
+				<ref bean="groupEnableAction" />
+				<ref bean="groupDisableAction" />
+			</list>
+		</property>
+	</bean>
+
+	<bean id="groupEditor" class="nc.ui.hr.uif2.view.HrBillFormEditor"
+		init-method="initUI">
+		<property name="model" ref="groupModel" />
+		<property name="templateContainer" ref="templateContainer" />
+		<property name="nodekey" value="group" />
+	</bean>
+
+
+	<bean id="groupNewAction" class="nc.ui.hi.keypsn.action.GroupAddAction">
+		<property name="model" ref="groupModel" />
+		<property name="cardview" ref="groupEditor" />
+	</bean>
+
+	<bean id="groupEditAction" class="nc.ui.hi.keypsn.action.GroupEditAction">
+		<property name="model" ref="groupModel" />
+		<property name="cardview" ref="groupEditor" />
+	</bean>
+
+	<bean id="groupDelAction" class="nc.ui.hi.keypsn.action.GroupDelAction">
+		<property name="model" ref="groupModel" />
+	</bean>
+
+	<bean id="groupRefreshAction" class="nc.ui.hi.keypsn.action.GroupRefreshAction">
+		<property name="model" ref="groupModel" />
+		<property name="dataManager" ref="groupDataManager" />
+	</bean>
+
+	<bean id="groupEnableAction" class="nc.ui.hi.keypsn.action.GroupEnableAction">
+		<property name="model" ref="groupModel" />
+	</bean>
+
+	<bean id="groupDisableAction" class="nc.ui.hi.keypsn.action.GroupDisableAction">
+		<property name="model" ref="groupModel" />
+		<property name="exceptionHandler" ref="exceptionHandler" />
+	</bean>
+
+	<bean id="exceptionHandler" class="nc.ui.uif2.DefaultExceptionHanler">
+		<property name="context" ref="context" />
+	</bean>
+
+	<bean id="container" class="nc.ui.uif2.TangramContainer"
+		init-method="initUI">
+		<property name="tangramLayoutRoot">
+			<bean class="nc.ui.uif2.tangramlayout.node.TBNode">
+				<property name="showMode" value="CardLayout" />
+				<property name="tabs">
+					<list>
+						<bean class="nc.ui.uif2.tangramlayout.node.VSNode">
+							<property name="showMode" value="NoDivider" />
+							<property name="up">
+								<bean class="nc.ui.uif2.tangramlayout.node.CNode">
+									<property name="component" ref="psndocPrimaryOrgPanel" />
+								</bean>
+							</property>
+							<property name="down">
+								<bean class="nc.ui.uif2.tangramlayout.node.HSNode">
+									<!-- <property name="left" ref="" /> -->
+									<property name="left">
+										<bean class="nc.ui.uif2.tangramlayout.node.VSNode">
+											<property name="showMode" value="NoDivider" />
+											<property name="up">
+												<bean class="nc.ui.uif2.tangramlayout.node.CNode">
+													<property name="component" ref="groupToolbar" />
+												</bean>
+											</property>
+											<property name="down">
+												<bean class="nc.ui.uif2.tangramlayout.node.CNode">
+													<property name="component" ref="treePanel" />
+												</bean>
+											</property>
+											<property name="dividerLocation" value="30f" />
+										</bean>
+									</property>
+									<property name="right">
+										<bean class="nc.ui.uif2.tangramlayout.node.CNode">
+											<property name="component" ref="psndocListView" />
+										</bean>
+									</property>
+									<property name="dividerLocation" value="320" />
+								</bean>
+							</property>
+							<property name="dividerLocation" value="30" />
+						</bean>
+						<bean class="nc.ui.uif2.tangramlayout.node.VSNode">
+							<property name="showMode" value="NoDivider" />
+							<property name="up">
+								<bean class="nc.ui.uif2.tangramlayout.node.CNode">
+									<property name="component" ref="editorToolBarPanel" />
+								</bean>
+							</property>
+							<property name="down">
+								<bean class="nc.ui.uif2.tangramlayout.node.CNode">
+									<property name="component" ref="psndocFormEditor" />
+								</bean>
+							</property>
+							<property name="dividerLocation" value="26f" />
+						</bean>
+					</list>
+				</property>
+			</bean>
+		</property>
+	</bean>
+
+	<bean id="psndocPrimaryOrgPanel" class="nc.ui.hi.psndoc.view.PsnPrimaryOrgPanel"
+		init-method="initUI">
+		<property name="model" ref="manageAppModel" />
+		<property name="hasShowAllInfo" value="false" />
+		<property name="listView" ref="psndocListView" />
+		<property name="paginationModel" ref="paginationModel" />
+		<property name="dataManager" ref="groupDataManager" />
+		<property name="pk_orgtype" value="HRORGTYPE00000000000" />
+		<property name="leftSuperModel" ref="groupModel" />
+		<property name="psnDataManager" ref="psndocDataManager" />
+	</bean>
+
+</beans>

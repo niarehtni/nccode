@@ -1,0 +1,668 @@
+package nc.ui.wa.datainterface;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import nc.ui.uif2.factory.AbstractJavaBeanDefinition;
+
+public class common_config extends AbstractJavaBeanDefinition {
+	private Map<String, Object> context = new HashMap();
+
+	public nc.vo.wa.pub.WaLoginContext getContext() {
+		if (context.get("context") != null)
+			return (nc.vo.wa.pub.WaLoginContext) context.get("context");
+		nc.vo.wa.pub.WaLoginContext bean = new nc.vo.wa.pub.WaLoginContext();
+		context.put("context", bean);
+		setBeanFacotryIfBeanFacatoryAware(bean);
+		invokeInitializingBean(bean);
+		return bean;
+	}
+
+	public nc.ui.wa.datainterface.model.DataIOModelService getDataIOModelService() {
+		if (context.get("dataIOModelService") != null)
+			return (nc.ui.wa.datainterface.model.DataIOModelService) context.get("dataIOModelService");
+		nc.ui.wa.datainterface.model.DataIOModelService bean = new nc.ui.wa.datainterface.model.DataIOModelService();
+		context.put("dataIOModelService", bean);
+		setBeanFacotryIfBeanFacatoryAware(bean);
+		invokeInitializingBean(bean);
+		return bean;
+	}
+
+	public nc.ui.wa.datainterface.model.DataIOAppModel getDataIOAppModel() {
+		if (context.get("dataIOAppModel") != null)
+			return (nc.ui.wa.datainterface.model.DataIOAppModel) context.get("dataIOAppModel");
+		nc.ui.wa.datainterface.model.DataIOAppModel bean = new nc.ui.wa.datainterface.model.DataIOAppModel();
+		context.put("dataIOAppModel", bean);
+		bean.setService(getDataIOModelService());
+		bean.setBusinessObjectAdapterFactory(getBoadatorfactory());
+		bean.setContext(getContext());
+		setBeanFacotryIfBeanFacatoryAware(bean);
+		invokeInitializingBean(bean);
+		return bean;
+	}
+
+	public nc.ui.wa.datainterface.model.DataIOModelDataManager getModelDataManager() {
+		if (context.get("modelDataManager") != null)
+			return (nc.ui.wa.datainterface.model.DataIOModelDataManager) context.get("modelDataManager");
+		nc.ui.wa.datainterface.model.DataIOModelDataManager bean = new nc.ui.wa.datainterface.model.DataIOModelDataManager();
+		context.put("modelDataManager", bean);
+		bean.setModel(getDataIOAppModel());
+		bean.setService(getDataIOModelService());
+		setBeanFacotryIfBeanFacatoryAware(bean);
+		invokeInitializingBean(bean);
+		return bean;
+	}
+
+	public nc.vo.bd.meta.BDObjectAdpaterFactory getBoadatorfactory() {
+		if (context.get("boadatorfactory") != null)
+			return (nc.vo.bd.meta.BDObjectAdpaterFactory) context.get("boadatorfactory");
+		nc.vo.bd.meta.BDObjectAdpaterFactory bean = new nc.vo.bd.meta.BDObjectAdpaterFactory();
+		context.put("boadatorfactory", bean);
+		setBeanFacotryIfBeanFacatoryAware(bean);
+		invokeInitializingBean(bean);
+		return bean;
+	}
+
+	public nc.ui.uif2.editor.TemplateContainer getTemplateContainer() {
+		if (context.get("templateContainer") != null)
+			return (nc.ui.uif2.editor.TemplateContainer) context.get("templateContainer");
+		nc.ui.uif2.editor.TemplateContainer bean = new nc.ui.uif2.editor.TemplateContainer();
+		context.put("templateContainer", bean);
+		bean.setContext(getContext());
+		bean.setNodeKeies(getManagedList0());
+		bean.load();
+		setBeanFacotryIfBeanFacatoryAware(bean);
+		invokeInitializingBean(bean);
+		return bean;
+	}
+
+	private List getManagedList0() {
+		List list = new ArrayList();
+		list.add("dataio");
+		return list;
+	}
+
+	public nc.ui.wa.datainterface.view.WaDataIOHeadPanel getOrgPanel() {
+		if (context.get("orgPanel") != null)
+			return (nc.ui.wa.datainterface.view.WaDataIOHeadPanel) context.get("orgPanel");
+		nc.ui.wa.datainterface.view.WaDataIOHeadPanel bean = new nc.ui.wa.datainterface.view.WaDataIOHeadPanel();
+		context.put("orgPanel", bean);
+		bean.setContext(getContext());
+		bean.setModel(getDataIOAppModel());
+		bean.setDataManager(getModelDataManager());
+		bean.setPk_orgtype("HRORGTYPE00000000000");
+		bean.initUI();
+		setBeanFacotryIfBeanFacatoryAware(bean);
+		invokeInitializingBean(bean);
+		return bean;
+	}
+
+	public nc.ui.wa.datainterface.view.DefaultDataIOHeadPanel getIoHeadPanel() {
+		if (context.get("ioHeadPanel") != null)
+			return (nc.ui.wa.datainterface.view.DefaultDataIOHeadPanel) context.get("ioHeadPanel");
+		nc.ui.wa.datainterface.view.DefaultDataIOHeadPanel bean = new nc.ui.wa.datainterface.view.DefaultDataIOHeadPanel();
+		context.put("ioHeadPanel", bean);
+		bean.setModel(getDataIOAppModel());
+		bean.setDataManager(getModelDataManager());
+		bean.initUI();
+		setBeanFacotryIfBeanFacatoryAware(bean);
+		invokeInitializingBean(bean);
+		return bean;
+	}
+
+	public nc.ui.wa.datainterface.view.DataIOPanel getIoMainPanel() {
+		if (context.get("ioMainPanel") != null)
+			return (nc.ui.wa.datainterface.view.DataIOPanel) context.get("ioMainPanel");
+		nc.ui.wa.datainterface.view.DataIOPanel bean = new nc.ui.wa.datainterface.view.DataIOPanel();
+		context.put("ioMainPanel", bean);
+		bean.setAppModel(getDataIOAppModel());
+		bean.setHeadPanel(getIoHeadPanel());
+		bean.initUI();
+		setBeanFacotryIfBeanFacatoryAware(bean);
+		invokeInitializingBean(bean);
+		return bean;
+	}
+
+	public nc.ui.wa.datainterface.view.DataIOListView getBatchBillTable() {
+		if (context.get("batchBillTable") != null)
+			return (nc.ui.wa.datainterface.view.DataIOListView) context.get("batchBillTable");
+		nc.ui.wa.datainterface.view.DataIOListView bean = new nc.ui.wa.datainterface.view.DataIOListView();
+		context.put("batchBillTable", bean);
+		bean.setModel(getDataIOAppModel());
+		bean.setMultiSelectionEnable(false);
+		bean.setPos("head");
+		bean.setNodekey("dataio");
+		bean.initUI();
+		setBeanFacotryIfBeanFacatoryAware(bean);
+		invokeInitializingBean(bean);
+		return bean;
+	}
+
+	public nc.ui.uif2.TangramContainer getMainPanel() {
+		if (context.get("mainPanel") != null)
+			return (nc.ui.uif2.TangramContainer) context.get("mainPanel");
+		nc.ui.uif2.TangramContainer bean = new nc.ui.uif2.TangramContainer();
+		context.put("mainPanel", bean);
+		bean.setModel(getDataIOAppModel());
+		bean.setName("mainPanel");
+		bean.setTangramLayoutRoot(getVSNode_22b31e());
+		bean.initUI();
+		setBeanFacotryIfBeanFacatoryAware(bean);
+		invokeInitializingBean(bean);
+		return bean;
+	}
+
+	private nc.ui.uif2.tangramlayout.node.VSNode getVSNode_22b31e() {
+		if (context.get("nc.ui.uif2.tangramlayout.node.VSNode#22b31e") != null)
+			return (nc.ui.uif2.tangramlayout.node.VSNode) context.get("nc.ui.uif2.tangramlayout.node.VSNode#22b31e");
+		nc.ui.uif2.tangramlayout.node.VSNode bean = new nc.ui.uif2.tangramlayout.node.VSNode();
+		context.put("nc.ui.uif2.tangramlayout.node.VSNode#22b31e", bean);
+		bean.setUp(getCNode_f383b7());
+		bean.setDown(getCNode_14c7341());
+		bean.setDividerLocation(30f);
+		setBeanFacotryIfBeanFacatoryAware(bean);
+		invokeInitializingBean(bean);
+		return bean;
+	}
+
+	private nc.ui.uif2.tangramlayout.node.CNode getCNode_f383b7() {
+		if (context.get("nc.ui.uif2.tangramlayout.node.CNode#f383b7") != null)
+			return (nc.ui.uif2.tangramlayout.node.CNode) context.get("nc.ui.uif2.tangramlayout.node.CNode#f383b7");
+		nc.ui.uif2.tangramlayout.node.CNode bean = new nc.ui.uif2.tangramlayout.node.CNode();
+		context.put("nc.ui.uif2.tangramlayout.node.CNode#f383b7", bean);
+		bean.setComponent(getOrgPanel());
+		setBeanFacotryIfBeanFacatoryAware(bean);
+		invokeInitializingBean(bean);
+		return bean;
+	}
+
+	private nc.ui.uif2.tangramlayout.node.CNode getCNode_14c7341() {
+		if (context.get("nc.ui.uif2.tangramlayout.node.CNode#14c7341") != null)
+			return (nc.ui.uif2.tangramlayout.node.CNode) context.get("nc.ui.uif2.tangramlayout.node.CNode#14c7341");
+		nc.ui.uif2.tangramlayout.node.CNode bean = new nc.ui.uif2.tangramlayout.node.CNode();
+		context.put("nc.ui.uif2.tangramlayout.node.CNode#14c7341", bean);
+		bean.setComponent(getBatchBillTable());
+		setBeanFacotryIfBeanFacatoryAware(bean);
+		invokeInitializingBean(bean);
+		return bean;
+	}
+
+	public nc.ui.uif2.TangramContainer getIoPanel() {
+		if (context.get("ioPanel") != null)
+			return (nc.ui.uif2.TangramContainer) context.get("ioPanel");
+		nc.ui.uif2.TangramContainer bean = new nc.ui.uif2.TangramContainer();
+		context.put("ioPanel", bean);
+		bean.setModel(getDataIOAppModel());
+		bean.setName("ioPanel");
+		bean.setTangramLayoutRoot(getVSNode_155177f());
+		bean.initUI();
+		setBeanFacotryIfBeanFacatoryAware(bean);
+		invokeInitializingBean(bean);
+		return bean;
+	}
+
+	private nc.ui.uif2.tangramlayout.node.VSNode getVSNode_155177f() {
+		if (context.get("nc.ui.uif2.tangramlayout.node.VSNode#155177f") != null)
+			return (nc.ui.uif2.tangramlayout.node.VSNode) context.get("nc.ui.uif2.tangramlayout.node.VSNode#155177f");
+		nc.ui.uif2.tangramlayout.node.VSNode bean = new nc.ui.uif2.tangramlayout.node.VSNode();
+		context.put("nc.ui.uif2.tangramlayout.node.VSNode#155177f", bean);
+		bean.setUp(getCNode_1da6da());
+		bean.setDown(getCNode_b54efe());
+		bean.setDividerLocation(30f);
+		setBeanFacotryIfBeanFacatoryAware(bean);
+		invokeInitializingBean(bean);
+		return bean;
+	}
+
+	private nc.ui.uif2.tangramlayout.node.CNode getCNode_1da6da() {
+		if (context.get("nc.ui.uif2.tangramlayout.node.CNode#1da6da") != null)
+			return (nc.ui.uif2.tangramlayout.node.CNode) context.get("nc.ui.uif2.tangramlayout.node.CNode#1da6da");
+		nc.ui.uif2.tangramlayout.node.CNode bean = new nc.ui.uif2.tangramlayout.node.CNode();
+		context.put("nc.ui.uif2.tangramlayout.node.CNode#1da6da", bean);
+		bean.setComponent(getIoHeadPanel());
+		setBeanFacotryIfBeanFacatoryAware(bean);
+		invokeInitializingBean(bean);
+		return bean;
+	}
+
+	private nc.ui.uif2.tangramlayout.node.CNode getCNode_b54efe() {
+		if (context.get("nc.ui.uif2.tangramlayout.node.CNode#b54efe") != null)
+			return (nc.ui.uif2.tangramlayout.node.CNode) context.get("nc.ui.uif2.tangramlayout.node.CNode#b54efe");
+		nc.ui.uif2.tangramlayout.node.CNode bean = new nc.ui.uif2.tangramlayout.node.CNode();
+		context.put("nc.ui.uif2.tangramlayout.node.CNode#b54efe", bean);
+		bean.setComponent(getIoMainPanel());
+		setBeanFacotryIfBeanFacatoryAware(bean);
+		invokeInitializingBean(bean);
+		return bean;
+	}
+
+	public nc.ui.uif2.TangramContainer getBankPanel() {
+		if (context.get("bankPanel") != null)
+			return (nc.ui.uif2.TangramContainer) context.get("bankPanel");
+		nc.ui.uif2.TangramContainer bean = new nc.ui.uif2.TangramContainer();
+		context.put("bankPanel", bean);
+		bean.setModel(getDataIOAppModel());
+		bean.setName("bankPanel");
+		bean.setTangramLayoutRoot(getVSNode_f41d25());
+		bean.initUI();
+		setBeanFacotryIfBeanFacatoryAware(bean);
+		invokeInitializingBean(bean);
+		return bean;
+	}
+
+	private nc.ui.uif2.tangramlayout.node.VSNode getVSNode_f41d25() {
+		if (context.get("nc.ui.uif2.tangramlayout.node.VSNode#f41d25") != null)
+			return (nc.ui.uif2.tangramlayout.node.VSNode) context.get("nc.ui.uif2.tangramlayout.node.VSNode#f41d25");
+		nc.ui.uif2.tangramlayout.node.VSNode bean = new nc.ui.uif2.tangramlayout.node.VSNode();
+		context.put("nc.ui.uif2.tangramlayout.node.VSNode#f41d25", bean);
+		bean.setUp(getCNode_179aa19());
+		bean.setDown(getCNode_8e66a2());
+		bean.setDividerLocation(30f);
+		setBeanFacotryIfBeanFacatoryAware(bean);
+		invokeInitializingBean(bean);
+		return bean;
+	}
+
+	private nc.ui.uif2.tangramlayout.node.CNode getCNode_179aa19() {
+		if (context.get("nc.ui.uif2.tangramlayout.node.CNode#179aa19") != null)
+			return (nc.ui.uif2.tangramlayout.node.CNode) context.get("nc.ui.uif2.tangramlayout.node.CNode#179aa19");
+		nc.ui.uif2.tangramlayout.node.CNode bean = new nc.ui.uif2.tangramlayout.node.CNode();
+		context.put("nc.ui.uif2.tangramlayout.node.CNode#179aa19", bean);
+		bean.setComponent(getFipEndHeadPanel());
+		setBeanFacotryIfBeanFacatoryAware(bean);
+		invokeInitializingBean(bean);
+		return bean;
+	}
+
+	private nc.ui.uif2.tangramlayout.node.CNode getCNode_8e66a2() {
+		if (context.get("nc.ui.uif2.tangramlayout.node.CNode#8e66a2") != null)
+			return (nc.ui.uif2.tangramlayout.node.CNode) context.get("nc.ui.uif2.tangramlayout.node.CNode#8e66a2");
+		nc.ui.uif2.tangramlayout.node.CNode bean = new nc.ui.uif2.tangramlayout.node.CNode();
+		context.put("nc.ui.uif2.tangramlayout.node.CNode#8e66a2", bean);
+		bean.setComponent(getBankEnterprisePanel());
+		setBeanFacotryIfBeanFacatoryAware(bean);
+		invokeInitializingBean(bean);
+		return bean;
+	}
+
+	public nc.ui.wa.datainterface.view.BankEnterprisePanel getBankEnterprisePanel() {
+		if (context.get("bankEnterprisePanel") != null)
+			return (nc.ui.wa.datainterface.view.BankEnterprisePanel) context.get("bankEnterprisePanel");
+		nc.ui.wa.datainterface.view.BankEnterprisePanel bean = new nc.ui.wa.datainterface.view.BankEnterprisePanel();
+		context.put("bankEnterprisePanel", bean);
+		bean.setAppModel(getDataIOAppModel());
+		bean.setHeadPanel(getFipEndHeadPanel());
+		bean.initUI();
+		setBeanFacotryIfBeanFacatoryAware(bean);
+		invokeInitializingBean(bean);
+		return bean;
+	}
+
+	public nc.ui.wa.datainterface.view.FipEndHeadPanel getFipEndHeadPanel() {
+		if (context.get("fipEndHeadPanel") != null)
+			return (nc.ui.wa.datainterface.view.FipEndHeadPanel) context.get("fipEndHeadPanel");
+		nc.ui.wa.datainterface.view.FipEndHeadPanel bean = new nc.ui.wa.datainterface.view.FipEndHeadPanel();
+		context.put("fipEndHeadPanel", bean);
+		bean.setModel(getDataIOAppModel());
+		bean.setDataManager(getModelDataManager());
+		bean.initUI();
+		setBeanFacotryIfBeanFacatoryAware(bean);
+		invokeInitializingBean(bean);
+		return bean;
+	}
+
+	public nc.funcnode.ui.action.SeparatorAction getNullAction() {
+		if (context.get("nullAction") != null)
+			return (nc.funcnode.ui.action.SeparatorAction) context.get("nullAction");
+		nc.funcnode.ui.action.SeparatorAction bean = new nc.funcnode.ui.action.SeparatorAction();
+		context.put("nullAction", bean);
+		setBeanFacotryIfBeanFacatoryAware(bean);
+		invokeInitializingBean(bean);
+		return bean;
+	}
+
+	public nc.ui.wa.datainterface.action.AddDatainterfaceAction getAddAction() {
+		if (context.get("addAction") != null)
+			return (nc.ui.wa.datainterface.action.AddDatainterfaceAction) context.get("addAction");
+		nc.ui.wa.datainterface.action.AddDatainterfaceAction bean = new nc.ui.wa.datainterface.action.AddDatainterfaceAction();
+		context.put("addAction", bean);
+		bean.setModel(getDataIOAppModel());
+		setBeanFacotryIfBeanFacatoryAware(bean);
+		invokeInitializingBean(bean);
+		return bean;
+	}
+
+	public nc.ui.wa.datainterface.action.EditDatainterfaceAction getEditAction() {
+		if (context.get("editAction") != null)
+			return (nc.ui.wa.datainterface.action.EditDatainterfaceAction) context.get("editAction");
+		nc.ui.wa.datainterface.action.EditDatainterfaceAction bean = new nc.ui.wa.datainterface.action.EditDatainterfaceAction();
+		context.put("editAction", bean);
+		bean.setModel(getDataIOAppModel());
+		bean.setDataManager(getModelDataManager());
+		setBeanFacotryIfBeanFacatoryAware(bean);
+		invokeInitializingBean(bean);
+		return bean;
+	}
+
+	public nc.ui.wa.datainterface.action.DelDatainterfaceAction getDelAction() {
+		if (context.get("delAction") != null)
+			return (nc.ui.wa.datainterface.action.DelDatainterfaceAction) context.get("delAction");
+		nc.ui.wa.datainterface.action.DelDatainterfaceAction bean = new nc.ui.wa.datainterface.action.DelDatainterfaceAction();
+		context.put("delAction", bean);
+		bean.setModel(getDataIOAppModel());
+		setBeanFacotryIfBeanFacatoryAware(bean);
+		invokeInitializingBean(bean);
+		return bean;
+	}
+
+	public nc.ui.wa.datainterface.action.SaveDatainterfaceAction getSaveAction() {
+		if (context.get("saveAction") != null)
+			return (nc.ui.wa.datainterface.action.SaveDatainterfaceAction) context.get("saveAction");
+		nc.ui.wa.datainterface.action.SaveDatainterfaceAction bean = new nc.ui.wa.datainterface.action.SaveDatainterfaceAction();
+		context.put("saveAction", bean);
+		bean.setModel(getDataIOAppModel());
+		setBeanFacotryIfBeanFacatoryAware(bean);
+		invokeInitializingBean(bean);
+		return bean;
+	}
+
+	public nc.ui.wa.datainterface.action.FormatCopyAction getCopyAction() {
+		if (context.get("copyAction") != null)
+			return (nc.ui.wa.datainterface.action.FormatCopyAction) context.get("copyAction");
+		nc.ui.wa.datainterface.action.FormatCopyAction bean = new nc.ui.wa.datainterface.action.FormatCopyAction();
+		context.put("copyAction", bean);
+		bean.setModel(getDataIOAppModel());
+		bean.setDataManager(getModelDataManager());
+		setBeanFacotryIfBeanFacatoryAware(bean);
+		invokeInitializingBean(bean);
+		return bean;
+	}
+
+	public nc.ui.wa.datainterface.action.DataIOExportAction getExportAction() {
+		if (context.get("exportAction") != null)
+			return (nc.ui.wa.datainterface.action.DataIOExportAction) context.get("exportAction");
+		nc.ui.wa.datainterface.action.DataIOExportAction bean = new nc.ui.wa.datainterface.action.DataIOExportAction();
+		context.put("exportAction", bean);
+		bean.setModel(getDataIOAppModel());
+		bean.setContainer((nc.ui.wa.datainterface.view.DataIOTangramContainer) findBeanInUIF2BeanFactory("container"));
+		bean.setIoMainPanel(getIoMainPanel());
+		setBeanFacotryIfBeanFacatoryAware(bean);
+		invokeInitializingBean(bean);
+		return bean;
+	}
+
+	public nc.ui.wa.datainterface.action.DataIOImportAction getImportAction() {
+		if (context.get("importAction") != null)
+			return (nc.ui.wa.datainterface.action.DataIOImportAction) context.get("importAction");
+		nc.ui.wa.datainterface.action.DataIOImportAction bean = new nc.ui.wa.datainterface.action.DataIOImportAction();
+		context.put("importAction", bean);
+		bean.setModel(getDataIOAppModel());
+		bean.setContainer((nc.ui.wa.datainterface.view.DataIOTangramContainer) findBeanInUIF2BeanFactory("container"));
+		bean.setIoMainPanel(getIoMainPanel());
+		setBeanFacotryIfBeanFacatoryAware(bean);
+		invokeInitializingBean(bean);
+		return bean;
+	}
+
+	public nc.ui.wa.datainterface.action.DataIntoDBAction getDataIntoDBAction() {
+		if (context.get("dataIntoDBAction") != null)
+			return (nc.ui.wa.datainterface.action.DataIntoDBAction) context.get("dataIntoDBAction");
+		nc.ui.wa.datainterface.action.DataIntoDBAction bean = new nc.ui.wa.datainterface.action.DataIntoDBAction();
+		context.put("dataIntoDBAction", bean);
+		bean.setModel(getDataIOAppModel());
+		bean.setIoHeadPanel(getIoHeadPanel());
+		bean.setIoMainPanel(getIoMainPanel());
+		setBeanFacotryIfBeanFacatoryAware(bean);
+		invokeInitializingBean(bean);
+		return bean;
+	}
+
+	public nc.ui.wa.datainterface.action.InDataAction getInDataAction() {
+		if (context.get("inDataAction") != null)
+			return (nc.ui.wa.datainterface.action.InDataAction) context.get("inDataAction");
+		nc.ui.wa.datainterface.action.InDataAction bean = new nc.ui.wa.datainterface.action.InDataAction();
+		context.put("inDataAction", bean);
+		bean.setModel(getDataIOAppModel());
+		bean.setIoHeadPanel(getIoHeadPanel());
+		bean.setIoMainPanel(getIoMainPanel());
+		setBeanFacotryIfBeanFacatoryAware(bean);
+		invokeInitializingBean(bean);
+		return bean;
+	}
+
+	public nc.ui.wa.datainterface.action.QueryAction getQueryAction() {
+		if (context.get("queryAction") != null)
+			return (nc.ui.wa.datainterface.action.QueryAction) context.get("queryAction");
+		nc.ui.wa.datainterface.action.QueryAction bean = new nc.ui.wa.datainterface.action.QueryAction();
+		context.put("queryAction", bean);
+		bean.setModel(getDataIOAppModel());
+		bean.setQueryDelegator(getQueryDelegator());
+		bean.setDataIoPanel(getIoMainPanel());
+		setBeanFacotryIfBeanFacatoryAware(bean);
+		invokeInitializingBean(bean);
+		return bean;
+	}
+
+	public nc.ui.wa.datainterface.action.OutDataAction getOutDataAction() {
+		if (context.get("outDataAction") != null)
+			return (nc.ui.wa.datainterface.action.OutDataAction) context.get("outDataAction");
+		nc.ui.wa.datainterface.action.OutDataAction bean = new nc.ui.wa.datainterface.action.OutDataAction();
+		context.put("outDataAction", bean);
+		bean.setModel(getDataIOAppModel());
+		bean.setIoHeadPanel(getIoHeadPanel());
+		bean.setIoMainPanel(getIoMainPanel());
+		setBeanFacotryIfBeanFacatoryAware(bean);
+		invokeInitializingBean(bean);
+		return bean;
+	}
+
+	public nc.ui.wa.datainterface.action.DataIOReturnAction getReturnAction() {
+		if (context.get("returnAction") != null)
+			return (nc.ui.wa.datainterface.action.DataIOReturnAction) context.get("returnAction");
+		nc.ui.wa.datainterface.action.DataIOReturnAction bean = new nc.ui.wa.datainterface.action.DataIOReturnAction();
+		context.put("returnAction", bean);
+		bean.setModel(getDataIOAppModel());
+		bean.setContainer((nc.ui.wa.datainterface.view.DataIOTangramContainer) findBeanInUIF2BeanFactory("container"));
+		bean.setIoHeadPanel(getIoHeadPanel());
+		setBeanFacotryIfBeanFacatoryAware(bean);
+		invokeInitializingBean(bean);
+		return bean;
+	}
+
+	public nc.ui.wa.datainterface.action.RefreshDatainterfaceAction getRefreshAction() {
+		if (context.get("refreshAction") != null)
+			return (nc.ui.wa.datainterface.action.RefreshDatainterfaceAction) context.get("refreshAction");
+		nc.ui.wa.datainterface.action.RefreshDatainterfaceAction bean = new nc.ui.wa.datainterface.action.RefreshDatainterfaceAction();
+		context.put("refreshAction", bean);
+		bean.setModel(getDataIOAppModel());
+		bean.setDataManager(getModelDataManager());
+		setBeanFacotryIfBeanFacatoryAware(bean);
+		invokeInitializingBean(bean);
+		return bean;
+	}
+
+	public nc.ui.wa.datainterface.action.CancelDatainterfaceAction getCancelAction() {
+		if (context.get("cancelAction") != null)
+			return (nc.ui.wa.datainterface.action.CancelDatainterfaceAction) context.get("cancelAction");
+		nc.ui.wa.datainterface.action.CancelDatainterfaceAction bean = new nc.ui.wa.datainterface.action.CancelDatainterfaceAction();
+		context.put("cancelAction", bean);
+		bean.setModel(getDataIOAppModel());
+		setBeanFacotryIfBeanFacatoryAware(bean);
+		invokeInitializingBean(bean);
+		return bean;
+	}
+
+	public nc.ui.wa.datainterface.action.AddInsuranceExportAction getAddInsuranceExportAction() {
+		if (context.get("addInsuranceExportAction") != null)
+			return (nc.ui.wa.datainterface.action.AddInsuranceExportAction) context.get("addInsuranceExportAction");
+		nc.ui.wa.datainterface.action.AddInsuranceExportAction bean = new nc.ui.wa.datainterface.action.AddInsuranceExportAction();
+		context.put("addInsuranceExportAction", bean);
+		bean.setModel(getDataIOAppModel());
+		setBeanFacotryIfBeanFacatoryAware(bean);
+		invokeInitializingBean(bean);
+		return bean;
+	}
+
+	public nc.ui.wa.datainterface.action.QuitInsuranceExportAction getQuitInsuranceExportAction() {
+		if (context.get("quitInsuranceExportAction") != null)
+			return (nc.ui.wa.datainterface.action.QuitInsuranceExportAction) context.get("quitInsuranceExportAction");
+		nc.ui.wa.datainterface.action.QuitInsuranceExportAction bean = new nc.ui.wa.datainterface.action.QuitInsuranceExportAction();
+		context.put("quitInsuranceExportAction", bean);
+		bean.setModel(getDataIOAppModel());
+		setBeanFacotryIfBeanFacatoryAware(bean);
+		invokeInitializingBean(bean);
+		return bean;
+	}
+
+	public nc.ui.wa.datainterface.action.SalaryInsuranceExportAction getSalaryInsuranceExportAction() {
+		if (context.get("salaryInsuranceExportAction") != null)
+			return (nc.ui.wa.datainterface.action.SalaryInsuranceExportAction) context
+					.get("salaryInsuranceExportAction");
+		nc.ui.wa.datainterface.action.SalaryInsuranceExportAction bean = new nc.ui.wa.datainterface.action.SalaryInsuranceExportAction();
+		context.put("salaryInsuranceExportAction", bean);
+		bean.setModel(getDataIOAppModel());
+		setBeanFacotryIfBeanFacatoryAware(bean);
+		invokeInitializingBean(bean);
+		return bean;
+	}
+
+	public nc.ui.wa.datainterface.action.ExportBankInfoAction getBankExportAction() {
+		if (context.get("bankExportAction") != null)
+			return (nc.ui.wa.datainterface.action.ExportBankInfoAction) context.get("bankExportAction");
+		nc.ui.wa.datainterface.action.ExportBankInfoAction bean = new nc.ui.wa.datainterface.action.ExportBankInfoAction();
+		context.put("bankExportAction", bean);
+		bean.setModel(getDataIOAppModel());
+		setBeanFacotryIfBeanFacatoryAware(bean);
+		invokeInitializingBean(bean);
+		return bean;
+	}
+
+	public nc.ui.wa.pub.WaQueryDelegator getQueryDelegator() {
+		if (context.get("queryDelegator") != null)
+			return (nc.ui.wa.pub.WaQueryDelegator) context.get("queryDelegator");
+		nc.ui.wa.pub.WaQueryDelegator bean = new nc.ui.wa.pub.WaQueryDelegator();
+		context.put("queryDelegator", bean);
+		bean.setNodeKey("dataio");
+		bean.setModel(getDataIOAppModel());
+		bean.setContext(getContext());
+		setBeanFacotryIfBeanFacatoryAware(bean);
+		invokeInitializingBean(bean);
+		return bean;
+	}
+
+	public nc.funcnode.ui.action.GroupAction getPrintActionMenu() {
+		if (context.get("printActionMenu") != null)
+			return (nc.funcnode.ui.action.GroupAction) context.get("printActionMenu");
+		nc.funcnode.ui.action.GroupAction bean = new nc.funcnode.ui.action.GroupAction();
+		context.put("printActionMenu", bean);
+		bean.setCode("print");
+		bean.setName(getI18nFB_77878a());
+		bean.setActions(getManagedList1());
+		setBeanFacotryIfBeanFacatoryAware(bean);
+		invokeInitializingBean(bean);
+		return bean;
+	}
+
+	private java.lang.String getI18nFB_77878a() {
+		if (context.get("nc.ui.uif2.I18nFB#77878a") != null)
+			return (java.lang.String) context.get("nc.ui.uif2.I18nFB#77878a");
+		nc.ui.uif2.I18nFB bean = new nc.ui.uif2.I18nFB();
+		context.put("&nc.ui.uif2.I18nFB#77878a", bean);
+		bean.setResDir("xmlcode");
+		bean.setDefaultValue("¥´¦L");
+		bean.setResId("X60130002");
+		setBeanFacotryIfBeanFacatoryAware(bean);
+		invokeInitializingBean(bean);
+		try {
+			Object product = bean.getObject();
+			context.put("nc.ui.uif2.I18nFB#77878a", product);
+			return (java.lang.String) product;
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	private List getManagedList1() {
+		List list = new ArrayList();
+		list.add(getPrintAction());
+		list.add(getPreviewAction());
+		list.add(getCardOutPut());
+		return list;
+	}
+
+	public nc.ui.wa.datainterface.action.DataIODirectPrintPreviewAction getPreviewAction() {
+		if (context.get("previewAction") != null)
+			return (nc.ui.wa.datainterface.action.DataIODirectPrintPreviewAction) context.get("previewAction");
+		nc.ui.wa.datainterface.action.DataIODirectPrintPreviewAction bean = new nc.ui.wa.datainterface.action.DataIODirectPrintPreviewAction();
+		context.put("previewAction", bean);
+		bean.setModel(getDataIOAppModel());
+		bean.setTabbedPane(getIoMainPanel());
+		setBeanFacotryIfBeanFacatoryAware(bean);
+		invokeInitializingBean(bean);
+		return bean;
+	}
+
+	public nc.ui.wa.datainterface.action.DataIODirectPrintAction getPrintAction() {
+		if (context.get("printAction") != null)
+			return (nc.ui.wa.datainterface.action.DataIODirectPrintAction) context.get("printAction");
+		nc.ui.wa.datainterface.action.DataIODirectPrintAction bean = new nc.ui.wa.datainterface.action.DataIODirectPrintAction();
+		context.put("printAction", bean);
+		bean.setModel(getDataIOAppModel());
+		bean.setTabbedPane(getIoMainPanel());
+		setBeanFacotryIfBeanFacatoryAware(bean);
+		invokeInitializingBean(bean);
+		return bean;
+	}
+
+	public nc.ui.wa.datainterface.action.DataIODirectExportAction getCardOutPut() {
+		if (context.get("cardOutPut") != null)
+			return (nc.ui.wa.datainterface.action.DataIODirectExportAction) context.get("cardOutPut");
+		nc.ui.wa.datainterface.action.DataIODirectExportAction bean = new nc.ui.wa.datainterface.action.DataIODirectExportAction();
+		context.put("cardOutPut", bean);
+		bean.setModel(getDataIOAppModel());
+		bean.setTabbedPane(getIoMainPanel());
+		setBeanFacotryIfBeanFacatoryAware(bean);
+		invokeInitializingBean(bean);
+		return bean;
+	}
+
+	public nc.ui.hrcp.cindex.model.HRListMetaDataDataSource getDatasource() {
+		if (context.get("datasource") != null)
+			return (nc.ui.hrcp.cindex.model.HRListMetaDataDataSource) context.get("datasource");
+		nc.ui.hrcp.cindex.model.HRListMetaDataDataSource bean = new nc.ui.hrcp.cindex.model.HRListMetaDataDataSource();
+		context.put("datasource", bean);
+		bean.setModel(getDataIOAppModel());
+		setBeanFacotryIfBeanFacatoryAware(bean);
+		invokeInitializingBean(bean);
+		return bean;
+	}
+
+	public nc.ui.wa.pub.action.WaTemplatePreviewAction getTempletPrintPreviewAction() {
+		if (context.get("templetPrintPreviewAction") != null)
+			return (nc.ui.wa.pub.action.WaTemplatePreviewAction) context.get("templetPrintPreviewAction");
+		nc.ui.wa.pub.action.WaTemplatePreviewAction bean = new nc.ui.wa.pub.action.WaTemplatePreviewAction();
+		context.put("templetPrintPreviewAction", bean);
+		bean.setModel(getDataIOAppModel());
+		bean.setNodeKey("dataio");
+		bean.setDatasource(getDatasource());
+		setBeanFacotryIfBeanFacatoryAware(bean);
+		invokeInitializingBean(bean);
+		return bean;
+	}
+
+	public nc.ui.wa.pub.action.WaTemplatePrintAction getTempletPrintAction() {
+		if (context.get("templetPrintAction") != null)
+			return (nc.ui.wa.pub.action.WaTemplatePrintAction) context.get("templetPrintAction");
+		nc.ui.wa.pub.action.WaTemplatePrintAction bean = new nc.ui.wa.pub.action.WaTemplatePrintAction();
+		context.put("templetPrintAction", bean);
+		bean.setModel(getDataIOAppModel());
+		bean.setNodeKey("dataio");
+		bean.setDatasource(getDatasource());
+		setBeanFacotryIfBeanFacatoryAware(bean);
+		invokeInitializingBean(bean);
+		return bean;
+	}
+
+}

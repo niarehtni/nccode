@@ -1,0 +1,1 @@
+alter table tbm_leaveplan add billcode char(20)

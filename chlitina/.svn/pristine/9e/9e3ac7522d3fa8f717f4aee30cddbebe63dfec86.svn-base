@@ -1,0 +1,2 @@
+insert into md_association(cascadedelete,cascadeupdate,componentid,createtime,creator,dr,endcardinality,endelementid,id,industry,isactive,modifier,modifytime,name,startbeanid,startcardinality,startelementid,ts,type,versiontype) values( null,null,'99a14456-dc04-4954-9199-1c7fc9213f7b',null,null,0,'1','3b6dd171-2900-47f3-bfbe-41e4483a2a65','ce2aa517-3588-46aa-afd8-b3e93de227ec','0','Y',null,null,'psnmap_pk_group','369dd2ac-dba4-4373-96d2-0146466e2c26','1','11f72710-e6d4-48a9-b530-4130b24f2558','2018-08-20 13:29:42',3,0)
+go

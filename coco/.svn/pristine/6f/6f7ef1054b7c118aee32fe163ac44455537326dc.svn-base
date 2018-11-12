@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+		<list>
+			<function>
+				<defaultName>6017item;06017item0016</defaultName>
+				<displayName>directsum()</displayName>
+				<hintMsgRes>6017item;06017item0017</hintMsgRes>
+				<inputSigRes>6017item;06017item0018</inputSigRes>
+				<pattern>directsum\(.\)</pattern>
+				<arguments>directsum({0})</arguments>
+				<group>MONTHSTATFUNC</group>
+				<parapanel>nc.ui.ta.item.formula.DirectSumDialog</parapanel>
+				<process>nc.impl.ta.formula.parser.func.SumFuncParser</process>
+				<productCode>UPP6013func</productCode>
+			</function>
+
+			<function>
+				<defaultName>6017item;06017item0019</defaultName>
+				<displayName>directcount()</displayName>
+				<hintMsgRes>6017item;06017item0020</hintMsgRes>
+				<inputSigRes>6017item;06017item0021</inputSigRes>
+				<pattern>directcount\(.\)</pattern>
+				<arguments>directcount({0})</arguments>
+				<group>MONTHSTATFUNC</group>
+				<parapanel>nc.ui.ta.item.formula.DirectCountDialog</parapanel>
+				<process>nc.impl.ta.formula.parser.func.CountFuncParser</process>
+				<productCode>UPP6013func</productCode>
+			</function>
+			
+			<function>
+				<defaultName>6017item;06017item0091</defaultName>
+				<displayName>directmonthsumcount()</displayName>
+				<hintMsgRes>6017item;06017item0092</hintMsgRes>
+				<inputSigRes>6017item;06017item0093</inputSigRes>
+				<pattern>directmonthsumcount\(.\)</pattern>
+				<arguments>directmonthsumcount({0},{1})</arguments>
+				<group>MONTHSTATFUNC</group>
+				<parapanel>nc.ui.ta.item.formula.DirectSumCountDialog</parapanel>
+				<process>nc.impl.ta.formula.parser.func.SumCountFuncParser</process>
+				<productCode>UPP6013func</productCode>
+			</function>
+		</list>

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="gbk"?>
+<component conRouterType="手动" createIndustry="0" createTime="2011-11-11 15:44:21" creator="" description="" displayName="nhicalc" fromSourceBmf="true" gencodestyle="NC传统样式" help="" id="e00889e3-81f5-4e5b-b666-79f22857f325" industry="0" industryChanged="false" industryIncrease="false" industryName="基础行业" isSource="false" isbizmodel="true" mainEntity="" modifier="" modifyIndustry="0" modifyTime="2012-06-26 20:43:55" name="nhicalc" namespace="twhr" ownModule="twhr" preLoad="false" resModuleName="nhicalc" resid="" version="54" versionType="0">
+    <celllist>
+        <opinterface componentID="e00889e3-81f5-4e5b-b666-79f22857f325" createIndustry="0" createTime="2011-11-11 15:44:24" creator="" description="" displayName="操作接口" fullClassName="nc.itf.twhr.INhicalcMaintain" height="155" help="" id="a2f9e315-c341-44c0-9536-2c404c274da0" implClsName="nc.impl.twhr.NhicalcMaintainImpl" industryChanged="false" isAuthorization="true" isBusiActivity="false" isBusiOperation="false" isSource="false" modifier="" modifyIndustry="0" modifyTime="2012-06-26 20:43:55" name="OpInterface" remote="true" resid="" singleton="true" transprop="NONE" version="" versionType="0" visibility="public" width="136" x="68" y="52">
+            <operationlist>
+                <operation dataType="fd6a567a-fc42-4014-9526-c32eb0d0d444" dataTypeStyle="ARRAY" dbtype="" defclassname="" displayName="queryByQueryScheme" forBusinessEntity="N" help="" id="3cb2ddfc-659f-4e4b-9ffc-5c11e242ff3e" isAggVOReturn="false" isBusiActivity="false" methodException="nc.vo.pub.BusinessException" name="queryByQueryScheme" opItfID="a2f9e315-c341-44c0-9536-2c404c274da0" ownerElementID="a2f9e315-c341-44c0-9536-2c404c274da0" transKind="REQUIRED" typeDisplayName="劳健保计算" typeName="nhicalc" versionType="0" visibility="public">
+                    <paramlist>
+                        <parameter dataType="BS000010000100001056" dataTypeStyle="SINGLE" dbtype="varchar" description="" displayName="queryScheme" isAggVO="false" name="queryScheme" operationID="3cb2ddfc-659f-4e4b-9ffc-5c11e242ff3e" paramTypeForLog="7" paramdefclassname="nc.ui.querytemplate.querytree.IQueryScheme" sequence="0" typeDisplayName="自定义项" typeName="CUSTOM" versionType="0"/>
+                    </paramlist>
+                </operation>
+            </operationlist>
+            <opImpllist>
+                <opItfImpl createTime="2011-11-19 11:27:58" creator="" description="" displayName="实现类" fullClassName="nc.impl.twhr.NhicalcMaintainImpl" id="40dd4bd9-6e24-4dea-a891-e67de79f97ac" name="Maintain" ownerElementID="a2f9e315-c341-44c0-9536-2c404c274da0" tag="" type="" versionType="0"/>
+            </opImpllist>
+        </opinterface>
+    </celllist>
+    <connectlist/>
+    <refdepends/>
+    <refdependLoseIDs/>
+    <cellRemoveLog/>
+    <rulers>
+        <ruler isHorizontal="true" unit="0">
+            <guideList/>
+        </ruler>
+        <ruler isHorizontal="false" unit="0">
+            <guideList/>
+        </ruler>
+    </rulers>
+</component>

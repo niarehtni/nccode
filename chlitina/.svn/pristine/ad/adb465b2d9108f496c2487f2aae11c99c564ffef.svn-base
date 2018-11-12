@@ -1,0 +1,6 @@
+insert into pub_billtemplet_t(basetab,dr,metadataclass,metadatapath,mixindex,pk_billtemplet,pk_billtemplet_t,pk_layout,pos,position,resid,tabcode,tabindex,tabname,ts,vdef1,vdef2,vdef3) values( null,0,'hrcm.postcont','postcont',null,'1001Z71000000000CFJA','1001ZZ1000000000KV1E',null,1,1,'1agreement0007','postcont',0,'岗位协议','2018-08-23 09:51:36',null,null,null)
+go
+insert into pub_billtemplet_t(basetab,dr,metadataclass,metadatapath,mixindex,pk_billtemplet,pk_billtemplet_t,pk_layout,pos,position,resid,tabcode,tabindex,tabname,ts,vdef1,vdef2,vdef3) values( null,0,'hrcm.secrerycont','secrerycont',null,'1001Z71000000000CFJA','1001ZZ1000000000KV1F',null,1,1,'1agreement0008','secrerycont',1,'保密协议','2018-08-23 09:51:36',null,null,null)
+go
+insert into pub_billtemplet_t(basetab,dr,metadataclass,metadatapath,mixindex,pk_billtemplet,pk_billtemplet_t,pk_layout,pos,position,resid,tabcode,tabindex,tabname,ts,vdef1,vdef2,vdef3) values( null,0,'hrcm.traincont','traincont',null,'1001Z71000000000CFJA','1001ZZ1000000000KV1G',null,1,1,'1agreement0009','traincont',2,'培训协议','2018-08-23 09:51:36',null,null,null)
+go

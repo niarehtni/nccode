@@ -1,0 +1,14 @@
+insert into pub_billtemplet_t(basetab,dr,metadataclass,metadatapath,mixindex,pk_billtemplet,pk_billtemplet_t,pk_layout,pos,position,resid,tabcode,tabindex,tabname,ts,vdef1,vdef2,vdef3) values( null,0,'hrcm.postcont','postcont',null,'1001Z710000000013I3Y','1001ZZ1000000000MQXB',null,1,1,'postcont','postcont',1,'岗位协议','2018-09-16 14:01:48',null,null,null)
+go
+insert into pub_billtemplet_t(basetab,dr,metadataclass,metadatapath,mixindex,pk_billtemplet,pk_billtemplet_t,pk_layout,pos,position,resid,tabcode,tabindex,tabname,ts,vdef1,vdef2,vdef3) values( null,0,'hrcm.hi_psnjob','hi_psnjob',null,'1001Z710000000013I3Y','1001ZZ1000000000MQXC',null,1,1,'hi_psnjob','hi_psnjob',3,'人员工作记录','2018-09-16 14:01:48',null,null,null)
+go
+insert into pub_billtemplet_t(basetab,dr,metadataclass,metadatapath,mixindex,pk_billtemplet,pk_billtemplet_t,pk_layout,pos,position,resid,tabcode,tabindex,tabname,ts,vdef1,vdef2,vdef3) values( null,0,'hrcm.secrerycont','secrerycont',null,'1001Z710000000013I3Y','1001ZZ1000000000MQXD',null,1,1,'secrerycont','secrerycont',2,'保密协议','2018-09-16 14:01:48',null,null,null)
+go
+insert into pub_billtemplet_t(basetab,dr,metadataclass,metadatapath,mixindex,pk_billtemplet,pk_billtemplet_t,pk_layout,pos,position,resid,tabcode,tabindex,tabname,ts,vdef1,vdef2,vdef3) values( null,0,'hrcm.hi_psnjob','hi_psnjob',null,'1001Z710000000013I3Y','1001ZZ1000000000MQXE',null,0,0,'hi_psnjob','hi_psnjob',3,'人员工作记录','2018-09-16 14:01:48',null,null,null)
+go
+insert into pub_billtemplet_t(basetab,dr,metadataclass,metadatapath,mixindex,pk_billtemplet,pk_billtemplet_t,pk_layout,pos,position,resid,tabcode,tabindex,tabname,ts,vdef1,vdef2,vdef3) values( null,0,'hrcm.hrcm_agreement','hrcm_agreement',null,'1001Z710000000013I3Y','1001ZZ1000000000MQXF',null,1,1,'1account0006','hrcm_agreement',0,'协议信息','2018-09-16 14:01:48',null,null,null)
+go
+insert into pub_billtemplet_t(basetab,dr,metadataclass,metadatapath,mixindex,pk_billtemplet,pk_billtemplet_t,pk_layout,pos,position,resid,tabcode,tabindex,tabname,ts,vdef1,vdef2,vdef3) values( null,0,'hrcm.hi_psndoc_ctrt','hi_psndoc_ctrt',null,'1001Z710000000013I3Y','1001ZZ1000000000MQXG',null,1,1,'hi_psndoc_ctrt','hi_psndoc_ctrt',4,'劳动合同','2018-09-16 14:01:48',null,null,null)
+go
+insert into pub_billtemplet_t(basetab,dr,metadataclass,metadatapath,mixindex,pk_billtemplet,pk_billtemplet_t,pk_layout,pos,position,resid,tabcode,tabindex,tabname,ts,vdef1,vdef2,vdef3) values( null,0,'hrcm.traincont','traincont',null,'1001Z710000000013I3Y','1001ZZ1000000000MQXH',null,1,1,'traincont','traincont',5,'培训协议','2018-09-16 14:01:48',null,null,null)
+go

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--hrpub公式的parser类所在文件的配置xml.parser类存放的文件有两种格式，一类是函数文件，在funcparserfiles里描述，另一类是变量文件，在varparserfiles里描述。如果有任何额外的parser，需要在extraparsers下的parser标签中注册(必须是nc.vo.hr.formula.IFormulaParser的实现类)-->
+<parserconfig>
+	<import resource="/hr/pub/formula/parserfiles/hrpubparserfiles.xml"/>
+	<varparserfiles>
+		<file>/hr/ta/formula/leaverulevar.xml</file>
+	</varparserfiles>
+	<extraparsers>
+	    <!--example
+		
+		<parser classname="xxxx">
+			<property name="d">
+				<value>xxd</value>
+			</property>
+		</parser>
+		
+		-->
+		<!--年龄工龄集团工龄的函数处理类,需要将假日的第一天与生日、参加工作日、进入集团日进行比较-->
+		<parser classname="nc.impl.ta.formula.parser.func.LeaveRulePsnAgeParser">
+		</parser>
+		<parser classname="nc.impl.ta.formula.parser.func.LeaveRuleUnitAgeParser">
+		</parser>
+		<parser classname="nc.impl.ta.formula.parser.func.LeaveRuleWorkAgeParser">
+		</parser>
+		<parser classname="nc.impl.ta.formula.parser.func.LeaveDayFuncParser">
+		</parser>
+		<!--部分工时特休年假  yejk  2018-09-18 -->
+		<parser classname="nc.impl.ta.formula.parser.func.PartWHLeavePercentFuncParser">
+		</parser>
+		
+	</extraparsers>
+</parserconfig>

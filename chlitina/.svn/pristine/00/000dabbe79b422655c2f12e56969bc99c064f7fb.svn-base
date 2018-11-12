@@ -1,0 +1,2 @@
+insert into pub_query_templet(description,devorg,dr,fixcondition,fixquerytree,id,layer,metaclass,model_code,model_name,node_code,parentid,pk_corp,pk_org,resid,ts) values( '劳动合同变更查询',null,null,null,null,'1001Z7CM602300000002',0,'218971f0-e5dc-408b-9a32-56529dddd4db','6011change','劳动合同变更查询','6011make',null,'@@@@',null,'16011make0021','2018-08-23 09:52:25')
+go

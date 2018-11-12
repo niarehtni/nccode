@@ -1,0 +1,186 @@
+package nc.impl.hrpub.dataexchange.businessprocess;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+
+import uap.distribution.util.StringUtil;
+
+import nc.impl.hrpub.dataexchange.DataImportExecutor;
+import nc.itf.hrpub.IDataExchangeExternalExecutor;
+import nc.jdbc.framework.processor.ColumnListProcessor;
+import nc.jdbc.framework.processor.ColumnProcessor;
+import nc.vo.hi.psndoc.PsnJobVO;
+import nc.vo.hi.psndoc.PsndocAggVO;
+import nc.vo.pub.BusinessException;
+import nc.vo.pub.lang.UFLiteralDate;
+
+public class PsnInfosetImportExecutor extends DataImportExecutor implements
+		IDataExchangeExternalExecutor {
+
+	private List<String> extendBizEntity = new ArrayList<String>();
+	private Map<String, String> psnCodePKMap;
+
+	public Map<String, String> getPsnCodePKMap() {
+		if (psnCodePKMap == null) {
+			psnCodePKMap = new HashMap<String, String>();
+		}
+		return psnCodePKMap;
+	}
+
+	public void setPsnCodePKMap(Map<String, String> psnCodePKMap) {
+		this.psnCodePKMap = psnCodePKMap;
+	}
+
+	public PsnInfosetImportExecutor() throws BusinessException {
+		super();
+
+		this.setActionOnDataExists(ExecuteActionEnum.UPDATE);
+	}
+
+	@Override
+	public Object getBizEntityID() throws BusinessException {
+		// 必須賦值，否則不會加載本類型
+		// 實體ID為md_class的ID欄位
+		if (this.extendBizEntity.size() == 0) {
+			String strSQL = "select distinct classid from md_property where name = 'pk_psndoc' and classid in ("
+					+ "select id from md_class where fullclassname in ("
+					+ "select vo_class_name from hr_infoset where pk_infoset in ("
+					+ "select pk_infoset from hr_infoset_item where item_code ='pk_psndoc'))) and datatype != '218971f0-e5dc-408b-9a32-56529dddd4db'";
+			List<String> valueList = (List<String>) this.getBaseDAO()
+					.executeQuery(strSQL, new ColumnListProcessor());
+			if (valueList != null && valueList.size() > 0) {
+				for (String value : valueList) {
+					this.extendBizEntity.add(value);
+				}
+			}
+
+			return this.extendBizEntity;
+		}
+
+		return new ArrayList<String>();
+	}
+
+	@Override
+	public void beforeUpdate() throws BusinessException {
+		if (this.getNcValueObjects() != null
+				&& this.getNcValueObjects().size() > 0) {
+			String rowNo = "";
+			try {
+				for (Map<String, Object> rowNCMap : this.getNcValueObjects()) {
+					rowNo = rowNCMap.keySet().toArray(new String[0])[0]
+							.split(":")[0];
+					
+					String code = (String) rowNCMap.get(rowNo + ":"
+							+ this.getReservedPropertyName("pk_psndoc"));
+					if(StringUtil.isEmpty(code)){
+						code = (String) rowNCMap.get(rowNo + ":pk_psndoc");
+					}
+					//员工考核信息专用通道
+					if(this.getNcEntityName().equals("hi_psndoc_ass")){
+						UFLiteralDate enddate = new UFLiteralDate((String) rowNCMap.get(rowNo + ":enddate"));
+						Collection<PsnJobVO> psnjobs = this.getBaseDAO().retrieveByClause(PsnJobVO.class, "pk_psndoc = '"+code+"'");
+						for (PsnJobVO vo : psnjobs){
+							if ((vo.getBegindate().isSameDate(enddate) || vo.getBegindate().before(enddate)) && null != vo.getEnddate() && (vo.getEnddate().isSameDate(enddate) || vo.getEnddate().after(enddate))){
+								rowNCMap.put(rowNo + ":pk_psnjob", vo.getPk_psnjob());
+								rowNCMap.put(rowNo +":pk_psnorg", vo.getPk_psnorg());
+							}
+						}
+						if((null == rowNCMap.get(rowNo + ":pk_psnjob")) || (null == rowNCMap.get(rowNo + ":pk_psnorg"))){
+							throw new BusinessException("找不到指定的员工 [" + code + "]");
+						}
+					}else if (this.getPsnCodePKMap().containsKey(code)) {
+						String pk_psndoc = this.getPsnCodePKMap().get(code);
+						rowNCMap.put(rowNo + ":pk_psndoc", pk_psndoc);
+					} else {
+						throw new BusinessException("找不到指定的员工 [" + code + "]");
+					}
+								
+					
+				}
+			} catch (Exception e) {
+				this.getErrorMessages().put(rowNo, e.getMessage());
+			}
+		}
+	}
+
+	@Override
+	public void afterUpdate() throws BusinessException {
+		// TODO 自动生成的方法存根
+
+	}
+
+	@Override
+	public void afterConvert() throws BusinessException {
+		// TODO 自动生成的方法存根
+
+	}
+
+	@Override
+	public void beforeConvert() throws BusinessException {
+		if (this.getJsonValueObjects() != null
+				&& this.getJsonValueObjects().size() > 0) {
+			for (Map<String, Object> jsonobj : this.getJsonValueObjects()) {
+				for (Entry<String, Object> entry : jsonobj.entrySet()) {
+					jsonobj.put(entry.getKey(),
+							((String) entry.getValue()).trim());
+					if (entry.getKey().contains("EMPNO")) {
+						String code = (String) entry.getValue();
+						String pk_psndoc = getPKByCode(code);
+						this.getPsnCodePKMap().put("code", pk_psndoc);
+					}
+				}
+			}
+		}
+	}
+
+	private String getPKByCode(String code) throws BusinessException {
+		String pk_psndoc = "";
+		if (psnCodePKMap.containsKey(code)) {
+			pk_psndoc = psnCodePKMap.get(code);
+		} else {
+			String strSQL = "select pk_psndoc from bd_psndoc where code = "
+					+ getStringValue(code);
+			pk_psndoc = (String) this.getBaseDAO().executeQuery(strSQL,
+					new ColumnProcessor());
+			psnCodePKMap.put(code, pk_psndoc);
+		}
+		return code;
+	}
+
+	@Override
+	public void beforeQuery() throws BusinessException {
+		// TODO 自动生成的方法存根
+
+	}
+
+	@Override
+	public void afterQuery() throws BusinessException {
+		// TODO 自动生成的方法存根
+
+	}
+
+	@Override
+	public void beforeInsertOperation(Map<String, Object> rowMap)
+			throws BusinessException {
+		// TODO 自动生成的方法存根
+
+	}
+
+	@Override
+	public void beforeUpdateOperation(Map<String, Object> rowMap)
+			throws BusinessException {
+		// TODO 自动生成的方法存根
+
+	}
+
+	@Override
+	public void doUpdateByBP() throws BusinessException {
+		// TODO 自动生成的方法存根
+
+	}
+
+}

@@ -1,0 +1,1 @@
+update wa_classitem set vformula=SUBSTRING(vformula,1,len(vformula)-1) +',null)' where vformula like 'psnsubinf%'

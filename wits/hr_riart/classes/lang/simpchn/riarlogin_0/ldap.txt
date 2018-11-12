@@ -1,0 +1,4 @@
+0riarlogin-0000=取LDAP配置文件發生錯誤
+0riarlogin-0001=取LDAP配置文件發生錯誤：
+0riarlogin-0002=請檢查域伺服器通訊是否正常
+0riarlogin-0003=域驗證失敗：用戶名或密碼錯誤

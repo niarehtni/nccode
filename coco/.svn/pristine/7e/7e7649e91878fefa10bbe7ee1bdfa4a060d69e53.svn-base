@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE beans PUBLIC "-//SPRING//DTD BEAN//EN" "http://www.springframework.org/dtd/spring-beans.dtd">
+
+<beans>
+	<import resource="workcalendar_base.xml"/>
+	 
+	<!-- 界面元素 ###########################################################-->
+	<!-- 组织面板 -->
+	<bean id="orgpanel" class="nc.ui.bd.pub.BDOrgPanel"
+		init-method="initUI">
+		<property name="model">
+			<ref bean="appmodel" />
+		</property>
+		<property name="dataManager">
+			<ref bean="modelDataManager" />
+		</property>
+		<property name="pk_orgtype">
+			<value>BUSINESSUNIT00000000</value>
+		</property>
+	</bean>
+
+	<!-- 界面布局 -->
+	<bean id="container" class="nc.ui.uif2.TangramContainer"
+		init-method="initUI">
+		<property name="tangramLayoutRoot">
+			<bean class="nc.ui.uif2.tangramlayout.node.VSNode">
+				<property name="up">
+					<bean class="nc.ui.uif2.tangramlayout.node.CNode">
+						<property name="component">
+							<ref bean="orgpanel" />
+						</property>
+					</bean>
+				</property>
+				<property name="down">
+					<bean class="nc.ui.uif2.tangramlayout.node.HSNode">
+						<property name="left">
+							<bean
+								class="nc.ui.uif2.tangramlayout.node.CNode">
+								<property name="component"
+									ref="treePanel">
+								</property>
+							</bean>
+						</property>
+						<property name="right">
+						    <bean class="nc.ui.uif2.tangramlayout.node.VSNode">
+		                          <property name="up">
+		                          		<bean class="nc.ui.uif2.tangramlayout.node.CNode">
+											<property name="component" ref="workCalendarCardEditor"></property>
+										</bean>
+								  </property>
+								  <property name="down">
+								        <bean class="nc.ui.uif2.tangramlayout.node.CNode">
+								            <property name="component" ref="workCalendarPanel"></property>
+							             </bean>
+								  </property>
+							      <property name="dividerLocation" value="135f"></property>
+							 </bean>
+						</property>
+						<property name="dividerLocation" value="0.2f"></property>
+					</bean>
+			    </property>
+				<property name="dividerLocation"><value>30f</value></property>
+			</bean>
+		</property>
+		<property name="actions">
+			<list>
+				<ref bean="AddAction" />
+				<ref bean="EditAction" />
+				<ref bean="DeleteAction" />
+				<ref bean="separatorAction" />
+				<ref bean="RefreshAction" />
+				<ref bean="filterActionMenu"/>
+				<ref bean="separatorAction" />
+				<ref bean="enableActionGroup"/>
+				<ref bean="separatorAction"/>
+				<ref bean="addDetailAction"/>
+				<ref bean="yearAdjustAction"/>
+				<ref bean="separatorAction" />
+			</list>
+		</property>
+		<property name="editActions">
+			<list>
+				<ref bean="SaveAction" />
+				<ref bean="SaveAddAction" />
+				<ref bean="separatorAction" />
+				<ref bean="CancelAction" />
+			</list>
+		</property>
+		<property name="model" ref="appmodel" />
+	</bean>
+
+</beans>
+

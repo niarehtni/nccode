@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="gbk"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+	<bean id="general" class="nc.pubapp.pade.code.funnode.FunNodePara">
+        <property name="moduleName" value="twhr" />
+	    <property name="bpfPath" value="test.bpf"/>
+	    <property name="funcode" value="68860545"/>
+	    <property name="clientPackName" value="nc.ui.twhr.allowance"/>
+			    <property name="metaData" value="allowance\METADATA\allowance.bmf"/>
+	    <property name="xmlPath" value="allowance\src\client\nc\ui\twhr\allowance\ace\view\Allowance_config.xml"/>
+	    <property name="metaDataType" value="singleType" />
+		<property name="funcregispath" value="allowance/funcmodel/allowance/funcregis/68860545.func" />
+		<property name="quetempath" value="${quetempath}" />
+		<property name="printtempath" value="${printtempath}" />
+		<property name="systembasepath" value="allowance/systemplatebase/allowance/68860545/68860545.stb" />
+		<property name="extendSuffix" value=""/>
+		<property name="uif2ModelFilePath" value="allowance\ace\uif2model\68860545.umf"/>
+		<property name="busiCompName" value="allowance"/>
+		<property name="metaDataId" value="a4d6694e-ec27-4ce6-88fe-14b55f14a5aa"/>
+	</bean>
+
+	<bean id="templet" class="nc.pubapp.pade.code.funnode.Templet">
+		<property name="tempStyle" value="1" />
+		<property name="nodeKey" value="" />
+		<property name="templetPath" value="allowance/templet/allowance/billtemplet/68860545.btf" />
+	</bean>
+	
+	<bean id="FilePackNameBean" class="nc.pubapp.pade.code.engine.FilePackNamePara">
+		<property name="filePackNameList">
+			 <list>
+				  <value>nc.ui.twhr.allowance.action.AllowanceAddLineAction.java</value>
+				  <value>nc.ui.twhr.allowance.handler.BodyAfterEditHandler.java</value>
+				  <value>nc.ui.twhr.allowance.handler.BodyBeforeEditHandler.java</value>
+			 </list>
+		</property>
+	</bean>
+
+</beans>

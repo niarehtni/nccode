@@ -1,0 +1,2 @@
+insert into pub_billtemplet(bill_templetcaption,bill_templetname,devorg,dividerproportion,dr,funccode,layer,metadataclass,model_type,modulecode,nodecode,options,pk_billtemplet,pk_billtypecode,pk_corp,pk_org,resid,shareflag,ts,validateformula) values( '兼职申请单','SYSTEM',null,'0.4806312769010043',0,null,0,'hrtrn.hi_partapply',null,'hrtrn','6009part',null,'1001Z71000000000A8WB','60091001','@@@@',null,'16009part-000027',null,'2018-08-23 09:49:24',null)
+go

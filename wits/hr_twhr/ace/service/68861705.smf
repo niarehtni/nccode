@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="gbk"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+	<bean id="general" class="nc.pubapp.pade.code.service.Service">
+			    <property name="servBsPackName" value="nc.bs.twhr.nhicalc"/>
+	    <property name="servImplPackName" value="nc.impl.twhr.nhicalc"/>
+	    <property name="metaData" value="nhicalculate\METADATA\nhicalc.bmf"/>
+		<property name="metaDataType" value="singleType" />
+		<property name="compName" value="nhicalculate" />
+		<property name="itfFullClassName" value="nc.itf.twhr.INhicalcMaintain"/>
+	    <property name="implFullClassName" value="nc.impl.twhr.NhicalcMaintainImpl"/>
+	    <property name="itfPackageName" value="nc.itf.twhr"/>
+	    <property name="itfClassName" value="INhicalcMaintain"/>
+	</bean>
+
+	<bean id="FilePackNameBean" class="nc.pubapp.pade.code.engine.FilePackNamePara">
+	    <property name="filePackNameList">
+	        <list>
+			    <value>nc.bs.twhr.nhicalc.bp.NhicalcBP.java</value>
+			    <value>nc.bs.twhr.nhicalc.ace.rule.DataUniqueCheckRule.java</value>
+			    <value>nc.impl.pub.ace.AceNhicalcPubServiceImpl.java</value>
+	        </list>
+    	</property>
+	</bean>
+
+	<bean id="Service" class="nc.pubapp.pade.designer.service.model.ServiceDiagram">
+	</bean>
+
+	<bean id="implClassPara" class="nc.pubapp.pade.code.service.ImplClassPara">
+	</bean>
+
+</beans>

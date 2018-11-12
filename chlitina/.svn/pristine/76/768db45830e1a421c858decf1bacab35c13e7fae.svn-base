@@ -1,0 +1,2 @@
+insert into pub_billtemplet(bill_templetcaption,bill_templetname,devorg,dividerproportion,dr,funccode,layer,metadataclass,model_type,modulecode,nodecode,options,pk_billtemplet,pk_billtypecode,pk_corp,pk_org,resid,shareflag,ts,validateformula) values( '合同处理中心','SYSTEM',null,null,0,null,0,'hrcm.hi_psnjob',null,null,'60110center',null,'1002Z71000000001AYMU','6011center','@@@@',null,'16011center0012',null,'2018-09-16 14:01:36',null)
+go

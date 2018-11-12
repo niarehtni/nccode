@@ -1,0 +1,522 @@
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '0e52dddf-f2cd-4637-a9db-e38128701580','074ef9b1-9e56-40f7-84fc-e748c26570d5','hrcm_agreement@@@breachmoney',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '0e92daab-06b9-427b-b213-c2abac5d6982','074ef9b1-9e56-40f7-84fc-e748c26570d5','hrcm_agreement@@@conttype',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '1cff3bd1-c943-4540-9baa-2237e9ae0d0b','074ef9b1-9e56-40f7-84fc-e748c26570d5','hrcm_agreement@@@signaddr',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '235b629d-f6ea-4660-9cef-4b90a841cfd5','074ef9b1-9e56-40f7-84fc-e748c26570d5','hrcm_agreement@@@pk_group',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '26c0e9a0-94d6-4640-9d85-830108a38845','074ef9b1-9e56-40f7-84fc-e748c26570d5','hrcm_agreement@@@pk_conttext',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '2707d9fe-af56-42dc-8991-4d42097e9c4e','074ef9b1-9e56-40f7-84fc-e748c26570d5','hrcm_agreement@@@lastflag',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '28809e59-e922-4940-8d9a-69cc97e5b59a','074ef9b1-9e56-40f7-84fc-e748c26570d5','hrcm_agreement@@@termmonth',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '2a1ace8f-369f-4db3-a18c-14e78cb3967e','074ef9b1-9e56-40f7-84fc-e748c26570d5','hrcm_agreement@@@agreementcode',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '2f310218-4e12-4551-8a48-0e86551d3041','074ef9b1-9e56-40f7-84fc-e748c26570d5','hrcm_agreement@@@neconomy',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '2f60a8e7-cb37-422c-b842-26cf5b99325b','074ef9b1-9e56-40f7-84fc-e748c26570d5','hrcm_agreement@@@agreementid',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '329b3a8a-ec1b-48de-b6a2-3a62cd175bc7','074ef9b1-9e56-40f7-84fc-e748c26570d5','hrcm_agreement@@@creator',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '3e13b59a-a05c-4651-85df-83ea997868f3','074ef9b1-9e56-40f7-84fc-e748c26570d5','hrcm_agreement@@@pk_psnjob',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '3ec8a014-5975-431d-9ddf-87339c444751','074ef9b1-9e56-40f7-84fc-e748c26570d5','hrcm_agreement@@@creationtime',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '57f91e06-65f1-451b-8349-ec03b14882d6','074ef9b1-9e56-40f7-84fc-e748c26570d5','hrcm_agreement@@@pk_psnorg',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '58b16362-0ee9-467d-ad41-aaee02e0295b','074ef9b1-9e56-40f7-84fc-e748c26570d5','hrcm_agreement@@@enddate',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '63729292-32a6-462f-9428-f8801b325cbe','074ef9b1-9e56-40f7-84fc-e748c26570d5','hrcm_agreement@@@pk_majorcorp',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '74a4a7fc-9761-4118-bfed-c13e954fb426','074ef9b1-9e56-40f7-84fc-e748c26570d5','hrcm_agreement@@@isrefer',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '80baf30c-a090-4c92-977c-6ad733d2f21b','074ef9b1-9e56-40f7-84fc-e748c26570d5','hrcm_agreement@@@pk_unchreason',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '815ff0dc-42c0-4352-8dea-9f3dfb47e2a1','074ef9b1-9e56-40f7-84fc-e748c26570d5','hrcm_agreement@@@signdate',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '8f2a8356-ec47-437b-95de-84dff3726d02','074ef9b1-9e56-40f7-84fc-e748c26570d5','hrcm_agreement@@@agreementtype',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'affe1b58-22cb-4d79-8d7d-29ed57fc55c6','074ef9b1-9e56-40f7-84fc-e748c26570d5','hrcm_agreement@@PK@@',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'b8da59dc-9729-436c-8596-e02fe3f9dc32','074ef9b1-9e56-40f7-84fc-e748c26570d5','hrcm_agreement@@@pk_psndoc',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'bd171e95-d12e-4975-87c1-05f53e608a5b','074ef9b1-9e56-40f7-84fc-e748c26570d5','hrcm_agreement@@@modifiedtime',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'c078a63b-e681-4946-ab8a-723cba73c45c','074ef9b1-9e56-40f7-84fc-e748c26570d5','hrcm_agreement@@@assgid',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'c1b09bda-898c-4199-938c-395e3d5e4226','074ef9b1-9e56-40f7-84fc-e748c26570d5','hrcm_agreement@@@contcode',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'c46a42b3-ad01-43aa-b0d1-f8050cfa6393','074ef9b1-9e56-40f7-84fc-e748c26570d5','hrcm_agreement@@@pk_org',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'e0c192ab-8a09-46b6-bccd-6b8ee3b1fa75','074ef9b1-9e56-40f7-84fc-e748c26570d5','hrcm_agreement@@@begindate',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'e3b1706c-a363-46fb-b315-e4664e3c4a72','074ef9b1-9e56-40f7-84fc-e748c26570d5','hrcm_agreement@@@memo',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'e71a7f90-bf07-40d9-8cba-62ab209b7697','074ef9b1-9e56-40f7-84fc-e748c26570d5','hrcm_agreement@@@modifier',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'f8cce83c-ca38-4529-bb50-3c847d98775e','074ef9b1-9e56-40f7-84fc-e748c26570d5','hrcm_agreement@@@agreement_unit',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '004b23af-cf02-4043-aa0b-2eb8459c7064','2ba1d618-1492-44da-987e-617d5451fa81','hrcm_agreement@@@contcode',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '04571202-3f51-4b67-8617-96840a5ca026','2ba1d618-1492-44da-987e-617d5451fa81','hrcm_agreement@@@traincontent',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '05b2a430-1dfa-4773-9860-f48057dd6211','2ba1d618-1492-44da-987e-617d5451fa81','hrcm_agreement@@@neconomy',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '09b857f8-f7ba-4a4e-ae08-2aeeecd375c7','2ba1d618-1492-44da-987e-617d5451fa81','hrcm_agreement@@PK@@',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '13a0350f-3a75-412a-9467-853c02b5fd2e','2ba1d618-1492-44da-987e-617d5451fa81','hrcm_agreement@@@trainname',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '153debaa-a747-493c-a81e-a73f4cf5e45a','2ba1d618-1492-44da-987e-617d5451fa81','hrcm_agreement@@@serviceyear',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '2cb3e4a6-e478-4586-85f2-70483cb56e81','2ba1d618-1492-44da-987e-617d5451fa81','hrcm_agreement@@@modifiedtime',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '2dd0563d-77bf-43f2-b1cb-5153cef8baa8','2ba1d618-1492-44da-987e-617d5451fa81','hrcm_agreement@@@traintype',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '2f812e7e-9497-4b83-b7a3-a8383d9a9202','2ba1d618-1492-44da-987e-617d5451fa81','hrcm_agreement@@@traindays',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '332a2384-2b2c-404e-ac69-11459c155249','2ba1d618-1492-44da-987e-617d5451fa81','hrcm_agreement@@@begindate',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '3c548cb2-7792-4cd3-97cb-31b3f0c5a5e0','2ba1d618-1492-44da-987e-617d5451fa81','hrcm_agreement@@@trmenddate',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '4514724f-ebea-4103-853d-c01bc10d21fb','2ba1d618-1492-44da-987e-617d5451fa81','hrcm_agreement@@@assgid',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '4577ac57-36af-4165-93d7-49c5a93ad48b','2ba1d618-1492-44da-987e-617d5451fa81','hrcm_agreement@@@pk_group',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '47f66a28-fa57-4810-838f-5d05233c0ef8','2ba1d618-1492-44da-987e-617d5451fa81','hrcm_agreement@@@pk_train',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '4c73acca-249a-49be-b997-a2ef5ab82b6f','2ba1d618-1492-44da-987e-617d5451fa81','hrcm_agreement@@@pk_unchreason',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '50cfd4ed-0b6c-4a7f-84e3-769657e4315e','2ba1d618-1492-44da-987e-617d5451fa81','hrcm_agreement@@@conttype',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '573cf452-78f6-412f-b7f0-a3328589ce82','2ba1d618-1492-44da-987e-617d5451fa81','hrcm_agreement@@@trainperiod',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '5d34dead-d26f-4780-9d88-eadc6b89a29f','2ba1d618-1492-44da-987e-617d5451fa81','hrcm_agreement@@@agreementcode',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '5f61feea-e781-41e6-84db-8d9f7e7aea11','2ba1d618-1492-44da-987e-617d5451fa81','hrcm_agreement@@@signaddr',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '6231c254-32c7-4d97-9cc9-c9a5b0a5c9b5','2ba1d618-1492-44da-987e-617d5451fa81','hrcm_agreement@@@pk_psnjob',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '66bda7a8-c37e-4bb2-939a-667bf8151d9e','2ba1d618-1492-44da-987e-617d5451fa81','hrcm_agreement@@@traincode',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '692e460f-e558-4acb-a79d-00e70ff223cd','2ba1d618-1492-44da-987e-617d5451fa81','hrcm_agreement@@@pk_conttext',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '72431b11-0d67-47a6-a295-29b0c60015f2','2ba1d618-1492-44da-987e-617d5451fa81','hrcm_agreement@@@pk_majorcorp',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '767ca851-e772-4a2e-b5ae-1240311f9390','2ba1d618-1492-44da-987e-617d5451fa81','hrcm_agreement@@@paymethod',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '7ea27c67-1eec-4cbf-98d8-57a3978c5b72','2ba1d618-1492-44da-987e-617d5451fa81','hrcm_agreement@@@isrefer',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '882b76aa-08de-4e51-b9d3-9c62cc6d733c','2ba1d618-1492-44da-987e-617d5451fa81','hrcm_agreement@@@trainmethod',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '8f9a167d-8290-4539-b820-27b8a0327806','2ba1d618-1492-44da-987e-617d5451fa81','hrcm_agreement@@@ntrmoney',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '9559940f-ccba-4911-838a-c9dc24254384','2ba1d618-1492-44da-987e-617d5451fa81','hrcm_agreement@@@creator',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '98e7829d-600f-4b29-b31f-d15da42ac95f','2ba1d618-1492-44da-987e-617d5451fa81','hrcm_agreement@@@trmbegindtate',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '9f22f26e-4e1a-41e2-8a37-46a77cf8f655','2ba1d618-1492-44da-987e-617d5451fa81','hrcm_agreement@@@signdate',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '9fbb8df2-fd07-4454-aa65-c0bccca94581','2ba1d618-1492-44da-987e-617d5451fa81','hrcm_agreement@@@agreementid',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'b1be341a-db80-4219-a02e-ffccb22316c1','2ba1d618-1492-44da-987e-617d5451fa81','hrcm_agreement@@@pk_org',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'b4a75421-91d2-4237-983e-ffac7c1c279d','2ba1d618-1492-44da-987e-617d5451fa81','hrcm_agreement@@@creationtime',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'ceddd3bd-1fd5-4d38-a891-5bed75ec77b2','2ba1d618-1492-44da-987e-617d5451fa81','hrcm_agreement@@@termmonth',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'd3191592-c6cb-4718-a4aa-56c032ffadec','2ba1d618-1492-44da-987e-617d5451fa81','hrcm_agreement@@@trainaddr',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'e0777fc7-b751-405c-9b94-69ed3b0a8bbd','2ba1d618-1492-44da-987e-617d5451fa81','hrcm_agreement@@@breachmoney',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'e44a808b-b993-4568-8b46-5c901d727879','2ba1d618-1492-44da-987e-617d5451fa81','hrcm_agreement@@@trainorg',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'e494bca7-851b-442c-81e0-ab6ed6d03b0f','2ba1d618-1492-44da-987e-617d5451fa81','hrcm_agreement@@@pk_psndoc',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'e8f6b87a-f892-4180-9f6f-f40c91ca28f3','2ba1d618-1492-44da-987e-617d5451fa81','hrcm_agreement@@@ntrpsnmoney',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'ea07b8ee-6c2f-4b5b-966b-828376088fe8','2ba1d618-1492-44da-987e-617d5451fa81','hrcm_agreement@@@pk_psnorg',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'eb739503-0a38-4e91-8d36-a458182a85fc','2ba1d618-1492-44da-987e-617d5451fa81','hrcm_agreement@@@enddate',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'ebdbcc2a-8c90-4afb-8e24-30e60b9ca1e1','2ba1d618-1492-44da-987e-617d5451fa81','hrcm_agreement@@@agreementtype',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'ec300a80-c4d4-4a29-ab80-153bd937c490','2ba1d618-1492-44da-987e-617d5451fa81','hrcm_agreement@@@agreement_unit',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'ee7afae1-5afe-4e65-a2f3-21704764de03','2ba1d618-1492-44da-987e-617d5451fa81','hrcm_agreement@@@lastflag',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'ef389e54-5016-453d-a5a7-50f8f0aeaa91','2ba1d618-1492-44da-987e-617d5451fa81','hrcm_agreement@@@modifier',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'f3708b11-831e-48d0-895d-7dbd4bef943e','2ba1d618-1492-44da-987e-617d5451fa81','hrcm_agreement@@@memo',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '021582cf-fb9a-4d77-b6d5-937388c2b237','8df12441-6f47-4ebf-ad14-0dcad84353b9','hi_psnjob@@@pk_dept',null,'hi_psnjob','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '08f53cab-a39e-4356-989f-81db6c445292','8df12441-6f47-4ebf-ad14-0dcad84353b9','hi_psnjob@@@worktype',null,'hi_psnjob','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '16c8a5ed-3602-4710-a479-204bc5d898d8','8df12441-6f47-4ebf-ad14-0dcad84353b9','hi_psnjob@@@memo',null,'hi_psnjob','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '25e58723-b6da-4f04-8e95-d60efdedc82d','8df12441-6f47-4ebf-ad14-0dcad84353b9','hi_psnjob@@@trial_type',null,'hi_psnjob','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '29fee3a5-1b00-4282-ae5d-aa95aa2b5e51','8df12441-6f47-4ebf-ad14-0dcad84353b9','hi_psnjob@@@pk_psncl',null,'hi_psnjob','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '2a4843f5-047f-467d-a12e-0ee724d16a9b','8df12441-6f47-4ebf-ad14-0dcad84353b9','hi_psnjob@@@begindate',null,'hi_psnjob','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '2b383bd2-f662-4a30-8aed-089dd629d9c4','8df12441-6f47-4ebf-ad14-0dcad84353b9','hi_psnjob@@@endflag',null,'hi_psnjob','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '3927e54b-ccb7-4f71-8f81-82569830c819','8df12441-6f47-4ebf-ad14-0dcad84353b9','hi_psnjob@@@psntype',null,'hi_psnjob','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '51bd2890-fb51-430d-9bff-fab30a4286c3','8df12441-6f47-4ebf-ad14-0dcad84353b9','hi_psnjob@@@occupation',null,'hi_psnjob','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '55061cb4-8256-403b-8917-2d84dd9fb09e','8df12441-6f47-4ebf-ad14-0dcad84353b9','hi_psnjob@@@pk_org',null,'hi_psnjob','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '5d9a61e4-8a6b-4e6b-8b33-1a975b875b1e','8df12441-6f47-4ebf-ad14-0dcad84353b9','hrcm_agreement@@@pk_psnjob',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '6bfe48c2-6df6-4922-a7dc-2944142a2702','8df12441-6f47-4ebf-ad14-0dcad84353b9','hi_psnjob@@@lastflag',null,'hi_psnjob','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '6f64573b-e1df-450a-807a-f4b94f00e30d','8df12441-6f47-4ebf-ad14-0dcad84353b9','hi_psnjob@@@trnsreason',null,'hi_psnjob','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '77551cdc-2849-430f-ac3f-11133f2d9e50','8df12441-6f47-4ebf-ad14-0dcad84353b9','hi_psnjob@@@oribilltype',null,'hi_psnjob','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '7af765f0-ad73-4e4f-a29e-7046a45f6a30','8df12441-6f47-4ebf-ad14-0dcad84353b9','hi_psnjob@@@series',null,'hi_psnjob','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '7e96e621-fad6-42c6-8fc9-b0d21b9d2df3','8df12441-6f47-4ebf-ad14-0dcad84353b9','hi_psnjob@@@trial_flag',null,'hi_psnjob','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '7f00f648-f056-4caf-9a11-10611d168e98','8df12441-6f47-4ebf-ad14-0dcad84353b9','hi_psnjob@@@assgid',null,'hi_psnjob','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '8118fe2f-133b-4050-b3a1-7b809eb551d9','8df12441-6f47-4ebf-ad14-0dcad84353b9','hi_psnjob@@@ismainjob',null,'hi_psnjob','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '82fe94e5-c727-4631-aeb4-bbedf27a2d6a','8df12441-6f47-4ebf-ad14-0dcad84353b9','hi_psnjob@@@pk_job_type',null,'hi_psnjob','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '836444ac-d5f5-45da-bca7-d72df8123b97','8df12441-6f47-4ebf-ad14-0dcad84353b9','hrcm_agreement@@@pk_psnjob',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '8da27195-2e0f-42d5-9074-6405ddafb926','8df12441-6f47-4ebf-ad14-0dcad84353b9','hrcm_agreement@@@pk_psnjob',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '8df2354c-c3b9-4df6-b044-4a96eeda94ce','8df12441-6f47-4ebf-ad14-0dcad84353b9','hi_psnjob@@@creator',null,'hi_psnjob','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '8ec29657-3403-4f56-8ce5-227410136510','8df12441-6f47-4ebf-ad14-0dcad84353b9','hi_psnjob@@@pk_job',null,'hi_psnjob','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '8fecd326-b893-4e97-851c-c974c9ad8eea','8df12441-6f47-4ebf-ad14-0dcad84353b9','hi_psndoc_ctrt@@@pk_psnjob',null,'hi_psndoc_ctrt','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '916a5292-7540-4a49-9cf9-a0292244a1ea','8df12441-6f47-4ebf-ad14-0dcad84353b9','hi_psnjob@@@pk_post',null,'hi_psnjob','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '92ac6bf5-00db-48bd-86cd-7d16d05c9332','8df12441-6f47-4ebf-ad14-0dcad84353b9','hi_psnjob@@@jobmode',null,'hi_psnjob','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '93995c71-7759-416e-bfa8-bace6e754cda','8df12441-6f47-4ebf-ad14-0dcad84353b9','hi_psnjob@@PK@@',null,'hi_psnjob','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '94bcac3d-284e-42a3-8624-745cfdd0b0a4','8df12441-6f47-4ebf-ad14-0dcad84353b9','hi_psnjob@@@clerkcode',null,'hi_psnjob','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '94cc7fb3-3819-43b9-8655-937605d68926','8df12441-6f47-4ebf-ad14-0dcad84353b9','hi_psnjob@@@recordnum',null,'hi_psnjob','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '95f0455d-b63a-4d62-b139-ee79e71e6acd','8df12441-6f47-4ebf-ad14-0dcad84353b9','hi_psnjob@@@pk_hrorg',null,'hi_psnjob','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '9a3ade74-92df-4b4b-9f84-e0721458b1bb','8df12441-6f47-4ebf-ad14-0dcad84353b9','hi_psnjob@@@pk_jobrank',null,'hi_psnjob','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '9fad8c27-8287-47ad-a84c-2294964ec07e','8df12441-6f47-4ebf-ad14-0dcad84353b9','hi_psnjob@@@trnstype',null,'hi_psnjob','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'a1852fca-38b3-464b-89ae-e73678ae54f1','8df12441-6f47-4ebf-ad14-0dcad84353b9','hi_psnjob@@@modifiedtime',null,'hi_psnjob','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'ad783df3-a422-4b19-9ebc-7e9b49712258','8df12441-6f47-4ebf-ad14-0dcad84353b9','hrcm_agreement@@@pk_psnjob',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'c21ed176-806f-4cf5-8e74-1b0fe8d5d74e','8df12441-6f47-4ebf-ad14-0dcad84353b9','hi_psnjob@@@oribillpk',null,'hi_psnjob','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'c66904e0-ec65-4c85-90ca-66d42665743a','8df12441-6f47-4ebf-ad14-0dcad84353b9','hi_psnjob@@@showorder',null,'hi_psnjob','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'c8063cc7-761e-443a-814a-4b7abb53a6de','8df12441-6f47-4ebf-ad14-0dcad84353b9','hi_psnjob@@@pk_postseries',null,'hi_psnjob','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'd41fe152-0a1f-47e1-8453-723b86247bd0','8df12441-6f47-4ebf-ad14-0dcad84353b9','hi_psnjob@@@deposemode',null,'hi_psnjob','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'd53b8193-3e19-4c63-9ef1-f4169900cfe8','8df12441-6f47-4ebf-ad14-0dcad84353b9','hi_psnjob@@@pk_jobgrade',null,'hi_psnjob','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'd9cf79e2-db0b-456b-8033-bdd90328cd8d','8df12441-6f47-4ebf-ad14-0dcad84353b9','hi_psnjob@@@poststat',null,'hi_psnjob','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'dcef5c7d-9681-4ef3-ad56-1b2a20e33239','8df12441-6f47-4ebf-ad14-0dcad84353b9','hi_psnjob@@@pk_psndoc',null,'hi_psnjob','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'ded21536-3a56-41c6-9d04-bd6a8fb2ce24','8df12441-6f47-4ebf-ad14-0dcad84353b9','hi_psnjob@@@enddate',null,'hi_psnjob','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'e6c1bbb2-8654-4b14-ad6b-3d1ce733bb2c','8df12441-6f47-4ebf-ad14-0dcad84353b9','hi_psnjob@@@pk_psnorg',null,'hi_psnjob','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'f6c7c8f0-b322-43a7-b838-7865a8846d55','8df12441-6f47-4ebf-ad14-0dcad84353b9','hi_psnjob@@@modifier',null,'hi_psnjob','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'f955509c-232a-4de7-9614-2d1930ac5541','8df12441-6f47-4ebf-ad14-0dcad84353b9','hi_psnjob@@@creationtime',null,'hi_psnjob','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'fb32cfe0-027d-446e-abb2-cb902bd08f4c','8df12441-6f47-4ebf-ad14-0dcad84353b9','hi_psnjob@@@trnsevent',null,'hi_psnjob','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'ffd203a7-b46b-4331-8a32-95cfce2cbf4d','8df12441-6f47-4ebf-ad14-0dcad84353b9','hi_psnjob@@@pk_group',null,'hi_psnjob','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '0f213cde-9346-46e3-9005-58fc5580fb16','a37d3985-b6ca-4bdc-9749-8399b6886090','hrcm_agreement@@@ifprop',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '13e77d65-a948-4dbd-bf72-4dc2f0e5938d','a37d3985-b6ca-4bdc-9749-8399b6886090','hrcm_agreement@@@conttype',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '14a8b953-f0e0-4885-b575-d0b83f0a20fa','a37d3985-b6ca-4bdc-9749-8399b6886090','hrcm_agreement@@@modifier',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '2d286138-c014-478c-9793-9ce65a38f7bf','a37d3985-b6ca-4bdc-9749-8399b6886090','hrcm_agreement@@@agreementtype',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '379bd013-9a79-4419-ba8e-b004bc487dd8','a37d3985-b6ca-4bdc-9749-8399b6886090','hrcm_agreement@@@pk_group',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '395f44ac-1998-42ad-ae17-e921add063ae','a37d3985-b6ca-4bdc-9749-8399b6886090','hrcm_agreement@@@pk_conttext',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '3a1f6223-9d1e-49b0-a78c-48fb1ec1da33','a37d3985-b6ca-4bdc-9749-8399b6886090','hrcm_agreement@@@termmonth',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '3af51d77-6958-4d19-b51d-5808f1aebae2','a37d3985-b6ca-4bdc-9749-8399b6886090','hrcm_agreement@@@agreementid',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '455c249c-1a20-48cb-bd4e-cd6c7a547be5','a37d3985-b6ca-4bdc-9749-8399b6886090','hrcm_agreement@@@memo',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '4b7a206a-1d87-44e5-aa28-b6c1db212268','a37d3985-b6ca-4bdc-9749-8399b6886090','hrcm_agreement@@@probenddate',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '4d1f9b15-341e-4c84-83c7-e92dfdae18a9','a37d3985-b6ca-4bdc-9749-8399b6886090','hrcm_agreement@@@pk_psnjob',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '556fdba7-c497-493d-9271-5c0cced63a70','a37d3985-b6ca-4bdc-9749-8399b6886090','hrcm_agreement@@@breachmoney',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '567f71cd-7f0d-414d-b836-d33a2c2d2fb9','a37d3985-b6ca-4bdc-9749-8399b6886090','hrcm_agreement@@PK@@',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '569fb511-f1a4-4bf5-8be4-7ed4cc438153','a37d3985-b6ca-4bdc-9749-8399b6886090','hrcm_agreement@@@probegindate',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '5871285d-fc70-480c-ab23-6aacffe35571','a37d3985-b6ca-4bdc-9749-8399b6886090','hrcm_agreement@@@pk_unchreason',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '590a3f90-870a-4c19-bcda-ff2f05405723','a37d3985-b6ca-4bdc-9749-8399b6886090','hrcm_agreement@@@signdate',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '59c0da63-317b-4ae4-b7b1-f36ee0a5a8e3','a37d3985-b6ca-4bdc-9749-8399b6886090','hrcm_agreement@@@neconomy',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '5a722aa1-a057-4f85-9afb-f88cb6ac6c4b','a37d3985-b6ca-4bdc-9749-8399b6886090','hrcm_agreement@@@lastflag',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '6bffa4cb-a8d7-41a5-ade3-d5b72ae2e69c','a37d3985-b6ca-4bdc-9749-8399b6886090','hrcm_agreement@@@probsalary',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '6d3d041f-985a-4a54-8176-baa2579077b7','a37d3985-b6ca-4bdc-9749-8399b6886090','hrcm_agreement@@@pk_org',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '775e521a-69b8-4c14-b236-22a5977227e5','a37d3985-b6ca-4bdc-9749-8399b6886090','hrcm_agreement@@@contcode',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '7c37daf0-0f06-4c5a-a681-7022449413e9','a37d3985-b6ca-4bdc-9749-8399b6886090','hrcm_agreement@@@begindate',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '81880e5d-37a0-45fe-abd5-b85e16747d50','a37d3985-b6ca-4bdc-9749-8399b6886090','hrcm_agreement@@@pk_psnorg',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '85a219c6-14d3-4013-9bd7-7574e7a13dfd','a37d3985-b6ca-4bdc-9749-8399b6886090','hrcm_agreement@@@prop_unit',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '934f43b2-9a35-43fc-ba06-d818be0d17bc','a37d3985-b6ca-4bdc-9749-8399b6886090','hrcm_agreement@@@probmonth',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '9e1b4902-426d-414d-a1d3-daa8dce90b70','a37d3985-b6ca-4bdc-9749-8399b6886090','hrcm_agreement@@@signaddr',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '9ff808ad-5fbc-4f64-a71d-da9814ecb8bb','a37d3985-b6ca-4bdc-9749-8399b6886090','hrcm_agreement@@@startsalary',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'b1ac379b-c52c-4c22-a4b0-ac0f3a86ac50','a37d3985-b6ca-4bdc-9749-8399b6886090','hrcm_agreement@@@modifiedtime',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'be52da26-4cd7-4a30-89b9-3fb29dd911dd','a37d3985-b6ca-4bdc-9749-8399b6886090','hrcm_agreement@@@agreementcode',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'ca601407-77aa-4a4f-b84f-88335af2c51f','a37d3985-b6ca-4bdc-9749-8399b6886090','hrcm_agreement@@@isrefer',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'd23c4869-a85f-46cb-83cb-61edcd1d58f3','a37d3985-b6ca-4bdc-9749-8399b6886090','hrcm_agreement@@@pk_psndoc',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'd40f1544-9490-40a2-b84c-78b9d636666e','a37d3985-b6ca-4bdc-9749-8399b6886090','hrcm_agreement@@@pk_post_org',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'dbc5a47d-210f-4563-aaa6-5b0805e23d5c','a37d3985-b6ca-4bdc-9749-8399b6886090','hrcm_agreement@@@assgid',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'e7e762ef-5f56-45b3-a396-379fd58be169','a37d3985-b6ca-4bdc-9749-8399b6886090','hrcm_agreement@@@pk_majorcorp',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'ec253398-b7e3-4ca9-a715-8cad676869ed','a37d3985-b6ca-4bdc-9749-8399b6886090','hrcm_agreement@@@agreement_unit',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'f2563858-93fc-475d-9905-e08e994d4099','a37d3985-b6ca-4bdc-9749-8399b6886090','hrcm_agreement@@@enddate',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'f591997b-d7eb-4c39-8147-1e7093e0c1ba','a37d3985-b6ca-4bdc-9749-8399b6886090','hrcm_agreement@@@creationtime',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'f7a22130-d296-4b03-9b39-24a48a43f632','a37d3985-b6ca-4bdc-9749-8399b6886090','hrcm_agreement@@@pk_post',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'fc6348f4-20ab-4d8a-9877-067c2150bd32','a37d3985-b6ca-4bdc-9749-8399b6886090','hrcm_agreement@@@creator',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '06bbbbec-382d-4ad6-9bc8-48a0fdcf3607','c776a38d-d0be-4efd-ab2b-83dd8f6758d2','hrcm_agreement@@@pk_psnorg',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '0855e586-3bc3-4eea-9799-d121c6e85e13','c776a38d-d0be-4efd-ab2b-83dd8f6758d2','hrcm_agreement@@@serviceyear',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '0e2df79c-39e9-4088-bfc9-229ab7021ba9','c776a38d-d0be-4efd-ab2b-83dd8f6758d2','hrcm_agreement@@@agreementtype',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '10b9c3af-cdc7-4006-b128-256a4058372f','c776a38d-d0be-4efd-ab2b-83dd8f6758d2','hrcm_agreement@@@traincontent',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '1339f6a6-785c-4da3-9ef9-27b87f41ce2a','c776a38d-d0be-4efd-ab2b-83dd8f6758d2','hrcm_agreement@@@pk_psnjob',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '1464ef6e-9386-46b9-93bf-3799d1d78ff9','c776a38d-d0be-4efd-ab2b-83dd8f6758d2','hrcm_agreement@@@traindays',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '154d370f-0b77-42fb-a641-4acd1f6f234e','c776a38d-d0be-4efd-ab2b-83dd8f6758d2','hrcm_agreement@@@pk_post_org',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '19ae397a-2b76-4b4a-a164-38becf1d509d','c776a38d-d0be-4efd-ab2b-83dd8f6758d2','hrcm_agreement@@@isrefer',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '1d6bef25-79ae-40f4-9d75-0f1bfbefb496','c776a38d-d0be-4efd-ab2b-83dd8f6758d2','hrcm_agreement@@@memo',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '35796fc7-be81-4c7c-a5b5-c9b157ad6dee','c776a38d-d0be-4efd-ab2b-83dd8f6758d2','hrcm_agreement@@@pk_conttext',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '3616b5a5-ff83-4ec3-9abb-f1eb1fde5295','c776a38d-d0be-4efd-ab2b-83dd8f6758d2','hrcm_agreement@@@breachmoney',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '37008a52-b825-4765-b0f2-4f039ce309a4','c776a38d-d0be-4efd-ab2b-83dd8f6758d2','hrcm_agreement@@@agreementcode',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '3c651c7c-92cd-475b-9e69-03c80b377fe6','c776a38d-d0be-4efd-ab2b-83dd8f6758d2','hrcm_agreement@@@trainaddr',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '40fa7ab6-0167-440c-9685-aa0d163116ee','c776a38d-d0be-4efd-ab2b-83dd8f6758d2','hrcm_agreement@@@paymethod',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '4121ea39-bc01-45cf-a587-c13c6c5e2108','c776a38d-d0be-4efd-ab2b-83dd8f6758d2','hrcm_agreement@@@trmenddate',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '4584b5f8-feb6-4a1e-99db-b03c194aea74','c776a38d-d0be-4efd-ab2b-83dd8f6758d2','hrcm_agreement@@@contcode',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '45d48a64-f7bc-4745-b784-d55369151564','c776a38d-d0be-4efd-ab2b-83dd8f6758d2','hrcm_agreement@@@ntrpsnmoney',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '47ca0f03-d36c-4bc9-b7e8-4905df8b168f','c776a38d-d0be-4efd-ab2b-83dd8f6758d2','hrcm_agreement@@@signdate',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '4ba2215d-1256-4780-a00d-ab9a6c3e4f16','c776a38d-d0be-4efd-ab2b-83dd8f6758d2','hrcm_agreement@@@signaddr',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '4d55fdae-af37-47b6-8af1-e399fc9b1931','c776a38d-d0be-4efd-ab2b-83dd8f6758d2','hrcm_agreement@@@modifier',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '510975f6-1dae-427b-b664-7d0c18953c0a','c776a38d-d0be-4efd-ab2b-83dd8f6758d2','hrcm_agreement@@@creator',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '51c0639f-d0c8-4295-b4e4-600c0a22747d','c776a38d-d0be-4efd-ab2b-83dd8f6758d2','hrcm_agreement@@@pk_group',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '54278715-8851-4821-9a52-2d86b1e488fb','c776a38d-d0be-4efd-ab2b-83dd8f6758d2','hrcm_agreement@@@traincode',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '54d7ff29-f2d0-4064-9c3c-f4ba029bb3ca','c776a38d-d0be-4efd-ab2b-83dd8f6758d2','hrcm_agreement@@@ntrmoney',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '5e781d59-fdc2-43bf-8773-516cf1804452','c776a38d-d0be-4efd-ab2b-83dd8f6758d2','hrcm_agreement@@@agreementid',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '5efca3a4-56eb-4cc9-a443-9e03f62730ef','c776a38d-d0be-4efd-ab2b-83dd8f6758d2','hrcm_agreement@@@startsalary',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '733634f7-8765-4c41-98dc-7600ee4c0ba7','c776a38d-d0be-4efd-ab2b-83dd8f6758d2','hrcm_agreement@@@trainname',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '75db4fa4-6486-4503-a4c5-97990d178266','c776a38d-d0be-4efd-ab2b-83dd8f6758d2','hrcm_agreement@@@trmbegindtate',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '8abbb05e-48de-421e-877f-d58a1acffaaf','c776a38d-d0be-4efd-ab2b-83dd8f6758d2','hrcm_agreement@@@modifiedtime',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '8c3b8653-a950-4fe3-b1bf-77f2cd6af85a','c776a38d-d0be-4efd-ab2b-83dd8f6758d2','hrcm_agreement@@@pk_psndoc',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '919fc00c-e754-4e3c-9b82-866799abe325','c776a38d-d0be-4efd-ab2b-83dd8f6758d2','hrcm_agreement@@@trainperiod',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '9c2c0188-c9ef-45d5-b59a-59851e66900f','c776a38d-d0be-4efd-ab2b-83dd8f6758d2','hrcm_agreement@@@pk_majorcorp',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'a14955f3-d4a4-49ed-8737-0038bd1fc095','c776a38d-d0be-4efd-ab2b-83dd8f6758d2','hrcm_agreement@@PK@@',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'a1ee1ccd-cef1-4b13-b9a6-a0716d795bf0','c776a38d-d0be-4efd-ab2b-83dd8f6758d2','hrcm_agreement@@@ifprop',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'a96a9a5c-080e-4556-94d9-b22495689854','c776a38d-d0be-4efd-ab2b-83dd8f6758d2','hrcm_agreement@@@probmonth',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'ad417bac-7771-40a6-83f3-e96bcb820c78','c776a38d-d0be-4efd-ab2b-83dd8f6758d2','hrcm_agreement@@@pk_unchreason',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'af712858-2c63-4a10-bd0f-aecf9a326d30','c776a38d-d0be-4efd-ab2b-83dd8f6758d2','hrcm_agreement@@@creationtime',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'b0844fe5-eaf6-4d2b-9ac0-3484e0bba3f2','c776a38d-d0be-4efd-ab2b-83dd8f6758d2','hrcm_agreement@@@termmonth',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'b30679e8-5125-4863-91bf-8c1761529418','c776a38d-d0be-4efd-ab2b-83dd8f6758d2','hrcm_agreement@@@prop_unit',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'b89c7246-bfb8-4260-83e8-078293b215e3','c776a38d-d0be-4efd-ab2b-83dd8f6758d2','hrcm_agreement@@@probenddate',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'ba88d06e-701a-4401-88dc-0a9e329aa480','c776a38d-d0be-4efd-ab2b-83dd8f6758d2','hrcm_agreement@@@traintype',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'bfe42b73-ccc1-4ebe-87b5-70f337cae76a','c776a38d-d0be-4efd-ab2b-83dd8f6758d2','hrcm_agreement@@@probsalary',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'c0814c2b-affb-47fd-8532-c4cf93cf6e14','c776a38d-d0be-4efd-ab2b-83dd8f6758d2','hrcm_agreement@@@begindate',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'c1b84b4b-9f01-4931-974f-1447b5ee6e27','c776a38d-d0be-4efd-ab2b-83dd8f6758d2','hrcm_agreement@@@pk_org',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'c609b3c9-41e6-4994-94c6-314a6cb6f97a','c776a38d-d0be-4efd-ab2b-83dd8f6758d2','hrcm_agreement@@@pk_post',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'cbbfbf5d-abc2-4413-8bb6-45a16a086e3f','c776a38d-d0be-4efd-ab2b-83dd8f6758d2','hrcm_agreement@@@neconomy',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'cd82da89-594b-4e6d-bce7-d75226fd0c26','c776a38d-d0be-4efd-ab2b-83dd8f6758d2','hrcm_agreement@@@pk_train',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'd47c35e9-69f0-4199-83e0-d3cf9f85e52a','c776a38d-d0be-4efd-ab2b-83dd8f6758d2','hrcm_agreement@@@enddate',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'd5820179-3353-4ccd-8998-72b1342cc0ea','c776a38d-d0be-4efd-ab2b-83dd8f6758d2','hrcm_agreement@@@conttype',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'd6033807-7281-4475-87b1-1fcc9d008ed9','c776a38d-d0be-4efd-ab2b-83dd8f6758d2','hrcm_agreement@@@trainmethod',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'd67c9f31-94fc-4823-89d9-aa1eb71fb691','c776a38d-d0be-4efd-ab2b-83dd8f6758d2','hrcm_agreement@@@lastflag',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'e585dade-de58-4b74-a071-8dfaf120cd04','c776a38d-d0be-4efd-ab2b-83dd8f6758d2','hrcm_agreement@@@assgid',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'ee7f1c2f-a854-40bf-8a03-ffd19411fb38','c776a38d-d0be-4efd-ab2b-83dd8f6758d2','hrcm_agreement@@@probegindate',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'f2160e42-b034-468f-9f44-0ebee52bab67','c776a38d-d0be-4efd-ab2b-83dd8f6758d2','hrcm_agreement@@@agreement_unit',null,'hrcm_agreement','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '000e3a6f-c1b3-432f-a14d-f2733a971e42','dde85a2e-eee0-41af-b41a-2fd18ed43244','hi_psndoc_ctrt@@@probegindate',null,'hi_psndoc_ctrt','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '023abb51-d585-4736-87b0-b18009b1a093','dde85a2e-eee0-41af-b41a-2fd18ed43244','hi_psndoc_ctrt@@@recordnum',null,'hi_psndoc_ctrt','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '0710a257-96cd-48cf-aa4a-7abbe1f614e8','dde85a2e-eee0-41af-b41a-2fd18ed43244','hi_psndoc_ctrt@@@continuetime',null,'hi_psndoc_ctrt','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '08b0c8b5-9df9-44dd-8c53-704314087808','dde85a2e-eee0-41af-b41a-2fd18ed43244','hi_psndoc_ctrt@@@assgid',null,'hi_psndoc_ctrt','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '0cf14938-6bef-4e19-8d84-95dabfb1d96e','dde85a2e-eee0-41af-b41a-2fd18ed43244','hi_psndoc_ctrt@@@pk_majorcorp',null,'hi_psndoc_ctrt','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '0e8423fa-2cd8-4ed7-8787-e3045c4e0883','dde85a2e-eee0-41af-b41a-2fd18ed43244','hi_psndoc_ctrt@@@cont_unit',null,'hi_psndoc_ctrt','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '1005076f-2219-48e3-8c38-dfbf16d3d162','dde85a2e-eee0-41af-b41a-2fd18ed43244','hi_psndoc_ctrt@@@creator',null,'hi_psndoc_ctrt','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '12614ccb-4821-4a5e-9c51-6256ce660b8b','dde85a2e-eee0-41af-b41a-2fd18ed43244','hi_psndoc_ctrt@@@filepath',null,'hi_psndoc_ctrt','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '14f955c5-cc3a-4691-99e4-b547b8aad990','dde85a2e-eee0-41af-b41a-2fd18ed43244','hi_psndoc_ctrt@@@termmonth',null,'hi_psndoc_ctrt','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '176bb654-3a46-4595-bb87-c0d2f24d0863','dde85a2e-eee0-41af-b41a-2fd18ed43244','hi_psndoc_ctrt@@@judgedate',null,'hi_psndoc_ctrt','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '296e74a0-3a9d-4bd3-b6ae-fd9f8b7e045e','dde85a2e-eee0-41af-b41a-2fd18ed43244','hi_psndoc_ctrt@@@pk_unchreason',null,'hi_psndoc_ctrt','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '30cf29d7-93aa-4ace-abf5-444d305d9b36','dde85a2e-eee0-41af-b41a-2fd18ed43244','hi_psndoc_ctrt@@@pk_org',null,'hi_psndoc_ctrt','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '34be827a-416d-42c8-a9f8-a72e310bb8d5','dde85a2e-eee0-41af-b41a-2fd18ed43244','hi_psndoc_ctrt@@@ifprop',null,'hi_psndoc_ctrt','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '357ca855-4267-4a2a-807f-6d7b1a7e5ff5','dde85a2e-eee0-41af-b41a-2fd18ed43244','hi_psndoc_ctrt@@PK@@',null,'hi_psndoc_ctrt','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '37de4646-7fa7-4e20-bf9c-3d2c43455fd0','dde85a2e-eee0-41af-b41a-2fd18ed43244','hi_psndoc_ctrt@@@glbdef1',null,'hi_psndoc_ctrt','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '3b1271c5-5641-40de-83d3-165c5d9f9808','dde85a2e-eee0-41af-b41a-2fd18ed43244','hi_psndoc_ctrt@@@signaddr',null,'hi_psndoc_ctrt','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '3c4c9d48-10e9-467a-ac11-5a2402a0c791','dde85a2e-eee0-41af-b41a-2fd18ed43244','hi_psndoc_ctrt@@@ifwrite',null,'hi_psndoc_ctrt','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '4ec1e221-ad19-4ec2-8a7c-91bc243e661a','dde85a2e-eee0-41af-b41a-2fd18ed43244','hi_psndoc_ctrt@@@begindate',null,'hi_psndoc_ctrt','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '54c93900-1da0-4a0f-9bb5-54ef1db81d71','dde85a2e-eee0-41af-b41a-2fd18ed43244','hi_psndoc_ctrt@@@conttype',null,'hi_psndoc_ctrt','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '61ba8797-d8eb-42e5-9530-ec876f7d6faf','dde85a2e-eee0-41af-b41a-2fd18ed43244','hi_psndoc_ctrt@@@memo',null,'hi_psndoc_ctrt','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '683cdafb-819b-482a-8a75-a92a4a4500cf','dde85a2e-eee0-41af-b41a-2fd18ed43244','hi_psndoc_ctrt@@@neconomy',null,'hi_psndoc_ctrt','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '7034634e-e2dd-4059-8b84-c1dfe9d0a8e1','dde85a2e-eee0-41af-b41a-2fd18ed43244','hi_psndoc_ctrt@@@pk_conttext',null,'hi_psndoc_ctrt','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '74015b90-0984-4a66-9247-e8020103da7c','dde85a2e-eee0-41af-b41a-2fd18ed43244','hi_psndoc_ctrt@@@promonth',null,'hi_psndoc_ctrt','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '76b38af5-63f8-4cd8-b1e3-b96d8629e31c','dde85a2e-eee0-41af-b41a-2fd18ed43244','hi_psndoc_ctrt@@@presenter',null,'hi_psndoc_ctrt','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '7bd012a5-5542-43c8-8834-462a39b073b5','dde85a2e-eee0-41af-b41a-2fd18ed43244','hi_psndoc_ctrt@@@breachmoney',null,'hi_psndoc_ctrt','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '7f8a1f8f-7180-41b4-975a-117efb7ca725','dde85a2e-eee0-41af-b41a-2fd18ed43244','hi_psndoc_ctrt@@@modifier',null,'hi_psndoc_ctrt','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '8af91a8a-ba4b-4b62-9f46-f04162229083','dde85a2e-eee0-41af-b41a-2fd18ed43244','hi_psndoc_ctrt@@@enddate',null,'hi_psndoc_ctrt','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '8c7f2b3f-c73c-45e6-a3d3-e6bb28782381','dde85a2e-eee0-41af-b41a-2fd18ed43244','hi_psndoc_ctrt@@@pk_psnjob',null,'hi_psndoc_ctrt','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '9989ba24-1552-4b82-acbd-806ae0931959','dde85a2e-eee0-41af-b41a-2fd18ed43244','hi_psndoc_ctrt@@@pk_psndoc',null,'hi_psndoc_ctrt','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '9f275718-310f-4e02-83cb-e97abb73431b','dde85a2e-eee0-41af-b41a-2fd18ed43244','hi_psndoc_ctrt@@@termtype',null,'hi_psndoc_ctrt','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'a2755cd7-e98a-47f9-bc55-60d50ad426d2','dde85a2e-eee0-41af-b41a-2fd18ed43244','hi_psndoc_ctrt@@@pk_group',null,'hi_psndoc_ctrt','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'a51bb053-eaea-4ce4-ae39-e6f8172ba4b8','dde85a2e-eee0-41af-b41a-2fd18ed43244','hi_psndoc_ctrt@@@probsalary',null,'hi_psndoc_ctrt','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'a55b61a6-ab5b-4b1e-9bbf-3e11a0019083','dde85a2e-eee0-41af-b41a-2fd18ed43244','hi_psndoc_ctrt@@@contmodel',null,'hi_psndoc_ctrt','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'ba317bf5-3e76-426d-800f-d31f89a45e79','dde85a2e-eee0-41af-b41a-2fd18ed43244','hi_psndoc_ctrt@@@probenddate',null,'hi_psndoc_ctrt','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'bb9e799b-39b9-4a62-a770-f5d42d725706','dde85a2e-eee0-41af-b41a-2fd18ed43244','hi_psndoc_ctrt@@@contractcode',null,'hi_psndoc_ctrt','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'bc1233b0-e967-4e46-bed0-d01c8bd13ca4','dde85a2e-eee0-41af-b41a-2fd18ed43244','hi_psndoc_ctrt@@@prop_unit',null,'hi_psndoc_ctrt','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'be4776af-3125-49c3-89ed-4704e608f40f','dde85a2e-eee0-41af-b41a-2fd18ed43244','hi_psndoc_ctrt@@@modifiedtime',null,'hi_psndoc_ctrt','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'c642375f-5d0f-4441-8d2f-594b7ddd7918','dde85a2e-eee0-41af-b41a-2fd18ed43244','hi_psndoc_ctrt@@@signdate',null,'hi_psndoc_ctrt','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'c658d2be-9c50-4929-8ce5-6b405795ffb0','dde85a2e-eee0-41af-b41a-2fd18ed43244','hi_psndoc_ctrt@@@contid',null,'hi_psndoc_ctrt','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'cdb4d25a-34a4-4726-a219-a3a7515a3440','dde85a2e-eee0-41af-b41a-2fd18ed43244','hi_psndoc_ctrt@@@contractnum',null,'hi_psndoc_ctrt','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'd3906f8b-7c44-4a80-93e4-92ce4838a9ee','dde85a2e-eee0-41af-b41a-2fd18ed43244','hi_psndoc_ctrt@@@lastflag',null,'hi_psndoc_ctrt','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'e10221b2-d871-4005-8813-0358f4a51751','dde85a2e-eee0-41af-b41a-2fd18ed43244','hi_psndoc_ctrt@@@pk_psnorg',null,'hi_psndoc_ctrt','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'e264b9f3-eee1-4e7f-81a7-ae44dbe4095f','dde85a2e-eee0-41af-b41a-2fd18ed43244','hi_psndoc_ctrt@@@isrefer',null,'hi_psndoc_ctrt','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'f54c4301-3656-4333-b6df-6c4627d40ee2','dde85a2e-eee0-41af-b41a-2fd18ed43244','hi_psndoc_ctrt@@@creationtime',null,'hi_psndoc_ctrt','2018-08-23 09:46:19')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'f6766e10-ed06-4e36-9f08-747cdf19aa75','dde85a2e-eee0-41af-b41a-2fd18ed43244','hi_psndoc_ctrt@@@startsalary',null,'hi_psndoc_ctrt','2018-08-23 09:46:19')
+go

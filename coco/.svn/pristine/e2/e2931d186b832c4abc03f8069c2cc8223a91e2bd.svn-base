@@ -1,0 +1,1 @@
+update hr_infoset_item set item_name = '自定義項2',item_name2 = '自定義項2 'where pk_infoset = (select pk_infoset from hr_infoset where infoset_code = 'hi_psndoc_family' and dr = 0) and item_code = 'glbdef2'

@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="GBK"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+<bean id="funcregister" class="nc.pubapp.pade.funcmodel.vo.FuncRegister">
+<property name="busiActiveList">
+<list>
+</list>
+</property>
+<property name="cfunid" value="0001ZZ10000000006Y03"/>
+<property name="class_name" value="nc.ui.pubapp.uif2app.ToftPanelAdaptorEx"/>
+<property name="dr" value="0"/>
+<property name="fun_name" value="计算劳健保"/>
+<property name="fun_property" value="0"/>
+<property name="funcRegisterButtonList">
+<list>
+<bean class="nc.pubapp.pade.funcmodel.vo.FuncRegisterButton">
+<property name="btncode" value="queryaction"/>
+<property name="btnname" value="查询"/>
+<property name="btnownertype" value="0"/>
+<property name="dr" value="0"/>
+<property name="isbuttonpower" value="false"/>
+<property name="isenable" value="true"/>
+<property name="iskeyfunc" value="false"/>
+<property name="parent_id" value="0001ZZ10000000006Y03"/>
+<property name="pk_btn" value="1001ZZ100000000049K7"/>
+<property name="ts" value="2014-12-30 09:30:43"/>
+</bean>
+<bean class="nc.pubapp.pade.funcmodel.vo.FuncRegisterButton">
+<property name="btncode" value="calculateaction"/>
+<property name="btnname" value="计算"/>
+<property name="btnownertype" value="0"/>
+<property name="dr" value="0"/>
+<property name="isbuttonpower" value="false"/>
+<property name="isenable" value="true"/>
+<property name="iskeyfunc" value="false"/>
+<property name="parent_id" value="0001ZZ10000000006Y03"/>
+<property name="pk_btn" value="1001ZZ100000000049K8"/>
+<property name="ts" value="2014-12-30 09:30:43"/>
+</bean>
+<bean class="nc.pubapp.pade.funcmodel.vo.FuncRegisterButton">
+<property name="btncode" value="Edit"/>
+<property name="btndesc" value="修改(Ctrl+E)"/>
+<property name="btnname" value="修改"/>
+<property name="btnownertype" value="0"/>
+<property name="dr" value="0"/>
+<property name="isbuttonpower" value="false"/>
+<property name="isenable" value="true"/>
+<property name="iskeyfunc" value="false"/>
+<property name="parent_id" value="0001ZZ10000000006Y03"/>
+<property name="pk_btn" value="1001ZZ100000000049K9"/>
+<property name="ts" value="2014-12-30 09:30:43"/>
+</bean>
+<bean class="nc.pubapp.pade.funcmodel.vo.FuncRegisterButton">
+<property name="btncode" value="generateaction"/>
+<property name="btnname" value="生成"/>
+<property name="btnownertype" value="0"/>
+<property name="dr" value="0"/>
+<property name="isbuttonpower" value="false"/>
+<property name="isenable" value="true"/>
+<property name="iskeyfunc" value="false"/>
+<property name="parent_id" value="0001ZZ10000000006Y03"/>
+<property name="pk_btn" value="1001ZZ100000000049KA"/>
+<property name="ts" value="2014-12-30 09:30:43"/>
+</bean>
+<bean class="nc.pubapp.pade.funcmodel.vo.FuncRegisterButton">
+<property name="btncode" value="Cancel"/>
+<property name="btndesc" value="取消(Ctrl+Q)"/>
+<property name="btnname" value="取消"/>
+<property name="btnownertype" value="0"/>
+<property name="dr" value="0"/>
+<property name="isbuttonpower" value="false"/>
+<property name="isenable" value="true"/>
+<property name="iskeyfunc" value="false"/>
+<property name="parent_id" value="0001ZZ10000000006Y03"/>
+<property name="pk_btn" value="1001ZZ100000000049KB"/>
+<property name="ts" value="2014-12-30 09:30:43"/>
+</bean>
+<bean class="nc.pubapp.pade.funcmodel.vo.FuncRegisterButton">
+<property name="btncode" value="unauditaction"/>
+<property name="btnname" value="取消审核"/>
+<property name="btnownertype" value="0"/>
+<property name="dr" value="0"/>
+<property name="isbuttonpower" value="false"/>
+<property name="isenable" value="true"/>
+<property name="iskeyfunc" value="false"/>
+<property name="parent_id" value="0001ZZ10000000006Y03"/>
+<property name="pk_btn" value="1001ZZ100000000049KC"/>
+<property name="ts" value="2014-12-30 09:30:43"/>
+</bean>
+<bean class="nc.pubapp.pade.funcmodel.vo.FuncRegisterButton">
+<property name="btncode" value="Save"/>
+<property name="btndesc" value="保存(Ctrl+S)"/>
+<property name="btnname" value="保存"/>
+<property name="btnownertype" value="0"/>
+<property name="dr" value="0"/>
+<property name="isbuttonpower" value="false"/>
+<property name="isenable" value="true"/>
+<property name="iskeyfunc" value="false"/>
+<property name="parent_id" value="0001ZZ10000000006Y03"/>
+<property name="pk_btn" value="1001ZZ100000000049KD"/>
+<property name="ts" value="2014-12-30 09:30:43"/>
+</bean>
+<bean class="nc.pubapp.pade.funcmodel.vo.FuncRegisterButton">
+<property name="btncode" value="filteraction"/>
+<property name="btnname" value="只显示差异"/>
+<property name="btnownertype" value="0"/>
+<property name="dr" value="0"/>
+<property name="isbuttonpower" value="false"/>
+<property name="isenable" value="true"/>
+<property name="iskeyfunc" value="false"/>
+<property name="parent_id" value="0001ZZ10000000006Y03"/>
+<property name="pk_btn" value="1001ZZ100000000049KE"/>
+<property name="ts" value="2014-12-30 09:30:43"/>
+</bean>
+<bean class="nc.pubapp.pade.funcmodel.vo.FuncRegisterButton">
+<property name="btncode" value="auditaction"/>
+<property name="btnname" value="审核"/>
+<property name="btnownertype" value="0"/>
+<property name="dr" value="0"/>
+<property name="isbuttonpower" value="false"/>
+<property name="isenable" value="true"/>
+<property name="iskeyfunc" value="false"/>
+<property name="parent_id" value="0001ZZ10000000006Y03"/>
+<property name="pk_btn" value="1001ZZ100000000049KF"/>
+<property name="ts" value="2014-12-30 09:30:43"/>
+</bean>
+</list>
+</property>
+<property name="funcRegisterParamList">
+<list>
+<bean class="nc.pubapp.pade.funcmodel.vo.FuncRegisterParam">
+<property name="dr" value="0"/>
+<property name="paramname" value="BeanConfigFilePath"/>
+<property name="paramvalue" value="nc/ui/twhr/nhicalc/ace/view/Nhicalc_config.xml"/>
+<property name="parentid" value="0001ZZ10000000006Y03"/>
+<property name="pk_param" value="0001ZZ10000000006Y04"/>
+<property name="ts" value="2014-12-30 09:02:38"/>
+</bean>
+</list>
+</property>
+<property name="funcode" value="68861705"/>
+<property name="funtype" value="0"/>
+<property name="isbuttonpower" value="false"/>
+<property name="iscauserusable" value="false"/>
+<property name="isenable" value="true"/>
+<property name="isfunctype" value="false"/>
+<property name="orgtypecode" value="HRORGTYPE00000000000"/>
+<property name="own_module" value="6886"/>
+<property name="pageList">
+<list>
+</list>
+</property>
+<property name="parent_id" value="1001ZZ10000000003WFM"/>
+<property name="ts" value="2014-12-30 09:02:38"/>
+</bean>
+
+</beans>

@@ -1,0 +1,296 @@
+<?xml version="1.0" encoding='UTF-8'?>
+<Widget controllerClazz="nc.bs.hrsms.ta.sss.monthreport.ctrl.MonthReportUnGeneratePsn" dialog="false" i18nName="a_pub-000181" langDir="node_pub-res" caption="未生成统计" id="unGeneratePsn" refId="unGeneratePsn" sourcePackage="src/public/">
+    <PageMetas>
+    </PageMetas>
+    <PlugoutDescs>
+    </PlugoutDescs>
+    <PluginDescs>
+    </PluginDescs>
+    <Events>
+    </Events>
+    <Models>
+        <Datasets>
+            <RefMdDataset caption="人员基本信息" controlwidgetopeStatus="false" enabled="false" id="$refds_hrhi_bd_psndoc" lazyLoad="true" notNullBody="false" objMeta="hrhi.bd_psndoc" voMeta="nc.vo.hi.psndoc.PsndocVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset caption="组织_部门版本信息" controlwidgetopeStatus="false" enabled="false" id="$refds_uap_dept_v" lazyLoad="true" notNullBody="false" objMeta="uap.dept_v" voMeta="nc.vo.vorg.DeptVersionVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset caption="组织_集团" controlwidgetopeStatus="false" enabled="false" id="$refds_uap_group" lazyLoad="true" notNullBody="false" objMeta="uap.group" voMeta="nc.vo.org.GroupVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset caption="考勤地点(自定义档案)" controlwidgetopeStatus="false" enabled="false" id="$refds_uap_Defdoc_HRTA001" lazyLoad="true" notNullBody="false" objMeta="uap.Defdoc-HRTA001_0xx" voMeta="nc.vo.bd.defdoc.DefdocVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <MdDataset caption="考勤档案" controlwidgetopeStatus="false" enabled="false" id="dsTBMPsndoc" lazyLoad="false" notNullBody="false" objMeta="hrta.tbm_psndoc" pageSize="20" voMeta="nc.vo.ta.psndoc.TBMPsndocVO">
+                <FieldRelations>
+                    <FieldRelation id="pk_psndoc_rel" needProcess="true" refDataset="$refds_hrhi_hi_psnjob">
+                        <MatchFields>
+                            <Field readField="pk_psndoc" writeField="pk_psnjob_pk_psndoc">
+                            </Field>
+                            <Field readField="clerkcode" writeField="pk_psnjob_clerkcode">
+                            </Field>
+                            <Field readField="pk_dept" writeField="pk_psnjob_pk_dept">
+                            </Field>
+                            <Field readField="pk_job" writeField="pk_psnjob_pk_job">
+                            </Field>
+                            <Field readField="pk_post" writeField="pk_psnjob_pk_post">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_psnjob" value="pk_psnjob">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_psnjob_pk_psndoc_rel" needProcess="true" refDataset="$refds_hrhi_bd_psndoc">
+                        <MatchFields>
+                            <Field readField="code" writeField="pk_psnjob_pk_psndoc_code">
+                            </Field>
+                            <Field readField="name" writeField="pk_psndoc_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_psndoc" value="pk_psnjob_pk_psndoc">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_org_v_rel" needProcess="true" refDataset="$refds_uap_adminorg_v">
+                        <MatchFields>
+                            <Field readField="name" writeField="pk_org_v_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_vid" value="pk_org_v">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_dept_v_rel" needProcess="true" refDataset="$refds_uap_dept_v">
+                        <MatchFields>
+                            <Field readField="name" writeField="pk_dept_v_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_vid" value="pk_dept_v">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_group_rel" needProcess="true" refDataset="$refds_uap_group">
+                        <MatchFields>
+                            <Field readField="name" writeField="pk_group_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_group" value="pk_group">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_org_rel" needProcess="true" refDataset="$refds_uap_hrorg">
+                        <MatchFields>
+                            <Field readField="name" writeField="pk_org_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_hrorg" value="pk_org">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_team_rel" needProcess="true" refDataset="$refds_mmbd_bd_team">
+                        <MatchFields>
+                            <Field readField="vteamname" writeField="pk_team_vteamname">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="cteamid" value="pk_team">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_adminorg_rel" needProcess="true" refDataset="$refds_uap_hrorg">
+                        <MatchFields>
+                            <Field readField="name" writeField="pk_adminorg_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_hrorg" value="pk_adminorg">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="creator_rel" needProcess="true" refDataset="$refds_uap_user">
+                        <MatchFields>
+                            <Field readField="user_name" writeField="creator_user_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="cuserid" value="creator">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="modifier_rel" needProcess="true" refDataset="$refds_uap_user">
+                        <MatchFields>
+                            <Field readField="user_name" writeField="modifier_user_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="cuserid" value="modifier">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_psnjob_pk_dept_rel" needProcess="true" refDataset="$refds_uap_dept">
+                        <MatchFields>
+                            <Field iscontains="Y" ismatch="Y" readField="pk_dept" writeField="pk_psnjob_pk_dept">
+                            </Field>
+                            <Field readField="name" writeField="pk_psnjob_pk_dept_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_dept" value="pk_psnjob_pk_dept">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_psnjob_pk_post_rel" needProcess="true" refDataset="$refds_hrjf_om_post">
+                        <MatchFields>
+                            <Field iscontains="Y" ismatch="Y" readField="pk_post" writeField="pk_psnjob_pk_post">
+                            </Field>
+                            <Field readField="postname" writeField="pk_psnjob_pk_post_postname">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_post" value="pk_psnjob_pk_post">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_psnjob_pk_job_rel" needProcess="true" refDataset="$refds_hrjf_om_job">
+                        <MatchFields>
+                            <Field readField="jobname" writeField="pk_psnjob_pk_job_jobname">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_job" value="pk_psnjob_pk_job">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                </FieldRelations>
+                <Fields>
+                    <ModifyField i18nName="w_ta-000229" id="pk_psndoc_name" text="姓名">
+                    </ModifyField>
+                    <Field dataType="String" i18nName="w_ta-000230" id="pk_psnjob_clerkcode" langDir="node_ta-res" nullAble="true" primaryKey="false" sourceField="pk_psnjob" text="员工号">
+                    </Field>
+                    <Field dataType="String" i18nName="w_ta-000231" id="pk_psnjob_pk_psndoc_code" langDir="node_ta-res" nullAble="true" primaryKey="false" sourceField="pk_psnjob_pk_psndoc" text="人员编码">
+                    </Field>
+                    <Field dataType="String" i18nName="w_ta-000232" id="pk_psnjob_pk_dept" langDir="node_ta-res" nullAble="true" primaryKey="false" sourceField="pk_psnjob" text="部门">
+                    </Field>
+                    <Field dataType="String" i18nName="w_ta-000233" id="pk_psnjob_pk_job" langDir="node_ta-res" nullAble="true" primaryKey="false" sourceField="pk_psnjob" text="职务">
+                    </Field>
+                    <Field dataType="String" i18nName="w_ta-000234" id="pk_psnjob_pk_post" langDir="node_ta-res" nullAble="true" primaryKey="false" sourceField="pk_psnjob" text="岗位">
+                    </Field>
+                    <Field dataType="String" i18nName="w_ta-000235" id="pk_psnjob_pk_dept_name" langDir="node_ta-res" nullAble="true" primaryKey="false" sourceField="pk_psnjob_pk_dept" text="名称">
+                    </Field>
+                    <Field dataType="String" i18nName="w_ta-000236" id="pk_psnjob_pk_post_postname" langDir="node_ta-res" nullAble="true" primaryKey="false" sourceField="pk_psnjob_pk_post" text="岗位名称">
+                    </Field>
+                    <Field dataType="String" i18nName="w_ta-000237" id="pk_psnjob_pk_job_jobname" langDir="node_ta-res" nullAble="true" primaryKey="false" sourceField="pk_psnjob_pk_job" text="职务名称">
+                    </Field>
+                </Fields>
+                <Events>
+                 	<Event async="true" jsEventClaszz="nc.uap.lfw.core.event.conf.DatasetListener" methodName="onDataLoad_dsTBMPsndoc" name="onDataLoad" onserver="true">
+                        <SubmitRule cardSubmit="false" panelSubmit="false" tabSubmit="false">
+                        </SubmitRule>
+                        <Params>
+                            <Param>
+                                <Name>dataLoadEvent</Name>
+                                <Value>
+                                </Value>
+                                <Desc>                                    <![CDATA[nc.uap.lfw.core.event.DataLoadEvent]]>
+                                </Desc>
+                            </Param>
+                        </Params>
+                        <Action>
+                        </Action>
+                 	</Event>
+                 </Events>
+            </MdDataset>
+            <RefMdDataset caption="组织_业务单元_人力资源组织" controlwidgetopeStatus="false" enabled="false" id="$refds_uap_hrorg" lazyLoad="true" notNullBody="false" objMeta="uap.hrorg" voMeta="nc.vo.org.HROrgVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset caption="用户" controlwidgetopeStatus="false" enabled="false" id="$refds_uap_user" lazyLoad="true" notNullBody="false" objMeta="uap.user" voMeta="nc.vo.sm.UserVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset caption="组织_业务单元_行政组织版本信息" controlwidgetopeStatus="false" enabled="false" id="$refds_uap_adminorg_v" lazyLoad="true" notNullBody="false" objMeta="uap.adminorg_v" voMeta="nc.vo.vorg.AdminOrgVersionVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset caption="组织_部门" controlwidgetopeStatus="false" enabled="false" id="$refds_uap_dept" lazyLoad="true" notNullBody="false" objMeta="uap.dept" voMeta="nc.vo.org.DeptVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset caption="职务" controlwidgetopeStatus="false" enabled="false" id="$refds_hrjf_om_job" lazyLoad="true" notNullBody="false" objMeta="hrjf.om_job" voMeta="nc.vo.om.job.JobVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset caption="组织关系" controlwidgetopeStatus="false" enabled="false" id="$refds_hrhi_hi_psnorg" lazyLoad="true" notNullBody="false" objMeta="hrhi.hi_psnorg" voMeta="nc.vo.hi.psndoc.PsnOrgVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset caption="岗位基本信息" controlwidgetopeStatus="false" enabled="false" id="$refds_hrjf_om_post" lazyLoad="true" notNullBody="false" objMeta="hrjf.om_post" voMeta="nc.vo.om.post.PostVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset caption="班组定义维护表信息" controlwidgetopeStatus="false" enabled="false" id="$refds_mmbd_bd_team" lazyLoad="true" notNullBody="false" objMeta="mmbd.bd_team" voMeta="nc.vo.bd.team.team01.BzdyHeadVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset caption="工作记录" controlwidgetopeStatus="false" enabled="false" id="$refds_hrhi_hi_psnjob" lazyLoad="true" notNullBody="false" objMeta="hrhi.hi_psnjob" voMeta="nc.vo.hi.psndoc.PsnJobVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+        </Datasets>
+        <ComboDatas>
+            <MDComboDataConf caption="考勤档案" fullclassName="ad6d6f46-ec1a-418d-a787-2363cb1fad39" id="combo_dsTBMPsndoc_tbm_prop">
+            </MDComboDataConf>
+        </ComboDatas>
+        <RefNodes>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" i18nName="w_ta-000213" id="refnode_dsTBMPsndoc_pk_psndoc_name" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" read="false" readDs="masterDs" readFields="pk_psndoc,name" refId="" refcode="HR人员" refnodeDelegator="" selLeafOnly="false" text="考勤档案_HR人员" usePower="false" writeDs="dsTBMPsndoc" writeFields="pk_psndoc,pk_psndoc_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" i18nName="w_ta-000214" id="refnode_dsTBMPsndoc_modifier_user_name" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" read="false" readDs="masterDs" readFields="cuserid,user_name" refId="" refcode="用户" refnodeDelegator="" selLeafOnly="false" text="考勤档案_用户" usePower="false" writeDs="dsTBMPsndoc" writeFields="modifier,modifier_user_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" i18nName="w_ta-000215" id="refnode_dsTBMPsndoc_pk_dept_v_name" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" read="false" readDs="masterDs" readFields="pk_vid,name" refId="" refcode="部门版本" refnodeDelegator="" selLeafOnly="false" text="考勤档案_部门版本" usePower="false" writeDs="dsTBMPsndoc" writeFields="pk_dept_v,pk_dept_v_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" i18nName="w_ta-000216" id="refnode_dsTBMPsndoc_pk_place_name" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" read="false" readDs="masterDs" readFields="pk_defdoc,name" refId="" refcode="考勤地点(自定义档案)" refnodeDelegator="" selLeafOnly="false" text="考勤档案_考勤地点(自定义档案)" usePower="false" writeDs="dsTBMPsndoc" writeFields="pk_place,pk_place_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" i18nName="w_ta-000217" id="refnode_dsTBMPsndoc_pk_adminorg_name" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" read="false" readDs="masterDs" readFields="pk_hrorg,name" refId="" refcode="人力资源组织" refnodeDelegator="" selLeafOnly="false" text="考勤档案_人力资源组织" usePower="false" writeDs="dsTBMPsndoc" writeFields="pk_adminorg,pk_adminorg_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" i18nName="w_ta-000218" id="refnode_dsTBMPsndoc_pk_org_v_name" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" read="false" readDs="masterDs" readFields="pk_vid,name" refId="" refcode="行政组织版本" refnodeDelegator="" selLeafOnly="false" text="考勤档案_行政组织版本" usePower="false" writeDs="dsTBMPsndoc" writeFields="pk_org_v,pk_org_v_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" i18nName="w_ta-000219" id="refnode_dsTBMPsndoc_pk_psnjob_pk_psndoc_name" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" read="false" readDs="masterDs" readFields="pk_psnjob,name" refId="" refcode="人员工作记录" refnodeDelegator="" selLeafOnly="false" text="考勤档案_人员工作记录" usePower="false" writeDs="dsTBMPsndoc" writeFields="pk_psnjob,pk_psnjob_pk_psndoc_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" i18nName="w_ta-000214" id="refnode_dsTBMPsndoc_creator_user_name" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" read="false" readDs="masterDs" readFields="cuserid,user_name" refId="" refcode="用户" refnodeDelegator="" selLeafOnly="false" text="考勤档案_用户" usePower="false" writeDs="dsTBMPsndoc" writeFields="creator,creator_user_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" i18nName="w_ta-000221" id="refnode_dsTBMPsndoc_pk_group_name" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" read="false" readDs="masterDs" readFields="pk_group,name" refId="" refcode="集团" refnodeDelegator="" selLeafOnly="false" text="考勤档案_集团" usePower="false" writeDs="dsTBMPsndoc" writeFields="pk_group,pk_group_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" i18nName="w_ta-000217" id="refnode_dsTBMPsndoc_pk_org_name" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" read="false" readDs="masterDs" readFields="pk_hrorg,name" refId="" refcode="人力资源组织" refnodeDelegator="" selLeafOnly="false" text="考勤档案_人力资源组织" usePower="false" writeDs="dsTBMPsndoc" writeFields="pk_org,pk_org_name">
+            </NCRefNode>
+        </RefNodes>
+    </Models>
+    <Components>
+        <GridComp autoRowHeight="false" canCopy="false" caption="考勤档案" dataset="dsTBMPsndoc" editable="false" enabled="true" expandTree="false" id="gridUnGeneratePsn" multiSelect="false" onPaste="" pagenationTop="false" reference="false" selfDefImageBtnRender="" showColInfo="false" showHeader="true" showImageBtn="false" showNumCol="false" showSumRow="false" sortable="true" visible="true">
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="pk_psnjob_clerkcode" fixedHeader="false" i18nName="w_ta-000230" id="pk_psnjob_clerkcode" imageOnly="false" langDir="node_ta-res" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="员工号" textAlign="left" visible="true" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="pk_psnjob_pk_psndoc_code" fixedHeader="false" i18nName="w_ta-000231" id="pk_psnjob_pk_psndoc_code" imageOnly="false" langDir="node_ta-res" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="人员编码" textAlign="left" visible="true" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="Reference" field="pk_psndoc_name" fixedHeader="false" i18nName="w_ta-000229" id="pk_psndoc_name" imageOnly="false" langDir="node_ta-res" nullAble="true" refNode="refnode_dsTBMPsndoc_pk_psndoc_name" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="姓名" textAlign="left" visible="true" width="130">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="pk_psnjob_pk_dept_name" fixedHeader="false" i18nName="w_ta-000232" id="pk_psnjob_pk_dept_name" imageOnly="false" langDir="node_ta-res" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="部门" textAlign="left" visible="true" width="130">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="pk_psnjob_pk_job_jobname" fixedHeader="false" i18nName="w_ta-000233" id="pk_psnjob_pk_job_jobname" imageOnly="false" langDir="node_ta-res" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="职务" textAlign="left" visible="true" width="130">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="pk_psnjob_pk_post_postname" fixedHeader="false" i18nName="w_ta-000234" id="pk_psnjob_pk_post_postname" imageOnly="false" langDir="node_ta-res" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="岗位" textAlign="left" visible="true" width="130">
+            </Column>
+        </GridComp>
+    </Components>
+    <Menus>
+    </Menus>
+</Widget>

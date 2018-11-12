@@ -1,0 +1,2 @@
+insert into md_accessorpara(assosequence,dr,id,industry,paravalue,ts,versiontype) values( 0,null,'cbd1526e-df1f-4d14-8538-7ccda55a0cdf',null,'nc.vo.trn.partmng.AggPartApply','2018-08-23 09:46:24',null)
+go

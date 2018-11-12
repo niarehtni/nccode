@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="GBK"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+<bean id="billType" class="nc.pubapp.pade.platform.vo.Billtype">
+<property name="billtype2List">
+<list>
+</list>
+</property>
+<property name="billtypename" value="TWRT"/>
+<property name="canextendtransaction" value="true"/>
+<property name="component" value="rangetable"/>
+<property name="fwdList">
+<list>
+</list>
+</property>
+<property name="isBizflowBill" value="false"/>
+<property name="isEditableProperty" value="false"/>
+<property name="isEnableButton" value="false"/>
+<property name="isPublished" value="false"/>
+<property name="isaccount" value="false"/>
+<property name="isapprovebill" value="true"/>
+<property name="islock" value="false"/>
+<property name="isroot" value="false"/>
+<property name="istransaction" value="false"/>
+<property name="nodecode" value="68861025"/>
+<property name="pk_billtypecode" value="TWRT"/>
+<property name="pk_billtypeid" value="0001ZZ10000000001GYB"/>
+<property name="pk_org" value="GLOBLE00000000000000"/>
+<property name="systemcode" value="TWHR"/>
+<property name="ts" value="2014-07-29 17:21:25"/>
+</bean>
+
+</beans>

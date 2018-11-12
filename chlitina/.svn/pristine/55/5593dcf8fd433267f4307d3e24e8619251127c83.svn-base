@@ -1,0 +1,33 @@
+package nc.impl.ta.common.utils;
+
+import java.util.List;
+import java.util.Map;
+
+import nc.bs.framework.common.NCLocator;
+import nc.itf.uap.IUAPQueryBS;
+import nc.jdbc.framework.processor.MapListProcessor;
+import nc.vo.pub.BusinessException;
+
+/**
+ *法人公司
+ * @author he
+ *
+ */
+		
+public class CorporateOrg {
+	public String legorg(String pk_org){
+		
+		//获取法人组织
+		//select legal_pk_org from org_leaglorg_mapping where pk_org='0001A110000000001WSM'
+		 IUAPQueryBS iUAPQueryBS = (IUAPQueryBS)NCLocator.getInstance().lookup(IUAPQueryBS.class.getName());   
+		 String legal_pk_org = null;
+		try {
+			List<Map<String,String>> legal_pk_orgs = (List<Map<String,String>>) iUAPQueryBS. executeQuery("select legal_pk_org from org_leaglorg_mapping where pk_org='"+pk_org+"'",new MapListProcessor());
+			legal_pk_org = legal_pk_orgs.get(0).get("legal_pk_org");
+		} catch (BusinessException e1) {
+			
+			e1.printStackTrace();
+		}
+		return legal_pk_org;
+	}
+}

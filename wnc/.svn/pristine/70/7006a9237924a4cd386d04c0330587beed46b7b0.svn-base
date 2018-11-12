@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="gbk"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+	<bean id="general" class="nc.pubapp.pade.code.funnode.FunNodePara">
+        <property name="moduleName" value="twhr" />
+	    <property name="bpfPath" value="test.bpf"/>
+	    <property name="funcode" value="68861005"/>
+	    <property name="clientPackName" value="nc.ui.twhr.basedoc"/>
+			    <property name="metaData" value="basedoc\METADATA\basedoc.bmf"/>
+	    <property name="xmlPath" value="basedoc\src\client\nc\ui\twhr\basedoc\ace\view\Basedoc_config.xml"/>
+	    <property name="metaDataType" value="singleType" />
+		<property name="funcregispath" value="basedoc/funcmodel/basedoc/funcregis/68861005.func" />
+		<property name="quetempath" value="${quetempath}" />
+		<property name="printtempath" value="${printtempath}" />
+		<property name="systembasepath" value="basedoc/systemplatebase/basedoc/68861005/68861005.stb" />
+		<property name="extendSuffix" value=""/>
+		<property name="uif2ModelFilePath" value="basedoc\ace\uif2model\68861005.umf"/>
+		<property name="busiCompName" value="basedoc"/>
+		<property name="metaDataId" value="df95eda2-3a1a-4389-bf4c-c103d30bd5f9"/>
+	</bean>
+
+	<bean id="templet" class="nc.pubapp.pade.code.funnode.Templet">
+		<property name="tempStyle" value="1" />
+		<property name="nodeKey" value="" />
+		<property name="templetPath" value="basedoc/templet/basedoc/billtemplet/68861005.btf" />
+	</bean>
+	
+	<bean id="FilePackNameBean" class="nc.pubapp.pade.code.engine.FilePackNamePara">
+		<property name="filePackNameList">
+			 <list>
+				  <value>nc.ui.twhr.basedoc.action.BasedocAddLineAction.java</value>
+				  <value>nc.ui.twhr.basedoc.handler.BodyAfterEditHandler.java</value>
+				  <value>nc.ui.twhr.basedoc.handler.BodyBeforeEditHandler.java</value>
+			 </list>
+		</property>
+	</bean>
+
+</beans>

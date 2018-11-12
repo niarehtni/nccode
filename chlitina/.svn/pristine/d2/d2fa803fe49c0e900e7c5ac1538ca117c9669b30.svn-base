@@ -1,0 +1,1023 @@
+package nc.impl.ta.timeitem;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import nc.bs.bd.cache.CacheProxy;
+import nc.bs.dao.BaseDAO;
+import nc.bs.framework.common.NCLocator;
+import nc.bs.logging.Logger;
+import nc.bs.uif2.validation.DefaultValidationService;
+import nc.bs.uif2.validation.IValidationService;
+import nc.bs.uif2.validation.ValidationException;
+import nc.bs.uif2.validation.ValidationFrameworkUtil;
+import nc.bs.uif2.validation.Validator;
+import nc.hr.utils.CommonUtils;
+import nc.hr.utils.HRUniqueRuleValidate;
+import nc.hr.utils.ResHelper;
+import nc.impl.ta.basedoc.BasedocServerUtils;
+import nc.itf.ta.IItemQueryService;
+import nc.itf.ta.ITimeItemManageMaintain;
+import nc.itf.ta.ITimeItemQueryMaintain;
+import nc.jdbc.framework.SQLParameter;
+import nc.jdbc.framework.processor.BeanListProcessor;
+import nc.vo.bd.pub.IPubEnumConst;
+import nc.vo.hr.tools.pub.GeneralVO;
+import nc.vo.pub.BusinessException;
+import nc.vo.pub.SuperVO;
+import nc.vo.pub.VOStatus;
+import nc.vo.pub.lang.UFBoolean;
+import nc.vo.ta.PublicLangRes;
+import nc.vo.ta.basedoc.RefDefVOWrapper;
+import nc.vo.ta.leavebalance.LeaveBalanceVO;
+import nc.vo.ta.timeitem.AwayTypeCopyVO;
+import nc.vo.ta.timeitem.LeaveTypeCopyVO;
+import nc.vo.ta.timeitem.OverTimeTypeCopyVO;
+import nc.vo.ta.timeitem.TimeItemClassConverter;
+import nc.vo.ta.timeitem.TimeItemComparator;
+import nc.vo.ta.timeitem.TimeItemCopyVO;
+import nc.vo.ta.timeitem.TimeItemVO;
+import nc.vo.uif2.LoginContext;
+import nc.vo.util.BDReferenceChecker;
+
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang.StringUtils;
+
+public class TimeItemMaintainImpl implements ITimeItemManageMaintain, ITimeItemQueryMaintain {
+
+    @Override
+    public TimeItemCopyVO[] refAwayTypes(LoginContext context, RefDefVOWrapper<TimeItemVO> wrapper)
+	    throws BusinessException {
+	return ref(context, wrapper, TimeItemCopyVO.ITEMTYPE + "=" + TimeItemVO.AWAY_TYPE, TimeItemVO.AWAY_TYPE);
+    }
+
+    @Override
+    public TimeItemCopyVO[] refLeaveTypes(LoginContext context, RefDefVOWrapper<TimeItemVO> wrapper)
+	    throws BusinessException {
+	// 将需要同时引用的数据也放入右边
+	List<TimeItemVO> notExistList = new ArrayList<TimeItemVO>();
+	try {
+	    // getRefDependVOs(notExistList, new ArrayList<TimeItemVO>(),
+	    // context.getPk_org(), wrapper.getRightVOs());
+	} catch (Exception e) {
+	    Logger.error(e.getMessage(), e);
+	    if (e instanceof BusinessException)
+		throw (BusinessException) e;
+	    else
+		throw new BusinessException(e.getMessage(), e);
+	}
+	if (!CollectionUtils.isEmpty(notExistList)) {
+	    if (!ArrayUtils.isEmpty(wrapper.getRightVOs()))
+		CollectionUtils.addAll(notExistList, wrapper.getRightVOs());
+	    wrapper.setRightVOs(notExistList.toArray(new TimeItemVO[0]));
+	}
+	TimeItemCopyVO[] result = ref(context, wrapper, TimeItemCopyVO.ITEMTYPE + "=" + TimeItemVO.LEAVE_TYPE,
+		TimeItemVO.LEAVE_TYPE);
+	if (ArrayUtils.isEmpty(result))
+	    return null;
+	// 引用后前置休假类别可能变化，需要校验前置休假类别
+	// checkDependTypes(result[0]);
+	return result;
+	// 没有使用返回的值在界面显示
+	// return setDependToLeaveTypeCopys(result);
+    }
+
+    @Override
+    public TimeItemCopyVO[] refOvertimeTypes(LoginContext context, RefDefVOWrapper<TimeItemVO> wrapper)
+	    throws BusinessException {
+	return ref(context, wrapper, TimeItemCopyVO.ITEMTYPE + "=" + TimeItemVO.OVERTIME_TYPE, TimeItemVO.OVERTIME_TYPE);
+    }
+
+    public TimeItemCopyVO[] refShutdownTypes(LoginContext context, RefDefVOWrapper<TimeItemVO> wrapper)
+	    throws BusinessException {
+	return ref(context, wrapper, TimeItemCopyVO.ITEMTYPE + "=" + TimeItemVO.SHUTDOWN_TYPE, TimeItemVO.SHUTDOWN_TYPE);
+    }
+
+    /**
+     * 引用指定考勤类别
+     * 
+     * @param context
+     * @param wrapper
+     * @param extraCond
+     * @param itemType
+     * @return
+     * @throws BusinessException
+     */
+    @SuppressWarnings("unchecked")
+    private TimeItemCopyVO[] ref(LoginContext context, RefDefVOWrapper<TimeItemVO> wrapper, String extraCond,
+	    int itemType) throws BusinessException {
+	try {
+	    return (TimeItemCopyVO[]) new TimeItemBasedocServerUtils().ref(
+		    TimeItemClassConverter.getCopyClassByType(itemType), context, wrapper, extraCond);
+	} catch (Exception e) {
+	    Logger.error(e.getMessage(), e);
+	    if (e instanceof BusinessException)
+		throw (BusinessException) e;
+	    else
+		throw new BusinessException(e.getMessage(), e);
+	}
+    }
+
+    @Override
+    public TimeItemCopyVO[] ref(LoginContext context, RefDefVOWrapper<TimeItemVO> wrapper) throws BusinessException {
+	throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public TimeItemCopyVO[] ref(LoginContext context, RefDefVOWrapper<TimeItemVO> wrapper, String extraCond)
+	    throws BusinessException {
+	throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public TimeItemCopyVO[] synchronizeAwayTypes(String pk_org) throws BusinessException {
+	return synchronize(pk_org, TimeItemCopyVO.ITEMTYPE + "=" + TimeItemVO.AWAY_TYPE, TimeItemVO.AWAY_TYPE);
+    }
+
+    @Override
+    public TimeItemCopyVO[] synchronizeLeaveTypes(String pk_org) throws BusinessException {
+	return synchronize(pk_org, TimeItemCopyVO.ITEMTYPE + "=" + TimeItemVO.LEAVE_TYPE, TimeItemVO.LEAVE_TYPE);
+    }
+
+    @Override
+    public TimeItemCopyVO[] synchronizeOvertimeTypes(String pk_org) throws BusinessException {
+	return synchronize(pk_org, TimeItemCopyVO.ITEMTYPE + "=" + TimeItemVO.OVERTIME_TYPE, TimeItemVO.OVERTIME_TYPE);
+    }
+
+    /**
+     * 同步指定考勤类别的拷贝
+     * 
+     * @param pk_org
+     * @param extraCond
+     * @param itemType
+     * @return
+     * @throws BusinessException
+     */
+    @SuppressWarnings("unchecked")
+    public TimeItemCopyVO[] synchronize(String pk_org, String extraCond, int itemType) throws BusinessException {
+	try {
+	    return (TimeItemCopyVO[]) new BasedocServerUtils().synchronize(
+		    TimeItemClassConverter.getCopyClassByType(itemType), pk_org, extraCond);
+	} catch (Exception e) {
+	    Logger.error(e.getMessage(), e);
+	    if (e instanceof BusinessException)
+		throw (BusinessException) e;
+	    else
+		throw new BusinessException(e.getMessage(), e);
+	}
+    }
+
+    @Override
+    public TimeItemCopyVO synchronize(TimeItemCopyVO vo) throws BusinessException {
+	try {
+	    vo.setIssynchronized(UFBoolean.TRUE);
+	    TimeItemCopyVO returnVO = new TimeItemBasedocServerUtils().synchronize(vo);
+	    if (returnVO instanceof LeaveTypeCopyVO) {
+		// 同步后前置类别可能修改，需要校验前置类别
+		checkDependTypes(vo.getPk_org(), (LeaveTypeCopyVO) vo);
+		return setDependToLeaveTypeCopys(new LeaveTypeCopyVO[] { (LeaveTypeCopyVO) returnVO })[0];
+	    }
+	    return returnVO;
+	} catch (Exception e) {
+	    Logger.error(e.getMessage(), e);
+	    if (e instanceof BusinessException)
+		throw (BusinessException) e;
+	    else
+		throw new BusinessException(e.getMessage(), e);
+	}
+    }
+
+    @Override
+    public TimeItemCopyVO[] synchronize(TimeItemCopyVO[] vos) throws BusinessException {
+	try {
+	    return new BasedocServerUtils().synchronize(vos);
+	} catch (Exception e) {
+	    Logger.error(e.getMessage(), e);
+	    if (e instanceof BusinessException)
+		throw (BusinessException) e;
+	    else
+		throw new BusinessException(e.getMessage(), e);
+	}
+    }
+
+    @Override
+    public TimeItemCopyVO[] synchronize(String pk_org) throws BusinessException {
+	throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public TimeItemCopyVO[] synchronize(String pk_org, String extraCond) throws BusinessException {
+	throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void delete(TimeItemCopyVO vo) throws BusinessException {
+	TimeItemBasedocServerUtils server = new TimeItemBasedocServerUtils();
+	if (vo instanceof LeaveTypeCopyVO)
+	    server.checkBeforeDependDelete(vo, null);
+	// 校验此考勤类别是否被日月报项目依赖
+	if (NCLocator.getInstance().lookup(IItemQueryService.class).isTimeitemUsed(vo, true))
+	    throw new BusinessException(ResHelper.getString("6017basedoc", "06017basedoc1668")
+	    /* @res "数据已被引用，不能删除！" */);
+	server.delete(vo);
+    }
+
+    @Override
+    public TimeItemCopyVO insert(TimeItemCopyVO vo) throws BusinessException {
+	validateVOs(vo.toDefVO());
+	vo.setStatus(VOStatus.NEW);
+	// 校验前置假
+	// checkDependTypes(vo);
+	TimeItemCopyVO returnVO = new BasedocServerUtils().insert(vo);
+	if (returnVO instanceof LeaveTypeCopyVO) {
+	    checkDependTypes(vo.getPk_org(), (LeaveTypeCopyVO) vo);
+	    return setDependToLeaveTypeCopys(new LeaveTypeCopyVO[] { (LeaveTypeCopyVO) returnVO })[0];
+	}
+	return returnVO;
+    }
+
+    @Override
+    public TimeItemCopyVO update(TimeItemCopyVO vo) throws BusinessException {
+	validateVOs(vo.toDefVO());
+	vo.setStatus(VOStatus.UPDATED);
+	// 校验前置假
+	// checkDependTypes(vo);
+	TimeItemCopyVO returnVO = new BasedocServerUtils().update(vo);
+	if (returnVO instanceof LeaveTypeCopyVO) {
+	    checkDependTypes(vo.getPk_org(), (LeaveTypeCopyVO) vo);
+	    return setDependToLeaveTypeCopys(new LeaveTypeCopyVO[] { (LeaveTypeCopyVO) returnVO })[0];
+	}
+	return returnVO;
+    }
+
+    /**
+     * 校验前置假的循环依赖 调用此方法的时候，应该保证所有的数据都入库了
+     * 
+     * @param pk_org
+     * @param copyVO
+     *            此次insert或者update的vo
+     * @throws BusinessException
+     */
+    private void checkDependTypes(String pk_org, LeaveTypeCopyVO copyVO) throws BusinessException {
+	Map<String, LeaveTypeCopyVO> typeMap = new TimeItemServiceImpl().queryLeaveCopyTypeMapByOrg(pk_org);
+	String[] pk_types = typeMap.keySet().toArray(new String[0]);
+	Arrays.sort(pk_types, new LeaveTypeComparator(typeMap));// 用排序器来实现排序。其实这里用不着排序，只是因为排序器也兼着校验循环依赖的职责，因此调用一下顺便做一下循环依赖的校验
+	for (String pk_type : pk_types) {
+	    checkDependSetPeriod(typeMap.get(pk_type), typeMap);
+	}
+    }
+
+    /**
+     * 校验前置假与本类别的结算周期类型不匹配的情况
+     * 
+     * @param copyVO
+     * @param typeMap
+     * @throws BusinessException
+     */
+    private void checkDependSetPeriod(LeaveTypeCopyVO copyVO, Map<String, LeaveTypeCopyVO> typeMap)
+	    throws BusinessException {
+	LeaveTypeCopyVO[] dependTypes = getDependLeaveTypes(copyVO.getPk_timeitem(), typeMap);
+	// 如果此次新增/修改的类别是按年/入职日结算，则其前置假的计算周期应该与之相等
+	int thisSetPeriod = copyVO.getLeavesetperiod() == null ? -1 : copyVO.getLeavesetperiod().intValue();
+	if (!ArrayUtils.isEmpty(dependTypes)) {
+	    // 如果是按年/入职日结算，则前置假的结算周期必须与之相等
+	    if (copyVO.isSetPeriodYearORDate()) {
+		for (LeaveTypeCopyVO pre : dependTypes) {
+		    if (pre.getLeavesetperiod().intValue() != thisSetPeriod) {
+			throw new BusinessException(ResHelper.getString("6017basedoc", "06017basedoc1669"
+			/* @res "前置假{0}是按{1}结算,{2}的前置假只能是按{3}结算" */, pre.getMultilangName(),
+				pre.getLeaveSetPeriodStr(), copyVO.getMultilangName(), copyVO.getLeaveSetPeriodStr()));
+		    }
+		}
+	    }
+	    // 如果是按月计算，则前置假的结算周期要么是年，要么是月。如果二者皆有，则必须保证按年结算的前置假在按月结算的之前
+	    else {
+		StringBuilder monthStr = new StringBuilder();
+		for (LeaveTypeCopyVO pre : dependTypes) {
+		    int setPeriod = pre.getLeavesetperiod().intValue();
+		    if (setPeriod == LeaveTypeCopyVO.LEAVESETPERIOD_DATE) {// 如果前置假按入职日结算则抛异常
+			throw new BusinessException(ResHelper.getString("6017basedoc", "06017basedoc1670"
+			/* @res "前置假{0}是按入职日期结算,{1}的前置假只能是按年或者期间结算" */, pre.getMultilangName(),
+				copyVO.getMultilangName()));
+		    }
+		    if (setPeriod == LeaveTypeCopyVO.LEAVESETPERIOD_MONTH)
+			monthStr.append(pre.getMultilangName()).append(PublicLangRes.getChineseDot());
+		    else if (monthStr.length() > 0) {
+			throw new BusinessException(ResHelper.getString("6017basedoc", "06017basedoc1671"
+			/* @res "{0}是按年结算的类别,顺序必须在按期间结算的类别{1}之前!" */, pre.getMultilangName(),
+				monthStr.deleteCharAt(monthStr.length() - 1).toString()));
+		    }
+		}
+	    }
+	}
+    }
+
+    /**
+     * 唯一性校验
+     * 
+     * @param vo
+     * @throws BusinessException
+     */
+    public void validateVOs(TimeItemVO vo) throws BusinessException {
+	IValidationService validateService = ValidationFrameworkUtil
+		.createValidationService(new Validator[] { new HRUniqueRuleValidate() });
+	validateService.validate(vo);
+    }
+
+    /**
+     * 查询引用指定类别的所有拷贝
+     * 
+     * @param vo
+     * @return
+     * @throws BusinessException
+     */
+    @SuppressWarnings("unchecked")
+    public TimeItemCopyVO[] getRefVOs(TimeItemCopyVO vo) throws BusinessException {
+	String condition = " " + TimeItemCopyVO.PK_TIMEITEM + "=? ";
+	SQLParameter para = new SQLParameter();
+	para.addParam(vo.getPk_timeitem());
+	BaseDAO dao = new BaseDAO();
+	// 查询所有引用的拷贝
+	Collection<TimeItemCopyVO> refCol = dao.retrieveByClause(
+		TimeItemClassConverter.getCopyClassByType(vo.getItemtype()), condition, para);
+	// 取定义VO
+	TimeItemVO defVO = (TimeItemVO) dao.retrieveByPK(TimeItemClassConverter.getDefClassByType(vo.getItemtype()),
+		vo.getPk_timeitem());
+	for (TimeItemCopyVO col : refCol) {
+	    col.syncFromDefVO(defVO);
+	}
+	return (TimeItemCopyVO[]) CommonUtils.toArray(TimeItemClassConverter.getCopyClassByType(vo.getItemtype()),
+		refCol);
+    }
+
+    @Override
+    public TimeItemCopyVO use(TimeItemCopyVO vo) throws BusinessException {
+	if (vo instanceof LeaveTypeCopyVO)
+	    new TimeItemBasedocServerUtils().checkBeforeUse(vo);
+	return setTimeItemEnabled(vo, IPubEnumConst.ENABLESTATE_ENABLE);
+    }
+
+    @Override
+    public TimeItemCopyVO unUse(TimeItemCopyVO vo) throws BusinessException {
+	if (vo instanceof LeaveTypeCopyVO)
+	    new TimeItemBasedocServerUtils().checkBeforeUnuse(vo);
+	// 校验此考勤类别是否被日月报项目依赖
+	if (NCLocator.getInstance().lookup(IItemQueryService.class).isTimeitemUsed(vo, false))
+	    throw new BusinessException(ResHelper.getString("6017basedoc", "06017basedoc1672")
+	    /* @res "数据已被考勤日月报项目引用，不能停用！" */);
+	return setTimeItemEnabled(vo, IPubEnumConst.ENABLESTATE_DISABLE);
+    }
+
+    /**
+     * 设置启用/停用状态
+     * 
+     * @param vo
+     * @param enableState
+     * @return
+     * @throws BusinessException
+     */
+    private TimeItemCopyVO setTimeItemEnabled(TimeItemCopyVO vo, int enableState) throws BusinessException {
+	BaseDAO dao = new BaseDAO();
+	vo.setEnablestate(enableState);
+	TimeItemVO defVO = vo.toDefVO();
+	// 如果此类别是当前组织定义的,则主表信息一并修改
+	if (vo.getPk_org().equals(vo.getPk_deforg())) {
+	    defVO.setCreator(vo.getCreator());
+	    defVO.setCreationtime(vo.getCreationtime());
+	    defVO.setModifier(vo.getModifier());
+	    defVO.setModifiedtime(vo.getModifiedtime());
+	    defVO.setEnablestate(enableState);
+	    dao.updateVO(defVO);
+	    CacheProxy.fireDataUpdated(TimeItemVO.getDefaultTableName());
+	}
+	dao.updateVO(vo);
+	CacheProxy.fireDataUpdated(TimeItemCopyVO.getDefaultTableName());
+	// 设置返回值
+	vo = (TimeItemCopyVO) dao.retrieveByPK(vo.getClass(), ((SuperVO) vo).getPrimaryKey());
+	vo.syncFromDefVO(defVO);
+	if (vo instanceof LeaveTypeCopyVO)
+	    return setDependToLeaveTypeCopys(new LeaveTypeCopyVO[] { (LeaveTypeCopyVO) vo })[0];
+	return vo;
+    }
+
+    @Override
+    public RefDefVOWrapper<TimeItemVO> queryAwayRefDefVOs(LoginContext context) throws BusinessException {
+	return queryRefDefVOs(context, TimeItemCopyVO.ITEMTYPE + "=" + TimeItemVO.AWAY_TYPE, TimeItemVO.AWAY_TYPE);
+    }
+
+    @Override
+    public RefDefVOWrapper<TimeItemVO> queryLeaveRefDefVOs(LoginContext context) throws BusinessException {
+	return queryRefDefVOs(context, TimeItemCopyVO.ITEMTYPE + "=" + TimeItemCopyVO.LEAVE_TYPE,
+		TimeItemCopyVO.LEAVE_TYPE);
+    }
+
+    @Override
+    public RefDefVOWrapper<TimeItemVO> queryOvertimeRefDefVOs(LoginContext context) throws BusinessException {
+	return queryRefDefVOs(context, TimeItemCopyVO.ITEMTYPE + "=" + TimeItemCopyVO.OVERTIME_TYPE,
+		TimeItemCopyVO.OVERTIME_TYPE);
+    }
+
+    /**
+     * 根据context查询指定考勤类别的引用信息
+     * 
+     * @param context
+     * @param extraCond
+     * @param itemType
+     * @return
+     * @throws BusinessException
+     */
+    @SuppressWarnings("unchecked")
+    public RefDefVOWrapper<TimeItemVO> queryRefDefVOs(LoginContext context, String extraCond, int itemType)
+	    throws BusinessException {
+	try {
+	    RefDefVOWrapper<TimeItemVO> refWrapper = new BasedocServerUtils().queryRefDefVODisplayWarraper(
+		    TimeItemClassConverter.getDefClassByType(itemType), context, extraCond);
+	    TimeItemVO[] leftObjs = refWrapper.getLeftVOs();
+	    List<TimeItemVO> newObjs = new ArrayList<TimeItemVO>();
+	    if (ArrayUtils.isEmpty(leftObjs))
+		return refWrapper;
+
+	    // 过滤左树已停用项目,左树不显示已停用的项目
+	    for (TimeItemVO leftObj : leftObjs) {
+		// 如果是组织节点，先查看集团是否有此定义的项目拷贝
+		if (!context.getPk_org().equals(context.getPk_group())) {
+		    TimeItemCopyVO groupVO = null;
+		    try {
+			groupVO = (TimeItemCopyVO) new BasedocServerUtils().queryByPkDef(
+				TimeItemClassConverter.getCopyClassByType(itemType), context.getPk_group(),
+				leftObj.getPk_timeitem());
+		    } catch (Exception e) {
+			Logger.error(e.getMessage(), e);
+			throw new BusinessException(e.getMessage(), e);
+		    }
+		    // 如果集团存在，则只看集团的是否停用决定是否显示
+		    if (groupVO != null) {
+			if (groupVO.getEnablestate() == IPubEnumConst.ENABLESTATE_ENABLE)
+			    newObjs.add(leftObj);
+			continue;
+		    }
+		}
+		// 如果是集团节点，或组织节点但在集团不存在此定义的项目拷贝,则直接查看全局
+		if (leftObj.getEnablestate() == IPubEnumConst.ENABLESTATE_ENABLE)
+		    newObjs.add(leftObj);
+	    }
+	    refWrapper.setLeftVOs(newObjs.toArray(new TimeItemVO[0]));
+
+	    return refWrapper;
+	} catch (ClassNotFoundException e) {
+	    Logger.error(e.getMessage(), e);
+	    throw new BusinessException(e.getMessage(), e);
+	}
+    }
+
+    /**
+     * 引用前校验, 若待引用数据有本组织不存在的前置休假类别，返回提示 若待引用数据在本组织的前置休假类别已停用，抛异常
+     * 若待删除数据是组织内其它数据的前置休假类别，抛异常
+     * 
+     * @param context
+     * @param wrapper
+     * @return
+     * @throws BusinessException
+     */
+    public String checkBeforeRef(LoginContext context, RefDefVOWrapper<TimeItemVO> wrapper) throws BusinessException {
+	TimeItemVO[] allDeleteVOs = wrapper.getLeftVOs();
+	TimeItemVO[] allRefVOs = wrapper.getRightVOs();
+	TimeItemBasedocServerUtils server = new TimeItemBasedocServerUtils();
+	// 删除校验
+	if (!ArrayUtils.isEmpty(allDeleteVOs)) {
+	    for (TimeItemVO deleteVO : allDeleteVOs) {
+		TimeItemCopyVO curDeleteVO = queryByDefVOPk(context.getPk_org(), deleteVO.getPk_timeitem(),
+			TimeItemCopyVO.LEAVE_TYPE);
+		// 如果当前组织不存在，不必做删除校验
+		if (curDeleteVO == null)
+		    continue;
+		if (ArrayUtils.contains(TimeItemCopyVO.NOTDELETECODEARRAY_LEAVE, curDeleteVO.getTimeitemcode()))
+		    throw new BusinessException(ResHelper.getString("6017basedoc", "06017basedoc1656")
+		    /* @res "年假、加班转调休、哺乳假不可取消引用！" */);
+		String errMsg = ResHelper.getString("6017basedoc", "06017basedoc1658")
+		/* @res "类别名称： " */+ curDeleteVO.getMultilangName();
+		// 校验此考勤类别是否被日月报项目依赖
+		if (NCLocator.getInstance().lookup(IItemQueryService.class).isTimeitemUsed(curDeleteVO, true))
+		    throw new BusinessException(errMsg + ResHelper.getString("6017basedoc", "06017basedoc1659")
+		    /* @res " 数据已被考勤日月报项目引用，不能删除！" */);
+		DefaultValidationService validationService = new DefaultValidationService();
+		validationService.addValidator(BDReferenceChecker.getInstance());
+		try {
+		    validationService.validate(curDeleteVO);
+		} catch (ValidationException e) {
+		    throw new BusinessException(errMsg + ResHelper.getString("6017basedoc", "06017basedoc1660")
+		    /* @res " 数据已被引用，不能删除！" */);
+		}
+		// 校验前置休假类别
+		server.checkBeforeDependDelete(curDeleteVO, allDeleteVOs);
+	    }
+	}
+	// 引用校验
+	return checkBeforeLeaveTypeRef(context.getPk_org(), allRefVOs);
+    }
+
+    /**
+     * 引用休假类别前，对引用框右边数据的校验
+     * 
+     * @param pk_org
+     * @param allRefVOs
+     * @return
+     * @throws BusinessException
+     */
+    private String checkBeforeLeaveTypeRef(String pk_org, TimeItemVO[] allRefVOs) throws BusinessException {
+	List<TimeItemVO> notExistList = new ArrayList<TimeItemVO>();
+	List<TimeItemVO> unuseList = new ArrayList<TimeItemVO>();
+	try {
+	    // getRefDependVOs(notExistList, unuseList, pk_org, allRefVOs);
+	} catch (Exception e) {
+	    if (e instanceof BusinessException) {
+		Logger.error(e.getMessage(), e);
+		throw (BusinessException) e;
+	    } else {
+		Logger.error(e.getMessage(), e);
+		throw new BusinessException(e.getMessage(), e);
+	    }
+	}
+
+	if (!CollectionUtils.isEmpty(unuseList)) {
+	    String msg = ResHelper.getString("6017basedoc", "06017basedoc1673")
+	    /* @res "引用的休假类别存在已停用的前置休假类别：" */;
+	    for (TimeItemVO unuseVO : unuseList)
+		msg += unuseVO.getMultilangName() + ",";
+	    msg += ResHelper.getString("6017basedoc", "06017basedoc1674")
+	    /* @res "请先启用这些类别！" */;
+	    throw new BusinessException(msg);
+	}
+	if (!CollectionUtils.isEmpty(notExistList)) {
+	    String returnMsg = ResHelper.getString("6017basedoc", "06017basedoc1675")
+	    /* @res "引用的休假类别存在前置休假类别：" */;
+	    for (TimeItemVO notExistVO : notExistList)
+		returnMsg += notExistVO.getMultilangName() + ",";
+	    returnMsg += ResHelper.getString("6017basedoc", "06017basedoc1609")
+	    /* @res "是否确定将这些内容全部引用？" */;
+	    return returnMsg;
+	}
+	return null;
+    }
+
+    /**
+     * 取引用上级休假类别时，本组织还需要同时引用的休假类别
+     * 
+     * @param notExistList
+     * @param unuseList
+     * @param pk_org
+     * @param allRefVOs
+     * @throws BusinessException
+     * @throws ClassNotFoundException
+     * @throws InstantiationException
+     * @throws IllegalAccessException
+     */
+    // private void getRefDependVOs(List<TimeItemVO> notExistList,
+    // List<TimeItemVO> unuseList, String pk_org, TimeItemVO[] allRefVOs) throws
+    // BusinessException, ClassNotFoundException, InstantiationException,
+    // IllegalAccessException{
+    // if(ArrayUtils.isEmpty(allRefVOs))
+    // return;
+    // // 取所在组织的所有休假类别
+    // TimeItemCopyVO[] curCopyVOs =
+    // queryCopyTypesByOrg(TimeItemCopyVO.LEAVE_TYPE, pk_org,
+    // TimeItemCopyVO.ITEMTYPE+"="+TimeItemCopyVO.LEAVE_TYPE);
+    // Map<String, TimeItemCopyVO> curVOMap =
+    // CommonMethods.toMap(TimeItemCopyVO.PK_TIMEITEM, curCopyVOs);
+    //
+    // for(TimeItemVO allRefVO:allRefVOs){
+    //
+    // //本组织已有则不需要检验
+    // TimeItemCopyVO copyVO = queryByDefVOPk(pk_org, allRefVO.getPk_timeitem(),
+    // TimeItemCopyVO.LEAVE_TYPE);
+    // if(copyVO!=null)
+    // continue;
+    // //先从集团找，集团没有再找全局的
+    // copyVO = queryByDefVOPk(allRefVO.getPk_group(),
+    // allRefVO.getPk_timeitem(), TimeItemCopyVO.LEAVE_TYPE);
+    // if(copyVO==null)
+    // copyVO = queryByDefVOPk(IOrgConst.GLOBEORG, allRefVO.getPk_timeitem(),
+    // TimeItemCopyVO.LEAVE_TYPE);
+    // // 取所在组织的所有休假类别
+    // TimeItemCopyVO[] allCopyVOs =
+    // queryCopyTypesByOrg(TimeItemCopyVO.LEAVE_TYPE, copyVO.getPk_org(),
+    // TimeItemCopyVO.ITEMTYPE+"="+TimeItemCopyVO.LEAVE_TYPE);
+    // Map<String, TimeItemCopyVO> allVOMap =
+    // CommonMethods.toMap(TimeItemCopyVO.PK_TIMEITEM, allCopyVOs);
+    // List<TimeItemCopyVO> dependList = new ArrayList<TimeItemCopyVO>();
+    // getdependTypes(dependList, copyVO, allVOMap);
+    // // 如果没有前置休假
+    // if(CollectionUtils.isEmpty(dependList))
+    // continue;
+    // for(TimeItemCopyVO dependVO:dependList){
+    // // 如果当前组织不存在且待引用中也不存在此引用则加入不存在列表
+    // if(curVOMap.get(dependVO.getPk_timeitem())==null &&
+    // !ArrayUtils.contains(allRefVOs, dependVO)){
+    // notExistList.add(dependVO.toDefVO());
+    // continue;
+    // }
+    // if(IPubEnumConst.ENABLESTATE_DISABLE==curVOMap.get(dependVO.getPk_timeitem()).getEnablestate().intValue()){
+    // unuseList.add(dependVO.toDefVO());
+    // continue;
+    // }
+    // }
+    // }
+    // }
+
+    @Override
+    public RefDefVOWrapper<TimeItemVO> queryDependLeaveDefVOs(LoginContext context, String pks, String thisPK,
+	    int thisSetPeriod) throws BusinessException {
+	// 拼主键数组
+	String[] pk_timeitems = StringUtils.isEmpty(pks) ? null : pks.split(",");
+	// 取当前组织所有的休假类别
+	// String condition = IBaseServiceConst.ENABLESTATE_FIELD + "=" +
+	// IPubEnumConst.ENABLESTATE_ENABLE;
+	LeaveTypeCopyVO[] allVOs = queryLeaveCopyTypesByOrg(context.getPk_org());
+	Map<String, LeaveTypeCopyVO> allVOMap = CommonUtils.toMap(TimeItemCopyVO.PK_TIMEITEM, allVOs);
+	// 设置返回值
+	RefDefVOWrapper<TimeItemVO> wrapper = new RefDefVOWrapper<TimeItemVO>();
+	List<TimeItemVO> leftObjs = new ArrayList<TimeItemVO>();
+	List<TimeItemVO> rightObjs = new ArrayList<TimeItemVO>();
+	// 如果当前组织没有休假类别(正常情况下不可能出现)
+	if (ArrayUtils.isEmpty(allVOs)) {
+	    wrapper.setLeftVOs(leftObjs.toArray(new TimeItemVO[0]));
+	    wrapper.setRightVOs(rightObjs.toArray(new TimeItemVO[0]));
+	    return wrapper;
+	}
+	Map<String, TimeItemVO> timeitemMap = new HashMap<String, TimeItemVO>();
+	// 设置左边VO数组
+	for (TimeItemCopyVO curVO : allVOs) {
+	    TimeItemVO defVO = curVO.toDefVO();
+	    timeitemMap.put(defVO.getPk_timeitem(), defVO);
+	    // 如果当前类别已经在右边了，或者被停用了，或者是自身，或者是哺乳假，则不出现在左边
+	    if (ArrayUtils.contains(pk_timeitems, defVO.getPk_timeitem())
+		    || IPubEnumConst.ENABLESTATE_ENABLE != curVO.getEnablestate().intValue()
+		    || (!StringUtils.isEmpty(thisPK) && curVO.getPk_timeitemcopy().equals(thisPK))
+		    || (curVO.getIslactation() != null && curVO.getIslactation().booleanValue()))
+		continue;
+	    // 如果当前类别与本类别的期间类型对不上，则也不出现在左边。现在的要求是：按年结算的前置一定只能是按年结算的，按入职日结算的前置一定只能是按入职日结算的，按期间结算的前置只能是按年或按期间结算的
+	    int leavesetperiod = curVO.getLeavesetperiod().intValue();
+	    if ((thisSetPeriod == TimeItemCopyVO.LEAVESETPERIOD_DATE || thisSetPeriod == TimeItemCopyVO.LEAVESETPERIOD_YEAR)
+		    && leavesetperiod != thisSetPeriod)
+		continue;
+	    if (thisSetPeriod == TimeItemCopyVO.LEAVESETPERIOD_MONTH
+		    && leavesetperiod == TimeItemCopyVO.LEAVESETPERIOD_DATE)
+		continue;
+	    // 如果当前类别的前置假中（包含间接前置假）有本类别，则也不出现在左边，否则会出现循环引用
+	    if (!StringUtils.isEmpty(thisPK)) {
+		TimeItemCopyVO[] curDependTypes = getDependLeaveTypes(curVO.getPk_timeitem(), allVOMap);
+		if (!ArrayUtils.isEmpty(curDependTypes)) {
+		    boolean isDependThis = false;
+		    for (TimeItemCopyVO curDependType : curDependTypes) {
+			if (curDependType.getPk_timeitemcopy().equals(thisPK)) {
+			    isDependThis = true;
+			    break;
+			}
+		    }
+		    if (isDependThis)
+			continue;
+		}
+	    }
+	    leftObjs.add(defVO);
+	}
+	// 如果没有已设置的休假类别
+	if (ArrayUtils.isEmpty(pk_timeitems)) {
+	    wrapper.setLeftVOs(leftObjs.toArray(new TimeItemVO[0]));
+	    wrapper.setRightVOs(rightObjs.toArray(new TimeItemVO[0]));
+	    return wrapper;
+	}
+	// 右边VO数组需要按顺序显示
+	for (String pk_timeitem : pk_timeitems) {
+	    TimeItemVO defVO = timeitemMap.get(pk_timeitem);
+	    if (defVO == null)
+		continue;
+	    rightObjs.add(defVO);
+	}
+	wrapper.setLeftVOs(leftObjs.toArray(new TimeItemVO[0]));
+	wrapper.setRightVOs(rightObjs.toArray(new TimeItemVO[0]));
+	return wrapper;
+    }
+
+    @Override
+    public RefDefVOWrapper<TimeItemVO> queryRefDefVOs(LoginContext context) throws BusinessException {
+	throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public RefDefVOWrapper<TimeItemVO> queryRefDefVOs(LoginContext context, String extraCond) throws BusinessException {
+	throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public AwayTypeCopyVO[] queryAwayCopyTypesByOrg(String pk_org) throws BusinessException {
+	return queryAwayCopyTypesByOrg(pk_org, null);
+    }
+
+    @Override
+    public LeaveTypeCopyVO[] queryLeaveCopyTypesByOrg(String pk_org) throws BusinessException {
+	return queryLeaveCopyTypesByOrg(pk_org, null);
+    }
+
+    @Override
+    public OverTimeTypeCopyVO[] queryOvertimeCopyTypesByOrg(String pk_org) throws BusinessException {
+	return queryOvertimeCopyTypesByOrg(pk_org, null);
+    }
+
+    @Override
+    public AwayTypeCopyVO[] queryAwayCopyTypesByOrg(String pk_org, String cond) throws BusinessException {
+	if (StringUtils.isEmpty(cond)) {
+	    cond = TimeItemCopyVO.ITEMTYPE + "=" + TimeItemCopyVO.AWAY_TYPE;
+	} else {
+	    cond += " and " + TimeItemCopyVO.ITEMTYPE + "=" + TimeItemCopyVO.AWAY_TYPE;
+	}
+	return (AwayTypeCopyVO[]) queryCopyTypesByOrg(TimeItemCopyVO.AWAY_TYPE, pk_org, cond);
+    }
+
+    @Override
+    public LeaveTypeCopyVO[] queryLeaveCopyTypesByOrg(String pk_org, String cond) throws BusinessException {
+	// if(StringUtils.isEmpty(cond)){
+	// //20180906 xyb 根据休假计划过滤休假类别
+	// cond =
+	// TimeItemCopyVO.ITEMTYPE+"="+TimeItemCopyVO.LEAVE_TYPE+" and "+"( isleaveplan is null or isleaveplan = 'N')";
+	// } else {
+	// //20180906 xyb 根据休假计划过滤休假类别
+	// cond += " and " +
+	// TimeItemCopyVO.ITEMTYPE+"="+TimeItemCopyVO.LEAVE_TYPE
+	// +" and "+"( isleaveplan is null or isleaveplan = 'N')";
+	// }
+	LeaveTypeCopyVO[] LeaveTypeCopys = setDependToLeaveTypeCopys((LeaveTypeCopyVO[]) queryCopyTypesByOrg(
+		TimeItemCopyVO.LEAVE_TYPE, pk_org, cond));
+	if (!ArrayUtils.isEmpty(LeaveTypeCopys)) {
+	    Arrays.sort(LeaveTypeCopys, new TimeItemComparator());
+	}
+	return LeaveTypeCopys;
+    }
+
+    /**
+     * 设置休假类别前置规则VO
+     * 
+     * @param curVOs
+     * @return
+     * @throws BusinessException
+     */
+    private LeaveTypeCopyVO[] setDependToLeaveTypeCopys(LeaveTypeCopyVO[] curVOs) throws BusinessException {
+	if (ArrayUtils.isEmpty(curVOs))
+	    return null;
+	LeaveTypeCopyVO[] copyVOs = curVOs;
+	String pk_org = copyVOs[0].getPk_org();
+	// 查询当前组织下所有休假类别
+	TimeItemCopyVO[] allVOs = queryCopyTypesByOrg(TimeItemCopyVO.LEAVE_TYPE, pk_org, TimeItemCopyVO.ITEMTYPE + "="
+		+ TimeItemCopyVO.LEAVE_TYPE);
+	// 用map存储定义信息
+	Map<String, TimeItemVO> timeitemMap = new HashMap<String, TimeItemVO>();
+	// 设置左边VO数组
+	for (TimeItemCopyVO allVO : allVOs) {
+	    TimeItemVO defVO = allVO.toDefVO();
+	    timeitemMap.put(defVO.getPk_timeitem(), defVO);
+	}
+	// 设置前置规则定义VO
+	for (LeaveTypeCopyVO copyVO : copyVOs) {
+	    // 取前置休假类别主键
+	    String[] dependTypes = StringUtils.isEmpty(copyVO.getPk_dependleavetypes()) ? null : copyVO
+		    .getPk_dependleavetypes().split(",");
+	    if (ArrayUtils.isEmpty(dependTypes))
+		continue;
+	    List<TimeItemVO> dependList = new ArrayList<TimeItemVO>();
+	    for (String dependType : dependTypes) {
+		TimeItemVO dependVO = timeitemMap.get(dependType);
+		if (dependVO == null)
+		    continue;
+		dependList.add(dependVO);
+	    }
+	    copyVO.setDependVOs(dependList.toArray(new TimeItemVO[0]));
+	}
+	return copyVOs;
+    }
+
+    @Override
+    public OverTimeTypeCopyVO[] queryOvertimeCopyTypesByOrg(String pk_org, String cond) throws BusinessException {
+	if (StringUtils.isEmpty(cond)) {
+	    cond = TimeItemCopyVO.ITEMTYPE + "=" + TimeItemCopyVO.OVERTIME_TYPE;
+	} else {
+	    cond += " and " + TimeItemCopyVO.ITEMTYPE + "=" + TimeItemCopyVO.OVERTIME_TYPE;
+	}
+	return (OverTimeTypeCopyVO[]) queryCopyTypesByOrg(TimeItemCopyVO.OVERTIME_TYPE, pk_org, cond);
+    }
+
+    /**
+     * 校验指定休假类别 1.前置休假是否存在循环前置 2.校验此vo前置假的结算周期类型是否符合要求
+     * 如果此vo是修改，则还需要校验所有以此vo为前置假的休假类别的前置假的结算周期类型是否符合要求 前置假的结算周期类型的要求：
+     * 按年结算的类别，前置假必须是按年结算 按入职日结算的类别，前置假必须是按入职日结算
+     * 按期间计算的类别，前置假可以是按年结算的，也可以是按期间结算的，但，如果同时有按年结算和按期间结算的，那么按年结算的类别应该在按期间结算的类别之前
+     * 
+     * @param vo
+     * @throws BusinessException
+     */
+    // public void checkDependTypes(TimeItemCopyVO vo) throws BusinessException
+    // {
+    // // 非休假类别不存在前置休假类别
+    // if(!(vo instanceof LeaveTypeCopyVO))
+    // return;
+    // // 查询当前组织下所有休假类别
+    // TimeItemCopyVO[] allVOs = queryCopyTypesByOrg(TimeItemCopyVO.LEAVE_TYPE,
+    // vo.getPk_org(), TimeItemCopyVO.ITEMTYPE+"="+TimeItemCopyVO.LEAVE_TYPE);
+    // Map<String, TimeItemCopyVO> allVOMap =
+    // CommonMethods.toMap(TimeItemCopyVO.PK_TIMEITEM, allVOs);
+    // // 先校验当前休假
+    // // checkDependTypes(new TimeItemCopyVO[]{vo}, allVOMap);
+    // // 修改当前休假可能引起其它休假前置假的关系变化，所以同时要校验其它所有休假，新增时不会引起这种变化，所以不用校验
+    // if(ArrayUtils.isEmpty(allVOs) ||
+    // StringUtils.isEmpty(vo.getPk_timeitemcopy()))
+    // return;
+    // allVOMap.put(vo.getPk_timeitem(),
+    // vo);//由于调用此方法的时候，数据还没有入数据库，因此需要用前台传来的vo覆盖从数据库中查询得来的vo
+    // for(TimeItemCopyVO allVO:allVOMap.values()){
+    // // 校验所有休假类别
+    // // checkDependTypes(new TimeItemCopyVO[]{allVO}, allVOMap);
+    // }
+    // }
+
+    /**
+     * 校验设置的前置休假是否存在循环前置(递归)
+     * 
+     * @param vos
+     * @param allVOMap
+     *            key: 定义主键 value: 休假类别
+     * @throws BusinessException
+     */
+    // private void checkDependTypes(TimeItemCopyVO[] vos, Map<String,
+    // TimeItemCopyVO> allVOMap) throws BusinessException {
+    // if(ArrayUtils.isEmpty(vos))
+    // return;
+    // // 前置休假结果集
+    // List<TimeItemCopyVO> dependList = new ArrayList<TimeItemCopyVO>();
+    // // 待递归校验结果集
+    // List<TimeItemCopyVO> checkList = new ArrayList<TimeItemCopyVO>();
+    // String errMsg = "{0}的前置休假类别设置错误：\r\n{1}";
+    // for(TimeItemCopyVO vo:vos){
+    // // 如果没有前置假
+    // if(StringUtils.isEmpty(vo.getPk_dependleavetypes()))
+    // continue;
+    // String[] pk_timeitems =
+    // vo.getPk_dependleavetypes().split(TimeitemConst.SPLITFLAG);
+    // for(String pk_timeitem:pk_timeitems){
+    // TimeItemCopyVO dependVO = allVOMap.get(pk_timeitem);
+    // if(dependVO==null)
+    // continue;
+    // if(ArrayUtils.contains(dependList.toArray(new TimeItemCopyVO[0]),
+    // dependVO)){
+    // errMsg = StringUtils.replace(errMsg, "{0}", vo.getMultilangName());
+    // errMsg = StringUtils.replace(errMsg, "{1}",
+    // dependVO.getMultilangName()+"已被列表中其他类别设置为前置休假类别！");
+    // throw new BusinessException(errMsg);
+    // }
+    // getdependTypes(dependList, dependVO, allVOMap);
+    // dependList.add(dependVO);
+    // checkList.add(dependVO);
+    // }
+    // if(ArrayUtils.contains(dependList.toArray(new TimeItemCopyVO[0]), vo)){
+    // errMsg = StringUtils.replace(errMsg, "{0}", vo.getMultilangName());
+    // errMsg = StringUtils.replace(errMsg, "{1}", "列表中存在前置休假类别为当前类别的数据！");
+    // throw new BusinessException(errMsg);
+    // }
+    // }
+    // // 如果存在待递归校验的休假
+    // if(CollectionUtils.isEmpty(checkList))
+    // return;
+    // checkDependTypes(checkList.toArray(new TimeItemCopyVO[0]), allVOMap);
+    // }
+
+    /**
+     * 通过考勤类别查询拷贝
+     * 
+     * @param type
+     * @param pk_org
+     * @param condition
+     * @return
+     * @throws BusinessException
+     */
+    @SuppressWarnings("unchecked")
+    public TimeItemCopyVO[] queryCopyTypesByOrg(int type, String pk_org, String condition) throws BusinessException {
+	try {
+	    return (TimeItemCopyVO[]) new BasedocServerUtils().queryByOrg(
+		    TimeItemClassConverter.getCopyClassByType(type), pk_org, condition, null);
+	} catch (ClassNotFoundException e) {
+	    Logger.error(e.getMessage(), e);
+	    throw new BusinessException(e.getMessage(), e);
+	}
+    }
+
+    @SuppressWarnings("unchecked")
+    public TimeItemCopyVO queryByDefVOPk(String pk_org, String pkDefvo, int type) throws BusinessException {
+	try {
+	    return (TimeItemCopyVO) new BasedocServerUtils().queryByPkDef(
+		    TimeItemClassConverter.getCopyClassByType(type), pk_org, pkDefvo);
+	} catch (Exception e) {
+	    Logger.error(e.getMessage(), e);
+	    if (e instanceof BusinessException)
+		throw (BusinessException) e;
+	    else
+		throw new BusinessException(e.getMessage(), e);
+	}
+    }
+
+    public TimeItemCopyVO queryByDefVOPk(String pk_org, String pkDefvo) throws BusinessException {
+	throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public TimeItemCopyVO[] queryByOrg(String pk_org) throws BusinessException {
+	throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public TimeItemCopyVO[] queryByOrg(String pk_org, String extraCond) throws BusinessException {
+	throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public TimeItemCopyVO[] queryByOrg(String pk_org, String extraCond, SQLParameter para) throws BusinessException {
+	throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean isTimeItemRef(TimeItemCopyVO vo) throws BusinessException {
+	DefaultValidationService validationService = new DefaultValidationService();
+	// 加入引用校验器
+	validationService.addValidator(BDReferenceChecker.getInstance());
+	try {
+	    validationService.validate(vo);
+	} catch (ValidationException e) {
+	    return true;
+	}
+	// 如果是休假类别则增加休假计算中的引用校验
+	if (vo instanceof LeaveTypeCopyVO) {
+	    BaseDAO dao = new BaseDAO();
+	    String sql = "select b.* from " + LeaveTypeCopyVO.getDefaultTableName() + " a,"
+		    + LeaveBalanceVO.getDefaultTableName() + " b where a." + LeaveTypeCopyVO.PK_TIMEITEM + " =b."
+		    + LeaveBalanceVO.PK_TIMEITEM + " and a." + LeaveTypeCopyVO.PK_TIMEITEMCOPY + " ='"
+		    + vo.getPrimaryKey() + "'";
+	    Collection<GeneralVO> c = (Collection<GeneralVO>) dao.executeQuery(sql, new BeanListProcessor(
+		    GeneralVO.class));
+	    if (c != null && c.size() > 0)
+		return true;
+	}
+	return false;
+    }
+
+    LeaveTypeCopyVO[] getDependLeaveTypes(String pk_timeitem, Map<String, LeaveTypeCopyVO> copyVOMap) {
+	LeaveTypeCopyVO copyVO = copyVOMap.get(pk_timeitem);
+	String dependTypePKs = copyVO.getPk_dependleavetypes();
+	if (StringUtils.isEmpty(dependTypePKs))
+	    return null;
+	String[] dependPKs = StringUtils.split(dependTypePKs, ",");
+	List<LeaveTypeCopyVO> dependList = new ArrayList<LeaveTypeCopyVO>();
+	for (String dependPK : dependPKs) {
+	    LeaveTypeCopyVO[] dependDependVOs = getDependLeaveTypes(dependPK, copyVOMap);
+	    if (!ArrayUtils.isEmpty(dependDependVOs)) {
+		dependList.addAll(Arrays.asList(dependDependVOs));
+	    }
+	    dependList.add(copyVOMap.get(dependPK));
+	}
+	// 如果list里面有重复的，将重复的去掉，规则是留前面的不留后面的.例如d的前置是a，b，c；b的前置是a；c的前置是a，b，
+	// 那么d的前置递归之后就是a，a，b，a，b，c去掉重复的就是a，b，c
+	if (dependPKs.length == dependList.size())
+	    return dependList.toArray(new LeaveTypeCopyVO[0]);
+	int index = 0;
+	Set<String> pkSet = new HashSet<String>();
+	while (true) {
+	    if (index >= dependList.size())
+		break;
+	    LeaveTypeCopyVO dependVO = dependList.get(index);
+	    String dependPK = dependVO.getPk_timeitem();
+	    if (!pkSet.contains(dependPK)) {
+		pkSet.add(dependPK);
+		index++;
+		continue;
+	    }
+	    dependList.remove(index);
+	}
+	return dependList.toArray(new LeaveTypeCopyVO[0]);
+    }
+
+    @Override
+    public TimeItemCopyVO[] saveOrder(TimeItemCopyVO[] vos) throws BusinessException {
+	if (ArrayUtils.isEmpty(vos))
+	    return null;
+	TimeItemCopyVO[] revos = new TimeItemCopyVO[vos.length];
+	for (int i = 0; i < vos.length; i++) {
+	    TimeItemCopyVO vo = vos[i];
+	    vo.setShoworder(i);
+	    TimeItemCopyVO upvo = update(vo);
+	    revos[i] = upvo;
+	}
+	return revos;
+    }
+}

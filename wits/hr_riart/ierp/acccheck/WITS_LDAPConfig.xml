@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="GBK"?>
+<ldapconfigs>
+	<ldap>
+		<domain>wistronits.com</domain>
+		<address>10.1.100.11</address>
+		<port>3268</port>
+	</ldap>
+</ldapconfigs>

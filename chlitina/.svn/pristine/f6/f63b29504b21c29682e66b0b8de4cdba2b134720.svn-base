@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding='UTF-8'?>
+<data>
+    <table name="pub_billtemplet">
+        <row primarykey="0001ZZ1000000003IBUC">
+        </row>
+    </table>
+    <table name="pub_systemplate_base">
+        <row primarykey="0001ZZ1000000003IBVD">
+        </row>
+    </table>
+    <table name="sm_funcregister">
+        <row primarykey="1001ZZ1000000000KAPP">
+        </row>
+    </table>
+</data>

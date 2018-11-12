@@ -1,0 +1,292 @@
+<?xml version="1.0" encoding='UTF-8'?>
+<Widget controllerClazz="nc.bs.hrsms.ta.sss.calendar.ctrl.WorkCalendarForPsnViewMain" dialog="false" i18nName="" langDir="" caption="店员工作日历按日历查看界面" id="main" refId="main" sourcePackage="src/public/">
+    <PlugoutDescs>
+    </PlugoutDescs>
+    <PluginDescs>
+        <PluginDesc id="Search">
+            <PluginDescItem clazztype="java.util.Map" id="key1">
+            </PluginDescItem>
+        </PluginDesc>
+        <PluginDesc id="Catagory">
+            <PluginDescItem clazztype="java.util.Map" id="key2">
+            </PluginDescItem>
+        </PluginDesc>
+        <PluginDesc id="DeptChange">
+            <PluginDescItem clazztype="java.util.Map" id="deptout">
+            </PluginDescItem>
+        </PluginDesc>
+          <PluginDesc id="inid_soci">
+        	<PluginDescItem clazztype="java.util.Map" id="inid_soci">
+            </PluginDescItem>
+        </PluginDesc>
+        <PluginDesc id="CircleArrangeShift_inId">
+            <PluginDescItem clazztype="java.util.Map" id="CircleArrangeShift_inId">
+            </PluginDescItem>
+        </PluginDesc>
+    </PluginDescs>
+    <Events>
+    	<Event async="true" methodName="pluginCircleArrangeShift_inId" onserver="true">
+            <Params>
+                <Param>
+                    <Name>keys</Name>
+                    <Value>
+                    </Value>
+                    <Desc>                        <![CDATA[java.util.Map]]>
+                    </Desc>
+                </Param>
+            </Params>
+            <Action>
+            </Action>
+        </Event>
+        <Event async="true" methodName="pluginSearch" onserver="true">
+            <Params>
+                <Param>
+                    <Name>keys</Name>
+                    <Value>
+                    </Value>
+                    <Desc>                        <![CDATA[java.util.Map]]>
+                    </Desc>
+                </Param>
+            </Params>
+            <Action>
+            </Action>
+        </Event>
+        <Event async="true" methodName="pluginCatagory" onserver="true">
+            <Params>
+                <Param>
+                    <Name>keys</Name>
+                    <Value>
+                    </Value>
+                    <Desc>                        <![CDATA[java.util.Map]]>
+                    </Desc>
+                </Param>
+            </Params>
+            <Action>
+            </Action>
+        </Event>
+        <Event async="true" methodName="pluginDeptChange" onserver="true">
+            <Params>
+                <Param>
+                    <Name>keys</Name>
+                    <Value></Value>
+                    <Desc>                        <![CDATA[java.util.Map]]>
+                    </Desc>
+                </Param>
+            </Params>
+            <Action>
+            </Action>
+        </Event>
+        <Event async="true" methodName="plugininid_soci" onserver="true">
+            <Params>
+                <Param>
+                    <Name>keys</Name>
+                    <Value>
+                    </Value>
+                    <Desc>                        <![CDATA[java.util.Map]]>
+                    </Desc>
+                </Param>
+            </Params>
+            <Action>
+            </Action>
+        </Event>
+    </Events>
+    <Models>
+        <Datasets>
+            <RefMdDataset caption="班次" controlwidgetopeStatus="false" enabled="false" id="$refds_uap_shift" lazyLoad="true" notNullBody="false" objMeta="hrta.bdshift" voMeta="nc.vo.bd.shift.ShiftVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <Dataset controlwidgetopeStatus="true" enabled="false" id="dsCalendar" lazyLoad="false" notNullBody="false">
+                <FieldRelations>
+                    <FieldRelation id="pk_shift_rel" refDataset="$refds_uap_shift">
+                        <MatchFields>
+                            <Field iscontains="Y" ismatch="Y" readField="pk_shift" writeField="pk_shift">
+                            </Field>
+                            <Field readField="name" writeField="pk_shift_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_shift" value="pk_shift">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                </FieldRelations>
+                <Fields>
+                    <Field dataType="String" id="pk_psnjob" nullAble="true" primaryKey="false" text="pk_psnjob">
+                    </Field>
+                    <Field dataType="String" id="pk_psndoc" nullAble="true" primaryKey="false" text="pk_psndoc">
+                    </Field>
+                    <Field dataType="UFLiteralDate" id="calendar" nullAble="true" primaryKey="false" text="calendar">
+                    </Field>
+                    <Field dataType="String" id="pk_shift" nullAble="true" primaryKey="false" text="pk_shift">
+                    </Field>
+                    <Field dataType="String" id="pk_shift_name" nullAble="true" primaryKey="false" text="pk_shift_name">
+                    </Field>
+                    <Field dataType="UFBoolean" id="has_tbmpsndoc" nullAble="true" primaryKey="false" text="has_tbmpsndoc">
+                    </Field>
+                    <Field dataType="String" id="color" nullAble="true" primaryKey="false" text="color">
+                    </Field>
+                    <Field dataType="UFBoolean" id="isEditable" nullAble="true" primaryKey="false" text="isEditable">
+                    </Field>
+                </Fields>
+                <Events>
+                    <Event async="true" jsEventClaszz="nc.uap.lfw.core.event.conf.DatasetListener" methodName="onDataLoad_dsCalendar" name="onDataLoad" onserver="true">
+                        <SubmitRule cardSubmit="false" panelSubmit="false" tabSubmit="false">
+                        </SubmitRule>
+                        <Params>
+                            <Param>
+                                <Name>dataLoadEvent</Name>
+                                <Value>
+                                </Value>
+                                <Desc>                                    <![CDATA[nc.uap.lfw.core.event.DataLoadEvent]]>
+                                </Desc>
+                            </Param>
+                        </Params>
+                        <Action>
+                        </Action>
+                    </Event>
+                    <Event async="true" jsEventClaszz="nc.uap.lfw.core.event.conf.DatasetListener" methodName="onAfterDataChange_dsCalendar" name="onAfterDataChange" onserver="true">
+                        <SubmitRule cardSubmit="false" panelSubmit="false" tabSubmit="false">
+                            <Widget cardSubmit="false" id="main" panelSubmit="false" tabSubmit="false">
+                                <Dataset id="dsCalendar" type="ds_all_line">
+                                </Dataset>
+                            </Widget>
+                        </SubmitRule>
+                        <Params>
+                            <Param>
+                                <Name>datasetCellEvent</Name>
+                                <Value>
+                                </Value>
+                                <Desc>                                    <![CDATA[nc.uap.lfw.core.event.DatasetCellEvent]]>
+                                </Desc>
+                            </Param>
+                        </Params>
+                        <Action>
+                        </Action>
+                    </Event>
+                </Events>
+            </Dataset>
+        </Datasets>
+        <RefNodes>
+            <NCRefNode allowInput="false" dataListener="" dialog="false" dialogHeight="" dialogWidth="" i18nName="w_ta-000071" id="refClass" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" path="" readDs="masterDs" readFields="pk_shift,name" refId="" refcode="班次(业务单元含本门店)" refnodeDelegator="" refresh="false" selLeafOnly="false" text="" usePower="false" writeDs="dsCalendar" writeFields="pk_shift,pk_shift_name">
+            </NCRefNode>
+        </RefNodes>
+    </Models>
+    <Components>
+        <WebPartComp contentFetcher="nc.bs.hrsms.ta.sss.calendar.lsnr.WorkCalenderColorProvider" id="explainHtml">
+        </WebPartComp>
+        <WebPartComp contentFetcher="nc.bs.hrsms.ta.sss.calendar.lsnr.CalTextNavgitionContentFetcher" id="psnHtml">
+        </WebPartComp>
+        <WebPartComp contentFetcher="nc.bs.hrsms.ta.sss.calendar.lsnr.WorkCalendarHtmlProvider" id="canlendarHtml">
+        </WebPartComp>
+    </Components>
+    <Menus>
+        <MenuBarComp id="menu_list">
+            <MenuItem i18nName="w_ta-000073" id="changClass" langDir="node_ta-res" modifiers="3" stateManager="nc.bs.hrsms.ta.sss.calendar.dft.BatchChangeShift_StateManager" text="调班">
+                <Events>
+                    <Event async="true" jsEventClaszz="nc.uap.lfw.core.event.conf.MouseListener" methodName="doChangeClasses" name="onclick" onserver="true">
+                        <SubmitRule cardSubmit="false" panelSubmit="false" tabSubmit="false">
+                        </SubmitRule>
+                        <Params>
+                            <Param>
+                                <Name>mouseEvent</Name>
+                                <Value>
+                                </Value>
+                                <Desc>                                    <![CDATA[nc.uap.lfw.core.event.MouseEvent]]>
+                                </Desc>
+                            </Param>
+                        </Params>
+                        <Action>
+                        </Action>
+                    </Event>
+                </Events>
+            </MenuItem>
+            <MenuItem i18nName="w_ta-000076" id="batchChange" langDir="node_ta-res" modifiers="2" stateManager="nc.bs.hrsms.ta.sss.calendar.dft.BatchChangeShift_StateManager" text="批量调班">
+                <Events>
+                    <Event async="true" jsEventClaszz="nc.uap.lfw.core.event.conf.MouseListener" methodName="doBatchChange" name="onclick" onserver="true">
+                        <SubmitRule cardSubmit="false" panelSubmit="false" tabSubmit="false">
+                        </SubmitRule>
+                        <Params>
+                            <Param>
+                                <Name>mouseEvent</Name>
+                                <Value>
+                                </Value>
+                                <Desc>                                    <![CDATA[nc.uap.lfw.core.event.MouseEvent]]>
+                                </Desc>
+                            </Param>
+                        </Params>
+                        <Action>
+                        </Action>
+                    </Event>
+                </Events>
+            </MenuItem>
+            <MenuItem i18nName="w_TeamCalendar-000045" id="circleArrangeShift" langDir="ta_nodes" modifiers="2" stateManager="nc.bs.hrsms.ta.sss.calendar.dft.BatchChangeShift_StateManager" text="循环排班">
+                <Events>
+                    <Event async="true" methodName="onCircleArrangeShift" name="onclick" onserver="true">
+                        <SubmitRule>
+                            <Widget id="main">
+                            </Widget>
+                        </SubmitRule>
+                        <Params>
+                            <Param>
+                                <Name>mouseEvent</Name>
+                                <Value>
+                                </Value>
+                                <Desc>                                    <![CDATA[nc.uap.lfw.core.event.MouseEvent]]>
+                                </Desc>
+                            </Param>
+                        </Params>
+                        <Action>
+                        </Action>
+                    </Event>
+                </Events>
+            </MenuItem>
+            <MenuItem i18nName="w_ta-000074" id="list_save" langDir="node_ta-res" modifiers="2" stateManager="nc.bs.hrsms.ta.sss.calendar.dft.Edit_StateManager" text="保存">
+                <Events>
+                    <Event async="true" jsEventClaszz="nc.uap.lfw.core.event.conf.MouseListener" methodName="doSave" name="onclick" onserver="true">
+                        <SubmitRule cardSubmit="false" panelSubmit="false" tabSubmit="false">
+                            <Widget cardSubmit="false" id="main" panelSubmit="false" tabSubmit="false">
+                                <Dataset id="dsModifiedClass" type="ds_current_line">
+                                </Dataset>
+                                <Dataset id="dsCalendar" type="ds_all_line">
+                                </Dataset>
+                            </Widget>
+                        </SubmitRule>
+                        <Params>
+                            <Param>
+                                <Name>mouseEvent</Name>
+                                <Value>
+                                </Value>
+                                <Desc>                                    <![CDATA[nc.uap.lfw.core.event.MouseEvent]]>
+                                </Desc>
+                            </Param>
+                        </Params>
+                        <Action>
+                        </Action>
+                    </Event>
+                </Events>
+            </MenuItem>
+            <MenuItem id="m_" modifiers="3" sep="true" text="m_">
+            </MenuItem>
+            <MenuItem i18nName="w_ta-000075" id="list_cancel" langDir="node_ta-res" modifiers="3" stateManager="nc.bs.hrsms.ta.sss.calendar.dft.Edit_StateManager" text="取消">
+                <Events>
+                    <Event async="true" jsEventClaszz="nc.uap.lfw.core.event.conf.MouseListener" methodName="doRefresh" name="onclick" onserver="true">
+                        <SubmitRule cardSubmit="false" panelSubmit="false" tabSubmit="false">
+                        </SubmitRule>
+                        <Params>
+                            <Param>
+                                <Name>mouseEvent</Name>
+                                <Value>
+                                </Value>
+                                <Desc>                                    <![CDATA[nc.uap.lfw.core.event.MouseEvent]]>
+                                </Desc>
+                            </Param>
+                        </Params>
+                        <Action>
+                        </Action>
+                    </Event>
+                </Events>
+            </MenuItem>
+        </MenuBarComp>
+    </Menus>
+</Widget>

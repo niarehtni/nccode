@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="rangetable/src/public"/>
+	<classpathentry kind="src" path="rangetable/src/client"/>
+	<classpathentry kind="src" path="rangetable/src/private"/>
+	<classpathentry kind="src" path="rangetable/resources"/>
+	<classpathentry kind="src" path="allowance/src/public"/>
+	<classpathentry kind="src" path="allowance/src/client"/>
+	<classpathentry kind="src" path="allowance/src/private"/>
+	<classpathentry kind="src" path="allowance/resources"/>
+	<classpathentry kind="src" path="basedoc/src/public"/>
+	<classpathentry kind="src" path="basedoc/src/client"/>
+	<classpathentry kind="src" path="basedoc/src/private"/>
+	<classpathentry kind="src" path="basedoc/resources"/>
+	<classpathentry kind="src" output="nhicalculate/classes" path="nhicalculate/src/public"/>
+	<classpathentry kind="src" output="nhicalculate/classes" path="nhicalculate/src/client"/>
+	<classpathentry kind="src" output="nhicalculate/classes" path="nhicalculate/src/private"/>
+	<classpathentry kind="src" output="nhicalculate/classes" path="nhicalculate/resources"/>
+	<classpathentry kind="src" path="groupinsurance/src/public"/>
+	<classpathentry kind="src" path="groupinsurance/src/client"/>
+	<classpathentry kind="src" path="groupinsurance/src/private"/>
+	<classpathentry kind="src" path="groupinsurance/resources"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="con" path="com.yonyou.studio.udt.core.container/Ant_Library"/>
+	<classpathentry kind="con" path="com.yonyou.studio.udt.core.container/Product_Common_Library"/>
+	<classpathentry kind="con" path="com.yonyou.studio.udt.core.container/Middleware_Library"/>
+	<classpathentry kind="con" path="com.yonyou.studio.udt.core.container/Framework_Library"/>
+	<classpathentry kind="con" path="com.yonyou.studio.udt.core.container/Module_Public_Library"/>
+	<classpathentry kind="con" path="com.yonyou.studio.udt.core.container/Module_Client_Library"/>
+	<classpathentry kind="con" path="com.yonyou.studio.udt.core.container/Module_Private_Library">
+		<accessrules>
+			<accessrule kind="accessible" pattern="**"/>
+		</accessrules>
+	</classpathentry>
+	<classpathentry kind="con" path="com.yonyou.studio.udt.core.container/Module_Lang_Library"/>
+	<classpathentry kind="con" path="com.yonyou.studio.udt.core.container/Generated_EJB"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>

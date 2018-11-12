@@ -1,0 +1,99 @@
+package nc.pubimpl.ta.overtime;
+
+import java.util.Map;
+
+import nc.pubitf.ta.overtime.ISegDetailService;
+import nc.vo.pub.BusinessException;
+import nc.vo.pub.lang.UFDouble;
+import nc.vo.pub.lang.UFLiteralDate;
+import nc.vo.ta.leave.LeaveRegVO;
+import nc.vo.ta.overtime.OvertimeRegVO;
+
+public class SegDetailServiceImpl implements ISegDetailService {
+
+	@Override
+	public void regOvertimeSegDetail(OvertimeRegVO[] overtimeRegVOs)
+			throws BusinessException {
+		// TODO 自動產生的方法 Stub
+
+	}
+
+	@Override
+	public void regOvertimeSegDetailConsume(LeaveRegVO[] leaveRegVOs)
+			throws BusinessException {
+		// TODO 自動產生的方法 Stub
+
+	}
+
+	@Override
+	public Map<String, UFDouble[]> calculateTaxableByDate(String[] pk_psndocs,
+			UFLiteralDate startDate, UFLiteralDate endDate)
+			throws BusinessException {
+		// TODO 自動產生的方法 Stub
+		return null;
+	}
+
+	@Override
+	public Map<String, UFDouble[]> settleByFixSalary(
+			Map<String, UFDouble> psnFixSalary, UFLiteralDate startDate,
+			UFLiteralDate endDate) throws BusinessException {
+		// TODO 自動產生的方法 Stub
+		return null;
+	}
+
+	@Override
+	public Map<String, UFDouble> calculateTaxFreeAmountByPeriod(
+			String[] pk_psndocs, String cyear, String cperiod)
+			throws BusinessException {
+		// TODO 自動產生的方法 Stub
+		return null;
+	}
+
+	@Override
+	public Map<String, UFDouble> calculateTaxableAmountByPeriod(
+			String[] pk_psndocs, String cyear, String cperiod)
+			throws BusinessException {
+		// TODO 自動產生的方法 Stub
+		return null;
+	}
+
+	@Override
+	public Map<String, UFDouble[]> calculateOvertimeAmountByPeriod(
+			String[] pk_psndocs, UFLiteralDate startDate, UFLiteralDate endDate)
+			throws BusinessException {
+		// TODO 自動產生的方法 Stub
+		return null;
+	}
+
+	@Override
+	public Map<String, Map<UFLiteralDate, UFDouble>> sumOvertimeFeeByPsnDate(
+			Map<String, Map<UFLiteralDate, UFDouble>> psnDailyPays,
+			boolean includeOT2Holiday) throws BusinessException {
+		// TODO 自動產生的方法 Stub
+		return null;
+	}
+
+	@Override
+	public Map<String, UFDouble> sumAdditionalHolidayes(
+			UFLiteralDate startDate, UFLiteralDate endDate, String[] pk_psndocs)
+			throws BusinessException {
+		// TODO 自動產生的方法 Stub
+		return null;
+	}
+
+	@Override
+	public Map<String, UFDouble> sumAdditionalHolidayes(String cyear,
+			String cperiod, String[] pk_psndocs) throws BusinessException {
+		// TODO 自動產生的方法 Stub
+		return null;
+	}
+
+	@Override
+	public Map<String, Map<String, UFDouble>> getOvertimeHours(
+			String[] pk_psndocs, UFLiteralDate overtimeDate)
+			throws BusinessException {
+		// TODO 自動產生的方法 Stub
+		return null;
+	}
+
+}

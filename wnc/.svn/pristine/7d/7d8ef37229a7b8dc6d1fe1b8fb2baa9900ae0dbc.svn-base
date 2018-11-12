@@ -1,0 +1,86 @@
+package nc.vo.ta.leave;
+
+import nc.vo.pub.lang.UFBoolean;
+import nc.vo.pub.lang.UFDouble;
+/**
+ * 休假登记记录表，供日薪计算使用
+ * 每天只允许存放一张休假登记记录表，当已经扣款过后，不允许当天继续修改
+ * @author ward
+ * @date 20180504
+ *
+ */
+public class LeaveRegHistoryVO extends LeaveRegVO{
+
+	private static final long serialVersionUID = 22433804426521408L;
+	
+	private String pk_leavereg_history;//主键
+	
+	private UFBoolean ischarge=UFBoolean.FALSE;//是否扣款
+	
+	private UFDouble charge;//扣款金额
+	
+	private UFDouble actualcharge;//实际扣款
+
+	public String getPk_leavereg_history() {
+		return pk_leavereg_history;
+	}
+
+	public void setPk_leavereg_history(String pk_leavereg_history) {
+		this.pk_leavereg_history = pk_leavereg_history;
+	}
+
+	public UFBoolean getIscharge() {
+		return ischarge;
+	}
+
+	public void setIscharge(UFBoolean ischarge) {
+		this.ischarge = ischarge;
+	}
+
+	public UFDouble getCharge() {
+		return charge;
+	}
+
+	public void setCharge(UFDouble charge) {
+		this.charge = charge;
+	}
+
+	public UFDouble getActualCharge() {
+		return actualcharge;
+	}
+
+	public void setActualCharge(UFDouble actualCharge) {
+		this.actualcharge = actualCharge;
+	}
+	
+	/**
+	  * <p>取得表主键.
+	  * <p>
+	  * 创建日期:${vmObject.createdDate}
+	  * @return java.lang.String
+	  */
+	public java.lang.String getPKFieldName() {
+	  return "pk_leavereg_history";
+	}
+   
+	/**
+	 * <p>返回表名称.
+	 * <p>
+	 * 创建日期:${vmObject.createdDate}
+	 * @return java.lang.String
+	 */
+	public java.lang.String getTableName() {
+		return "tbm_leavereg_history";
+	}    
+	
+	/**
+	 * <p>返回表名称.
+	 * <p>
+	 * 创建日期:${vmObject.createdDate}
+	 * @return java.lang.String
+	 */
+	public static java.lang.String getDefaultTableName() {
+		return "tbm_leavereg_history";
+	}    
+   
+}

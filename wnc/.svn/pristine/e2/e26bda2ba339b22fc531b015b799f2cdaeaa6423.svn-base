@@ -1,0 +1,5 @@
+package nc.itf.hrpub;
+
+public interface IWNCTASKQuery {
+	public String doQuery(String requestContext) throws Exception;
+}

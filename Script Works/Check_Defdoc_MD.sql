@@ -1,0 +1,16 @@
+select 'bd_defdoc' TableName, * FROM bd_defdoc WHERE pk_defdoclist = (SELECT pk_defdoclist FROM bd_defdoclist WHERE code = 'WITS03');
+select 'bd_defdoclist' TableName, * FROM bd_defdoclist WHERE pk_defdoclist = (SELECT pk_defdoclist FROM bd_defdoclist WHERE code = 'WITS03');
+select 'md_property' TableName, * FROM md_property WHERE classid=(select id from md_class where componentid=(select componentid from bd_defdoclist where code = 'WITS03'));
+select 'bd_refinfo' TableName, * FROM bd_refinfo WHERE para1 = (select id from md_class where componentid=(select componentid from bd_defdoclist where code = 'WITS03'));
+select 'md_bizitfmap' TableName, * FROM md_bizitfmap WHERE classid=(select id from md_class where componentid=(select componentid from bd_defdoclist where code = 'WITS03'));
+select 'md_association' TableName, * FROM md_association WHERE startbeanid=(select id from md_class where componentid=(select componentid from bd_defdoclist where code = 'WITS03'));
+select 'md_ormap' TableName, * FROM md_ormap WHERE classid=(select id from md_class where componentid=(select componentid from bd_defdoclist where code = 'WITS03'));
+select 'md_busiop' TableName, * FROM md_busiop WHERE ownertype=(select id from md_class where componentid=(select componentid from bd_defdoclist where code = 'WITS03'));
+select 'md_attr_power' TableName, * FROM md_attr_power WHERE beanid=(select id from md_class where componentid=(select componentid from bd_defdoclist where code = 'WITS03'));
+select 'sm_permission_res' TableName, * FROM sm_permission_res WHERE mdid=(select id from md_class where componentid=(select componentid from bd_defdoclist where code = 'WITS03'));
+select 'bd_mode_all' TableName, * FROM bd_mode_all WHERE mdclassid=(select id from md_class where componentid=(select componentid from bd_defdoclist where code = 'WITS03'));
+select 'bd_mode_selected' TableName, * FROM bd_mode_selected WHERE mdclassid=(select id from md_class where componentid=(select componentid from bd_defdoclist where code = 'WITS03'));
+select 'bd_uniquerule' TableName, * FROM bd_uniquerule WHERE mdclassid=(select id from md_class where componentid=(select componentid from bd_defdoclist where code = 'WITS03'));
+select 'pub_bcr_nbcr' TableName, * FROM pub_bcr_nbcr WHERE metaid=(select id from md_class where componentid=(select componentid from bd_defdoclist where code = 'WITS03'));
+select 'pub_eventtype' TableName, * FROM pub_eventtype WHERE sourceid=(select id from md_class where componentid=(select componentid from bd_defdoclist where code = 'WITS03'));
+select 'md_class' TableName, * FROM md_class WHERE componentid=(select componentid from bd_defdoclist where code = 'WITS03');

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="GBK"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+<bean id="menuItem" class="nc.pubapp.pade.funcmodel.vo.MenuItem">
+<property name="dr" value="0"/>
+<property name="funcode" value="68861705"/>
+<property name="ismenutype" value="false"/>
+<property name="menuitemcode" value="60401701"/>
+<property name="menuitemname" value="计算劳健保"/>
+<property name="pk_menu" value="1004ZZ10000000000FFL"/>
+<property name="pk_menuitem" value="0001ZZ10000000006Y05"/>
+<property name="resid" value="D60401701"/>
+<property name="ts" value="2014-12-30 17:49:09"/>
+</bean>
+
+</beans>

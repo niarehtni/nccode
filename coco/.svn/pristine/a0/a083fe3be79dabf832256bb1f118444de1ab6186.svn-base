@@ -1,0 +1,9 @@
+<?xml version='1.0' encoding='gb2312'?>
+<module name="twhrformatsvc">
+	<public>
+		<component priority="0" singleton="true" remote="true" tx="CMT" supportAlias="true">
+			<interface>nc.itf.hr.dataexchange.IDataFormatService</interface>
+			<implementation>nc.impl.hr.dataexchange.DataFormatServiceImpl</implementation>
+		</component>
+	</public>
+</module>

@@ -1,0 +1,10 @@
+insert into pub_billtemplet_t(basetab,dr,metadataclass,metadatapath,mixindex,pk_billtemplet,pk_billtemplet_t,pk_layout,pos,position,resid,tabcode,tabindex,tabname,ts,vdef1,vdef2,vdef3) values( null,0,'hrhi.hi_psndoc_parttime','hi_psndoc_parttime',null,'1001Z71000000000C2GC','1001ZZ1000000000MQP1',null,1,1,'16009tran0036','hi_psndoc_part',1,'人员兼职记录','2018-09-16 13:59:35',null,null,null)
+/
+insert into pub_billtemplet_t(basetab,dr,metadataclass,metadatapath,mixindex,pk_billtemplet,pk_billtemplet_t,pk_layout,pos,position,resid,tabcode,tabindex,tabname,ts,vdef1,vdef2,vdef3) values( null,0,'hrhi.hi_psndoc_trial','hi_psndoc_trial',null,'1001Z71000000000C2GC','1001ZZ1000000000MQP2',null,1,1,'16009tran0038','hi_psndoc_trial',4,'人员试用情况','2018-09-16 13:59:35',null,null,null)
+/
+insert into pub_billtemplet_t(basetab,dr,metadataclass,metadatapath,mixindex,pk_billtemplet,pk_billtemplet_t,pk_layout,pos,position,resid,tabcode,tabindex,tabname,ts,vdef1,vdef2,vdef3) values( null,0,'hrhi.hi_psndoc_psnchg','hi_psndoc_psnchg',null,'1001Z71000000000C2GC','1001ZZ1000000000MQP3',null,1,1,'16009tran0037','hi_psndoc_psnchg',5,'人员流动情况','2018-09-16 13:59:35',null,null,null)
+/
+insert into pub_billtemplet_t(basetab,dr,metadataclass,metadatapath,mixindex,pk_billtemplet,pk_billtemplet_t,pk_layout,pos,position,resid,tabcode,tabindex,tabname,ts,vdef1,vdef2,vdef3) values( null,0,'hrhi.bd_psndoc',null,null,'1001Z71000000000C2GC','1001ZZ1000000000MQP4',null,0,0,'UC000-0001403','info',0,'姓名','2018-09-16 13:59:35',null,null,null)
+/
+insert into pub_billtemplet_t(basetab,dr,metadataclass,metadatapath,mixindex,pk_billtemplet,pk_billtemplet_t,pk_layout,pos,position,resid,tabcode,tabindex,tabname,ts,vdef1,vdef2,vdef3) values( null,0,'hrhi.hi_psnjob','hi_psnjob',null,'1001Z71000000000C2GC','1001ZZ1000000000MQP5',null,1,1,'16009tran0035','hi_psndoc_deptchg',0,'人员任职记录','2018-09-16 13:59:35',null,null,null)
+/

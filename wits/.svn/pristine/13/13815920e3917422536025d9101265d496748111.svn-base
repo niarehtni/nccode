@@ -1,0 +1,157 @@
+/**
+ * @(#)WaProjSalaryEditor.java 1.0 2017年9月20日
+ *
+ * Copyright (c) 2013, Yonyou. All rights reserved.
+ * YONYOU PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
+ */
+package nc.ui.wa.formular;
+
+import java.util.List;
+
+import org.apache.commons.lang.ArrayUtils;
+
+import nc.bs.framework.common.NCLocator;
+import nc.hr.utils.ResHelper;
+import nc.itf.uap.IUAPQueryBS;
+import nc.ui.pub.beans.UIComboBox;
+import nc.ui.pub.beans.UILabel;
+import nc.ui.uif2.model.AbstractUIAppModel;
+import nc.vo.pub.BusinessException;
+import nc.vo.uif2.LoginContext;
+import nc.vo.wa.item.WaItemVO;
+
+/**
+ * @author niehg
+ * @since 6.3
+ */
+@SuppressWarnings({ "serial", "restriction" })
+public class WaProjSalaryEditor extends WaAbstractFunctionEditor {
+	private UILabel ivjUILabel = null;
+	private UIComboBox ivjcmbItem = null;
+
+	// 指定专案代码薪资维护函数
+	private static final String funcname = "@" + ResHelper.getString("6013commonbasic", "06013commonbasic0266") + "@";
+
+	public WaProjSalaryEditor() {
+		initialize();
+	}
+
+	public String getFuncName() {
+		return funcname;
+	}
+
+	private void initialize() {
+		try {
+			setLayout(null);
+			setSize(300, 300);
+
+			add(getUILabel(), getUILabel().getName());
+			add(getcmbItem(), getcmbItem().getName());
+
+			add(getOkButton(), getOkButton().getName());
+			add(getCancelButton(), getOkButton().getName());
+		} catch (Throwable ivjExc) {
+			handleException(ivjExc);
+		}
+
+		initConnection();
+	}
+
+	public boolean checkPara(int dataType) {
+		try {
+			String nullstr = "";
+			if (getcmbItem().getSelectedIndex() < 0) {
+				if (nullstr.length() > 0) {
+					nullstr = nullstr + ",";
+				}
+				nullstr = nullstr + ResHelper.getString("common", "UC000-0003385");
+			}
+
+			if (nullstr.length() > 0) {
+				throw new Exception(nullstr + ResHelper.getString("6013commonbasic", "06013commonbasic0021"));
+			}
+
+			return true;
+		} catch (Exception e) {
+			handleException(e);
+			showErrMsg(e.getMessage());
+		}
+		return false;
+	}
+
+	public String[] getPara() {
+		String[] paras = new String[1];
+		WaItemVO item = (WaItemVO) getcmbItem().getSelectdItemValue();
+		paras[0] = item.getItemkey().toString().trim();
+		return paras;
+	}
+
+	@SuppressWarnings("unchecked")
+	public void initData() {
+		try {
+			WaItemVO[] items = getItems(getContext());
+			WaItemVO itemVO = (WaItemVO) getModel().getSelectedData();
+			if (!ArrayUtils.isEmpty(items)) {
+				getcmbItem().addItems(items);
+				for (WaItemVO vo : items) {
+					if (itemVO.getItemkey().equals(vo.getItemkey())) {
+						getcmbItem().setSelectedItem(vo);
+					}
+				}
+			} else {
+				getcmbItem().addItem(itemVO);
+			}
+
+		} catch (Exception e) {
+			handleException(e);
+		}
+	}
+
+	public void setModel(AbstractUIAppModel model) {
+		super.setModel(model);
+		initData();
+	}
+
+	private UIComboBox getcmbItem() {
+		if (this.ivjcmbItem == null) {
+			try {
+				this.ivjcmbItem = new UIComboBox();
+				this.ivjcmbItem.setName("cmbItem");
+				this.ivjcmbItem.setBounds(100, 70, 140, 22);
+				this.ivjcmbItem.setTranslate(true);
+			} catch (Throwable ivjExc) {
+				handleException(ivjExc);
+			}
+		}
+		return this.ivjcmbItem;
+	}
+
+	private UILabel getUILabel() {
+		if (this.ivjUILabel == null) {
+			try {
+				this.ivjUILabel = new UILabel();
+				this.ivjUILabel.setName("UILabel2");
+				this.ivjUILabel.setText(ResHelper.getString("6013commonbasic", "06013commonbasic0024"));
+				this.ivjUILabel.setBounds(10, 70, 80, 22);
+			} catch (Throwable ivjExc) {
+				handleException(ivjExc);
+			}
+		}
+		return this.ivjUILabel;
+	}
+
+	@SuppressWarnings("unchecked")
+	private WaItemVO[] getItems(LoginContext context) throws BusinessException {
+		WaItemVO[] items = null;
+		StringBuilder where = new StringBuilder();
+		where.append(" (pk_group='").append(context.getPk_group()).append("' ");
+		where.append(" or pk_org='").append(context.getPk_org()).append("') ");
+		List<WaItemVO> result = (List<WaItemVO>) NCLocator.getInstance().lookup(IUAPQueryBS.class)
+				.retrieveByClause(WaItemVO.class, where.toString());
+		if (null != result) {
+			items = result.toArray(new WaItemVO[0]);
+		}
+
+		return items;
+	}
+}

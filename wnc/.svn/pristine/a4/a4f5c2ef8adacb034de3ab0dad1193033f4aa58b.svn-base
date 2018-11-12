@@ -1,0 +1,297 @@
+package nc.impl.ta.teamcalendar;
+
+import java.util.Map;
+import java.util.TimeZone;
+
+import nc.impl.ta.calendar.TACalendarUtils;
+import nc.itf.bd.shift.ShiftServiceFacade;
+import nc.itf.ta.algorithm.CompleteCheckTimeScopeUtils;
+import nc.itf.ta.algorithm.ICompleteCheckTimeScope;
+import nc.itf.ta.algorithm.ITimeScope;
+import nc.itf.ta.algorithm.TimeScopeUtils;
+import nc.vo.bd.holiday.HolidayVO;
+import nc.vo.bd.shift.AggShiftVO;
+import nc.vo.bd.shift.ShiftVO;
+import nc.vo.bd.shift.WTVO;
+import nc.vo.bd.team.team01.entity.TeamHeadVO;
+import nc.vo.pub.BusinessException;
+import nc.vo.pub.VOStatus;
+import nc.vo.pub.lang.UFBoolean;
+import nc.vo.pub.lang.UFDouble;
+import nc.vo.pub.lang.UFLiteralDate;
+import nc.vo.ta.teamcalendar.AggTeamCalendarVO;
+import nc.vo.ta.teamcalendar.TeamCalHoliday;
+import nc.vo.ta.teamcalendar.TeamCalendarVO;
+import nc.vo.ta.teamcalendar.TeamWorkTimeVO;
+import nc.vo.util.AuditInfoUtil;
+
+import org.apache.commons.lang.ArrayUtils;
+
+public class TeamCalendarUtils {
+	
+	/**
+	 * 处理一个班次在某天的假日切割情况。此方法调用时，应该保证工作时间段与假日有交集
+	 */
+	public static AggTeamCalendarVO createHolidayCutAggPsnCalendarVO(
+			TeamHeadVO teamVO,
+			AggShiftVO aggShiftVO,
+			HolidayVO[] holidayVOs,
+			String date,
+			TimeZone timeZone){
+		AggTeamCalendarVO cutCalendar = TeamCalendarUtils.cutHoliday(aggShiftVO, holidayVOs, date, timeZone);
+		cutCalendar.getTeamCalendarVO().setPk_team(teamVO.getCteamid());
+		cutCalendar.getTeamCalendarVO().setPk_org_v(teamVO.getPk_org_v());
+		return cutCalendar;
+	}
+	
+	/**
+	 * 处理一个班次与假日的切割情况。对于弹性班，有可能处理的结果是固化了，但是没有切割掉固化后的工作段
+	 * @param aggShiftVO
+	 * @param holidayVOs
+	 * @param date
+	 * @param timeZone
+	 * @param pk_psndoc
+	 * @return
+	 */
+	public static AggTeamCalendarVO cutHoliday(AggShiftVO aggShiftVO,HolidayVO[] holidayVOs,String date,TimeZone timeZone){
+		TeamCalendarVO mainVO = new TeamCalendarVO();
+		mainVO.setCalendar(UFLiteralDate.getDate(date));
+		mainVO.setCancelflag(UFBoolean.TRUE);//考虑与假日切割的肯定是遇假日取消
+		AggTeamCalendarVO aggVO = new AggTeamCalendarVO();
+		aggVO.setParentVO(mainVO);
+		
+		TeamCalHoliday[] calHolVOs = new TeamCalHoliday[holidayVOs.length];
+		for(int i=0;i<calHolVOs.length;i++){
+			calHolVOs[i]=new TeamCalHoliday();
+			calHolVOs[i].setPk_holiday(holidayVOs[i].getPk_holiday());
+		}
+		aggVO.setTeamCalHolidayVO(calHolVOs);
+		ITimeScope[] holidayScopes = HolidayVO.toTimeScopes(holidayVOs, timeZone);//假日时间段
+		ITimeScope[] remainsWorkScopes = TimeScopeUtils.minusTimeScopes(aggShiftVO.toMaxWorkTimeScope(date, timeZone), holidayScopes);//工作时间段减去假日时间段
+		if(ArrayUtils.isEmpty(remainsWorkScopes)){//如果减完后啥都不剩了，那么当日肯定排为公休
+			TeamCalendarUtils.setGX(mainVO);
+			mainVO.setOriginal_shift_b4cut(aggShiftVO.getShiftVO().getPk_shift());//切割前的班次
+			return aggVO;
+		}
+		//如果减完后，还剩一点，则需要分两种情况：
+		//如果是固定班，则很简单，剩下的就是最终工作时间段；
+		//如果是弹性班，则要看假日时段是否能覆盖某一个可能的完整工作时间段（注意不是最大的工作时间段，即有可能假日不能覆盖最大的工作时间段，但能覆盖某一个可能的完整工作时间段），如果能覆盖，则此天依然能排为公休，如果不能覆盖任意一个可能的工作时间段，则要用中间点固化的时间工作时间段减去假日时段，剩下的才是最终工作时间段
+		if(!aggShiftVO.getShiftVO().isFlexibleFinal()){//如果是固定班
+			mainVO.setPk_shift(aggShiftVO.getShiftVO().getPrimaryKey());
+			TeamWorkTimeVO[] workTimeVOs = transfer2WorkTimeVOs(remainsWorkScopes,aggShiftVO,date,timeZone);
+			aggVO.setTeamWorkTimeVO(workTimeVOs);
+			mainVO.setGzsj(new UFDouble(TimeScopeUtils.getLength(workTimeVOs)/3600.0));
+			mainVO.setIf_rest(UFBoolean.FALSE);
+			mainVO.setIswtrecreate(UFBoolean.TRUE);
+			mainVO.setIsflexiblefinal(UFBoolean.FALSE);
+			return aggVO;
+		}
+		//下面是弹性班
+		if(TACalendarUtils.isHolidayCanOverrideACompleteShift(aggShiftVO, holidayScopes, date, timeZone)){//如果假日时间段可以覆盖一个完整的工作时间段，则设置为公休
+			TeamCalendarUtils.setGX(mainVO);
+			mainVO.setOriginal_shift_b4cut(aggShiftVO.getShiftVO().getPk_shift());//切割前的班次
+			return aggVO;
+		}
+		//如果不能覆盖，则先按中间时间点固化工作时间段（班次定义保存的时候，对于弹性班的工作时间段已经做了中间化处理，可以直接用），然后看固化后的时间段与
+		//假日是否有交集，如果无交集，则这一天的排班不受影响。如果有交集，则要进行切割
+		//注意，代码走到这里，弹性班已经肯定要按中间点固化了，只不过固化后的工作时间段是否会被假日切割还不确定，需要进一步判断
+		WTVO[] wtVOs = aggShiftVO.getWTVOs();//已经是按中间点固化好了的
+		mainVO.setPk_shift(aggShiftVO.getShiftVO().getPrimaryKey());
+		ITimeScope[] midWorkScopes =  TimeScopeUtils.toTimeScope(wtVOs, date, timeZone);
+		//如果假日与中间点固化的工作段无交集
+		if(!TimeScopeUtils.isCross(holidayScopes,midWorkScopes)){
+			mainVO.setIswtrecreate(UFBoolean.FALSE);
+			mainVO.setGzsj(aggShiftVO.getShiftVO().getGzsj());
+			mainVO.setIf_rest(UFBoolean.FALSE);
+			mainVO.setIsflexiblefinal(UFBoolean.FALSE);
+			return aggVO;
+		}
+		//如果有交集，则将中间点工作段减去假日，作为最终的工作时间段
+		remainsWorkScopes = TimeScopeUtils.minusTimeScopes(midWorkScopes, holidayScopes);
+		TeamWorkTimeVO[] workTimeVOs = transfer2WorkTimeVOs(remainsWorkScopes,aggShiftVO,date,timeZone);
+		aggVO.setTeamWorkTimeVO(workTimeVOs);
+		mainVO.setGzsj(new UFDouble(TimeScopeUtils.getLength(workTimeVOs)/3600.0));
+		mainVO.setIf_rest(UFBoolean.FALSE);
+		mainVO.setIswtrecreate(UFBoolean.TRUE);
+		mainVO.setIsflexiblefinal(UFBoolean.FALSE);
+		return aggVO;
+		
+	}
+	
+	/**
+	 * 根据某一天的排班，计算其切割情况，如果返回null，则表示无切割，照正常逻辑生成teamcalendar数据即可
+	 * */
+	public static AggTeamCalendarVO createAggTeamCalendarByShiftAndHolidayNullWhenNotCut(
+			AggShiftVO aggShiftVO,String date,TimeZone timeZone,
+			HolidayVO[] holidayVOs,
+			Map<String, Boolean> enjoyHolidayMap){
+		HolidayVO[] crossedHolidayVOs = TACalendarUtils.findCrossedHolidayVOs(aggShiftVO, holidayVOs, date, timeZone, enjoyHolidayMap);
+		if(ArrayUtils.isEmpty(crossedHolidayVOs))
+			return null;
+		return cutHoliday(aggShiftVO, crossedHolidayVOs, date, timeZone);
+		
+	}
+	
+	/**
+	 * 将被假日切割后的时间段转换为PsnWortTimeVO[]数组，需要处理其中的上下班是否需要刷卡、上班刷卡段、下班刷卡段开始结束时间等信息
+	 * @param timeScopes
+	 * @param aggShiftVO
+	 * @return
+	 */
+	private static TeamWorkTimeVO[] transfer2WorkTimeVOs(ITimeScope[] timeScopes,AggShiftVO aggShiftVO,String date,TimeZone timeZone){
+		TeamWorkTimeVO[] workTimeVOs = new TeamWorkTimeVO[timeScopes.length];
+		WTVO[] wtVOs = aggShiftVO.getWTVOs();
+		ITimeScope[] wtScopes = TimeScopeUtils.toTimeScope(wtVOs, date, timeZone);
+		//TODO:构建工作时间子表
+		for(int i=0;i<workTimeVOs.length;i++){
+			workTimeVOs[i]=new TeamWorkTimeVO(timeScopes[i]);
+			workTimeVOs[i].setTimeid(i);
+			//上面几个字段都好处理，关键是后面的ksfromtime，kstotime，jsfromtime，jstotime，checkinflag，checkoutflag
+			//checkinflag和checkoutflag的处理逻辑如下：分两次循环，
+			//第一次循环时简单处理，PsnWortTimeVO的checkinflag，checkoutflag跟随其所属的原始的工作时间段
+			//第二次循环时做错误校验：如果第一个段的上班不刷卡，则要校正成刷卡；如果最后一段的下班不刷卡，则要校正成刷卡
+			//若相邻两段的前段下班、后段上班不匹配，则都设置为刷卡
+			for(int j=0;j<wtVOs.length;j++){
+				if(TimeScopeUtils.contains(wtScopes[j], workTimeVOs[i])){
+					workTimeVOs[i].setCheckinflag(wtVOs[j].getCheckinflag());//刷卡标志从所属的原始工作时间段
+					workTimeVOs[i].setCheckoutflag(wtVOs[j].getCheckoutflag());
+					break;
+				}
+			}
+		}
+		if(workTimeVOs[0].getCheckinflag()==null||!workTimeVOs[0].getCheckinflag().booleanValue())//如果第一次循环的结果是第一段的上班不刷卡，则要校正过来
+			workTimeVOs[0].setCheckinflag(UFBoolean.TRUE);
+		if(workTimeVOs[workTimeVOs.length-1].getCheckoutflag()==null||!workTimeVOs[workTimeVOs.length-1].getCheckoutflag().booleanValue())//如果第一次循环的结果是最后一段的下班不刷卡，则要校正过来
+			workTimeVOs[workTimeVOs.length-1].setCheckoutflag(UFBoolean.TRUE);
+		//第二次循环，对相邻两段进行校验，消除前后不匹配的情况
+		if(workTimeVOs.length>1)
+			for(int i=0;i<workTimeVOs.length-1;i++){
+				boolean lastCheckoutflag=workTimeVOs[i].getCheckoutflag()!=null&&workTimeVOs[i].getCheckoutflag().booleanValue();
+				boolean nextCheckinflag=workTimeVOs[i+1].getCheckinflag()!=null&&workTimeVOs[i+1].getCheckinflag().booleanValue();
+				if(lastCheckoutflag!=nextCheckinflag){//如果前一个下班和后一个上班的刷卡标志不一致，则都调整为必须刷卡
+					workTimeVOs[i].setCheckoutflag(UFBoolean.TRUE);
+					workTimeVOs[i+1].setCheckinflag(UFBoolean.TRUE);
+				}
+			}
+		//至此，是否需要刷卡的标志处理完毕，下面开始处理上班刷卡段的开始、结束时间和下班刷卡段的开始结束时间
+		ITimeScope kqScope = aggShiftVO.getShiftVO().toKqScope(date, timeZone);
+		//将多个工作时间段合并成刷卡段，并计算刷卡段的上班刷卡段、下班刷卡段的开始结束时间
+		ICompleteCheckTimeScope[] checkTimeScopes = CompleteCheckTimeScopeUtils
+		.mergeWorkTime(kqScope.getScope_start_datetime(), kqScope.getScope_end_datetime(), workTimeVOs);
+		for(ICompleteCheckTimeScope checkTimeScope:checkTimeScopes){
+			workTimeVOs[checkTimeScope.getCheckinScopeTimeID()].setKsfromtime(checkTimeScope.getKsfromtime());
+			workTimeVOs[checkTimeScope.getCheckinScopeTimeID()].setKstotime(checkTimeScope.getKstotime());
+			workTimeVOs[checkTimeScope.getCheckoutScopeTimeID()].setJsfromtime(checkTimeScope.getKsfromtime());
+			workTimeVOs[checkTimeScope.getCheckoutScopeTimeID()].setJstotime(checkTimeScope.getJstotime());
+		}
+		
+		return workTimeVOs;
+	}
+	
+	/**
+	 * 根据班次主键生成AggTeamCalendarVO
+	 * @param pk_psndoc
+	 * @param pk_group
+	 * @param pk_org 业务单元主键
+	 * @param date
+	 * @param pk_shift
+	 * @param shiftVOMap
+	 * @param isHolidayCancel
+	 * @return
+	 * @throws BusinessException
+	 */
+	public static AggTeamCalendarVO createAggVOByShiftVO(TeamHeadVO teamVO,String pk_group,String pk_org,String date,
+			String pk_shift,Map<String, AggShiftVO> shiftVOMap,boolean isHolidayCancel) throws BusinessException{
+		TeamCalendarVO calendarVO = new TeamCalendarVO();
+		calendarVO.setPk_team(teamVO.getPrimaryKey());
+		calendarVO.setPk_org_v(teamVO.getPk_org_v());
+		calendarVO.setVnote(teamVO.getVbnote());
+		calendarVO.setCwkid(teamVO.getCwkid());
+		calendarVO.setCalendar(UFLiteralDate.getDate(date));
+		calendarVO.setCancelflag(UFBoolean.valueOf(isHolidayCancel));
+		if(ShiftVO.PK_GX.equals(pk_shift)){
+			setGX(calendarVO);
+		}else if ("0001Z7000000000012GX".equals(pk_shift)) {
+			setLJ(calendarVO);
+		}
+		else{
+			setNonGX(calendarVO, ShiftServiceFacade.getAggShiftVOFromMap(shiftVOMap,pk_shift).getShiftVO());
+		}
+		
+		AggTeamCalendarVO aggVO = new AggTeamCalendarVO();
+		aggVO.setParentVO(calendarVO);
+		setGroupOrgPk2AggVO(pk_group, pk_org, aggVO);
+		return aggVO;
+	}
+	//設置例假日
+	public static void setLJ(TeamCalendarVO calendarVO) {
+		calendarVO.setPk_shift("0001Z7000000000012GX");
+		calendarVO.setGzsj(UFDouble.ZERO_DBL);
+		calendarVO.setDay_daytype(4);
+		calendarVO.setIf_rest(UFBoolean.TRUE);
+		calendarVO.setIsflexiblefinal(UFBoolean.FALSE);
+		calendarVO.setIswtrecreate(UFBoolean.FALSE);
+		calendarVO.setStatus(VOStatus.NEW);
+		
+	}
+	
+	/**
+	 * 设置公休班次的TeamCalendarVO信息
+	 * @param calendarVO
+	 */
+	public static void setGX(TeamCalendarVO calendarVO){
+		calendarVO.setPk_shift(ShiftVO.PK_GX);
+		calendarVO.setGzsj(UFDouble.ZERO_DBL);
+		calendarVO.setDay_daytype(1);
+		calendarVO.setIf_rest(UFBoolean.TRUE);
+		calendarVO.setIsflexiblefinal(UFBoolean.FALSE);
+		calendarVO.setIswtrecreate(UFBoolean.FALSE);
+		calendarVO.setStatus(VOStatus.NEW);
+	}
+	
+	/**
+	 * 设置非公休班次的TeamCalendarVO信息
+	 * @param calendarVO
+	 * @param shiftVO
+	 */
+	public static void setNonGX(TeamCalendarVO calendarVO,ShiftVO shiftVO){
+		calendarVO.setPk_shift(shiftVO.getPrimaryKey());
+		calendarVO.setGzsj(shiftVO.getGzsj());
+		calendarVO.setDay_daytype(0);
+		calendarVO.setIf_rest(UFBoolean.FALSE);
+		calendarVO.setIsflexiblefinal(shiftVO.getIsflexiblefinal());
+		calendarVO.setIswtrecreate(UFBoolean.FALSE);
+		calendarVO.setStatus(VOStatus.NEW);
+	}
+	
+	/**
+	 * 将集团主键等信息设置到AggVO里面
+	 * @param pk_group
+	 * @param pk_org 业务单元主键
+	 * @param aggVO
+	 * @param isHolidayCancel
+	 */
+	public static void setGroupOrgPk2AggVO(String pk_group,String pk_org,AggTeamCalendarVO aggVO){
+		if(aggVO==null)
+			return;
+		TeamCalendarVO calVO = aggVO.getTeamCalendarVO();
+		calVO.setPk_group(pk_group);
+		calVO.setPk_org(pk_org);
+		calVO.setStatus(VOStatus.NEW);
+		AuditInfoUtil.addData(calVO);
+		TeamWorkTimeVO[] wtVOs = aggVO.getTeamWorkTimeVO();
+		if(!ArrayUtils.isEmpty(wtVOs))
+			for(TeamWorkTimeVO wtVO:wtVOs){
+				wtVO.setPk_group(pk_group);
+				wtVO.setPk_org(pk_org);
+				wtVO.setStatus(VOStatus.NEW);
+			}
+		TeamCalHoliday[] holVOs = aggVO.getTeamCalHolidayVO();
+		if(!ArrayUtils.isEmpty(holVOs))
+			for(TeamCalHoliday holVO:holVOs){
+				holVO.setPk_group(pk_group);
+				holVO.setPk_org(pk_org);
+				holVO.setStatus(VOStatus.NEW);
+			}
+	}
+}

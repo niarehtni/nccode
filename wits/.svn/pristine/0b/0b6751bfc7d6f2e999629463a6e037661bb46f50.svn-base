@@ -1,0 +1,993 @@
+package nc.impl.bm.bmfile;
+
+import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import nc.bs.bd.baseservice.busilog.BDBusiLogUtil;
+import nc.bs.dao.BaseDAO;
+import nc.bs.dao.DAOException;
+import nc.bs.framework.common.NCLocator;
+import nc.bs.uif2.LockFailedException;
+import nc.hr.frame.persistence.BaseDAOManager;
+import nc.hr.frame.persistence.IValidatorFactory;
+import nc.hr.frame.persistence.SimpleDocServiceTemplate;
+import nc.hr.utils.InSQLCreator;
+import nc.hr.utils.PubEnv;
+import nc.hr.utils.ResHelper;
+import nc.impl.bm.bmdata.BmDataLocker;
+import nc.impl.bm.end.MonthEndDAO;
+import nc.itf.bm.bmfile.IBmfileManageService;
+import nc.itf.bm.bmfile.IBmfileQueryService;
+import nc.itf.bm.bmfile.IHRBmfileConstant;
+import nc.itf.hr.trn.IhrtrnQBS;
+import nc.jdbc.framework.processor.ColumnListProcessor;
+import nc.pubitf.resa.costcenter.ICostCenterPubService;
+import nc.vo.bm.bmclass.AssignclsVO;
+import nc.vo.bm.bmclass.BmClassConstant;
+import nc.vo.bm.bmclass.BmClassVO;
+import nc.vo.bm.data.BmDataVO;
+import nc.vo.bm.end.BmClassEndVO;
+import nc.vo.bm.pub.BmLoginContext;
+import nc.vo.bm.pub.BmMetaDataConstant;
+import nc.vo.bm.pub.BmPowerSqlHelper;
+import nc.vo.bm.pub.IHRBMDataResCode;
+import nc.vo.hi.pub.CommonValue;
+import nc.vo.hi.pub.HICommonValue;
+import nc.vo.hr.comp.trn.PsnTrnVO;
+import nc.vo.hr.pub.FormatVO;
+import nc.vo.jcom.lang.StringUtil;
+import nc.vo.pub.BusinessException;
+import nc.vo.pub.lang.UFBoolean;
+import nc.vo.pub.lang.UFLiteralDate;
+import nc.vo.uif2.LoginContext;
+import nc.vo.util.BDPKLockUtil;
+import nc.vo.util.BDVersionValidationUtil;
+
+import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang.StringUtils;
+
+/**
+ * @author duyao
+ * @version NCdp205268341 补丁合并
+ *          查询新进人员信息时在queryTrnPsnInfo方法中增加了校验，如果新进人员在本期间可以增加的险种是否均已加入
+ *          ，若否则显示该人员，若是则不显示。
+ *          在新进人员增加险种时在insertBmDataVOs中增加了校验，如果当前人员已经增加过该险种则过滤掉该险种
+ */
+@SuppressWarnings("restriction")
+public class BmfileManageServiceImpl implements IBmfileManageService, IBmfileQueryService {
+	private BmfileDao dao;
+
+	private final String DOC_NAME = "Bmfile";
+
+	private SimpleDocServiceTemplate serviceTemplate;
+
+	private InSQLCreator inSQLCreator;
+
+	@Override
+	public void batchAddPsn(BmDataVO[] vos, BmDataVO[] classInfo, BmLoginContext context) throws BusinessException {
+
+		if (vos != null && vos.length > 0) {
+			try {
+				// BDPKLockUtil.lockString(vos[0].getPk_org() +
+				// vos[0].getCyear() + vos[0].getCperiod());
+				BmClassVO[] bmclassVos = this.getBmfileDao().retrieveByClause(
+						BmClassVO.class,
+						"pk_org = '" + context.getPk_org() + "' and cyear='" + vos[0].getCyear() + "' and cperiod='"
+								+ vos[0].getCperiod() + "'");
+				if (null != bmclassVos) {
+					for (int i = 0; i < bmclassVos.length; i++) {
+						BDPKLockUtil.lockString(bmclassVos[i].getPk_bm_class());
+					}
+				}
+			} catch (LockFailedException le) {
+				throw new BusinessException(ResHelper.getString("60150bmdata", "060150bmdata0002")
+				/* @res "你操作的数据正被他人修改！请稍后再试" */);
+			}
+			// checkRepeatBmClass(vos, false);
+		}
+		List<BmDataVO> insertList = new ArrayList<BmDataVO>();
+
+		HashMap<String, BmDataVO[]> bmdatamap = new HashMap<String, BmDataVO[]>();
+		/*
+		 * 通过classid查询集团分配险种主键
+		 */
+
+		AssignclsVO[] assignclsVOs = queryAssignclsVOsByClassVOs(classInfo);
+		Map<String, String> map4Assigncls = new HashMap<String, String>();
+		if (!ArrayUtils.isEmpty(assignclsVOs)) {
+			for (int i = 0; i < assignclsVOs.length; i++) {
+				map4Assigncls.put(assignclsVOs[i].getClassid(), assignclsVOs[i].getPk_assigncls());
+			}
+		}
+		String[] clspk = null;
+		BaseDAO bdao = getBmfileDao().getBaseDao();
+		for (int i = 0; i < classInfo.length; i++) {
+			// insertList.clear();
+			String pk_bm_class = classInfo[i].getPk_bm_class();
+			List<BmDataVO> bmclspsnlist = new ArrayList<BmDataVO>();
+			for (int j = 0; j < vos.length; j++) {
+				if ("Y".equals(vos[j].getAttributeValue(pk_bm_class))) {
+					BmDataVO copyVo = (BmDataVO) vos[j].clone();
+					copyVo.setPk_bm_class(pk_bm_class);
+					copyVo.setPk_group(context.getPk_group());
+					copyVo.setPk_org(context.getPk_org());
+					copyVo.setCyear(context.getCyear());
+					copyVo.setCperiod(context.getCperiod());
+					copyVo.setPaylocation(classInfo[i].getPaylocation());
+					copyVo.setDbegindate(classInfo[i].getDbegindate());
+					copyVo.setCaculateflag(UFBoolean.FALSE);
+					copyVo.setCheckflag(UFBoolean.FALSE);
+					copyVo.setAccountstate(IHRBmfileConstant.ACCOUNTSTATE_NORMAL);
+					copyVo.setAccounttype(IHRBmfileConstant.ACCOUNTTYPE_NEW);
+					copyVo.setPk_sourcecls(map4Assigncls.get(classInfo[i].getPk_bm_class()));
+					bmclspsnlist.add(copyVo);
+				}
+			}
+			insertList.addAll(bmclspsnlist);
+			bmdatamap.put(pk_bm_class, bmclspsnlist.toArray(new BmDataVO[0]));
+			clspk = (String[]) ArrayUtils.add(clspk, pk_bm_class);
+			// if (!insertList.isEmpty())
+			// {
+			// /*
+			// * 批量新增的校验
+			// * */
+			// checkRepeatBmClass(insertList.toArray(new BmDataVO[0]), false);
+			//
+			// bdao.insertVOList(insertList);
+			//
+			//
+			// BmClassVO bmClass = new BmClassVO();
+			// bmClass.setPk_bm_class(classInfo[i].getPk_bm_class());
+			// // 同步财务组织与成本中心
+			// getBmfileDao().synFiAndCostOrg(insertList.toArray(new
+			// BmDataVO[insertList.size()]),bmClass);
+			// }
+		}
+		if (!insertList.isEmpty()) {
+			/*
+			 * 批量新增的校验
+			 */
+			checkRepeatBmClass(insertList.toArray(new BmDataVO[0]), false);
+
+			bdao.insertVOList(insertList);
+			// 同步财务组织与成本中心
+			getBmfileDao().synFiAndCostOrg(bmdatamap, clspk);
+		}
+	}
+
+	@Override
+	public AssignclsVO[] queryAssignclsVOsByClassVOs(BmDataVO[] classInfo) throws BusinessException {
+		return getBmfileDao().queryAssignclsVOsByClassVOs(classInfo);
+	}
+
+	@Override
+	public void batchDelBmfile(BmDataVO[] vos) throws BusinessException {
+		if (vos != null && vos.length > 0) {
+			try {
+				BmClassVO[] bmclassVos = this.getBmfileDao().retrieveByClause(
+						BmClassVO.class,
+						"pk_org = '" + vos[0].getPk_org() + "' and cyear='" + vos[0].getCyear() + "' and cperiod='"
+								+ vos[0].getCperiod() + "'");
+				if (null != bmclassVos) {
+					for (int i = 0; i < bmclassVos.length; i++) {
+						BDPKLockUtil.lockString(bmclassVos[i].getPk_bm_class());
+					}
+				}
+			} catch (LockFailedException le) {
+				throw new BusinessException(ResHelper.getString("60150bmdata", "060150bmdata0002")
+				/* @res "你操作的数据正被他人修改！请稍后再试" */);
+			}
+		}
+		getBmfileDao().getBaseDao().deleteVOArray(vos);
+
+		new BDBusiLogUtil(BmMetaDataConstant.BM_DATA_MDID).writeBusiLog(BmMetaDataConstant.DELETE, "", vos);
+	}
+
+	@Override
+	public void delete(BmDataVO vo) throws BusinessException {
+		getServiceTemplate().delete(vo);
+		new BDBusiLogUtil(BmMetaDataConstant.BM_DATA_MDID).writeBusiLog(BmMetaDataConstant.DELETE, "", vo);
+	}
+
+	@Override
+	public void deleteBmfileDsp4Psndoc(BmClassEndVO bmClassEndVO, BmLoginContext context) throws BusinessException {
+
+	}
+
+	@Override
+	public void deleteDisplayInfo(BmLoginContext context, String type) throws BusinessException {
+
+	}
+
+	private String getAddWhere(int trnType, BmLoginContext context) {
+		StringBuffer sqlB = new StringBuffer();
+		sqlB.append(" and psnjob.pk_group = '").append(context.getPk_group()).append("' ");
+		if (CommonValue.TRN_SUB == trnType || CommonValue.TRN_POST_MOD == trnType) {// 在社保档案的人员,且为同一个组织关系
+			sqlB.append(" and exists ");
+			sqlB.append(" (select pk_psndoc from bm_data ");
+			sqlB.append(" where bm_data.pk_psndoc = psnjob.pk_psndoc and  bm_data.assgid = psnjob.assgid  and bm_data.pk_psnorg = psnjob.pk_psnorg");
+			sqlB.append(" and bm_data.pk_org = '").append(context.getPk_org()).append("' ");
+			sqlB.append(" and bm_data.cyear = '").append(context.getCyear()).append("' ");
+			sqlB.append(" and bm_data.cperiod = '").append(context.getCperiod()).append("'");
+			sqlB.append(" and bm_data.accountstate = '0' ");
+			sqlB.append(" and bm_data.checkflag = 'N') ");
+		} else if (CommonValue.TRN_ADD == trnType) { // 过滤条件改在queryTrnPsnInfo中
+			/*
+			 * sqlB.append(" and not exists ");
+			 * sqlB.append(" (select pk_psndoc from bm_data ");
+			 * sqlB.append(" where bm_data.pk_psndoc = psnjob.pk_psndoc ");
+			 * sqlB.
+			 * append(" and bm_data.pk_org = '").append(context.getPk_org())
+			 * .append("' ");
+			 * sqlB.append(" and bm_data.cyear = '").append(context
+			 * .getCyear()).append("' ");
+			 * sqlB.append(" and bm_data.cperiod = '")
+			 * .append(context.getCperiod()).append("') ");
+			 * sqlB.append(" and psnjob.pk_org  in ("
+			 * ).append(AOSSQLHelper.getChildrenBUInSQLByHROrgPK
+			 * (context.getPk_org())).append(") ");
+			 */
+
+		}
+		return sqlB.toString();
+	}
+
+	@Override
+	public Map<String, Object> getAllPeriod(String pk_org) throws BusinessException {
+		return getBmfileDao().getAllPeriod(pk_org);
+	}
+
+	@Override
+	public Map<String, Object> getAllPeriodForRpt(String whereSql) throws BusinessException {
+		return getBmfileDao().getAllPeriodForRpt(whereSql);
+	}
+
+	private BmfileDao getBmfileDao() {
+		if (dao == null) {
+			dao = new BmfileDao();
+		}
+
+		return dao;
+	}
+
+	@Override
+	public BmDataVO[] getPkFinanceOrg(BmDataVO[] array) throws BusinessException {
+		return getBmfileDao().getPkFinanceOrg(array);
+
+	}
+
+	private SimpleDocServiceTemplate getServiceTemplate() {
+		if (serviceTemplate == null) {
+			serviceTemplate = new SimpleDocServiceTemplate(DOC_NAME);
+			serviceTemplate.setLocker(new BmDataLocker());
+		}
+
+		return serviceTemplate;
+	}
+
+	@Override
+	public String getSqlForFormular(String pk_bm_class, String itemid, String period, String cyear, String cperiod,
+			String pk_psndocRef) {
+		StringBuffer sqlBuffer = new StringBuffer();
+		sqlBuffer.append("select max(data_source." + itemid + ")"); // 1
+		sqlBuffer.append("  from bm_data data_source ");
+		// guoqtNCdp204998627集团级薪资发放项目取社保数据
+		sqlBuffer.append(" where (data_source.pk_bm_class in (select  classid from bm_assigncls where pk_sourcecls ='"
+				+ pk_bm_class + "'  and classid <>'" + pk_bm_class + "') or" + " data_source.pk_bm_class = '"
+				+ pk_bm_class + "'");
+		// guoqt 薪资可以取任意组织的社保数据，如果跨组织交，如薪资是A组织，社保是B组织，那该险种必须是集团分给组织B的
+		// 通过薪资选择的险种反查其集团险种，再查找集团险种分给所有组织的该险种
+		sqlBuffer
+				.append("   or (data_source.pk_bm_class in ( select  classid from bm_assigncls where pk_sourcecls in  "
+						+ " (select  pk_sourcecls from bm_assigncls where classid= '" + pk_bm_class + "') ) ) ) ");
+		sqlBuffer.append("   and data_source.cyear ='" + cyear + "' and data_source.cperiod = '" + cperiod + "' ");
+		sqlBuffer.append("   and data_source.pk_psndoc = " + pk_psndocRef);
+		sqlBuffer.append("   and data_source.checkflag = 'Y' ");
+		return sqlBuffer.toString();
+	}
+
+	@Override
+	public BmDataVO insert(BmDataVO vo) throws BusinessException {
+		return getServiceTemplate().insert(vo);
+	}
+
+	@Override
+	public BmDataVO[] insertBmDataVOs(BmDataVO[] vos, BmLoginContext context) throws BusinessException {
+		if (vos != null && vos.length > 0) {
+			try {
+				BmClassVO[] bmclassVos = this.getBmfileDao().retrieveByClause(
+						BmClassVO.class,
+						"pk_org = '" + vos[0].getPk_org() + "' and cyear='" + vos[0].getCyear() + "' and cperiod='"
+								+ vos[0].getCperiod() + "'");
+				if (null != bmclassVos) {
+					for (int i = 0; i < bmclassVos.length; i++) {
+						BDPKLockUtil.lockString(bmclassVos[i].getPk_bm_class());
+					}
+				}
+			} catch (LockFailedException le) {
+				throw new BusinessException(ResHelper.getString("60150bmdata", "060150bmdata0002")
+				/* @res "你操作的数据正被他人修改！请稍后再试" */);
+			}
+			checkRepeatBmClass(vos, false);
+
+			// 去除重复险种
+			vos = removeRepeatBmClass(vos);
+		}
+		return getBmfileDao().insertVOArrayReturnVOArray(vos);
+	}
+
+	// 去除重复的险种
+	private BmDataVO[] removeRepeatBmClass(BmDataVO[] vos) throws BusinessException {
+
+		List<BmDataVO> bmDataVOList = new ArrayList<BmDataVO>();
+		List<BmDataVO> repeatbmDataVOList = new ArrayList<BmDataVO>();
+		for (int i = 0; i < vos.length; i++) {
+			// 取得社保档案
+			BmDataVO[] davos = queryBmDataByPsndoc(vos[i].getPk_group(), vos[i].getPk_org(), vos[i].getPk_psndoc(),
+					vos[i].getCyear(), vos[i].getCperiod());
+			if (davos == null) {
+				continue;
+			} else {
+				for (int j = 0; j < davos.length; j++) {
+					if (vos[i].getPk_bm_class().equals((davos[j].getPk_bm_class()))) {
+						// 取得重复的社保档案
+						repeatbmDataVOList.add(vos[i]);
+					}
+				}
+			}
+		}
+		for (int i = 0; i < vos.length; i++) {
+			if (!repeatbmDataVOList.contains(vos[i])) {
+				bmDataVOList.add(vos[i]);
+			}
+		}
+		return bmDataVOList.toArray(new BmDataVO[0]);
+	}
+
+	@Override
+	public void checkRepeatBmClass(BmDataVO[] vos, boolean isTransferIn) throws BusinessException {
+		InSQLCreator isc = new InSQLCreator();
+		String[] strFields = BmClassConstant.DATAPSN_COLUMNFILE;
+		String tablename = isc.insertValues(BmClassConstant.BM_TEMP_DATAPSNFILE, strFields, strFields, vos);
+		/* 验证是否该人员同一期间内是否在其他组织中添加过该险种 */
+		if (isTransferIn) {
+			BmDataVO[] checkVOs = getBmfileDao().checkRepeatBmClass(vos, tablename);
+			if (!ArrayUtils.isEmpty(checkVOs)) {
+				StringBuffer message = new StringBuffer();
+				message.append(ResHelper.getString("60150bmdata", "060150bmdata0103")
+				/* @res "该期间下：" */);
+				for (int i = 0; i < checkVOs.length; i++) {
+					message.append("\n");
+					message.append(MessageFormat.format(ResHelper.getString("60150bmdata", "060150bmdata0102")
+					/* @res "人员[{0}]在组织[{1}]中已存在险种[{2}]" */, checkVOs[i].getPsnname(), checkVOs[i].getOrgname(),
+							checkVOs[i].getClassname()));
+				}
+				throw new BusinessException(message.toString());
+			}
+		} else {
+			/* 验证是否该人员是否在其他组织中转出过该险种 */
+			BmDataVO[] checkVOs = getBmfileDao().checkTransfOutBmClass(vos, tablename);
+			if (!ArrayUtils.isEmpty(checkVOs)) {
+				StringBuffer message = new StringBuffer();
+				for (int i = 0; i < checkVOs.length; i++) {
+					message.append(ResHelper.getString("60150bmdata", "060150bmdata0111", checkVOs[i].getClassname(),
+							checkVOs[i].getCyear() + checkVOs[i].getCperiod(), checkVOs[i].getPsnname())
+					/* @res "在险种{0}的{1}期间下，已存在人员{2}的转出数据，不能添加！" */);
+					message.append("\n");
+				}
+				throw new BusinessException(message.toString());
+			}
+		}
+	}
+
+	@Override
+	public BmClassVO[] queryBmClass(BmLoginContext loginContext, boolean isGroup, boolean isCheck)
+			throws BusinessException {
+		return getBmfileDao().queryBmClass(loginContext, isGroup, isCheck);
+	}
+
+	@Override
+	public BmClassVO[] queryBmClassForAdd(String pk_org, String pk_psnjob, String cyear, String cperiod, String pk_group)
+			throws BusinessException {
+		return getBmfileDao().queryBmClassForAdd(pk_org, pk_psnjob, cyear, cperiod, pk_group);
+	}
+
+	// 20151021 xiejie3 NCdp205514521 查询社保缴交数据，增加险种权限控制（pk_group用来查询险种权限）
+	@Override
+	public BmDataVO[] queryBmDataByPsndoc(String pk_group, String pk_org, String pk_psndoc, String cyear, String cperiod)
+			throws BusinessException {
+		String sql = "select distinct itemkey from bm_classitem  " + "where pk_bm_class in " + "("
+				+ " select pk_bm_class from bm_data " + " where bm_data.pk_org = '" + pk_org + "' "
+				+ " and bm_data.pk_psndoc = '" + pk_psndoc + "'  " + " and bm_data.cyear = '" + cyear + "' "
+				+ " and bm_data.cperiod = '" + cperiod + "' " + ")" + " and cyear = '" + cyear + "' and cperiod = '"
+				+ cperiod + "' and bm_classitem.category_id = '" + BmClassConstant.DOC_CATEGORY_ID + "' ";
+
+		@SuppressWarnings("unchecked")
+		List<String> listFileds = (List<String>) getBmfileDao().getBaseDao().executeQuery(sql.toString(), null,
+				new ColumnListProcessor("itemkey"));
+		StringBuffer sbd = new StringBuffer();
+		for (int i = 0; i < listFileds.size(); i++) {
+			sbd.append("bm_data." + listFileds.get(i) + ",");
+		}
+		return getBmfileDao().queryBmDataByPsndoc(pk_group, pk_org, pk_psndoc, cyear, cperiod, sbd.toString());
+	}
+
+	@Override
+	public BmDataVO[] queryBmfile(BmLoginContext loginContext, String condition) throws BusinessException {
+		return getBmfileDao().queryBmfile(loginContext, condition, null);
+	}
+
+	@Override
+	public BmDataVO[] queryBmfile(BmLoginContext loginContext, String[] strPks) throws BusinessException {
+
+		String inCondition = getPsnInsql(strPks);
+		return getBmfileDao().queryBmfile(loginContext, inCondition, null);
+	}
+
+	/**
+	 * 从社保档案中可以转出与删除的数据
+	 * 
+	 * @param loginContext
+	 * @param condition
+	 * @return
+	 * @throws BusinessException
+	 */
+	@Override
+	public BmDataVO[] queryBmfile4TransferOut(BmLoginContext loginContext, String condition, String powerSql)
+			throws BusinessException {
+		return getBmfileDao().queryBmfile4DelAndTransferOut(loginContext, condition, null, powerSql);
+	}
+
+	@Override
+	public BmDataVO[] queryBmfile4Del(BmLoginContext loginContext, String condition, String powerSql)
+			throws BusinessException {
+		return getBmfileDao().queryBmfile4DelAndTransferOut(loginContext, condition, IHRBmfileConstant.ACTION_BATCHDEL,
+				powerSql);
+	}
+
+	@Override
+	public BmDataVO[] queryBmfileForTrnIn(BmLoginContext loginContext, String condition) throws BusinessException {
+		return getBmfileDao().queryBmfile(loginContext, condition, IHRBmfileConstant.ACTION_TRANSFERIN);
+	}
+
+	@Override
+	public BmDataVO[] queryBmfileForTrnIn(BmLoginContext loginContext, String[] strPks) throws BusinessException {
+		String inCondition = getPsnInsql(strPks);
+		return getBmfileDao().queryBmfile(loginContext, inCondition, IHRBmfileConstant.ACTION_TRANSFERIN);
+	}
+
+	@Override
+	public BmDataVO[] queryBmfileForTrnOutCancel(BmLoginContext loginContext, String condition)
+			throws BusinessException {
+		return getBmfileDao().queryBmfile(loginContext, condition, IHRBmfileConstant.ACTION_TRNOUTCANCEL);
+	}
+
+	@Override
+	public BmDataVO[] queryBmfileForTrnOutCancel(BmLoginContext loginContext, String[] strPks) throws BusinessException {
+		String inCondition = getPsnInsql(strPks);
+		return getBmfileDao().queryBmfile(loginContext, inCondition, IHRBmfileConstant.ACTION_TRNOUTCANCEL);
+	}
+
+	@Override
+	public BmDataVO[] queryBmfileForUnseal(BmLoginContext loginContext, String condition) throws BusinessException {
+		return getBmfileDao().queryBmfile(loginContext, condition, IHRBmfileConstant.ACTION_UNSEAL);
+	}
+
+	@Override
+	public BmDataVO[] queryByCondition(BmLoginContext context, String condition, String orderby)
+			throws BusinessException {
+		return getBmfileDao().queryByCondition(context, condition, orderby);
+	}
+
+	@Override
+	public BmDataVO[] queryByCondition(LoginContext context, String condition) throws BusinessException {
+		BmLoginContext bmLoginContext = (BmLoginContext) context;
+		if (bmLoginContext.getPk_org() == null || bmLoginContext.getCyear() == null
+				|| bmLoginContext.getCperiod() == null) {
+			return null;
+		}
+		String sql = " accountstate = '0' ";
+		if (condition != null && condition.indexOf("accountstate") > -1) {
+			sql = condition;
+		} else if (condition != null) {
+			sql = sql + " and " + condition;
+		}
+		sql = sql + " and pk_org = '" + bmLoginContext.getPk_org() + "' and cyear = '" + bmLoginContext.getCyear()
+				+ "' and cperiod = '" + bmLoginContext.getCperiod() + "'";
+		String powerSql = BmPowerSqlHelper.getRefPowerSql(context.getPk_group(), HICommonValue.RESOUCECODE_6007PSNJOB,
+				IHRBMDataResCode.BMDEFAULT, "bm_data");
+		if (!StringUtil.isEmptyWithTrim(powerSql)) {
+			sql += " and " + powerSql;
+		}
+		return getServiceTemplate().queryByContextAndCondWithOrder(context, BmDataVO.class, sql,
+				new String[] { "pk_psndoc" });
+	}
+
+	@Override
+	public BmDataVO queryByPk(String pk) throws BusinessException {
+		return getServiceTemplate().queryByPk(BmDataVO.class, pk);
+	}
+
+	@Override
+	public String[] queryDeptsByCostCenter(String pk_costcenter) throws BusinessException {
+		boolean isEnable = PubEnv.isModuleStarted(PubEnv.getPk_group(), PubEnv.MODULE_RESA);
+		if (isEnable) {
+			ICostCenterPubService costCenterPubService = NCLocator.getInstance().lookup(ICostCenterPubService.class);
+			return costCenterPubService.queryDeptsByCostCenter(pk_costcenter).toArray(new String[0]);
+		} else {
+			return null;
+		}
+	}
+
+	/**
+	 * 专门为分页提供的
+	 */
+	@Override
+	public BmDataVO[] queryPayfileVOByPKS(String[] pks) throws BusinessException {
+		if (ArrayUtils.isEmpty(pks)) {
+			return new BmDataVO[0];
+		}
+		InSQLCreator inSQLCreator = new InSQLCreator();
+
+		String insql = inSQLCreator.getInSQL(pks);
+		String conditon = " bm_data.pk_bm_data in (" + insql + ") ";
+		BmDataVO[] bmDataVOArrays = getServiceTemplate().queryByCondition(BmDataVO.class, conditon);
+
+		// autor erl 2011-8-19 09:09 按传进来的主键的顺序排序
+		List<BmDataVO> BmDataVOList = new ArrayList<BmDataVO>();
+		Map<String, BmDataVO> BmDataVOMap = new HashMap<String, BmDataVO>();
+		for (BmDataVO bmDataVO : bmDataVOArrays) {
+			BmDataVOMap.put(bmDataVO.getPk_bm_data(), bmDataVO);
+		}
+		for (String strPK : pks) {
+			BmDataVOList.add(BmDataVOMap.get(strPK));
+		}
+
+		return BmDataVOList.toArray(new BmDataVO[0]);
+	}
+
+	@Override
+	public String[] queryPKSByCondition(BmLoginContext context, String condition, String orderSQL)
+			throws BusinessException {
+		// TODO Auto-generated method stub
+		return getBmfileDao().queryPKSByCondition(context, condition, orderSQL);
+	}
+
+	@Override
+	public BmDataVO queryPsnByPsnjob(String pk_psnjob) throws BusinessException {
+		return getBmfileDao().queryPsnByPsnjob(pk_psnjob);
+	}
+
+	@Override
+	public BmDataVO[] queryPsnForAdd(BmLoginContext loginContext, String condition) throws BusinessException {
+		return getBmfileDao().queryPsnForAdd(loginContext, condition, true);
+	}
+
+	@Override
+	public BmDataVO[] queryPsnForAdd(BmLoginContext loginContext, String[] strPks) throws BusinessException {
+		String inCondition = getPsnInsql(strPks);
+		return getBmfileDao().queryPsnForAdd(loginContext, inCondition, false);
+	}
+
+	// @Override
+	// public PsnTrnVO[] queryTrnPsnInfo(BmLoginContext context, UFLiteralDate
+	// beginDate, UFLiteralDate endDate, int trnType)
+	// throws BusinessException
+	// {
+	// if (IHRBmfileConstant.TRN_TIN == trnType)
+	// {
+	// return getBmfileDao().queryTrnInBmfile(context);
+	// }
+	// else if (IHRBmfileConstant.TRN_TOUT == trnType)
+	// {
+	// return getBmfileDao().queryTrnOutBmfile(context);
+	// }
+	// IhrtrnQBS hrtrnQBS = NCLocator.getInstance().lookup(IhrtrnQBS.class);
+	// return hrtrnQBS.queryTRNPsnInf(context.getPk_org(), beginDate, endDate,
+	// trnType, getAddWhere(trnType, context));
+	// }
+
+	public PsnTrnVO[] queryTrnPsnInfo(BmLoginContext context, UFLiteralDate beginDate, UFLiteralDate endDate,
+			int trnType) throws BusinessException {
+		if (IHRBmfileConstant.TRN_TIN == trnType) {
+			return getBmfileDao().queryTrnInBmfile(context);
+		} else if (IHRBmfileConstant.TRN_TOUT == trnType) {
+			return getBmfileDao().queryTrnOutBmfile(context);
+		} else if (CommonValue.TRN_ADD == trnType) {
+
+			// 新近人员查询新进人员在本期间可以增加的险种是否均已加入，若否则显示该人员，若是则不显示。
+			IhrtrnQBS hrtrnQBS = NCLocator.getInstance().lookup(IhrtrnQBS.class);
+			PsnTrnVO[] psnTrnVO = hrtrnQBS.queryTRNPsnInf(context.getPk_org(), beginDate, endDate, trnType,
+					getAddWhere(trnType, context));
+			if (psnTrnVO == null) {
+				return psnTrnVO;
+			}
+			return andTrnAddPsnInf(context, psnTrnVO);
+		}
+
+		IhrtrnQBS hrtrnQBS = NCLocator.getInstance().lookup(IhrtrnQBS.class);
+		return hrtrnQBS.queryTRNPsnInf(context.getPk_org(), beginDate, endDate, trnType, getAddWhere(trnType, context));
+
+	}
+
+	// 新近人员查询新进人员在本期间可以增加的险种是否均已加入，若否则显示该人员，若是则不显示。
+	private PsnTrnVO[] andTrnAddPsnInf(BmLoginContext context, PsnTrnVO[] psnTrnVO) throws DAOException {
+
+		List<PsnTrnVO> psnTrnVOlist = new ArrayList<PsnTrnVO>();
+		for (int i = 0; i < psnTrnVO.length; i++) {
+			// 查询待加险种
+			BmClassVO[] bmClassVO = getBmfileDao().queryBmClassForAdd(context.getPk_org(), psnTrnVO[i].getPk_psnjob(),
+					context.getCyear(), context.getCperiod(), context.getPk_group());
+			if (bmClassVO != null) {
+				psnTrnVOlist.add(psnTrnVO[i]);
+			}
+		}
+
+		return psnTrnVOlist.toArray(new PsnTrnVO[0]);
+	}
+
+	/* 以下的接口是社保档案显示设置，目前暂时不做 */
+
+	public void setValidatorFactory(IValidatorFactory docValidatorFactory) {
+		getServiceTemplate().setValidatorFactory(docValidatorFactory);
+	}
+
+	public void singleAddPsn(BmDataVO vo, BmDataVO[] classInfo) throws DAOException {
+		BmDataVO temp = null;
+		List<BmDataVO> insetList = new ArrayList<BmDataVO>();
+		for (int i = 0; i < classInfo.length; i++) {
+			temp = (BmDataVO) vo.clone();
+			temp.setPaylocation(classInfo[i].getPaylocation());
+			temp.setDbegindate(classInfo[i].getDbegindate());
+			temp.setBmaccountno(classInfo[i].getBmaccountno());
+			temp.setAttributeValue("f_14", classInfo[i].getAttributeValue("f_14"));// 年初余额
+			temp.setAttributeValue("f_15", classInfo[i].getAttributeValue("f_15"));// 期初余额
+			temp.setAttributeValue("f_16", classInfo[i].getAttributeValue("f_16"));// 本金累计
+			temp.setAttributeValue("f_17", classInfo[i].getAttributeValue("f_17"));// 利息累计
+			insetList.add(vo);
+		}
+		getBmfileDao().getBaseDao().insertVOList(insetList);
+	}
+
+	@Override
+	public void transferIn(BmDataVO[] vos) throws BusinessException {
+		if (vos == null || vos.length == 0) {
+			return;
+		}
+		// 唯一性校验
+		checkRepeatBmClass(vos, true);
+		// 得到所有险种，去重！！
+		HashMap<String, List<BmDataVO>> bminfoLists = new HashMap<String, List<BmDataVO>>();
+		for (int i = 0; i < vos.length; i++) {
+			List<BmDataVO> bminfoList = bminfoLists.get(vos[i].getPk_bm_class());
+			if (null == bminfoList) {
+				bminfoList = new ArrayList<BmDataVO>();
+			}
+
+			bminfoList.add(vos[i]);
+			bminfoLists.put(vos[i].getPk_bm_class(), bminfoList);
+		}
+
+		String pk_bm_class = FormatVO.formatArrayToString(bminfoLists.keySet().toArray(new String[0]), "'");
+		List<BmClassVO> target = getBmfileDao().queryTransferClass(pk_bm_class, vos[0].getPk_org());
+		BmClassVO[] source = getServiceTemplate().queryByPks(BmClassVO.class,
+				bminfoLists.keySet().toArray(new String[0]));
+
+		if (target == null) {
+
+			throw new BusinessException(ResHelper.getString("60150bmfile", "060150bmfile0047")
+			/* @res "本组织未找到对应的险种" */);
+		} else if (target.size() < source.length) {
+			StringBuilder msg = new StringBuilder();
+			for (int i = 0; i < source.length; i++) {
+				int j = 0;
+				for (; j < target.size(); j++) {
+					if (null != source[i].getPk_bm_class()
+							&& source[i].getPk_bm_class().equals(target.get(j).getPk_bm_class())) {
+						break;
+					}
+				}
+				if (j >= target.size()) {
+					msg.append(ResHelper.getString("60150bmfile", "060150bmfile0062", source[i].getMultilangName())
+					/* @res "{0}的最新期间数据已经审核不能转入！" */).append("\n");
+				}
+			}
+			throw new BusinessException(msg.toString());
+		} else if (target.size() == source.length) {
+			// 更新期间为最新期间
+			for (int i = 0; i < vos.length; i++) {
+
+				for (int j = 0; j < target.size(); j++) {
+					if (null != vos[i].getPk_bm_class()
+							&& vos[i].getPk_bm_class().equals(target.get(j).getPk_bm_class())) {
+						vos[i].setCyear(target.get(j).getCyear());
+						vos[i].setCperiod(target.get(j).getCperiod());
+					}
+				}
+
+			}
+		} else {
+			throw new BusinessException(ResHelper.getString("60150bmfile", "060150bmfile0069")/*
+																							 * @
+																							 * res
+																							 * "险种数据异常！"
+																							 */);
+		}
+		// fengwei 2012-09-27 转入时，要更新“新增转入类型”
+		// String[] updatFileds = new String[]{"accountstate", "pk_org",
+		// "pk_transferorg", "pk_bm_class", "accounttype",
+		// "paylocation","cyear","cperiod"};
+		// xiejie3 由于社保档案转档时，需要将集团级缴交地转到目标组织，所以paylocation单独处理。
+		String[] updatFileds = new String[] { "accountstate", "pk_org", "pk_transferorg", "pk_bm_class", "accounttype",
+				"cyear", "cperiod" };
+		getBmfileDao().getBaseDao().updateVOArray(vos, updatFileds);
+
+		List<BmDataVO> voList = new ArrayList<BmDataVO>();
+		BaseDAOManager manager = new BaseDAOManager();
+		String sqlPayLocation = "select pk_loctrule from bm_locationrule where pk_group=pk_org and pk_loctrule ="
+				+ "( select paylocation from bm_data where pk_bm_data='";
+		for (int i = 0; i < vos.length; i++) {
+			String sqlPayLocation2 = sqlPayLocation + vos[i].getPk_bm_data() + "')";
+			if (!manager.isValueExist(sqlPayLocation2)) {
+				voList.add(vos[i]);
+
+			}
+		}
+		String[] updatFileds2 = new String[] { "paylocation" };
+		if (voList != null && voList.size() != 0) {
+			BmDataVO[] vos2 = (BmDataVO[]) voList.toArray(new BmDataVO[voList.size()]);
+			getBmfileDao().getBaseDao().updateVOArray(vos2, updatFileds2);
+		}
+
+		MonthEndDAO monthDao = new MonthEndDAO();
+		// for(int j = 0;j<target.size();j++){
+		// // 更新人员信息变化为最新的
+		// monthDao.updatePsnInfo(target.get(j),
+		// bminfoLists.get(target.get(j).getPk_bm_class()).toArray(new
+		// BmDataVO[0]));
+		// }
+		BmClassVO[] bmclsvos = target.toArray(new BmClassVO[0]);
+		monthDao.updatePsnInfo(bmclsvos, bminfoLists);
+		InSQLCreator inC = new InSQLCreator();
+		// try
+		// {
+		String sql = " select * from bm_data where pk_bm_data in(" + inC.getInSQL(vos, BmDataVO.PK_BM_DATA) + ")";
+		vos = getBmfileDao().executeQueryVOs(sql, BmDataVO.class); // 取得更新人员工作记录后的数据
+
+		// }finally
+		// {
+		// inC.clear();
+		// }
+
+		bminfoLists = new HashMap<String, List<BmDataVO>>();
+		for (int i = 0; i < vos.length; i++) {
+			List<BmDataVO> bminfoList = bminfoLists.get(vos[i].getPk_bm_class());
+			if (null == bminfoList) {
+				bminfoList = new ArrayList<BmDataVO>();
+			}
+
+			bminfoList.add(vos[i]);
+			bminfoLists.put(vos[i].getPk_bm_class(), bminfoList);
+		}
+
+		String[] bmclspks = null;
+		HashMap<String, BmDataVO[]> map = new HashMap<String, BmDataVO[]>();
+		for (int j = 0; j < target.size(); j++) {
+			String pk = target.get(j).getPk_bm_class();
+			map.put(pk, bminfoLists.get(pk).toArray(new BmDataVO[0]));
+			bmclspks = (String[]) ArrayUtils.add(bmclspks, pk);
+			// // 同步财务组织与成本中心
+			// getBmfileDao().synFiAndCostOrg(bminfoLists.get(target.get(j).getPk_bm_class()).toArray(new
+			// BmDataVO[0]),target.get(j));
+		}
+		// 同步财务组织与成本中心
+		getBmfileDao().synFiAndCostOrg(map, bmclspks);
+
+	}
+
+	@Override
+	public void transferOut(BmDataVO[] vos) throws BusinessException {
+		if (vos == null || vos.length == 0) {
+			return;
+		}
+
+		/*
+		 * //得到所有险种，去重！！ Map<String,String> map = new HashMap<String,String>();
+		 * Map<String,String> orgMap = new HashMap<String,String>(); for(int
+		 * i=0;i<vos.length;i++){ map.put(vos[i].getPk_bm_class(), "");
+		 * orgMap.put(vos[i].getPk_transferorg(), ""); }
+		 * 
+		 * Iterator orgIt = orgMap.keySet().iterator(); List target = null;
+		 * while(orgIt.hasNext()){ String pk_transferorg = (String)
+		 * orgIt.next(); String pk_bm_class =
+		 * FormatVO.formatArrayToString(map.keySet().toArray(new String[0]),
+		 * "'"); target = getBmfileDao().queryTransferClass(pk_bm_class,
+		 * pk_transferorg, vos[0].getCyear(), vos[0].getCperiod()); target =
+		 * Arrays.asList(map.keySet().toArray(new String[0])); if (target ==
+		 * null || target.size() != map.size()) { throw new
+		 * BusinessException(ResHelper.getString("60150bmfile",
+		 * "060150bmfile0046")
+		 * 
+		 * @res "目标组织未找到对应的险种" ); } }
+		 */
+		validateHasTransferClass(vos);
+		String[] updatFileds = new String[] { "accountstate", "pk_transferorg" };
+		getBmfileDao().getBaseDao().updateVOArray(vos, updatFileds);
+	}
+
+	@Override
+	public void transferOutCancel(BmDataVO[] vos) throws BusinessException {
+		Map<String, List<BmDataVO>> bminfoLists = new HashMap<String, List<BmDataVO>>();
+		for (int i = 0; i < vos.length; i++) {
+			List<BmDataVO> bminfoList = bminfoLists.get(vos[i].getPk_bm_class());
+			if (null == bminfoList) {
+				bminfoList = new ArrayList<BmDataVO>();
+			}
+
+			bminfoList.add(vos[i]);
+			bminfoLists.put(vos[i].getPk_bm_class(), bminfoList);
+		}
+		BmClassVO[] source = getServiceTemplate().queryByPks(BmClassVO.class,
+				bminfoLists.keySet().toArray(new String[0]));
+		for (int i = 0; i < vos.length; i++) {
+
+			for (int j = 0; j < source.length; j++) {
+				if (null != vos[i].getPk_bm_class() && vos[i].getPk_bm_class().equals(source[j].getPk_bm_class())) {
+					vos[i].setCyear(source[j].getCyear());
+					vos[i].setCperiod(source[j].getCperiod());
+				}
+			}
+
+		}
+		String[] updatFileds = new String[] { "accountstate", "pk_transferorg", "cyear", "cperiod" };
+		getBmfileDao().getBaseDao().updateVOArray(vos, updatFileds);
+	}
+
+	@Override
+	public BmDataVO update(BmDataVO vo) throws BusinessException {
+		return getServiceTemplate().update(vo, true);
+	}
+
+	@Override
+	public void updateAccountstate(BmDataVO[] vos) throws BusinessException {
+		String[] updatFileds = new String[] { "accountstate", "vcancelreason" };
+		getBmfileDao().getBaseDao().updateVOArray(vos, updatFileds);
+	}
+
+	@Override
+	public BmDataVO[] updateBmDataVOs(BmDataVO[] vos) throws BusinessException {
+		// // fengwei 2021-08-01 修改前，对险种加锁
+		// BDPKLockUtil.lockSuperVO(vos);
+		if (vos != null && vos.length > 0) {
+			try {
+				BmClassVO[] bmclassVos = this.getBmfileDao().retrieveByClause(
+						BmClassVO.class,
+						"pk_org = '" + vos[0].getPk_org() + "' and cyear='" + vos[0].getCyear() + "' and cperiod='"
+								+ vos[0].getCperiod() + "'");
+				if (null != bmclassVos) {
+					for (int i = 0; i < bmclassVos.length; i++) {
+						BDPKLockUtil.lockString(bmclassVos[i].getPk_bm_class());
+					}
+				}
+			} catch (LockFailedException le) {
+				throw new BusinessException(ResHelper.getString("60150bmdata", "060150bmdata0002")
+				/* @res "你操作的数据正被他人修改！请稍后再试" */);
+			}
+		}
+
+		// 版本校验（时间戳校验）
+		BDVersionValidationUtil.validateSuperVO(vos);
+
+		// 查询需要更新的险种项目
+		StringBuffer sbd = new StringBuffer();
+		sbd.append("select distinct itemkey from bm_classitem ");
+		sbd.append(" where pk_bm_class in (");
+		for (int i = 0; i < vos.length; i++) {
+			if (i == vos.length - 1) {
+				sbd.append("'" + vos[i].getPk_bm_class() + "'");
+			} else {
+				sbd.append("'" + vos[i].getPk_bm_class() + "',");
+			}
+		}
+		sbd.append(") and cyear = '" + vos[0].getCyear() + "' and cperiod = '" + vos[0].getCperiod()
+				+ "' and bm_classitem.category_id = '" + BmClassConstant.DOC_CATEGORY_ID + "' ");
+
+		@SuppressWarnings("unchecked")
+		List<String> listFileds = (List<String>) getBmfileDao().getBaseDao().executeQuery(sbd.toString(), null,
+				new ColumnListProcessor("itemkey"));
+
+		String[] updatFixFileds = new String[] { "bmaccountno", "paylocation", "dbegindate", "pk_financeorg",
+				"fiporgvid", "pk_financedept", "fipdeptvid", "pk_liabilityorg", "pk_liabilitydept", "libdeptvid",
+				// MOD {修改时添加20个自定义项} kevin.nie 2017-09-12 start
+				"def1", "def2", "def3", "def4", "def5", "def6", "def7", "def8", "def9", "def10", "def11", "def12",
+				"def13", "def14", "def15", "def16", "def17", "def18", "def19", "def20",
+
+				// {修改时添加20个自定义项} kevin.nie 2017-09-12 end
+				"accountstate" };
+
+		for (int i = 0; i < updatFixFileds.length; i++) {
+			listFileds.add(updatFixFileds[i]);
+		}
+
+		getBmfileDao().getBaseDao().updateVOArray(vos, listFileds.toArray(new String[0]));
+		return queryBmDataByPsndoc(vos[0].getPk_group(), vos[0].getPk_org(), vos[0].getPk_psndoc(), vos[0].getCyear(),
+				vos[0].getCperiod());
+	}
+
+	public void validateHasTransferClass(BmDataVO[] vos) throws BusinessException {
+		Map<String, List<BmDataVO>> bminfoLists = new HashMap<String, List<BmDataVO>>();
+		for (int i = 0; i < vos.length; i++) {
+			List<BmDataVO> bminfoList = bminfoLists.get(vos[i].getPk_bm_class());
+			if (null == bminfoList) {
+				bminfoList = new ArrayList<BmDataVO>();
+			}
+
+			bminfoList.add(vos[i]);
+			bminfoLists.put(vos[i].getPk_bm_class(), bminfoList);
+		}
+		String pk_bm_class = FormatVO.formatArrayToString(bminfoLists.keySet().toArray(new String[0]), "'");
+		List<BmClassVO> target = getBmfileDao().queryAllTransferClass(pk_bm_class, vos[0].getPk_transferorg());
+		List<BmClassVO> source = getBmfileDao().querySourceClass(pk_bm_class);
+
+		if (ArrayUtils.isEmpty(target.toArray())) {
+			throw new BusinessException(ResHelper.getString("60150bmfile", "060150bmfile0063")
+			/* @res "目标组织下未找到对应的险种！" */);
+		} else {
+			StringBuilder msg = new StringBuilder();
+			for (int i = 0; i < source.size(); i++) {
+				int j = 0;
+				for (; j < target.size(); j++) {
+					if (null != source.get(i).getPk_bm_class()
+							&& source.get(i).getPk_bm_class().equals(target.get(j).getPk_bm_class())) {
+						break;
+					}
+				}
+				if (j >= target.size()) {
+					msg.append(ResHelper.getString("60150bmfile", "060150bmfile0064", source.get(i).getMultilangName())
+					/* @res "目标组织下未找到{0}对应的险种！" */).append("\n");
+				}
+			}
+			if (!StringUtils.isEmpty(msg.toString())) {
+				throw new BusinessException(msg.toString());
+			}
+		}
+	}
+
+	private String getPsnInsql(String[] strPks) throws BusinessException {
+		if (inSQLCreator == null) {
+			inSQLCreator = new InSQLCreator();
+		}
+		return "hi_psnjob.pk_psnjob in (" + inSQLCreator.getInSQL(strPks) + ")";
+	}
+
+	// 20150831 xiejie3 补丁合并NCdp205306564人员变动社保档案人员变动不能做转出 begin
+	// shenliangc
+	/*
+	 * 社保档案变动人员直接用薪资档案变动人员的查询方法， 变动人员页签展示的同样是变动人员在本组织内最后一条工作记录信息，
+	 * 如果人员发生过跨组织调配并且工作记录变化已生效，则组织变化后的所有工作记录都是看不到的。
+	 * 然后选择人员进行封存，处理逻辑是根据选中数据的工作记录主键到bm_data表中匹配数据，
+	 * 而此时由于人员工作信息变化生效事件会触发社保档案中人员工作记录的同步监听机制，
+	 * 将人员工作记录主键修改为最新工作记录主键，注意这里是真正的最新工作记录主键，
+	 * 而从前一个面板传过来的人员工作记录主键只是当前主组织下的最后一条工作记录主键，所以当然查不到数据。
+	 * 
+	 * 首先想到的解决方案是，选中人员进行封存操作时，根据人员查询档案数据方法修改，
+	 * 不是直接根据选中的工作记录主键，而是需要先根据选中的人员基本信息主键查询人员工作记录表，
+	 * 查出人员真正最新一条工作记录主键，作为查询条件进行查询即可。
+	 * 
+	 * 同时注意到，发生调配但工作记录变化没有生效（受业务参数设置控制）的档案人员，
+	 * 在bm_data表中的pk_psnjob还没有更新，仍然是调配前的那条工作记录，
+	 * 因此将来自变动人员面板的工作记录主键（变动未生效）和来自工作记录表的工作记录主键（变动已生效） 的并集作为查询条件用于社保档案查询。
+	 * 
+	 * shenliangc 2014-04-14
+	 */
+	@Override
+	public String[] queryCurrentPkPsnJob(String[] psnDocPks, UFLiteralDate beginLDate, UFLiteralDate endLDate)
+			throws BusinessException {
+		return this.getBmfileDao().queryCurrentPkPsnJob(psnDocPks, beginLDate, endLDate);
+	}
+
+	// end
+}

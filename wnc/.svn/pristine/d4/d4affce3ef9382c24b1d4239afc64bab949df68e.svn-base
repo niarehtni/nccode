@@ -1,0 +1,50 @@
+package nc.ui.hrwa.wadaysalary.ace.action;
+
+import java.awt.event.ActionEvent;
+
+import nc.bs.framework.common.NCLocator;
+import nc.itf.hrwa.IWadaysalaryService;
+import nc.ui.hr.uif2.action.HrAction;
+import nc.vo.wa.paydata.AggDaySalaryVO;
+import nc.vo.wa.pub.WaDayLoginContext;
+
+import org.apache.commons.lang.StringUtils;
+
+public class CalculAction extends HrAction{
+
+	/**
+	 * 日薪计算：计算按钮
+	 */
+	private static final long serialVersionUID = -7065970889565697283L;
+	
+	private WaDayLoginContext context;
+
+	public WaDayLoginContext getContext() {
+		return context;
+	}
+
+	public void setContext(WaDayLoginContext context) {
+		this.context = context;
+	}
+
+	@Override
+	public void doAction(ActionEvent paramActionEvent) throws Exception {
+		IWadaysalaryService wadaysalaryService=NCLocator.getInstance().lookup(IWadaysalaryService.class);
+		AggDaySalaryVO[] aggSalaryVOs=wadaysalaryService.calculSalaryByHrorg(context, context.getPk_hrorg(),context.getCalculdate().toString());
+		getModel().initModel(aggSalaryVOs);
+	}
+	
+	protected boolean isActionEnable() {
+		if(StringUtils.isEmpty(getContext().getPk_hrorg())||null==getContext().getCalculdate()){
+			return false;
+		}
+		return true;
+	}
+
+	public CalculAction() {
+		super.setBtnName("計算");
+		super.setCode("CALCUL");
+		super.putValue("CALCUL", "計算");
+	}
+
+}

@@ -1,0 +1,7 @@
+
+delete pub_bcr_sn where ( pk_billcodesn in ('1001ZZ10000000013NH6') and (dr=0 or dr is null) );
+
+
+
+insert into pub_bcr_sn(dr,lastsn,markstr,markstrdesc,pk_billcodebase,pk_billcodesn,ts) values( 0,'00000001','0001A1100000000011TO','#pkgrp#20|','0001ZZ10000000051GBB','1001ZZ10000000013NH6','2018-09-21 16:42:05');
+

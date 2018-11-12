@@ -1,0 +1,60 @@
+package nc.impl.twhr;
+
+import nc.impl.pub.ace.AceTwhr_declarationPubServiceImpl;
+import nc.ui.querytemplate.querytree.IQueryScheme;
+import nc.vo.twhr.twhr_declaration.AggDeclarationVO;
+import nc.itf.twhr.ITwhr_declarationMaintain;
+import nc.vo.pub.BusinessException;
+
+public class Twhr_declarationMaintainImpl extends AceTwhr_declarationPubServiceImpl
+		implements ITwhr_declarationMaintain {
+
+	@Override
+	public void delete(AggDeclarationVO[] clientFullVOs,
+			AggDeclarationVO[] originBills) throws BusinessException {
+		super.pubdeleteBills(clientFullVOs, originBills);
+	}
+
+	@Override
+	public AggDeclarationVO[] insert(AggDeclarationVO[] clientFullVOs,
+			AggDeclarationVO[] originBills) throws BusinessException {
+		return super.pubinsertBills(clientFullVOs, originBills);
+	}
+
+	@Override
+	public AggDeclarationVO[] update(AggDeclarationVO[] clientFullVOs,
+			AggDeclarationVO[] originBills) throws BusinessException {
+		return super.pubupdateBills(clientFullVOs, originBills);
+	}
+
+	@Override
+	public AggDeclarationVO[] query(IQueryScheme queryScheme)
+			throws BusinessException {
+		return super.pubquerybills(queryScheme);
+	}
+
+	@Override
+	public AggDeclarationVO[] save(AggDeclarationVO[] clientFullVOs,
+			AggDeclarationVO[] originBills) throws BusinessException {
+		return super.pubsendapprovebills(clientFullVOs, originBills);
+	}
+
+	@Override
+	public AggDeclarationVO[] unsave(AggDeclarationVO[] clientFullVOs,
+			AggDeclarationVO[] originBills) throws BusinessException {
+		return super.pubunsendapprovebills(clientFullVOs, originBills);
+	}
+
+	@Override
+	public AggDeclarationVO[] approve(AggDeclarationVO[] clientFullVOs,
+			AggDeclarationVO[] originBills) throws BusinessException {
+		return super.pubapprovebills(clientFullVOs, originBills);
+	}
+
+	@Override
+	public AggDeclarationVO[] unapprove(AggDeclarationVO[] clientFullVOs,
+			AggDeclarationVO[] originBills) throws BusinessException {
+		return super.pubunapprovebills(clientFullVOs, originBills);
+	}
+
+}

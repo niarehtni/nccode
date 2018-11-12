@@ -1,0 +1,76 @@
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'e2381942-b966-11e8-a42e-ab44e9fc28de','1001ZZ1000000000MODV','bd_defdoc@@@code',null,'bd_defdoc','2018-09-16 13:39:13')
+/
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'e2381945-b966-11e8-a42e-ab44e9fc28de','1001ZZ1000000000MODV','bd_defdoc@@@creationtime',null,'bd_defdoc','2018-09-16 13:39:13')
+/
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'e2381946-b966-11e8-a42e-ab44e9fc28de','1001ZZ1000000000MODV','bd_defdoc@@@creator',null,'bd_defdoc','2018-09-16 13:39:13')
+/
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'e2381948-b966-11e8-a42e-ab44e9fc28de','1001ZZ1000000000MODV','bd_defdoc@@@innercode',null,'bd_defdoc','2018-09-16 13:39:13')
+/
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'e2381949-b966-11e8-a42e-ab44e9fc28de','1001ZZ1000000000MODV','bd_defdoc@@PK@@',null,'bd_defdoc','2018-09-16 13:39:13')
+/
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'e238194a-b966-11e8-a42e-ab44e9fc28de','1001ZZ1000000000MODV','bd_defdoc@@@memo',null,'bd_defdoc','2018-09-16 13:39:13')
+/
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'e238194b-b966-11e8-a42e-ab44e9fc28de','1001ZZ1000000000MODV','bd_defdoc@@@mnecode',null,'bd_defdoc','2018-09-16 13:39:13')
+/
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'e238194c-b966-11e8-a42e-ab44e9fc28de','1001ZZ1000000000MODV','bd_defdoc@@@modifier',null,'bd_defdoc','2018-09-16 13:39:13')
+/
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'e238194e-b966-11e8-a42e-ab44e9fc28de','1001ZZ1000000000MODV','bd_defdoc@@@modifiedtime',null,'bd_defdoc','2018-09-16 13:39:13')
+/
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'e238194f-b966-11e8-a42e-ab44e9fc28de','1001ZZ1000000000MODV','bd_defdoc@@@name',null,'bd_defdoc','2018-09-16 13:39:13')
+/
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'e2381950-b966-11e8-a42e-ab44e9fc28de','1001ZZ1000000000MODV','bd_defdoc@@@shortname',null,'bd_defdoc','2018-09-16 13:39:13')
+/
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'e2381952-b966-11e8-a42e-ab44e9fc28de','1001ZZ1000000000MODV','bd_defdoc@@@pid',null,'bd_defdoc','2018-09-16 13:39:13')
+/
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'e2381954-b966-11e8-a42e-ab44e9fc28de','1001ZZ1000000000MODV','bd_defdoc@@@pk_defdoclist',null,'bd_defdoc','2018-09-16 13:39:13')
+/
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'e2381955-b966-11e8-a42e-ab44e9fc28de','1001ZZ1000000000MODV','bd_defdoc@@@pk_group',null,'bd_defdoc','2018-09-16 13:39:13')
+/
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'e2381956-b966-11e8-a42e-ab44e9fc28de','1001ZZ1000000000MODV','bd_defdoc@@@pk_org',null,'bd_defdoc','2018-09-16 13:39:13')
+/
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'e2381957-b966-11e8-a42e-ab44e9fc28de','1001ZZ1000000000MODV','bd_defdoc@@@enablestate',null,'bd_defdoc','2018-09-16 13:39:13')
+/
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'e2381959-b966-11e8-a42e-ab44e9fc28de','1001ZZ1000000000MODV','bd_defdoc@@@dataoriginflag',null,'bd_defdoc','2018-09-16 13:39:13')
+/
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'e238195a-b966-11e8-a42e-ab44e9fc28de','1001ZZ1000000000MODV','bd_defdoc@@@datatype',null,'bd_defdoc','2018-09-16 13:39:13')
+/
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'e238195b-b966-11e8-a42e-ab44e9fc28de','1001ZZ1000000000MODV','bd_defdoc@@@def1',null,'bd_defdoc','2018-09-16 13:39:13')
+/
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'e238195c-b966-11e8-a42e-ab44e9fc28de','1001ZZ1000000000MODV','bd_defdoc@@@def2',null,'bd_defdoc','2018-09-16 13:39:13')
+/
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'e238195d-b966-11e8-a42e-ab44e9fc28de','1001ZZ1000000000MODV','bd_defdoc@@@def3',null,'bd_defdoc','2018-09-16 13:39:13')
+/
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'e238195e-b966-11e8-a42e-ab44e9fc28de','1001ZZ1000000000MODV','bd_defdoc@@@def4',null,'bd_defdoc','2018-09-16 13:39:13')
+/
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'e238195f-b966-11e8-a42e-ab44e9fc28de','1001ZZ1000000000MODV','bd_defdoc@@@def5',null,'bd_defdoc','2018-09-16 13:39:13')
+/
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'e2381960-b966-11e8-a42e-ab44e9fc28de','1001ZZ1000000000MODV','bd_defdoc@@@def6',null,'bd_defdoc','2018-09-16 13:39:13')
+/
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'e2381961-b966-11e8-a42e-ab44e9fc28de','1001ZZ1000000000MODV','bd_defdoc@@@def7',null,'bd_defdoc','2018-09-16 13:39:13')
+/
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'e2381962-b966-11e8-a42e-ab44e9fc28de','1001ZZ1000000000MODV','bd_defdoc@@@def8',null,'bd_defdoc','2018-09-16 13:39:13')
+/
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'e2381963-b966-11e8-a42e-ab44e9fc28de','1001ZZ1000000000MODV','bd_defdoc@@@def9',null,'bd_defdoc','2018-09-16 13:39:13')
+/
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'e2381964-b966-11e8-a42e-ab44e9fc28de','1001ZZ1000000000MODV','bd_defdoc@@@def10',null,'bd_defdoc','2018-09-16 13:39:13')
+/
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'e2381965-b966-11e8-a42e-ab44e9fc28de','1001ZZ1000000000MODV','bd_defdoc@@@def11',null,'bd_defdoc','2018-09-16 13:39:13')
+/
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'e2381966-b966-11e8-a42e-ab44e9fc28de','1001ZZ1000000000MODV','bd_defdoc@@@def12',null,'bd_defdoc','2018-09-16 13:39:13')
+/
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'e2381967-b966-11e8-a42e-ab44e9fc28de','1001ZZ1000000000MODV','bd_defdoc@@@def13',null,'bd_defdoc','2018-09-16 13:39:13')
+/
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'e2381968-b966-11e8-a42e-ab44e9fc28de','1001ZZ1000000000MODV','bd_defdoc@@@def14',null,'bd_defdoc','2018-09-16 13:39:13')
+/
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'e2381969-b966-11e8-a42e-ab44e9fc28de','1001ZZ1000000000MODV','bd_defdoc@@@def15',null,'bd_defdoc','2018-09-16 13:39:13')
+/
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'e238196a-b966-11e8-a42e-ab44e9fc28de','1001ZZ1000000000MODV','bd_defdoc@@@def16',null,'bd_defdoc','2018-09-16 13:39:13')
+/
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'e238196b-b966-11e8-a42e-ab44e9fc28de','1001ZZ1000000000MODV','bd_defdoc@@@def17',null,'bd_defdoc','2018-09-16 13:39:13')
+/
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'e238196c-b966-11e8-a42e-ab44e9fc28de','1001ZZ1000000000MODV','bd_defdoc@@@def18',null,'bd_defdoc','2018-09-16 13:39:13')
+/
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'e238196d-b966-11e8-a42e-ab44e9fc28de','1001ZZ1000000000MODV','bd_defdoc@@@def19',null,'bd_defdoc','2018-09-16 13:39:13')
+/
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'e238196e-b966-11e8-a42e-ab44e9fc28de','1001ZZ1000000000MODV','bd_defdoc@@@def20',null,'bd_defdoc','2018-09-16 13:39:13')
+/

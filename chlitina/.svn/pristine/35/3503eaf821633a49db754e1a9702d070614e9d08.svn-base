@@ -1,0 +1,620 @@
+package nc.impl.twhr;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import nc.bs.dao.BaseDAO;
+import nc.bs.dao.DAOException;
+import nc.bs.framework.common.NCLocator;
+import nc.impl.pub.ace.AceTwhr_declarationPubServiceImpl;
+import nc.ui.querytemplate.querytree.IQueryScheme;
+import nc.vo.twhr.twhr_declaration.AggDeclarationVO;
+import nc.vo.twhr.twhr_declaration.BusinessBVO;
+import nc.vo.twhr.twhr_declaration.CompanyBVO;
+import nc.vo.twhr.twhr_declaration.NonPartTimeBVO;
+import nc.vo.twhr.twhr_declaration.PartTimeBVO;
+import nc.itf.twhr.ITwhr_declarationMaintain;
+import nc.itf.uap.IUAPQueryBS;
+import nc.jdbc.framework.processor.BeanListProcessor;
+import nc.jdbc.framework.processor.ColumnListProcessor;
+import nc.jdbc.framework.processor.MapListProcessor;
+import nc.pubitf.para.DeclarationUtils;
+import nc.pubitf.twhr.utils.LegalOrgUtilsEX;
+import nc.vo.hi.psndoc.PTCostVO;
+import nc.vo.pub.BusinessException;
+import nc.vo.pub.SuperVO;
+import nc.vo.pub.VOStatus;
+import nc.vo.pub.lang.UFBoolean;
+import nc.vo.pub.lang.UFDate;
+import nc.vo.pub.lang.UFDateTime;
+import nc.vo.pub.lang.UFDouble;
+import nc.vo.pub.lang.UFLiteralDate;
+
+public class Twhr_declarationMaintainImpl extends AceTwhr_declarationPubServiceImpl
+		implements ITwhr_declarationMaintain {
+	
+	private BaseDAO basDAO;
+	// 申报格式:50薪资:1 90AB:2 其他:0
+	private static final int DECLAREFORM_50 = 1;
+	private static final int DECLAREFORM_90AB = 2;
+	private static final int DECLAREFORM_OTHER = 0;
+	
+	
+	/**
+	 * @return the basDAO
+	 */
+	private BaseDAO getBaseDAO() {
+		if(null == basDAO){
+			basDAO = new BaseDAO();
+		}
+		return basDAO;
+	}
+
+	
+
+	@Override
+	public void delete(AggDeclarationVO[] clientFullVOs,
+			AggDeclarationVO[] originBills) throws BusinessException {
+		super.pubdeleteBills(clientFullVOs, originBills);
+	}
+
+	@Override
+	public AggDeclarationVO[] insert(AggDeclarationVO[] clientFullVOs,
+			AggDeclarationVO[] originBills) throws BusinessException {
+		return super.pubinsertBills(clientFullVOs, originBills);
+	}
+
+	@Override
+	public AggDeclarationVO[] update(AggDeclarationVO[] clientFullVOs,
+			AggDeclarationVO[] originBills) throws BusinessException {
+		return super.pubupdateBills(clientFullVOs, originBills);
+	}
+
+	@Override
+	public AggDeclarationVO[] query(IQueryScheme queryScheme)
+			throws BusinessException {
+		return super.pubquerybills(queryScheme);
+	}
+
+	@Override
+	public AggDeclarationVO[] save(AggDeclarationVO[] clientFullVOs,
+			AggDeclarationVO[] originBills) throws BusinessException {
+		return super.pubsendapprovebills(clientFullVOs, originBills);
+	}
+
+	@Override
+	public AggDeclarationVO[] unsave(AggDeclarationVO[] clientFullVOs,
+			AggDeclarationVO[] originBills) throws BusinessException {
+		return super.pubunsendapprovebills(clientFullVOs, originBills);
+	}
+
+	@Override
+	public AggDeclarationVO[] approve(AggDeclarationVO[] clientFullVOs,
+			AggDeclarationVO[] originBills) throws BusinessException {
+		return super.pubapprovebills(clientFullVOs, originBills);
+	}
+
+	@Override
+	public AggDeclarationVO[] unapprove(AggDeclarationVO[] clientFullVOs,
+			AggDeclarationVO[] originBills) throws BusinessException {
+		return super.pubunapprovebills(clientFullVOs, originBills);
+	}
+
+	/* (non-Javadoc)
+	 * @see nc.itf.twhr.ITwhr_declarationMaintain#writeBack4HealthCaculate(nc.vo.twhr.twhr_declaration.AggDeclarationVO[], nc.vo.twhr.twhr_declaration.AggDeclarationVO[])
+	 */
+	@Override
+	public void writeBack4HealthCaculate(AggDeclarationVO originBill)
+			throws BusinessException {
+		if(null == originBill){
+			return;
+		}
+		AggDeclarationVO [] saveVOs = {originBill}; 
+		//先当成新增全新的记录
+		insert(saveVOs,saveVOs);
+		//根据组织查找主键,并fix
+		dataFix(originBill.getParentVO().getPk_org());
+		
+	}
+
+	/**
+	 * 把所有字表的记录都设置成唯一一条主表的记录
+	 *(此界面没有主表,但是四个字表,通过一条默认数据来关连个子表)
+	 * @throws BusinessException
+	 * @author Ares.Tank 
+	 * @date 2018年9月25日 下午4:05:42
+	 * @description
+	 */
+	private void dataFix(String pk_org) throws BusinessException{
+		//根据组织查找主键
+		String sqlStr ="select pk_declaration from twhr_declaration "
+				+ "where twhr_declaration.pk_org = '"+pk_org+"' and dr = 0";
+		String keyOfDeclaration = null;
+		List pk_declarations  
+			= (List)getBaseDAO().executeQuery(sqlStr, new ColumnListProcessor());
+		if(null==pk_declarations){
+			//新组织就直接存
+			return ;
+		}else{
+			for(Object obj : pk_declarations){
+				if(null==obj){
+					return ;
+				}
+				keyOfDeclaration = obj.toString();
+				
+			}
+		}
+		
+		sqlStr = "update declaration_parttime SET rowno = null,pk_declaration = '"+keyOfDeclaration+"' "
+				+ " where pk_org = '"+pk_org+"' and dr = 0";
+		getBaseDAO().executeUpdate(sqlStr);
+		
+		sqlStr = "update declaration_nonparttime SET rowno = null,pk_declaration = '"+keyOfDeclaration+"'"
+				+ " where pk_org = '"+pk_org+"' and dr = 0";
+		getBaseDAO().executeUpdate(sqlStr);
+		
+		sqlStr = "update declaration_business SET rowno = null,pk_declaration = '"+keyOfDeclaration+"'"
+				+ " where pk_org = '"+pk_org+"' and dr = 0";
+		getBaseDAO().executeUpdate(sqlStr);
+		
+		sqlStr = "update declaration_company SET rowno = null,pk_declaration = '"+keyOfDeclaration+"'"
+				+ " where pk_org = '"+pk_org+"' and dr = 0";
+		getBaseDAO().executeUpdate(sqlStr);
+		
+		//删除旧引用
+		sqlStr = "delete from twhr_declaration "
+				+ " where (pk_declaration <> '"+keyOfDeclaration+"' or dr = null) "
+				+ "and pk_org = '"+pk_org+"'";
+		getBaseDAO().executeUpdate(sqlStr);
+		
+	}
+
+
+
+	/* (non-Javadoc)
+	 * @see nc.itf.twhr.ITwhr_declarationMaintain#generatCompanyBVO(nc.vo.pub.lang.UFDate)
+	 */
+	@Override
+	public void generatCompanyBVO(UFDate dateMonth,String pk_hrorg,String pkGroup) throws BusinessException {
+		Set<String> orgs = LegalOrgUtilsEX.getOrgsByLegal(pk_hrorg, pkGroup);
+		for (String pk_org : orgs) {
+			// 查出日期符合的非兼职人员信息
+			List<CompanyBVO> saveList = new ArrayList<>();
+			AggDeclarationVO avo = DeclarationUtils.getAggDeclarationVO();
+			avo.getParentVO().setPk_group(pkGroup);
+			avo.getParentVO().setPk_org(pk_org);
+			// 找出公司补充保费的总条数
+			String sqlStr = "select max(num) as countsum from declaration_company";
+			Integer sum = 100000000;
+			List objs = (List) getBaseDAO().executeQuery(sqlStr, new ColumnListProcessor());
+			if (null != objs) {
+				for (Object obj : objs) {
+					if (null != obj) {
+						sum = (Integer) obj;
+					}
+				}
+			}
+			//月初时间
+			String startDayOfMonth = getStartDay(dateMonth);
+			//下月初时间
+			String endDayOfMonth = getEndDay(dateMonth);
+			
+			//删除该组织该月的记录  TODO 月份的选择
+			sqlStr = " delete from declaration_company "
+			+ " where pay_date >= '"+startDayOfMonth+"' "
+			+ " and pay_date < '"+endDayOfMonth+"' "
+			+ "and vbdef1 = '"+pk_org+"' and dr = 0 ";
+			getBaseDAO().executeUpdate(sqlStr);	
+			
+			
+			
+			
+			
+			if (sum == null || sum < 0) {
+				sum = 100000000;
+			}
+
+			sqlStr = "SELECT dnp.* from declaration_nonparttime dnp "
+					+ " LEFT JOIN twhr_declaration dectw on dnp.pk_declaration = dectw.pk_declaration "
+					+ " where dnp.pay_date >= '" + startDayOfMonth + "' and dnp.pay_date < '"
+					+ endDayOfMonth + "' " + " and dectw.pk_org = '" + pk_org + "'";
+			List<NonPartTimeBVO> resultBeans = (List<NonPartTimeBVO>) getBaseDAO().executeQuery(sqlStr,
+					new BeanListProcessor(NonPartTimeBVO.class));
+			if (null != resultBeans) {
+				for (NonPartTimeBVO vo : resultBeans) {
+					if (null == vo) {
+						continue;
+					}
+					CompanyBVO newVO = new CompanyBVO();
+					// 行号
+					newVO.setNum(++sum);
+					// 部门
+					newVO.setPk_dept(vo.getPk_dept());
+					// 薪资方案
+					newVO.setPk_wa_class(vo.getVbdef2());
+					// 给付日期
+					newVO.setPay_date(vo.getPay_date());
+					// 给付金额(本次扣稅基數)
+					newVO.setPay_money(vo.getSingle_pay());
+					// 人员
+					newVO.setPk_psndoc(vo.getVbdef4());
+					// 投保总额 (级距)
+					newVO.setTotalinsure(vo.getDeductions_month_insure());
+					// 補充保費費基
+					newVO.setReplenis_base(vo.getSingle_pay().sub(vo.getDeductions_month_insure()));
+					// 补充保费
+					newVO.setCompany_bear(vo.getSingle_withholding());
+					// TS
+					newVO.setTs(new UFDateTime());
+					//法人组织
+					newVO.setVbdef1(vo.getVbdef1());
+					//薪资方案
+					newVO.setVbdef2(vo.getVbdef2());
+					//薪资期间
+					newVO.setVbdef3(vo.getVbdef3());
+					//人员
+					newVO.setVbdef4(vo.getVbdef4());
+					
+					saveList.add(newVO);
+				}
+			}
+
+			// 查出日期符合的兼职人员的信息
+			sqlStr = "SELECT dnp.* from declaration_parttime dnp "
+					+ " LEFT JOIN twhr_declaration dectw on dnp.pk_declaration = dectw.pk_declaration "
+					+ " where dnp.pay_date >= '" + startDayOfMonth + "' and dnp.pay_date < '"
+					+ endDayOfMonth + "' " + " and dectw.pk_org = '" + pk_org + "'";
+			List<PartTimeBVO> qryResultBeans = (List<PartTimeBVO>) getBaseDAO().executeQuery(sqlStr,
+					new BeanListProcessor(PartTimeBVO.class));
+			if (null != qryResultBeans) {
+				for (PartTimeBVO vo : qryResultBeans) {
+					if (null == vo) {
+						continue;
+					}
+					CompanyBVO newVO = new CompanyBVO();
+					// 行号
+					newVO.setNum(++sum);
+					// 部门
+					newVO.setPk_dept(vo.getPk_dept());
+					// 薪资方案
+					newVO.setPk_wa_class(vo.getVbdef2());
+					// 给付日期
+					newVO.setPay_date(vo.getPay_date());
+					// 给付金额(本次扣稅基數)
+					newVO.setPay_money(vo.getSingle_pay());
+					// 人员
+					newVO.setPk_psndoc(vo.getVbdef4());
+					// 投保总额 (级距)--兼职人员有投保级距?
+					newVO.setTotalinsure(null);
+					// 補充保費費基--兼职人员费基?
+					newVO.setReplenis_base(null);
+					// 补充保费
+					newVO.setCompany_bear(vo.getSingle_withholding());
+					// TS
+					newVO.setTs(new UFDateTime());
+					//法人组织
+					newVO.setVbdef1(vo.getVbdef1());
+					//薪资方案
+					newVO.setVbdef2(vo.getVbdef2());
+					//薪资期间
+					newVO.setVbdef3(vo.getVbdef3());
+					//人员
+					newVO.setVbdef4(vo.getVbdef4());
+
+					saveList.add(newVO);
+				}
+			}
+			avo.setChildren(CompanyBVO.class, saveList.toArray(new CompanyBVO[0]));
+			
+			AggDeclarationVO[] saveVOs = { avo };
+			// 先当成新增全新的记录
+			insert(saveVOs, saveVOs);
+			// 根据组织查找主键,并fix
+			dataFix(avo.getParentVO().getPk_org());
+			
+			
+			
+		}
+	}
+
+	/**
+	 * 结束时间String
+	 * @param date
+	 * @return
+	 * @author Ares.Tank 
+	 * @date 2018年9月27日 下午6:08:23
+	 * @description 
+	 */
+	private String getEndDay(UFDate date) {
+		if(null == date){
+			return null;
+		}
+		if(date.getMonth() >=9){
+			return date.getYear() + "-" + (date.getMonth()+1) + "-" + "01" + " 00:00:00";
+		}else{
+			return date.getYear() + "-0" + (date.getMonth()+1) + "-" + "01" + " 00:00:00";
+		}
+	}
+
+
+
+	/**
+	 * 获取这月的开始时间 string
+	 * @param date
+	 * @return
+	 * @author Ares.Tank 
+	 * @date 2018年9月27日 下午6:08:20
+	 * @description 
+	 */
+	private String getStartDay(UFDate date) {
+		if(null == date){
+			return null;
+		}
+		if(date.getMonth() >=10){
+			return date.getYear() + "-" + date.getMonth() + "-" + "01" + " 00:00:00";
+		}else{
+			return date.getYear() + "-0" + date.getMonth() + "-" + "01" + " 00:00:00";
+		}
+
+		
+	}
+
+
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see nc.itf.twhr.ITwhr_declarationMaintain#writeBack4PTCost(nc.vo.twhr.
+	 * twhr_declaration.AggDeclarationVO)
+	 */
+	@Override
+	public void writeBack4PTCost(PTCostVO ptvo, String pk_org, String pk_group) throws BusinessException {
+		AggDeclarationVO avo = DeclarationUtils.getAggDeclarationVO();
+		avo.getParentVO().setPk_group(pk_group);
+		avo.getParentVO().setPk_org(pk_org);
+		
+		// 判断申报格式
+		int type = checkDeclareform(ptvo.getDeclareformat());
+		
+		// 如果是删除,则直接删除
+		String tableName = null;
+		if (ptvo.getStatus() == VOStatus.DELETED) {
+			if(DECLAREFORM_50 == type){
+				tableName = "declaration_parttime";
+				
+			}else if (DECLAREFORM_90AB == type){
+				tableName = "declaration_business";
+				
+			}
+			if(tableName != null){
+				String sqlStr = " delete from "+tableName
+						+ " where pay_date >= '"+ptvo.getPaydate().toString()+"' "
+						+ " and pay_date < '"+ptvo.getPaydate().getDateAfter(1).toString()+"' "
+						+ "and vbdef4 = '"+ptvo.getPk_psndoc()+"' and dr = 0 ";
+				getBaseDAO().executeUpdate(sqlStr);	
+			}
+			return ;
+		}else if(ptvo.getStatus() == VOStatus.UPDATED){
+			if(DECLAREFORM_50 == type){
+				tableName = "declaration_parttime";
+				
+			}else if (DECLAREFORM_90AB == type){
+				tableName = "declaration_business";
+				
+			}
+			if(tableName != null){
+				String sqlStr = " delete from "+tableName
+						+ " where pay_date >= '"+ptvo.getPaydate().toString()+"' "
+						+ " and pay_date < '"+ptvo.getPaydate().getDateAfter(1).toString()+"' "
+						+ "and vbdef4 = '"+ptvo.getPk_psndoc()+"' and dr = 0 ";
+				getBaseDAO().executeUpdate(sqlStr);	
+			}
+		}
+		// 判断是否是新生成的数据,还是同一天的数据 
+		SuperVO superVO = isExistPTCostRecord(ptvo.getPk_psndoc(), ptvo.getPaydate(), type);
+		
+		if (DECLAREFORM_50 == type) {
+			
+				// 50格式
+				SuperVO[] svos = new SuperVO[1];
+				// svos[0] = DeclarationUtils.getNonPartTimeBVO();
+				PartTimeBVO newVO = null;
+				if(null == superVO){
+					newVO = DeclarationUtils.getPartTimeBVO();
+				}else{
+					newVO = (PartTimeBVO)(superVO.clone());
+				}
+				
+				// 给付日期:
+				newVO.setPay_date(new UFDate(ptvo.getPaydate().toDate()));
+
+				Map<String, Object> baseInfo = getBaseInfo(ptvo.getPk_psndoc(), pk_org);
+
+				// 所得人姓名
+				newVO.setBeneficiary_name(baseInfo.get("beneficiary_name").toString());
+				// 所得人身份证号
+				newVO.setBeneficiary_id(baseInfo.get("beneficiary_id").toString());
+				// 部门
+				newVO.setPk_dept(null);
+
+				// 单次给付金额
+				newVO.setSingle_pay(ptvo.getTaxamount());
+				// 单次扣缴补充保险费金额
+				newVO.setSingle_withholding(ptvo.getExtendamount());
+
+				// 写入薪资方案、薪资期间、法人组织 用作取消计算的标识
+				newVO.setVbdef1(pk_org);
+				// newVO.setVbdef2(pk_wa_class);
+				// newVO.setVbdef3(pk_wa_period);
+				newVO.setVbdef4(ptvo.getPk_psndoc());
+
+				svos[0] = newVO;
+				avo.setChildren(NonPartTimeBVO.class, svos);
+			
+
+		} else if (DECLAREFORM_90AB == type) {
+
+			
+				// 90AB格式
+				// 50格式
+				SuperVO[] svos = new SuperVO[1];
+				BusinessBVO newVO = null;
+				// svos[0] = DeclarationUtils.getNonPartTimeBVO();
+				if(null == superVO){
+					 newVO = DeclarationUtils.getBusinessBVO();
+				}else{
+					 newVO = (BusinessBVO)(superVO.clone());
+				}
+				
+				// 给付日期:
+				newVO.setPay_date(new UFDate(ptvo.getPaydate().toDate()));
+
+				Map<String, Object> baseInfo = getBaseInfo(ptvo.getPk_psndoc(), pk_org);
+
+				// 所得人姓名
+				newVO.setBeneficiary_name(baseInfo.get("beneficiary_name").toString());
+				// 所得人身份证号
+				newVO.setBeneficiary_id(baseInfo.get("beneficiary_id").toString());
+				// 部门
+				newVO.setPk_dept(null);
+
+				// 单次给付金额
+				newVO.setSingle_pay(ptvo.getTaxamount());
+				// 单次扣缴补充保险费金额
+				newVO.setSingle_withholding(ptvo.getExtendamount());
+
+				// 写入薪资方案、薪资期间、法人组织 用作取消计算的标识
+				newVO.setVbdef1(pk_org);
+				// newVO.setVbdef2(pk_wa_class);
+				// newVO.setVbdef3(pk_wa_period);
+				newVO.setVbdef4(ptvo.getPk_psndoc());
+
+				svos[0] = newVO;
+				avo.setChildren(BusinessBVO.class, svos);
+			
+		}
+		if (null == avo) {
+			return;
+		}
+		AggDeclarationVO[] saveVOs = { avo };
+		// 先当成新增全新的记录
+		insert(saveVOs, saveVOs);
+		// 根据组织查找主键,并fix
+		dataFix(avo.getParentVO().getPk_org());
+		
+		
+
+	}
+	
+	
+
+	// 获取健保基本信息
+	private Map<String, Object> getBaseInfo(String psndoc, String pk_org) throws BusinessException {
+		// Map<String,Object> resultMap = new HashMap<>();
+		String sqlStr = "SELECT psn.name as beneficiary_name, psn.id as beneficiary_id, "
+				+ " org.glbdef40 as insurance_unit_code ,job.pk_dept as pk_dept" + "	FROM bd_psndoc psn "
+				+ " left JOIN org_hrorg org on psn.pk_org = org.pk_hrorg and org.dr = 0"
+				+ " left join hi_psnjob job on job.pk_psndoc = psn.pk_psndoc and lastflag = 'Y' and job.dr = 0 "
+				+ " WHERE psn.pk_psndoc = '" + psndoc + "'" + " and org.pk_hrorg = '" + pk_org + "'"
+				+ " and psn.dr = 0 ";
+		List<Map> sqlResultMapList = (List<Map>) getBaseDAO().executeQuery(sqlStr, new MapListProcessor());
+		if (null != sqlResultMapList) {
+
+			for (Map sqlResultMap : sqlResultMapList) {
+				if (null != sqlResultMap) {
+					return sqlResultMap;
+				}
+
+			}
+
+		}
+
+		return new HashMap();
+	}
+	
+	/**
+	 * 判断申报格式是否为50薪资
+	 * @param pk_wa_class
+	 * @return 50薪资:1 90AB:2 其他:0
+	 * @throws BusinessException 
+	 * @date 2018年9月22日 下午12:35:51
+	 * @description
+	 */
+	private int checkDeclareform(String pk_declareform) throws BusinessException {
+		if(null==pk_declareform){
+			return DECLAREFORM_OTHER;
+		}
+		int type = 0;
+		String dbCode = null;
+		String sqlStr = "select code from bd_defdoc "
+				+ " where bd_defdoc.pk_defdoc= '"+pk_declareform+"'";
+		//判断申报格式类型
+		IUAPQueryBS iUAPQueryBS = (IUAPQueryBS)NCLocator.getInstance().lookup(IUAPQueryBS.class.getName());
+		List list 
+			= (List)iUAPQueryBS.executeQuery(sqlStr, new ColumnListProcessor());
+		if (null != list && list.size() > 0) {
+			for (Object obj : list) {
+				if (null != obj) {
+					dbCode = obj.toString();
+					if(dbCode.equals("50")){
+						return DECLAREFORM_50;
+					}else if(dbCode.equals("9A")){
+						return DECLAREFORM_90AB;
+					}else if(dbCode.equals("9B")){
+						return DECLAREFORM_90AB;
+					}
+				}
+			}
+		}
+		
+		return DECLAREFORM_OTHER;
+	}
+	/**
+	 * 判断数据库中是否已经存在劳务费用的生成记录,如果有就返回主键
+	 * @param psndoc 人员
+	 * @param payDate 发放日
+	 * @param type 申报类型  DECLAREFORM_50,DECLAREFORM_90A DECLAREFORM_90B
+	 * @return
+	 * @author Ares.Tank 
+	 * @throws BusinessException 
+	 * @date 2018年9月26日 下午11:51:33
+	 * @description
+	 */
+	private SuperVO isExistPTCostRecord(String psndoc , UFLiteralDate payDate,int type) throws BusinessException{
+		if(null == psndoc || null == payDate){
+			return null;
+		}
+		
+		
+		String tableName;
+		Class clazz = null;
+		if(DECLAREFORM_50 == type){
+			tableName = "declaration_parttime";
+			clazz = PartTimeBVO.class;
+		}else if (DECLAREFORM_90AB == type){
+			tableName = "declaration_business";
+			clazz = BusinessBVO.class;
+		}else{
+			return null;
+		}
+		String sqlStr = " select sub.*  from "+tableName+" sub "
+				+ " where sub.pay_date >= '"+payDate.toString()+"' "
+				+ " and sub.pay_date < '"+payDate.getDateAfter(1).toString()+"' "
+				+ "and sub.vbdef4 = '"+psndoc+"' and sub.dr = 0 ";
+		List result = (List)getBaseDAO().executeQuery(sqlStr, new BeanListProcessor(clazz));
+		String pkStringRtn = null;
+		if(null != result){
+			for(Object obj : result){
+				if(null != obj){
+					return (SuperVO)obj;
+				}
+			}
+		}
+		return null;
+
+	}
+
+}

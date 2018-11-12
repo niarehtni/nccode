@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding='gb2312'?>
+<module name="hrta">
+  <public>
+	<component remote="true" singleton="true"  tx="CMT">
+	  <interface>nc.itf.ta.overtime.ISegruleMaintain</interface>
+	  <implementation>nc.impl.ta.overtime.SegruleMaintainImpl</implementation>
+	</component>
+
+	<component remote="true" singleton="true"  tx="CMT">
+	  <interface>nc.pubitf.ta.overtime.ISegRuleService</interface>
+	  <implementation>nc.pubimpl.ta.overtime.SegRuleServiceImpl</implementation>
+	</component>
+
+  </public> 
+</module> 

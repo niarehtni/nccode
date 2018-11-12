@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding='gb2312'?>
+<module name="hrpub">
+  <public>
+	<component remote="true" singleton="true"  tx="NONE">
+	  <interface>nc.itf.hrpub.IWNCTASKQuery</interface>
+	  <implementation>nc.impl.hrpub.WNCTASKQueryImpl</implementation>
+	    <extension class="nc.uap.ws.deploy.OxbWSExtensionProcessor">
+	        <wsdl>/nc/itf/hrpub/IWNCTASKQuery.wsdl</wsdl>
+	        <address>/nc.itf.hrpub.IWNCTASKQuery</address>
+	    </extension>
+	</component>
+
+	<component remote="true" singleton="true"  tx="NONE">
+	  <interface>nc.itf.hrpub.IWNCDataExchange</interface>
+	  <implementation>nc.impl.hrpub.WNCDataExchangeImpl</implementation>
+	    <extension class="nc.uap.ws.deploy.OxbWSExtensionProcessor">
+	        <wsdl>/nc/itf/hrpub/IWNCDataExchange.wsdl</wsdl>
+	        <address>/nc.itf.hrpub.IWNCDataExchange</address>
+	    </extension>
+	</component>
+  </public> 
+</module> 

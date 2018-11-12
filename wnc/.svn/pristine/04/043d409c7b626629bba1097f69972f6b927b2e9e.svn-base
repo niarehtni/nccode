@@ -1,0 +1,291 @@
+package nc.pubimpl.ta.overtime;
+
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+
+import nc.bs.dao.BaseDAO;
+import nc.bs.dao.DAOException;
+import nc.bs.framework.common.NCLocator;
+import nc.pubitf.ta.overtime.ISegDetailService;
+import nc.vo.hi.psndoc.PsndocVO;
+import nc.vo.ml.MultiLangUtil;
+import nc.vo.pub.BusinessException;
+import nc.vo.pub.lang.UFBoolean;
+import nc.vo.pub.lang.UFDate;
+import nc.vo.pub.lang.UFDouble;
+import nc.vo.pub.lang.UFLiteralDate;
+import nc.vo.ta.leave.LeaveRegVO;
+import nc.vo.ta.overtime.AggSegRuleVO;
+import nc.vo.ta.overtime.OvertimeRegVO;
+import nc.vo.ta.overtime.QueryValueTypeEnum;
+import nc.vo.ta.overtime.SegDetailVO;
+import nc.vo.ta.overtime.SegRuleTermVO;
+import nc.vo.ta.overtime.SegRuleVO;
+import nc.vo.ta.timeitem.OverTimeTypeCopyVO;
+
+public class SegDetailServiceImpl implements ISegDetailService {
+	private Map<String, OTSChainNode> allNode = null;
+	private BaseDAO baseDao = null;
+
+	@Override
+	public void regOvertimeSegDetail(OvertimeRegVO[] overtimeRegVOs)
+			throws BusinessException {
+		for (OvertimeRegVO vo : overtimeRegVOs) {
+			String pk_psndoc = vo.getPk_psndoc();
+
+			OverTimeTypeCopyVO otType = (OverTimeTypeCopyVO) this.getBaseDao()
+					.retrieveByPK(OverTimeTypeCopyVO.class,
+							vo.getPk_overtimetypecopy());
+
+			if (otType.getPk_segrule() != null) {
+				AggSegRuleVO ruleAggVO = getSegRuleAggVO(otType.getPk_segrule());
+
+				OTSChainNode curOTSegNode = getOvertimeSegChainNodeByOTReg(vo,
+						ruleAggVO);
+
+				if (allNode == null) {
+					allNode = new HashMap<String, OTSChainNode>();
+				}
+
+				// 取當前人員全節點（物理鏈表）
+				if (!allNode.containsKey(pk_psndoc)) {
+					OTSChainNode psnNode = OTSChainUtils.buildChainNodes(
+							pk_psndoc, false, false, false, false);
+					if (psnNode != null) {
+						allNode.put(pk_psndoc, psnNode);
+					}
+				}
+
+				OTSChainUtils
+						.combineNodes(allNode.get(pk_psndoc), curOTSegNode);
+				OTSChainUtils.saveAll(allNode.get(pk_psndoc));
+			}
+		}
+	}
+
+	private OTSChainNode getOvertimeSegChainNodeByOTReg(OvertimeRegVO vo,
+			AggSegRuleVO ruleAggVO) throws BusinessException {
+		SegRuleVO rule = ruleAggVO.getParentVO();
+		SegRuleTermVO[] terms = (SegRuleTermVO[]) ruleAggVO.getChildrenVO();
+
+		UFDouble othours = vo.getOvertimehour();
+		UFDouble totalSegHours = UFDouble.ZERO_DBL; // 纍計生成分段時長
+		OTSChainNode parentNode = null;
+		for (SegRuleTermVO term : terms) {
+			UFDouble start = term.getStartpoint();
+			UFDouble end = term.getEndpoint();
+			UFDouble rate = term.getOtrate();
+			UFDouble weight = term.getAdditionalweight();
+			UFDouble seghours = end.sub(start); // 分段時長
+			UFDouble curSegHours = UFDouble.ZERO_DBL;
+			if (othours.doubleValue() >= seghours.doubleValue()) {
+				// 加班時長大於分段長度
+				curSegHours = seghours;
+			} else {
+				curSegHours = othours;
+			}
+
+			OTSChainNode curNode = new OTSChainNode();
+			SegDetailVO segvo = createNewSegDetail(vo, rule, term, seghours,
+					rate, curSegHours);
+
+			curNode.setNodeData(segvo);
+
+			if (parentNode == null) {
+				curNode.setNextNode(null);
+				curNode.setPriorNode(null);
+				parentNode = curNode;
+			} else {
+				OTSChainUtils.appendNode(parentNode, curNode);
+				parentNode = curNode;
+			}
+
+			totalSegHours = totalSegHours.add(curSegHours);// 生成分段時長纍加
+		}
+		return OTSChainUtils.getFirstNode(parentNode);
+	}
+
+	private SegDetailVO createNewSegDetail(OvertimeRegVO vo, SegRuleVO rule,
+			SegRuleTermVO term, UFDouble seghours, UFDouble rate,
+			UFDouble curSegHours) throws DAOException {
+		SegDetailVO segvo = new SegDetailVO();
+		segvo.setPk_group(vo.getPk_group());
+		segvo.setPk_org(vo.getPk_org());
+		segvo.setPk_org_v(vo.getPk_org_v());
+		segvo.setPk_overtimereg(vo.getPk_overtimereg());
+		segvo.setPk_psndoc(vo.getPk_psndoc());
+		segvo.setPk_segrule(rule.getPk_segrule());
+		segvo.setPk_segruleterm(term.getPk_segruleterm());
+		segvo.setConsumedhours(UFDouble.ZERO_DBL);
+		segvo.setConsumedamount(UFDouble.ZERO_DBL);
+		segvo.setHourlypay(getPsnHourPay(vo.getPk_psnjob(),
+				vo.getOvertimebegindate()));
+		segvo.setHours(curSegHours);
+		segvo.setIscanceled(UFBoolean.FALSE);
+		segvo.setIscompensation(vo.getIstorest());
+		segvo.setIsconsumed(UFBoolean.FALSE);
+		segvo.setIssettled(UFBoolean.FALSE);
+		segvo.setMaketime(new UFDate());
+		PsndocVO psnVo = (PsndocVO) this.getBaseDao().retrieveByPK(
+				PsndocVO.class, vo.getPk_psndoc());
+		segvo.setNodecode(psnVo.getCode() + "_"
+				+ vo.getOvertimebegindate().toString() + "_" + rule.getCode()
+				+ "_" + String.valueOf(String.format("%02d", term.getSegno())));
+		segvo.setNodename(MultiLangUtil.getSuperVONameOfCurrentLang(psnVo,
+				PsndocVO.NAME, psnVo.getName())
+				+ "_"
+				+ vo.getOvertimebegindate().toString().replace("-", "")
+				+ "_"
+				+ MultiLangUtil.getSuperVONameOfCurrentLang(rule,
+						SegRuleVO.NAME, rule.getName())
+				+ "_"
+				+ String.valueOf(term.getSegno()));
+		segvo.setOtrate(getOTRate(term, rule));
+		segvo.setRegdate(vo.getOvertimeenddate());
+		segvo.setRemaininghours(segvo.getHours());
+		segvo.setRemainingamount(getOTAmount(rule, segvo.getOtrate(),
+				segvo.getHourlypay(), segvo.getHours()));
+		segvo.setRulehours(seghours);
+		segvo.setOtrate(rate);
+		return segvo;
+	}
+
+	private UFDouble getOTAmount(SegRuleVO rule, UFDouble otRate,
+			UFDouble hourlypay, UFDouble hours) {
+		// TODO
+		int roundType = rule.getRoundtype();
+		UFDouble amount = hourlypay.multiply(otRate).multiply(hours);
+		return amount.setScale(0, 4);
+	}
+
+	private UFDouble getOTRate(SegRuleTermVO term, SegRuleVO rule) {
+		// TODO
+		// 發生有效：實際外加補休天數 = 加班時數 > 0 ? 外加補休天數 : 0
+		// 發生比例：實際外加補休天數 = additionaldays * 加班時數 / 日標準工時
+		// 加權比例：實際外加補休天數 = Sum(加班分段規則.additionalweight * 加班時數 / 日標準工時)
+		// 最大權值：實際外加補休天數 = additionaldays * Max(加班分段規則.additionalweight)
+		// 權值匯總：實際外加補休天數 = additionaldays * Sum(加班分類規則.additionalweight)"
+
+		return term.getOtrate();
+	}
+
+	private UFDouble getPsnHourPay(String pk_psnjob,
+			UFLiteralDate overtimebegindate) {
+		IWadaysalaryQueryService dayPaySvc = NCLocator.getInstance().lookup(
+				IWadaysalaryQueryService.class);
+
+		dayPaySvc.getDaySalaryMap(new String[] { pk_psnjob },
+				overtimebegindate, overtimebegindate);
+		return null;
+	}
+
+	@SuppressWarnings("unchecked")
+	private AggSegRuleVO getSegRuleAggVO(String pk_segrule)
+			throws BusinessException {
+		SegRuleVO ruleVO = (SegRuleVO) this.getBaseDao().retrieveByPK(
+				SegRuleVO.class, pk_segrule);
+
+		if (ruleVO == null) {
+			throw new BusinessException("數據錯誤：加班分段規則已被刪除");
+		}
+
+		Collection<SegRuleTermVO> segTerms = this.getBaseDao()
+				.retrieveByClause(SegRuleTermVO.class,
+						"pk_segrule='" + pk_segrule + "' and dr=0", "segno");
+		if (segTerms == null || segTerms.size() == 0) {
+			throw new BusinessException("數據錯誤：加班分段規則明細已被刪除");
+		}
+
+		AggSegRuleVO aggVo = new AggSegRuleVO();
+		aggVo.setParent(ruleVO);
+		aggVo.setChildrenVO(segTerms.toArray(new SegRuleTermVO[0]));
+
+		return aggVo;
+	}
+
+	@Override
+	public void regOvertimeSegDetailConsume(LeaveRegVO[] leaveRegVOs)
+			throws BusinessException {
+		// TODO 自動產生的方法 Stub
+
+	}
+
+	@Override
+	public Map<String, UFDouble[]> calculateTaxableByDate(String[] pk_psndocs,
+			UFLiteralDate startDate, UFLiteralDate endDate)
+			throws BusinessException {
+		// TODO 自動產生的方法 Stub
+		return null;
+	}
+
+	@Override
+	public Map<String, UFDouble[]> settleByFixSalary(
+			Map<String, UFDouble> psnFixSalary, UFLiteralDate startDate,
+			UFLiteralDate endDate) throws BusinessException {
+		// TODO 自動產生的方法 Stub
+		return null;
+	}
+
+	@Override
+	public Map<String, UFDouble> calculateTaxFreeAmountByPeriod(
+			String[] pk_psndocs, String cyear, String cperiod)
+			throws BusinessException {
+		// TODO 自動產生的方法 Stub
+		return null;
+	}
+
+	@Override
+	public Map<String, UFDouble> calculateTaxableAmountByPeriod(
+			String[] pk_psndocs, String cyear, String cperiod)
+			throws BusinessException {
+		// TODO 自動產生的方法 Stub
+		return null;
+	}
+
+	@Override
+	public Map<String, UFDouble[]> calculateOvertimeAmountByPeriod(
+			String[] pk_psndocs, UFLiteralDate startDate, UFLiteralDate endDate)
+			throws BusinessException {
+		// TODO 自動產生的方法 Stub
+		return null;
+	}
+
+	@Override
+	public Map<String, Map<UFLiteralDate, UFDouble>> sumOvertimeFeeByPsnDate(
+			Map<String, Map<UFLiteralDate, UFDouble>> psnDailyPays,
+			boolean includeOT2Holiday) throws BusinessException {
+		// TODO 自動產生的方法 Stub
+		return null;
+	}
+
+	@Override
+	public Map<String, UFDouble> sumAdditionalHolidayes(
+			UFLiteralDate startDate, UFLiteralDate endDate, String[] pk_psndocs)
+			throws BusinessException {
+		// TODO 自動產生的方法 Stub
+		return null;
+	}
+
+	@Override
+	public Map<String, UFDouble> sumAdditionalHolidayes(String cyear,
+			String cperiod, String[] pk_psndocs) throws BusinessException {
+		// TODO 自動產生的方法 Stub
+		return null;
+	}
+
+	@Override
+	public Map<String, Map<QueryValueTypeEnum, UFDouble>> getOvertimeHours(
+			String[] pk_psndocs, UFLiteralDate overtimeDate)
+			throws BusinessException {
+		// TODO 自動產生的方法 Stub
+		return null;
+	}
+
+	public BaseDAO getBaseDao() {
+		if (baseDao == null) {
+			baseDao = new BaseDAO();
+		}
+		return baseDao;
+	}
+}

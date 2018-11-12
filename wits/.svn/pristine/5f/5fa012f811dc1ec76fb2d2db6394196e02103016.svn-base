@@ -1,0 +1,13 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<module name="uapwits">
+	<public>
+		<component accessProtected="false" priority="0" singleton="true" remote="true" supportAlias="false" tx="CMT">
+			  <interface>nc.pubitf.login.ILdapUserManager</interface>
+			  <implementation>nc.pubimpl.login.LdapUserManagerImpl</implementation>
+		</component>
+		<component accessProtected="false" priority="0" singleton="true" remote="true" supportAlias="false" tx="NONE">
+			  <interface>nc.pubitf.login.ILdapConfigLoader</interface>
+			  <implementation>nc.pubimpl.login.LdapConfigLoaderImpl</implementation>
+		</component>
+	</public>
+</module>

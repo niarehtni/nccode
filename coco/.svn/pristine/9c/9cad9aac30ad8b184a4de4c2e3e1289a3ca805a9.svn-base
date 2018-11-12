@@ -1,0 +1,271 @@
+<?xml version="1.0" encoding='UTF-8'?>
+<Widget controllerClazz="nc.bs.hrsms.ta.empleaveqry4store.win.EmpLeave4StoreViewCtrl"  dialog="false" i18nName="a_pub-000176" langDir="node_pub-res" caption="员工假期查询列表界面" id="main" refId="main" sourcePackage="src/public/">
+    <PlugoutDescs>
+    </PlugoutDescs>
+    <PluginDescs>
+        <PluginDesc id="Search">
+            <PluginDescItem clazztype="java.util.Map" id="key_1">
+            </PluginDescItem>
+        </PluginDesc>
+        <PluginDesc id="DeptChange">
+            <PluginDescItem clazztype="java.util.Map" id="deptout">
+            </PluginDescItem>
+        </PluginDesc>
+    </PluginDescs>
+    <Events>
+        <Event async="true" methodName="pluginSearch" onserver="true">
+            <Params>
+                <Param>
+                    <Name>keys</Name>
+                    <Value>
+                    </Value>
+                    <Desc>                        <![CDATA[java.util.Map]]>
+                    </Desc>
+                </Param>
+            </Params>
+            <Action>
+            </Action>
+        </Event>
+        <Event async="true" methodName="pluginDeptChange" onserver="true">
+            <Params>
+                <Param>
+                    <Name>keys</Name>
+                    <Value></Value>
+                    <Desc>                        <![CDATA[java.util.Map]]>
+                    </Desc>
+                </Param>
+            </Params>
+            <Action>
+            </Action>
+        </Event>
+    </Events>
+    <Models>
+        <Datasets>
+            <RefMdDataset i18nName="w_ta-000159" langDir="node_ta-res" caption="人员基本信息" controlwidgetopeStatus="false" enabled="false" id="$refds_hrhi_bd_psndoc" lazyLoad="true" notNullBody="false" objMeta="hrhi.bd_psndoc" voMeta="nc.vo.hi.psndoc.PsndocVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset i18nName="w_ta-000160" langDir="node_ta-res" caption="组织_部门" controlwidgetopeStatus="false" enabled="false" id="$refds_uap_dept" lazyLoad="true" notNullBody="false" objMeta="uap.dept" voMeta="nc.vo.org.DeptVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset i18nName="w_ta-000161" langDir="node_ta-res" caption="组织_部门版本信息" controlwidgetopeStatus="false" enabled="false" id="$refds_uap_dept_v" lazyLoad="true" notNullBody="false" objMeta="uap.dept_v" voMeta="nc.vo.vorg.DeptVersionVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset i18nName="w_ta-000162" langDir="node_ta-res" caption="组织_集团" controlwidgetopeStatus="false" enabled="false" id="$refds_uap_group" lazyLoad="true" notNullBody="false" objMeta="uap.group" voMeta="nc.vo.org.GroupVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset i18nName="w_ta-000163" langDir="node_ta-res" caption="组织关系" controlwidgetopeStatus="false" enabled="false" id="$refds_hrhi_hi_psnorg" lazyLoad="true" notNullBody="false" objMeta="hrhi.hi_psnorg" voMeta="nc.vo.hi.psndoc.PsnOrgVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <MdDataset i18nName="w_ta-000164" langDir="node_ta-res" caption="假期结余" controlwidgetopeStatus="false" enabled="false" id="dsLeavebalance" lazyLoad="false" notNullBody="false" objMeta="hrta.hrtaleavebalance" pageSize="20" voMeta="nc.vo.ta.leavebalance.LeaveBalanceVO">
+                <FieldRelations>
+                    <FieldRelation id="pk_group_rel" refDataset="$refds_uap_group">
+                        <MatchFields>
+                            <Field readField="name" writeField="pk_group_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_group" value="pk_group">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_org_rel" refDataset="$refds_uap_hrorg">
+                        <MatchFields>
+                            <Field readField="name" writeField="pk_org_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_hrorg" value="pk_org">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_psndoc_rel" refDataset="$refds_hrhi_bd_psndoc">
+                        <MatchFields>
+                            <Field readField="name" writeField="pk_psndoc_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_psndoc" value="pk_psndoc">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_psnjob_rel" refDataset="$refds_hrhi_hi_psnjob">
+                        <MatchFields>
+                            <Field readField="pk_psndoc" writeField="pk_psnjob_pk_psndoc">
+                            </Field>
+                            <Field readField="pk_dept" writeField="pk_psnjob_pk_dept">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_psnjob" value="pk_psnjob">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_timeitem_rel" refDataset="$refds_hrta_leavetypecopy">
+                        <MatchFields>
+                            <Field readField="pk_timeitem" writeField="pk_timeitemcopy_pk_timeitem">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_timeitemcopy" value="pk_timeitemcopy">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_timeitemcopy_pk_timeitem_rel" refDataset="$refds_hrta_leavetype">
+                        <MatchFields>
+                            <Field readField="timeitemname" writeField="pk_timeitemcopy_pk_timeitem_timeitemname">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_timeitem" value="pk_timeitemcopy_pk_timeitem">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_org_v_rel" refDataset="$refds_uap_hrorg_v">
+                        <MatchFields>
+                            <Field readField="name" writeField="pk_org_v_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_vid" value="pk_org_v">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_dept_v_rel" refDataset="$refds_uap_dept_v">
+                        <MatchFields>
+                            <Field readField="name" writeField="pk_dept_v_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_vid" value="pk_dept_v">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_psnjob_pk_dept_rel" refDataset="$refds_uap_dept">
+                        <MatchFields>
+                            <Field iscontains="Y" ismatch="Y" readField="pk_dept" writeField="pk_psnjob_pk_dept">
+                            </Field>
+                            <Field readField="name" writeField="pk_psnjob_pk_dept_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_dept" value="pk_psnjob_pk_dept">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                </FieldRelations>
+                <Fields>
+                    <Field i18nName="w_ta-000165" langDir="node_ta-res" dataType="String" id="pk_psnjob_pk_dept" nullAble="true" primaryKey="false" sourceField="pk_psnjob" text="部门">
+                    </Field>
+                    <Field i18nName="w_ta-000165" langDir="node_ta-res" dataType="String" id="pk_psnjob_pk_dept_name" nullAble="true" primaryKey="false" sourceField="pk_psnjob_pk_dept" text="部门">
+                    </Field>
+                </Fields>
+                <Events>
+                    <Event async="true" jsEventClaszz="nc.uap.lfw.core.event.conf.DatasetListener" methodName="onDataLoad_dsLeavebalance" name="onDataLoad" onserver="true">
+                        <SubmitRule cardSubmit="false" panelSubmit="false" tabSubmit="false">
+                        </SubmitRule>
+                        <Params>
+                            <Param>
+                                <Name>dataLoadEvent</Name>
+                                <Value>
+                                </Value>
+                                <Desc>                                    <![CDATA[nc.uap.lfw.core.event.DataLoadEvent]]>
+                                </Desc>
+                            </Param>
+                        </Params>
+                        <Action>
+                        </Action>
+                    </Event>
+                </Events>
+            </MdDataset>
+            <RefMdDataset i18nName="w_ta-000166" langDir="node_ta-res" caption="休假类别copy" controlwidgetopeStatus="false" enabled="false" id="$refds_hrta_leavetypecopy" lazyLoad="true" notNullBody="false" objMeta="hrta.leavetypecopy" voMeta="nc.vo.ta.timeitem.LeaveTypeCopyVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset i18nName="w_ta-000167" langDir="node_ta-res" caption="组织_业务单元_人力资源组织版本信息" controlwidgetopeStatus="false" enabled="false" id="$refds_uap_hrorg_v" lazyLoad="true" notNullBody="false" objMeta="uap.hrorg_v" voMeta="nc.vo.vorg.HROrgVersionVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset i18nName="w_ta-000166" langDir="node_ta-res" caption="休假类别" controlwidgetopeStatus="false" enabled="false" id="$refds_hrta_leavetype" lazyLoad="true" notNullBody="false" objMeta="hrta.leavetype" voMeta="nc.vo.ta.timeitem.LeaveTypeVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset i18nName="w_ta-000168" langDir="node_ta-res" caption="工作记录" controlwidgetopeStatus="false" enabled="false" id="$refds_hrhi_hi_psnjob" lazyLoad="true" notNullBody="false" objMeta="hrhi.hi_psnjob" voMeta="nc.vo.hi.psndoc.PsnJobVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset i18nName="w_ta-000169" langDir="node_ta-res" caption="组织_业务单元_人力资源组织" controlwidgetopeStatus="false" enabled="false" id="$refds_uap_hrorg" lazyLoad="true" notNullBody="false" objMeta="uap.hrorg" voMeta="nc.vo.org.HROrgVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+        </Datasets>
+        <ComboDatas>
+            <MDComboDataConf i18nName="w_ta-000164" langDir="node_ta-res" caption="假期结余" fullclassName="38e433f2-90a6-4210-b874-1beef30ac415" id="combo_dsLeavebalance_settlementmethod">
+            </MDComboDataConf>
+        </ComboDatas>
+        <RefNodes>
+            <NCRefNode allowInput="false" dataListener="" dialog="true" i18nName="w_ta-000151" id="refnode_dsLeavebalance_pk_psndoc_name" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" path="reference/refgrid.jsp" readDs="masterDs" readFields="pk_psndoc,name" refId="" refcode="HR人员" refnodeDelegator="" refresh="true" selLeafOnly="false" text="假期结余_HR人员" usePower="false" writeDs="dsLeavebalance" writeFields="pk_psndoc,pk_psndoc_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialog="true" i18nName="w_ta-000152" id="refnode_dsLeavebalance_pk_timeitemcopy_pk_timeitem_timeitemname" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" path="reference/refgrid.jsp" readDs="masterDs" readFields="pk_timeitemcopy,timeitemname" refId="" refcode="休假类别拷贝" refnodeDelegator="" refresh="true" selLeafOnly="false" text="假期结余_休假类别拷贝" usePower="false" writeDs="dsLeavebalance" writeFields="pk_timeitemcopy,pk_timeitemcopy_pk_timeitem.timeitemname">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialog="true" i18nName="w_ta-000153" id="refnode_dsLeavebalance_pk_dept_v_name" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" path="reference/reftree.jsp" readDs="masterDs" readFields="pk_vid,name" refId="" refcode="部门版本" refnodeDelegator="" refresh="true" selLeafOnly="false" text="假期结余_部门版本" usePower="false" writeDs="dsLeavebalance" writeFields="pk_dept_v,pk_dept_v_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialog="true" i18nName="w_ta-000154" id="refnode_dsLeavebalance_pk_org_v_name" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" path="reference/reftree.jsp" readDs="masterDs" readFields="pk_vid,name" refId="" refcode="人力资源组织版本" refnodeDelegator="" refresh="true" selLeafOnly="false" text="假期结余_人力资源组织版本" usePower="false" writeDs="dsLeavebalance" writeFields="pk_org_v,pk_org_v_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialog="true" i18nName="w_ta-000155" id="refnode_dsLeavebalance_pk_psnjob_pk_psndoc" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" path="reference/refgrid.jsp" readDs="masterDs" readFields="pk_psnjob,name" refId="" refcode="人员工作记录" refnodeDelegator="" refresh="true" selLeafOnly="false" text="假期结余_人员工作记录" usePower="false" writeDs="dsLeavebalance" writeFields="pk_psnjob,pk_psnjob_pk_psndoc">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialog="true" i18nName="w_ta-000156" id="refnode_dsLeavebalance_pk_group_name" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" path="reference/reftree.jsp" readDs="masterDs" readFields="pk_group,name" refId="" refcode="集团" refnodeDelegator="" refresh="true" selLeafOnly="false" text="假期结余_集团" usePower="false" writeDs="dsLeavebalance" writeFields="pk_group,pk_group_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialog="true" i18nName="w_ta-000157" id="refnode_dsLeavebalance_pk_timeitem_timeitemname" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" path="reference/refgrid.jsp" readDs="masterDs" readFields="pk_timeitem,timeitemname" refId="" refcode="休假类别" refnodeDelegator="" refresh="true" selLeafOnly="false" text="假期结余_休假类别" usePower="false" writeDs="dsLeavebalance" writeFields="pk_timeitem,pk_timeitem_timeitemname">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialog="true" i18nName="w_ta-000158" id="refnode_dsLeavebalance_pk_org_name" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" path="reference/reftree.jsp" readDs="masterDs" readFields="pk_hrorg,name" refId="" refcode="人力资源组织" refnodeDelegator="" refresh="true" selLeafOnly="false" text="假期结余_人力资源组织" usePower="false" writeDs="dsLeavebalance" writeFields="pk_org,pk_org_name">
+            </NCRefNode>
+        </RefNodes>
+    </Models>
+    <Components>
+        <WebPartComp contentFetcher="nc.bs.hrss.ta.leaveinfo.lsnr.TextNavgitionContentFetcher" id="htmlcontent3805">
+        </WebPartComp>
+        <GridComp i18nName="w_ta-000164" langDir="node_ta-res" autoRowHeight="false" caption="假期结余" dataset="dsLeavebalance" editable="true" enabled="true" expandTree="false" id="tblLeavebalance" multiSelect="false" pagenationTop="false" reference="false" selfDefImageBtnRender="" showColInfo="false" showHeader="true" showImageBtn="false" showNumCol="false" showSumRow="false" sortable="true" visible="true">
+            <Column i18nName="w_ta-000170" langDir="node_ta-res" autoExpand="false" dataType="String" editable="true" editorType="StringText" fixedHeader="false" id="detail" imageOnly="false" nullAble="true" renderType="DetailRender" showCheckBox="true" sortable="true" sumCol="false" text="详细" textAlign="center" visible="true" width="60">
+            </Column>
+            <Column i18nName="w_ta-000171" langDir="node_ta-res" autoExpand="false" dataType="String" editable="true" editorType="Reference" field="pk_psndoc_name" fixedHeader="false" id="pk_psndoc_name" imageOnly="false" nullAble="true" refNode="refnode_dsLeavebalance_pk_psndoc_name" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="姓名" textAlign="left" visible="true" width="100">
+            </Column>
+            <Column i18nName="w_ta-000165" langDir="node_ta-res" autoExpand="false" dataType="String" editable="true" editorType="StringText" field="pk_psnjob_pk_dept_name" fixedHeader="false" id="pk_psnjob_pk_dept_name" imageOnly="false" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="部门" textAlign="left" visible="true" width="100">
+            </Column>
+            <Column i18nName="w_ta-000166" langDir="node_ta-res" autoExpand="false" dataType="String" editable="true" editorType="Reference" field="pk_timeitemcopy_pk_timeitem_timeitemname" fixedHeader="false" id="pk_timeitemcopy_pk_timeitem_timeitemname" imageOnly="false" nullAble="true" refNode="refnode_dsLeavebalance_pk_timeitemcopy_pk_timeitem_timeitemname" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="休假类别" textAlign="left" visible="false" width="100">
+            </Column>
+            <Column i18nName="w_ta-000172" langDir="node_ta-res" autoExpand="false" dataType="UFDouble" editable="true" editorType="DecimalText" field="lastdayorhour" fixedHeader="false" id="lastdayorhour" imageOnly="false" nullAble="true" renderType="DecimalRender" showCheckBox="true" sortable="true" sumCol="false" text="上期结余" textAlign="right" visible="true" width="100">
+            </Column>
+            <Column i18nName="w_ta-001289" langDir="node_ta-res" autoExpand="false" dataType="UFDouble" editable="true" editorType="DecimalText" field="changelength" fixedHeader="false" id="changelength" imageOnly="false" nullAble="true" renderType="DecimalRender" showCheckBox="true" sortable="true" sumCol="false" text="调整时长" textAlign="right" visible="true" width="100">
+            </Column>
+            <Column i18nName="w_ta-000173" langDir="node_ta-res" autoExpand="false" dataType="UFDouble" editable="true" editorType="DecimalText" field="curdayorhour" fixedHeader="false" id="curdayorhour" imageOnly="false" nullAble="true" renderType="DecimalRender" showCheckBox="true" sortable="true" sumCol="false" text="享有" textAlign="right" visible="true" width="80">
+            </Column>
+            <Column i18nName="w_ta-000174" langDir="node_ta-res" autoExpand="false" dataType="UFDouble" editable="true" editorType="DecimalText" field="realdayorhour" fixedHeader="false" id="realdayorhour" imageOnly="false" nullAble="true" renderType="DecimalRender" showCheckBox="true" sortable="true" sumCol="false" text="实际享有" textAlign="right" visible="true" width="100">
+            </Column>
+            <Column i18nName="w_ta-000175" langDir="node_ta-res" autoExpand="false" dataType="UFDouble" editable="true" editorType="DecimalText" field="yidayorhour" fixedHeader="false" id="yidayorhour" imageOnly="false" nullAble="true" renderType="DecimalRender" showCheckBox="true" sortable="true" sumCol="false" text="已休" textAlign="right" visible="true" width="80">
+            </Column>
+            <Column i18nName="w_ta-000176" langDir="node_ta-res" autoExpand="false" dataType="UFDouble" editable="true" editorType="DecimalText" field="restdayorhour" fixedHeader="false" id="restdayorhour" imageOnly="false" nullAble="true" renderType="DecimalRender" showCheckBox="true" sortable="true" sumCol="false" text="结余" textAlign="right" visible="true" width="80">
+            </Column>
+            <Column i18nName="w_ta-000177" langDir="node_ta-res" autoExpand="false" dataType="UFDouble" editable="true" editorType="DecimalText" field="freezedayorhour" fixedHeader="false" id="freezedayorhour" imageOnly="false" nullAble="true" renderType="DecimalRender" showCheckBox="true" sortable="true" sumCol="false" text="冻结" textAlign="right" visible="true" width="80">
+            </Column>
+            <Column i18nName="w_ta-000178" langDir="node_ta-res" autoExpand="false" dataType="UFDouble" editable="true" editorType="DecimalText" field="usefulrestdayorhour" fixedHeader="false" id="usefulrestdayorhour" imageOnly="false" nullAble="true" renderType="DecimalRender" showCheckBox="true" sortable="true" sumCol="false" text="可用" textAlign="right" visible="true" width="80">
+            </Column>
+            <Column i18nName="w_ta-000179" langDir="node_ta-res" autoExpand="false" dataType="UFBoolean" editable="true" editorType="CheckBox" field="issettlement" fixedHeader="false" id="issettlement" imageOnly="false" nullAble="true" renderType="BooleanRender" showCheckBox="false" sortable="true" sumCol="false" text="是否结算" textAlign="center" visible="true" width="80">
+            </Column>
+            <Column i18nName="w_ta-000180" langDir="node_ta-res" autoExpand="false" dataType="UFLiteralDate" editable="true" editorType="DateText" field="settlementdate" fixedHeader="false" id="settlementdate" imageOnly="false" nullAble="true" renderType="DateRender" showCheckBox="true" sortable="true" sumCol="false" text="结算日期" textAlign="left" visible="true" width="80">
+            </Column>
+            <Column i18nName="w_ta-000181" langDir="node_ta-res" autoExpand="false" dataType="UFBoolean" editable="true" editorType="CheckBox" field="isuse" fixedHeader="false" id="isuse" imageOnly="false" nullAble="true" renderType="BooleanRender" showCheckBox="false" sortable="true" sumCol="false" text="薪资使用" textAlign="center" visible="false" width="80">
+            </Column>
+            <Column i18nName="w_ta-000182" langDir="node_ta-res" autoExpand="true" dataType="UFDateTime" editable="true" editorType="DateTimeText" field="calculatetime" fixedHeader="false" id="calculatetime" imageOnly="false" nullAble="true" renderType="DateTimeRender" showCheckBox="true" sortable="true" sumCol="false" text="计算时间" textAlign="left" visible="true" width="150">
+            </Column>
+        </GridComp>
+    </Components>
+    <Menus>
+        <MenuBarComp id="menu_list">
+        </MenuBarComp>
+    </Menus>
+</Widget>

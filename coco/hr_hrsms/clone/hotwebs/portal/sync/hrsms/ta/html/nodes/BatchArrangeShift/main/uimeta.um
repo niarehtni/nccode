@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding='UTF-8'?>
+<UIMeta flowmode="true" id="main_um" jquery="0">
+    <FlowvLayout autoFill="0" id="flowvlayout5674" widgetId="main">
+        <FlowvPanel id="panelv_mainmenubar" widgetId="main">
+           <CanvasLayout className="rightcanvas" id="menucanvas" widgetId="main">
+                <CanvasPanel id="canvasp1" widgetId="main">
+		            <Menubar id="mainMenubar" widgetId="main"> 
+		            </Menubar>
+                </CanvasPanel>
+            </CanvasLayout>
+        </FlowvPanel>
+       <FlowvPanel id="panelv25674" widgetId="main" leftPadding="20" rightPadding="20">
+            <PanelLayout i18nName="w_TeamCalendar-000046" langDir="ta_nodes" id="panellayout6299" title="排班信息" widgetId="main" className="small_panel_div">
+                <PanelPanel id="panelpanel6299" topPadding="20" widgetId="main">
+                    <FormComp height="100%" id="frmCircleArrangeShift" label_position="" left="0" position="relative" top="0" widgetId="main" width="100%">
+                    </FormComp>
+                </PanelPanel>
+            </PanelLayout>
+        </FlowvPanel>
+        <FlowvPanel id="panelv45674" widgetId="main" leftPadding="20" rightPadding="20" height="380">
+	        <PanelLayout i18nName="w_TeamCalendar-000047" langDir="ta_nodes" id="panellayout8283" title="班组" widgetId="main" className="small_panel_div">
+                <PanelPanel id="panelpanel8283" topPadding="20" widgetId="main">
+                    <GridComp height="100%" id="tblTeamMntn" left="0" position="relative" top="0" widgetId="main" width="100%">
+			        </GridComp>
+                </PanelPanel>
+            </PanelLayout>
+        </FlowvPanel>
+        <FlowvPanel id="panelv65674" widgetId="main" leftPadding="20" rightPadding="20" height="380">
+            <PanelLayout i18nName="w_TeamCalendar-000048" langDir="ta_nodes" id="panellayout4064" title="人员" widgetId="main" className="small_panel_div">
+                <PanelPanel id="panelpanel4064" topPadding="20" widgetId="main">
+                	<GridComp height="100%" id="tblPsn" left="0" position="relative" top="0" widgetId="main" width="100%">
+			        </GridComp>
+                </PanelPanel>
+            </PanelLayout>
+        </FlowvPanel>
+        <FlowvPanel id="panelv85674" widgetId="main" leftPadding="20" rightPadding="20">            
+	        <PanelLayout i18nName="w_TeamCalendar-000049" langDir="ta_nodes" id="panellayout6903" title="工作周期" widgetId="main" className="small_panel_div">
+	            <PanelPanel bottomPadding="10" id="panelpanel6902" topPadding="20" widgetId="main">
+	            	<GridComp height="100%" id="tblWorkPeriod" left="0" position="relative" top="0" widgetId="main" width="100%">
+			        </GridComp>
+	            </PanelPanel>
+	        </PanelLayout>
+        </FlowvPanel>
+    </FlowvLayout>
+</UIMeta>

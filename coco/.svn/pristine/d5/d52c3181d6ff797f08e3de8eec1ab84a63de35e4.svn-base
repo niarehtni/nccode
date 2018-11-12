@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE beans PUBLIC "-//SPRING//DTD BEAN//EN" "http://www.springframework.org/dtd/spring-beans.dtd">
+
+<beans>
+	<import resource="classpath:nc/ui/wa/datainterface/common_config.xml" />
+
+	<bean id="container" class="nc.ui.wa.datainterface.view.DataIOTangramContainer" init-method="initUI"> 		
+		<property name="model" ref="dataIOAppModel"/>
+		<property name = "mainPanel" ref = "mainPanel"/>
+		<property name = "ioPanel" ref = "ioPanel"/>
+		<property name = "bankPanel" ref = "bankPanel"/>
+		
+		<property name="actions">
+			<list>
+				<ref bean="addAction" />    
+				<ref bean="editAction" />    
+				<ref bean="delAction" />    
+			 	<ref bean="copyAction" />
+				<ref bean="nullAction" /> 
+				<ref bean="refreshAction" />    
+				<ref bean="nullAction" /> 
+				<ref bean="fipEndAction" />
+				<ref bean="exportAction" />
+				
+			</list>
+		</property> 
+		<property name="exportActions">
+			<list>
+				<ref bean="queryAction" />
+				<ref bean="nullAction" /> 
+				<ref bean="outDataAction" />
+				<ref bean="nullAction" /> 
+				<ref bean="printActionMenu" />
+				<ref bean="nullAction" /> 
+				<ref bean="returnAction" />    
+ 
+			</list>
+		</property>
+		<property name="bankActions">
+			<list>
+				<ref bean="queryFipEndAction" />
+				<ref bean="nullAction" /> 
+				<ref bean="sendReversMenu"/>
+				<ref bean="nullAction" /> 
+				<ref bean="bankPrintActionMenu" />
+				<ref bean="nullAction" /> 
+				<ref bean="fipEndReturnAction" />    
+				<ref bean="nullAction" /> 
+			</list>
+		</property>  
+		
+		<property name="importActions">
+			<list>
+				<ref bean="inDataAction" />
+				<ref bean="dataIntoDBAction" />  
+				<ref bean="nullAction" /> 
+  				<ref bean="printActionMenu" />
+				<ref bean="nullAction" /> 
+				<ref bean="returnAction" />    
+			</list>
+		</property> 
+
+    </bean>  
+     <bean id="fipEndAction" class="nc.ui.wa.datainterface.action.FipEndAction">
+        <property name="model" ref="dataIOAppModel"></property>
+        <property name="container" ref="container"></property>
+        <property name="bankEnterprisePanel" ref="bankEnterprisePanel"></property> 
+      </bean> 
+       <bean id="queryFipEndAction" class="nc.ui.wa.datainterface.action.QueryFipEndAction">
+        <property name="model" ref="dataIOAppModel"></property>
+        <property name="bankEnterprisePanel" ref="bankEnterprisePanel"></property> 
+      </bean> 
+       <bean id="fipEndReturnAction" class="nc.ui.wa.datainterface.action.FipEndReturnAction">
+       	 <property name="model" ref="dataIOAppModel"></property>
+         <property name="container" ref="container"></property>
+         <property name="bankEnterprisePanel" ref="bankEnterprisePanel"></property> 
+                
+      </bean> 
+        <bean id="sendDataAction" class="nc.ui.wa.datainterface.action.SendDataAction">
+        <property name="model" ref="dataIOAppModel"></property>
+        <property name="bankEnterprisePanel" ref="bankEnterprisePanel"></property> 
+      </bean> 
+   		<bean id="reversAction" class="nc.ui.wa.datainterface.action.ReversAction">
+        <property name="model" ref="dataIOAppModel"></property>
+        <property name="bankEnterprisePanel" ref="bankEnterprisePanel"></property> 
+      </bean> 
+      	
+	<bean id="bankPrintActionMenu" class="nc.funcnode.ui.action.GroupAction">
+		<property name="code" value="print"></property>
+		<property name="name">
+			<bean class="nc.ui.uif2.I18nFB">
+				<property name="resDir" value="xmlcode" />
+				<property name="defaultValue" value="打印" />
+				<property name="resId" value="X60130002" />
+			</bean>
+		</property>
+		<property name="actions">
+			<list>
+				<ref bean="bankPrintAction" />
+				<ref bean="bankPreviewAction" />
+				<ref bean="bankExportAction" />
+			</list>
+		</property>
+	</bean>	 
+	<bean id="sendReversMenu" class="nc.funcnode.ui.action.MenuAction">
+			<property name="code" value="assistFunction"></property>
+			<property name="name">
+				<bean class="nc.ui.uif2.I18nFB">
+					<property name="resDir" value="xmlcode" />
+					<property name="defaultValue" value="关联功能" />
+					<property name="resId" value="X60130026" />
+				</bean>
+			</property>
+			<property name="actions">
+				<list>
+				    <ref bean="nullAction"/>
+					<ref bean="sendDataAction" />
+					 <ref bean="nullAction"/>
+					<ref bean="reversAction" />
+				</list>
+			</property>
+	</bean>
+	
+	<bean id="bankPreviewAction" class="nc.ui.wa.datainterface.action.DataIODirectPrintPreviewAction">
+	  <property name="model" ref="dataIOAppModel"></property> 
+	  <property name="tabbedPane" ref="bankEnterprisePanel" />	 
+	</bean>
+	<bean id="bankPrintAction" class="nc.ui.wa.datainterface.action.DataIODirectPrintAction">	
+	  <property name="model" ref="dataIOAppModel"></property> 
+	  <property name="tabbedPane" ref="bankEnterprisePanel" />
+	</bean>
+	<bean id="bankExportAction" class="nc.ui.wa.datainterface.action.DataIODirectExportAction">	
+	  <property name="model" ref="dataIOAppModel"></property> 
+	  <property name="tabbedPane" ref="bankEnterprisePanel" />
+	</bean>
+</beans>
+

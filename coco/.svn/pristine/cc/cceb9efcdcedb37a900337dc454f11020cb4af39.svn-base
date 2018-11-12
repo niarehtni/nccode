@@ -1,0 +1,219 @@
+<?xml version="1.0" encoding="gbk"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+	<!-- 环境变量 -->
+	<bean id="context" class="nc.vo.uif2.LoginContext">
+	</bean>
+	<!-- 模板容器，负责对模板的统一装载 -->
+	<bean id="templateContainer" class="nc.ui.uif2.editor.TemplateContainer"
+		init-method="load">
+		<property name="context" ref="context" />
+		<property name="nodeKeies">
+        	<list>
+        		<value>bt</value>
+        	</list>
+        </property>
+	</bean>
+	<!-- 对象转换器工厂，由此获取操作对象的特征信息，元数据要实现IBDObject接口 -->
+	<!-- 对于有元数据的VO，可以使用下面的配置 -->
+	<bean id="boadatorfactory" class="nc.vo.bd.meta.BDObjectAdpaterFactory" />
+	<!-- 应用服务类，负责进行模型操作的处理 -->
+	<bean id="batchModelService" class="nc.ui.pubapp.pub.smart.SmartBatchAppModelService">
+		<property name="serviceItf" value="nc.itf.twhr.INhicalcMaintain" />
+		<property name="voClass" value="nc.vo.twhr.nhicalc.NhiCalcVO" />
+	</bean>
+	<!-- 批量操作应用模型 ，缓存界面数据 -->
+	<bean id="batchBillTableModel" class="nc.ui.pubapp.uif2app.model.BatchBillTableModel">
+		<property name="context" ref="context" />
+		<property name="service" ref="batchModelService" />
+		<property name="validationService" ref="validateService" />
+		<property name="businessObjectAdapterFactory" ref="boadatorfactory" />
+	</bean>
+	<!-- 批量操作前台校验 -->
+	<bean id="validateService" class="nc.ui.uif2.model.DefaultBatchValidationService">
+		<property name="editor" ref="list" />
+	</bean>
+		
+	<bean id="modelDataManager" class="nc.ui.pubapp.uif2app.model.BatchModelDataManager">
+		<property name="model" ref="batchBillTableModel" />
+		<property name="service" ref="batchModelService" />
+	</bean>
+	<!-- 编辑态关闭节点时提示是否保存 -->
+	<bean id="closingListener" class="nc.ui.uif2.FunNodeClosingHandler">
+		<property name="model" ref="batchBillTableModel" />
+		<property name="saveaction" ref="saveAction" />
+		<property name="cancelaction" ref="cancelAction" />
+	</bean>
+	
+	<bean id="orgpanel" class="nc.ui.twhr.nhicalc.ace.view.NhiOrgHeadPanel"
+		init-method="initUI">
+		<property name="model" ref="batchBillTableModel" />
+		<property name="context" ref="context" />
+		<property name="dataManager" ref="modelDataManager" />
+		<property name="pk_orgtype" value="HRORGTYPE00000000000" />
+	</bean>
+
+	<!-- 列表控件 -->
+	<bean id="list" class="nc.ui.pubapp.uif2app.view.ShowUpableBatchBillTable"
+		init-method="initUI">
+		<property name="model" ref="batchBillTableModel" />
+		<property name="voClassName" value="nc.vo.twhr.nhicalc.NhiCalcVO" />
+		<property name="isBodyAutoAddLine" value="false" />
+	</bean>
+	
+	<!-- 事件监听 -->
+	<bean id="appEventHandlerMediator" class="nc.ui.pubapp.uif2app.model.AppEventHandlerMediator">
+		<property name="model" ref="batchBillTableModel" />
+		<property name="handlerGroup">
+			<list>
+				<!-- 表体字段编辑前事件 -->
+				<bean class="nc.ui.pubapp.uif2app.event.EventHandlerGroup">
+					<property name="event" value="nc.ui.pubapp.uif2app.event.card.CardBodyBeforeEditEvent"/>
+					<property name="handler">
+						<bean class="nc.ui.twhr.nhicalc.handler.BodyBeforeEditHandler"/>
+					</property>
+				</bean>		
+				<!-- 表体表尾字段编辑后事件 -->
+				<bean class="nc.ui.pubapp.uif2app.event.EventHandlerGroup">
+					<property name="event" value="nc.ui.pubapp.uif2app.event.card.CardBodyAfterEditEvent"/>
+					<property name="handler">
+						<bean class="nc.ui.twhr.nhicalc.handler.BodyAfterEditHandler"/>
+					</property>
+				</bean>	
+			</list>
+		</property>		
+	</bean>	
+	<!-- 界面布局总装-->
+	<bean id="container" class="nc.ui.uif2.TangramContainer"
+		init-method="initUI">
+		<property name="tangramLayoutRoot">
+			<bean class="nc.ui.uif2.tangramlayout.node.VSNode">
+				<property name="down">
+					<bean class="nc.ui.uif2.tangramlayout.node.CNode">
+						<property name="component" ref="list" />
+					</bean>
+				</property>
+				<property name="up">
+					<bean class="nc.ui.uif2.tangramlayout.node.CNode">
+						<property name="component" ref="orgpanel" />
+					</bean>
+				</property>
+				<property name="dividerLocation" value="31" />
+			</bean>
+		</property>
+		    <property name="actions">
+			        <list>
+			        	<ref bean="generateAction" />
+				        <ref bean="editAction" />
+				        <ref bean="separatorAction" />
+						<!--ref bean="queryAction" /-->
+						<ref bean="filterActionGroup" />
+						<ref bean="separatorAction" />
+						<ref bean="calculateAction" />
+				        <ref bean="auditActionGroup" />
+			        </list>
+		    </property>
+		    <property name="editActions">
+			        <list>
+			        	<!--ref bean="generateAction" /-->
+			        	<ref bean="separatorAction" />
+				        <ref bean="saveAction" />
+				        <ref bean="cancelAction" />
+			        </list>
+		    </property>
+		<property name="model" ref="batchBillTableModel" />
+	</bean>	
+
+	<!-- Actions -->
+	<bean id="separatorAction" class="nc.funcnode.ui.action.SeparatorAction" />
+	<bean id="generateAction" class="nc.ui.twhr.nhicalc.action.GenerateAction">
+		<property name="code" value="generateaction" />
+		<property name="btnName" value="生成"/>
+		<property name="orgpanel" ref="orgpanel" />
+		<property name="model" ref="batchBillTableModel" />
+		<property name="editor" ref="list" />
+	</bean>
+	<bean id="queryAction" class="nc.ui.twhr.nhicalc.action.QueryAction">
+		<property name="code" value="queryaction" />
+		<property name="btnName" value="查询"/>
+		<property name="orgpanel" ref="orgpanel" />
+		<property name="model" ref="batchBillTableModel" />
+		<property name="editor" ref="list" />
+	</bean>
+	<!-- 过滤按钮组 -->
+	<bean id="filterActionGroup" class="nc.funcnode.ui.action.MenuAction">
+		<property name="code" value="filterManage" />
+		<property name="name" value="过滤"/>
+		<property name="actions">
+			<list>
+				<!--ref bean="filteraction" /-->
+				<ref bean="showLastMonthAction" />
+			</list>
+		</property>
+	</bean>
+	<!-- 过滤 -->
+	<bean id="filteraction" class="nc.ui.twhr.nhicalc.action.FilterAction">
+		<property name="code" value="filteraction" />
+		<property name="btnName" value="只显示差异"/>
+		<property name="orgpanel" ref="orgpanel" />
+		<property name="model" ref="batchBillTableModel" />
+		<property name="editor" ref="list" />
+	</bean>
+	<bean id="showLastMonthAction" class="nc.ui.twhr.nhicalc.action.ShowLastMonthAction">
+		<property name="code" value="showlastmonthaction" />
+		<property name="btnName" value="隱藏上月資料"/>
+		<property name="orgpanel" ref="orgpanel" />
+		<property name="model" ref="batchBillTableModel" />
+		<property name="editor" ref="list" />
+	</bean>	
+	<bean id="editAction" class="nc.ui.twhr.nhicalc.action.EditAction">
+		<property name="btnName" value="修改"/>
+		<property name="orgpanel" ref="orgpanel" />
+		<property name="model" ref="batchBillTableModel" />
+		<property name="editor" ref="list" />
+	</bean>
+	<bean id="saveAction" class="nc.ui.pubapp.uif2app.actions.batch.BatchSaveAction">
+		<property name="model" ref="batchBillTableModel" />
+		<property name="editor" ref="list" />
+	</bean>
+	<bean id="cancelAction" class="nc.ui.pubapp.uif2app.actions.batch.BatchCancelAction">
+		<property name="model" ref="batchBillTableModel" />
+		<property name="editor" ref="list" />
+	</bean>
+	<bean id="calculateAction" class="nc.ui.twhr.nhicalc.action.CalculateAction">
+		<property name="code" value="calculateaction" />
+		<property name="btnName" value="计算"/>
+		<property name="orgpanel" ref="orgpanel" />
+		<property name="model" ref="batchBillTableModel" />
+		<property name="editor" ref="list" />
+	</bean>
+
+	<!-- 审核按钮组 -->
+	<bean id="auditActionGroup" class="nc.funcnode.ui.action.MenuAction">
+		<property name="code" value="auditManage" />
+		<property name="name" value="审核"/>
+		<property name="actions">
+			<list>
+				<ref bean="auditaction" />
+				<ref bean="unauditaction" />
+			</list>
+		</property>
+	</bean>
+	<!-- 审核 -->
+	<bean id="auditaction" class="nc.ui.twhr.nhicalc.action.AuditAction">
+		<property name="code" value="auditaction" />
+		<property name="btnName" value="审核"/>
+		<property name="orgpanel" ref="orgpanel" />
+		<property name="model" ref="batchBillTableModel" />
+		<property name="editor" ref="list" />
+	</bean>
+	<!-- 取消审核 -->
+	<bean id="unauditaction" class="nc.ui.twhr.nhicalc.action.UnAuditAction">
+		<property name="code" value="unauditaction" />
+		<property name="btnName" value="取消审核"/>
+		<property name="orgpanel" ref="orgpanel" />
+		<property name="model" ref="batchBillTableModel" />
+		<property name="editor" ref="list" />
+	</bean>
+</beans>

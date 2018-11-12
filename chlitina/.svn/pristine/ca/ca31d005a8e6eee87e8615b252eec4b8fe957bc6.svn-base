@@ -1,0 +1,2 @@
+insert into pub_billtemplet(bill_templetcaption,bill_templetname,devorg,dividerproportion,dr,funccode,layer,metadataclass,model_type,modulecode,nodecode,options,pk_billtemplet,pk_billtypecode,pk_corp,pk_org,resid,shareflag,ts,validateformula) values( '离职申请单','SYSTEM',null,'0.4806312769010043',0,null,0,'trn.stapply',null,null,'6009tran',null,'1001Z71000000000YCVT','60091301','@@@@',null,'16009tran0026',null,'2018-08-23 09:49:15',null)
+go

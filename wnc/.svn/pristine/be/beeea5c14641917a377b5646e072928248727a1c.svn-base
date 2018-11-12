@@ -1,0 +1,48 @@
+package nc.ui.ta.psndoc.action;
+
+import java.awt.event.ActionEvent;
+
+import nc.pubitf.para.SysInitQuery;
+import nc.ui.hr.uif2.view.HrBillFormEditor;
+import nc.ui.pub.bill.BillItem;
+import nc.vo.pub.BusinessException;
+
+public class AddAction extends nc.ui.hr.uif2.action.AddAction {
+	private static final long serialVersionUID = 1L;
+
+	private HrBillFormEditor cardForm;
+
+	@Override
+	public void doAction(ActionEvent e) throws Exception {
+		super.doAction(e);
+
+		if (this.getModel().getUiState().equals(nc.ui.uif2.UIState.ADD)) {
+			try {
+				boolean isTWLocalizationEnabled = SysInitQuery.getParaBoolean(this.getModel().getContext().getPk_org(),
+						"TWHR01").booleanValue();
+				if (isTWLocalizationEnabled) {
+					String defaultWeekForm = SysInitQuery.getParaString(this.getModel().getContext().getPk_org(),
+							"TWHRT04");
+					BillItem item = this.getCardForm().getBillCardPanel().getHeadItem("weekform");
+					item.setValue(defaultWeekForm);
+					item.setEnabled(true);
+				} else {
+					BillItem item = this.getCardForm().getBillCardPanel().getHeadItem("weekform");
+					item.setValue(null);
+					item.setEnabled(false);
+				}
+			} catch (BusinessException ex) {
+				// TODO ×Ô„Ó®aÉúµÄ catch …^‰K
+				ex.printStackTrace();
+			}
+		}
+	}
+
+	public HrBillFormEditor getCardForm() {
+		return cardForm;
+	}
+
+	public void setCardForm(HrBillFormEditor cardForm) {
+		this.cardForm = cardForm;
+	}
+}

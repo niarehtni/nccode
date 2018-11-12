@@ -1,0 +1,127 @@
+package nc.ui.ta.psndocwadoc.view.labourjoin;
+
+import java.awt.BorderLayout;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.commons.lang.ArrayUtils;
+
+import nc.bs.framework.common.NCLocator;
+import nc.desktop.ui.WorkbenchEnvironment;
+import nc.itf.hr.wa.IPsndocwadocLabourService;
+import nc.ui.hr.frame.util.BillPanelUtils;
+import nc.ui.pub.beans.UIPanel;
+import nc.ui.pub.bill.BillListData;
+import nc.ui.pub.bill.BillListPanel;
+import nc.ui.pub.bill.BillModel;
+import nc.ui.pub.bill.IBillItem;
+import nc.ui.ta.pub.standardpsntemplet.PsnTempletQuitUtils;
+import nc.vo.hi.psndoc.PsnJobVO;
+import nc.vo.pub.BusinessException;
+import nc.vo.pub.bill.BillTempletVO;
+import nc.vo.pub.lang.UFDouble;
+import nc.vo.ta.psndoc.TBMPsndocVO;
+
+@SuppressWarnings({"restriction","unchecked"})
+public class ConfirmPsnPanelForQuitJoin extends UIPanel {
+	
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -5985391483446618328L;
+	
+	private BillListPanel billListPanel = null;
+
+	public ConfirmPsnPanelForQuitJoin() {
+		
+	}
+	
+	public void init(){
+		setLayout(new BorderLayout());
+		add(getBillListPanel(),BorderLayout.CENTER);
+		
+	}
+	
+	
+//	public void setFormVOs(SuperVO[] vos){
+//		getBillListPanel().getBillListData().setHeaderValueObjectByMetaData(vos);
+//		if(!ArrayUtils.isEmpty(vos))
+//			getBillListPanel().getHeadBillModel().setRowState(0, vos.length-1, BillModel.SELECTED);
+//	}
+	public void setFormVOs(PsnJobVO[] vos) throws BusinessException {
+		vos = rebuildVOs(vos);
+		getBillListPanel().getBillListData().setHeaderValueObjectByMetaData(vos);
+
+		for (int i = 0; i < getBillListPanel().getHeadBillModel().getRowCount(); i++) {
+			String pk_psndoc = (String) getBillListPanel().getHeadBillModel().getValueAt(i, "pk_psndoc");
+			for (PsnJobVO vo : vos) {
+				if (pk_psndoc.equals(vo.getAttributeValue("pk_psndoc"))) {
+					getBillListPanel().getHeadBillModel().setValueAt(vo.getAttributeValue("insurancetype"), i,
+							"insurancetype");
+					getBillListPanel().getHeadBillModel().setValueAt(vo.getAttributeValue("gradedistance"), i,
+							"gradedistance");
+					i++;
+				}
+			}
+			i--;
+		}
+
+		if (!ArrayUtils.isEmpty(vos))
+			getBillListPanel().getHeadBillModel().setRowState(0, vos.length - 1, BillModel.SELECTED);
+	}
+
+	private PsnJobVO[] rebuildVOs(PsnJobVO[] vos) throws BusinessException {
+		List<PsnJobVO> psnjobs = new ArrayList<PsnJobVO>();
+		List<String> pk_psndocs = new ArrayList<String>();
+		IPsndocwadocLabourService wadocQs = NCLocator.getInstance().lookup(IPsndocwadocLabourService.class);
+		for(PsnJobVO vo : vos){
+			pk_psndocs.add(vo.getPk_psndoc());
+		}
+		Map<String,String[]> QuitMap = wadocQs.queryLabour(pk_psndocs);
+		
+		if (vos != null) {
+			for (PsnJobVO vo : vos) {
+				vo.setAttributeValue("insurancetype", "„Ú±£");
+				vo.setAttributeValue("gradedistance", new UFDouble(QuitMap.get(vo.getPk_psndoc()) == null ? "" : QuitMap.get(vo.getPk_psndoc())[0]));
+				psnjobs.add(vo);
+
+				PsnJobVO rtvo = (PsnJobVO) vo.clone();
+				vo.setAttributeValue("insurancetype", "„ÚÍË");
+				vo.setAttributeValue("gradedistance", new UFDouble(QuitMap.get(vo.getPk_psndoc()) == null ? "" : QuitMap.get(vo.getPk_psndoc())[1]));
+				psnjobs.add(rtvo);
+
+				PsnJobVO hlvo = (PsnJobVO) vo.clone();
+				vo.setAttributeValue("insurancetype", "½¡±£");
+				vo.setAttributeValue("gradedistance", new UFDouble(QuitMap.get(vo.getPk_psndoc()) == null ? "" : QuitMap.get(vo.getPk_psndoc())[2]));
+				psnjobs.add(hlvo);
+			}
+		}
+		WorkbenchEnvironment.getInstance().removeClientCache("QuitMap");
+		return psnjobs.toArray(new PsnJobVO[0]);
+	}
+	
+	public String[] getSelPkPsndocs(){
+		TBMPsndocVO[] selVOs = BillPanelUtils.getMultiSelectedData(getBillListPanel().getHeadBillModel(), TBMPsndocVO.class);
+		if(ArrayUtils.isEmpty(selVOs))
+			return null;
+		String[] retPks = new String[selVOs.length];
+		for(int i=0;i<selVOs.length;i++){
+			retPks[i]=selVOs[i].getPk_psndoc();
+		}
+		return retPks;
+	}
+
+	protected BillListPanel getBillListPanel() {
+		if(billListPanel==null){
+			billListPanel = new BillListPanel();
+			BillTempletVO btv = PsnTempletQuitUtils.createSeniorItems(IBillItem.HEAD);
+			BillListData listData = new BillListData(btv);
+			billListPanel.setListData(listData);
+			billListPanel.setMultiSelect(true);
+		}
+		return billListPanel;
+	}
+
+}

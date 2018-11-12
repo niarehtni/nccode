@@ -1,0 +1,747 @@
+﻿package nc.vo.ta.overtime;
+
+import nc.vo.pub.IVOMeta;
+import nc.vo.pub.SuperVO;
+import nc.vo.pub.lang.UFBoolean;
+import nc.vo.pub.lang.UFDate;
+import nc.vo.pub.lang.UFDateTime;
+import nc.vo.pub.lang.UFDouble;
+import nc.vo.pub.lang.UFLiteralDate;
+import nc.vo.pubapp.pattern.model.meta.entity.vo.VOMetaFactory;
+
+/**
+ * <b> 此處簡要描述此類功能 </b>
+ * <p>
+ * 此處添加累的描述信息
+ * </p>
+ * 創建日期:2018/4/23
+ * 
+ * @author
+ * @version NCPrj ??
+ */
+
+public class SegDetailVO extends SuperVO {
+
+	/**
+	 * 加班分段明細主鍵
+	 */
+	public String pk_segdetail;
+	/**
+	 * 集團
+	 */
+	public String pk_group;
+	/**
+	 * 組織
+	 */
+	public String pk_org;
+	/**
+	 * 組織版本
+	 */
+	public String pk_org_v;
+	/**
+	 * 創建人
+	 */
+	public String creator;
+	/**
+	 * 創建時間
+	 */
+	public UFDateTime creationtime;
+	/**
+	 * 修改人
+	 */
+	public String modifier;
+	/**
+	 * 修改時間
+	 */
+	public UFDateTime modifiedtime;
+	/**
+	 * 制單時間
+	 */
+	public UFDate maketime;
+	/**
+	 * 父節點
+	 */
+	public String pk_parentsegdetail;
+	/**
+	 * 節點序號
+	 */
+	public Integer nodeno;
+	/**
+	 * 節點編碼
+	 */
+	public String nodecode;
+	/**
+	 * 節點名稱
+	 */
+	public String nodename;
+	/**
+	 * 加班日期
+	 */
+	public UFLiteralDate regdate;
+	/**
+	 * 加班分段依據
+	 */
+	public String pk_segrule;
+	/**
+	 * 加班分段規則
+	 */
+	public String pk_segruleterm;
+	/**
+	 * 人員
+	 */
+	public String pk_psndoc;
+	/**
+	 * 加班登記單
+	 */
+	public String pk_overtimereg;
+	/**
+	 * 分段規則時長
+	 */
+	public UFDouble rulehours;
+	/**
+	 * 核定加班時長
+	 */
+	public UFDouble hours;
+	/**
+	 * 核定時薪
+	 */
+	public UFDouble hourlypay;
+	/**
+	 * 分段規則費率
+	 */
+	public UFDouble otrate;
+	/**
+	 * 已核銷時長
+	 */
+	public UFDouble consumedhours;
+	/**
+	 * 已核銷金額
+	 */
+	public UFDouble consumedamount;
+	/**
+	 * 核銷剩餘時長
+	 */
+	public UFDouble remaininghours;
+	/**
+	 * 核銷剩餘金額
+	 */
+	public UFDouble remainingamount;
+	/**
+	 * 是否作廢
+	 */
+	public UFBoolean iscanceled;
+	/**
+	 * 是否轉補休
+	 */
+	public UFBoolean iscompensation;
+	/**
+	 * 是否核銷完成
+	 */
+	public UFBoolean isconsumed;
+	/**
+	 * 是否結算
+	 */
+	public UFBoolean issettled;
+	/**
+	 * 時間戳
+	 */
+	public UFDateTime ts;
+
+	/**
+	 * 屬性 pk_segdetail的Getter方法.屬性名：加班分段明細主鍵 創建日期:2018/4/23
+	 * 
+	 * @return java.lang.String
+	 */
+	public String getPk_segdetail() {
+		return this.pk_segdetail;
+	}
+
+	/**
+	 * 屬性pk_segdetail的Setter方法.屬性名：加班分段明細主鍵 創建日期:2018/4/23
+	 * 
+	 * @param newPk_segdetail
+	 *            java.lang.String
+	 */
+	public void setPk_segdetail(String pk_segdetail) {
+		this.pk_segdetail = pk_segdetail;
+	}
+
+	/**
+	 * 屬性 pk_group的Getter方法.屬性名：集團 創建日期:2018/4/23
+	 * 
+	 * @return nc.vo.org.GroupVO
+	 */
+	public String getPk_group() {
+		return this.pk_group;
+	}
+
+	/**
+	 * 屬性pk_group的Setter方法.屬性名：集團 創建日期:2018/4/23
+	 * 
+	 * @param newPk_group
+	 *            nc.vo.org.GroupVO
+	 */
+	public void setPk_group(String pk_group) {
+		this.pk_group = pk_group;
+	}
+
+	/**
+	 * 屬性 pk_org的Getter方法.屬性名：組織 創建日期:2018/4/23
+	 * 
+	 * @return nc.vo.org.OrgVO
+	 */
+	public String getPk_org() {
+		return this.pk_org;
+	}
+
+	/**
+	 * 屬性pk_org的Setter方法.屬性名：組織 創建日期:2018/4/23
+	 * 
+	 * @param newPk_org
+	 *            nc.vo.org.OrgVO
+	 */
+	public void setPk_org(String pk_org) {
+		this.pk_org = pk_org;
+	}
+
+	/**
+	 * 屬性 pk_org_v的Getter方法.屬性名：組織版本 創建日期:2018/4/23
+	 * 
+	 * @return nc.vo.vorg.OrgVersionVO
+	 */
+	public String getPk_org_v() {
+		return this.pk_org_v;
+	}
+
+	/**
+	 * 屬性pk_org_v的Setter方法.屬性名：組織版本 創建日期:2018/4/23
+	 * 
+	 * @param newPk_org_v
+	 *            nc.vo.vorg.OrgVersionVO
+	 */
+	public void setPk_org_v(String pk_org_v) {
+		this.pk_org_v = pk_org_v;
+	}
+
+	/**
+	 * 屬性 creator的Getter方法.屬性名：創建人 創建日期:2018/4/23
+	 * 
+	 * @return nc.vo.sm.UserVO
+	 */
+	public String getCreator() {
+		return this.creator;
+	}
+
+	/**
+	 * 屬性creator的Setter方法.屬性名：創建人 創建日期:2018/4/23
+	 * 
+	 * @param newCreator
+	 *            nc.vo.sm.UserVO
+	 */
+	public void setCreator(String creator) {
+		this.creator = creator;
+	}
+
+	/**
+	 * 屬性 creationtime的Getter方法.屬性名：創建時間 創建日期:2018/4/23
+	 * 
+	 * @return nc.vo.pub.lang.UFDateTime
+	 */
+	public UFDateTime getCreationtime() {
+		return this.creationtime;
+	}
+
+	/**
+	 * 屬性creationtime的Setter方法.屬性名：創建時間 創建日期:2018/4/23
+	 * 
+	 * @param newCreationtime
+	 *            nc.vo.pub.lang.UFDateTime
+	 */
+	public void setCreationtime(UFDateTime creationtime) {
+		this.creationtime = creationtime;
+	}
+
+	/**
+	 * 屬性 modifier的Getter方法.屬性名：修改人 創建日期:2018/4/23
+	 * 
+	 * @return nc.vo.sm.UserVO
+	 */
+	public String getModifier() {
+		return this.modifier;
+	}
+
+	/**
+	 * 屬性modifier的Setter方法.屬性名：修改人 創建日期:2018/4/23
+	 * 
+	 * @param newModifier
+	 *            nc.vo.sm.UserVO
+	 */
+	public void setModifier(String modifier) {
+		this.modifier = modifier;
+	}
+
+	/**
+	 * 屬性 modifiedtime的Getter方法.屬性名：修改時間 創建日期:2018/4/23
+	 * 
+	 * @return nc.vo.pub.lang.UFDateTime
+	 */
+	public UFDateTime getModifiedtime() {
+		return this.modifiedtime;
+	}
+
+	/**
+	 * 屬性modifiedtime的Setter方法.屬性名：修改時間 創建日期:2018/4/23
+	 * 
+	 * @param newModifiedtime
+	 *            nc.vo.pub.lang.UFDateTime
+	 */
+	public void setModifiedtime(UFDateTime modifiedtime) {
+		this.modifiedtime = modifiedtime;
+	}
+
+	/**
+	 * 屬性 maketime的Getter方法.屬性名：制單時間 創建日期:2018/4/23
+	 * 
+	 * @return nc.vo.pub.lang.UFDate
+	 */
+	public UFDate getMaketime() {
+		return this.maketime;
+	}
+
+	/**
+	 * 屬性maketime的Setter方法.屬性名：制單時間 創建日期:2018/4/23
+	 * 
+	 * @param newMaketime
+	 *            nc.vo.pub.lang.UFDate
+	 */
+	public void setMaketime(UFDate maketime) {
+		this.maketime = maketime;
+	}
+
+	/**
+	 * 屬性 pk_parentsegdetail的Getter方法.屬性名：父節點 創建日期:2018/4/23
+	 * 
+	 * @return nc.vo.ta.overtime.SegDetailVO
+	 */
+	public String getPk_parentsegdetail() {
+		return this.pk_parentsegdetail;
+	}
+
+	/**
+	 * 屬性pk_parentsegdetail的Setter方法.屬性名：父節點 創建日期:2018/4/23
+	 * 
+	 * @param newPk_parentsegdetail
+	 *            nc.vo.ta.overtime.SegDetailVO
+	 */
+	public void setPk_parentsegdetail(String pk_parentsegdetail) {
+		this.pk_parentsegdetail = pk_parentsegdetail;
+	}
+
+	/**
+	 * 屬性 nodeno的Getter方法.屬性名：節點序號 創建日期:2018/4/23
+	 * 
+	 * @return java.lang.Integer
+	 */
+	public Integer getNodeno() {
+		return this.nodeno;
+	}
+
+	/**
+	 * 屬性nodeno的Setter方法.屬性名：節點序號 創建日期:2018/4/23
+	 * 
+	 * @param newNodeno
+	 *            java.lang.Integer
+	 */
+	public void setNodeno(Integer nodeno) {
+		this.nodeno = nodeno;
+	}
+
+	/**
+	 * 屬性 nodecode的Getter方法.屬性名：節點編碼 創建日期:2018/4/23
+	 * 
+	 * @return java.lang.String
+	 */
+	public String getNodecode() {
+		this.nodecode = (String) this.getAttributeValue("code");
+		return this.nodecode;
+	}
+
+	/**
+	 * 屬性nodecode的Setter方法.屬性名：節點編碼 創建日期:2018/4/23
+	 * 
+	 * @param newNodecode
+	 *            java.lang.String
+	 */
+	public void setNodecode(String nodecode) {
+		this.nodecode = nodecode;
+		this.setAttributeValue("code", nodecode);
+	}
+
+	/**
+	 * 屬性 nodename的Getter方法.屬性名：節點名稱 創建日期:2018/4/23
+	 * 
+	 * @return java.lang.String
+	 */
+	public String getNodename() {
+		this.nodename = (String) this.getAttributeValue("name");
+		return this.nodename;
+	}
+
+	/**
+	 * 屬性nodename的Setter方法.屬性名：節點名稱 創建日期:2018/4/23
+	 * 
+	 * @param newNodename
+	 *            java.lang.String
+	 */
+	public void setNodename(String nodename) {
+		this.nodename = nodename;
+		this.setAttributeValue("name", nodename);
+	}
+
+	/**
+	 * 屬性 regdate的Getter方法.屬性名：加班日期 創建日期:2018/4/23
+	 * 
+	 * @return nc.vo.pub.lang.UFLiteralDate
+	 */
+	public UFLiteralDate getRegdate() {
+		return this.regdate;
+	}
+
+	/**
+	 * 屬性regdate的Setter方法.屬性名：加班日期 創建日期:2018/4/23
+	 * 
+	 * @param newRegdate
+	 *            nc.vo.pub.lang.UFLiteralDate
+	 */
+	public void setRegdate(UFLiteralDate regdate) {
+		this.regdate = regdate;
+	}
+
+	/**
+	 * 屬性 pk_segrule的Getter方法.屬性名：加班分段依據 創建日期:2018/4/23
+	 * 
+	 * @return nc.vo.ta.overtime.SegRuleVO
+	 */
+	public String getPk_segrule() {
+		return this.pk_segrule;
+	}
+
+	/**
+	 * 屬性pk_segrule的Setter方法.屬性名：加班分段依據 創建日期:2018/4/23
+	 * 
+	 * @param newPk_segrule
+	 *            nc.vo.ta.overtime.SegRuleVO
+	 */
+	public void setPk_segrule(String pk_segrule) {
+		this.pk_segrule = pk_segrule;
+	}
+
+	/**
+	 * 屬性 pk_segruleterm的Getter方法.屬性名：加班分段規則 創建日期:2018/4/23
+	 * 
+	 * @return nc.vo.ta.overtime.SegRuleTermVO
+	 */
+	public String getPk_segruleterm() {
+		return this.pk_segruleterm;
+	}
+
+	/**
+	 * 屬性pk_segruleterm的Setter方法.屬性名：加班分段規則 創建日期:2018/4/23
+	 * 
+	 * @param newPk_segruleterm
+	 *            nc.vo.ta.overtime.SegRuleTermVO
+	 */
+	public void setPk_segruleterm(String pk_segruleterm) {
+		this.pk_segruleterm = pk_segruleterm;
+	}
+
+	/**
+	 * 屬性 pk_psndoc的Getter方法.屬性名：人員 創建日期:2018/4/23
+	 * 
+	 * @return nc.vo.hi.psndoc.PsndocVO
+	 */
+	public String getPk_psndoc() {
+		return this.pk_psndoc;
+	}
+
+	/**
+	 * 屬性pk_psndoc的Setter方法.屬性名：人員 創建日期:2018/4/23
+	 * 
+	 * @param newPk_psndoc
+	 *            nc.vo.hi.psndoc.PsndocVO
+	 */
+	public void setPk_psndoc(String pk_psndoc) {
+		this.pk_psndoc = pk_psndoc;
+	}
+
+	/**
+	 * 屬性 pk_overtimereg的Getter方法.屬性名：加班登記單 創建日期:2018/4/23
+	 * 
+	 * @return nc.vo.ta.overtime.OvertimeRegVO
+	 */
+	public String getPk_overtimereg() {
+		return this.pk_overtimereg;
+	}
+
+	/**
+	 * 屬性pk_overtimereg的Setter方法.屬性名：加班登記單 創建日期:2018/4/23
+	 * 
+	 * @param newPk_overtimereg
+	 *            nc.vo.ta.overtime.OvertimeRegVO
+	 */
+	public void setPk_overtimereg(String pk_overtimereg) {
+		this.pk_overtimereg = pk_overtimereg;
+	}
+
+	/**
+	 * 屬性 rulehours的Getter方法.屬性名：分段規則時長 創建日期:2018/4/23
+	 * 
+	 * @return nc.vo.pub.lang.UFDouble
+	 */
+	public UFDouble getRulehours() {
+		return this.rulehours;
+	}
+
+	/**
+	 * 屬性rulehours的Setter方法.屬性名：分段規則時長 創建日期:2018/4/23
+	 * 
+	 * @param newRulehours
+	 *            nc.vo.pub.lang.UFDouble
+	 */
+	public void setRulehours(UFDouble rulehours) {
+		this.rulehours = rulehours;
+	}
+
+	/**
+	 * 屬性 hours的Getter方法.屬性名：核定加班時長 創建日期:2018/4/23
+	 * 
+	 * @return nc.vo.pub.lang.UFDouble
+	 */
+	public UFDouble getHours() {
+		return this.hours;
+	}
+
+	/**
+	 * 屬性hours的Setter方法.屬性名：核定加班時長 創建日期:2018/4/23
+	 * 
+	 * @param newHours
+	 *            nc.vo.pub.lang.UFDouble
+	 */
+	public void setHours(UFDouble hours) {
+		this.hours = hours;
+	}
+
+	/**
+	 * 屬性 hourlypay的Getter方法.屬性名：核定時薪 創建日期:2018/4/23
+	 * 
+	 * @return nc.vo.pub.lang.UFDouble
+	 */
+	public UFDouble getHourlypay() {
+		return this.hourlypay;
+	}
+
+	/**
+	 * 屬性hourlypay的Setter方法.屬性名：核定時薪 創建日期:2018/4/23
+	 * 
+	 * @param newHourlypay
+	 *            nc.vo.pub.lang.UFDouble
+	 */
+	public void setHourlypay(UFDouble hourlypay) {
+		this.hourlypay = hourlypay;
+	}
+
+	/**
+	 * 屬性 otrate的Getter方法.屬性名：分段規則費率 創建日期:2018/4/23
+	 * 
+	 * @return nc.vo.pub.lang.UFDouble
+	 */
+	public UFDouble getOtrate() {
+		return this.otrate;
+	}
+
+	/**
+	 * 屬性otrate的Setter方法.屬性名：分段規則費率 創建日期:2018/4/23
+	 * 
+	 * @param newOtrate
+	 *            nc.vo.pub.lang.UFDouble
+	 */
+	public void setOtrate(UFDouble otrate) {
+		this.otrate = otrate;
+	}
+
+	/**
+	 * 屬性 consumedhours的Getter方法.屬性名：已核銷時長 創建日期:2018/4/23
+	 * 
+	 * @return nc.vo.pub.lang.UFDouble
+	 */
+	public UFDouble getConsumedhours() {
+		return this.consumedhours;
+	}
+
+	/**
+	 * 屬性consumedhours的Setter方法.屬性名：已核銷時長 創建日期:2018/4/23
+	 * 
+	 * @param newConsumedhours
+	 *            nc.vo.pub.lang.UFDouble
+	 */
+	public void setConsumedhours(UFDouble consumedhours) {
+		this.consumedhours = consumedhours;
+	}
+
+	/**
+	 * 屬性 consumedamount的Getter方法.屬性名：已核銷金額 創建日期:2018/4/23
+	 * 
+	 * @return nc.vo.pub.lang.UFDouble
+	 */
+	public UFDouble getConsumedamount() {
+		return this.consumedamount;
+	}
+
+	/**
+	 * 屬性consumedamount的Setter方法.屬性名：已核銷金額 創建日期:2018/4/23
+	 * 
+	 * @param newConsumedamount
+	 *            nc.vo.pub.lang.UFDouble
+	 */
+	public void setConsumedamount(UFDouble consumedamount) {
+		this.consumedamount = consumedamount;
+	}
+
+	/**
+	 * 屬性 remaininghours的Getter方法.屬性名：核銷剩餘時長 創建日期:2018/4/23
+	 * 
+	 * @return nc.vo.pub.lang.UFDouble
+	 */
+	public UFDouble getRemaininghours() {
+		return this.remaininghours;
+	}
+
+	/**
+	 * 屬性remaininghours的Setter方法.屬性名：核銷剩餘時長 創建日期:2018/4/23
+	 * 
+	 * @param newRemaininghours
+	 *            nc.vo.pub.lang.UFDouble
+	 */
+	public void setRemaininghours(UFDouble remaininghours) {
+		this.remaininghours = remaininghours;
+	}
+
+	/**
+	 * 屬性 remainingamount的Getter方法.屬性名：核銷剩餘金額 創建日期:2018/4/23
+	 * 
+	 * @return nc.vo.pub.lang.UFDouble
+	 */
+	public UFDouble getRemainingamount() {
+		return this.remainingamount;
+	}
+
+	/**
+	 * 屬性remainingamount的Setter方法.屬性名：核銷剩餘金額 創建日期:2018/4/23
+	 * 
+	 * @param newRemainingamount
+	 *            nc.vo.pub.lang.UFDouble
+	 */
+	public void setRemainingamount(UFDouble remainingamount) {
+		this.remainingamount = remainingamount;
+	}
+
+	/**
+	 * 屬性 iscanceled的Getter方法.屬性名：是否作廢 創建日期:2018/4/23
+	 * 
+	 * @return nc.vo.pub.lang.UFBoolean
+	 */
+	public UFBoolean getIscanceled() {
+		return this.iscanceled;
+	}
+
+	/**
+	 * 屬性iscanceled的Setter方法.屬性名：是否作廢 創建日期:2018/4/23
+	 * 
+	 * @param newIscanceled
+	 *            nc.vo.pub.lang.UFBoolean
+	 */
+	public void setIscanceled(UFBoolean iscanceled) {
+		this.iscanceled = iscanceled;
+	}
+
+	/**
+	 * 屬性 iscompensation的Getter方法.屬性名：是否轉補休 創建日期:2018/4/23
+	 * 
+	 * @return nc.vo.pub.lang.UFBoolean
+	 */
+	public UFBoolean getIscompensation() {
+		return this.iscompensation;
+	}
+
+	/**
+	 * 屬性iscompensation的Setter方法.屬性名：是否轉補休 創建日期:2018/4/23
+	 * 
+	 * @param newIscompensation
+	 *            nc.vo.pub.lang.UFBoolean
+	 */
+	public void setIscompensation(UFBoolean iscompensation) {
+		this.iscompensation = iscompensation;
+	}
+
+	/**
+	 * 屬性 isconsumed的Getter方法.屬性名：是否核銷完成 創建日期:2018/4/23
+	 * 
+	 * @return nc.vo.pub.lang.UFBoolean
+	 */
+	public UFBoolean getIsconsumed() {
+		return this.isconsumed;
+	}
+
+	/**
+	 * 屬性isconsumed的Setter方法.屬性名：是否核銷完成 創建日期:2018/4/23
+	 * 
+	 * @param newIsconsumed
+	 *            nc.vo.pub.lang.UFBoolean
+	 */
+	public void setIsconsumed(UFBoolean isconsumed) {
+		this.isconsumed = isconsumed;
+	}
+
+	/**
+	 * 屬性 issettled的Getter方法.屬性名：是否結算 創建日期:2018/4/23
+	 * 
+	 * @return nc.vo.pub.lang.UFBoolean
+	 */
+	public UFBoolean getIssettled() {
+		return this.issettled;
+	}
+
+	/**
+	 * 屬性issettled的Setter方法.屬性名：是否結算 創建日期:2018/4/23
+	 * 
+	 * @param newIssettled
+	 *            nc.vo.pub.lang.UFBoolean
+	 */
+	public void setIssettled(UFBoolean issettled) {
+		this.issettled = issettled;
+	}
+
+	/**
+	 * 屬性 生成時間戳的Getter方法.屬性名：時間戳 創建日期:2018/4/23
+	 * 
+	 * @return nc.vo.pub.lang.UFDateTime
+	 */
+	public UFDateTime getTs() {
+		return this.ts;
+	}
+
+	/**
+	 * 屬性生成時間戳的Setter方法.屬性名：時間戳 創建日期:2018/4/23
+	 * 
+	 * @param newts
+	 *            nc.vo.pub.lang.UFDateTime
+	 */
+	public void setTs(UFDateTime ts) {
+		this.ts = ts;
+	}
+
+	@Override
+	public IVOMeta getMetaData() {
+		return VOMetaFactory.getInstance().getVOMeta("overtime.segdetail");
+	}
+}

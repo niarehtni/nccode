@@ -1,0 +1,2 @@
+insert into pub_query_templet(description,devorg,dr,fixcondition,fixquerytree,id,layer,metaclass,model_code,model_name,node_code,parentid,pk_corp,pk_org,resid,ts) values( null,null,null,null,null,'1001Z71000000000WK6T',0,'8df12441-6f47-4ebf-ad14-0dcad84353b9','6011agcha','协议变更查询模板','6011make',null,'@@@@',null,'16011make0017','2018-09-16 14:01:50')
+/

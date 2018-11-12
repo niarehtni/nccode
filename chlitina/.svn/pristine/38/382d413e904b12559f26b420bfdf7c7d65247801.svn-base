@@ -1,0 +1,12 @@
+insert into md_bizitfmap(bizinterfaceid,bizitfimpclassname,classattrid,classattrpath,classid,dr,industry,intattrid,ts,versiontype) values( '6c8722b9-911a-489b-8d0d-18bd3734fcf6',null,'f00f9bbb-f57d-4070-85ad-551b7b39b709',null,'317f74f8-7bc5-4496-a51b-0648ffbfd48b',0,null,'5dd3c721-22ad-42b1-9c10-4351c236bc77','2018-08-14 16:03:21',null)
+go
+insert into md_bizitfmap(bizinterfaceid,bizitfimpclassname,classattrid,classattrpath,classid,dr,industry,intattrid,ts,versiontype) values( '6c8722b9-911a-489b-8d0d-18bd3734fcf6',null,'3bdc7bb0-e226-4454-b513-a964db6d635e',null,'317f74f8-7bc5-4496-a51b-0648ffbfd48b',0,null,'89578a97-42fe-439b-827c-8eabd9e3604c','2018-08-14 16:03:21',null)
+go
+insert into md_bizitfmap(bizinterfaceid,bizitfimpclassname,classattrid,classattrpath,classid,dr,industry,intattrid,ts,versiontype) values( '6c8722b9-911a-489b-8d0d-18bd3734fcf6',null,'212f775c-a9ba-4b76-bcb9-f413c1beb40e',null,'317f74f8-7bc5-4496-a51b-0648ffbfd48b',0,null,'a47e6cda-09e4-480b-923f-ec6f41e3e06c','2018-08-14 16:03:21',null)
+go
+insert into md_bizitfmap(bizinterfaceid,bizitfimpclassname,classattrid,classattrpath,classid,dr,industry,intattrid,ts,versiontype) values( '6c8722b9-911a-489b-8d0d-18bd3734fcf6',null,null,null,'317f74f8-7bc5-4496-a51b-0648ffbfd48b',0,null,'c8334364-7ab9-4266-8d4b-e74537935e46','2018-08-14 16:03:21',null)
+go
+insert into md_bizitfmap(bizinterfaceid,bizitfimpclassname,classattrid,classattrpath,classid,dr,industry,intattrid,ts,versiontype) values( '6c8722b9-911a-489b-8d0d-18bd3734fcf6',null,'25f8764d-42a6-4d66-8ebc-818ac8af1974',null,'317f74f8-7bc5-4496-a51b-0648ffbfd48b',0,null,'d32cc17b-f415-415a-923f-0764443eb102','2018-08-14 16:03:21',null)
+go
+insert into md_bizitfmap(bizinterfaceid,bizitfimpclassname,classattrid,classattrpath,classid,dr,industry,intattrid,ts,versiontype) values( '6c8722b9-911a-489b-8d0d-18bd3734fcf6',null,'c9a273df-9fed-4781-83c5-128759a71bda',null,'317f74f8-7bc5-4496-a51b-0648ffbfd48b',0,null,'ecf1b76a-6e44-42e2-a55e-87596504775b','2018-08-14 16:03:21',null)
+go

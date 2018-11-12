@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component conRouterType="手动" createIndustry="0"
+	createTime="2018-01-15 16:52:52" creator="" description=""
+	displayName="申報格式(自定义档案)业务操作" fromSourceBmf="true"
+	gencodestyle="NC传统样式" help="" id="6443b7b9-f9d1-11e7-927b-17bea46d96b9"
+	industry="0" industryChanged="false" industryIncrease="false"
+	industryName="基础行业" isSource="false" isbizmodel="true" mainEntity=""
+	modifier="" modifyIndustry="0" modifyTime="2018-01-15 16:52:52"
+	name="bo_Defdoc-TWHR012" namespace="uap" ownModule="uapbd"
+	preLoad="false" programcode="" resModuleName="bo_Defdoc-TWHR012"
+	resid="" version="2" versionType="0">
+	<celllist>
+		<busioperation componentID="6443b7b9-f9d1-11e7-927b-17bea46d96b9"
+			createIndustry="0" createTime="2018-01-15 16:52:52" creator=""
+			dataType="1001ZZ1000000001NEF9" dbtype="" description=""
+			displayName="修改" fullClassName="nc.vouap.bo_Defdoc-TWHR012.edit"
+			height="100" help="" id="6443b7bd-f9d1-11e7-927b-17bea46d96b9"
+			industryChanged="false" isAuthorization="true" isBusiActivity="false"
+			isSource="false" logtype="MODIFY" modifier="" modifyIndustry="0"
+			modifyTime="2018-01-15 16:52:52" name="edit" needlog="true"
+			resid="2UC000-001103" typeDisplayName="申報格式(自定义档案)"
+			typeName="Defdoc-TWHR012" version=""
+			versionType="0" visibility="public" width="80" x="150" y="120">
+			<refoperationlist />
+		</busioperation>
+		<busioperation componentID="6443b7b9-f9d1-11e7-927b-17bea46d96b9"
+			createIndustry="0" createTime="2018-01-15 16:52:52" creator=""
+			dataType="1001ZZ1000000001NEF9" dbtype="" description=""
+			displayName="删除" fullClassName="nc.vouap.bo_Defdoc-TWHR012.delete"
+			height="100" help="" id="6443b7bb-f9d1-11e7-927b-17bea46d96b9"
+			industryChanged="false" isAuthorization="true" isBusiActivity="false"
+			isSource="false" logtype="DELETE" modifier="" modifyIndustry="0"
+			modifyTime="2018-01-15 16:52:52" name="delete" needlog="true"
+			resid="2UC000-001104" typeDisplayName="申報格式(自定义档案)"
+			typeName="Defdoc-TWHR012" version=""
+			versionType="0" visibility="public" width="80" x="250" y="120">
+			<refoperationlist />
+		</busioperation>
+		<busioperation componentID="6443b7b9-f9d1-11e7-927b-17bea46d96b9"
+			createIndustry="0" createTime="2018-01-15 16:52:52" creator=""
+			dataType="1001ZZ1000000001NEF9" dbtype="" description=""
+			displayName="启用" fullClassName="nc.vouap.bo_Defdoc-TWHR012.enable"
+			height="100" help="" id="6443b7be-f9d1-11e7-927b-17bea46d96b9"
+			industryChanged="false" isAuthorization="true" isBusiActivity="false"
+			isSource="false" logtype="MODIFY" modifier="" modifyIndustry="0"
+			modifyTime="2018-01-15 16:52:52" name="enable" needlog="true"
+			resid="2UC000-001105" typeDisplayName="申報格式(自定义档案)"
+			typeName="Defdoc-TWHR012" version=""
+			versionType="0" visibility="public" width="80" x="350" y="120">
+			<refoperationlist />
+		</busioperation>
+		<busioperation componentID="6443b7b9-f9d1-11e7-927b-17bea46d96b9"
+			createIndustry="0" createTime="2018-01-15 16:52:52" creator=""
+			dataType="1001ZZ1000000001NEF9" dbtype="" description=""
+			displayName="停用" fullClassName="nc.vouap.bo_Defdoc-TWHR012.disable"
+			height="100" help="" id="6443b7bc-f9d1-11e7-927b-17bea46d96b9"
+			industryChanged="false" isAuthorization="true" isBusiActivity="false"
+			isSource="false" logtype="MODIFY" modifier="" modifyIndustry="0"
+			modifyTime="2018-01-15 16:52:52" name="disable" needlog="true"
+			resid="2UC000-001106" typeDisplayName="申報格式(自定义档案)"
+			typeName="Defdoc-TWHR012" version=""
+			versionType="0" visibility="public" width="80" x="450" y="120">
+			<refoperationlist />
+		</busioperation>
+		<busioperation componentID="6443b7b9-f9d1-11e7-927b-17bea46d96b9"
+			createIndustry="0" createTime="2018-01-15 16:52:52" creator=""
+			dataType="1001ZZ1000000001NEF9" dbtype="" description=""
+			displayName="新增" fullClassName="nc.vouap.bo_Defdoc-TWHR012.add"
+			height="100" help="" id="6443b7ba-f9d1-11e7-927b-17bea46d96b9"
+			industryChanged="false" isAuthorization="true" isBusiActivity="false"
+			isSource="false" logtype="ADD" modifier="" modifyIndustry="0"
+			modifyTime="2018-01-15 16:52:52" name="add" needlog="true"
+			resid="2UC000-001114" typeDisplayName="申報格式(自定义档案)"
+			typeName="Defdoc-TWHR012" version=""
+			versionType="0" visibility="public" width="80" x="50" y="120">
+			<refoperationlist />
+		</busioperation>
+	</celllist>
+	<connectlist />
+	<refdepends />
+	<refdependLoseIDs />
+	<cellRemoveLog />
+	<rulers>
+		<ruler isHorizontal="true" unit="0">
+			<guideList />
+		</ruler>
+		<ruler isHorizontal="false" unit="0">
+			<guideList />
+		</ruler>
+	</rulers>
+</component>

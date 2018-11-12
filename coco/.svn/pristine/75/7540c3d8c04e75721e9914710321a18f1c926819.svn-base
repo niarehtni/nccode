@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="nc.itf.hrsms.ta.away.ShopAwayRegEJB">
+	<public>
+		<component priority="0" singleton="true" remote="true" tx="CMT"  supportAlias="false">
+			<interface>nc.itf.hrsms.ta.away.IShopAwayRegQueryMaintain</interface>
+			<implementation>nc.impl.hrsms.ta.away.ShopAwayRegQueryMaintainImpl</implementation>
+		</component>
+	</public>
+</module>

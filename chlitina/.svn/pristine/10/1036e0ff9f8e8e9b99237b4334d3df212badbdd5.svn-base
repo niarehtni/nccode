@@ -1,0 +1,298 @@
+package nc.impl.wa.func;
+
+import java.math.BigDecimal;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+
+import org.apache.commons.lang.StringUtils;
+
+import nc.bs.dao.DAOException;
+import nc.bs.framework.common.NCLocator;
+import nc.bs.logging.Logger;
+import nc.hr.frame.persistence.SimpleDocServiceTemplate;
+import nc.impl.hi.ComdateUtils;
+import nc.impl.wa.paydata.caculate.AbstractFormulaExecutor;
+import nc.itf.bd.psn.psndoc.IPsndocQueryService;
+import nc.jdbc.framework.processor.ColumnProcessor;
+import nc.jdbc.framework.processor.MapListProcessor;
+import nc.pubitf.para.SysInitQuery;
+
+
+
+import nc.vo.arap.baddebts.ItemVO;
+import nc.vo.bd.psn.PsndocVO;
+import nc.vo.bd.psn.PsnjobVO;
+import nc.vo.hi.psndoc.PsnJobVO;
+import nc.vo.hi.psndoc.PsnOrgVO;
+import nc.vo.hi.psndoc.PsndocDefVO;
+import nc.vo.pub.BusinessException;
+import nc.vo.pub.lang.UFBoolean;
+import nc.vo.pub.lang.UFDate;
+import nc.vo.pub.lang.UFDouble;
+import nc.vo.pub.lang.UFLiteralDate;
+import nc.vo.ta.psncalendar.PsnCalendarVO;
+import nc.vo.ta.timeitem.TimeItemCopyVO;
+import nc.vo.wa.classitem.WaClassItemVO;
+import nc.vo.wa.item.WaItemVO;
+import nc.vo.wa.payfile.PayfileVO;
+import nc.vo.wa.period.PeriodVO;
+import nc.vo.wa.pub.WaLoginContext;
+
+public class AvgSalaryFormulaExcutor extends AbstractFormulaExecutor{
+	
+	@SuppressWarnings("all")
+	public void excute(Object inarguments, WaLoginContext context)
+			throws BusinessException {
+		//通过pk_wa_class和cyear和cperiod筛选出人员
+		String[] arguments = (String[])inarguments;
+		String pk_wa_class = context.getPk_wa_class();
+		//根据薪资方案筛选出公共薪资项目中勾选了平均薪资项的薪资薪资项
+		List<WaItemVO> walist = (List<WaItemVO>)this.getBaseDao().retrieveByClause(WaItemVO.class, "PK_WA_ITEM IN (select distinct PK_WA_ITEM from WA_CLASSITEM where PK_WA_CLASS='"+pk_wa_class+"') "
+				+ "and AVGCALCSALFLAG='Y'");
+		
+		String cumn="";
+		for(WaItemVO waitem : walist){
+			cumn += waitem.getItemkey() +"+";
+		}
+		String tablesql = "(select "+cumn.substring(0, cumn.length()-1)+" as f_itemkey,cyear,cperiod,pk_psndoc,pk_wa_class,pk_org from wa_data) wadata";
+		List<Map<String,String>> custlist = (List<Map<String,String>>)this.getBaseDao().executeQuery("select pk_psndoc from wa_cacu_data where pk_wa_class='"+pk_wa_class+"' and creator = '" + context.getPk_loginUser() + "';", new MapListProcessor());
+		//取所有人的平均月薪
+		Map<String, Object> allpersonsalary = new HashMap<String, Object>();
+		for(Map<String, String> pk_psndocs : custlist){
+			String pk_psndoc = pk_psndocs.get("pk_psndoc");
+			//先获取基准日期，再根据基准日期和平均月数获取开始日期
+			UFDate basedate = getbasedate(pk_psndoc, context, arguments);
+			//获取基准日期往前推的日期,返回的日期即为需要计算的开始日期
+			UFDate basemonthdate = ComdateUtils.calendarclac(basedate, arguments[1]);
+			//判断人员是否月薪(以基准日期为准)
+			//获取这个员工在此薪资方案下的薪资期间和wa_data值
+			List<Map<String,Object>> waperiodlist = (List<Map<String,Object>>) this.getBaseDao().executeQuery("select WA_PERIOD.CSTARTDATE, WA_PERIOD.CENDDATE,("+cumn.substring(0, cumn.length()-1)+") as f_itemkey "
+					+ "from wa_data,WA_WACLASS,WA_PERIOD where WA_DATA.PK_WA_CLASS=WA_WACLASS.PK_WA_CLASS "
+					+" and WA_WACLASS.PK_PERIODSCHEME=WA_PERIOD.PK_PERIODSCHEME "
+					+" and WA_DATA.CYEAR=WA_PERIOD.CYEAR "
+					+" and WA_DATA.CPERIOD=WA_PERIOD.CPERIOD"
+					+" and WA_WACLASS.PK_WA_CLASS='"+pk_wa_class+"'"
+					+" and WA_DATA.PK_PSNDOC='"+pk_psndoc+"';", new MapListProcessor());
+			UFBoolean flag = ismonthsalary(pk_psndoc, context, basedate );
+			UFDouble avgSalary = UFDouble.ZERO_DBL;
+			if(flag.booleanValue()){
+				//判断这个员工工作是否满六个月,无论是否满六个月，其计算方式都一样
+				if(sixmonth(pk_psndoc, context).booleanValue()){
+					avgSalary = getavgsalary(basedate, basemonthdate, waperiodlist);
+					allpersonsalary.put(pk_psndoc, avgSalary.multiply(30));
+				}else{
+					avgSalary = getavgsalary(basedate, basemonthdate, waperiodlist);
+					allpersonsalary.put(pk_psndoc, avgSalary.multiply(30));
+				}
+			}else{
+				//非月薪
+				avgSalary = getavgsalary(basedate, basemonthdate, waperiodlist);
+				UFDouble actavgSalary = getnoavgsalary(pk_psndoc, basedate, basemonthdate, waperiodlist);
+				/**
+				 * 則使用工作期間總工資除總日數，取得日薪後乘以30為平均工資，
+				 * 如果此工資少於工資總額除實際工作日數乘30所得之平均工資的百分之六十，
+				 * 則使用後者計算出之金額作為實際的平均工資
+				 */
+				UFDouble avgmonsalary = avgSalary.multiply(30);
+				UFDouble actmontsalary = actavgSalary.multiply(30);
+				if(avgmonsalary.doubleValue() - (actmontsalary.multiply(0.6).doubleValue()) > 0){
+					allpersonsalary.put(pk_psndoc, actmontsalary);
+				}else{
+					allpersonsalary.put(pk_psndoc, actmontsalary.multiply(0.6));
+				}
+			}
+		}
+		String updatesql = "";
+		Iterator<Entry<String, Object>> entries = allpersonsalary.entrySet().iterator(); 
+		while (entries.hasNext()) {    
+			Entry<String, Object> entry = entries.next();    
+			updatesql +="update wa_cacu_data  set "
+					+ " cacu_value='"+entry.getValue()+"' where pk_psndoc='"+entry.getKey()+"'";
+			getBaseDao().executeUpdate(updatesql.toString());
+		}
+	}
+	
+	/**
+	 * 非月薪的人员计算
+	 * @param pk_psndoc
+	 * @param basedate
+	 * @param basemonthdate
+	 * @param waperiodlist
+	 * @return
+	 * @throws BusinessException
+	 */
+	@SuppressWarnings("all")
+	public UFDouble getnoavgsalary(String pk_psndoc, UFDate basedate,
+			UFDate basemonthdate, List<Map<String, Object>> waperiodlist) throws BusinessException {
+		//取薪资期间和基准日期段的时间交集
+		long sumSalary = 0;
+		long sumDays = 0;
+		for(Map<String, Object>waperiod : waperiodlist){
+			String waperiodstartdate = (String) waperiod.get("cstartdate");
+			String waperiodenddate = (String) waperiod.get("cenddate");
+			String periodtime = ComdateUtils.getAlphalDate(basemonthdate.toString(), ComdateUtils.getcheckdate(basedate.toString(), -1), waperiodstartdate, waperiodenddate);
+			//日期交集的天数
+			long days =  ComdateUtils.daysOfTwo(periodtime.split(":")[0], periodtime.split(":")[0]);
+			sumDays += days;
+			//获取薪资期间的天数
+			long periodays = ComdateUtils.daysOfTwo(waperiodstartdate, waperiodenddate);
+			sumSalary += ((Long.parseLong(waperiod.get("f_itemkey").toString()))/periodays)*days;
+		}
+		if(sumDays == 0){
+			return UFDouble.ZERO_DBL;
+		}
+		//计算非月薪人员的实际日薪
+		List<PsnCalendarVO> psncalendarlist = 
+				(List<PsnCalendarVO>) this.getBaseDao().retrieveByClause(PsnCalendarVO.class, "pk_psndoc='"+pk_psndoc+"'  and "
+						+ "calendar BETWEEN '"+basemonthdate+"' and '"+ComdateUtils.getcheckdate(basedate.toString(), -1)+"'");
+		int actdays = 0;
+		for(PsnCalendarVO psnvo : psncalendarlist){
+			if(null != psnvo.getGzsj() && psnvo.getGzsj().getDouble() > 0){
+				actdays++;
+			}
+		}
+		//实际日薪为
+		
+		return (new UFDouble(sumSalary+"").div(new UFDouble(actdays+"")));
+	}
+
+
+	/**
+	 * 返回日薪(基准时间段--取左不取右，薪资期间段--既取左也取右)
+	 * @param basedateperiod
+	 * @param waperiodlist
+	 * @return
+	 */
+	private UFDouble getavgsalary(UFDate basedate, UFDate basemonthdate,
+			List<Map<String, Object>> waperiodlist) {
+			//取薪资期间和基准日期段的时间交集
+			int sumSalary = 0;
+			int sumDays = 0;
+			for(Map<String, Object>waperiod : waperiodlist){
+				String waperiodstartdate = (String) waperiod.get("cstartdate");
+				String waperiodenddate = (String) waperiod.get("cenddate");
+				String periodtime = ComdateUtils.getAlphalDate(basemonthdate.toString(), ComdateUtils.getcheckdate(basedate.toString(), -1), waperiodstartdate, waperiodenddate);
+				//日期交集的天数
+				int days = 0;
+				if(null != periodtime){
+					days =  ComdateUtils.daysOfTwo(periodtime.split(":")[0], periodtime.split(":")[0]);
+				}else{
+				}
+				sumDays += days;
+				//获取薪资期间的天数
+				int periodays = ComdateUtils.daysOfTwo(waperiodstartdate, waperiodenddate);
+				sumSalary += (Integer.parseInt(waperiod.get("f_itemkey").toString())/periodays)*days;
+			}
+			if(sumDays == 0){
+				return UFDouble.ZERO_DBL;
+			}
+			return (new UFDouble(sumSalary+"").div(new UFDouble(sumDays+"")));
+	}
+	
+	
+	/**
+	 * 判断这个员工入职是否满六个月
+	 * @param pk_psndoc
+	 * @param context
+	 * @return
+	 * @throws BusinessException 
+	 */
+	public  UFBoolean sixmonth(String pk_psndoc, WaLoginContext context) throws BusinessException {
+		List<PsnJobVO> joblist = (List<PsnJobVO>)this.getBaseDao().retrieveByClause(PsnJobVO.class, "pk_psndoc='"+pk_psndoc+"' and pk_org='"+context.getPk_org()+"'");
+		UFBoolean sixmonthflag = UFBoolean.TRUE;
+		return sixmonthflag;
+	}
+	/**
+	 * 获取基准日期
+	 * 如果往前推的起始日期早于进入日期，则取进入日期
+	 * @param pk_psndoc
+	 * @param context
+	 * @return
+	 * @throws BusinessException 
+	 */
+	public UFDate getbasedate(String pk_psndoc, WaLoginContext context, String[] arguments) throws BusinessException {
+		String basedatename = null;
+		UFDate basedate = null;
+		try {
+			
+				if(arguments[0].equals("salarybegindate")){
+					basedatename = "startpaydate";
+				}else if(arguments[0].equals("salaryenddate")){
+					basedatename = "";
+				}else if(arguments[0].equals("sepaydate")){
+					basedatename = "sepaydate";
+				}else if(arguments[0].equals("retirementdate")){
+					basedatename = "retirementdate";
+				} else {
+						String code = SysInitQuery.getParaString(context.getPk_org(), "TBMTWHR01");
+						//根据休假类别的结算方式查找判断日期
+						List <TimeItemCopyVO> listvo = (List<TimeItemCopyVO>) this.getBaseDao().retrieveByClause(TimeItemCopyVO.class, "pk_timeitem=(select pk_timeitem from tbm_timeitem "
+								+ "where stoppaydatetimeitemcode='"+code+"' and pk_org='"+context.getPk_org()+"')");
+						if(null != listvo.get(0).getLeavesetperiod() && listvo.get(0).getLeavesetperiod().toString().equals("3")){
+							basedatename = "workagestartdate";
+						}else{
+							basedatename = "joinsysdate";
+						}
+				}
+				//判断基准日期是工作记录里面还是人员信息档案里面
+				List<PsnOrgVO> basedatelist = (List<PsnOrgVO>) this.getBaseDao().retrieveByClause(PsnOrgVO.class, "pk_org='"+context.getPk_org()+"' and pk_psndoc='"+pk_psndoc+"'");
+				List<PsndocVO> basedatelists = (List<PsndocVO>) this.getBaseDao().retrieveByClause(PsndocVO.class, "pk_org='"+context.getPk_org()+"' and pk_psndoc='"+pk_psndoc+"'");
+				if(basedatename.equals("workagestartdate") || basedatename.equals("joinsysdate") ||
+						basedatename.equals("startpaydate") ||
+						basedatename.equals("stoppaydate")){
+					if(null != basedatelist.get(0).getAttributeValue(basedatename)){
+						basedate = new UFDate(basedatelists.get(0).getAttributeValue(basedatename).toString());
+					}
+				}else {
+					if(null != basedatelists.get(0).getAttributeValue(basedatename)){
+						basedate = new UFDate(basedatelists.get(0).getAttributeValue(basedatename).toString());
+					}
+				}
+				
+				//获取此员工进入日期
+				if(basedatelist.get(0).getBegindate().after(new UFLiteralDate(basedate.toString()))){
+					return new UFDate(basedatelist.get(0).getBegindate().toDate());
+				}
+			} catch (BusinessException e) {
+				throw new BusinessException(e.getMessage());
+			}
+		if(null == basedate){
+			throw new BusinessException("基准日期不能为空");
+		}
+		return basedate;
+	}
+	/**
+	 * 获取是否月薪
+	 * @param pk_psndoc
+	 * @param context
+	 * @param basedate
+	 * @return
+	 * @throws BusinessException
+	 */
+	public  UFBoolean ismonthsalary(String pk_psndoc, WaLoginContext context, UFDate basedate) throws BusinessException {
+		List<PsnJobVO> psnjobvos = (List<PsnJobVO>) this.getBaseDao().retrieveByClause(PsnJobVO.class, "pk_psndoc='"+pk_psndoc+"'");
+		UFBoolean ismonthsalary = UFBoolean.TRUE;
+		for(PsnJobVO psnjob : psnjobvos){
+			//取基准日期在任职记录的区间
+			if(psnjob.getBegindate().before(new UFLiteralDate(basedate.toString())) || 
+					psnjob.getBegindate().isSameDate(new UFLiteralDate(basedate.toString() )) && 
+					(psnjob.getEnddate()== null || psnjob.getEnddate().equals("~") ||
+					psnjob.getEnddate().isSameDate(new UFLiteralDate(basedate.toString())) ||
+							psnjob.getEnddate().after(new UFLiteralDate(basedate.toString())))){
+				return (UFBoolean) psnjob.getAttributeValue("ismonsalary");
+			}
+		}
+		return ismonthsalary;
+	}
+
+	
+}

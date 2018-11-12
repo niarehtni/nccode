@@ -1,0 +1,131 @@
+
+
+--PUB_SYSINITTEMP表的删除语句
+delete  PUB_SYSINITTEMP WHERE PK_SYSINITTEMP IN('1001Z710000000002XH2','1001Z710000000002XH3','1001Z710000000002XH4','1001Z710000000002XH5');;
+--PUB_SYSINITTEMPnull
+
+
+
+Insert into PUB_SYSINITTEMP
+(afterclass,apptag,checkclass,dataclass,dataoriginflag,defaultvalue,domainflag,dr,editcomponentctrlclass,groupcode,groupname,initcode,initname,mainflag,mutexflag,orgtypeconvertmode,paratype,pk_orgtype,pk_refinfo,pk_sysinittemp,remark,showflag,stateflag,sysflag,sysindex,ts,valuelist,valuetype)
+Values(null,null,null,null,0,'2018-01-01','6017',null,null,'~',null,'TWHRT01','起始變更日','N',0,'HRORGTYPE00000000000','business','HRORGTYPE00000000000','@@@@Z0Z100000000XYHL','1001Z710000000002XH2','有效日期格式','Y',5,'N',0,'2018-08-10 17:42:45','有效的日期格式',0);
+
+Insert into PUB_SYSINITTEMP
+(afterclass,apptag,checkclass,dataclass,dataoriginflag,defaultvalue,domainflag,dr,editcomponentctrlclass,groupcode,groupname,initcode,initname,mainflag,mutexflag,orgtypeconvertmode,paratype,pk_orgtype,pk_refinfo,pk_sysinittemp,remark,showflag,stateflag,sysflag,sysindex,ts,valuelist,valuetype)
+Values(null,null,null,null,null,'0','6017',null,null,'~',null,'TWHRT02','周起算日','N',0,'HRORGTYPE00000000000',null,'HRORGTYPE00000000000','~','1001Z710000000002XH3','假設選擇周日，則每星期為周日到周六','Y',1,'N',0,'2018-08-10 09:50:26','C,周日=0,周一=1,周二=2,周三=3,周四=4,周五=5,周六=6',2);
+
+Insert into PUB_SYSINITTEMP
+(afterclass,apptag,checkclass,dataclass,dataoriginflag,defaultvalue,domainflag,dr,editcomponentctrlclass,groupcode,groupname,initcode,initname,mainflag,mutexflag,orgtypeconvertmode,paratype,pk_orgtype,pk_refinfo,pk_sysinittemp,remark,showflag,stateflag,sysflag,sysindex,ts,valuelist,valuetype)
+Values(null,null,null,null,0,'N','6017',null,null,'~',null,'TWHRT03','排班是否嚴格校驗','N',0,'HRORGTYPE00000000000',null,'HRORGTYPE00000000000','~','1001Z710000000002XH4','嚴格控制時會有排班未滿月的例外處理','Y',2,'N',0,'2018-08-10 09:57:27','Y/N',1);
+
+Insert into PUB_SYSINITTEMP
+(afterclass,apptag,checkclass,dataclass,dataoriginflag,defaultvalue,domainflag,dr,editcomponentctrlclass,groupcode,groupname,initcode,initname,mainflag,mutexflag,orgtypeconvertmode,paratype,pk_orgtype,pk_refinfo,pk_sysinittemp,remark,showflag,stateflag,sysflag,sysindex,ts,valuelist,valuetype)
+Values(null,null,null,null,null,'N','6017',null,null,'~',null,'TWHRT04','默認校驗工型','N',0,'HRORGTYPE00000000000',null,'HRORGTYPE00000000000','~','1001Z710000000002XH5','法定工時/二周變形工時/八周變形 /四周變形工時','Y',1,'N',0,'2018-08-10 09:58:28','C,法定工時=0,二周變形工時=1,八周變形=2,四周變形工時=3',2);
+
+
+
+
+--PUB_SYSINIT表的删除语句
+delete  PUB_SYSINIT WHERE pk_sysinit in ('1001A11000000000002U','1001A11000000000002V','1001A11000000000002W','1001A11000000000002X','1001A11000000000002Y','1001A11000000000003Z',
+'1001A11000000000003U','1001A11000000000003V','1001A11000000000003W','1001A11000000000003X','1001A11000000000003Y','1001A11000000000003Z',
+'1001A11000000000004U','1001A11000000000004V','1001A11000000000004W','1001A11000000000004X','1001A11000000000004Y','1001A11000000000004Z','1001A11000000000005U',
+'1001A11000000000005V','1001A11000000000005W','1001A11000000000005X','1001A11000000000005Y','1001A11000000000005Z');
+--PUB_SYSINITnull
+
+
+
+Insert into PUB_SYSINIT
+(controlflag,dataoriginflag,dr,editflag,initcode,initname,modifiedtime,modifier,pk_org,pk_sysinit,sysinit,ts,value)
+Values('N',0,0,'Y','TWHRT01','起始變更日','2018-08-10 09:45:25','NC_USER0000000000000','0001A110000000000DCV','1001A11000000000002U','1001Z710000000002XH2','2018-08-10 09:45:25','2018-01-01');
+
+Insert into PUB_SYSINIT
+(controlflag,dataoriginflag,dr,editflag,initcode,initname,modifiedtime,modifier,pk_org,pk_sysinit,sysinit,ts,value)
+Values('N',0,0,'Y','TWHRT01','起始變更日','2018-08-10 09:45:25','NC_USER0000000000000','0001A110000000000DDJ','1001A11000000000002V','1001Z710000000002XH2','2018-08-10 09:45:25','2018-01-01');
+
+Insert into PUB_SYSINIT
+(controlflag,dataoriginflag,dr,editflag,initcode,initname,modifiedtime,modifier,pk_org,pk_sysinit,sysinit,ts,value)
+Values('N',0,0,'Y','TWHRT01','起始變更日','2018-08-10 09:45:25','NC_USER0000000000000','0001A110000000001WSM','1001A11000000000002W','1001Z710000000002XH2','2018-08-10 09:45:25','2018-01-01');
+
+Insert into PUB_SYSINIT
+(controlflag,dataoriginflag,dr,editflag,initcode,initname,modifiedtime,modifier,pk_org,pk_sysinit,sysinit,ts,value)
+Values('N',0,0,'Y','TWHRT01','起始變更日','2018-08-10 09:45:25','NC_USER0000000000000','0001A110000000001WSR','1001A11000000000002X','1001Z710000000002XH2','2018-08-10 09:45:25','2018-01-01');
+
+Insert into PUB_SYSINIT
+(controlflag,dataoriginflag,dr,editflag,initcode,initname,modifiedtime,modifier,pk_org,pk_sysinit,sysinit,ts,value)
+Values('N',0,0,'Y','TWHRT01','起始變更日','2018-08-10 09:45:25','NC_USER0000000000000','0001A11000000000RU6T','1001A11000000000002Y','1001Z710000000002XH2','2018-08-10 09:45:25','2018-01-01');
+
+Insert into PUB_SYSINIT
+(controlflag,dataoriginflag,dr,editflag,initcode,initname,modifiedtime,modifier,pk_org,pk_sysinit,sysinit,ts,value)
+Values('N',0,0,'Y','TWHRT01','起始變更日','2018-08-10 09:45:25','NC_USER0000000000000','0001A11000000000RU6Y','1001A11000000000002Z','1001Z710000000002XH2','2018-08-10 09:45:25','2018-01-01');
+
+Insert into PUB_SYSINIT
+(controlflag,dataoriginflag,dr,editflag,initcode,initname,modifiedtime,modifier,pk_org,pk_sysinit,sysinit,ts,value)
+Values('N',0,0,'Y','TWHRT02','周起算日','2018-08-10 09:50:26','NC_USER0000000000000','0001A11000000000RU6Y','1001A11000000000003U','1001Z710000000002XH3','2018-08-10 09:50:26','0');
+
+Insert into PUB_SYSINIT
+(controlflag,dataoriginflag,dr,editflag,initcode,initname,modifiedtime,modifier,pk_org,pk_sysinit,sysinit,ts,value)
+Values('N',0,0,'Y','TWHRT02','周起算日','2018-08-10 09:50:26','NC_USER0000000000000','0001A11000000000RU6T','1001A11000000000003V','1001Z710000000002XH3','2018-08-10 09:50:26','0');
+
+Insert into PUB_SYSINIT
+(controlflag,dataoriginflag,dr,editflag,initcode,initname,modifiedtime,modifier,pk_org,pk_sysinit,sysinit,ts,value)
+Values('N',0,0,'Y','TWHRT02','周起算日','2018-08-10 09:50:26','NC_USER0000000000000','0001A110000000001WSR','1001A11000000000003W','1001Z710000000002XH3','2018-08-10 09:50:26','0');
+
+Insert into PUB_SYSINIT
+(controlflag,dataoriginflag,dr,editflag,initcode,initname,modifiedtime,modifier,pk_org,pk_sysinit,sysinit,ts,value)
+Values('N',0,0,'Y','TWHRT02','周起算日','2018-08-10 09:50:26','NC_USER0000000000000','0001A110000000001WSM','1001A11000000000003X','1001Z710000000002XH3','2018-08-10 09:50:26','0');
+
+Insert into PUB_SYSINIT
+(controlflag,dataoriginflag,dr,editflag,initcode,initname,modifiedtime,modifier,pk_org,pk_sysinit,sysinit,ts,value)
+Values('N',0,0,'Y','TWHRT02','周起算日','2018-08-10 09:50:26','NC_USER0000000000000','0001A110000000000DDJ','1001A11000000000003Y','1001Z710000000002XH3','2018-08-10 09:50:26','0');
+
+Insert into PUB_SYSINIT
+(controlflag,dataoriginflag,dr,editflag,initcode,initname,modifiedtime,modifier,pk_org,pk_sysinit,sysinit,ts,value)
+Values('N',0,0,'Y','TWHRT02','周起算日','2018-08-10 11:28:37','NC_USER0000000000000','0001A110000000000DCV','1001A11000000000003Z','1001Z710000000002XH3','2018-08-10 11:28:37','1');
+
+Insert into PUB_SYSINIT
+(controlflag,dataoriginflag,dr,editflag,initcode,initname,modifiedtime,modifier,pk_org,pk_sysinit,sysinit,ts,value)
+Values('N',0,0,'Y','TWHRT03','排班是否嚴格校驗','2018-08-10 09:57:27','NC_USER0000000000000','0001A110000000000DCV','1001A11000000000004U','1001Z710000000002XH4','2018-08-10 09:57:27','Y');
+
+Insert into PUB_SYSINIT
+(controlflag,dataoriginflag,dr,editflag,initcode,initname,modifiedtime,modifier,pk_org,pk_sysinit,sysinit,ts,value)
+Values('N',0,0,'Y','TWHRT03','排班是否嚴格校驗','2018-08-10 09:57:27','NC_USER0000000000000','0001A110000000000DDJ','1001A11000000000004V','1001Z710000000002XH4','2018-08-10 09:57:27','Y');
+
+Insert into PUB_SYSINIT
+(controlflag,dataoriginflag,dr,editflag,initcode,initname,modifiedtime,modifier,pk_org,pk_sysinit,sysinit,ts,value)
+Values('N',0,0,'Y','TWHRT03','排班是否嚴格校驗','2018-08-10 09:57:27','NC_USER0000000000000','0001A110000000001WSM','1001A11000000000004W','1001Z710000000002XH4','2018-08-10 09:57:27','Y');
+
+Insert into PUB_SYSINIT
+(controlflag,dataoriginflag,dr,editflag,initcode,initname,modifiedtime,modifier,pk_org,pk_sysinit,sysinit,ts,value)
+Values('N',0,0,'Y','TWHRT03','排班是否嚴格校驗','2018-08-10 09:57:27','NC_USER0000000000000','0001A110000000001WSR','1001A11000000000004X','1001Z710000000002XH4','2018-08-10 09:57:27','Y');
+
+Insert into PUB_SYSINIT
+(controlflag,dataoriginflag,dr,editflag,initcode,initname,modifiedtime,modifier,pk_org,pk_sysinit,sysinit,ts,value)
+Values('N',0,0,'Y','TWHRT03','排班是否嚴格校驗','2018-08-10 09:57:27','NC_USER0000000000000','0001A11000000000RU6T','1001A11000000000004Y','1001Z710000000002XH4','2018-08-10 09:57:27','Y');
+
+Insert into PUB_SYSINIT
+(controlflag,dataoriginflag,dr,editflag,initcode,initname,modifiedtime,modifier,pk_org,pk_sysinit,sysinit,ts,value)
+Values('N',0,0,'Y','TWHRT03','排班是否嚴格校驗','2018-08-10 09:57:27','NC_USER0000000000000','0001A11000000000RU6Y','1001A11000000000004Z','1001Z710000000002XH4','2018-08-10 09:57:27','Y');
+
+Insert into PUB_SYSINIT
+(controlflag,dataoriginflag,dr,editflag,initcode,initname,modifiedtime,modifier,pk_org,pk_sysinit,sysinit,ts,value)
+Values('N',0,0,'Y','TWHRT04','默認校驗工型','2018-08-10 09:58:28','NC_USER0000000000000','0001A110000000000DCV','1001A11000000000005U','1001Z710000000002XH5','2018-08-10 09:58:28','0');
+
+Insert into PUB_SYSINIT
+(controlflag,dataoriginflag,dr,editflag,initcode,initname,modifiedtime,modifier,pk_org,pk_sysinit,sysinit,ts,value)
+Values('N',0,0,'Y','TWHRT04','默認校驗工型','2018-08-10 09:58:28','NC_USER0000000000000','0001A110000000000DDJ','1001A11000000000005V','1001Z710000000002XH5','2018-08-10 09:58:28','0');
+
+Insert into PUB_SYSINIT
+(controlflag,dataoriginflag,dr,editflag,initcode,initname,modifiedtime,modifier,pk_org,pk_sysinit,sysinit,ts,value)
+Values('N',0,0,'Y','TWHRT04','默認校驗工型','2018-08-10 09:58:28','NC_USER0000000000000','0001A110000000001WSM','1001A11000000000005W','1001Z710000000002XH5','2018-08-10 09:58:28','0');
+
+Insert into PUB_SYSINIT
+(controlflag,dataoriginflag,dr,editflag,initcode,initname,modifiedtime,modifier,pk_org,pk_sysinit,sysinit,ts,value)
+Values('N',0,0,'Y','TWHRT04','默認校驗工型','2018-08-10 09:58:28','NC_USER0000000000000','0001A110000000001WSR','1001A11000000000005X','1001Z710000000002XH5','2018-08-10 09:58:28','0');
+
+Insert into PUB_SYSINIT
+(controlflag,dataoriginflag,dr,editflag,initcode,initname,modifiedtime,modifier,pk_org,pk_sysinit,sysinit,ts,value)
+Values('N',0,0,'Y','TWHRT04','默認校驗工型','2018-08-10 09:58:28','NC_USER0000000000000','0001A11000000000RU6T','1001A11000000000005Y','1001Z710000000002XH5','2018-08-10 09:58:28','0');
+
+Insert into PUB_SYSINIT
+(controlflag,dataoriginflag,dr,editflag,initcode,initname,modifiedtime,modifier,pk_org,pk_sysinit,sysinit,ts,value)
+Values('N',0,0,'Y','TWHRT04','默認校驗工型','2018-08-10 09:58:28','NC_USER0000000000000','0001A11000000000RU6Y','1001A11000000000005Z','1001Z710000000002XH5','2018-08-10 09:58:28','0');

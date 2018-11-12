@@ -1,0 +1,251 @@
+package nc.impl.hrpub.dataexchange.businessprocess;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+
+import nc.bs.framework.common.NCLocator;
+import nc.bs.uap.lock.PKLock;
+import nc.hr.utils.PubEnv;
+import nc.impl.hrpub.dataexchange.DataImportExecutor;
+import nc.impl.ta.leave.LeaveRegisterMaintainImpl;
+import nc.itf.hrpub.IDataExchangeExternalExecutor;
+import nc.itf.ta.ILeaveRegisterManageMaintain;
+import nc.itf.ta.ILeaveRegisterQueryMaintain;
+import nc.vo.pub.BusinessException;
+import nc.vo.pub.lang.UFBoolean;
+import nc.vo.pub.lang.UFDateTime;
+import nc.vo.pub.lang.UFDouble;
+import nc.vo.pub.lang.UFLiteralDate;
+import nc.vo.ta.leave.LeaveCheckResult;
+import nc.vo.ta.leave.LeaveRegVO;
+import nc.vo.ta.leave.SplitBillResult;
+
+import org.apache.commons.lang.StringUtils;
+
+public class LeaveBPImportExecutor extends DataImportExecutor implements
+		IDataExchangeExternalExecutor {
+	private Map<String, LeaveRegVO> rowNCVO;
+	private Map<String, String> rowLeaveType;
+
+	public LeaveBPImportExecutor() throws BusinessException {
+		super();
+		// TODO 自动生成的构造函数存根
+	}
+
+	@Override
+	public Object getBizEntityID() throws BusinessException {
+		// TODO 自动生成的方法存根
+		return null;
+	}
+
+	@Override
+	public void beforeUpdate() throws BusinessException {
+		if (this.getNcValueObjects() != null
+				&& this.getNcValueObjects().size() > 0) {
+			String rowNo = "";
+			for (Map<String, Object> rowNCMap : this.getNcValueObjects()) {
+				try {
+					rowNo = rowNCMap.keySet().toArray(new String[0])[0]
+							.split(":")[0];
+					LeaveRegVO vo = new LeaveRegVO();
+
+					vo.setBillsource(0);
+					vo.setCreationtime(new UFDateTime(
+							getDateString((String) rowNCMap.get(rowNo
+									+ ":creationtime"))));
+					vo.setCreator(this.getCuserid());
+					vo.setIslactation(UFBoolean.FALSE);
+					vo.setLeaveremark((String) rowNCMap.get(rowNo
+							+ ":leaveremark"));
+					vo.setLeavebegintime(new UFDateTime(
+							getDateString((String) rowNCMap.get(rowNo
+									+ ":leavebegintime"))));
+					vo.setLeavebegindate(new UFLiteralDate(
+							getDateString((String) rowNCMap.get(rowNo
+									+ ":leavebegintime"))));
+					vo.setLeaveendtime(new UFDateTime(
+							getDateString((String) rowNCMap.get(rowNo
+									+ ":leaveendtime"))));
+					vo.setLeaveenddate(new UFLiteralDate(
+							getDateString((String) rowNCMap.get(rowNo
+									+ ":leaveendtime"))));
+					vo.setLeavehour(new UFDouble((String) rowNCMap.get(rowNo
+							+ ":leavehour")));
+					vo.setPk_psndoc((String) rowNCMap.get(rowNo + ":pk_psndoc"));
+					vo.setLeaveindex(1);
+					vo.setPk_group(this.getPk_group());
+					vo.setPk_org(this.getPk_org());
+					vo.setPk_org_v(this.getPk_org_v());
+
+					// PK_LEAVETYPE
+					String leaveType = this.getTimeItemByCode(this
+							.getRowLeaveType().get(rowNo));
+					vo.setPk_leavetype(leaveType);
+
+					// PK_LEAVETYPECOPY
+					String leaveTypeCopy = this.getTimeItemCopyByOrg(leaveType,
+							this.getPk_org());
+					vo.setPk_leavetypecopy(leaveTypeCopy);
+
+					Map<String, Object> psnjob = this.getPsnjob(vo
+							.getPk_psndoc(), vo.getLeavebegindate().toString());
+					if (psnjob != null
+							&& psnjob.size() > 0
+							&& !StringUtils.isEmpty((String) psnjob
+									.get("pk_psnjob"))) {
+						vo.setPk_psnjob((String) psnjob.get("pk_psnjob"));
+						vo.setPk_dept_v((String) psnjob.get("pk_dept_v"));
+						vo.setPk_psnorg((String) psnjob.get("pk_psnorg"));
+					} else {
+						throw new BusinessException("未找到員工工作記錄");
+					}
+
+					vo.setTs(new UFDateTime());
+					this.getRowNCVO().put(rowNo, vo);
+				} catch (Exception e) {
+					this.getErrorMessages().put(rowNo, e.getMessage());
+				}
+			}
+		}
+	}
+
+	@Override
+	public void afterUpdate() throws BusinessException {
+		// TODO 自动生成的方法存根
+
+	}
+
+	@Override
+	public void afterConvert() throws BusinessException {
+		// TODO 自动生成的方法存根
+
+	}
+
+	@Override
+	public void beforeConvert() throws BusinessException {
+		if (this.getJsonValueObjects() != null
+				&& this.getJsonValueObjects().size() > 0) {
+			for (Map<String, Object> jsonobj : this.getJsonValueObjects()) {
+				String rowNo = "";
+				String rowType = "";
+				for (Entry<String, Object> entry : jsonobj.entrySet()) {
+					if (entry.getKey().equals("ROWNO")) {
+						rowNo = (String) entry.getValue();
+					} else if (entry.getKey().equals("HR_LEAVEID")) {
+						rowType = (String) entry.getValue();
+					}
+				}
+
+				if (StringUtils.isEmpty(rowNo)) {
+					throw new BusinessException("匯入資料ROWNO不能為空");
+				}
+
+				this.getRowLeaveType().put(rowNo, rowType);
+			}
+		}
+	}
+
+	@Override
+	public void beforeQuery() throws BusinessException {
+		// TODO 自动生成的方法存根
+
+	}
+
+	@Override
+	public void afterQuery() throws BusinessException {
+		// TODO 自动生成的方法存根
+
+	}
+
+	@Override
+	public void doUpdateByBP() throws BusinessException {
+		if (this.getRowNCVO() != null && this.getRowNCVO().size() > 0) {
+			List<String> locks = new ArrayList<String>();
+			for (Entry<String, LeaveRegVO> rowData : this.getRowNCVO()
+					.entrySet()) {
+				try {
+					// PK锁Key
+					String lockable = "leavebalance" + this.getPk_org()
+							+ rowData.getValue().getPk_timeitem()
+							+ rowData.getValue().getPk_psnorg();
+
+					// 如果当前Key注册为已加锁，则等7秒后释放锁
+					if (locks.contains(lockable)) {
+						PKLock lock = PKLock.getInstance();
+						Thread.sleep(7000);
+						lock.releaseBatchLock(new String[] { lockable },
+								PubEnv.getPk_user(), null);
+						locks.remove(lockable);
+					}
+
+					LeaveCheckResult<LeaveRegVO> checkResult = this
+							.getVOQueryService().checkWhenSave(
+									rowData.getValue());
+					SplitBillResult<LeaveRegVO> splitResult = checkResult
+							.getSplitResult();
+					this.getVOSaveService().insertData(splitResult);
+
+					// 如果当前Key未注册，则注册为已加锁
+					if (!locks.contains(lockable)) {
+						locks.add(lockable);
+					}
+				} catch (BusinessException e) {
+					this.getErrorMessages().put(rowData.getKey(),
+							e.getMessage());
+				} catch (InterruptedException e) {
+					this.getErrorMessages().put(rowData.getKey(),
+							e.getMessage());
+				}
+			}
+		}
+	}
+
+	@Override
+	public void beforeInsertOperation(Map<String, Object> rowMap)
+			throws BusinessException {
+		// TODO 自动生成的方法存根
+
+	}
+
+	@Override
+	public void beforeUpdateOperation(Map<String, Object> rowMap)
+			throws BusinessException {
+		// TODO 自动生成的方法存根
+
+	}
+
+	private ILeaveRegisterQueryMaintain getVOQueryService() {
+		return (ILeaveRegisterQueryMaintain) NCLocator.getInstance().lookup(
+				ILeaveRegisterQueryMaintain.class);
+	}
+
+	private ILeaveRegisterManageMaintain getVOSaveService() {
+		return new LeaveRegisterMaintainImpl();
+	}
+
+	public Map<String, String> getRowLeaveType() {
+		if (rowLeaveType == null) {
+			rowLeaveType = new HashMap<String, String>();
+		}
+		return rowLeaveType;
+	}
+
+	public void setRowLeaveType(Map<String, String> rowLeaveType) {
+		this.rowLeaveType = rowLeaveType;
+	}
+
+	public Map<String, LeaveRegVO> getRowNCVO() {
+		if (rowNCVO == null) {
+			rowNCVO = new HashMap<String, LeaveRegVO>();
+		}
+		return rowNCVO;
+	}
+
+	public void setRowNCVO(Map<String, LeaveRegVO> rowNCVO) {
+		this.rowNCVO = rowNCVO;
+	}
+
+}

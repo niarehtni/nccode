@@ -1,0 +1,93 @@
+package nc.impl.ta.formula.parser.func;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import nc.bs.framework.common.NCLocator;
+import nc.impl.pub.util.db.TempTableDAO;
+import nc.itf.uap.IUAPQueryBS;
+import nc.jdbc.framework.processor.MapListProcessor;
+import nc.pubimpl.ta.overtime.CreateMonthCacuTableImpl;
+import nc.pubitf.ta.overtime.ICreateMonthCacuTable;
+import nc.pubitf.ta.overtime.ISegDetailService;
+import nc.vo.pub.BusinessException;
+import nc.vo.pub.lang.UFDouble;
+import nc.vo.ta.overtime.CalendarDateTypeEnum;
+import nc.vo.ta.overtime.OvertimeSettleTypeEnum;
+import nc.vo.ta.period.PeriodVO;
+
+public class SumCountFuncParser extends AggregateFuncParser{
+	 private static final long serialVersionUID = -8891628401300003931L;
+	  
+	  public SumCountFuncParser()
+	  {
+	    setFuncName("directmonthsumcount");
+	  }
+	  
+
+	@Override
+	protected String translateFunc2SQL(String pk_org, String formula, String funcStr, String[] funcArgs, Object... params)
+			throws BusinessException {
+		//find tbm_daystat.pk_psndoc[]
+		PeriodVO periodVO = (PeriodVO)params[0];
+		 IUAPQueryBS iUAPQueryBS = (IUAPQueryBS)NCLocator.getInstance().lookup(IUAPQueryBS.class.getName());   
+  	   //所有人员
+		List<Map<String,String>> psndoclist = (List<Map<String,String>>) iUAPQueryBS. executeQuery("SELECT distinct pk_psndoc FROM tbm_daystat WHERE tbm_daystat.pk_org = '"+pk_org+"'  and calendar BETWEEN '"+periodVO.getBegindate()+"' and '"+periodVO.getEnddate()+"' ;" + 
+				"",new MapListProcessor());
+		List<String> psndocs = new ArrayList<String>();
+		if(psndoclist.size()==0){
+			return null;
+		}
+		for(Map<String, String> psndoc : psndoclist){
+			psndocs.add(psndoc.get("pk_psndoc"));
+		}
+		CalendarDateTypeEnum dateType = null;
+		OvertimeSettleTypeEnum settleType = null;
+		if(formula.toString().contains("NORMAL")){
+			dateType = CalendarDateTypeEnum.NORMAL;
+		}
+		if(formula.toString().contains("OFFDAY")){
+			dateType = CalendarDateTypeEnum.OFFDAY;
+		}
+		if(formula.toString().contains("HOLIDAYS")){
+			dateType = CalendarDateTypeEnum.HOLIDAY;
+		}
+		if(formula.toString().contains("NATIONALDAY")){
+			dateType = CalendarDateTypeEnum.NATIONALDAY;
+		}
+		if(formula.toString().contains("PERIOD_TOSALARY")){
+			settleType = OvertimeSettleTypeEnum.PERIOD_TOSALARY;
+		}
+		if(formula.toString().contains("OTHER_TOSALARY")){
+			settleType = OvertimeSettleTypeEnum.OTHER_TOSALARY;
+		}
+		if(formula.toString().contains("PERIOD_TOREST")){
+			settleType = OvertimeSettleTypeEnum.PERIOD_TOREST;
+		}
+		if(formula.toString().contains("TOTAL")){
+			settleType = OvertimeSettleTypeEnum.TOTAL;
+		}
+		Map<String, UFDouble> psndocandcount = NCLocator.getInstance().lookup(ISegDetailService.class).getOvertimeSalaryHoursByTBMPeriodSource(pk_org, psndocs.toArray(new String[0]), periodVO.getYear(), periodVO.getPk_period(), dateType, settleType);
+		//Map<pk_psndoc, UFDouble> data = segdetail.getAmount(pk_psndoc[])
+		//Create temp table: tmpT1 createTable
+		//Insert data into  tmpT1
+		//Map<String, UFDouble> psndocandcounts = new HashMap<String, UFDouble>();
+		//UFDouble d1 = UFDouble.ONE_DBL;
+		//UFDouble d2 = UFDouble.ONE_DBL;
+		//psndocandcounts.put("0001A110000000001HJE", d1);
+		//psndocandcounts.put("0001A1100000000061MD", d2);
+		if(null == psndocandcount){
+			return null;
+		}
+		NCLocator.getInstance().lookup(ICreateMonthCacuTable.class).createtableandinsert(psndocandcount);
+		//Construct SQL
+		// -- select data.UFDouble from tmpT1 where tmpT1.pk_psndoc = tbm_monthstat.pk_psndoc
+		String strsql = "SELECT sumhours FROM tbm_monthstat_cacu WHERE "
+				+ "tbm_monthstat_cacu.pk_psndoc = tbm_monthstat.pk_psndoc and tbm_monthstat.PK_ORG='"+pk_org+"' "
+				+ " and TBM_MONTHSTAT.TBMMONTH='"+periodVO.getMonth()+"' and TBM_MONTHSTAT.TBMYEAR='"+periodVO.getYear()+"'";
+		return strsql;
+	}
+
+}

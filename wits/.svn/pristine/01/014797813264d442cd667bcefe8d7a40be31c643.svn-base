@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="gbk"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+	<bean id="general" class="nc.pubapp.pade.code.service.Service">
+			    <property name="servBsPackName" value="nc.bs.twhr.groupinsurance"/>
+	    <property name="servImplPackName" value="nc.impl.twhr.groupinsurance"/>
+	    <property name="metaData" value="groupinsurance\METADATA\groupinsurance.bmf"/>
+		<property name="metaDataType" value="singleType" />
+		<property name="compName" value="groupinsurance" />
+		<property name="itfFullClassName" value="nc.itf.twhr.IGroupinsuranceMaintain"/>
+	    <property name="implFullClassName" value="nc.impl.twhr.GroupinsuranceMaintainImpl"/>
+	    <property name="itfPackageName" value="nc.itf.twhr"/>
+	    <property name="itfClassName" value="IGroupinsuranceMaintain"/>
+	</bean>
+
+	<bean id="FilePackNameBean" class="nc.pubapp.pade.code.engine.FilePackNamePara">
+	    <property name="filePackNameList">
+	        <list>
+			    <value>nc.bs.twhr.groupinsurance.bp.GroupinsuranceBP.java</value>
+			    <value>nc.bs.twhr.groupinsurance.ace.rule.DataUniqueCheckRule.java</value>
+			    <value>nc.impl.pub.ace.AceGroupinsurancePubServiceImpl.java</value>
+	        </list>
+    	</property>
+	</bean>
+
+	<bean id="Service" class="nc.pubapp.pade.designer.service.model.ServiceDiagram">
+	</bean>
+
+	<bean id="implClassPara" class="nc.pubapp.pade.code.service.ImplClassPara">
+	</bean>
+
+</beans>

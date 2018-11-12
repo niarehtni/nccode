@@ -1,0 +1,2 @@
+insert into md_component(createtime,creator,description,displayname,dr,fromsourcebmf,help,id,industry,isbizmodel,modifier,modifytime,name,namespace,ownmodule,preload,resid,resmodule,ts,version,versiontype) values( '2010-05-19 18:53:56',null,null,'合同处理中心',null,'Y',null,'9e1d9fdc-37cf-4269-a358-acd2bbf7b0ee','0','N','developer','2015-10-26 13:40:15','hrcm_center','hrcm','hrcm',null,'2center-000001','60110center','2018-08-23 09:46:19','258',0)
+go

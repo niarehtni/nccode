@@ -1,0 +1,182 @@
+package nc.ui.wa.datainterface.action;
+
+import java.awt.event.ActionEvent;
+import java.io.File;
+
+import javax.swing.Action;
+import javax.swing.JComponent;
+import javax.swing.JFileChooser;
+import javax.swing.SwingUtilities;
+import javax.swing.SwingWorker;
+
+import nc.bs.framework.common.NCLocator;
+import nc.bs.uif2.LockFailedException;
+import nc.bs.uif2.VersionConflictException;
+import nc.hr.utils.ResHelper;
+import nc.itf.wa.datainterface.IReportExportService;
+import nc.ui.hr.caculate.view.BannerTimerDialog;
+import nc.ui.hr.uif2.action.HrAction;
+import nc.ui.pub.beans.UIDialog;
+import nc.ui.pub.beans.UIFileChooser;
+import nc.ui.uif2.ShowStatusBarMsgUtil;
+import nc.ui.wa.datainterface.ExportTextDlg4TW;
+import nc.ui.wa.datainterface.TextFileFilter4TW;
+import nc.vo.pub.BusinessException;
+import nc.vo.wa.pub.WaLoginContext;
+
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang.StringUtils;
+
+@SuppressWarnings("restriction")
+public class IncomeTaxReturnExportAction extends HrAction {
+
+	/**
+	 * serial version id
+	 */
+	private static final long serialVersionUID = 7226143507491953308L;
+
+	String[] pk_wa_classes = null;// 薪資方案列表
+	String cyear = ""; // 申報年度
+	String startPeriod = ""; // 起始期間
+	String endPeriod = ""; // 截止期間
+	String voucherType = "";// 憑單類型
+	String vatNumber = "";// 統一編號
+
+	public IncomeTaxReturnExportAction() {
+		super();
+		super.setBtnName(ResHelper.getString("twhr_datainterface",
+				"DataInterface-00052")); // 綜所稅申報
+		super.setCode("IncomeTaxReturnExportAction");
+		super.putValue(Action.SHORT_DESCRIPTION, ResHelper.getString(
+				"twhr_datainterface", "DataInterface-00052")); // 綜所稅申報
+	}
+
+	@Override
+	public void doAction(ActionEvent arg0) throws Exception {
+
+		JComponent parentUi = getModel().getContext().getEntranceUI();
+
+		final ExportTextDlg4TW dlg = new ExportTextDlg4TW(
+				parentUi,
+				ResHelper
+						.getString("twhr_datainterface", "DataInterface-00053"), // 請選擇申報期間
+				getModel().getContext(), true, ((WaLoginContext) this
+						.getModel().getContext()).getPk_wa_class());
+		dlg.loadData();
+		int isGen = dlg.showModal();
+		if (isGen == UIDialog.ID_OK) {
+			pk_wa_classes = dlg.getRefWaClass().getRefPKs();
+			startPeriod = dlg.getStart_period();
+			endPeriod = dlg.getEnd_period();
+			voucherType = dlg.getVouchType();
+			vatNumber = dlg.getVatNumber();
+			cyear = String.valueOf(Integer.valueOf(dlg.getCyear()) - 1911);
+
+			new SwingWorker() {
+
+				BannerTimerDialog dialog = new BannerTimerDialog(
+						SwingUtilities.getWindowAncestor(getModel()
+								.getContext().getEntranceUI()));
+				String error = null;
+
+				protected Boolean doInBackground() throws Exception {
+					try {
+						dialog.setStartText(ResHelper.getString(
+								"twhr_datainterface", "DataInterface-00054"));// 正在生成申報檔
+						dialog.start();
+
+						JComponent parentUi = getModel().getContext()
+								.getEntranceUI();
+
+						IReportExportService exportSrv = (IReportExportService) NCLocator
+								.getInstance().lookup(
+										IReportExportService.class);
+
+						if (StringUtils.isEmpty(vatNumber)) {
+							throw new BusinessException(
+									ResHelper.getString("twhr_datainterface",
+											"DataInterface-00061")); // 當前業務單元未維護統一編號
+						}
+
+						String[] textArr = exportSrv.getIITXTextReport(
+								dlg.getPk_orgs(), startPeriod, endPeriod,
+								pk_wa_classes, cyear, voucherType);
+
+						if (textArr != null && textArr.length > 2) {
+							UIFileChooser fileChooser = new UIFileChooser();
+							fileChooser.setDialogTitle(ResHelper
+									.getString("twhr_datainterface",
+											"DataInterface-00058"));// 報盤檔保存
+							TextFileFilter4TW filter = new TextFileFilter4TW();
+							filter.setFilterString("*." + cyear);
+							filter.setDescription(ResHelper
+									.getString("twhr_datainterface",
+											"DataInterface-00059"));// 報盤檔
+							fileChooser.addChoosableFileFilter(filter);
+							fileChooser.setSelectedFile(new File(fileChooser
+									.getCurrentDirectory().getAbsolutePath()
+									+ "\\" + vatNumber + "." + cyear));
+							int userSelection = fileChooser
+									.showSaveDialog(parentUi);
+
+							File fileToSave = null;
+							String filename = "";
+							if (userSelection == JFileChooser.APPROVE_OPTION) {
+								if (!fileChooser.getSelectedFile()
+										.getAbsoluteFile().toString()
+										.toUpperCase().endsWith("." + cyear)) {
+									filename = fileChooser.getSelectedFile()
+											.getAbsolutePath() + "." + cyear;
+								} else {
+									filename = fileChooser.getSelectedFile()
+											.getAbsolutePath();
+								}
+								fileToSave = new File(filename);
+
+								StringBuilder sb = new StringBuilder();
+								for (String txt : textArr) {
+									sb.append(txt + "\r\n");
+								}
+								// 讀取報表文本
+								FileUtils.writeStringToFile(fileToSave,
+										sb.toString(), "Big5");
+							}
+						}
+
+					} catch (LockFailedException le) {
+						error = le.getMessage();
+					} catch (VersionConflictException le) {
+						throw new BusinessException(le.getBusiObject()
+								.toString(), le);
+					} catch (Exception e) {
+						error = e.getMessage();
+					} finally {
+						dialog.end();
+					}
+					return Boolean.TRUE;
+				}
+
+				protected void done() {
+					if (error != null) {
+						ShowStatusBarMsgUtil.showErrorMsg(ResHelper.getString(
+								"twhr_datainterface", "DataInterface-00055"),
+								error, getModel().getContext()); // 生成綜所稅申報檔發生錯誤
+					} else {
+						ShowStatusBarMsgUtil.showStatusBarMsg(ResHelper
+								.getString("twhr_datainterface",
+										"DataInterface-00056"), getModel()
+								.getContext()); // 綜所稅申報檔生成成功
+					}
+				}
+			}.execute();
+		} else if (isGen == UIDialog.ID_CANCEL) {
+			this.putValue("message_after_action", ResHelper.getString(
+					"twhr_datainterface", "DataInterface-00078")); // 綜所稅申報檔導出已取消
+		}
+	}
+
+	@Override
+	protected boolean isActionEnable() {
+		return false;
+	}
+}

@@ -1,0 +1,35 @@
+package nc.ui.hrta.leaveplan.after;
+
+import nc.ui.pub.beans.UIRefPane;
+import nc.ui.pub.bill.BillCardPanel;
+import nc.ui.pubapp.uif2app.event.IAppEventHandler;
+import nc.ui.pubapp.uif2app.event.card.CardHeadTailAfterEditEvent;
+import nc.vo.bd.ref.RefQueryVO;
+
+
+@SuppressWarnings("restriction")
+public class LeavePlanAfterEditHandler implements
+		IAppEventHandler<CardHeadTailAfterEditEvent> {
+	/**
+	 * @Description: 构建方法.
+	 */
+	public LeavePlanAfterEditHandler() {
+
+	}
+
+	@Override
+	public void handleAppEvent(CardHeadTailAfterEditEvent event) {
+		BillCardPanel panel = event.getBillCardPanel();
+		String key = event.getKey();
+		Object pkorg = panel.getHeadItem("pk_org").getValueObject();
+		
+		
+		if (key.equals("pk_org")) {
+			
+			UIRefPane refPitchname = (UIRefPane)panel.getHeadItem("pk_leavetype").getComponent(); 
+			refPitchname.setPk_org(pkorg.toString());
+			
+		}
+	}
+
+}

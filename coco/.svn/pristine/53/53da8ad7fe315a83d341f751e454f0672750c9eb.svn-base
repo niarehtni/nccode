@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding='UTF-8'?>
+<UIMeta flowmode="false" id="transtype_um" jquery="0" preferredHeight="" preferredWidth="">
+    <FlowvLayout id="flowvlayout2237" widgetId="transtype">
+        <FlowvPanel height="30" id="panelv02237" widgetId="transtype">
+        </FlowvPanel>
+        <FlowvPanel height="40" id="panelv12237" widgetId="transtype">
+            <TextField height="22" id="stapply_mode" imgsrc="" left="85" position="relative" top="0" type="text" widgetId="transtype" width="223">
+            </TextField>
+        </FlowvPanel>
+        <FlowvPanel id="panelv22237" widgetId="transtype">
+            <TextField height="22" id="transtype_id" imgsrc="" left="60" position="relative" top="0" type="text" widgetId="transtype" width="250">
+            </TextField>
+        </FlowvPanel>
+        <FlowvPanel height="30" id="panelv32237" widgetId="transtype">
+            <Button height="23" id="button_confirm" left="310" position="relative" top="0" widgetId="transtype" width="64">
+            </Button>
+        </FlowvPanel>
+    </FlowvLayout>
+</UIMeta>

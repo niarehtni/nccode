@@ -1,0 +1,21 @@
+package nc.pubimpl.ta.overtime;
+
+import java.util.Map;
+
+import nc.impl.pub.util.db.TempTableDAO;
+import nc.vo.pub.BusinessException;
+import nc.vo.pub.lang.UFDouble;
+
+public class CreateMonthCacuTableImpl {
+	public static void createtableandinsert(Map<String, UFDouble> psndocandcount) throws BusinessException{
+
+		TempTableDAO tabledao = new TempTableDAO();
+		String[] colNames = {"pk_psndoc","sumhours"};
+		String[] dataTypes = {"char(20)", "number"};
+		String tablename = tabledao.createTableWithoutTS("tbm_monthstat_cacu", colNames, dataTypes);
+		for(String psndoc : psndocandcount.keySet()){
+			String sql = "insert into tbm_monthstat_cacu values('"+psndoc+"','"+psndocandcount.get(psndoc)+"')";
+			
+		}
+	}
+}

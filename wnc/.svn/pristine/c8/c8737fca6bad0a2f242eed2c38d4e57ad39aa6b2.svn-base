@@ -1,0 +1,6 @@
+#
+#Fri Jul 07 07:52:37 GMT+08:00 2017
+client=rangetable,allowance,basedoc,nhicalculate
+private=rangetable,allowance,basedoc,nhicalculate
+deps=uapbd,pubapp
+public=rangetable,allowance,basedoc,nhicalculate

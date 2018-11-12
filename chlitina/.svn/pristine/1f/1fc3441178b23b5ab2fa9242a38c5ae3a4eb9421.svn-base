@@ -1,0 +1,342 @@
+package nc.impl.pub;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+
+import nc.bs.dao.BaseDAO;
+import nc.bs.overtime.otleavebalance.bp.OTLeaveBalanceDeleteBP;
+import nc.bs.overtime.otleavebalance.bp.OTLeaveBalanceInsertBP;
+import nc.bs.overtime.otleavebalance.bp.OTLeaveBalanceUpdateBP;
+import nc.impl.pubapp.pattern.data.bill.tool.BillTransferTool;
+import nc.jdbc.framework.processor.MapListProcessor;
+import nc.pubimpl.ta.overtime.OTSChainNode;
+import nc.pubimpl.ta.overtime.OTSChainUtils;
+import nc.pubitf.para.SysInitQuery;
+import nc.ui.querytemplate.querytree.IQueryScheme;
+import nc.vo.pub.BusinessException;
+import nc.vo.pub.lang.UFBoolean;
+import nc.vo.pub.lang.UFDouble;
+import nc.vo.pubapp.pattern.exception.ExceptionUtils;
+import nc.vo.pubapp.query2.sql.process.QueryCondition;
+import nc.vo.ta.overtime.AggOTLeaveBalanceVO;
+import nc.vo.ta.overtime.OTBalanceDetailVO;
+import nc.vo.ta.overtime.OTLeaveBalanceVO;
+import nc.vo.ta.overtime.SegDetailConsumeVO;
+
+import org.drools.core.util.StringUtils;
+
+public class OTLeaveBalancePubServiceImpl {
+    private BaseDAO baseDAO = null;
+
+    // 新增
+    public AggOTLeaveBalanceVO[] pubinsertBills(AggOTLeaveBalanceVO[] vos) throws BusinessException {
+	try {
+	    // 数据库中数据和前台传递过来的差异VO合并后的结果
+	    BillTransferTool<AggOTLeaveBalanceVO> transferTool = new BillTransferTool<AggOTLeaveBalanceVO>(vos);
+	    AggOTLeaveBalanceVO[] mergedVO = transferTool.getClientFullInfoBill();
+
+	    // 调用BP
+	    OTLeaveBalanceInsertBP action = new OTLeaveBalanceInsertBP();
+	    AggOTLeaveBalanceVO[] retvos = action.insert(mergedVO);
+	    // 构造返回数据
+	    return transferTool.getBillForToClient(retvos);
+	} catch (Exception e) {
+	    ExceptionUtils.marsh(e);
+	}
+	return null;
+    }
+
+    // 删除
+    public void pubdeleteBills(AggOTLeaveBalanceVO[] vos) throws BusinessException {
+	try {
+	    // 加锁 比较ts
+	    BillTransferTool<AggOTLeaveBalanceVO> transferTool = new BillTransferTool<AggOTLeaveBalanceVO>(vos);
+	    AggOTLeaveBalanceVO[] fullBills = transferTool.getClientFullInfoBill();
+	    OTLeaveBalanceDeleteBP deleteBP = new OTLeaveBalanceDeleteBP();
+	    deleteBP.delete(fullBills);
+	} catch (Exception e) {
+	    ExceptionUtils.marsh(e);
+	}
+    }
+
+    // 修改
+    public AggOTLeaveBalanceVO[] pubupdateBills(AggOTLeaveBalanceVO[] vos) throws BusinessException {
+	try {
+	    // 加锁 + 检查ts
+	    BillTransferTool<AggOTLeaveBalanceVO> transTool = new BillTransferTool<AggOTLeaveBalanceVO>(vos);
+	    // 补全前台VO
+	    AggOTLeaveBalanceVO[] fullBills = transTool.getClientFullInfoBill();
+	    // 获得修改前vo
+	    AggOTLeaveBalanceVO[] originBills = transTool.getOriginBills();
+	    // 调用BP
+	    OTLeaveBalanceUpdateBP bp = new OTLeaveBalanceUpdateBP();
+	    AggOTLeaveBalanceVO[] retBills = bp.update(fullBills, originBills);
+	    // 构造返回数据
+	    retBills = transTool.getBillForToClient(retBills);
+	    return retBills;
+	} catch (Exception e) {
+	    ExceptionUtils.marsh(e);
+	}
+	return null;
+    }
+
+    @SuppressWarnings("unchecked")
+    public AggOTLeaveBalanceVO[] pubquerybills(IQueryScheme queryScheme) throws BusinessException {
+	AggOTLeaveBalanceVO[] bills = null;
+	try {
+	    Map<String, QueryCondition> conds = (Map<String, QueryCondition>) queryScheme.get("all_condition");
+	    String pk_org = null;
+	    UFBoolean isfrozen = null;
+	    String[] pk_psndocs = null;
+	    String[] pk_dept_vs = null;
+	    String[] leavebegindate = null;
+	    String[] leaveenddate = null;
+	    String maxdate = "";
+	    if (conds != null && conds.size() > 0) {
+		for (Entry<String, QueryCondition> cond : conds.entrySet()) {
+		    String strKey = cond.getKey();
+		    QueryCondition condition = cond.getValue();
+		    if (strKey.equals("pk_org")) {
+			if (condition.getValues() != null && condition.getValues().length > 0) {
+			    pk_org = condition.getValues()[0];
+			}
+		    } else if (strKey.equals("isfrozen")) {
+			if (condition.getValues() != null && condition.getValues().length > 0) {
+			    isfrozen = new UFBoolean(condition.getValues()[0]);
+			}
+		    } else if (strKey.equals("pk_psndoc")) {
+			if (condition.getValues() != null && condition.getValues().length > 0) {
+			    pk_psndocs = condition.getValues();
+			}
+		    } else if (strKey.equals("pk_dept_v")) {
+			if (condition.getValues() != null && condition.getValues().length > 0) {
+			    pk_dept_vs = condition.getValues();
+			}
+		    } else if (strKey.equals("leavebegindate")) {
+			if (condition.getValues() != null && condition.getValues().length > 0) {
+			    leavebegindate = condition.getValues();
+			}
+		    } else if (strKey.equals("leaveenddate")) {
+			if (condition.getValues() != null && condition.getValues().length > 0) {
+			    leaveenddate = condition.getValues();
+			}
+		    } else if (strKey.equals("maxdate")) {
+			if (condition.getValues() != null && condition.getValues().length > 0) {
+			    maxdate = condition.getValues()[0];
+			}
+		    }
+		}
+
+		bills = queryBillsByConditions(pk_org, pk_psndocs, pk_dept_vs, leavebegindate, leaveenddate, maxdate,
+			isfrozen);
+	    }
+	} catch (Exception e) {
+	    ExceptionUtils.marsh(e);
+	}
+	return bills;
+    }
+
+    private AggOTLeaveBalanceVO[] queryBillsByConditions(String pk_org, String[] pk_psndocs, String[] pk_dept_vs,
+	    String[] leavebegindate, String[] leaveenddate, String maxdate, UFBoolean isfrozen)
+	    throws BusinessException {
+	String strPk_psndocs = getInCondition(pk_psndocs, "pk_psndoc");
+	String strPk_dept = getInCondition(pk_dept_vs, "pk_dept_v");
+	String strLeaveBeginDate = getDateCondition(leavebegindate, "leavebegindate");
+	String strLeaveEndDate = getDateCondition(leaveenddate, "leaveenddate");
+	String pk_leavetypecopy = "";
+
+	UFBoolean twEnabled = SysInitQuery.getParaBoolean(pk_org, "TWHR01");// 啟用臺灣本地化
+	if (twEnabled != null && twEnabled.booleanValue()) {
+	    pk_leavetypecopy = SysInitQuery.getParaString(pk_org, "TWHRT08");// 加班轉調休休假類別
+	} else {
+	    return null;
+	}
+
+	List<Map<String, Object>> leaveapplies = null;
+	List<Map<String, Object>> leaveregs = null;
+	if (isfrozen != null) {
+	    // 不為空時僅返回凍結或未凍結的單據
+	    if (isfrozen.booleanValue()) {
+		// 只返回凍結單據，即只有申請沒有登記
+		leaveapplies = getLeaveApplies(strPk_psndocs, strPk_dept, strLeaveBeginDate, strLeaveEndDate, maxdate,
+			pk_leavetypecopy);
+	    } else {
+		leaveregs = getLeaveRegs(strPk_psndocs, strPk_dept, strLeaveBeginDate, strLeaveEndDate, maxdate,
+			pk_leavetypecopy);
+	    }
+	} else {
+	    // 為空時不過濾是否有凍結時數
+	    leaveapplies = getLeaveApplies(strPk_psndocs, strPk_dept, strLeaveBeginDate, strLeaveEndDate, maxdate,
+		    pk_leavetypecopy);
+
+	    leaveregs = getLeaveRegs(strPk_psndocs, strPk_dept, strLeaveBeginDate, strLeaveEndDate, maxdate,
+		    pk_leavetypecopy);
+	}
+
+	// 查找加班信息
+	Map<String, List<String>> leaveregotreg = new HashMap<String, List<String>>();
+	Map<String, Map<String, Object>> otregvos = getOvertimeRegByLeaveReg(leaveregs, leaveregotreg);
+
+	List<AggOTLeaveBalanceVO> aggvos = new ArrayList<AggOTLeaveBalanceVO>();
+
+	if (leaveapplies != null && leaveapplies.size() > 0) {
+	    for (Map<String, Object> leaveapply : leaveapplies) {
+		AggOTLeaveBalanceVO aggvo = new AggOTLeaveBalanceVO();
+		OTLeaveBalanceVO headvo = new OTLeaveBalanceVO();
+		headvo.setPk_group((String) leaveapply.get("pk_group"));
+		headvo.setPk_org((String) leaveapply.get("pk_org"));
+		headvo.setPk_org_v((String) leaveapply.get("pk_org_v"));
+		headvo.setPk_psndoc((String) leaveapply.get("pk_psndoc"));
+		headvo.setPk_leavereg(null);
+		headvo.setPk_leaveapply((String) leaveapply.get("pk_leaveh"));
+		headvo.setTotalhours(new UFDouble((String) leaveapply.get("realdayorhour")));
+		headvo.setConsumedhours(new UFDouble((String) leaveapply.get("resteddayorhour")));
+		headvo.setRemainhours(new UFDouble((String) leaveapply.get("restdayorhour")));
+		headvo.setFrozenhours(new UFDouble((String) leaveapply.get("freezedayorhour")));
+		headvo.setFreehours(new UFDouble((String) leaveapply.get("usefuldayorhour")));
+		aggvo.setParent(headvo);
+
+		// TODO 加载子表
+
+		aggvo.setChildren(OTBalanceDetailVO.class, null);
+
+		aggvos.add(aggvo);
+	    }
+	}
+
+	return aggvos.toArray(new AggOTLeaveBalanceVO[0]);
+    }
+
+    private Map<String, Map<String, Object>> getOvertimeRegByLeaveReg(List<Map<String, Object>> leaveregs,
+	    Map<String, List<String>> leaveregotreg) throws BusinessException {
+	Map<String, OTSChainNode> psnNodes = new HashMap<String, OTSChainNode>();
+	Map<String, Map<String, Object>> otregvos = new HashMap<String, Map<String, Object>>();
+	if (leaveregs != null && leaveregs.size() > 0) {
+	    for (Map<String, Object> leavereg : leaveregs) {
+		String pk_psndoc = (String) leavereg.get("pk_psndoc");
+		if (!psnNodes.containsKey(pk_psndoc)) {
+		    OTSChainNode nodes = OTSChainUtils.buildChainNodes(pk_psndoc, null, null, true, false, true, false,
+			    true);
+		    psnNodes.put(pk_psndoc, nodes);
+		}
+
+		OTSChainNode firstNode = OTSChainUtils.getFirstNode(psnNodes.get(pk_psndoc));
+		OTSChainNode curNode = firstNode;
+		while (curNode != null) {
+		    if (curNode.getNodeData().getPk_segdetailconsume() != null) {
+			for (SegDetailConsumeVO cvo : curNode.getNodeData().getPk_segdetailconsume()) {
+			    if (cvo.getPk_leavereg().equals(leavereg.get("pk_leavereg"))) {
+				if (!leaveregotreg.containsKey(cvo.getPk_leavereg())) {
+				    leaveregotreg.put(cvo.getPk_leavereg(), new ArrayList<String>());
+				}
+
+				leaveregotreg.get(cvo.getPk_leavereg()).add(curNode.getNodeData().getPk_overtimereg());
+				if (!otregvos.containsKey(curNode.getNodeData().getPk_overtimereg())) {
+				    otregvos.put(curNode.getNodeData().getPk_overtimereg(),
+					    new HashMap<String, Object>());
+				    otregvos.get(curNode.getNodeData().getPk_overtimereg()).put("pk_overtimereg",
+					    curNode.getNodeData().getPk_overtimereg());
+				    otregvos.get(curNode.getNodeData().getPk_overtimereg()).put("calendar",
+					    curNode.getNodeData().getRegdate());
+				    otregvos.get(curNode.getNodeData().getPk_overtimereg()).put("overtimehours",
+					    curNode.getNodeData().getHours());
+				    otregvos.get(curNode.getNodeData().getPk_overtimereg()).put("consumedhours",
+					    curNode.getNodeData().getConsumedhours());
+				    otregvos.get(curNode.getNodeData().getPk_overtimereg()).put("hasfrozen",
+					    UFBoolean.FALSE);
+				}
+			    }
+			}
+		    }
+		    curNode = curNode.getNextNode();
+		}
+	    }
+	}
+
+	return otregvos;
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<Map<String, Object>> getLeaveRegs(String strPk_psndocs, String strPk_dept, String strLeaveBeginDate,
+	    String strLeaveEndDate, String maxdate, String pk_leavetypecopy) throws BusinessException {
+	String strSQL = " select pk_group, pk_org, pk_org_v, pk_psndoc, pk_leavereg, pk_billsourceh, isnull(realdayorhour,0) realdayorhour, "
+		+ " isnull(resteddayorhour, 0) resteddayorhour, isnull(restdayorhour,0) restdayorhour, "
+		+ " isnull(freezedayorhour, 0) freezedayorhour, isnull(usefuldayorhour, 0) usefuldayorhour, "
+		+ " leavebegintime, leaveendtime "
+		+ " from tbm_leavereg "
+		+ " where pk_leavetypecopy = '"
+		+ pk_leavetypecopy
+		+ "' and dr=0 "
+		+ (StringUtils.isEmpty(strPk_dept) ? "" : " and " + strPk_dept)
+		+ (StringUtils.isEmpty(strPk_psndocs) ? "" : " and " + strPk_psndocs)
+		+ (StringUtils.isEmpty(strLeaveBeginDate) ? "" : " and " + strLeaveBeginDate)
+		+ (StringUtils.isEmpty(strLeaveEndDate) ? "" : " and " + strLeaveEndDate);
+	List<Map<String, Object>> ret = (List<Map<String, Object>>) this.getBaseDAO().executeQuery(strSQL,
+		new MapListProcessor());
+	return ret;
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<Map<String, Object>> getLeaveApplies(String strPk_psndocs, String strPk_dept,
+	    String strLeaveBeginDate, String strLeaveEndDate, String maxdate, String pk_leavetypecopy)
+	    throws BusinessException {
+	String strSQL = " select lh.pk_group, lh.pk_org, lh.pk_org_v, lh.pk_psndoc, lh.pk_leaveh, isnull(lh.realdayorhour,0) realdayorhour, "
+		+ " isnull(lh.resteddayorhour,0) resteddayorhour, isnull(lh.restdayorhour,0) restdayorhour, "
+		+ " isnull(lh.leavehour,0) freezedayorhour, isnull(lh.usefuldayorhour,0) usefuldayorhour, "
+		+ " lb.leavebegintime, lb.leaveendtime "
+		+ " from tbm_leaveb lb "
+		+ " inner join tbm_leaveh lh on lb.pk_leaveh = lh.pk_leaveh "
+		+ " where lh.approve_state in (0, 3, 4) and lh.pk_leavetypecopy = '"
+		+ pk_leavetypecopy
+		+ "' and lh.dr=0 and lb.dr=0 "
+		+ (StringUtils.isEmpty(strPk_dept) ? "" : " and lh." + strPk_dept)
+		+ (StringUtils.isEmpty(strPk_psndocs) ? "" : " and lh." + strPk_psndocs)
+		+ (StringUtils.isEmpty(strLeaveBeginDate) ? "" : " and "
+			+ strLeaveBeginDate.replace("leavebegindate", "lb.leavebegindate"))
+		+ (StringUtils.isEmpty(strLeaveEndDate) ? "" : " and "
+			+ strLeaveEndDate.replace("leaveenddate", "lb.leaveenddate"));
+	List<Map<String, Object>> ret = (List<Map<String, Object>>) this.getBaseDAO().executeQuery(strSQL,
+		new MapListProcessor());
+	return ret;
+    }
+
+    private String getInCondition(String[] pks, String fieldName) {
+	String strConditions = "";
+	if (pks != null && pks.length > 0) {
+	    for (String pk : pks) {
+		if (StringUtils.isEmpty(strConditions)) {
+		    strConditions += "'" + pk + "'";
+		} else {
+		    strConditions += ",'" + pk + "'";
+		}
+	    }
+	    strConditions = fieldName + " in (" + strConditions + ")";
+	}
+	return strConditions;
+    }
+
+    private String getDateCondition(String[] dates, String fieldName) {
+	String strConditions = "";
+	if (dates != null && dates.length > 0) {
+	    if (dates.length >= 1) {
+		strConditions += fieldName + " >= '" + dates[0] + "'";
+	    }
+
+	    if (dates.length >= 2) {
+		strConditions += " and " + fieldName + " <= '" + dates[1] + "'";
+	    }
+	}
+	return strConditions;
+    }
+
+    public BaseDAO getBaseDAO() {
+	if (baseDAO == null) {
+	    baseDAO = new BaseDAO();
+	}
+	return baseDAO;
+    }
+
+}

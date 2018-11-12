@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="nc.itf.hr.wa.HRWAEJB"> 
+  <public>
+    <component priority="0" singleton="true" remote="true" tx="NONE" supportAlias="true">
+      <interface>nc.itf.hr.wa.IWaAdjustQueryService</interface>
+      <implementation>nc.impl.wa.adjust.WaAdjustManageServiceImpl</implementation> 
+    </component>
+    <component priority="0" singleton="true" remote="true" tx="CMT" supportAlias="true">
+      <interface>nc.itf.hr.wa.IWaAdjustManageService</interface>
+      <implementation>nc.impl.wa.adjust.WaAdjustManageServiceImpl</implementation>
+	  <property name = "validatorFactory">
+      	<ref>WaAdjustValidatorFactory</ref>
+      </property>
+    </component>
+	<component name="WaAdjustValidatorFactory" priority="0" singleton="true" remote="true" tx="NONE" supportAlias="false" >
+      <interface>nc.hr.frame.persistence.IValidatorFactory</interface>
+      <implementation>nc.impl.wa.adjust.WaAdjustValidatorFactory</implementation>
+    </component>
+    
+      <component priority="0" singleton="true" remote="true" tx="CMT" supportAlias="true">
+      <interface>nc.itf.hr.wa.IWaConversionBatchService</interface>
+      <implementation>nc.impl.wa.conversion.WaConversionBatchServiceImpl</implementation>
+    </component>
+    <component priority="0" singleton="true" remote="true" tx="NONE" supportAlias="true">
+      <interface>nc.itf.hr.wa.IWaConversionBatchQueryService</interface>
+      <implementation>nc.impl.wa.conversion.WaConversionBatchQueryServiceImpl</implementation>
+    </component> 
+
+    <component name="nc.impl.wa.grade.WaGradeAppImpl" priority="0" remote="true" singleton="true" supportAlias="true" tx="CMT">
+      <interface>nc.itf.hr.wa.IWaGradeService</interface>
+      <implementation>nc.impl.wa.grade.WaGradeAppImpl</implementation>
+      <property name = "validatorFactory"><ref>WaGradeValidatorFactory</ref></property>
+	</component>
+
+	<component name="WaGradeValidatorFactory" priority="0" singleton="true" remote="true" tx="NONE" supportAlias="false" >
+      		<interface>nc.hr.frame.persistence.IValidatorFactory</interface>
+      		<implementation>nc.impl.wa.grade.WaGradeValidatorFactory</implementation>
+    </component>
+    	
+    <component name="nc.itf.hr.wa.IWaGradeQueryService" priority="0" remote="true" singleton="true" supportAlias="false" tx="NONE">
+	    <interface>nc.itf.hr.wa.IWaGradeQueryService</interface>
+	    <implementation>nc.impl.wa.grade.WaGradeQueryImpl</implementation>
+    </component>
+    
+    <component priority="0" singleton="true" remote="true" tx="NONE" supportAlias="true">
+      <interface>nc.itf.hr.wa.IPsndocwadocQueryService</interface>
+      <implementation>nc.impl.wa.psndocwadoc.PsndocwadocManageServiceImpl</implementation> 
+    </component>
+    <component priority="0" singleton="true" remote="true" tx="CMT" supportAlias="true">
+      <interface>nc.itf.hr.wa.IPsndocwadocManageService</interface>
+      <implementation>nc.impl.wa.psndocwadoc.PsndocwadocManageServiceImpl</implementation>
+    </component>
+    
+    <component priority="0" singleton="true" remote="true" tx="CMT" supportAlias="true">
+      <interface>nc.itf.hr.wa.IWaPsnHiService</interface>
+      <implementation>nc.impl.wa.adjust.WaAdjustManageServiceImpl</implementation>
+    </component>
+	
+	<component priority="0" singleton="true" remote="true" tx="CMT" supportAlias="true">
+      <interface>nc.itf.hr.wa.IPsndocwadocLabourService</interface>
+      <implementation>nc.impl.wa.psndocwadoc.PsndocwadocLabourImpl</implementation>
+    </component>
+    
+  </public>
+</module>
+

@@ -1,0 +1,301 @@
+<?xml version="1.0" encoding='UTF-8'?>
+<Widget controllerClazz="nc.bs.hrsms.ta.sss.calendar.ctrl.WorkCalendarListViewMain" dialog="false" i18nName="" langDir="" caption="店员工作日历按时段查看界面" id="main" refId="main" sourcePackage="src/public/">
+    <PlugoutDescs>
+    </PlugoutDescs>
+    <PluginDescs>
+        <PluginDesc id="Search">
+            <PluginDescItem clazztype="java.util.Map" id="key1">
+            </PluginDescItem>
+        </PluginDesc>
+        <PluginDesc id="Catagory">
+            <PluginDescItem clazztype="java.util.Map" id="key2">
+            </PluginDescItem>
+        </PluginDesc>
+        <PluginDesc id="DeptChange">
+            <PluginDescItem clazztype="java.util.Map" id="deptout">
+            </PluginDescItem>
+        </PluginDesc>
+         <PluginDesc id="inid_soci">
+        	<PluginDescItem clazztype="java.util.Map" id="inid_soci">
+            </PluginDescItem>
+        </PluginDesc>
+        <PluginDesc id="CircleArrangeShift_inId">
+            <PluginDescItem clazztype="java.util.Map" id="CircleArrangeShift_inId">
+            </PluginDescItem>
+        </PluginDesc>
+    </PluginDescs>
+    <Events>
+    	<Event async="true" methodName="pluginCircleArrangeShift_inId" onserver="true">
+            <Params>
+                <Param>
+                    <Name>keys</Name>
+                    <Value>
+                    </Value>
+                    <Desc>                        <![CDATA[java.util.Map]]>
+                    </Desc>
+                </Param>
+            </Params>
+            <Action>
+            </Action>
+        </Event>
+        <Event async="true" methodName="pluginSearch" onserver="true">
+            <Params>
+                <Param>
+                    <Name>keys</Name>
+                    <Value>
+                    </Value>
+                    <Desc>                        <![CDATA[java.util.Map]]>
+                    </Desc>
+                </Param>
+            </Params>
+            <Action>
+            </Action>
+        </Event>
+        <Event async="true" methodName="pluginCatagory" onserver="true">
+            <Params>
+                <Param>
+                    <Name>keys</Name>
+                    <Value>
+                    </Value>
+                    <Desc>                        <![CDATA[java.util.Map]]>
+                    </Desc>
+                </Param>
+            </Params>
+            <Action>
+            </Action>
+        </Event>
+        <Event async="true" methodName="pluginDeptChange" onserver="true">
+            <Params>
+                <Param>
+                    <Name>keys</Name>
+                    <Value>
+                    </Value>
+                    <Desc>                        <![CDATA[java.util.Map]]>
+                    </Desc>
+                </Param>
+            </Params>
+            <Action>
+            </Action>
+        </Event>
+        <Event async="true" methodName="plugininid_soci" onserver="true">
+            <Params>
+                <Param>
+                    <Name>keys</Name>
+                    <Value>
+                    </Value>
+                    <Desc>                        <![CDATA[java.util.Map]]>
+                    </Desc>
+                </Param>
+            </Params>
+            <Action>
+            </Action>
+        </Event>
+    </Events>
+    <Models>
+        <Datasets>
+            <RefMdDataset caption="班次" controlwidgetopeStatus="false" enabled="false" id="$refds_uap_shift" lazyLoad="true" notNullBody="false" objMeta="hrta.bdshift" voMeta="nc.vo.bd.shift.ShiftVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <MdDataset i18nName="w_TeamCalendar-000026" langDir="ta_nodes" caption="人员基本信息" controlwidgetopeStatus="false" enabled="false" id="$refds_hrhi_bd_psndoc" lazyLoad="true" notNullBody="false" objMeta="hrhi.bd_psndoc" voMeta="nc.vo.hi.psndoc.PsndocVO">
+                <Fields>
+                </Fields>
+            </MdDataset>
+            <RefMdDataset caption="组织_部门" controlwidgetopeStatus="false" enabled="false" id="$refds_uap_dept" lazyLoad="true" notNullBody="false" objMeta="uap.dept" voMeta="nc.vo.org.DeptVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <Dataset controlwidgetopeStatus="true" enabled="false" id="dsCalendar" lazyLoad="false" notNullBody="false" pageSize="20">
+                <FieldRelations>
+                    <FieldRelation id="pk_psndoc_rel" needProcess="true" refDataset="$refds_hrhi_hi_psnjob">
+                        <MatchFields>
+                            <Field readField="pk_psndoc" writeField="pk_psnjob_pk_psndoc">
+                            </Field>
+                            <Field readField="clerkcode" writeField="pk_psnjob_clerkcode">
+                            </Field>
+                            <Field readField="pk_dept" writeField="pk_psnjob_pk_dept">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_psnjob" value="pk_psnjob">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    
+                    <FieldRelation id="pk_shift_rel" needProcess="true" refDataset="$refds_uap_shift">
+                        <MatchFields>
+                            <Field readField="pk_shift" writeField="pk_shift">
+                            </Field>
+                            <Field readField="name" writeField="pk_shift_name">
+                            </Field>
+                            <Field readField="pk_shifttype" writeField="pk_shifttype">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_shift" value="pk_shift">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    
+                    <FieldRelation id="pk_psnjob_pk_psndoc_rel" refDataset="$refds_hrhi_bd_psndoc">
+                        <MatchFields>
+                            <Field readField="code" writeField="pk_psnjob_pk_psndoc_code">
+                            </Field>
+                            <Field readField="name" writeField="pk_psnjob_pk_psndoc_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_psndoc" value="pk_psnjob_pk_psndoc">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_psnjob_pk_dept_rel" refDataset="$refds_uap_dept">
+                        <MatchFields>
+                            <Field readField="name" writeField="pk_psnjob_pk_dept_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_dept" value="pk_psnjob_pk_dept">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                </FieldRelations>
+                <Fields>
+                    <Field dataType="String" i18nName="w_ta-000055" id="pk_psnjob" langDir="node_ta-res" nullAble="true" primaryKey="false" text="人员任职记录主键">
+                    </Field>
+                    <Field dataType="String" i18nName="w_ta-000056" id="pk_psnjob_pk_psndoc" langDir="node_ta-res" nullAble="true" primaryKey="false" sourceField="pk_psnjob" text="人员基本信息主键">
+                    </Field>
+                    <Field dataType="String" i18nName="w_ta-000057" id="pk_psnjob_pk_psndoc_code" langDir="node_ta-res" nullAble="true" primaryKey="false" text="人员编码">
+                    </Field>
+                    <Field dataType="String" i18nName="w_ta-000058" id="pk_psnjob_pk_psndoc_name" langDir="node_ta-res" nullAble="true" primaryKey="false" text="姓名">
+                    </Field>
+                    <Field dataType="String" i18nName="w_ta-000059" id="pk_psnjob_clerkcode" langDir="node_ta-res" nullAble="true" primaryKey="false" text="员工号">
+                    </Field>
+                    <Field dataType="String" i18nName="w_ta-000061" id="pk_psnjob_pk_dept" langDir="node_ta-res" nullAble="true" primaryKey="false" text="部门主键">
+                    </Field>
+                    <Field dataType="String" i18nName="w_ta-000062" id="pk_psnjob_pk_dept_name" langDir="node_ta-res" nullAble="true" primaryKey="false" text="部门">
+                    </Field>
+                     
+                     <Field dataType="String" i18nName="" id="totaltimes"  langDir="" nullAble="true" primaryKey="false" text="总工时">
+                    </Field>
+                </Fields>
+                <Events>
+                    <Event async="true" jsEventClaszz="nc.uap.lfw.core.event.conf.DatasetListener" methodName="onDataLoad_dsCalendar" name="onDataLoad" onserver="true">
+                        <SubmitRule cardSubmit="false" panelSubmit="false" tabSubmit="false">
+                            <Widget cardSubmit="false" id="main" panelSubmit="false" tabSubmit="false">
+                                <Dataset id="dsCalendar" type="ds_current_line">
+                                </Dataset>
+                            </Widget>
+                        </SubmitRule>
+                        <Params>
+                            <Param>
+                                <Name>dataLoadEvent</Name>
+                                <Value>
+                                </Value>
+                                <Desc>                                    <![CDATA[nc.uap.lfw.core.event.DataLoadEvent]]>
+                                </Desc>
+                            </Param>
+                        </Params>
+                        <Action>
+                        </Action>
+                    </Event>
+                    <Event async="true" jsEventClaszz="nc.uap.lfw.core.event.conf.DatasetListener" methodName="onAfterDataChange_dsCalendar" name="onAfterDataChange" onserver="true">
+                        <SubmitRule cardSubmit="false" panelSubmit="false" tabSubmit="false">
+                            <Widget cardSubmit="false" id="main" panelSubmit="false" tabSubmit="false">
+                                <Dataset id="dsModifiedClass" type="ds_all_line">
+                                </Dataset>
+                                <Dataset id="dsCalendar" type="ds_current_line">
+                                </Dataset>
+                            </Widget>
+                        </SubmitRule>
+                        <Params>
+                            <Param>
+                                <Name>datasetCellEvent</Name>
+                                <Value>
+                                </Value>
+                                <Desc>                                    <![CDATA[nc.uap.lfw.core.event.DatasetCellEvent]]>
+                                </Desc>
+                            </Param>
+                        </Params>
+                        <Action>
+                        </Action>
+                    </Event>
+                </Events>
+            </Dataset>
+            <Dataset controlwidgetopeStatus="false" enabled="false" id="dsModifiedClass" lazyLoad="true" notNullBody="false">
+                <Fields>
+                    <Field dataType="String" i18nName="w_ta-000056" id="pk_psndoc" langDir="node_ta-res" nullAble="true" primaryKey="false" text="人员基本信息主键">
+                    </Field>
+                    <Field dataType="String" i18nName="w_ta-000055" id="pk_psnjob" langDir="node_ta-res" nullAble="true" primaryKey="false" text="人员任职记录主键">
+                    </Field>
+                    <Field dataType="String" i18nName="w_ta-000063" id="pk_shift" langDir="node_ta-res" nullAble="true" primaryKey="false" text="班别主键">
+                    </Field>
+                    <Field dataType="String" i18nName="w_ta-000064" id="date" langDir="node_ta-res" nullAble="true" primaryKey="false" text="日期">
+                    </Field>
+                </Fields>
+            </Dataset>
+            <RefMdDataset caption="工作记录" controlwidgetopeStatus="false" enabled="false" id="$refds_hrhi_hi_psnjob" lazyLoad="true" notNullBody="false" objMeta="hrhi.hi_psnjob" voMeta="nc.vo.hi.psndoc.PsnJobVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+        </Datasets>
+    </Models>
+    <Components>
+        <WebPartComp contentFetcher="nc.bs.hrsms.ta.sss.calendar.lsnr.CalColorExplainContentFetcher" id="explainHtml">
+        </WebPartComp>
+        <GridComp autoRowHeight="false" canCopy="false" dataset="dsCalendar" editable="true" enabled="true" expandTree="false" id="gridPsnCalendar" multiSelect="false" pagenationTop="false" reference="false" selfDefImageBtnRender="" showColInfo="false" showHeader="true" showImageBtn="false" showNumCol="false" showSumRow="false" sortable="true" visible="true">
+            <Column autoExpand="false" dataType="String" editable="false" editorType="StringText" field="pk_psnjob_pk_psndoc_name" fixedHeader="true" i18nName="w_ta-000058" id="pk_psnjob_pk_psndoc_name" imageOnly="false" langDir="node_ta-res" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="姓名" textAlign="left" visible="true" width="80">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="false" editorType="StringText" field="pk_psnjob_pk_dept_name" fixedHeader="false" i18nName="w_ta-000062" id="pk_psnjob_pk_dept_name" imageOnly="false" langDir="node_ta-res" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="部门" textAlign="left" visible="false" width="100">
+            </Column>
+             <Column autoExpand="false" dataType="String" editable="false" editorType="StringText" field="totaltimes" fixedHeader="true" i18nName="" id="totaltimes" imageOnly="false" langDir="" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="总工时" textAlign="left" visible="true" width="100">
+            </Column>
+            
+            <Events>
+                <Event async="true" jsEventClaszz="nc.uap.lfw.core.event.conf.GridCellListener" methodName="onBeforeEdit_gridPsnCalendr" name="beforeEdit" onserver="false">
+                    <SubmitRule cardSubmit="false" panelSubmit="false" tabSubmit="false">
+                    </SubmitRule>
+                    <Params>
+                        <Param>
+                            <Name>gridCellEvent</Name>
+                            <Value>
+                            </Value>
+                            <Desc>                                <![CDATA[nc.uap.lfw.core.event.CellEvent]]>
+                            </Desc>
+                        </Param>
+                    </Params>
+                    <Action>                        <![CDATA[return beforEditClass(gridCellEvent);]]>
+                    </Action>
+                </Event>
+            </Events>
+        </GridComp>
+    </Components>
+    <Menus>
+        <MenuBarComp id="menu_list">
+            <!-- tangcht -->
+            <MenuItem i18nName="coco_cal_res000" id="list_import" langDir="coco_ta" modifiers="2" text="导入">
+                <Events>
+                    <Event async="true" jsEventClaszz="nc.uap.lfw.core.event.conf.MouseListener" methodName="doImportExcel" name="onclick" onserver="true">
+                        <SubmitRule cardSubmit="false" panelSubmit="false" tabSubmit="false">
+                            <Widget cardSubmit="false" id="main" panelSubmit="false" tabSubmit="false">
+                                <Dataset id="dsCalendar" type="ds_all_line">
+                                </Dataset>
+                            </Widget>
+                        </SubmitRule>
+                        <Params>
+                            <Param>
+                                <Name>mouseEvent</Name>
+                                <Value>
+                                </Value>
+                                <Desc>                                    <![CDATA[nc.uap.lfw.core.event.MouseEvent]]>
+                                </Desc>
+                            </Param>
+                        </Params>
+                        <Action>
+                        </Action>
+                    </Event>
+                </Events>
+            </MenuItem>
+        </MenuBarComp>
+    </Menus>
+</Widget>

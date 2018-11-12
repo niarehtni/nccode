@@ -1,0 +1,108 @@
+insert into md_bizitfmap(bizinterfaceid,bizitfimpclassname,classattrid,classattrpath,classid,dr,industry,intattrid,ts,versiontype) values( '6c8722b9-911a-489b-8d0d-18bd3734fcf6',null,'a2691525-ce26-4b66-9cb5-a4104aa2a597',null,'0d7c6e1a-bcfd-4286-a998-75c04879d18a',null,null,'5dd3c721-22ad-42b1-9c10-4351c236bc77','2018-08-23 09:46:06',null)
+go
+insert into md_bizitfmap(bizinterfaceid,bizitfimpclassname,classattrid,classattrpath,classid,dr,industry,intattrid,ts,versiontype) values( '6c8722b9-911a-489b-8d0d-18bd3734fcf6',null,'c7ed05df-e287-49ef-ba72-cdd98e61f376',null,'0d7c6e1a-bcfd-4286-a998-75c04879d18a',null,null,'89578a97-42fe-439b-827c-8eabd9e3604c','2018-08-23 09:46:06',null)
+go
+insert into md_bizitfmap(bizinterfaceid,bizitfimpclassname,classattrid,classattrpath,classid,dr,industry,intattrid,ts,versiontype) values( '6c8722b9-911a-489b-8d0d-18bd3734fcf6',null,'ba774a2b-78c8-4583-9d26-d05148d632a0',null,'0d7c6e1a-bcfd-4286-a998-75c04879d18a',null,null,'a47e6cda-09e4-480b-923f-ec6f41e3e06c','2018-08-23 09:46:06',null)
+go
+insert into md_bizitfmap(bizinterfaceid,bizitfimpclassname,classattrid,classattrpath,classid,dr,industry,intattrid,ts,versiontype) values( '6c8722b9-911a-489b-8d0d-18bd3734fcf6',null,null,null,'0d7c6e1a-bcfd-4286-a998-75c04879d18a',null,null,'c8334364-7ab9-4266-8d4b-e74537935e46','2018-08-23 09:46:06',null)
+go
+insert into md_bizitfmap(bizinterfaceid,bizitfimpclassname,classattrid,classattrpath,classid,dr,industry,intattrid,ts,versiontype) values( '6c8722b9-911a-489b-8d0d-18bd3734fcf6',null,'7017aa32-901b-4d1c-8d2a-152d91d15b17',null,'0d7c6e1a-bcfd-4286-a998-75c04879d18a',null,null,'d32cc17b-f415-415a-923f-0764443eb102','2018-08-23 09:46:06',null)
+go
+insert into md_bizitfmap(bizinterfaceid,bizitfimpclassname,classattrid,classattrpath,classid,dr,industry,intattrid,ts,versiontype) values( '6c8722b9-911a-489b-8d0d-18bd3734fcf6',null,'7fc4c3ca-e105-4363-83c1-e890dd99441d',null,'0d7c6e1a-bcfd-4286-a998-75c04879d18a',null,null,'ecf1b76a-6e44-42e2-a55e-87596504775b','2018-08-23 09:46:06',null)
+go
+insert into md_bizitfmap(bizinterfaceid,bizitfimpclassname,classattrid,classattrpath,classid,dr,industry,intattrid,ts,versiontype) values( '6c8722b9-911a-489b-8d0d-18bd3734fcf6',null,'cb0dbf9b-27d8-4a1f-8080-9240fc30b754',null,'218971f0-e5dc-408b-9a32-56529dddd4db',null,null,'ecf1b76a-6e44-42e2-a55e-87596504775b','2018-08-23 09:46:06',null)
+go
+insert into md_bizitfmap(bizinterfaceid,bizitfimpclassname,classattrid,classattrpath,classid,dr,industry,intattrid,ts,versiontype) values( '6c8722b9-911a-489b-8d0d-18bd3734fcf6',null,'ba7f162a-56fb-4503-8fb3-2aa5e245efd2',null,'218971f0-e5dc-408b-9a32-56529dddd4db',null,null,'d32cc17b-f415-415a-923f-0764443eb102','2018-08-23 09:46:06',null)
+go
+insert into md_bizitfmap(bizinterfaceid,bizitfimpclassname,classattrid,classattrpath,classid,dr,industry,intattrid,ts,versiontype) values( '6c8722b9-911a-489b-8d0d-18bd3734fcf6',null,null,null,'218971f0-e5dc-408b-9a32-56529dddd4db',null,null,'c8334364-7ab9-4266-8d4b-e74537935e46','2018-08-23 09:46:06',null)
+go
+insert into md_bizitfmap(bizinterfaceid,bizitfimpclassname,classattrid,classattrpath,classid,dr,industry,intattrid,ts,versiontype) values( '6c8722b9-911a-489b-8d0d-18bd3734fcf6',null,'15f84ba9-165e-4c8a-b9ba-69e543898cad',null,'218971f0-e5dc-408b-9a32-56529dddd4db',null,null,'a47e6cda-09e4-480b-923f-ec6f41e3e06c','2018-08-23 09:46:06',null)
+go
+insert into md_bizitfmap(bizinterfaceid,bizitfimpclassname,classattrid,classattrpath,classid,dr,industry,intattrid,ts,versiontype) values( '6c8722b9-911a-489b-8d0d-18bd3734fcf6',null,'9a63b242-b091-49b4-92e4-43c0c8cb80f8',null,'218971f0-e5dc-408b-9a32-56529dddd4db',null,null,'89578a97-42fe-439b-827c-8eabd9e3604c','2018-08-23 09:46:06',null)
+go
+insert into md_bizitfmap(bizinterfaceid,bizitfimpclassname,classattrid,classattrpath,classid,dr,industry,intattrid,ts,versiontype) values( '6c8722b9-911a-489b-8d0d-18bd3734fcf6',null,'8fa7dee7-40ac-4c19-b7a0-02d6f3e343e5',null,'218971f0-e5dc-408b-9a32-56529dddd4db',null,null,'5dd3c721-22ad-42b1-9c10-4351c236bc77','2018-08-23 09:46:06',null)
+go
+insert into md_bizitfmap(bizinterfaceid,bizitfimpclassname,classattrid,classattrpath,classid,dr,industry,intattrid,ts,versiontype) values( '6c8722b9-911a-489b-8d0d-18bd3734fcf6',null,'f1e30dee-8a72-40f2-938a-d0943e82c88d',null,'305e3727-0259-41dd-8e9a-bda4f14b6466',null,null,'5dd3c721-22ad-42b1-9c10-4351c236bc77','2018-08-23 09:46:06',null)
+go
+insert into md_bizitfmap(bizinterfaceid,bizitfimpclassname,classattrid,classattrpath,classid,dr,industry,intattrid,ts,versiontype) values( '6c8722b9-911a-489b-8d0d-18bd3734fcf6',null,'354cad71-47ac-42d4-854e-fc0dd7e4f89f',null,'305e3727-0259-41dd-8e9a-bda4f14b6466',null,null,'89578a97-42fe-439b-827c-8eabd9e3604c','2018-08-23 09:46:06',null)
+go
+insert into md_bizitfmap(bizinterfaceid,bizitfimpclassname,classattrid,classattrpath,classid,dr,industry,intattrid,ts,versiontype) values( '6c8722b9-911a-489b-8d0d-18bd3734fcf6',null,'3aaa97dc-132d-4947-8b9a-289c8594057c',null,'305e3727-0259-41dd-8e9a-bda4f14b6466',null,null,'a47e6cda-09e4-480b-923f-ec6f41e3e06c','2018-08-23 09:46:06',null)
+go
+insert into md_bizitfmap(bizinterfaceid,bizitfimpclassname,classattrid,classattrpath,classid,dr,industry,intattrid,ts,versiontype) values( '6c8722b9-911a-489b-8d0d-18bd3734fcf6',null,null,null,'305e3727-0259-41dd-8e9a-bda4f14b6466',null,null,'c8334364-7ab9-4266-8d4b-e74537935e46','2018-08-23 09:46:06',null)
+go
+insert into md_bizitfmap(bizinterfaceid,bizitfimpclassname,classattrid,classattrpath,classid,dr,industry,intattrid,ts,versiontype) values( '6c8722b9-911a-489b-8d0d-18bd3734fcf6',null,'354cad71-47ac-42d4-854e-fc0dd7e4f89f',null,'305e3727-0259-41dd-8e9a-bda4f14b6466',null,null,'d32cc17b-f415-415a-923f-0764443eb102','2018-08-23 09:46:06',null)
+go
+insert into md_bizitfmap(bizinterfaceid,bizitfimpclassname,classattrid,classattrpath,classid,dr,industry,intattrid,ts,versiontype) values( '6c8722b9-911a-489b-8d0d-18bd3734fcf6',null,'d5cdfd7e-b930-4eb6-aca2-6919a14d030d',null,'305e3727-0259-41dd-8e9a-bda4f14b6466',null,null,'ecf1b76a-6e44-42e2-a55e-87596504775b','2018-08-23 09:46:06',null)
+go
+insert into md_bizitfmap(bizinterfaceid,bizitfimpclassname,classattrid,classattrpath,classid,dr,industry,intattrid,ts,versiontype) values( '6c8722b9-911a-489b-8d0d-18bd3734fcf6',null,'dc8f6265-78fa-432a-88d2-642881486ba3',null,'5514d59a-2a2a-4ca4-a485-1435e0ce9dff',null,null,'ecf1b76a-6e44-42e2-a55e-87596504775b','2018-08-23 09:46:06',null)
+go
+insert into md_bizitfmap(bizinterfaceid,bizitfimpclassname,classattrid,classattrpath,classid,dr,industry,intattrid,ts,versiontype) values( '6c8722b9-911a-489b-8d0d-18bd3734fcf6',null,'6c8693c7-18b0-4eaa-ae66-556524afa4b0',null,'5514d59a-2a2a-4ca4-a485-1435e0ce9dff',null,null,'d32cc17b-f415-415a-923f-0764443eb102','2018-08-23 09:46:06',null)
+go
+insert into md_bizitfmap(bizinterfaceid,bizitfimpclassname,classattrid,classattrpath,classid,dr,industry,intattrid,ts,versiontype) values( '6c8722b9-911a-489b-8d0d-18bd3734fcf6',null,null,null,'5514d59a-2a2a-4ca4-a485-1435e0ce9dff',null,null,'c8334364-7ab9-4266-8d4b-e74537935e46','2018-08-23 09:46:06',null)
+go
+insert into md_bizitfmap(bizinterfaceid,bizitfimpclassname,classattrid,classattrpath,classid,dr,industry,intattrid,ts,versiontype) values( '6c8722b9-911a-489b-8d0d-18bd3734fcf6',null,'f6641110-7424-43de-b5ec-7a6bd3dd1db9',null,'5514d59a-2a2a-4ca4-a485-1435e0ce9dff',null,null,'a47e6cda-09e4-480b-923f-ec6f41e3e06c','2018-08-23 09:46:06',null)
+go
+insert into md_bizitfmap(bizinterfaceid,bizitfimpclassname,classattrid,classattrpath,classid,dr,industry,intattrid,ts,versiontype) values( '6c8722b9-911a-489b-8d0d-18bd3734fcf6',null,'623862f1-4e62-42d1-8757-a8e9f9787f2a',null,'5514d59a-2a2a-4ca4-a485-1435e0ce9dff',null,null,'89578a97-42fe-439b-827c-8eabd9e3604c','2018-08-23 09:46:06',null)
+go
+insert into md_bizitfmap(bizinterfaceid,bizitfimpclassname,classattrid,classattrpath,classid,dr,industry,intattrid,ts,versiontype) values( '6c8722b9-911a-489b-8d0d-18bd3734fcf6',null,'67ff8fd6-dcaf-4f57-adb6-6fa8b9a4e75e',null,'5514d59a-2a2a-4ca4-a485-1435e0ce9dff',null,null,'5dd3c721-22ad-42b1-9c10-4351c236bc77','2018-08-23 09:46:06',null)
+go
+insert into md_bizitfmap(bizinterfaceid,bizitfimpclassname,classattrid,classattrpath,classid,dr,industry,intattrid,ts,versiontype) values( '6c8722b9-911a-489b-8d0d-18bd3734fcf6',null,'0b759035-c6e6-4a71-b719-da63ceb481d5',null,'7156d223-4531-4337-b192-492ab40098f1',null,null,'5dd3c721-22ad-42b1-9c10-4351c236bc77','2018-08-23 09:46:06',null)
+go
+insert into md_bizitfmap(bizinterfaceid,bizitfimpclassname,classattrid,classattrpath,classid,dr,industry,intattrid,ts,versiontype) values( '6c8722b9-911a-489b-8d0d-18bd3734fcf6',null,'942bddba-2d8a-4758-93c9-da770bcdbf84','pk_psndoc.name','7156d223-4531-4337-b192-492ab40098f1',null,null,'89578a97-42fe-439b-827c-8eabd9e3604c','2018-08-23 09:46:06',null)
+go
+insert into md_bizitfmap(bizinterfaceid,bizitfimpclassname,classattrid,classattrpath,classid,dr,industry,intattrid,ts,versiontype) values( '6c8722b9-911a-489b-8d0d-18bd3734fcf6',null,'eae81a34-74e8-48b5-92bb-cce66429d2a6',null,'7156d223-4531-4337-b192-492ab40098f1',null,null,'a47e6cda-09e4-480b-923f-ec6f41e3e06c','2018-08-23 09:46:06',null)
+go
+insert into md_bizitfmap(bizinterfaceid,bizitfimpclassname,classattrid,classattrpath,classid,dr,industry,intattrid,ts,versiontype) values( '6c8722b9-911a-489b-8d0d-18bd3734fcf6',null,null,null,'7156d223-4531-4337-b192-492ab40098f1',null,null,'c8334364-7ab9-4266-8d4b-e74537935e46','2018-08-23 09:46:06',null)
+go
+insert into md_bizitfmap(bizinterfaceid,bizitfimpclassname,classattrid,classattrpath,classid,dr,industry,intattrid,ts,versiontype) values( '6c8722b9-911a-489b-8d0d-18bd3734fcf6',null,'252a64d8-e339-40fb-9a1d-abdec7aea1e0',null,'7156d223-4531-4337-b192-492ab40098f1',null,null,'d32cc17b-f415-415a-923f-0764443eb102','2018-08-23 09:46:06',null)
+go
+insert into md_bizitfmap(bizinterfaceid,bizitfimpclassname,classattrid,classattrpath,classid,dr,industry,intattrid,ts,versiontype) values( '6c8722b9-911a-489b-8d0d-18bd3734fcf6',null,'d5e2acaa-3deb-4e9e-8225-3931d9e4b556',null,'7156d223-4531-4337-b192-492ab40098f1',null,null,'ecf1b76a-6e44-42e2-a55e-87596504775b','2018-08-23 09:46:06',null)
+go
+insert into md_bizitfmap(bizinterfaceid,bizitfimpclassname,classattrid,classattrpath,classid,dr,industry,intattrid,ts,versiontype) values( '6c8722b9-911a-489b-8d0d-18bd3734fcf6',null,'6fb9ab12-49ab-4d73-96ea-8550b1e6e3de',null,'80703e94-ae67-407c-a9a6-f822482c964f',null,null,'ecf1b76a-6e44-42e2-a55e-87596504775b','2018-08-23 09:46:06',null)
+go
+insert into md_bizitfmap(bizinterfaceid,bizitfimpclassname,classattrid,classattrpath,classid,dr,industry,intattrid,ts,versiontype) values( '6c8722b9-911a-489b-8d0d-18bd3734fcf6',null,'4358c6b3-65cd-4479-9b8b-ffa90a1efe19',null,'80703e94-ae67-407c-a9a6-f822482c964f',null,null,'d32cc17b-f415-415a-923f-0764443eb102','2018-08-23 09:46:06',null)
+go
+insert into md_bizitfmap(bizinterfaceid,bizitfimpclassname,classattrid,classattrpath,classid,dr,industry,intattrid,ts,versiontype) values( '6c8722b9-911a-489b-8d0d-18bd3734fcf6',null,null,null,'80703e94-ae67-407c-a9a6-f822482c964f',null,null,'c8334364-7ab9-4266-8d4b-e74537935e46','2018-08-23 09:46:06',null)
+go
+insert into md_bizitfmap(bizinterfaceid,bizitfimpclassname,classattrid,classattrpath,classid,dr,industry,intattrid,ts,versiontype) values( '6c8722b9-911a-489b-8d0d-18bd3734fcf6',null,'57faab97-1e18-41c3-b885-851d10644101',null,'80703e94-ae67-407c-a9a6-f822482c964f',null,null,'a47e6cda-09e4-480b-923f-ec6f41e3e06c','2018-08-23 09:46:06',null)
+go
+insert into md_bizitfmap(bizinterfaceid,bizitfimpclassname,classattrid,classattrpath,classid,dr,industry,intattrid,ts,versiontype) values( '6c8722b9-911a-489b-8d0d-18bd3734fcf6',null,'f480d527-9678-4008-b29b-1a692f691bd6',null,'80703e94-ae67-407c-a9a6-f822482c964f',null,null,'89578a97-42fe-439b-827c-8eabd9e3604c','2018-08-23 09:46:06',null)
+go
+insert into md_bizitfmap(bizinterfaceid,bizitfimpclassname,classattrid,classattrpath,classid,dr,industry,intattrid,ts,versiontype) values( '6c8722b9-911a-489b-8d0d-18bd3734fcf6',null,'954a4e59-3bf8-41b9-9775-51684d89ac7e',null,'80703e94-ae67-407c-a9a6-f822482c964f',null,null,'5dd3c721-22ad-42b1-9c10-4351c236bc77','2018-08-23 09:46:06',null)
+go
+insert into md_bizitfmap(bizinterfaceid,bizitfimpclassname,classattrid,classattrpath,classid,dr,industry,intattrid,ts,versiontype) values( '6c8722b9-911a-489b-8d0d-18bd3734fcf6',null,'1dd4ecee-89a0-4277-bcbd-8e11b8562a31',null,'96ef15b7-959d-4069-849b-56144e3cd2b4',null,null,'5dd3c721-22ad-42b1-9c10-4351c236bc77','2018-08-23 09:46:06',null)
+go
+insert into md_bizitfmap(bizinterfaceid,bizitfimpclassname,classattrid,classattrpath,classid,dr,industry,intattrid,ts,versiontype) values( '6c8722b9-911a-489b-8d0d-18bd3734fcf6',null,'7bda0259-799e-4333-81ca-5fe0fcf2a237',null,'96ef15b7-959d-4069-849b-56144e3cd2b4',null,null,'89578a97-42fe-439b-827c-8eabd9e3604c','2018-08-23 09:46:06',null)
+go
+insert into md_bizitfmap(bizinterfaceid,bizitfimpclassname,classattrid,classattrpath,classid,dr,industry,intattrid,ts,versiontype) values( '6c8722b9-911a-489b-8d0d-18bd3734fcf6',null,'fb941661-6e5b-4aa1-a886-f375a8c24f1f',null,'96ef15b7-959d-4069-849b-56144e3cd2b4',null,null,'a47e6cda-09e4-480b-923f-ec6f41e3e06c','2018-08-23 09:46:06',null)
+go
+insert into md_bizitfmap(bizinterfaceid,bizitfimpclassname,classattrid,classattrpath,classid,dr,industry,intattrid,ts,versiontype) values( '6c8722b9-911a-489b-8d0d-18bd3734fcf6',null,null,null,'96ef15b7-959d-4069-849b-56144e3cd2b4',null,null,'c8334364-7ab9-4266-8d4b-e74537935e46','2018-08-23 09:46:06',null)
+go
+insert into md_bizitfmap(bizinterfaceid,bizitfimpclassname,classattrid,classattrpath,classid,dr,industry,intattrid,ts,versiontype) values( '6c8722b9-911a-489b-8d0d-18bd3734fcf6',null,'89654557-236c-41b9-918f-da3264d70576',null,'96ef15b7-959d-4069-849b-56144e3cd2b4',null,null,'d32cc17b-f415-415a-923f-0764443eb102','2018-08-23 09:46:06',null)
+go
+insert into md_bizitfmap(bizinterfaceid,bizitfimpclassname,classattrid,classattrpath,classid,dr,industry,intattrid,ts,versiontype) values( '6c8722b9-911a-489b-8d0d-18bd3734fcf6',null,'3a23461c-1480-40f7-a864-5bcdf269cebc',null,'96ef15b7-959d-4069-849b-56144e3cd2b4',null,null,'ecf1b76a-6e44-42e2-a55e-87596504775b','2018-08-23 09:46:06',null)
+go
+insert into md_bizitfmap(bizinterfaceid,bizitfimpclassname,classattrid,classattrpath,classid,dr,industry,intattrid,ts,versiontype) values( '6c8722b9-911a-489b-8d0d-18bd3734fcf6',null,'273073d1-2cc8-42c8-a595-16b8afb29566',null,'b90a7a58-d544-424c-b3eb-93620c65a6e2',null,null,'ecf1b76a-6e44-42e2-a55e-87596504775b','2018-08-23 09:46:06',null)
+go
+insert into md_bizitfmap(bizinterfaceid,bizitfimpclassname,classattrid,classattrpath,classid,dr,industry,intattrid,ts,versiontype) values( '6c8722b9-911a-489b-8d0d-18bd3734fcf6',null,'99776f4d-541e-46d8-b281-fdf379d25cff',null,'b90a7a58-d544-424c-b3eb-93620c65a6e2',null,null,'d32cc17b-f415-415a-923f-0764443eb102','2018-08-23 09:46:06',null)
+go
+insert into md_bizitfmap(bizinterfaceid,bizitfimpclassname,classattrid,classattrpath,classid,dr,industry,intattrid,ts,versiontype) values( '6c8722b9-911a-489b-8d0d-18bd3734fcf6',null,null,null,'b90a7a58-d544-424c-b3eb-93620c65a6e2',null,null,'c8334364-7ab9-4266-8d4b-e74537935e46','2018-08-23 09:46:06',null)
+go
+insert into md_bizitfmap(bizinterfaceid,bizitfimpclassname,classattrid,classattrpath,classid,dr,industry,intattrid,ts,versiontype) values( '6c8722b9-911a-489b-8d0d-18bd3734fcf6',null,'0d8f83fc-de19-4fc9-84b9-a04097cae5c0',null,'b90a7a58-d544-424c-b3eb-93620c65a6e2',null,null,'a47e6cda-09e4-480b-923f-ec6f41e3e06c','2018-08-23 09:46:06',null)
+go
+insert into md_bizitfmap(bizinterfaceid,bizitfimpclassname,classattrid,classattrpath,classid,dr,industry,intattrid,ts,versiontype) values( '6c8722b9-911a-489b-8d0d-18bd3734fcf6',null,'ab8a7580-2752-43a9-9fd2-c6017d3410f3',null,'b90a7a58-d544-424c-b3eb-93620c65a6e2',null,null,'89578a97-42fe-439b-827c-8eabd9e3604c','2018-08-23 09:46:06',null)
+go
+insert into md_bizitfmap(bizinterfaceid,bizitfimpclassname,classattrid,classattrpath,classid,dr,industry,intattrid,ts,versiontype) values( '6c8722b9-911a-489b-8d0d-18bd3734fcf6',null,'f0928317-5e7c-440a-b728-696ae3d7680e',null,'b90a7a58-d544-424c-b3eb-93620c65a6e2',null,null,'5dd3c721-22ad-42b1-9c10-4351c236bc77','2018-08-23 09:46:06',null)
+go
+insert into md_bizitfmap(bizinterfaceid,bizitfimpclassname,classattrid,classattrpath,classid,dr,industry,intattrid,ts,versiontype) values( '6c8722b9-911a-489b-8d0d-18bd3734fcf6',null,'289d684f-de1c-4ac6-aff5-6cfb6ff51af6',null,'cef69936-e28b-44b2-8034-b2f0e65f5d5e',null,null,'5dd3c721-22ad-42b1-9c10-4351c236bc77','2018-08-23 09:46:06',null)
+go
+insert into md_bizitfmap(bizinterfaceid,bizitfimpclassname,classattrid,classattrpath,classid,dr,industry,intattrid,ts,versiontype) values( '6c8722b9-911a-489b-8d0d-18bd3734fcf6',null,'7f43c049-0a68-4f32-a18c-7ad7156cdce5',null,'cef69936-e28b-44b2-8034-b2f0e65f5d5e',null,null,'89578a97-42fe-439b-827c-8eabd9e3604c','2018-08-23 09:46:06',null)
+go
+insert into md_bizitfmap(bizinterfaceid,bizitfimpclassname,classattrid,classattrpath,classid,dr,industry,intattrid,ts,versiontype) values( '6c8722b9-911a-489b-8d0d-18bd3734fcf6',null,'accf30e3-ef4c-474d-8294-8c05403fcfc1',null,'cef69936-e28b-44b2-8034-b2f0e65f5d5e',null,null,'a47e6cda-09e4-480b-923f-ec6f41e3e06c','2018-08-23 09:46:06',null)
+go
+insert into md_bizitfmap(bizinterfaceid,bizitfimpclassname,classattrid,classattrpath,classid,dr,industry,intattrid,ts,versiontype) values( '6c8722b9-911a-489b-8d0d-18bd3734fcf6',null,null,null,'cef69936-e28b-44b2-8034-b2f0e65f5d5e',null,null,'c8334364-7ab9-4266-8d4b-e74537935e46','2018-08-23 09:46:06',null)
+go
+insert into md_bizitfmap(bizinterfaceid,bizitfimpclassname,classattrid,classattrpath,classid,dr,industry,intattrid,ts,versiontype) values( '6c8722b9-911a-489b-8d0d-18bd3734fcf6',null,'ddb5b04b-d578-4aba-bd80-bba9d4f4a894',null,'cef69936-e28b-44b2-8034-b2f0e65f5d5e',null,null,'d32cc17b-f415-415a-923f-0764443eb102','2018-08-23 09:46:06',null)
+go
+insert into md_bizitfmap(bizinterfaceid,bizitfimpclassname,classattrid,classattrpath,classid,dr,industry,intattrid,ts,versiontype) values( '6c8722b9-911a-489b-8d0d-18bd3734fcf6',null,'811654a2-5c96-4a9e-97c1-136b763a7ff2',null,'cef69936-e28b-44b2-8034-b2f0e65f5d5e',null,null,'ecf1b76a-6e44-42e2-a55e-87596504775b','2018-08-23 09:46:06',null)
+go

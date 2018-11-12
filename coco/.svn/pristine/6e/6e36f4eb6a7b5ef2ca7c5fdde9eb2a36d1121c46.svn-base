@@ -1,0 +1,328 @@
+<?xml version="1.0" encoding='UTF-8'?>
+<Widget caption="门店班次列表界面" controllerClazz="nc.bs.hrsms.ta.shift.ctrl.MainViewController" i18nName="" id="main" langDir="" refId="main" sourcePackage="src/public/">
+    <Attributes>
+        <Attribute>
+            <Key>$QueryTemplate</Key>
+            <Value>
+            </Value>
+        </Attribute>
+    </Attributes>
+    <PageMetas>
+    </PageMetas>
+    <PlugoutDescs>
+    </PlugoutDescs>
+    <PluginDescs>
+        <PluginDesc id="inParam">
+            <PluginDescItem clazztype="java.util.Map" id="selid">
+            </PluginDescItem>
+        </PluginDesc>
+        <PluginDesc id="DeptChange">
+            <PluginDescItem clazztype="java.util.Map" id="deptout">
+            </PluginDescItem>
+        </PluginDesc>
+        <PluginDesc id="ReSearch">
+            <PluginDescItem clazztype="java.lang.String" id="closewindow">
+            </PluginDescItem>
+        </PluginDesc>
+    </PluginDescs>
+    <Events>
+        <Event async="true" methodName="plugininParam" onserver="true">
+            <Params>
+                <Param>
+                    <Name>keys</Name>
+                    <Value>
+                    </Value>
+                    <Desc>                        <![CDATA[java.util.Map]]>
+                    </Desc>
+                </Param>
+            </Params>
+            <Action>
+            </Action>
+        </Event>
+        <Event async="true" methodName="pluginDeptChange" onserver="true">
+            <Params>
+                <Param>
+                    <Name>keys</Name>
+                    <Value>
+                    </Value>
+                    <Desc>                        <![CDATA[java.util.Map]]>
+                    </Desc>
+                </Param>
+            </Params>
+            <Action>
+            </Action>
+        </Event>
+        <Event async="true" methodName="pluginReSearch" onserver="true">
+            <Params>
+                <Param>
+                    <Name>keys</Name>
+                    <Value>
+                    </Value>
+                    <Desc>                        <![CDATA[java.util.Map]]>
+                    </Desc>
+                </Param>
+            </Params>
+            <Action>
+            </Action>
+        </Event>
+    </Events>
+    <Models>
+        <Datasets>
+            <RefMdDataset caption="HR部门" controlwidgetopeStatus="false" enabled="false" id="$refds_hrjf_hrdept" lazyLoad="true" notNullBody="false" objMeta="hrjf.hrdept" voMeta="nc.vo.om.hrdept.HRDeptVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset caption="业务流程" controlwidgetopeStatus="false" enabled="false" id="$refds_uap_BusitypeVO" lazyLoad="true" notNullBody="false" objMeta="uap.BusitypeVO" voMeta="nc.vo.pf.pub.BusitypeVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset caption="人员基本信息" controlwidgetopeStatus="false" enabled="false" id="$refds_hrhi_bd_psndoc" lazyLoad="true" notNullBody="false" objMeta="hrhi.bd_psndoc" voMeta="nc.vo.hi.psndoc.PsndocVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <MdDataset caption="班次定义" controlwidgetopeStatus="false" enabled="false" id="ta_shoreshift" lazyLoad="false" notNullBody="false" objMeta="hrta.bdshift" voMeta="nc.vo.bd.shift.ShiftVO">
+                <FieldRelations>
+                    
+                    <FieldRelation id="pk_group_rel" needProcess="true" refDataset="$refds_uap_group" useCache="true">
+                        <MatchFields>
+                            <Field readField="name" writeField="pk_group_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_group" value="pk_group">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_org_rel" needProcess="true" refDataset="$refds_uap_org" useCache="true">
+                        <MatchFields>
+                            <Field readField="name" writeField="pk_org_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_org" value="pk_org">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                   
+                  
+                    <FieldRelation id="creator_rel" needProcess="true" refDataset="$refds_uap_user" useCache="true">
+                        <MatchFields>
+                            <Field readField="user_name" writeField="creator_user_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="cuserid" value="creator">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="modifier_rel" needProcess="true" refDataset="$refds_uap_user" useCache="true">
+                        <MatchFields>
+                            <Field readField="user_name" writeField="modifier_user_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="cuserid" value="modifier">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                </FieldRelations>
+                <Fields>
+                   
+                </Fields>
+                <Events>
+                    <Event async="true" methodName="onDataLoad" name="onDataLoad" onserver="true">
+                        <SubmitRule>
+                        </SubmitRule>
+                        <Params>
+                            <Param>
+                                <Name>dataLoadEvent</Name>
+                                <Value>
+                                </Value>
+                                <Desc>                                    <![CDATA[nc.uap.lfw.core.event.DataLoadEvent]]>
+                                </Desc>
+                            </Param>
+                        </Params>
+                        <Action>
+                        </Action>
+                    </Event>
+                    <Event async="true" methodName="onAfterRowSelect" name="onAfterRowSelect" onserver="true">
+                        <SubmitRule>
+                        </SubmitRule>
+                        <Params>
+                            <Param>
+                                <Name>datasetEvent</Name>
+                                <Value>
+                                </Value>
+                                <Desc>                                    <![CDATA[nc.uap.lfw.core.event.DatasetEvent]]>
+                                </Desc>
+                            </Param>
+                        </Params>
+                        <Action>
+                        </Action>
+                    </Event>
+                </Events>
+            </MdDataset>
+           
+            <RefMdDataset caption="组织_集团" controlwidgetopeStatus="false" enabled="false" id="$refds_uap_group" lazyLoad="true" notNullBody="false" objMeta="uap.group" voMeta="nc.vo.org.GroupVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset caption="用户" controlwidgetopeStatus="false" enabled="false" id="$refds_uap_user" lazyLoad="true" notNullBody="false" objMeta="uap.user" voMeta="nc.vo.sm.UserVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset caption="组织" controlwidgetopeStatus="false" enabled="false" id="$refds_uap_org" lazyLoad="true" notNullBody="false" objMeta="uap.org" voMeta="nc.vo.org.OrgVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+        </Datasets>
+        <ComboDatas>
+          	<MDComboDataConf caption="班次定义_上班日期" fullclassName="85f950ce-a2bc-4ccc-8072-2a3d7c93bf7d" id="combo_ta_shoreshift_beginday">
+            </MDComboDataConf>
+            <MDComboDataConf caption="班次定义_下班日期" fullclassName="85f950ce-a2bc-4ccc-8072-2a3d7c93bf7d" id="combo_ta_shoreshift_endday">
+            </MDComboDataConf>
+            <MDComboDataConf caption="班次定义_启用状态" fullclassName="6b533ffa-3e43-4147-8670-ba0f5471fd40" id="combo_ta_shoreshift_enablestate">
+            </MDComboDataConf>
+        </ComboDatas>
+        <RefNodes>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" hrOrgs="false" i18nName="" id="refnode_ta_shoreshift_pk_group_name" langDir="" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" read="false" readDs="masterDs" readFields="pk_group,name" refId="" refcode="集团" refnodeDelegator="" relationRefNodeId="" selLeafOnly="false" text="班次定义_集团" usePower="false" writeDs="ta_shoreshift" writeFields="pk_group,pk_group_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" hrOrgs="false" i18nName="" id="refnode_ta_shoreshift_pk_org_name" langDir="" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" read="false" readDs="masterDs" readFields="pk_org,name" refId="" refcode="业务单元(所有)" refnodeDelegator="" relationRefNodeId="" selLeafOnly="false" text="班次定义_业务单元(所有)" usePower="false" writeDs="ta_shoreshift" writeFields="pk_org,pk_org_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" hrOrgs="false" i18nName="" id="refnode_ta_shoreshift_creator_user_name" langDir="" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" read="false" readDs="masterDs" readFields="cuserid,user_name" refId="" refcode="用户" refnodeDelegator="" relationRefNodeId="" selLeafOnly="false" text="班次定义_用户" usePower="false" writeDs="ta_shoreshift" writeFields="creator,creator_user_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" hrOrgs="false" i18nName="" id="refnode_ta_shoreshift_modifier_user_name" langDir="" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" read="false" readDs="masterDs" readFields="cuserid,user_name" refId="" refcode="用户" refnodeDelegator="" relationRefNodeId="" selLeafOnly="false" text="班次定义_用户" usePower="false" writeDs="ta_shoreshift" writeFields="modifier,modifier_user_name">
+            </NCRefNode>
+        </RefNodes>
+    </Models>
+    <Components>
+        <GridComp autoRowHeight="false" canCopy="true" caption="班次定义" checkBoxModel="1" dataset="ta_shoreshift" editable="true" enabled="true" expandTree="false" id="ta_shoreshiftGrid" multiSelect="false" multiSelectShow="true" onPaste="" pagenationTop="false" reference="false" selfDefImageBtnRender="" showColInfo="false" showForm="false" showHeader="true" showImageBtn="false" showNumCol="false" showSumRow="false" showTree="true" sortable="true" visible="true">
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="pk_shift" fixedHeader="false" i18nName="" id="pk_shift" imageOnly="false" nullAble="false" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="主键" textAlign="left" visible="false" width="120">
+            </Column>
+           
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="code" fixedHeader="false" i18nName="" id="code" imageOnly="false" langDir="" nullAble="true" renderType="LnkCompRender" showCheckBox="true" sortable="true" sumCol="false" text="班次编码" textAlign="left" visible="true" width="120">
+            </Column>
+             <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="name" fixedHeader="false" i18nName="" id="name" imageOnly="false" langDir="" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="名称" textAlign="left" visible="true" width="120">
+            </Column>
+            
+            <Column autoExpand="false" dataType="UFDouble" editable="true" editorType="DecimalText" field="gzsj" fixedHeader="false" i18nName="" id="gzsj" imageOnly="false" langDir="" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="工作时长(小时)" textAlign="left" visible="true" width="120">
+            </Column>
+            
+             <Column autoExpand="false" dataType="Integer" editable="true" editorType="ComboBox" field="beginday" fixedHeader="false" i18nName="" id="beginday" imageOnly="false" langDir="" nullAble="true" refComboData="combo_ta_shoreshift_beginday" renderType="ComboRender" showCheckBox="true" sortable="true" sumCol="false" text="上班日期" textAlign="right" visible="true" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="begintime" fixedHeader="false" i18nName="" id="begintime" imageOnly="false" langDir="" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="上班时间" textAlign="left" visible="true" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="Integer" editable="true" editorType="ComboBox" field="endday" fixedHeader="false" i18nName="" id="endday" imageOnly="false" langDir="" nullAble="true" refComboData="combo_ta_shoreshift_endday" renderType="ComboRender" showCheckBox="true" sortable="true" sumCol="false" text="下班日期" textAlign="left" visible="true" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="endtime" fixedHeader="false" i18nName="" id="endtime" imageOnly="false" langDir="" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="下班时间" textAlign="left" visible="true" width="120">
+            </Column>
+            
+            <Column autoExpand="false" dataType="Integer" editable="true" editorType="ComboBox" field="enablestate" fixedHeader="false" i18nName="" id="enablestate" imageOnly="false" langDir="" nullAble="true" refComboData="combo_ta_shoreshift_enablestate" renderType="ComboRender" showCheckBox="true" sortable="true" sumCol="false" text="启用状态" textAlign="left" visible="true" width="120">
+            </Column>
+            
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="pk_group" fixedHeader="false" i18nName="" id="pk_group" imageOnly="false" nullAble="false" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="集团主键" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="Reference" field="pk_group_name" fixedHeader="false" i18nName="" id="pk_group_name" imageOnly="false" nullAble="true" refNode="refnode_ta_shoreshift_pk_group_name" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="集团主键" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="pk_org" fixedHeader="false" i18nName="" id="pk_org" imageOnly="false" nullAble="false" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="组织主键" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="Reference" field="pk_org_name" fixedHeader="false" i18nName="" id="pk_org_name" imageOnly="false" nullAble="true" refNode="refnode_ta_shoreshift_pk_org_name" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="组织主键" textAlign="left" visible="false" width="120">
+            </Column>
+           
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="creator" fixedHeader="false" i18nName="" id="creator" imageOnly="false" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="创建人" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="Reference" field="creator_user_name" fixedHeader="false" i18nName="" id="creator_user_name" imageOnly="false" nullAble="true" refNode="refnode_ta_shoreshift_creator_user_name" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="创建人" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="UFDateTime" editable="true" editorType="DateTimeText" field="creationtime" fixedHeader="false" i18nName="" id="creationtime" imageOnly="false" nullAble="true" renderType="DateTimeRender" showCheckBox="true" sortable="true" sumCol="false" text="创建时间" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="modifier" fixedHeader="false" i18nName="" id="modifier" imageOnly="false" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="最后修改人" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="Reference" field="modifier_user_name" fixedHeader="false" i18nName="" id="modifier_user_name" imageOnly="false" nullAble="true" refNode="refnode_ta_shoreshift_modifier_user_name" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="最后修改人" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="UFDateTime" editable="true" editorType="DateTimeText" field="modifiedtime" fixedHeader="false" i18nName="" id="modifiedtime" imageOnly="false" nullAble="true" renderType="DateTimeRender" showCheckBox="true" sortable="true" sumCol="false" text="最后修改时间" textAlign="left" visible="false" width="120">
+            </Column>
+        </GridComp>
+    </Components>
+    <Menus>
+        <MenuBarComp id="menu_list">
+            <MenuItem i18nName="w_ta-001019" id="list_add" langDir="node_ta-res" modifiers="2" showModel="1" stateManager="nc.bs.hrsms.ta.shift.common.Init_StateManager" text="新增">
+                <Events>
+                    <Event async="true" methodName="addShift" name="onclick" onserver="true">
+                        <SubmitRule>
+                        </SubmitRule>
+                        <Params>
+                            <Param>
+                                <Name>mouseEvent</Name>
+                                <Value>
+                                </Value>
+                                <Desc>                                    <![CDATA[]]>
+                                </Desc>
+                            </Param>
+                        </Params>
+                        <Action>
+                        </Action>
+                    </Event>
+                </Events>
+            </MenuItem>
+            <MenuItem i18nName="" id="list_delete" langDir="" modifiers="2" showModel="1" stateManager="nc.bs.hrsms.ta.shift.common.Init_StateManager" text="删除">
+                <Events>
+                    <Event async="true" methodName="deleteShift" name="onclick" onserver="true">
+                        <SubmitRule>
+                        </SubmitRule>
+                        <Params>
+                            <Param>
+                                <Name>mouseEvent</Name>
+                                <Value>
+                                </Value>
+                                <Desc>                                    <![CDATA[]]>
+                                </Desc>
+                            </Param>
+                        </Params>
+                        <Action>
+                        </Action>
+                    </Event>
+                </Events>
+            </MenuItem>
+            <MenuItem id="m_" modifiers="3" sep="true" showModel="1" text="m_">
+            </MenuItem>
+            <MenuItem i18nName="w_ta-001023" id="list_enable" langDir="" modifiers="2" showModel="1" stateManager="nc.bs.hrsms.ta.shift.common.Init_StateManager" text="启用">
+                <Events>
+                    <Event async="true" methodName="enableShift" name="onclick" onserver="true">
+                        <SubmitRule>
+                        </SubmitRule>
+                        <Params>
+                            <Param>
+                                <Name>mouseEvent</Name>
+                                <Value>
+                                </Value>
+                                <Desc>                                    <![CDATA[]]>
+                                </Desc>
+                            </Param>
+                        </Params>
+                        <Action>
+                        </Action>
+                    </Event>
+                </Events>
+            </MenuItem>
+            <MenuItem i18nName="" id="list_disable" langDir="" modifiers="2" showModel="1" stateManager="nc.bs.hrsms.ta.shift.common.Init_StateManager" text="停用">
+                <Events>
+                    <Event async="true" methodName="disableShift" name="onclick" onserver="true">
+                        <SubmitRule>
+                        </SubmitRule>
+                        <Params>
+                            <Param>
+                                <Name>mouseEvent</Name>
+                                <Value>
+                                </Value>
+                                <Desc>                                    <![CDATA[]]>
+                                </Desc>
+                            </Param>
+                        </Params>
+                        <Action>
+                        </Action>
+                    </Event>
+                </Events>
+            </MenuItem>
+        </MenuBarComp>
+    </Menus>
+</Widget>

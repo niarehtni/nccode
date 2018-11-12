@@ -1,0 +1,208 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE beans PUBLIC "-//SPRING//DTD BEAN//EN" "http://www.springframework.org/dtd/spring-beans.dtd">
+
+<beans>
+
+	<!-- 环境变量 -->
+	<bean id="context" class="nc.vo.uif2.LoginContext">
+	</bean>
+	
+	<!-- 模型部分配置########################################################### -->
+	
+	<!-- 应用服务类，负责进行模型操作的处理 -->
+	<bean id="modelService" class="nc.ui.wa.othersource.model.OtherSourceModelService">
+			<property name="beanId" value="3834dbf1-a7ff-4300-aa16-b6db0255068b" />
+	</bean>
+
+	<!-- 对象转换器工厂，由此获取操作对象的特征信息 。模型属性之一-->
+	<bean id="boadatorfactory" class="nc.vo.bd.meta.BDObjectAdpaterFactory" />
+
+
+
+		<!-- 管理应用模型 -->
+	<bean id="modelDataManager" class="nc.ui.hr.uif2.model.HrDefaultModelDataManager">
+		<property name="model" ref="HAppModel"></property>
+		<property name="service" ref="modelService"></property>
+	    <property name="queryDelegater" ref="modelService" />
+		<property name="context" ref="context"></property>
+	</bean>
+
+	<!-- 界面元素 ###########################################################-->
+
+	<!-- 模板容器 -->
+	<bean id="templateContainer" class="nc.ui.uif2.editor.TemplateContainer"
+		init-method="load">
+		<property name="context" ref="context" />
+		<property name="nodeKeies">
+			<list>
+				<value>othersou</value>
+			</list>
+		</property>
+	</bean>
+	
+	<!-- 层次结构构造策略 -->
+	<bean id="treeCreateStrategy" class="nc.vo.bd.meta.BDObjectTreeCreateStrategy">
+		<property name="factory" ref="boadatorfactory"/>
+		<property name="rootName" value="外部数据源设置"></property>
+	</bean> 
+	
+	<!-- 层次应用模型 -->
+	<bean id="HAppModel" class="nc.ui.wa.othersource.model.OtherHierachicalDataAppModel">
+		<property name="service">
+			<ref bean="modelService" />
+		</property>
+		<property name="treeCreateStrategy">
+			<ref bean="treeCreateStrategy" />
+		</property>
+		<property name="businessObjectAdapterFactory">
+			<ref bean="boadatorfactory" />
+		</property>
+		<property name="context">
+			<ref bean="context" />
+		</property>
+	</bean>
+	
+	
+	
+	<!-- 界面元素 ###########################################################-->
+	<!--树控件-->
+	<bean id="treePanel" class="nc.ui.uif2.components.TreePanel" init-method="initUI">
+		<property name="model" ref="HAppModel"></property>
+	</bean>
+	<!--卡控件-->
+	<bean id="billForm" class="nc.ui.hr.uif2.view.HrBillFormEditor" init-method="initUI">
+		<property name="model" ref="HAppModel"></property>
+		<property name="nodekey" value="othersou"></property>
+		<property name="pos"><value>head</value></property>
+		<property name="templateContainer" ref="templateContainer"/>
+	</bean>
+<!-- 	<bean id="billForm" class="nc.ui.uif2.editor.BillForm" -->
+<!-- 		init-method="initUI"> -->
+<!-- 		<property name="model" ref="billModel"></property> -->
+<!-- 		<property name="pos"><value>head</value></property> -->
+<!-- 		<property name="nodekey"><value>othersou</value></property> -->
+<!-- 		<property name="templateContainer" ref="templateContainer"></property> -->
+<!-- 	</bean> -->
+
+  
+	<!--异常关闭处理-->
+	<bean id="ClosingListener" class="nc.ui.uif2.FunNodeClosingHandler">
+		<property name="model" ref="HAppModel" />
+		<property name="saveaction" ref="SaveAction" />
+		<property name="cancelaction" ref="CancelAction" />
+	</bean>
+  
+
+
+	<!--
+		Actions ###########################################################
+	-->
+	<bean id="AddAction" class="nc.ui.hr.uif2.action.AddAction">
+		<property name="model" ref="HAppModel"></property>
+	</bean>
+	<bean id="EditAction" class="nc.ui.hr.uif2.action.EditAction">
+		<property name="model" ref="HAppModel"></property>
+	</bean>
+	<bean id="DelAction" class="nc.ui.hr.uif2.action.DeleteAction">
+		<property name="model" ref="HAppModel" />
+		<property name="exceptionHandler" ref="exceptionHandler" />	
+		<property name="validationService" ref="deleteValidator"></property>
+	</bean>
+	
+	
+	<bean id="exceptionHandler" class="nc.ui.wa.pub.action.DelExceptionHanler">
+		<property name="context">
+			<ref bean="context" />
+		</property>
+	</bean>
+	
+
+	<bean id="SaveAction" class="nc.ui.hr.uif2.action.SaveAction">
+		<property name="model" ref="HAppModel" />
+		<property name="editor" ref="billForm" />
+		<property name="validationService" ref="billNotNullValidator"></property>
+	</bean>
+
+	<bean id="billNotNullValidator" class="nc.ui.hr.uif2.validator.BillNotNullValidateService">
+		<constructor-arg ref="billForm">
+		</constructor-arg>
+		<property name="nextValidateService" ref="saveValidator" />
+	</bean>
+	
+	<bean id="saveValidator" class="nc.ui.wa.othersource.action.SaveValidatorService"/>
+	<bean id="deleteValidator" class="nc.ui.wa.othersource.action.DeleteValidatorService"/>
+	
+	
+	<bean id="CancelAction" class="nc.ui.hr.uif2.action.CancelAction">
+		<property name="model" ref="HAppModel" />
+	</bean>
+
+    <bean id="RefreshAction" class="nc.ui.hr.uif2.action.RefreshAction">
+		<property name="model" ref="HAppModel" />
+		<property name="dataManager" ref="modelDataManager"></property>
+		<property name="formEditor" ref="billForm"></property>		
+	</bean>
+    
+
+	<bean id="nullaction" class="nc.funcnode.ui.action.SeparatorAction" />
+
+	
+	
+	<!-- 界面布局总装########################################################### -->
+	<bean id="container" class="nc.ui.uif2.TangramContainer" init-method="initUI">
+		<property name="tangramLayoutRoot">
+			<bean class="nc.ui.uif2.tangramlayout.node.VSNode">
+				<property name="showMode" value="NoDivider" />
+				<property name="up">
+					<bean class="nc.ui.uif2.tangramlayout.node.CNode">
+						<property name="component" ref="orgpanel" />
+					</bean>
+				</property>
+				<property name="down">
+					<bean class="nc.ui.uif2.tangramlayout.node.HSNode">
+						<property name="left">
+							<bean class="nc.ui.uif2.tangramlayout.node.CNode">
+								<property name="component" ref="treePanel"></property>
+							</bean>
+						</property>
+						<property name="right">
+							<bean class="nc.ui.uif2.tangramlayout.node.CNode">
+								<property name="component" ref="billForm"></property>
+							</bean>
+						</property>
+						<property name="dividerLocation"><value>0.2f</value></property>
+					</bean>
+				</property>
+				<property name="dividerLocation" value="30f" />
+			</bean>
+		</property>
+		
+		<property name="actions">
+			<list>
+				<ref bean="AddAction" />
+				<ref bean="EditAction" />
+				<ref bean="DelAction" />
+				<ref bean="nullaction" />
+	            <ref bean="RefreshAction" />
+
+			</list>
+		</property>
+		<property name="editActions">
+			<list>
+				<ref bean="SaveAction" />
+				<ref bean="nullaction" />
+				<ref bean="CancelAction" />
+			</list>
+		</property>
+		<property name="model" ref="HAppModel" />
+	</bean>
+	
+	<bean id="orgpanel" class="nc.ui.hr.uif2.view.PrimaryOrgPanel"
+		init-method="initUI">
+		<property name="model" ref="HAppModel" />
+		<property name="dataManager" ref="modelDataManager" />
+		<property name="pk_orgtype" value="HRORGTYPE00000000000" />
+	</bean>
+	
+</beans>

@@ -1,0 +1,2 @@
+insert into md_component(createtime,creator,description,displayname,dr,fromsourcebmf,help,id,industry,isbizmodel,modifier,modifytime,name,namespace,ownmodule,preload,resid,resmodule,ts,version,versiontype) values( '2009-08-26 16:43:40','zhoucx',null,'公共薪资项目',0,'Y','BDMODE,URC,DOC','c314d979-3ddd-47a2-adb1-12c2640d9ef0','0','N','YONYOU NC','2018-08-14 16:00:22','waitem','hrwa','hrwa',null,'2waitem-000017','waitem','2018-08-14 16:03:21','106',0)
+go

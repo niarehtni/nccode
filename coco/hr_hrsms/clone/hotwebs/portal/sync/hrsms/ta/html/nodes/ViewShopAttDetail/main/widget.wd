@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding='UTF-8'?>
+<Widget controllerClazz="nc.bs.hrsms.ta.sss.ShopAttendance.ctrl.ViewShopAttDetailViewMain" dialog="false" i18nName="a_pub-000201" langDir="node_pub-res" caption="签卡信息" id="main" refId="main" sourcePackage="src/public/">
+    <PlugoutDescs>
+    </PlugoutDescs>
+    <PluginDescs>
+    </PluginDescs>
+    <Models>
+        <Datasets>
+            <RefMdDataset caption="签卡原因(自定义档案)" controlwidgetopeStatus="false" enabled="true" id="$refds_uap_Defdoc_HRTA004" lazyLoad="true" notNullBody="false" objMeta="uap.Defdoc-HRTA004_0xx" voMeta="nc.vo.bd.defdoc.DefdocVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset caption="用户" controlwidgetopeStatus="false" enabled="false" id="$refds_uap_user" lazyLoad="true" notNullBody="false" objMeta="uap.user" voMeta="nc.vo.sm.UserVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset caption="考勤机" controlwidgetopeStatus="false" enabled="false" id="$refds_hrta_tbmmachine" lazyLoad="true" notNullBody="false" objMeta="hrta.tbmmachine" voMeta="nc.vo.ta.machineset.MachineVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset caption="考勤地点(自定义档案)" controlwidgetopeStatus="false" enabled="false" id="$refds_uap_Defdoc_HRTA001" lazyLoad="true" notNullBody="false" objMeta="uap.Defdoc-HRTA001_0xx" voMeta="nc.vo.bd.defdoc.DefdocVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <Dataset controlwidgetopeStatus="false" enabled="false" id="dsImportData" lazyLoad="false" notNullBody="false">
+                <FieldRelations>
+                    <FieldRelation id="ref_idata_signreason" needProcess="true" refDataset="$refds_uap_Defdoc_HRTA004">
+                        <MatchFields>
+                            <Field iscontains="Y" ismatch="Y" readField="pk_defdoc" writeField="signreason">
+                            </Field>
+                            <Field readField="name" writeField="signreason_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_defdoc" value="signreason">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="ref_idata_user" needProcess="true" refDataset="$refds_uap_user">
+                        <MatchFields>
+                            <Field iscontains="Y" ismatch="Y" readField="cuserid" writeField="creator">
+                            </Field>
+                            <Field readField="user_name" writeField="creator_user_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="cuserid" value="creator">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="ref_idata_place" needProcess="true" refDataset="$refds_uap_Defdoc_HRTA001">
+                        <MatchFields>
+                            <Field iscontains="Y" ismatch="Y" readField="pk_defdoc" writeField="pk_place">
+                            </Field>
+                            <Field readField="name" writeField="pk_place_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_defdoc" value="pk_place">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="ref_idata_machine" needProcess="true" refDataset="$refds_hrta_tbmmachine">
+                        <MatchFields>
+                            <Field iscontains="Y" ismatch="Y" readField="pk_machineset" writeField="pk_machine">
+                            </Field>
+                            <Field readField="machinename" writeField="pk_machine_machinename">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_machineset" value="pk_machine">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                </FieldRelations>
+                <Fields>
+                    <Field dataType="String" i18nName="w_ta-000220" id="timecardid" langDir="node_ta-res" nullAble="true" primaryKey="false" text="考勤卡号">
+                    </Field>
+                    <Field dataType="UFDateTime" i18nName="w_ta-001138" id="datetime" langDir="node_ta-res" nullAble="true" primaryKey="false" text="刷卡数据">
+                    </Field>
+                    <Field dataType="Integer" id="timeflag" nullAble="true" primaryKey="false" text="timeflag">
+                    </Field>
+                    <Field dataType="Integer" id="checkflag" nullAble="true" primaryKey="false" text="checkflag">
+                    </Field>
+                    <Field dataType="String" id="pk_machine" nullAble="true" primaryKey="false" text="pk_machine">
+                    </Field>
+                    <Field dataType="String" i18nName="w_ta-001129" id="pk_machine_machinename" langDir="node_ta-res" nullAble="true" primaryKey="false" sourceField="pk_machine" text="考勤机名称">
+                    </Field>
+                    <Field dataType="String" id="pk_place" nullAble="true" primaryKey="false" text="pk_place">
+                    </Field>
+                    <Field dataType="String" i18nName="w_ta-001130" id="pk_place_name" langDir="node_ta-res" nullAble="true" primaryKey="false" sourceField="pk_place" text="考勤地点">
+                    </Field>
+                    <Field dataType="UFBoolean" id="placeabnormal" nullAble="true" primaryKey="false" text="placeabnormal">
+                    </Field>
+                    <Field dataType="String" id="signreason" nullAble="true" primaryKey="false" text="signreason">
+                    </Field>
+                    <Field dataType="String" i18nName="w_ta-001131" id="signreason_name" langDir="node_ta-res" nullAble="true" primaryKey="false" sourceField="signreason" text="签卡原因">
+                    </Field>
+                    <Field dataType="String" id="creator" nullAble="true" primaryKey="false" text="creator">
+                    </Field>
+                    <Field dataType="String" i18nName="w_ta-001132" id="creator_user_name" langDir="node_ta-res" nullAble="true" primaryKey="false" sourceField="creator" text="用户名称">
+                    </Field>
+                    <Field dataType="UFDateTime" id="creationtime" nullAble="true" primaryKey="false" text="creationtime">
+                    </Field>
+                </Fields>
+                <Events>
+                    <Event async="true" jsEventClaszz="nc.uap.lfw.core.event.conf.DatasetListener" methodName="onDataLoad_dsImportData" name="onDataLoad" onserver="true">
+                        <SubmitRule cardSubmit="false" panelSubmit="false" tabSubmit="false">
+                        </SubmitRule>
+                        <Params>
+                            <Param>
+                                <Name>dataLoadEvent</Name>
+                                <Value>
+                                </Value>
+                                <Desc>                                    <![CDATA[nc.uap.lfw.core.event.DataLoadEvent]]>
+                                </Desc>
+                            </Param>
+                        </Params>
+                        <Action>
+                        </Action>
+                    </Event>
+                </Events>
+            </Dataset>
+        </Datasets>
+        <ComboDatas>
+            <MDComboDataConf caption="刷/签卡信息" fullclassName="f5932e0d-836f-4599-8691-ec2b64233712" id="combo_check_flag">
+            </MDComboDataConf>
+            <MDComboDataConf caption="刷/签卡信息" fullclassName="3e145fe4-dfba-418b-80b7-d855a1b5b7c0" id="combo_time_flag">
+            </MDComboDataConf>
+        </ComboDatas>
+    </Models>
+    <Components>
+        <GridComp autoRowHeight="false" canCopy="false" dataset="dsImportData" editable="true" enabled="true" expandTree="false" id="tblImportData" multiSelect="false" pagenationTop="false" reference="false" selfDefImageBtnRender="" showColInfo="false" showHeader="true" showImageBtn="false" showNumCol="false" showSumRow="false" sortable="true" visible="true">
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="timecardid" fixedHeader="false" i18nName="w_ta-000220" id="timecardid" imageOnly="false" langDir="node_ta-res" nullAble="true" renderType="DefaultRender" showCheckBox="false" sortable="true" sumCol="false" text="考勤卡号" textAlign="left" visible="true" width="90">
+            </Column>
+            <Column autoExpand="false" dataType="UFDateTime" editable="true" editorType="DateTimeText" field="datetime" fixedHeader="false" i18nName="w_ta-001138" id="datetime" imageOnly="false" langDir="node_ta-res" nullAble="true" renderType="DateTimeRender" showCheckBox="false" sortable="true" sumCol="false" text="刷/签卡时间" textAlign="left" visible="true" width="150">
+            </Column>
+            <Column autoExpand="false" dataType="Integer" editable="true" editorType="ComboBox" field="timeflag" fixedHeader="false" i18nName="w_ta-001139" id="timeflag" imageOnly="false" langDir="node_ta-res" nullAble="true" refComboData="combo_time_flag" renderType="ComboRender" showCheckBox="false" sortable="true" sumCol="false" text="卡类型" textAlign="right" visible="true" width="80">
+            </Column>
+            <Column autoExpand="false" dataType="Integer" editable="true" editorType="ComboBox" field="checkflag" fixedHeader="false" i18nName="w_ta-001140" id="checkflag" imageOnly="false" langDir="node_ta-res" nullAble="true" refComboData="combo_check_flag" renderType="ComboRender" showCheckBox="false" sortable="true" sumCol="false" text="进出标识" textAlign="right" visible="true" width="80">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="pk_machine_machinename" fixedHeader="false" i18nName="w_ta-001234" id="pk_machine_machinename" imageOnly="false" langDir="node_ta-res" nullAble="true" renderType="DefaultRender" showCheckBox="false" sortable="true" sumCol="false" text="考勤机" textAlign="left" visible="true" width="100">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="pk_place_name" fixedHeader="false" i18nName="w_ta-001130" id="pk_place_name" imageOnly="false" langDir="node_ta-res" nullAble="true" renderType="DefaultRender" showCheckBox="false" sortable="true" sumCol="false" text="刷卡地点" textAlign="left" visible="true" width="80">
+            </Column>
+            <Column autoExpand="false" dataType="UFBoolean" editable="true" editorType="CheckBox" field="placeabnormal" fixedHeader="false" i18nName="w_ta-001141" id="placeabnormal" imageOnly="false" langDir="node_ta-res" nullAble="true" renderType="BooleanRender" showCheckBox="false" sortable="true" sumCol="false" text="地点异常" textAlign="center" visible="true" width="80">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="signreason_name" fixedHeader="false" i18nName="w_ta-001131" id="signreason_name" imageOnly="false" langDir="node_ta-res" nullAble="true" renderType="DefaultRender" showCheckBox="false" sortable="true" sumCol="false" text="签卡原因" textAlign="left" visible="true" width="80">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="creator_user_name" fixedHeader="false" i18nName="w_ta-001142" id="creator_user_name" imageOnly="false" langDir="node_ta-res" nullAble="true" renderType="DefaultRender" showCheckBox="false" sortable="true" sumCol="false" text="处理人" textAlign="left" visible="true" width="80">
+            </Column>
+            <Column autoExpand="false" dataType="UFDateTime" editable="true" editorType="DateTimeText" field="creationtime" fixedHeader="false" i18nName="w_ta-001143" id="creationtime" imageOnly="false" langDir="node_ta-res" nullAble="true" renderType="DateTimeRender" showCheckBox="false" sortable="true" sumCol="false" text="处理时间" textAlign="left" visible="true" width="150">
+            </Column>
+        </GridComp>
+    </Components>
+    <Menus>
+    </Menus>
+</Widget>

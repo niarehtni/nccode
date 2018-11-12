@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="gbk"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+<bean id="menuItem" class="nc.pubapp.pade.funcmodel.vo.MenuItem"><property name="dr" value="0"/>
+<property name="funModelFilePath" value="hrta/designmodel/funcmodel/segrule/funcregis/60170segrule.menu"/>
+<property name="funcode" value="60170segrule"/>
+<property name="ismenutype" value="false"/>
+<property name="menuitemcode" value="6017100110"/>
+<property name="menuitemname" value="加班分段依据"/>
+<property name="pk_menuitem" value="0001ZZ10000000015QBF"/>
+<property name="resid" value="D6017100110"/>
+<property name="ts" value="2018-04-22 18:08:45"/>
+</bean>
+
+</beans>

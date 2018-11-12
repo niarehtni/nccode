@@ -1,0 +1,52 @@
+package nc.ui.ta.teamcalendar.view.batchchangedaytype;
+
+
+import nc.bs.framework.common.NCLocator;
+import nc.itf.ta.ITeamCalendarQueryMaintain;
+import nc.ui.hr.uif2.model.HRWizardModel;
+import nc.ui.pub.beans.wizard.IWizardStepListener;
+import nc.ui.pub.beans.wizard.WizardStepEvent;
+import nc.ui.pub.beans.wizard.WizardStepException;
+import nc.ui.querytemplate.querytree.FromWhereSQL;
+import nc.ui.ta.teamcalendar.view.batchchange.SelectTeamPanelForBatchChange;
+import nc.vo.bd.team.team01.entity.TeamHeadVO;
+import nc.vo.logging.Debug;
+import nc.vo.pub.BusinessException;
+import nc.vo.pub.BusinessRuntimeException;
+import nc.vo.pub.lang.UFLiteralDate;
+
+public class ConfirmTeamStepListenerForBatchChangeDayType implements IWizardStepListener {
+
+	@Override
+	public void stepActived(WizardStepEvent event) throws WizardStepException {
+		ConfirmTeamStepForBatchChangeDayType currStep = (ConfirmTeamStepForBatchChangeDayType)event.getStep();
+		HRWizardModel model = (HRWizardModel)currStep.getModel();
+		if(!(model.getStepWhenAction() instanceof SelectTeamStepForBatchChangeDayType))
+			return;
+		SelectTeamStepForBatchChangeDayType selectTeamStep = (SelectTeamStepForBatchChangeDayType)model.getSteps().get(0);
+		SelectTeamPanelForBatchChange selectTeamPanel = selectTeamStep.getTeamPanelForBatchChangeDayType();
+		FromWhereSQL fromWhereSQL =  selectTeamPanel.getQuerySQL();
+		String pk_org = selectTeamPanel.getPK_BU();
+		UFLiteralDate beginDate = selectTeamPanel.getBeginDate();
+		UFLiteralDate endDate = selectTeamPanel.getEndDate();
+		// 调用班组接口查询业务单元的班组信息
+		TeamHeadVO[] vos = null;
+		ITeamCalendarQueryMaintain queryService = NCLocator.getInstance().lookup(ITeamCalendarQueryMaintain.class);
+		try {
+			vos = queryService.queryTeamVOsByConditionAndOverride(pk_org, fromWhereSQL, beginDate, endDate,true);
+			//vos = queryService.queryTeamVOsByConditionAndOverrideWithOutDate(pk_org, fromWhereSQL);
+		} catch (BusinessException e) {
+			Debug.error(e.getMessage(), e);
+			throw new BusinessRuntimeException(e.getMessage(), e);
+		}
+		currStep.getTeamPanelForBatchChangeDayType().setFormVOs(vos);
+	}
+
+	@Override
+	public void stepDisactived(WizardStepEvent event)
+			throws WizardStepException {
+		// TODO Auto-generated method stub
+		
+	}
+
+}

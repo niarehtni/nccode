@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding='UTF-8'?>
+<UIMeta chart="0" flowmode="true" id="CreditCardRecordList_um" externalcss="/lfw/frame/device_pc/themes/${theme}/ext/hrss/textnavigation.css" includejs="ui/jquery-ui-core.js,ui/jquery-ui-widget.js,textnavigation.js" jquery="1" jsEditor="0" jsExcel="0">
+    <FlowhLayout id="flowhlayout5023">
+        <FlowhPanel id="panelh15023">
+            <Widget id="main">
+            </Widget>
+        </FlowhPanel>
+    </FlowhLayout>
+</UIMeta>

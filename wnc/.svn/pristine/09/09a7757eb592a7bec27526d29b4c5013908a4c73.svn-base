@@ -1,0 +1,230 @@
+package nc.impl.trn.listener;
+
+import java.util.ArrayList;
+import java.util.Collection;
+
+import nc.bs.businessevent.BusinessEvent;
+import nc.bs.businessevent.IBusinessEvent;
+import nc.bs.businessevent.IBusinessListener;
+import nc.bs.dao.BaseDAO;
+import nc.bs.framework.common.NCLocator;
+import nc.itf.ta.IPsnCalendarManageService;
+import nc.jdbc.framework.processor.ColumnProcessor;
+import nc.ui.bd.team.team01.serviceproxy.TeamMaintainService;
+import nc.vo.bd.team.team01.entity.AggTeamVO;
+import nc.vo.bd.team.team01.entity.TeamHeadVO;
+import nc.vo.bd.team.team01.entity.TeamItemVO;
+import nc.vo.hi.psndoc.PsnJobVO;
+import nc.vo.hi.pub.HiBatchEventValueObject;
+import nc.vo.hi.pub.HiEventValueObject;
+import nc.vo.pub.BusinessException;
+import nc.vo.pub.VOStatus;
+import nc.vo.pub.lang.UFBoolean;
+import nc.vo.pub.lang.UFLiteralDate;
+
+import org.apache.commons.lang.StringUtils;
+
+public class PsnjobShiftChangeBusinessListener implements IBusinessListener {
+	private BaseDAO baseDao = null;
+
+	@Override
+	public void doAction(IBusinessEvent eventObject) throws BusinessException {
+		if (!(eventObject instanceof BusinessEvent)) {
+			return;
+		}
+
+		BusinessEvent be = (BusinessEvent) eventObject;
+		Object eventParams = be.getObject();
+
+		if (eventParams == null) {
+			return;
+		}
+
+		HiEventValueObject[] hiEventValueObjectArray = handleEventParamters(eventParams);
+
+		dealPsnShift(hiEventValueObjectArray);
+	}
+
+	private HiEventValueObject[] handleEventParamters(Object eventParams) {
+
+		HiEventValueObject[] hiEventValueObjectArray = null;
+
+		// 傳入參數處理
+		if ((eventParams instanceof HiEventValueObject)) {
+			hiEventValueObjectArray = new HiEventValueObject[] { (HiEventValueObject) eventParams };
+		} else if ((eventParams instanceof HiEventValueObject[])) {
+			hiEventValueObjectArray = (HiEventValueObject[]) eventParams;
+		} else if ((eventParams instanceof HiBatchEventValueObject)) {
+			HiBatchEventValueObject obj = (HiBatchEventValueObject) eventParams;
+			HiEventValueObject[] eventArray = new HiEventValueObject[obj
+					.getPk_hrorg().length];
+			for (int i = 0; i < eventArray.length; i++) {
+				eventArray[i] = new HiEventValueObject();
+				eventArray[i].setPsnjob_before(obj.getPsnjobs_before()[i]);
+				eventArray[i].setPsnjob_after(obj.getPsnjobs_after()[i]);
+				eventArray[i].setPk_hrorg(obj.getPk_hrorg()[i]);
+			}
+
+			hiEventValueObjectArray = eventArray;
+		} else {
+			throw new IllegalArgumentException(eventParams.getClass().getName());
+		}
+		return hiEventValueObjectArray;
+	}
+
+	private void dealPsnShift(HiEventValueObject[] eventVOs)
+			throws BusinessException {
+		for (HiEventValueObject vo : eventVOs) {
+			PsnJobVO oldPsnJob = vo.getPsnjob_before();
+			PsnJobVO newPsnJob = vo.getPsnjob_after();
+			String pk_hrorg = vo.getPk_hrorg();
+
+			String oldShift = oldPsnJob.getAttributeValue("jobglbdef7") == null ? ""
+					: (String) oldPsnJob.getAttributeValue("jobglbdef7");
+			String newShift = newPsnJob.getAttributeValue("jobglbdef7") == null ? ""
+					: (String) newPsnJob.getAttributeValue("jobglbdef7");
+
+			// oldShift和newShift不相同，即為發生班組異動
+			if (!oldShift.equals(newShift)) {
+				changeShiftGroup(pk_hrorg, oldPsnJob, newPsnJob); // 修改班组
+
+				if (StringUtils.isEmpty(newShift)) {
+					// 同步班次
+					((IPsnCalendarManageService) NCLocator.getInstance()
+							.lookup(IPsnCalendarManageService.class))
+							.sync2TeamCalendar(
+									pk_hrorg,
+									oldShift,
+									new String[] { newPsnJob.getPk_psndoc() },
+									oldPsnJob.getBegindate(),
+									findEndDate(
+											oldShift,
+											newPsnJob.getBegindate() == null ? "9999-12-31"
+													: newPsnJob.getBegindate()
+															.getDateBefore(1)
+															.toString()));
+				} else {
+					// 同步班次
+					((IPsnCalendarManageService) NCLocator.getInstance()
+							.lookup(IPsnCalendarManageService.class))
+							.sync2TeamCalendar(
+									pk_hrorg,
+									(StringUtils.isEmpty(newShift) ? null
+											: newShift),
+									new String[] { newPsnJob.getPk_psndoc() },
+									newPsnJob.getBegindate(),
+									findEndDate(
+											newShift,
+											newPsnJob.getEnddate() == null ? "9999-12-31"
+													: newPsnJob.getEnddate()
+															.toString()));
+				}
+			}
+		}
+	}
+
+	private UFLiteralDate findEndDate(String cteamid, String psnjobEnddate)
+			throws BusinessException {
+		// 取班组已排班最后一日
+		// 取人员在职日最后一日
+		// 取日期较小的一个
+		String strSQL = "select calendar from tbm_psncalendar where pk_psndoc in (select pk_psndoc from hi_psnjob where pk_psnjob in (select pk_psnjob from bd_team_b where cteamid = '"
+				+ cteamid
+				+ "')) and calendar<='"
+				+ psnjobEnddate
+				+ "' order by calendar desc";
+		String maxDate = (String) this.getBaseDao().executeQuery(strSQL,
+				new ColumnProcessor());
+		return new UFLiteralDate(StringUtils.isEmpty(maxDate) ? psnjobEnddate
+				: maxDate);
+	}
+
+	private void changeShiftGroup(String pk_hrorg, PsnJobVO oldPsnJob,
+			PsnJobVO newPsnJob) throws BusinessException {
+		// 結束舊班組
+		finishOldShift(oldPsnJob, newPsnJob);
+		// 開始新班組
+		startNewShift(newPsnJob);
+	}
+
+	@SuppressWarnings("unchecked")
+	private void finishOldShift(PsnJobVO oldPsnJob, PsnJobVO newPsnJob)
+			throws BusinessException {
+		String oldShift = ((String) oldPsnJob.getAttributeValue("jobglbdef7"));
+		// 舊班組為空時，不做結束動作
+		if (!StringUtils.isEmpty(oldShift)) {
+			TeamHeadVO headVO = (TeamHeadVO) this.getBaseDao().retrieveByPK(
+					TeamHeadVO.class, oldShift);
+			Collection<TeamItemVO> itemVOs = this.getBaseDao()
+					.retrieveByClause(TeamItemVO.class,
+							"cteamid='" + oldShift + "'");
+
+			Collection<TeamItemVO> updateItemVOs = new ArrayList<TeamItemVO>();
+
+			for (TeamItemVO vo : itemVOs) {
+				if (vo.getPk_psnjob().equals(oldPsnJob.getPk_psnjob())) {
+					vo.setDenddate(newPsnJob.getBegindate().getDateBefore(1));
+					vo.setStatus(VOStatus.UPDATED);
+					updateItemVOs.add(vo);
+				}
+			}
+
+			if (updateItemVOs.size() > 0) {
+				updateShiftGroup(headVO, itemVOs);
+			}
+		}
+
+	}
+
+	private void updateShiftGroup(TeamHeadVO headVO,
+			Collection<TeamItemVO> itemVOs) throws BusinessException {
+		AggTeamVO aggVO = new AggTeamVO();
+		aggVO.setParent(headVO);
+		aggVO.setChildrenVO(itemVOs.toArray(new TeamItemVO[0]));
+		aggVO.getParentVO().setStatus(1);
+
+		new TeamMaintainService().update(new AggTeamVO[] { aggVO });
+	}
+
+	private void startNewShift(PsnJobVO newPsnJob) throws BusinessException {
+		String newShift = ((String) newPsnJob.getAttributeValue("jobglbdef7"));
+		// 新班組為空時，不做開始動作
+		if (!StringUtils.isEmpty(newShift)) {
+			TeamHeadVO headVO = (TeamHeadVO) this.getBaseDao().retrieveByPK(
+					TeamHeadVO.class,
+					(String) newPsnJob.getAttributeValue("jobglbdef7"));
+			Collection<TeamItemVO> insertItemVOs = new ArrayList<TeamItemVO>();
+
+			// 构造新成员TeamItemVO，加入itemVOs
+			TeamItemVO newMemberVO = new TeamItemVO();
+			newMemberVO.setPk_group(headVO.getPk_group());
+			newMemberVO.setPk_org(headVO.getPk_org());
+			newMemberVO.setPk_org_v(headVO.getPk_org_v());
+			newMemberVO.setPk_dept(newPsnJob.getPk_dept());
+			newMemberVO.setPk_psncl(newPsnJob.getPk_psncl());
+			newMemberVO.setPk_psnjob(newPsnJob.getPk_psnjob());
+			newMemberVO.setCworkmanid(newPsnJob.getPk_psndoc());
+			newMemberVO.setCteamid(headVO.getCteamid());
+			newMemberVO.setBmanager(UFBoolean.FALSE);
+			newMemberVO.setDr(0);
+			newMemberVO.setDstartdate(newPsnJob.getBegindate());
+			newMemberVO.setDenddate(newPsnJob.getEnddate());
+			newMemberVO.setStatus(VOStatus.NEW);
+			insertItemVOs.add(newMemberVO);
+
+			updateShiftGroup(headVO, insertItemVOs);
+		}
+	}
+
+	public BaseDAO getBaseDao() {
+		if (baseDao == null) {
+			baseDao = new BaseDAO();
+		}
+		return baseDao;
+	}
+
+	public void setBaseDao(BaseDAO baseDao) {
+		this.baseDao = baseDao;
+	}
+
+}

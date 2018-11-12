@@ -1,0 +1,557 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE beans PUBLIC "-//SPRING//DTD BEAN//EN" "http://www.springframework.org/dtd/spring-beans.dtd">
+
+<beans>
+
+	<!-- 环境变量 -->
+	<bean id="context" class="nc.vo.ta.pub.TADefDocLoginContext">
+		<property name="nodeType">
+			<value>ORG_NODE</value>
+		</property>
+	</bean>
+	<bean id="resourceCode" class="java.lang.String">
+		<constructor-arg value="60170psndoc" />
+	</bean>
+
+
+	<!-- 模型部分配置########################################################### -->
+	<!-- 对象转换器工厂，由此获取操作对象的特征信息 -->
+	<bean id="boadatorfactory" class="nc.vo.bd.meta.BDObjectAdpaterFactory" />
+
+	<!-- 应用服务类，负责进行模型操作的处理 -->
+	<bean id="modelService" class="nc.ui.ta.psndoc.model.TbmPsndocAppModelService" />
+
+
+	<bean id="cardListEditor" class="nc.ui.ta.psndoc.view.CardListEditor">
+		<property name="cardEditor" ref="tbmPsndocFormEditor" />
+		<property name="listEditor" ref="tbmPsndocListView" />
+		<property name="model" ref="tbmPsndocModel" />
+	</bean>
+
+	<!-- 应用模型 -->
+	<bean id="tbmPsndocModel" class="nc.ui.ta.psndoc.model.TbmPsndocAppModel">
+		<property name="service" ref="modelService"></property>
+		<property name="businessObjectAdapterFactory"
+			ref="boadatorfactory">
+		</property>
+		<property name="context" ref="context"></property>
+		<property name="resourceCode" ref="resourceCode" />
+	</bean>
+
+
+	<!-- 数据模型管理器，主要负责各种方式的模型初始化 -->
+	<bean id="modelDataManager" class="nc.ui.ta.psndoc.model.TbmPsndocAppModelDataManager">
+		<property name="model" ref="tbmPsndocModel" />
+		<property name="service" ref="modelService" />
+		<property name="context" ref="context" />
+		<property name="paginationModel" ref="paginationModel" />
+		<property name="paginationBar" ref="paginationBar" />
+	</bean>
+	
+	<!-- 分页面板 -->
+	<bean id="paginationBar" class="nc.ui.uif2.components.pagination.PaginationBar">
+		<property name="paginationModel" ref="paginationModel" />
+	</bean>
+
+	<bean id="paginationModel" class="nc.ui.uif2.components.pagination.PaginationModel"
+		init-method="init">
+		<property name="paginationQueryService" ref="modelService" />
+	</bean>
+
+	<!-- 模板容器，负责对模板的统一装载 -->
+	<bean id="templateContainer" class="nc.ui.uif2.editor.TemplateContainer" init-method="load">
+		<property name="context" ref="context" />
+		<property name="nodeKeies">
+			<list>
+				<value>6017psndoc</value>
+			</list>
+		</property>
+	</bean>
+
+
+	<!-- 界面元素 ###########################################################-->
+
+	
+
+
+	<!-- Actions ###########################################################-->
+	<bean id="separatorAction" class="nc.funcnode.ui.action.SeparatorAction" />
+	
+	<bean id="enableJudge" class="nc.ui.ta.pub.action.EnableJudge">
+		<property name="model" ref="tbmPsndocModel"/>
+	</bean>
+	
+	<bean id="addAction" class="nc.ui.ta.psndoc.action.AddAction">
+		<property name="model" ref="tbmPsndocModel" />
+		<property name="cardForm" ref="tbmPsndocFormEditor" />
+		<property name="ncActionStatusJudge" ref="enableJudge"/>
+	</bean>
+
+	<bean id="assignAction" class="nc.ui.ta.psndoc.action.AssignAction">
+		<property name="model" ref="tbmPsndocModel" />
+		<property name="dataManager" ref="modelDataManager" />
+		<property name="listView" ref="tbmPsndocListView" />
+	</bean>
+	<bean id="batchEditActon" class="nc.ui.ta.psndoc.action.BatchEditAction">
+		<property name="model" ref="tbmPsndocModel" />
+		<property name="ncActionStatusJudge" ref="enableJudge"/>
+		<property name="dataManager" ref="modelDataManager" />
+		<property name="listView" ref="tbmPsndocListView" />
+	</bean>
+
+	<bean id="cancelAction" class="nc.ui.ta.psndoc.action.CancelAction">
+		<property name="model" ref="tbmPsndocModel" />
+		<property name="currentTabShowJudge" ref="currentTabShowJudge" />
+	</bean>
+
+	<bean id="chgpsnActon" class="nc.ui.ta.psndoc.action.ChgpsnAction">
+		<property name="model" ref="tbmPsndocModel" />
+		<property name="ncActionStatusJudge" ref="enableJudge"/>
+		<property name="dataManager" ref="modelDataManager" />
+	</bean>
+
+	<bean id="deleteAction" class="nc.ui.ta.psndoc.action.DeleteAction">
+		<property name="model" ref="tbmPsndocModel" />
+		<property name="ncActionStatusJudge" ref="enableJudge"/>
+		<property name="currentTabShowJudge" ref="currentTabShowJudge" />
+		<property name="mdOperateCode" value="Delete"/>
+		<property name="resourceCode" value="60170psndoc"/>
+	</bean>
+
+	<bean id="editAction" class="nc.ui.ta.psndoc.action.EditAction">
+		<property name="model" ref="tbmPsndocModel" />
+		<property name="ncActionStatusJudge" ref="enableJudge"/>
+	</bean>
+
+	<bean id="filterAction" class="nc.funcnode.ui.action.MenuAction">
+		<property name="code" >
+			<bean class="nc.ui.uif2.I18nFB">
+			    <property name="resDir" value="common"></property> 
+			    <property name="defaultValue" value="过滤" />
+			    <property name="resId" value="UCH069"></property>
+	    	</bean>
+		</property>
+		<property name="name" >
+			<bean class="nc.ui.uif2.I18nFB">
+			    <property name="resDir" value="common"></property> 
+			    <property name="defaultValue" value="过滤" />
+			    <property name="resId" value="UCH069"></property>
+		    </bean>
+		</property>
+		<property name="actions">
+			<list>
+				<ref bean="showEndDocAction" />
+			</list>
+		</property>
+	</bean>
+	<!-- 关闭节点时提示是否保存数据 -->
+	<bean id="ClosingListener" class="nc.ui.uif2.FunNodeClosingHandler">
+		<property name="model" ref="tbmPsndocModel" />
+		<property name="saveaction" ref="saveAction" />
+		<property name="cancelaction" ref="cancelAction" />
+	</bean>
+
+	<bean id="showEndDocAction" class="nc.ui.ta.psndoc.action.ShowEndDocAciotn">
+		<property name="model" ref="tbmPsndocModel" />
+		<property name="ncActionStatusJudge" ref="enableJudge"/>
+		<property name="dataManager" ref="modelDataManager" />
+	</bean>
+	<!-- 导入导出菜单按钮 -->
+	<bean id="exOrImpActionGroup" class="nc.funcnode.ui.action.MenuAction">
+		<property name="code">
+			<value>exOrImp</value>
+		</property>
+		<property name="name" >
+		<bean class="nc.ui.uif2.I18nFB">
+		     <property name="resDir" value="6017basedoc"></property> 
+		    <property name="defaultValue" value="导入导出" />
+		    <property name="resId" value="06017basedoc1818"></property>
+	     </bean>
+		</property>
+		<property name="actions">
+			<list>
+				<ref bean="importAction" />
+				<ref bean="exportAction" />
+			</list>
+		</property>
+	</bean>
+
+	<bean id="exportAction" class="nc.ui.ta.psndoc.action.ExportAction">
+		<property name="model" ref="tbmPsndocModel" />
+		<property name="ncActionStatusJudge" ref="enableJudge"/>
+		<property name="listView" ref="tbmPsndocListView" />
+	</bean>
+
+	<bean id="importAction" class="nc.ui.ta.psndoc.action.ImportAction">
+		<property name="model" ref="tbmPsndocModel" />
+		<property name="ncActionStatusJudge" ref="enableJudge"/>
+		<property name="dataManager" ref="modelDataManager" />
+	</bean>
+
+	<bean id="queryAction" class="nc.ui.ta.psndoc.action.QueryAction">
+		<property name="model" ref="tbmPsndocModel" />
+		<property name="ncActionStatusJudge" ref="enableJudge"/>
+		<property name="dataManager" ref="modelDataManager" />
+		<property name="queryDelegator">
+			 <bean class="nc.ui.hr.uif2.HrQueryDelegator2"  init-method="getQueryDlg">
+				<property name="model" ref="tbmPsndocModel" />
+				<property name="nodeKey" value="6017psndoc" />
+				<property name="context" ref="context" />
+				<property name="queryEditorListener" ref="queryEditorListener"/>
+			</bean> 
+			<!-- <bean class="nc.ui.hr.uif2.HrQueryDelegator">
+				<property name="model" ref="tbmPsndocModel" />
+				<property name="nodeKey" value="6017psndoc" />
+				<property name="context" ref="context" />
+				
+			</bean> -->
+		</property>
+	</bean>
+	
+	<!-- 负责查询模板上参照pk_org设置的监听器，包括快速查询，高级查询，普通查询之类的 -->
+	<bean id="queryEditorListener" class="nc.ui.ta.pub.QueryEditorListener"/>
+	
+	<bean id="batchAddAction" class="nc.ui.ta.psndoc.action.BatchAddAction">
+		<property name="model" ref="tbmPsndocModel" />
+		<property name="ncActionStatusJudge" ref="enableJudge"/>
+		<property name="cardForm" ref="tbmPsndocFormEditor" />
+		<property name="listView" ref="tbmPsndocListView" />
+		<property name="dataManager" ref="modelDataManager" />
+	</bean>
+	
+
+	<bean id="refreshAction" class="nc.ui.hr.uif2.action.RefreshAction">
+		<property name="model" ref="tbmPsndocModel" />
+		<property name="ncActionStatusJudge" ref="enableJudge"/>
+		<property name="dataManager" ref="modelDataManager" />
+		<property name="formEditor" ref="tbmPsndocFormEditor" />
+		<!-- <property name="refreshSingle" value="true" /> -->
+	</bean>
+
+	<bean id="saveAction" class="nc.ui.ta.psndoc.action.SaveAction">
+		<property name="model" ref="tbmPsndocModel" />
+		<property name="cardListEditor" ref="cardListEditor" />
+		<property name="validator">
+			<list>
+				<!-- <ref bean="ValidateBillFormNotNull" /> -->
+				<bean id="notNullValidator" class="nc.ui.ta.psndoc.validator.NotNullValidator"></bean>
+				<bean id="notBlankValidator" class="nc.ui.ta.psndoc.validator.NotBlankValidator" />
+				<bean id="timeCardIDValidator" class="nc.ui.ta.psndoc.validator.TimeCardIDValidator" />
+			</list>
+		</property>
+	</bean>
+	
+    <bean id="datasource" class="nc.ui.hr.uif2.model.HRMetaDataDataSource">
+       <property name="model" ref="tbmPsndocModel" />
+       <property name="singleData" value="true"/>
+    </bean>
+    
+	<bean id="setTempCardAction" class="nc.ui.ta.psndoc.action.SetTempCardAction">
+		<property name="model" ref="tbmPsndocModel" />
+		<property name="ncActionStatusJudge" ref="enableJudge"/>
+		<property name="relNodeCode" value="60170tempcard" />
+	</bean>
+	    <bean id="printPreviewAction" class="nc.ui.ta.psndoc.action.TaPsnDirectPreviewAction">
+    	<property name="model" ref="tbmPsndocModel" />
+    	<property name="listView" ref="tbmPsndocListView" />
+   </bean>	
+
+   <bean id="printDirectAction" class="nc.ui.ta.psndoc.action.TaPsnDirectPrintAction">
+   		<property name="model" ref="tbmPsndocModel" />
+   		<property name="listView" ref="tbmPsndocListView" />
+   </bean>
+   
+   <bean id="listOutputAction" class="nc.ui.ta.psndoc.action.TaPsnOutPutAction">
+  		<property name="model" ref="tbmPsndocModel" />
+        <property name="listView" ref="tbmPsndocListView" />
+ 	 </bean>
+    
+    <bean id="TemplatePreviewAction" class="nc.ui.ta.psndoc.action.TaPsndocTemplatePreviewAction">
+     <property name="model" ref="tbmPsndocModel" />
+      <property name="printDlgParentConatiner" ref="tbmPsndocFormEditor"></property>
+       <property name="datasource" ref="datasource" />  
+       <property name="nodeKey" value="6017psndoc" />
+    </bean>
+
+    <bean id="TemplatePrintAction" class="nc.ui.ta.psndoc.action.TaPsndocTemplatePrintAction">
+      <property name="model" ref="tbmPsndocModel" />
+      <property name="printDlgParentConatiner" ref="tbmPsndocFormEditor"></property>
+      <property name="datasource" ref="datasource" />  
+      <property name="nodeKey" value="6017psndoc" />
+    </bean>
+    <bean id="FirstLineAction" class="nc.ui.uif2.actions.FirstLineAction">
+		<property name="model" ref="tbmPsndocModel"/>
+	</bean>
+	<bean id="PreLineAction" class="nc.ui.uif2.actions.PreLineAction">
+		<property name="model" ref="tbmPsndocModel"/>
+	</bean>
+	<bean id="NextLineAction" class="nc.ui.uif2.actions.NextLineAction">
+		<property name="model" ref="tbmPsndocModel"/>
+	</bean>
+	<bean id="LastLineAction" class="nc.ui.uif2.actions.LastLineAction">
+		<property name="model" ref="tbmPsndocModel"/>
+	</bean>
+	<!-- 新增菜单按钮 -->
+	<bean id="addActionGroup" class="nc.funcnode.ui.action.GroupAction">
+		<property name="code">
+			<value>add</value>
+		</property>
+		<property name="name">
+		<bean class="nc.ui.uif2.I18nFB">
+		     <property name="resDir" value="common"></property> 
+		    <property name="defaultValue" value="新增" />
+		    <property name="resId" value="UC001-0000108"></property>
+		     </bean>
+		</property>
+		<property name="actions">
+			<list>
+				<ref bean="addAction" />
+				<ref bean="batchAddAction" />
+				<ref bean="chgpsnActon" />
+			</list>
+		</property>
+	</bean>
+	<!-- 修改菜单按钮 -->
+	<bean id="editActionGroup" class="nc.funcnode.ui.action.GroupAction">
+		<property name="code">
+			<value>edit</value>
+		</property>
+		<property name="name" >
+		<bean class="nc.ui.uif2.I18nFB">
+		     <property name="resDir" value="common"></property> 
+		    <property name="defaultValue" value="修改" />
+		    <property name="resId" value="UC001-0000045"></property>
+	     </bean>
+		</property>
+		<property name="actions">
+			<list>
+				<ref bean="editAction" />
+				<ref bean="batchEditActon" />
+			</list>
+		</property>
+	</bean>
+	<bean id="ValidateBillFormNotNull" class="nc.ui.hr.uif2.validator.BillFormNotNullValidator">
+		<property name="billForm" ref="tbmPsndocFormEditor" />
+	</bean>
+	<bean id="PrintActiongroup" class="nc.funcnode.ui.action.GroupAction">
+		<property name="code"><value>printgroup</value> </property>
+		<property name="name" >
+		<bean class="nc.ui.uif2.I18nFB">
+		     <property name="resDir" value="common"></property> 
+		    <property name="defaultValue" value="打印" />
+		    <property name="resId" value="UC001-0000007"></property>
+		     </bean>
+		</property>
+		<property name="actions">
+	 	<list>
+	 		<ref bean="printDirectAction"/>
+	  		<ref bean="printPreviewAction"/>
+	  		<ref bean="listOutputAction"/>
+	  		<ref bean="separatorAction" />
+	  		<ref bean="TemplatePrintAction"/>
+	  		<ref bean="TemplatePreviewAction"/>
+	 	</list>
+		</property>
+	</bean>
+	<bean id="CardPrintActiongroup" class="nc.funcnode.ui.action.GroupAction">
+		<property name="code"><value>cardprintgroup</value> </property>
+		<property name="name" >
+		<bean class="nc.ui.uif2.I18nFB">
+		     <property name="resDir" value="common"></property> 
+		    <property name="defaultValue" value="打印" />
+		    <property name="resId" value="UC001-0000007"></property>
+		     </bean>
+		</property>
+		<property name="actions">
+	 	<list>
+		 	<ref bean="TemplatePrintAction"/>
+	  		<ref bean="TemplatePreviewAction"/>
+	  		<ref bean="cardOutputAction"/>
+	 	</list>
+		</property>
+	</bean>
+ 	 <bean id="cardOutputAction" class="nc.ui.hr.uif2.action.print.ExportCardAction">
+  		<property name="model" ref="tbmPsndocModel" />
+        <property name="printDlgParentConatiner" ref="tbmPsndocFormEditor"></property>
+	    <property name="datasource" ref="datasource" />  
+	    <property name="nodeKey" value="6017psndoc" />
+ 	 </bean>
+	
+	<bean id="currentTabShowJudge" class="nc.ui.ta.pub.view.TBMCurrentShowingJudge">
+		<property name="listView" ref="tbmPsndocListView"></property>
+		<property name="cardView" ref="tbmPsndocFormEditor"></property>
+	</bean>
+	
+
+	<!-- 列表     ########################################################### -->
+	<bean id="tbmPsndocListView" class="nc.ui.ta.psndoc.view.TbmPsndocListView" init-method="initUI">
+		<property name="model" ref="tbmPsndocModel" />
+		<property name="multiSelectionEnable" value="true" />
+		<property name="multiSelectionMode" value="1" />
+		<property name="nodekey" value="6017psndoc" />
+		<property name="pos" value="head" />
+		<property name="south" ref="paginationBar" />
+		<!--property name="templateContainer" ref="templateContainer" /-->
+		<property name="dealHyperlink" value="true"/>
+	</bean>
+
+	<!-- 卡片     ########################################################### -->
+	<bean id="tbmPsndocFormEditor" class="nc.ui.ta.psndoc.view.TbmPsndocFormEditor" init-method="initUI">
+		<property name="model" ref="tbmPsndocModel"></property>
+		<property name="templateContainer" ref="templateContainer" />
+		<property name="nodekey" value="6017psndoc"></property>
+		<property name="componentValueManager" ref="valueAdaptor"></property>
+		<property name="actions">
+			<list>
+				<ref bean="FirstLineAction"/>
+				<ref bean="PreLineAction"/>
+				<ref bean="NextLineAction"/>
+				<ref bean="LastLineAction"/>
+			</list>
+		</property> 
+	</bean>
+
+	<bean id="valueAdaptor" class="nc.ui.ta.psndoc.view.ValueAdapter">
+	</bean>
+
+	<!-- 界面布局总装########################################################### -->
+	<bean id="container" class="nc.ui.uif2.TangramContainer"
+		init-method="initUI">
+		<property name="tangramLayoutRoot">
+		
+			<bean class="nc.ui.uif2.tangramlayout.node.TBNode">
+	        <property name="showMode" value="CardLayout" />
+	        <property name="tabs">
+	          <list>
+	            <bean class="nc.ui.uif2.tangramlayout.node.VSNode">
+	              <property name="showMode" value="NoDivider" />
+	              <property name="up">
+	                <bean class="nc.ui.uif2.tangramlayout.node.CNode">
+	                  <property name="component" ref="orgPanel" />
+	                </bean>
+	              </property>
+	              <property name="down">
+	                <bean class="nc.ui.uif2.tangramlayout.node.CNode">
+	                      <property name="component" ref="tbmPsndocListView" />
+	                </bean>
+	              </property>
+	              <property name="dividerLocation" value="30f" />
+	            </bean>
+	            <bean class="nc.ui.uif2.tangramlayout.node.VSNode">
+	              <property name="showMode" value="NoDivider" />
+	              <property name="up">
+	                <bean class="nc.ui.uif2.tangramlayout.node.CNode">
+	                  <property name="component" ref="editorToolBarPanel" />
+	                </bean>
+	              </property>
+	              <property name="down">
+	                <bean class="nc.ui.uif2.tangramlayout.node.CNode">
+	                  <property name="component" ref="tbmPsndocFormEditor" />
+	                </bean>
+	              </property>
+	              <property name="dividerLocation" value="26f" />
+	            </bean>
+	          </list>
+	        </property>
+	      </bean>
+		</property>
+	</bean>
+	<!-- 卡片工具栏 -->
+	  <bean id="editorToolBarPanel" class="nc.ui.uif2.tangramlayout.CardLayoutToolbarPanel">
+	    <property name="model" ref="tbmPsndocModel" />
+	    <property name="titleAction" ref="editorReturnAction" />
+	    <property name="actions">
+	      <list>
+	        <ref bean="FirstLineAction" />
+	        <ref bean="PreLineAction" />
+	        <ref bean="NextLineAction" />
+	        <ref bean="LastLineAction" />
+	      </list>
+	    </property>
+	  </bean>
+	  <bean id="fileAction" class="nc.ui.hr.pf.action.PFFileManageAction">
+	    <property name="model" ref="tbmPsndocModel" />
+	    <property name="toolBarVisible" value="false" />
+	  </bean>
+	  <!-- 返回按钮 -->
+	  <bean id="editorReturnAction" class="nc.ui.uif2.actions.ShowMeUpAction">
+	    <property name="goComponent" ref="tbmPsndocListView" />
+	  </bean>
+	<bean id="toftpanelActionContributors"
+		class="nc.ui.uif2.actions.ActionContributors">
+		<property name="contributors">
+			<list>
+				<ref bean="listViewActions" />
+				<ref bean="cardViewActions" />
+			</list>
+		</property>
+	</bean>
+	<bean id="listViewActions" class="nc.ui.uif2.actions.StandAloneToftPanelActionContainer">
+		<constructor-arg> <ref bean="tbmPsndocListView" /> </constructor-arg>
+		<property name="model" ref="tbmPsndocModel" />
+		<property name="actions">
+			<list>
+				<ref bean="addActionGroup" />
+				<ref bean="editActionGroup" />
+				<ref bean="deleteAction" />
+				<ref bean="separatorAction" />
+				<ref bean="queryAction" />
+				<ref bean="refreshAction" />
+				<ref bean="filterAction" />
+				<ref bean="separatorAction" />
+				<ref bean="setTempCardAction" />
+				<ref bean="separatorAction" />
+				<ref bean="exOrImpActionGroup" />
+				<ref bean="PrintActiongroup" />
+			</list>
+		</property>
+		<property name="editActions">
+			<list>
+				<ref bean="saveAction" />
+				<ref bean="separatorAction" />
+				<ref bean="cancelAction" />
+			</list>
+		</property>
+	</bean>
+
+	<bean id="cardViewActions"  class="nc.ui.uif2.actions.StandAloneToftPanelActionContainer">
+		<constructor-arg> <ref bean="tbmPsndocFormEditor" /> </constructor-arg>
+		<property name="model" ref="tbmPsndocModel"/>		
+		<property name="actions">
+			<list>
+				<ref bean="addAction" />
+				<ref bean="editAction" />
+				<ref bean="deleteAction" />
+				<ref bean="separatorAction" />
+				<ref bean="refreshAction" />
+				<ref bean="separatorAction" />
+				<ref bean="CardPrintActiongroup" />
+			</list>
+		</property>
+		<property name="editActions">
+			<list>
+				<ref bean="saveAction" />
+				<ref bean="separatorAction" />
+				<ref bean="cancelAction" />
+			</list>
+		</property>
+	</bean>	
+	
+	<!-- 业务单元面板 -->
+	<bean id="orgPanel" class="nc.ui.ta.psndoc.view.TbmPsndocOrgPanel" init-method="initUI">
+		<property name="model" ref="tbmPsndocModel" />
+		<property name="dataManager" ref="modelDataManager" />
+		<property name="paginationModel" ref="paginationModel" />
+		<property name="pk_orgtype" value="HRORGTYPE00000000000" />
+	</bean>
+	
+	<!-- 超链接 -->
+	<bean id="mouseClickShowPanelMediator" class="nc.ui.hr.uif2.mediator.HyperLinkClickMediator">
+		<!-- <property name="listView" ref="listView"/> -->
+		<property name="model" ref="tbmPsndocModel"/>
+		<property name="showUpComponent" ref="tbmPsndocFormEditor"/>
+		<property name="hyperLinkColumn" value="pk_psnjob"/>
+	</bean>
+</beans>
+

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="hrwa">
+  <public>
+	<component remote="true" singleton="true"  tx="CMT">
+	  <interface>nc.itf.hr.wa.IDeductDetailService</interface>
+      <implementation>nc.impl.wa.rpt.DeductDetailServiceImpl</implementation>
+	</component>
+  </public> 
+</module> 
+
+    

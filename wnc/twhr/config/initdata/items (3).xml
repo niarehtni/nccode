@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="utf-8"?>
+<items>
+    <!-- 导出菜单注册的预置数据 -->
+    <!--
+	<item>
+		<itemKey>0001</itemKey>
+		<itemName>菜单注册</itemName>
+		<itemRule>sm_menuitemreg</itemRule>
+		<sysField></sysField>
+		<corpField></corpField>
+		<grpField></grpField>
+		<fixedWhere>funcode='Z000000001'</fixedWhere>
+	</item>
+	-->
+	<!-- 导出功能注册的预置数据 -->
+	<!--
+	<item>
+		<itemKey>0002</itemKey>
+		<itemName>功能注册</itemName>
+		<itemRule>sm_funcregister</itemRule>
+		<sysField></sysField>
+		<corpField></corpField>
+		<grpField></grpField>
+		<fixedWhere>funcode='Z000000001'</fixedWhere>
+	</item>
+	-->
+	<!-- 导出单据模版的预置数据 -->
+	<!--
+	<item>
+		<itemKey>0003</itemKey>
+		<itemName>单据模版</itemName>
+		<itemRule>pub_billtemplet</itemRule>
+		<sysField></sysField>
+		<corpField></corpField>
+		<grpField>nodecode</grpField>
+		<fixedWhere>nodecode='Z000000001'</fixedWhere>
+	</item>
+	-->
+	<!-- 导出查询模版的预置数据 -->
+	<!--
+	<item>
+		<itemKey>0004</itemKey>
+		<itemName>查询模版</itemName>
+		<itemRule>pub_query_templet</itemRule>
+		<sysField></sysField>
+		<corpField></corpField>
+		<grpField>node_code</grpField>
+		<fixedWhere>node_code='Z000000001'</fixedWhere>
+	</item>
+	-->
+	<!-- 导出打印模版的预置数据 -->
+	<!--
+	<item>
+		<itemKey>0005</itemKey>
+		<itemName>打印模版</itemName>
+		<itemRule>pub_print_template</itemRule>
+		<sysField></sysField>
+		<corpField></corpField>
+		<grpField>vnodecode</grpField>
+		<fixedWhere>vnodecode='Z000000001'</fixedWhere>
+	</item>
+	-->
+	<!-- 导出默认模板分配的预置数据 -->
+	<!--
+	<item>
+		<itemKey>0006</itemKey>
+		<itemName>默认模板分配</itemName>
+		<itemRule>pub_systemplate_base</itemRule>
+		<sysField></sysField>
+		<corpField></corpField>
+		<grpField></grpField>
+		<fixedWhere>funnode='Z000000001'</fixedWhere>
+	</item>	
+	-->
+	<!-- 导出单据类型的预置数据 -->
+	<!--
+	<item>
+		<itemKey>0007</itemKey>
+		<itemName>单据类型</itemName>
+		<itemRule>bd_billtype</itemRule>
+		<sysField>systemcode</sysField>
+		<corpField></corpField>
+		<grpField>pk_billtypecode</grpField>
+		<fixedWhere>nodecode='Z000000001'</fixedWhere>
+	</item>
+	-->
+	<!-- 导出单据脚本的预置数据 -->
+	<!--
+	<item>
+		<itemKey>0008</itemKey>
+		<itemName>单据脚本</itemName>
+		<itemRule>pub_billaction</itemRule>
+		<sysField></sysField>
+		<corpField></corpField>
+		<grpField>pk_billaction</grpField>
+		<fixedWhere>pk_billaction='Z000000001'</fixedWhere>
+	</item>
+	-->
+	<!-- 导出参照的预置数据 -->
+	<!--
+	<item>
+		<itemKey>0009</itemKey>
+		<itemName>参照</itemName>
+		<itemRule>bd_refinfo</itemRule>
+		<sysField>systemcode</sysField>
+		<corpField></corpField>
+		<grpField>pk_refinfo</grpField>
+		<fixedWhere>pk_refinfo='Z000000001'</fixedWhere>
+	</item>
+	-->
+	<!-- 导出参照基础数据的预置数据 -->
+	<!--
+	<item>
+		<itemKey>0010</itemKey>
+		<itemName>参照基础数据</itemName>
+		<itemRule>bd_refinfobase</itemRule>
+		<sysField>systemcode</sysField>
+		<corpField></corpField>
+		<grpField>pk_refinfo</grpField>
+		<fixedWhere>pk_refinfo='Z000000001'</fixedWhere>
+	</item>
+	-->
+	<!-- 导出编码规则主表的预置数据 -->
+	<!--
+	<item>
+		<itemKey>0011</itemKey>
+		<itemName>编码规则主表</itemName>
+		<itemRule>pub_bcr_rulebase</itemRule>
+		<sysField></sysField>
+		<corpField></corpField>
+		<grpField></grpField>
+		<fixedWhere>rulecode='Z000000001'</fixedWhere>
+	</item>
+	-->	
+	<!-- 导出编码规则编码段的预置数据 -->
+	<!--
+	<item>
+		<itemKey>0012</itemKey>
+		<itemName>编码规则编码段</itemName>
+		<itemRule>pub_bcr_elem</itemRule>
+		<sysField></sysField>
+		<corpField></corpField>
+		<grpField></grpField>
+		<fixedWhere>elemvalue='Z000000001'</fixedWhere>
+	</item>	
+	-->
+	<!-- 导出编码规则编码段的预置数据 -->
+	<!--
+	<item>
+		<itemKey>0013</itemKey>
+		<itemName>编码规则编码段</itemName>
+		<itemRule>pub_bcr_nbcr</itemRule>
+		<sysField></sysField>
+		<corpField></corpField>
+		<grpField></grpField>
+		<fixedWhere>code='Z000000001'</fixedWhere>
+	</item>
+	-->	
+	<!-- 导出业务动作脚本的预置数据 -->
+	<!--
+	<item>
+		<itemKey>0014</itemKey>
+		<itemName>业务动作脚本</itemName>
+		<itemRule>pub_busiclass</itemRule>
+		<sysField></sysField>
+		<corpField></corpField>
+		<grpField>pk_busiclass</grpField>
+		<fixedWhere>pk_busiclass='Z000000001'</fixedWhere>
+	</item>
+	-->
+	<!-- 导出单据转换规则的预置数据 -->
+    <!--
+    <item>
+      <itemKey>0015</itemKey>
+      <itemName>单据转换规则</itemName>
+      <itemRule>pub_vochange</itemRule>
+      <sysField></sysField>
+      <corpField></corpField>
+      <grpField>pk_busiclass</grpField>
+      <fixedWhere>pk_busiclass='Z000000001'</fixedWhere>
+    </item>
+    --> 		
+</items>

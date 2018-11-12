@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding='UTF-8'?>
+<Widget caption="店员离职类型界面" controllerClazz="nc.bs.hrsms.hi.employ.ShopDimission.DimistypeViewController" i18nName="a_pub-000051" id="transtype" langDir="node_pub-res" refId="transtype" sourcePackage="hi/src/public/">
+    <Attributes>
+    </Attributes>
+    <PageMetas>
+    </PageMetas>
+    <PlugoutDescs>
+        <PlugoutDesc id="outOpenMain">
+        </PlugoutDesc>
+    </PlugoutDescs>
+    <PluginDescs>
+    </PluginDescs>
+    <Models>
+        <Datasets>
+        </Datasets>
+        <ComboDatas>
+            <DynamicComboData caption="离职类型" className="nc.bs.hrsms.hi.employ.ShopDimission.lsnr.DimTrnstypeComboLoader" id="combo_transtype">
+            </DynamicComboData>
+        </ComboDatas>
+    </Models>
+    <Components>
+        <ButtonComp enabled="true" i18nName="w_hi-000662" id="button_confirm" langDir="node_hi-res" text="确定" visible="true">
+            <Events>
+                <Event async="true" methodName="onConfirm" name="onclick" onserver="true">
+                    <SubmitRule>
+                    </SubmitRule>
+                    <Params>
+                        <Param>
+                            <Name>mouseEvent</Name>
+                            <Desc>                                <![CDATA[nc.uap.lfw.core.event.MouseEvent]]>
+                            </Desc>
+                        </Param>
+                    </Params>
+                    <Action>
+                    </Action>
+                </Event>
+            </Events>
+        </ButtonComp>
+        <ComBoBoxComp allowExtendValue="false" editorType="ComboBox" enabled="true" focus="false"  id="transtype_id"  multiSelect="false" needNullOption="false" refComboData="combo_transtype" selectOnly="true" text="离职类型" textAlign="left" textWidth="70" visible="true">
+        </ComBoBoxComp>
+    </Components>
+    <Menus>
+    </Menus>
+</Widget>

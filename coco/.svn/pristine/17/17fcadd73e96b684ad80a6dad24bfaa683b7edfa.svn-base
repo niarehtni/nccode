@@ -1,0 +1,98 @@
+package nc.ui.pubapp.uif2app.view;
+
+import nc.ui.pub.beans.MessageDialog;
+import nc.ui.pub.beans.UIRefPane;
+import nc.ui.pubapp.uif2app.event.AppUiStateChangeEvent;
+import nc.ui.pubapp.uif2app.event.IAppEventHandler;
+import nc.ui.pubapp.uif2app.event.OrgChangedEvent;
+import nc.ui.pubapp.uif2app.model.IAppModelEx;
+import nc.ui.uif2.AppEvent;
+import nc.ui.uif2.AppEventListener;
+import nc.ui.uif2.UIState;
+import nc.ui.uif2.model.AbstractUIAppModel;
+import nc.ui.uif2.model.IAppModelDataManager;
+import nc.vo.pubapp.pattern.exception.ExceptionUtils;
+import nc.vo.uif2.LoginContext;
+
+public class OrgPanel_Org extends BaseOrgPanel_Org {
+	private static final long serialVersionUID = 5232628868540352269L;
+	private IAppModelDataManager dataManager;
+
+	public OrgPanel_Org() {
+	}
+
+	public IAppModelDataManager getDataManager() {
+		return this.dataManager;
+
+	}
+
+	public void initUI() {
+		super.initUI();
+		initDefaultOrg();
+	}
+
+	public void setDataManager(IAppModelDataManager dataManager) {
+		this.dataManager = dataManager;
+	}
+
+	public void setModel(AbstractUIAppModel model) {
+		super.setModel(model);
+
+		model.addAppEventListener(new AppEventListener() {
+			public void handleEvent(AppEvent event) {
+				if ("UiState_Changed" == event.getType()) {
+					if ((event instanceof AppUiStateChangeEvent)) {
+						OrgPanel_Org.this
+								.handleUIStateChangedEvent((AppUiStateChangeEvent) event);
+					} else {
+						ExceptionUtils
+								.wrappBusinessException("event 不是 AppUiStateChangeEvent 类型");
+					}
+
+				}
+
+			}
+		});
+		model.addAppEventListener(OrgChangedEvent.class,
+				new IAppEventHandler() {
+
+					public void handleAppEvent(OrgChangedEvent e) {
+						OrgPanel_Org.this.handleOrgChangedEvent(e);
+					}
+
+					@Override
+					public void handleAppEvent(AppEvent e) {
+						OrgPanel_Org.this
+								.handleOrgChangedEvent((OrgChangedEvent) e);
+
+					}
+
+				});
+
+	}
+
+	protected void handleOrgChangedEvent(OrgChangedEvent e) {
+		String pk_org = getRefPane().getRefPK();
+		getModel().getContext().setPk_org(pk_org);
+		if (pk_org != null) {
+			getDataManager().initModel();
+		}
+	}
+
+	protected void handleUIStateChangedEvent(AppUiStateChangeEvent event) {
+		if ((getModel().getUiState() == UIState.ADD)
+				|| (getModel().getUiState() == UIState.EDIT)
+				|| (getModel().getUiState() == UIState.DISABLE)) {
+			getRefPane().setEnabled(false);
+		} else {
+			getRefPane().setEnabled(true);
+		}
+	}
+
+	protected void initDefaultOrg() {
+		if (getModel().getContext().getPk_org() != null) {
+
+			setPkOrg(getModel().getContext().getPk_org());
+		}
+	}
+}

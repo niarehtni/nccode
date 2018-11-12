@@ -1,0 +1,26 @@
+package nc.ui.twhr.twhr_declaration.ace.view;
+
+import nc.ui.pubapp.uif2app.view.ShowUpableBillListView;
+import nc.ui.uif2.AppEvent;
+
+public class DeclarationListView extends ShowUpableBillListView {
+
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 6178345724917694319L;
+
+
+	@Override
+	public void handleEvent(AppEvent event) {
+		if(null != getBillListPanel().getChildListPanel("id_companybvo")){
+			getBillListPanel().getChildListPanel("id_companybvo").setTotalRowShow(true);
+		}
+		
+		super.handleEvent(event);
+	}
+
+	
+	
+	
+}

@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding='UTF-8'?>
+<UIMeta chart="0" flowmode="true" id="main_um" jquery="0" jsEditor="0" jsExcel="0">
+    <FlowvLayout autoFill="0" id="flowvlayout7501" widgetId="main">
+        <FlowvPanel id="panelv07500" widgetId="main">
+         <CanvasLayout className="rightcanvas" id="menucanvas" widgetId="main">
+           <CanvasPanel id="canvasp1" widgetId="main">
+       	  	 <Menubar height="100%" id="savemenu" left="0" position="relative" top="0" widgetId="main" width="100%">
+              </Menubar> 
+           </CanvasPanel>
+         </CanvasLayout>
+        </FlowvPanel>
+        <FlowvPanel id="panelv07501" topPadding="20" widgetId="main">
+            <TabLayout currentItem="0" id="tag6499" oneTabHide="true" widgetId="main">
+                <TabItem i18nName="w_PsnInfoDetail-000001" langDir="hi_nodes" id="UITabItem06499" showCloseIcon="" text="任职记录" widgetId="main">
+                    <FormComp height="100%" id="hi_psnjobForm" left="0" position="relative" top="0" widgetId="main" width="100%">
+                    </FormComp>
+                </TabItem>
+                <TabItem i18nName="w_PsnInfoDetail-000002" langDir="hi_nodes" id="UITabItem16499" showCloseIcon="" text="兼职记录" widgetId="main">
+                    <FormComp height="100%" id="hi_psndoc_parttimeForm" left="0" position="relative" top="0" widgetId="main" width="100%">
+                    </FormComp>
+                </TabItem>
+                <TabItem i18nName="w_PsnInfoDetail-000003" langDir="hi_nodes" id="UITabItem26499" showCloseIcon="" text="履历记录" widgetId="main">
+                    <FormComp height="100%" id="hi_psndoc_workForm" left="0" position="relative" top="20" widgetId="main" width="100%">
+                    </FormComp>
+                </TabItem>
+                <TabItem i18nName="w_PsnInfoDetail-000004" langDir="hi_nodes" id="UITabItem36499" showCloseIcon="" text="家庭信息" widgetId="main">
+                    <FormComp height="100%" id="hi_psndoc_familyForm" left="0" position="relative" top="0" widgetId="main" width="100%">
+                    </FormComp>
+                </TabItem>
+                <TabItem i18nName="w_PsnInfoDetail-000005" langDir="hi_nodes" id="UITabItem46499" showCloseIcon="" text="学历信息" widgetId="main">
+                    <FormComp height="100%" id="hi_psndoc_eduForm" left="0" position="relative" top="0" widgetId="main" width="100%">
+                    </FormComp>
+                </TabItem>
+                <TabItem i18nName="w_PsnInfoDetail-000006" langDir="hi_nodes" id="UITabItem56499" showCloseIcon="" text="语言能力" widgetId="main">
+                    <FormComp height="100%" id="hi_psndoc_langabilityForm" left="0" position="relative" top="0" widgetId="main" width="100%">
+                    </FormComp>
+                </TabItem>
+                <TabItem i18nName="w_PsnInfoDetail-000007" langDir="hi_nodes" id="UITabItem66499" showCloseIcon="" text="培训记录" widgetId="main">
+                    <FormComp height="100%" id="hi_psndoc_trainForm" left="0" position="relative" top="0" widgetId="main" width="100%">
+                    </FormComp>
+                </TabItem>
+                <TabItem i18nName="w_PsnInfoDetail-000008" langDir="hi_nodes" id="UITabItem76499" showCloseIcon="" text="考核记录" widgetId="main">
+                    <FormComp height="100%" id="hi_psndoc_assForm" left="0" position="relative" top="0" widgetId="main" width="100%">
+                    </FormComp>
+                </TabItem>
+                <TabItem i18nName="w_PsnInfoDetail-000009" langDir="hi_nodes" id="UITabItem86499" showCloseIcon="" text="奖励情况" widgetId="main">
+                    <FormComp height="100%" id="hi_psndoc_encForm" left="0" position="relative" top="0" widgetId="main" width="100%">
+                    </FormComp>
+                </TabItem>
+                <TabItem i18nName="w_PsnInfoDetail-000010" langDir="hi_nodes" id="UITabItem96499" showCloseIcon="" text="出国/境情况" widgetId="main">
+                    <FormComp height="100%" id="hi_psndoc_abroadForm" left="0" position="relative" top="0" widgetId="main" width="100%">
+                    </FormComp>
+                </TabItem>
+                 <TabItem i18nName="w_PsnInfoDetail-000011" langDir="hi_nodes" id="UITabItem106499" showCloseIcon="" text="职业资格" widgetId="main">
+                    <FormComp height="100%" id="hi_psndoc_nationdutyForm" left="0" position="relative" top="0" widgetId="main" width="100%">
+                    </FormComp>
+                </TabItem>
+                <TabItem i18nName="w_PsnInfoDetail-000012" langDir="hi_nodes" id="UITabItem116499" showCloseIcon="" text="离退待遇" widgetId="main">
+                    <FormComp height="100%" id="hi_psndoc_retireForm" left="0" position="relative" top="0" widgetId="main" width="100%">
+                    </FormComp>
+                </TabItem>
+                <TabItem i18nName="w_PsnInfoDetail-000013" langDir="hi_nodes" id="UITabItem126499" showCloseIcon="" text="职称信息" widgetId="main">
+                    <FormComp height="100%" id="hi_psndoc_titleForm" left="0" position="relative" top="0" widgetId="main" width="100%">
+                    </FormComp>
+                </TabItem>
+                <TabItem i18nName="w_PsnInfoDetail-000014" langDir="hi_nodes" id="UITabItem136499" showCloseIcon="" text="惩罚信息" widgetId="main">
+                    <FormComp height="100%" id="hi_psndoc_punForm" left="0" position="relative" top="0" widgetId="main" width="100%">
+                    </FormComp>
+                </TabItem>
+                <TabItem i18nName="w_PsnInfoDetail-000015" langDir="hi_nodes" id="UITabItem146499" showCloseIcon="" text="流动情况" widgetId="main">
+                    <FormComp height="100%" id="hi_psndoc_psnchgForm" left="0" position="relative" top="0" widgetId="main" width="100%">
+                    </FormComp>
+                </TabItem>
+                <TabItem i18nName="w_PsnInfoDetail-000017" langDir="hi_nodes" id="UITabItem166499" showCloseIcon="" text="参加党派记录" widgetId="main">
+                    <FormComp height="100%" id="hi_psndoc_partylogForm" left="0" position="relative" top="0" widgetId="main" width="100%">
+                    </FormComp>
+                </TabItem>
+                <TabItem i18nName="w_PsnInfoDetail-000018" langDir="hi_nodes" id="UITabItem176499" showCloseIcon="" text="专业技术项目工作" widgetId="main">
+                    <FormComp height="100%" id="hi_psndoc_speitemForm" left="0" position="relative" top="0" widgetId="main" width="100%">
+                    </FormComp>
+                </TabItem>
+                <TabItem i18nName="w_PsnInfoDetail-000019" langDir="hi_nodes" id="UITabItem186499" showCloseIcon="" text="紧急联系人" widgetId="main">
+                    <FormComp height="100%" id="hi_psndoc_linkmanForm" left="0" position="relative" top="0" widgetId="main" width="100%">
+                    </FormComp>
+                </TabItem>
+                <TabItem i18nName="w_PsnInfoDetail-000020" langDir="hi_nodes" id="UITabItem196499" showCloseIcon="" text="组织关系" widgetId="main">
+                    <FormComp height="100%" id="hi_psnorgForm" left="0" position="relative" top="0" widgetId="main" width="100%">
+                    </FormComp>
+                </TabItem>
+                <TabItem i18nName="w_PsnInfoDetail-000021" langDir="hi_nodes" id="UITabItem206499" showCloseIcon="" text="身份证件" widgetId="main">
+                    <FormComp height="100%" id="hi_psndoc_certForm" left="0" position="relative" top="0" widgetId="main" width="100%">
+                    </FormComp>
+                </TabItem>
+                <TabItem i18nName="w_PsnInfoDetail-000022" langDir="hi_nodes" id="UITabItem216499" showCloseIcon="" text="试用情况" widgetId="main">
+                    <FormComp height="100%" id="hi_psndoc_trialForm" left="0" position="relative" top="0" widgetId="main" width="100%">
+                    </FormComp>
+                </TabItem>
+                <TabItem i18nName="w_PsnInfoDetail-000010" langDir="hi_nodes" id="UITabItem226499" showCloseIcon="" text="员工能力素质" widgetId="main">
+                    <FormComp height="100%" id="hi_psndoc_capaForm" left="0" position="relative" top="0" widgetId="main" width="100%">
+                    </FormComp>
+                </TabItem>
+                <TabItem i18nName="w_PsnInfoDetail-000024" langDir="hi_nodes" id="UITabItem236499" showCloseIcon="" text="合同信息" widgetId="main">
+					<FlowvLayout id="flowvlayout3756" widgetId="main">
+						<FlowvPanel id="panelv08875" widgetId="main">
+							<FormComp id="hi_psndoc_ctrtForm" widgetId="main">
+							</FormComp>
+						</FlowvPanel>
+						<FlowvPanel id="panelv09875" widgetId="main">
+							<FormComp id="hi_psndoc_ctrt_form_Release" widgetId="main">
+							</FormComp>
+						</FlowvPanel>
+						<FlowvPanel id="panelv10875" widgetId="main">
+							<FormComp id="hi_psndoc_ctrt_form_finish" widgetId="main">
+							</FormComp>
+						</FlowvPanel>
+						<FlowvPanel id="panelv11875" widgetId="main">
+							<FormComp id="hi_psndoc_ctrt_form_extend" widgetId="main">
+							</FormComp>
+						</FlowvPanel>
+						<FlowvPanel id="panelv12875" widgetId="main">
+							<FormComp id="hi_psndoc_ctrt_form_change" widgetId="main">
+							</FormComp>
+						</FlowvPanel>
+                	</FlowvLayout>
+                </TabItem>
+                 <TabItem i18nName="w_PsnInfoDetail-000025" langDir="hi_nodes" id="UITabItem246499" showCloseIcon="" text="企业内部任职资格" widgetId="main">
+                    <FormComp height="100%" id="hi_psndoc_qulifyForm" left="0" position="relative" top="0" widgetId="main" width="100%">
+                    </FormComp>
+                </TabItem>
+            </TabLayout>
+        </FlowvPanel>
+    </FlowvLayout>
+</UIMeta>

@@ -1,0 +1,2 @@
+insert into md_accessorpara(assosequence,dr,id,industry,paravalue,ts,versiontype) values( 0,null,'cfdd0d50-138b-4011-bec6-a71f8a2d2e5d',null,'nc.vo.trn.transmng.AggStapply','2018-08-23 09:46:25',null)
+go

@@ -1,0 +1,549 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE beans PUBLIC "-//SPRING//DTD BEAN//EN" "http://www.springframework.org/dtd/spring-beans.dtd">
+
+<beans>
+	<!-- 环境变量 -->
+	<bean id="context" class="nc.vo.uif2.LoginContext">
+	</bean>
+
+	<!-- 模型部分配置 -->
+
+	<!-- 应用服务类，负责进行模型操作的处理 -->
+	<bean id="modelService" class="nc.ui.om.hrdept.model.DeptModelService" />
+
+	<!-- 对象转换器工厂，由此获取操作对象的特征信息 -->
+	<bean id="boadatorfactory" class="nc.vo.bd.meta.BDObjectAdpaterFactory" />
+
+	<!-- 层次结构构造策略 -->
+	<bean id="treeCreateStrategy" class="nc.vo.bd.meta.BDObjectTreeCreateStrategy">
+		<property name="factory" ref="boadatorfactory" />
+		<property name="rootName">
+	    	<bean class="nc.ui.uif2.I18nFB">
+		    	<property name="resDir" value="menucode"></property>	
+			    <property name="defaultValue" value="部门" />
+			    <property name="resId" value="X600505"></property>
+	    	</bean>
+    	</property>
+		<!-- <property name="rootName" value="部门" /> -->
+	</bean>
+
+	<!-- 层次应用模型 -->
+	<bean id="appModel" class="nc.ui.om.hrdept.model.DeptAppModel">
+		<property name="service">
+			<ref bean="modelService" />
+		</property>
+		<property name="treeCreateStrategy">
+			<ref bean="treeCreateStrategy" />
+		</property>
+		<property name="businessObjectAdapterFactory">
+			<ref bean="boadatorfactory" />
+		</property>
+		<property name="context">
+			<ref bean="context" />
+		</property>
+	</bean>
+
+	<!-- 数据模型管理器，主要负责各种方式的模型初始化 -->
+	<bean id="modelDataManager" class="nc.ui.om.hrdept.model.DeptModelDataManager">
+		<property name="model" ref="appModel" />
+		<property name="service" ref="modelService" />
+		<property name="context" ref="context" />
+	</bean>
+
+	<!-- 模板容器，负责对模板的统一装载 -->
+	<bean id="templateContainer" class="nc.ui.uif2.editor.TemplateContainer"
+		init-method="load">
+		<property name="context" ref="context" />
+		<property name="nodeKeies">
+			<list>
+				<value>hrdept</value>
+			</list>
+		</property>
+	</bean>
+
+	<!-- 界面元素 -->
+	<!--树控件 nc.ui.uif2.components.TreePanel -->
+	<bean id="treePanel" class="nc.ui.om.hrdept.view.DeptTreePanel"
+		init-method="init">
+		<property name="model" ref="appModel" />
+		<property name="searchMode" value="filter" />
+		<property name="filterByText"><ref bean="bdobjectFilter" /></property>
+		<property name="rootvisibleflag" value="true" />
+		<property name="treeCellRenderer" ref="treeCellRenderer" />
+	</bean>
+	
+	<bean id="bdobjectFilter" class="nc.ui.pub.beans.tree.BDObjectFilterByText" />
+
+	<bean id="treeCellRenderer" class="nc.ui.om.hrdept.view.DeptTreeCellRenderer" />
+
+	<!--卡控件 -->
+	<bean id="billFormEditor" class="nc.ui.om.hrdept.view.DeptCardForm"
+		init-method="initUI">
+		<property name="model" ref="appModel" />
+		<property name="templateContainer" ref="templateContainer" />
+		<property name="nodekey" value="hrdept" />
+		<property name="userdefitemPreparator">
+			<bean class="nc.ui.uif2.editor.UserdefitemContainerPreparator">
+				<property name="container" ref="userdefitemContainer" />
+				<property name="params">
+					<list>
+						<bean name="orgUnitCardUserdefitemQueryParam" class="nc.ui.uif2.editor.UserdefQueryParam">
+							<property name="mdfullname" value="uap.dept" />
+							<property name="pos" value="0" />
+							<property name="prefix" value="def" />
+						</bean>
+						<bean name="reportOrgCardUserdefitemQueryParam" class="nc.ui.uif2.editor.UserdefQueryParam">
+							<property name="rulecode" value="uap.reportorg" />
+							<property name="pos" value="0" />
+							<property name="prefix" value="reportorg_def" />
+						</bean>
+					</list>
+				</property>
+			</bean>
+		</property>
+		<property name="tabActions">
+			<list>
+				<ref bean="AddLineAction" />
+				<ref bean="InsertLineAction" />
+				<ref bean="DelLineAction" />
+				<ref bean="CopyLineAction" />
+				<ref bean="PasteLineAction" />
+			</list>
+		</property>
+	</bean>
+	
+	<bean id="userdefitemDeptVPreprocessor" class="nc.ui.uif2.editor.UserdefitemUIPreprocessor" init-method="init">
+		<property name="container" ref="userdefitemContainer" />
+		<property name="params">
+			<list>
+				<bean class="nc.ui.uif2.userdefitem.QueryParam">
+					<property name="mdfullname" value="uap.dept_v" />
+				</bean>
+			</list>
+		</property>
+	</bean>
+	
+	<bean id="userdefitemContainer" class="nc.ui.uif2.userdefitem.UserDefItemContainer">
+		<property name="context" ref="context" />
+		<property name="params">
+			<list>
+				<bean id="userdefitemOrgParam" class="nc.ui.uif2.userdefitem.QueryParam">
+					<property name="mdfullname" value="uap.dept" />
+				</bean>
+				<bean id="userdefitemReportOrgParam" class="nc.ui.uif2.userdefitem.QueryParam">
+					<property name="mdfullname" value="uap.reportorg" />
+				</bean>
+			</list>
+		</property>
+	</bean>
+	
+	<bean id="resourceCode" class="java.lang.String">
+		<constructor-arg value="60050deptinfo" />
+	</bean>
+	<!-- Actions -->
+	<!-- 节点级Action -->
+	<bean id="AddAction" class="nc.ui.om.hrdept.action.AddDeptAction">
+		<property name="showTipsOnTree" value="true"></property>
+		<property name="model" ref="appModel" />
+	</bean>
+
+	<bean id="EditAction" class="nc.ui.om.hrdept.action.EditDeptAction">
+		<property name="showTipsOnTree" value="true"></property>
+		<property name="model" ref="appModel" />
+		<property name="resourceCode" ref="resourceCode" />
+	</bean>
+
+	<bean id="DeleteAction" class="nc.ui.om.hrdept.action.DeleteDeptAction">
+		<property name="showTipsOnTree" value="true" />
+		<property name="model" ref="appModel" />
+		<property name="validationService" ref="deleteValidator" />
+		<property name="resourceCode" ref="resourceCode" />		
+	</bean>
+
+	<bean id="CopyDeptAction" class="nc.ui.om.hrdept.action.CopyDeptAction">
+		<property name="model" ref="appModel" />
+		<property name="dataManager" ref="modelDataManager" />
+	</bean>
+
+	<bean id="RefreshAction" class="nc.ui.om.hrdept.action.RefreshDeptAction">
+		<property name="model" ref="appModel" />
+		<property name="dataManager" ref="modelDataManager"></property>
+	</bean>
+
+	<bean id="RenameDeptAction" class="nc.ui.om.hrdept.action.RenameDeptAction">
+		<property name="model" ref="appModel" />
+		<property name="validationService" ref="modificationValidator" />
+		<property name="resourceCode" ref="resourceCode" />
+	</bean>
+
+	<bean id="MergeDeptAction" class="nc.ui.om.hrdept.action.MergeDeptAction">
+		<property name="model" ref="appModel" />
+		<property name="validationService" ref="modificationValidator" />
+		<property name="dataManager" ref="modelDataManager"></property>
+		<property name="resourceCode" ref="resourceCode" />
+	</bean>
+
+	<bean id="ShiftDeptAction" class="nc.ui.om.hrdept.action.ShiftDeptAction">
+		<property name="model" ref="appModel" />
+		<property name="validationService" ref="modificationValidator" />
+		<property name="resourceCode" ref="resourceCode" />
+	</bean>
+
+	<bean id="OuterShiftDeptAction" class="nc.ui.om.hrdept.action.OuterShiftDeptAction">
+		<property name="model" ref="appModel" />
+		<property name="dataManager" ref="modelDataManager" />
+		<property name="validationService" ref="modificationValidator" />
+	</bean>
+
+	<bean id="SaveAction" class="nc.ui.om.hrdept.action.SaveDeptAction">
+		<property name="model" ref="appModel" />
+		<property name="editor" ref="billFormEditor" />
+		<property name="validationService" ref="billNotNullValidator" />
+	</bean>
+
+	<bean id="SaveAddAction" class="nc.ui.om.hrdept.action.SaveAddDeptAction">
+		<property name="model" ref="appModel" />
+		<property name="validationService" ref="billNotNullValidator" />
+		<property name="addAction" ref="AddAction" />
+		<property name="saveAction" ref="SaveAction" />
+	</bean>
+
+	<bean id="CancelAction" class="nc.ui.om.hrdept.action.CancelDeptAction">
+		<property name="model" ref="appModel" />
+	</bean>
+	<bean id="ActionanleJudge" class="nc.ui.om.hrdept.action.SubTableEnableJudge">
+		<property name="model" ref="appModel" />
+		<property name="cardPanel" ref="billFormEditor" />
+	</bean>
+	<bean id="nullaction" class="nc.funcnode.ui.action.SeparatorAction" />
+
+	<!-- 页签级Action -->
+	<!-- 主表 -->
+
+	<!-- 子表 -->
+	<bean id="AddLineAction" class="nc.ui.om.hrdept.action.DeptAddLineAction">
+		<property name="model" ref="appModel" />
+		<property name="cardPanel" ref="billFormEditor" />
+		<property name="judge" ref="ActionanleJudge" />
+	</bean>
+	<bean id="InsertLineAction" class="nc.ui.om.hrdept.action.DeptInsertLineAction">
+		<property name="model" ref="appModel" />
+		<property name="cardPanel" ref="billFormEditor" />
+		<property name="judge" ref="ActionanleJudge" />
+	</bean>
+	<bean id="CopyLineAction" class="nc.ui.om.hrdept.action.DeptCopyLineAction">
+		<property name="model" ref="appModel" />
+		<property name="cardPanel" ref="billFormEditor" />
+		<property name="judge" ref="ActionanleJudge" />
+	</bean>
+	<bean id="DelLineAction" class="nc.ui.om.hrdept.action.DeptDelLineAction">
+		<property name="model" ref="appModel" />
+		<property name="cardPanel" ref="billFormEditor" />
+		<property name="judge" ref="ActionanleJudge" />
+	</bean>
+	<bean id="PasteLineAction" class="nc.ui.om.hrdept.action.DeptPasteLineAction">
+		<property name="model" ref="appModel" />
+		<property name="cardPanel" ref="billFormEditor" />
+		<property name="judge" ref="ActionanleJudge" />
+	</bean>
+
+	<bean id="VersionAction" class="nc.funcnode.ui.action.MenuAction">
+		<property name="code" value="version" />
+		<property name="name">
+	    	<bean class="nc.ui.uif2.I18nFB">
+		    	<property name="resDir" value="menucode"></property>	
+			    <property name="defaultValue" value="部门版本化" />
+			    <property name="resId" value="X600506"></property>
+	    	</bean>
+    	</property>
+		<!-- <property name="name" value="部门版本化" /> -->
+		<property name="actions">
+			<list>
+				<ref bean="CreateDeptStruVersionAction" />
+				<ref bean="CreateDeptVersionAction" />
+			</list>
+		</property>
+	</bean>
+
+	<bean id="CreateDeptStruVersionAction" class="nc.ui.om.hrdept.action.CreateDeptStruVersionAction">
+		<property name="model" ref="appModel" />
+		<property name="resourceCode" ref="resourceCode" />
+	</bean>
+
+	<bean id="CreateDeptVersionAction" class="nc.ui.om.hrdept.action.CreateDeptVersionAction">
+		<property name="model" ref="appModel" />
+		<property name="resourceCode" ref="resourceCode" />
+		<property name="nodekey">
+			<value>deptversion</value>
+		</property>
+	</bean>
+
+	<bean id="FilterAction" class="nc.funcnode.ui.action.MenuAction">
+		<property name="code">
+	    	<bean class="nc.ui.uif2.I18nFB">
+		    	<property name="resDir" value="menucode"></property>	
+			    <property name="defaultValue" value="过滤" />
+			    <property name="resId" value="X600508"></property>
+	    	</bean>
+    	</property>
+    	<property name="name">
+	    	<bean class="nc.ui.uif2.I18nFB">
+		    	<property name="resDir" value="menucode"></property>	
+			    <property name="defaultValue" value="过滤" />
+			    <property name="resId" value="X600509"></property>
+	    	</bean>
+    	</property>
+		<!-- <property name="code" value="过滤" />
+		<property name="name" value="过滤" /> -->
+		<property name="actions">
+			<list>
+				<ref bean="ShowHRCanceledDataAction" />
+			</list>
+		</property>
+	</bean>
+
+	<bean id="ShowHRCanceledDataAction" class="nc.ui.om.hrdept.action.ShowCanceledDeptDataAction">
+		<property name="model" ref="appModel" />
+		<property name="dataManager" ref="modelDataManager" />
+	</bean>
+
+	<bean id="HRCancelGroupAction" class="nc.funcnode.ui.action.GroupAction">
+		<property name="code">
+			<value>seal</value>
+		</property>
+		<!-- <property name="name">
+			<value>撤销</value>
+		</property> -->
+		<property name="name">
+	    	<bean class="nc.ui.uif2.I18nFB">
+		    	<property name="resDir" value="menucode"></property>	
+			    <property name="defaultValue" value="撤销" />
+			    <property name="resId" value="X600510"></property>
+	    	</bean>
+    	</property>
+		<property name="actions">
+			<list>
+				<ref bean="HRCancelAction" />
+				<ref bean="HRUnCancelAction" />
+			</list>
+		</property>
+	</bean>
+
+	<bean id="HRCancelAction" class="nc.ui.om.hrdept.action.HRCancelAction">
+		<property name="model" ref="appModel" />
+		<property name="dataManager" ref="modelDataManager"></property>
+		<property name="resourceCode" ref="resourceCode" />
+	</bean>
+
+	<bean id="HRUnCancelAction" class="nc.ui.om.hrdept.action.HRUnCancelAction">
+		<property name="model" ref="appModel" />
+		<property name="dataManager" ref="modelDataManager"></property>
+		<property name="resourceCode" ref="resourceCode" />
+	</bean>
+
+	<bean id="AlterationGroupAction" class="nc.funcnode.ui.action.MenuAction">
+		<property name="code" value="alteration" />
+		<property name="name">
+	    	<bean class="nc.ui.uif2.I18nFB">
+		    	<property name="resDir" value="menucode"></property>	
+			    <property name="defaultValue" value="部门变更" />
+			    <property name="resId" value="X600511"></property>
+	    	</bean>
+    	</property>
+		<!-- <property name="name" value="变更" /> -->
+		<property name="actions">
+			<list>
+				<ref bean="RenameDeptAction" />
+				<ref bean="MergeDeptAction" />
+				<ref bean="HRCancelAction" />
+				<ref bean="HRUnCancelAction" />
+				<ref bean="ShiftDeptAction" />
+				<ref bean="OuterShiftDeptAction" />
+			</list>
+		</property>
+	</bean>
+
+	<bean id="PrintGroupAction" class="nc.funcnode.ui.action.GroupAction">
+		<property name="actions">
+			<list>
+				<!-- <ref bean="PrintAction" />
+				<ref bean="PreviewAction" /> -->
+				<ref bean="TemplatePrintAction" />
+				<ref bean="TemplatePreviewAction" />
+			</list>
+		</property>
+	</bean>
+
+	<bean id="datasource" class="nc.ui.om.hrdept.model.DeptMetaDataDataSource">
+		<property name="model" ref="appModel" />
+	</bean>
+
+	<!-- <bean id="PreviewAction" class="nc.ui.hr.uif2.action.print.DirectPreviewAction">
+		<property name="model" ref="appModel" />
+		<property name="billFormEditor" ref="billFormEditor" />
+	</bean>
+	<bean id="PrintAction" class="nc.ui.hr.uif2.action.print.DirectPrintAction">
+		<property name="model" ref="appModel" />
+		<property name="billFormEditor" ref="billFormEditor" />
+	</bean> -->
+	<bean id="TemplatePreviewAction" class="nc.ui.uif2.actions.TemplatePreviewAction">
+		<property name="model" ref="appModel" />
+		<property name="printDlgParentConatiner" ref="billFormEditor"></property>
+		<property name="datasource" ref="datasource" />
+		<property name="nodeKey" value="hrdept" />
+	</bean>
+
+	<bean id="TemplatePrintAction" class="nc.ui.uif2.actions.TemplatePrintAction">
+		<property name="model" ref="appModel" />
+		<property name="printDlgParentConatiner" ref="billFormEditor"></property>
+		<property name="datasource" ref="datasource" />
+		<property name="nodeKey" value="hrdept" />
+	</bean>
+
+	<bean id="FileManageAction" class="nc.ui.om.hrdept.action.DeptFileManageAction">
+		<property name="model" ref="appModel" />
+		<property name="resourceCode" ref="resourceCode" />
+	</bean>
+
+	<bean id="AssiciatedQueryAction" class="nc.funcnode.ui.action.MenuAction">
+		<property name="code" value="AssiciatedQuery" />
+		<!-- <property name="name" value="联查" /> -->
+		<property name="name">
+	    	<bean class="nc.ui.uif2.I18nFB">
+		    	<property name="resDir" value="menucode"></property>	
+			    <property name="defaultValue" value="联查" />
+			    <property name="resId" value="X600512"></property>
+	    	</bean>
+    	</property>
+		<property name="actions">
+			<list>
+				<ref bean="QueryPostAction" />
+				<ref bean="QueryPersonAction" />
+			</list>
+		</property>
+	</bean>
+
+	<bean id="QueryPostAction" class="nc.ui.om.hrdept.action.QueryPostAction">
+		<property name="model" ref="appModel" />
+	</bean>
+
+	<bean id="QueryPersonAction" class="nc.ui.om.hrdept.action.QueryPersonAction">
+		<property name="model" ref="appModel" />
+	</bean>
+
+	<!-- Validator -->
+	<bean id="billNotNullValidator" class="nc.ui.om.pub.validator.OMBillNotNullValidateService">
+		<constructor-arg  ref="billFormEditor" />
+		<constructor-arg  value="pk_vid" />
+		<property name="nextValidateService" ref="insertUpdateValidator" />
+	</bean>
+
+	<bean id="insertUpdateValidator" class="nc.ui.om.hrdept.validator.DeptInsertUpdateValidator">
+		<property name="billForm" ref="billFormEditor" />
+	</bean>
+
+	<bean id="deleteValidator" class="nc.ui.om.hrdept.validator.DeptDeleteValidator">
+		<property name="model" ref="appModel" />
+	</bean>
+
+	<bean id="modificationValidator" class="nc.ui.om.hrdept.validator.DeptModificationValidator">
+		<property name="model" ref="appModel" />
+	</bean>
+
+	<!-- ClosingListener -->
+	<bean id="ClosingListener" class="nc.ui.uif2.FunNodeClosingHandler">
+		<property name="model" ref="appModel" />
+		<property name="saveaction" ref="SaveAction" />
+		<property name="cancelaction" ref="CancelAction" />
+	</bean>
+	
+	<bean id="QueryAction" class="nc.ui.om.hrdept.action.QueryDeptAction">
+		<property name="model" ref="appModel" />
+		<property name="dataManager" ref="modelDataManager" />
+		<property name="queryDelegator">
+			<bean class="nc.ui.hr.uif2.HrQueryDelegator">
+				<property name="nodeKey" value="hrdept" />
+				<property name="context" ref="context" />
+				<property name="model" ref="appModel" />
+			</bean>
+		</property>
+	</bean>
+
+	<!-- 界面零件 -->
+	<bean id="orgpanel" class="nc.ui.om.hrdept.view.DeptOrgRefPanel"
+		init-method="initUI">
+		<property name="model" ref="appModel" />
+		<property name="dataManager" ref="modelDataManager" />
+		<property name="controlType" value="2" />
+	</bean>
+
+	<!-- 界面布局总装 -->
+	<bean id="container" class="nc.ui.uif2.TangramContainer"
+		init-method="initUI">
+		<property name="model" ref="appModel" />
+		<property name="tangramLayoutRoot">
+			<bean class="nc.ui.uif2.tangramlayout.node.VSNode">
+				<property name="showMode" value="NoDivider" />
+				<property name="up">
+					<bean class="nc.ui.uif2.tangramlayout.node.CNode">
+						<property name="component" ref="orgpanel"></property>
+					</bean>
+				</property>
+				<property name="down">
+					<bean class="nc.ui.uif2.tangramlayout.node.HSNode">
+						<property name="left">
+							<bean class="nc.ui.uif2.tangramlayout.node.CNode">
+								<property name="component" ref="treePanel"></property>
+							</bean>
+						</property>
+						<property name="right">
+							<bean class="nc.ui.uif2.tangramlayout.node.CNode">
+								<property name="component" ref="billFormEditor"></property>
+							</bean>
+						</property>
+						<property name="dividerLocation">
+							<value>0.2f</value>
+						</property>
+					</bean>
+				</property>
+				<property name="dividerLocation">
+					<value>30</value>
+				</property>
+			</bean>
+		</property>
+
+		<property name="actions">
+			<list>
+				<ref bean="AddAction" />
+				<ref bean="EditAction" />
+				<ref bean="DeleteAction" />
+				<ref bean="CopyDeptAction" />
+				<ref bean="nullaction" />
+				<ref bean="QueryAction" />
+				<ref bean="RefreshAction" />
+				<ref bean="FilterAction" />
+				<ref bean="nullaction" />
+				<ref bean="AlterationGroupAction" />
+				<!--<ref bean="RenameDeptAction" /> <ref bean="MergeDeptAction" /> <ref 
+					bean="ShiftDeptAction" /> <ref bean="HRCancelGroupAction" /> -->
+				<ref bean="VersionAction" />				
+				<ref bean="FileManageAction" />
+				<ref bean="nullaction" />
+				<ref bean="AssiciatedQueryAction" />
+				<ref bean="nullaction" />
+				<ref bean="PrintGroupAction" />
+			</list>
+		</property>
+
+		<property name="editActions">
+			<list>
+				<ref bean="SaveAction" />
+				<ref bean="SaveAddAction" />
+				<ref bean="nullaction" />
+				<ref bean="CancelAction" />
+			</list>
+		</property>
+	</bean>
+
+</beans>

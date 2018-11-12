@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding='gb2312'?>
+<module name="twhr">
+  <public>
+	<component remote="true" singleton="true"  tx="CMT">
+	  <interface>nc.itf.twhr.IGroupinsuranceMaintain</interface>
+	  <implementation>nc.impl.twhr.GroupinsuranceMaintainImpl</implementation>
+	</component>
+
+  </public> 
+</module> 

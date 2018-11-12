@@ -1,0 +1,20 @@
+
+delete bd_defdoc where ( pk_defdoclist in ('1001ZZ1000000000KGVY') and (dr=0 or dr is null) )
+go
+
+delete bd_defdoclist where ( pk_defdoclist='1001ZZ1000000000KGVY' and (dr=0 or dr is null) )
+go
+
+
+insert into bd_defdoclist(associatename,bpfcomponentid,code,codectlgrade,coderule,comp,componentid,creationtime,creator,dataoriginflag,docclass,doclevel,doctype,dr,funcode,isgrade,isrelease,mngctlmode,modifiedtime,modifier,name,name2,name3,name4,name5,name6,pk_defdoclist,pk_group,pk_org,ts) values( 'bd_defdoc','2b6869e5-a049-11e8-839d-79b29e477abc','avgmoncount',null,null,null,'2a8adbf9-a049-11e8-839d-79b29e477abc','2018-08-15 13:07:53','1001A1100000000001JN',0,null,0,null,0,null,'N','N',0,'2018-08-15 15:34:02','1001A1100000000001JN','平均月数','平均月数',null,null,null,null,'1001ZZ1000000000KGVY',null,'GLOBLE00000000000000','2018-08-15 15:34:03')
+go
+
+
+insert into bd_defdoc(code,creationtime,creator,dataoriginflag,datatype,def1,def10,def11,def12,def13,def14,def15,def16,def17,def18,def19,def2,def20,def3,def4,def5,def6,def7,def8,def9,dr,enablestate,innercode,memo,mnecode,modifiedtime,modifier,name,name2,name3,name4,name5,name6,pid,pk_defdoc,pk_defdoclist,pk_group,pk_org,shortname,shortname2,shortname3,shortname4,shortname5,shortname6,ts) values( '3','2018-08-15 14:37:22','1001A1100000000001JN',0,1,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,0,2,null,null,null,'2018-08-15 15:06:11','1001A1100000000001JN','3个月','3个月',null,null,null,null,null,'1001ZZ1000000000KHO7','1001ZZ1000000000KGVY','0001A1100000000005F5','GLOBLE00000000000000',null,null,null,null,null,null,'2018-08-15 15:06:11')
+go
+insert into bd_defdoc(code,creationtime,creator,dataoriginflag,datatype,def1,def10,def11,def12,def13,def14,def15,def16,def17,def18,def19,def2,def20,def3,def4,def5,def6,def7,def8,def9,dr,enablestate,innercode,memo,mnecode,modifiedtime,modifier,name,name2,name3,name4,name5,name6,pid,pk_defdoc,pk_defdoclist,pk_group,pk_org,shortname,shortname2,shortname3,shortname4,shortname5,shortname6,ts) values( '6','2018-08-15 14:37:22','1001A1100000000001JN',0,1,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,0,2,null,null,null,'2018-08-15 15:06:11','1001A1100000000001JN','6个月','6个月',null,null,null,null,null,'1001ZZ1000000000KHO8','1001ZZ1000000000KGVY','0001A1100000000005F5','GLOBLE00000000000000',null,null,null,null,null,null,'2018-08-15 15:06:11')
+go
+insert into bd_defdoc(code,creationtime,creator,dataoriginflag,datatype,def1,def10,def11,def12,def13,def14,def15,def16,def17,def18,def19,def2,def20,def3,def4,def5,def6,def7,def8,def9,dr,enablestate,innercode,memo,mnecode,modifiedtime,modifier,name,name2,name3,name4,name5,name6,pid,pk_defdoc,pk_defdoclist,pk_group,pk_org,shortname,shortname2,shortname3,shortname4,shortname5,shortname6,ts) values( '9','2018-08-15 14:37:22','1001A1100000000001JN',0,1,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,0,2,null,null,null,'2018-08-15 15:06:11','1001A1100000000001JN','9个月','9个月',null,null,null,null,null,'1001ZZ1000000000KHO9','1001ZZ1000000000KGVY','0001A1100000000005F5','GLOBLE00000000000000',null,null,null,null,null,null,'2018-08-15 15:06:11')
+go
+insert into bd_defdoc(code,creationtime,creator,dataoriginflag,datatype,def1,def10,def11,def12,def13,def14,def15,def16,def17,def18,def19,def2,def20,def3,def4,def5,def6,def7,def8,def9,dr,enablestate,innercode,memo,mnecode,modifiedtime,modifier,name,name2,name3,name4,name5,name6,pid,pk_defdoc,pk_defdoclist,pk_group,pk_org,shortname,shortname2,shortname3,shortname4,shortname5,shortname6,ts) values( '12','2018-08-15 14:37:22','1001A1100000000001JN',0,1,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,0,2,null,null,null,'2018-08-15 15:06:11','1001A1100000000001JN','12个月','12个月',null,null,null,null,null,'1001ZZ1000000000KHOA','1001ZZ1000000000KGVY','0001A1100000000005F5','GLOBLE00000000000000',null,null,null,null,null,null,'2018-08-15 15:06:11')
+go

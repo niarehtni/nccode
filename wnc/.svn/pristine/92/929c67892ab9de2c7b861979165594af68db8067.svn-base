@@ -1,0 +1,127 @@
+package nc.vo.wa.grade;
+
+import nc.vo.pub.SuperVO;
+import nc.vo.pub.lang.UFBoolean;
+import nc.vo.pub.lang.UFDate;
+import nc.vo.pub.lang.UFDouble;
+
+public class WaGradeVerVO extends SuperVO {
+
+	private static final long serialVersionUID = 1L;
+	private String pk_wa_grd;
+	private String pk_wa_gradever;
+	private UFDouble gradever_num;
+
+	private UFDate ver_create_date;
+	private String gradever_name;
+	private UFBoolean effect_flag;
+	private String gradets;
+	private WaCriterionVO[] criterionvos;
+	private CrtVO[] crtVOs;
+	public static String PK_WA_GRD = "pk_wa_grd";
+	public static String PK_WA_GRADEVER = "pk_wa_gradever";
+	public static String GRADEVER_NUM = "gradever_num";
+	public static String VER_CREATE_DATE = "ver_create_date";
+	public static String GRADEVER_NAME = "gradever_name";
+	public static String EFFECT_FLAG = "effect_flag";
+	public static String GRADE_TS = "grade_ts";
+	public static final String TABLENAME = "wa_grade_ver";
+
+	public CrtVO[] getCrtVOs() {
+		if (crtVOs == null) {
+			return new CrtVO[0];
+		}
+		return crtVOs;
+	}
+
+	public void setCrtVOs(CrtVO[] crtVOs) {
+		this.crtVOs = crtVOs;
+	}
+
+	public String getGradets() {
+		return gradets;
+	}
+
+	public void setGradets(String gradets) {
+		this.gradets = gradets;
+	}
+
+	public WaCriterionVO[] getCriterionvos() {
+		return CrtVO.getData(getCrtVOs());
+	}
+
+	public WaCriterionVO[] getCriterionvos4Copy() {
+		return criterionvos;
+	}
+
+	public void setCriterionvos(WaCriterionVO[] criterionvos) {
+		this.criterionvos = criterionvos;
+	}
+
+	public String getPk_wa_grd() {
+		return pk_wa_grd;
+	}
+
+	public void setPk_wa_grd(String pk_wa_grd) {
+		this.pk_wa_grd = pk_wa_grd;
+	}
+
+	public String getPk_wa_gradever() {
+		return pk_wa_gradever;
+	}
+
+	public void setPk_wa_gradever(String pk_wa_gradever) {
+		this.pk_wa_gradever = pk_wa_gradever;
+	}
+
+	public UFDouble getGradever_num() {
+		return gradever_num;
+	}
+
+	public void setGradever_num(UFDouble gradever_num) {
+		this.gradever_num = gradever_num;
+	}
+
+	public UFDate getVer_create_date() {
+		return ver_create_date;
+	}
+
+	public void setVer_create_date(UFDate ver_create_date) {
+		this.ver_create_date = ver_create_date;
+	}
+
+	public UFBoolean getEffect_flag() {
+		return effect_flag;
+	}
+
+	public void setEffect_flag(UFBoolean effect_flag) {
+		this.effect_flag = effect_flag;
+	}
+
+	public String getGradever_name() {
+		return gradever_name;
+	}
+
+	public void setGradever_name(String gradever_name) {
+		this.gradever_name = gradever_name;
+	}
+
+	@Override
+	public String getPKFieldName() {
+		// TODO Auto-generated method stub
+		return "pk_wa_gradever";
+	}
+
+	@Override
+	public String getParentPKFieldName() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public String getTableName() {
+		// TODO Auto-generated method stub
+		return "wa_grade_ver";
+	}
+
+}

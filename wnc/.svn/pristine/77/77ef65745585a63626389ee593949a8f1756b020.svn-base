@@ -1,0 +1,128 @@
+package nc.bs.twhr.twhr_declaration.impl;
+
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import nc.bs.dao.BaseDAO;
+import nc.bs.hr.dataexchange.export.DataFormatter;
+import nc.hr.utils.InSQLCreator;
+import nc.itf.twhr.IDeclarationExportService;
+import nc.pubitf.twhr.utils.LegalOrgUtilsEX;
+import nc.vo.bd.defdoc.DefdocVO;
+import nc.vo.pub.BusinessException;
+import nc.vo.pub.lang.UFDate;
+
+import org.apache.commons.lang.StringUtils;
+
+public class DeclarationExportServiceImpl implements IDeclarationExportService {
+	private BaseDAO basedao = new BaseDAO();
+
+	@Override
+	public List<Map<String, String[]>> getIITXTextReport(String pk_group, String pk_org, UFDate startdate,
+			UFDate enddate, String name, String email, String tel) throws BusinessException {
+		List<Map<String, String[]>> rtns = new ArrayList<Map<String, String[]>>();
+		Set<String> orgsByLegal = LegalOrgUtilsEX.getOrgsByLegal(pk_org, pk_group);
+		// 通过法人公司找到所有的统编
+		InSQLCreator insql = new InSQLCreator();
+		List<DefdocVO> defdocvos = (List<DefdocVO>) this.basedao.retrieveByClause(
+				DefdocVO.class,
+				"PK_DEFDOC =(select REFVALUE from TWHR_BASEDOC " + "where code='TWTAX005' and pk_org in("
+						+ insql.getInSQL((String[]) orgsByLegal.toArray(new String[orgsByLegal.size()])) + "))");
+		Date date = new Date();
+		for (String legal_pk_org : orgsByLegal) {
+			// Map<String, Object> refList = getRefListByOrg(legal_pk_org);
+			// InSQLCreator creator = new InSQLCreator();
+			// String tempTableName = creator.getInSQL(dataPKs);
+
+			Map<String, String[]> maps = new HashMap<String, String[]>();
+			// 获取三张表名\
+			String[] tablenames = { "declaration_business", "declaration_nonparttime", "declaration_parttime" };
+			int i = 1;
+			for (String tablename : tablenames) {
+				// 所得收入类别
+				if (tablename.equalsIgnoreCase("declaration_business")) {
+					DataFormatter formatter = new DataFormatter("SECOND_HINSURANCE_TW_65");
+					formatter.getRefsMap().put("PK_ORG", pk_org);
+					formatter.getRefsMap().put("LEGAL_PK_ORG", legal_pk_org);
+					formatter.getRefsMap().put("INCOMECATEGORY", "65");
+					formatter.getRefsMap().put("CONTACTEMAIL", email);
+					formatter.getRefsMap().put("CONTTEL", tel);
+					formatter.getRefsMap().put("CONTACTNAME", name);
+					formatter.getRefsMap().put("STARTDATE", startdate.toString());
+					formatter.getRefsMap().put("ENDDATE", enddate.toString());
+					formatter.setiYear(date.getYear());
+					formatter.setStartPeriod(startdate.toString().substring(0, 4)
+							+ startdate.toString().substring(5, 7));
+					formatter.setEndPeriod(enddate.toString().substring(0, 4) + enddate.toString().substring(5, 7));
+					String[] rtn = formatter.getData();
+					if (rtn.length > 0) {
+						// 檔案名稱DPR+申報單位統一編號(8碼)+處理/申報日期(yyymmdd)+序號3碼
+						// 当前年
+						String curdate = String.valueOf(date.getYear() - 1911) + date.toString().substring(5, 7)
+								+ date.toString().substring(8, 10);
+						maps.put(
+								"DPR" + defdocvos.get(0).getCode() + curdate
+										+ StringUtils.leftPad(String.valueOf(i++), 3, '0'), rtn);
+					}
+				} else if (tablename.equalsIgnoreCase("declaration_nonparttime")) {
+					DataFormatter formatter = new DataFormatter("SECOND_HINSURANCE_TW_62");
+					formatter.getRefsMap().put("PK_ORG", pk_org);
+					formatter.getRefsMap().put("LEGAL_PK_ORG", legal_pk_org);
+					formatter.getRefsMap().put("INCOMECATEGORY", "62");
+					formatter.setStartPeriod(startdate.toString().substring(0, 4)
+							+ startdate.toString().substring(5, 7));
+					formatter.setEndPeriod(enddate.toString().substring(0, 4) + enddate.toString().substring(5, 7));
+					formatter.getRefsMap().put("STARTDATE", startdate.toString());
+					formatter.getRefsMap().put("ENDDATE", enddate.toString());
+					// formatter.getRefsMap().put("CURDATE", date);
+					formatter.getRefsMap().put("CONTACTEMAIL", email);
+					formatter.getRefsMap().put("CONTTEL", tel);
+					formatter.getRefsMap().put("CONTACTNAME", name);
+					formatter.setiYear(date.getYear());
+					String[] rtn = formatter.getData();
+					if (rtn.length > 0) {
+						// 檔案名稱DPR+申報單位統一編號(8碼)+處理/申報日期(yyymmdd)+序號3碼
+						// 当前年
+						String curdate = String.valueOf(date.getYear() - 1911) + date.toString().substring(5, 7)
+								+ date.toString().substring(8, 10);
+						maps.put(
+								"DPR" + defdocvos.get(0).getCode() + curdate
+										+ StringUtils.leftPad(String.valueOf(i++), 3, '0'), rtn);
+					}
+				} else {
+					DataFormatter formatter = new DataFormatter("SECOND_HINSURANCE_TW_63");
+					formatter.getRefsMap().put("PK_ORG", pk_org);
+					formatter.getRefsMap().put("LEGAL_PK_ORG", legal_pk_org);
+					formatter.getRefsMap().put("INCOMECATEGORY", "63");
+					formatter.setStartPeriod(startdate.toString().substring(0, 4)
+							+ startdate.toString().substring(5, 7));
+					formatter.setEndPeriod(enddate.toString().substring(0, 4) + enddate.toString().substring(5, 7));
+					// formatter.getRefsMap().put("CURDATE", new Date());
+					formatter.getRefsMap().put("STARTDATE", startdate.toString());
+					formatter.getRefsMap().put("ENDDATE", enddate.toString());
+					formatter.getRefsMap().put("CONTACTEMAIL", email);
+					formatter.getRefsMap().put("CONTTEL", tel);
+					formatter.getRefsMap().put("CONTACTNAME", name);
+					formatter.setiYear(date.getYear());
+					String[] rtn = formatter.getData();
+					if (rtn.length > 0) {
+						// 檔案名稱DPR+申報單位統一編號(8碼)+處理/申報日期(yyymmdd)+序號3碼
+						// 当前年
+						String curdate = String.valueOf(date.getYear() - 1911) + date.toString().substring(5, 7)
+								+ date.toString().substring(8, 10);
+						maps.put(
+								"DPR" + defdocvos.get(0).getCode() + curdate
+										+ StringUtils.leftPad(String.valueOf(i++), 3, '0'), rtn);
+					}
+				}
+			}
+			rtns.add(maps);
+		}
+		return rtns;
+	}
+
+}

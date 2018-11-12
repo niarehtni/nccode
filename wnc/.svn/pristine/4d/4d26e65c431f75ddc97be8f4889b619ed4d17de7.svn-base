@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="gbk"?>
+<module name="twhr">
+	<public>
+		<!-- 接口 -->
+		<component priority="0" singleton="true" remote="true" tx="CMT" supportAlias="true">
+		  <interface>nc.itf.twhr.IBasedocMaintain</interface>
+		  <implementation>nc.impl.twhr.BasedocMaintainImpl</implementation>
+		</component>
+		<component priority="0" singleton="true" remote="true" tx="CMT" supportAlias="true">
+		  <interface>nc.pubitf.twhr.IBasedocPubQuery</interface>
+		  <implementation>nc.pubimpl.twhr.BasedocPubQueryImpl</implementation>
+		</component>
+	</public>
+</module>
+ 

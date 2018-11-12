@@ -1,0 +1,6 @@
+insert into md_table(createtime,creator,databaseid,description,displayname,dr,fromsourcebmf,help,id,industry,isactive,isextendtable,modifier,modifytime,name,parenttable,resid,resmodule,ts,versiontype) values( '2010-05-19 18:57:36',null,null,null,'劳动合同',null,'Y',null,'hi_psndoc_ctrt','0',null,null,'developer','2015-10-26 13:40:58','hi_psndoc_ctrt',null,'2center-000002','60110center','2018-09-16 13:58:37',0)
+/
+insert into md_table(createtime,creator,databaseid,description,displayname,dr,fromsourcebmf,help,id,industry,isactive,isextendtable,modifier,modifytime,name,parenttable,resid,resmodule,ts,versiontype) values( '2010-05-19 18:57:09',null,null,null,'人员工作记录',null,'Y',null,'hi_psnjob','0',null,null,'developer','2015-10-26 13:40:58','hi_psnjob',null,'2center-000028','60110center','2018-09-16 13:58:37',0)
+/
+insert into md_table(createtime,creator,databaseid,description,displayname,dr,fromsourcebmf,help,id,industry,isactive,isextendtable,modifier,modifytime,name,parenttable,resid,resmodule,ts,versiontype) values( '2011-12-09 16:27:17',null,null,null,'岗位协议',null,'Y',null,'hrcm_agreement','0',null,null,'developer','2015-10-26 13:40:58','hrcm_agreement',null,'2center-000070','60110center','2018-09-16 13:58:37',0)
+/

@@ -1,0 +1,2 @@
+insert into pub_billtemplet(bill_templetcaption,bill_templetname,devorg,dividerproportion,dr,funccode,layer,metadataclass,model_type,modulecode,nodecode,options,pk_billtemplet,pk_billtypecode,pk_corp,pk_org,resid,shareflag,ts,validateformula) values( '部门调整申请','SYSTEM',null,null,0,null,0,'hrjf.deptadj',null,'HRJF','60050deptadj',null,'0001AA10000000HY5HKX','60050depta','@@@@',null,null,null,'2018-11-04 19:05:49',null)
+/

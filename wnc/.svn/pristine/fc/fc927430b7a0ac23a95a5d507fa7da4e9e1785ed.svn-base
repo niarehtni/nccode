@@ -1,0 +1,57 @@
+package nc.itf.hrwa;
+
+import java.util.Map;
+
+import nc.vo.pub.BusinessException;
+import nc.vo.pub.lang.UFDouble;
+import nc.vo.wa.paydata.AggDaySalaryVO;
+import nc.vo.wa.pub.WaDayLoginContext;
+
+public  interface IWadaysalaryService {
+	/**
+	 * 通過人力資源組織，計算日薪
+	 * @param pk_hrorg 
+	 * @param calculDate
+	 * @return
+	 * @throws BusinessException
+	 */
+	public AggDaySalaryVO[] calculSalaryByHrorg(String pk_hrorg,String calculDate) throws BusinessException;
+	/**
+	 * 通過人力資源組織，計算日薪
+	 * @param context
+	 * @param pk_hrorg
+	 * @param calculDate
+	 * @return
+	 * @throws BusinessException
+	 */
+	public AggDaySalaryVO[] calculSalaryByHrorg(WaDayLoginContext context,String pk_hrorg, String calculDate)throws BusinessException;
+	/**
+	 * 計算當前人力資源組織，部分員工日薪
+	 * @param pk_hrorg
+	 * @param pk_psnjobs
+	 * @param calculDate
+	 * @return
+	 * @throws BusinessException
+	 */
+	public AggDaySalaryVO[] calculSalaryByPsnjobs(String pk_hrorg,String pk_psnjobs[],String calculDate) throws BusinessException;
+	/**
+	 * 計算當前人力資源組織，部分員工日薪
+	 * @param context
+	 * @param pk_hrorg
+	 * @param pk_psnjobs
+	 * @param calculDate
+	 * @return
+	 * @throws BusinessException
+	 */
+	public AggDaySalaryVO[] calculSalaryByPsnjobs(WaDayLoginContext context,String pk_hrorg, String[] pk_psnjobs, String calculDate)throws BusinessException;
+	/**
+	 * 統計某一月份所有人員的請假扣款
+	 * @param pk_psndoc
+	 * @param cyear
+	 * @param cperiod
+	 * @return
+	 * @throws BusinessException
+	 */
+	public Map<String, UFDouble> statisticLeavecharge(String pk_psndoc[],String cyear,String cperiod) throws BusinessException;
+	
+}

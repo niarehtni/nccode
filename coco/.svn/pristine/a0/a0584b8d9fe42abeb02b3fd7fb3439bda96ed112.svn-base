@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding='UTF-8'?>
+<UIMeta flowmode="true" id="main_um" jquery="0">
+    <FlowvLayout id="flowvlayout5648" widgetId="main">
+    	<FlowvPanel id="panelv_mainmenubar" widgetId="main">
+           <CanvasLayout className="rightcanvas" id="menucanvas" widgetId="main">
+                <CanvasPanel id="canvasp1" widgetId="main">
+		            <Menubar id="mainMenubar" widgetId="main"> 
+		            </Menubar>
+                </CanvasPanel>
+            </CanvasLayout>
+        </FlowvPanel>
+       <FlowvPanel id="panelv25674" widgetId="main" topPadding="20" leftPadding="20" rightPadding="20">
+            <FormComp height="100%" id="frmChangeClassInfo" label_position="" left="0" position="relative" top="50" widgetId="main" width="100%">
+            </FormComp>
+        </FlowvPanel> 
+    </FlowvLayout>
+</UIMeta>

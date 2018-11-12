@@ -1,0 +1,184 @@
+package nc.ui.pubapp.uif2app.actions;
+import java.awt.event.ActionEvent;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import nc.ui.pub.bill.BillCardPanel;
+
+import javax.swing.KeyStroke;
+
+import org.apache.avalon.framework.component.Component;
+
+import nc.bs.framework.common.NCLocator;
+import nc.itf.pubapp.pub.smart.ISmartService;
+import nc.itf.twhr.IBasedocMaintain;
+import nc.itf.uap.IUAPQueryBS;
+import nc.jdbc.framework.processor.MapListProcessor;
+import nc.ui.ml.NCLangRes;
+import nc.ui.pub.beans.MessageDialog;
+import nc.ui.uif2.NCAction;
+import nc.ui.uif2.UIState;
+import nc.ui.uif2.editor.BatchBillTable;
+import nc.ui.uif2.model.BatchBillTableModel;
+
+import nc.uif2.annoations.MethodType;
+import nc.uif2.annoations.ModelMethod;
+import nc.uif2.annoations.ModelType;
+import nc.uif2.annoations.ViewMethod;
+import nc.uif2.annoations.ViewType;
+import nc.vo.bd.meta.BatchOperateVO;
+import nc.vo.pub.BusinessException;
+import nc.vo.twhr.basedoc.BaseDocVO;
+import nc.vo.uif2.LoginContext;
+
+public class SynchLegalpersonAction extends NCAction implements Component {
+
+	private static final long serialVersionUID = 3092296343062418822L;
+	private BatchBillTableModel model = null;
+	private BatchBillTable editor = null; 
+
+	public SynchLegalpersonAction() {
+		String editStr = NCLangRes.getInstance().getStrByID("uif2", "同步至下级");
+		// ActionInitializer.initializeAction(this, "Edit");
+		putValue("ShortDescription", editStr + "(Ctrl+K)");
+		putValue("AcceleratorKey", KeyStroke.getKeyStroke(75, 2));
+		setCode("Syn");
+		setBtnName("同步至下级");
+	}
+
+	public void doAction(ActionEvent e) throws Exception {
+		/*BillCardPanel panel = ((nc.ui.pubapp.uif2app.view.GlbShowUpableBatchBillTable)this.editor).getBillCardPanel();
+		int [] selectRows = panel.getBillTable().getSelectedRows();
+		int selectRowsNum = panel.getBillTable().getSelectedRowCount();
+		BaseDocVO[] itemvos = new BaseDocVO[selectRowsNum];
+		for (int i = 0; i < selectRowsNum; i++) {
+			itemvos[i] = (BaseDocVO) panel.getBillModel().getBodyValueRowVO(selectRows[i], BaseDocVO.class.getName());;
+		}*/
+		
+		Object[] psns = getModel().getSelectedOperaDatas();
+		String[] strings = getNeedShowOrgPks();
+		// 先做校验，判断需要同步的编码是否已存在，如果存在，先删除，再增加
+		vaildata(strings, psns);
+		// 同步到下一级
+		synbtnmethod(strings, psns);
+
+	}
+	@SuppressWarnings("all")
+	private void vaildata(String[] strings, Object[] psns) {
+		try {
+			List<BaseDocVO> arraylist = new ArrayList<BaseDocVO>();
+			IUAPQueryBS iUAPQueryBS = (IUAPQueryBS) NCLocator.getInstance()
+					.lookup(IUAPQueryBS.class.getName());
+			// 除了全局之外的
+			List<Map<String, String>> custlist = (List<Map<String, String>>) iUAPQueryBS
+					.executeQuery(
+							"select pk_org,code ,id  from twhr_basedoc "
+							+ "where pk_org <> 'GLOBLE00000000000000' ;", new MapListProcessor());
+			
+			for (int x = 0; x < psns.length; x++) {
+				for(int y =0; y<custlist.size(); y++){
+					if(((BaseDocVO) psns[x]).getCode().equals(custlist.get(y).get("code"))){
+						((BaseDocVO) psns[x]).setId(custlist.get(y).get("id"));
+						arraylist.add((BaseDocVO) ((BaseDocVO) psns[x]).clone());
+					}
+				}
+				
+			}
+			//获取到所有重复数据的id,然后去数据库删掉
+			  BaseDocVO[] basedoc = new BaseDocVO[arraylist.size()];
+			  IBasedocMaintain basedocMaintain = (IBasedocMaintain)
+			  NCLocator.getInstance().lookup(
+			  IBasedocMaintain.class.getName());
+			  basedocMaintain.del(arraylist.toArray(basedoc));
+			 
+			
+		} catch (Exception e2) {
+			e2.printStackTrace();
+		}
+
+	}
+
+	private void synbtnmethod(String[] strings, Object[] psns) {
+		try {
+			List<BaseDocVO> arraylist = new ArrayList<BaseDocVO>();
+			for (int i = 0; i < strings.length; i++) {
+				for (int j = 0; j < psns.length; j++) {
+					BaseDocVO basedoc = (BaseDocVO) psns[j];
+					((BaseDocVO) psns[j]).setPk_group(model.getContext().getPk_group());
+					((BaseDocVO) psns[j]).setPk_org(strings[i]);
+					((BaseDocVO) psns[j]).setId(null);
+					arraylist.add((BaseDocVO) ((BaseDocVO) psns[j]).clone());
+				}
+			}
+			BaseDocVO[] docvo = new BaseDocVO[arraylist.size()];
+			BatchOperateVO batchoperate = new BatchOperateVO();
+			batchoperate.setAddObjs(arraylist.toArray(docvo));
+			ISmartService service = (ISmartService) NCLocator.getInstance()
+					.lookup(ISmartService.class.getName());
+			service.batchSave(batchoperate);
+			/*
+			 * IBasedocMaintain basedocMaintain = (IBasedocMaintain)
+			 * NCLocator.getInstance().lookup(
+			 * IBasedocMaintain.class.getName());
+			 * basedocMaintain.synbasedoc(arraylist.toArray(docvo));
+			 */
+			MessageDialog.showHintDlg(model.getContext().getEntranceUI(), "同步",
+					"同步成功");
+
+		} catch (Exception e1) {
+			e1.printStackTrace();
+			MessageDialog.showHintDlg(model.getContext().getEntranceUI(), "同步",
+					"同步失败");
+		}
+	}
+
+	private String[] getNeedShowOrgPks() {
+		LoginContext context = getModel().getContext();
+		List<String> arraylist = null;
+		try {
+			arraylist = new ArrayList<String>();
+			IUAPQueryBS iUAPQueryBS = (IUAPQueryBS) NCLocator.getInstance()
+					.lookup(IUAPQueryBS.class.getName());
+			// 所有法人pk
+			List<Map<String, String>> custlist = (List<Map<String, String>>) iUAPQueryBS
+					.executeQuery("select pk_corp from org_corp",
+							new MapListProcessor());
+			for (Map<String, String> map : custlist) {
+				arraylist.add(map.get("pk_corp"));
+			}
+
+		} catch (BusinessException e) {
+			e.printStackTrace();
+		}
+		String[] orgPKs = new String[arraylist.size()];
+		arraylist.toArray(orgPKs);
+		return orgPKs == null ? new String[0] : orgPKs;
+
+	}
+
+	protected boolean isActionEnable() {
+		return (this.model.getUiState() == UIState.NOT_EDIT)
+				&& (!this.model.getRows().isEmpty());
+	}
+
+	@ModelMethod(modelType = ModelType.BatchBillTableModel, methodType = MethodType.GETTER)
+	public BatchBillTableModel getModel() {
+		return this.model;
+	}
+
+	@ModelMethod(modelType = ModelType.BatchBillTableModel, methodType = MethodType.SETTER)
+	public void setModel(BatchBillTableModel model) {
+		this.model = model;
+		model.addAppEventListener(this);
+	}
+	@ViewMethod(viewType=ViewType.BatchBillTable, methodType=MethodType.GETTER)
+	  public BatchBillTable getEditor() {
+	     return this.editor;
+	   }
+	   
+	@ViewMethod(viewType=ViewType.BatchBillTable, methodType=MethodType.SETTER)
+	   public void setEditor(BatchBillTable editor) {
+	    this.editor = editor;
+	   }
+}

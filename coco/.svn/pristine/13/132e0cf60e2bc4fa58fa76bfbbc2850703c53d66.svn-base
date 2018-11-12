@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding='UTF-8'?>
+<UIMeta flowmode="true" id="main_um" preferredHeight="" preferredWidth="">
+    <FlowvLayout id="mainFlowvLayout" widgetId="main">
+		<FlowvPanel id="panelv_operate" widgetId="main">
+         <CanvasLayout className="rightcanvas" id="menucanvas" widgetId="main">
+           <CanvasPanel id="canvasp1" widgetId="main">
+       	  	 <Menubar height="100%" id="menubar" left="0" position="relative" top="0" widgetId="main" width="100%">
+             </Menubar>
+           </CanvasPanel>
+         </CanvasLayout>
+        </FlowvPanel>
+        <FlowvPanel id="g_p_2" leftPadding="20" rightPadding="20" widgetId="main">
+            <PanelLayout expand="true" id="layout02" title="基础信息" widgetId="main" className="small_panel_div">
+                <PanelPanel bottomPadding="10" id="panel02" topPadding="10" widgetId="main">
+                    <FormComp height="100%" id="base_form" label_position="" left="0" position="relative" top="0" width="100%" widgetId="main">
+                    </FormComp>
+                </PanelPanel>
+            </PanelLayout>
+        </FlowvPanel>
+        <FlowvPanel id="g_p_3" leftPadding="20" rightPadding="20" widgetId="main" width="100%">
+            <PanelLayout expand="true" id="layout03" title="作息时间规则" widgetId="main" className="small_panel_div">
+                <PanelPanel bottomPadding="10" id="panel03" topPadding="20" widgetId="main">
+                    <FormComp height="100%" id="zxsj_form" label_position="" left="0" position="relative" top="0" width="100%" widgetId="main">
+                    </FormComp>
+                </PanelPanel>
+            </PanelLayout>
+        </FlowvPanel>
+        <FlowvPanel id="g_p_4" leftPadding="20" rightPadding="20" widgetId="main">
+            <PanelLayout expand="true" id="layout04" title="工休时间列表" widgetId="main"  className="small_panel_div">
+                <PanelPanel bottomPadding="10" id="panel04" topPadding="20" widgetId="main">
+                    <GridComp height="100%" id="rt_grid" left="100" position="relative" top="0" width="80%">
+            		</GridComp>
+                </PanelPanel>
+            </PanelLayout>
+        </FlowvPanel>
+         <FlowvPanel id="g_p_5" leftPadding="20" rightPadding="20" widgetId="main" width="100%">
+            <PanelLayout expand="true" id="layout05" title="迟到早退规则" widgetId="main" className="small_panel_div">
+                <PanelPanel bottomPadding="10" id="panel05" topPadding="20" widgetId="main">
+                    <FormComp height="100%" id="lateleave_form" label_position="" left="0" position="relative" top="0" width="100%" widgetId="main">
+                    </FormComp>
+                </PanelPanel>
+            </PanelLayout>
+        </FlowvPanel>
+         <FlowvPanel id="g_p_6" leftPadding="20" rightPadding="20" widgetId="main" width="100%">
+            <PanelLayout expand="true" id="layout06" title="加班规则" widgetId="main" className="small_panel_div">
+                <PanelPanel bottomPadding="30" id="panel06" topPadding="20" widgetId="main">
+                    <FormComp height="100%" id="overtime_form" label_position=""  left="0" position="relative" top="0" width="100%" widgetId="main">
+                    </FormComp>
+                </PanelPanel>
+            </PanelLayout>
+        </FlowvPanel>
+        <FlowvPanel id="panelv06429dfds" widgetId="main" height="10">
+		</FlowvPanel>
+    </FlowvLayout>
+</UIMeta>

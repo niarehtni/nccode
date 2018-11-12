@@ -1,0 +1,606 @@
+package nc.ui.ta.psndocwadoc.view.labourjoin;
+
+
+import java.awt.BorderLayout;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import nc.bs.framework.common.NCLocator;
+import nc.desktop.ui.WorkbenchEnvironment;
+import nc.itf.hr.wa.IPsndocwadocLabourService;
+import nc.ui.bd.ref.model.DefdocGridRefModel;
+import nc.ui.pub.beans.UIPanel;
+import nc.ui.pub.beans.UIRefPane;
+import nc.ui.pub.beans.ValueChangedEvent;
+import nc.ui.pub.beans.ValueChangedListener;
+import nc.ui.ta.pub.BUPanel;
+import nc.ui.ta.pub.selpsn.ConditionSelPsnPanel;
+import nc.ui.uif2.AppEvent;
+import nc.ui.uif2.AppEventListener;
+import nc.ui.uif2.model.AbstractUIAppModel;
+import nc.ui.uif2.model.IAppModel;
+import nc.vo.pub.BusinessException;
+import nc.vo.pub.lang.UFDate;
+import nc.vo.pub.lang.UFLiteralDate;
+
+import org.apache.commons.lang.StringUtils;
+
+import com.jgoodies.forms.builder.DefaultFormBuilder;
+import com.jgoodies.forms.layout.FormLayout;
+
+@SuppressWarnings("restriction")
+public class JoinSetPanelForOutJoin extends UIPanel implements ValueChangedListener, AppEventListener,  ActionListener {
+
+	private static final long serialVersionUID = 749514391008736111L;
+	
+	IAppModel model = null;
+
+	ConditionSelPsnPanel selPsnPanel;
+	UIPanel OutPanel;
+	UIRefPane dateRefPane;
+	UIRefPane xianZhongRefPane;
+//	UIRefPane laoShenRefPane;
+//	UIRefPane laoJiRefPane;
+//	UIRefPane laoFuRefPane;
+//	UIRefPane jianShenRefPane;
+//	UIRefPane jianJiRefPane;
+//	UIRefPane jianFuRefPane;
+//	UIRefPane tuiFenRefPane;
+//	UIRefPane tuiJiRefPane;
+//	UIRefPane teShuRefPane;
+//	UIComboBox yiDongRefPane;
+//	UIRefPane rateRefPane;
+//	UICheckBox baoCheckBox;
+//	UICheckBox tuiCheckBox;
+//	UICheckBox jianCheckBox;
+	private BUPanel buPanel=null;
+	private UIPanel topPanel = null;
+	private String pk_org;
+	IPsndocwadocLabourService defService = null;
+	UFLiteralDate newDate = new UFLiteralDate();
+
+	public JoinSetPanelForOutJoin() {
+	}
+
+	public void init(){
+		//显示两个radiobutton的panel
+		UIPanel topSubPanel1 = new UIPanel();
+		topSubPanel1.setLayout(new FlowLayout());
+		topSubPanel1.add(getAddPanel());
+		topSubPanel1.setSize(new Dimension(400,300));
+		topPanel = new UIPanel();
+		topPanel.setLayout(new BorderLayout());
+		topPanel.add(topSubPanel1, BorderLayout.NORTH);
+		setLayout(new BorderLayout());
+		add(topPanel,BorderLayout.NORTH);
+	}
+
+	protected ConditionSelPsnPanel getSelPsnPanel(){
+		if(selPsnPanel==null){
+			selPsnPanel = new ConditionSelPsnPanel();
+			selPsnPanel.setModel((AbstractUIAppModel) getModel());
+			selPsnPanel.init();
+		}
+		return selPsnPanel;
+	}
+	public BUPanel getBuPanel() {
+		if(buPanel==null){
+			buPanel = new BUPanel();
+			buPanel.setModel((AbstractUIAppModel) getModel());
+			buPanel.init();
+			buPanel.getBuRef().addValueChangedListener(this);
+		}
+		return buPanel;
+	}
+
+
+/*	@Override
+	public void valueChanged(ValueChangedEvent event) {
+		int daysCount = getCircularDaysCountInput().getValue();
+		int existsCount = getShiftSetScrollPane().getTable().getRowCount();
+		if(daysCount==existsCount){
+			return;
+		}
+		if(daysCount>existsCount){
+			getShiftSetScrollPane().addLine(daysCount-existsCount);
+			return;
+		}
+		int[] delRows = new int[existsCount-daysCount];
+		for(int i=0;i<delRows.length;i++){
+			delRows[i]=daysCount+i;
+		}
+		getShiftSetScrollPane().delLine(delRows);
+
+	}
+*/
+
+	public IAppModel getModel() {
+		return model;
+	}
+
+	public void setModel(IAppModel model) {
+		this.model = model;
+		model.addAppEventListener(this);
+	}
+
+	@Override
+	public void handleEvent(AppEvent event) {
+
+	}
+	public UIPanel getAddPanel(){
+		if(OutPanel==null){
+			OutPanel = new UIPanel();
+			FormLayout layout = new FormLayout("left:50px, 10px, fill:100px, 15px,left:100px, 10px, fill:100px, 15px," +
+					   "left:100px, 10px, fill:100px, 15px,left:100px, 10px, fill:100px, 15px", 
+                    "50px, 50px");
+			DefaultFormBuilder builder = new DefaultFormBuilder(layout,OutPanel);
+			builder.append("开始日期");
+			builder.append(getRefBeginDate());
+			builder.nextLine();
+			
+			builder.append("险种");
+			builder.append(getXianZhongRefPane());
+			
+//			builder.append(getBaoCheckBox());
+//			builder.append("劳保");
+//			builder.append("劳保投保身分");
+//			builder.append(getLaoShenRefPane());
+//			builder.append("劳保级距");
+//			builder.append(getLaoJiRefPane());
+//			builder.append("劳保补助身分");
+//			builder.append(getLaoBuRefPane());
+//			builder.nextLine();
+//			
+//			builder.append(getJianCheckBox());
+//			builder.append("健保");
+//			builder.append("健保投保身份");
+//			builder.append(getJianShenRefPane());
+//			builder.append("健保级距");
+//			builder.append(getJianJiRefPane());
+//			builder.append("健保补助身分");
+//			builder.append(getJianBuRefPane());
+//			builder.nextLine();
+//			
+//			builder.append(getTuiCheckBox());
+//			builder.append("劳退");
+//			builder.append("劳退提缴身分");
+//			builder.append(getTuiFenRefPane());
+//			builder.append("劳退级距");
+//			builder.append(getTuiJiRefPane());
+//			builder.nextLine();
+//			
+//			builder.append("");
+//			builder.append("");
+//			builder.append("劳保特殊身份别");
+//			builder.append(getTeShuRefPane());
+//			builder.append("自提比例");
+//			builder.append(getRateRefPane());
+//			builder.nextLine();
+//			
+//			builder.append("异动类型");
+//			builder.append(getYiDongRefPane());
+//			FormLayout layout = new FormLayout(
+//					"15dlu, 2dlu, left:pref, 23dlu, left:pref, 23dlu, left:pref, 40dlu, 52dlu, 11dlu",
+//			"default, 30dlu");
+//			DefaultFormBuilder builder = new DefaultFormBuilder(layout,shiftPanel);
+//			builder.append(getOldShiftCheckBox());
+//			builder.append(ResHelper.getString("6017psncalendar","06017psncalendar0073")
+///*@res "原班次"*/);
+//			builder.append(getOldShiftRefPane());
+//			builder.append(ResHelper.getString("6017psncalendar","06017psncalendar0074")
+///*@res "说明:勾选\"原班次\",则只调整班次为\"原班次\"参照指定班次的工作日"*/);
+//			builder.nextLine();
+//			builder.append(new UILabel(" "));
+//			builder.append(ResHelper.getString("6017psncalendar","06017psncalendar0075")
+///*@res "新班次"*/);
+//			builder.append(getNewShiftRefPane());
+//			shiftPanel.setBorder(new UITitledBorder(ResHelper.getString("6017psncalendar","06017psncalendar0076")
+///*@res "班次信息"*/));
+		}
+		return OutPanel;
+	}
+
+//	public UICheckBox getBaoCheckBox() {
+//		if(baoCheckBox==null){
+//			baoCheckBox = new UICheckBox();
+//			baoCheckBox.setSelected(false);
+//			baoCheckBox.addActionListener(this);
+//		}
+//		return baoCheckBox;
+//	}
+//	public UICheckBox getTuiCheckBox() {
+//		if(tuiCheckBox==null){
+//			tuiCheckBox = new UICheckBox();
+//			tuiCheckBox.setSelected(false);
+//			tuiCheckBox.addActionListener(this);
+//		}
+//		return tuiCheckBox;
+//	}
+//	public UICheckBox getJianCheckBox() {
+//		if(jianCheckBox==null){
+//			jianCheckBox = new UICheckBox();
+//			jianCheckBox.setSelected(false);
+//			jianCheckBox.addActionListener(this);
+//		}
+//		return jianCheckBox;
+//	}
+	//险种
+	protected UIRefPane getXianZhongRefPane(){
+		if(xianZhongRefPane==null){
+			String pk_defdoclist = "";
+			try {
+				defService = NCLocator.getInstance().lookup(IPsndocwadocLabourService.class);
+				pk_defdoclist = defService.queryRefNameByCode("TWHR009");
+			} catch (BusinessException e) {
+				e.printStackTrace();
+			}
+			xianZhongRefPane = new UIRefPane();
+			DefdocGridRefModel refModel = new DefdocGridRefModel();
+			refModel.setPara1(pk_defdoclist);
+			refModel.setPara2("bd_defdoc");
+			xianZhongRefPane.setRefModel(refModel);
+			xianZhongRefPane.setPreferredSize(new Dimension(100, 20));
+			xianZhongRefPane.getRefModel().setPk_org(getBuPanel().getPK_BU());
+		}
+		return xianZhongRefPane;
+	}
+//	//劳保投保身分
+//	protected UIRefPane getLaoShenRefPane(){
+//		if(laoShenRefPane==null){
+//			String pk_defdoclist = "";
+//			try {
+//				defService = NCLocator.getInstance().lookup(IDefdoclistQryService.class);
+//				pk_defdoclist = defService.queryRefNameByCode("TWHR006");
+//			} catch (BusinessException e) {
+//				e.printStackTrace();
+//			}
+//			laoShenRefPane = new UIRefPane();
+//			DefdocGridRefModel refModel = new DefdocGridRefModel();
+//			refModel.setPara1(pk_defdoclist);
+//			refModel.setPara2("bd_defdoc");
+//			laoShenRefPane.setRefModel(refModel);
+//			laoShenRefPane.setPreferredSize(new Dimension(100, 20));
+//			laoShenRefPane.getRefModel().setPk_org(getBuPanel().getPK_BU());
+//			laoShenRefPane.setRefEditable(false);
+//			laoShenRefPane.setEnabled(false);
+//		}
+//		return laoShenRefPane;
+//	}
+//	
+//	//劳保级距
+//	protected UIRefPane getLaoJiRefPane(){
+//		if(laoJiRefPane==null){
+//			laoJiRefPane = new UIRefPane();
+//			JiJuRefModel refModel = new JiJuRefModel(1,newDate);
+//			laoJiRefPane.setRefModel(refModel);
+//			laoJiRefPane.setPreferredSize(new Dimension(100, 20));
+//			laoJiRefPane.getRefModel().setPk_org(getBuPanel().getPK_BU());
+//			laoJiRefPane.setRefEditable(false);
+//			laoJiRefPane.setEnabled(false);
+//		}
+//		return laoJiRefPane;
+//	}
+//	
+//	//劳保补助身分
+//	protected UIRefPane getLaoBuRefPane() {
+//		if(laoFuRefPane==null){
+//			laoFuRefPane = new UIRefPane();
+//			AllowanceRefModel refModel = new AllowanceRefModel();
+//			laoFuRefPane.setRefModel(refModel);
+//			laoFuRefPane.setPreferredSize(new Dimension(100, 20));
+//			laoFuRefPane.getRefModel().setPk_org(getBuPanel().getPK_BU());
+//			laoFuRefPane.setRefEditable(false);
+//			laoFuRefPane.setEnabled(false);
+//		}
+//		return laoFuRefPane;
+//	}
+//	
+//	//健保投保身份
+//	protected UIRefPane getJianShenRefPane(){
+//		if(jianShenRefPane==null){
+//			String pk_defdoclist = "";
+//			try {
+//				defService = NCLocator.getInstance().lookup(IDefdoclistQryService.class);
+//				pk_defdoclist = defService.queryRefNameByCode("TWHR007");
+//			} catch (BusinessException e) {
+//				e.printStackTrace();
+//			}
+//			jianShenRefPane = new UIRefPane();
+//			DefdocGridRefModel refModel = new DefdocGridRefModel();
+//			refModel.setPara1(pk_defdoclist);
+//			refModel.setPara2("bd_defdoc");
+//			jianShenRefPane.setRefModel(refModel);
+//			jianShenRefPane.setPreferredSize(new Dimension(100, 20));
+//			jianShenRefPane.getRefModel().setPk_org(getBuPanel().getPK_BU());
+//			jianShenRefPane.setRefEditable(false);
+//			jianShenRefPane.setEnabled(false);
+//		}
+//		return jianShenRefPane;
+//	}
+//	
+//	//健保级距
+//	protected UIRefPane getJianJiRefPane() {
+//		if(jianJiRefPane==null){
+//			jianJiRefPane = new UIRefPane();
+//			JiJuRefModel refModel = new JiJuRefModel(3,newDate);
+//			jianJiRefPane.setRefModel(refModel);
+//			jianJiRefPane.setPreferredSize(new Dimension(100, 20));
+//			jianJiRefPane.getRefModel().setPk_org(getBuPanel().getPK_BU());
+//			jianJiRefPane.setRefEditable(false);
+//			jianJiRefPane.setEnabled(false);
+//		}
+//		return jianJiRefPane;
+//	}
+//	
+//	//健保补助身分
+//	protected UIRefPane getJianBuRefPane() {
+//		if(jianFuRefPane==null){
+//			jianFuRefPane = new UIRefPane();
+//			AllowanceRefModel refModel = new AllowanceRefModel();
+//			jianFuRefPane.setRefModel(refModel);
+//			jianFuRefPane.setPreferredSize(new Dimension(100, 20));
+//			jianFuRefPane.getRefModel().setPk_org(getBuPanel().getPK_BU());
+//			jianFuRefPane.setRefEditable(false);
+//			jianFuRefPane.setEnabled(false);
+//		}
+//		return jianFuRefPane;
+//	}
+//	
+//	//劳退提缴身分
+//	protected UIRefPane getTuiFenRefPane(){
+//		if(tuiFenRefPane==null){
+//			String pk_defdoclist = "";
+//			try {
+//				defService = NCLocator.getInstance().lookup(IDefdoclistQryService.class);
+//				pk_defdoclist = defService.queryRefNameByCode("NHI003");
+//			} catch (BusinessException e) {
+//				e.printStackTrace();
+//			}
+//			tuiFenRefPane = new UIRefPane();
+//			DefdocGridRefModel refModel = new DefdocGridRefModel();
+//			refModel.setPara1(pk_defdoclist);
+//			refModel.setPara2("bd_defdoc");
+//			tuiFenRefPane.setRefModel(refModel);
+//			tuiFenRefPane.setPreferredSize(new Dimension(100, 20));
+//			tuiFenRefPane.getRefModel().setPk_org(getBuPanel().getPK_BU());
+//			tuiFenRefPane.setRefEditable(false);
+//			tuiFenRefPane.setEnabled(false);
+//		}
+//		return tuiFenRefPane;
+//	}
+//	
+//	//劳退级距
+//	protected UIRefPane getTuiJiRefPane() {
+//		if(tuiJiRefPane==null){
+//			tuiJiRefPane = new UIRefPane();
+//			JiJuRefModel refModel = new JiJuRefModel(2,newDate);
+//			tuiJiRefPane.setRefModel(refModel);
+//			tuiJiRefPane.setPreferredSize(new Dimension(33, 20));
+//			tuiJiRefPane.getRefModel().setPk_org(getBuPanel().getPK_BU());
+//			tuiJiRefPane.setRefEditable(false);
+//			tuiJiRefPane.setEnabled(false);
+//		}
+//		return tuiJiRefPane;
+//	}
+//	
+//	//劳保特殊身份别
+//	protected UIRefPane getTeShuRefPane(){
+//		if(teShuRefPane==null){
+//			String pk_defdoclist = "";
+//			try {
+//				defService = NCLocator.getInstance().lookup(IDefdoclistQryService.class);
+//				pk_defdoclist = defService.queryRefNameByCode("NHI002");
+//			} catch (BusinessException e) {
+//				e.printStackTrace();
+//			}
+//			teShuRefPane = new UIRefPane();
+//			DefdocGridRefModel refModel = new DefdocGridRefModel();
+//			refModel.setPara1(pk_defdoclist);
+//			refModel.setPara2("bd_defdoc");
+//			teShuRefPane.setRefModel(refModel);
+//			teShuRefPane.setPreferredSize(new Dimension(100, 20));
+//			teShuRefPane.getRefModel().setPk_org(getBuPanel().getPK_BU());
+//			teShuRefPane.setRefEditable(false);
+//			teShuRefPane.setEnabled(false);
+//		}
+//		return teShuRefPane;
+//	}
+//	
+//	protected UIRefPane getRateRefPane() {
+//		if(rateRefPane==null){
+//			rateRefPane = new UIRefPane();
+//			rateRefPane.setTextType("TextDbl");
+//			rateRefPane.setNumPoint(4);
+//			rateRefPane.setMaxLength(9);
+//			rateRefPane.setMinValue(0.0000D);
+//			rateRefPane.setMaxValue(9999.9999D);
+//			rateRefPane.setButtonVisible(false);
+//		}
+//		return rateRefPane;
+//	}
+//	
+//	public UIComboBox getYiDongRefPane() {
+//		if (yiDongRefPane == null) {
+//			yiDongRefPane = new UIComboBox();
+//			yiDongRefPane.addItem( "");
+//			yiDongRefPane.addItem("加保");
+//			yiDongRefPane.addItem("保薪调整");
+//			yiDongRefPane.setShowMustInputHint(true);
+//		}
+//		return yiDongRefPane;
+//	}
+//	
+//	protected UIRefPane getYiDongRefPane() {
+//		if(yiDongRefPane==null){
+//			yiDongRefPane = new UIRefPane();
+//			TrnsTypeRefModel refModel = new TrnsTypeRefModel();
+//			yiDongRefPane.setRefModel(refModel);
+//			yiDongRefPane.setPreferredSize(new Dimension(100, 20));
+//			yiDongRefPane.getRefModel().setPk_org(getBuPanel().getPK_BU());
+//		}
+//		return yiDongRefPane;
+//	}
+	
+	protected UIRefPane getRefBeginDate(){
+		if (dateRefPane == null) {
+			dateRefPane = new UIRefPane();
+			dateRefPane.setName("refBeginDate");
+			dateRefPane.setRefNodeName("日期");
+			dateRefPane.getUITextField().setFormatShow(true);
+			dateRefPane.setValueObj(getBusDate());
+		}
+		return dateRefPane;
+	}
+	private UFLiteralDate getBusDate(){
+		UFDate busDate = WorkbenchEnvironment.getInstance().getBusiDate();
+		return UFLiteralDate.getDate(busDate.toString().substring(0, 10));
+	}
+
+
+	
+	public String getBeginDatePk(){
+		return getRefBeginDate().getRefPK();
+	}
+	public String getxianZhongPk(){
+		return getXianZhongRefPane().getRefPK();
+	}
+//	public String getLaoShenPk(){
+//		return getLaoShenRefPane().getRefPK();
+//	}
+//	public String getLaoJiPk(){
+//		return getLaoJiRefPane().getRefPK();
+//	}
+//	public String getLaofuPk(){
+//		return getLaoBuRefPane().getRefPK();
+//	}
+//	public String getJianShenPk(){
+//		return getJianShenRefPane().getRefPK();
+//	}
+//	public String getJianJiPk(){
+//		return getJianJiRefPane().getRefPK();
+//	}
+//	public String getJianFuPk(){
+//		return getJianBuRefPane().getRefPK();
+//	}
+//	public String getTuiFenPk(){
+//		return getTuiFenRefPane().getRefPK();
+//	}
+//	public String getTuiJiPk(){
+//		return getTuiJiRefPane().getRefPK();
+//	}
+//	public String getTeShuPk(){
+//		return getTeShuRefPane().getRefPK();
+//	}
+//	public String getRatePk(){
+//		return getRateRefPane().getRefPK();
+//	}
+
+	public void setPK_BU(String pk_org){
+		UIRefPane refPane = (UIRefPane)getRefBeginDate();
+		refPane.setPk_org(pk_org);
+		UIRefPane refPane2 = (UIRefPane)getXianZhongRefPane();
+		refPane2.setPk_org(pk_org);
+//		UIRefPane refPane2 = (UIRefPane)getLaoShenRefPane();
+//		refPane2.setPk_org(pk_org);
+//		UIRefPane refPane3 = (UIRefPane)getLaoJiRefPane();
+//		refPane3.setPk_org(pk_org);
+//		UIRefPane refPane4 = (UIRefPane)getLaoBuRefPane();
+//		refPane4.setPk_org(pk_org);
+//		UIRefPane refPane5 = (UIRefPane)getJianShenRefPane();
+//		refPane5.setPk_org(pk_org);
+//		UIRefPane refPane6 = (UIRefPane)getJianJiRefPane();
+//		refPane6.setPk_org(pk_org);
+//		UIRefPane refPane7 = (UIRefPane)getJianBuRefPane();
+//		refPane7.setPk_org(pk_org);
+//		UIRefPane refPane8 = (UIRefPane)getTuiFenRefPane();
+//		refPane8.setPk_org(pk_org);
+//		UIRefPane refPane9 = (UIRefPane)getTuiJiRefPane();
+//		refPane9.setPk_org(pk_org);
+//		UIRefPane refPane10 = (UIRefPane)getTeShuRefPane();
+//		refPane10.setPk_org(pk_org);
+//		UIRefPane refPane11 = (UIRefPane)getRateRefPane();
+//		refPane11.setPk_org(pk_org);
+		this.pk_org=pk_org;
+	}
+	
+	public String getPK_org(){
+		return pk_org;
+	}
+
+	@Override
+	public void valueChanged(ValueChangedEvent event) {
+		String pk_org = getBuPanel().getPK_BU();
+		if(StringUtils.isEmpty(pk_org))
+			return;
+		getRefBeginDate().getRefModel().setPk_org(pk_org);
+//		getLaoShenRefPane().getRefModel().setPk_org(pk_org);
+//		getLaoJiRefPane().getRefModel().setPk_org(pk_org);
+//		getLaoBuRefPane().getRefModel().setPk_org(pk_org);
+//		getJianShenRefPane().getRefModel().setPk_org(pk_org);
+//		getJianJiRefPane().getRefModel().setPk_org(pk_org);
+//		getJianBuRefPane().getRefModel().setPk_org(pk_org);
+//		getTuiFenRefPane().getRefModel().setPk_org(pk_org);
+//		getTuiJiRefPane().getRefModel().setPk_org(pk_org);
+//		getTeShuRefPane().getRefModel().setPk_org(pk_org);
+//		getRateRefPane().getRefModel().setPk_org(pk_org);
+	}
+	@Override
+	public void actionPerformed(ActionEvent evt) {
+//		Object source = evt.getSource();
+//		Boolean flag = false;
+//		if(source == getBaoCheckBox()){
+//		//	super.actionPerformed(evt);
+//			flag = getBaoCheckBox().isSelected();
+//			if(flag){
+//				laoShenRefPane.setRefEditable(true);
+//				laoJiRefPane.setRefEditable(true);
+//				laoFuRefPane.setRefEditable(true);
+//				teShuRefPane.setRefEditable(true);
+//				laoShenRefPane.getUITextField().setShowMustInputHint(true);
+//				laoJiRefPane.getUITextField().setShowMustInputHint(true);
+//			}else{
+//				laoShenRefPane.setRefEditable(false);
+//				laoJiRefPane.setRefEditable(false);
+//				laoFuRefPane.setRefEditable(false);
+//				teShuRefPane.setRefEditable(false);
+//				laoShenRefPane.getUITextField().setShowMustInputHint(false);
+//				laoJiRefPane.getUITextField().setShowMustInputHint(false);
+//			}
+//			return;
+//		}else if(source == getTuiCheckBox()){
+//			flag = getTuiCheckBox().isSelected();
+//			if(flag){
+//				tuiFenRefPane.setRefEditable(true);
+//				tuiJiRefPane.setRefEditable(true);
+//				rateRefPane.setRefEditable(true);
+//				tuiFenRefPane.getUITextField().setShowMustInputHint(true);
+//				tuiJiRefPane.getUITextField().setShowMustInputHint(true);
+//			}else{
+//				tuiFenRefPane.setRefEditable(false);
+//				tuiJiRefPane.setRefEditable(false);
+//				rateRefPane.setRefEditable(false);
+//				tuiFenRefPane.getUITextField().setShowMustInputHint(false);
+//				tuiJiRefPane.getUITextField().setShowMustInputHint(false);
+//			}
+//			return;
+//		}else if(source == getJianCheckBox()){
+//			flag = getJianCheckBox().isSelected();
+//			if(flag){
+//				jianShenRefPane.setRefEditable(true);
+//				jianJiRefPane.setRefEditable(true);
+//				jianFuRefPane.setRefEditable(true);
+//				jianShenRefPane.getUITextField().setShowMustInputHint(true);
+//				jianJiRefPane.getUITextField().setShowMustInputHint(true);
+//			}else{
+//				jianShenRefPane.setRefEditable(false);
+//				jianJiRefPane.setRefEditable(false);
+//				jianFuRefPane.setRefEditable(false);
+//				jianShenRefPane.getUITextField().setShowMustInputHint(false);
+//				jianJiRefPane.getUITextField().setShowMustInputHint(false);
+//			}
+//			return;
+//		}
+//		getOldShiftRefPane().setEnabled(getBaoCheckBox().isSelected());
+	}
+}

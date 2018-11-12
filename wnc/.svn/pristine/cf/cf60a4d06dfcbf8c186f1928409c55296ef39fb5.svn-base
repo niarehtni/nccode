@@ -1,0 +1,1317 @@
+package nc.tc.nc.vo.twhr.rangetable;
+import org.testng.*;
+import nc.vo.pub.IVOMeta;
+import nc.vo.pub.SuperVO;
+import nc.vo.pub.lang.UFBoolean;
+import nc.vo.pub.lang.UFDate;
+import nc.vo.pub.lang.UFDateTime;
+import nc.vo.pub.lang.UFDouble;
+import nc.vo.pubapp.pattern.model.meta.entity.vo.VOMetaFactory;
+import java.util.ArrayList;
+import java.io.IOException;
+import java.lang.reflect.Method;
+import java.lang.reflect.InvocationTargetException;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.List;
+import java.util.HashMap;
+import java.io.Serializable;
+import jxl.read.biff.BiffException;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.DataProvider;
+import org.testng.annotations.Test;
+import com.yonyou.uat.util.ExcelDataProvider;
+import com.yonyou.uat.util.DBDataProvider;
+import com.yonyou.uat.dbmanagement.DBManage;
+import com.yonyou.uat.dbmanagement.QueryInfoVO;
+import nc.vo.twhr.rangetable.RangeLineVO;
+import nc.bs.framework.common.NCLocator;
+import com.yonyou.uat.framework.BaseTestCase;
+import nc.vo.pub.lang.UFDateTime;
+import nc.vo.pub.lang.UFDateTime;
+import java.lang.String;
+import java.lang.String;
+import java.lang.String;
+import java.lang.String;
+import nc.vo.pub.lang.UFDateTime;
+import nc.vo.pub.lang.UFDateTime;
+import java.lang.String;
+import java.lang.String;
+import java.lang.String;
+import java.lang.String;
+import java.lang.String;
+import java.lang.String;
+import java.lang.Integer;
+import nc.vo.pub.lang.UFDouble;
+import nc.vo.pub.lang.UFDouble;
+import nc.vo.pub.lang.UFDouble;
+import nc.vo.pub.lang.UFDouble;
+import nc.vo.pub.lang.UFDouble;
+import nc.vo.pub.lang.UFDouble;
+import java.lang.String;
+import nc.vo.pub.lang.UFDateTime;
+import nc.vo.pub.lang.UFDateTime;
+import nc.vo.pub.IVOMeta;
+public class RangeLineVOTest extends BaseTestCase {
+  RangeLineVO rangeLineVO=null;
+  DBManage dbManage=null;
+  
+  @BeforeClass 
+  public void BeforeClass(){
+    rangeLineVO=NCLocator.getInstance().lookup(RangeLineVO.class);
+  }
+  
+  @AfterClass 
+  public void AfterClass(){
+  }
+  
+  @BeforeMethod 
+  public void BeforeMethod(){
+    List<String> tableList=new ArrayList<String>();
+    tableList.add("pub_wfexptlog");
+    dbManage=new DBManage();
+    dbManage.setTableList(tableList);
+    dbManage.tableExport();
+  }
+  
+  @AfterMethod 
+  public void AfterMethod(){
+    dbManage.tableRollBack();
+  }
+  
+  @Test(description="",dependsOnMethods={},groups="",timeOut=100000,dataProvider="dp") 
+  public void getCreationtime(  Map<String,ArrayList<String>> dp){
+    
+    //Construct method parameters
+    
+    //Invoke tested method
+    UFDateTime retObj=null;
+    retObj=rangeLineVO.getCreationtime();
+    
+    //Verify result is ok
+    
+    //Verify Object1 == Object2
+    Assert.assertNotNull(retObj);
+    Assert.assertNotNull(retObj.getBeginDate());
+    Assert.assertNotNull(retObj.getDate());
+    Assert.assertNotNull(retObj.getDay());
+    Assert.assertEquals(retObj.getDay(),0);
+    Assert.assertNotNull(retObj.getDaysMonth());
+    Assert.assertEquals(retObj.getDaysMonth(),0);
+    Assert.assertNotNull(retObj.getEnMonth());
+    Assert.assertEquals(retObj.getEnMonth(),"expectValue");
+    Assert.assertNotNull(retObj.getEnWeek());
+    Assert.assertEquals(retObj.getEnWeek(),"expectValue");
+    Assert.assertNotNull(retObj.getEndDate());
+    Assert.assertNotNull(retObj.getHour());
+    Assert.assertEquals(retObj.getHour(),0);
+    Assert.assertNotNull(retObj.getLocalDay());
+    Assert.assertEquals(retObj.getLocalDay(),0);
+    Assert.assertNotNull(retObj.getLocalHour());
+    Assert.assertEquals(retObj.getLocalHour(),0);
+    Assert.assertNotNull(retObj.getLocalMinute());
+    Assert.assertEquals(retObj.getLocalMinute(),0);
+    Assert.assertNotNull(retObj.getLocalMonth());
+    Assert.assertEquals(retObj.getLocalMonth(),0);
+    Assert.assertNotNull(retObj.getLocalYear());
+    Assert.assertEquals(retObj.getLocalYear(),0);
+    Assert.assertNotNull(retObj.getMillis());
+    Assert.assertEquals(retObj.getMillis(),0);
+    Assert.assertNotNull(retObj.getMinute());
+    Assert.assertEquals(retObj.getMinute(),0);
+    Assert.assertNotNull(retObj.getMonth());
+    Assert.assertEquals(retObj.getMonth(),0);
+    Assert.assertNotNull(retObj.getSecond());
+    Assert.assertEquals(retObj.getSecond(),0);
+    Assert.assertNotNull(retObj.getStrDay());
+    Assert.assertEquals(retObj.getStrDay(),"expectValue");
+    Assert.assertNotNull(retObj.getStrMonth());
+    Assert.assertEquals(retObj.getStrMonth(),"expectValue");
+    Assert.assertNotNull(retObj.getTime());
+    Assert.assertEquals(retObj.getTime(),"expectValue");
+    Assert.assertNotNull(retObj.getUFTime());
+    Assert.assertNotNull(retObj.getWeek());
+    Assert.assertEquals(retObj.getWeek(),0);
+    Assert.assertNotNull(retObj.getWeekOfYear());
+    Assert.assertEquals(retObj.getWeekOfYear(),0);
+    Assert.assertNotNull(retObj.getYear());
+    Assert.assertEquals(retObj.getYear(),0);
+    
+    //Verify Return or middle Object == expect Object(from object file)
+    Object expectedObj=super.getExpectResultObject("caseName");
+    if (expectedObj != null) {
+      Assert.assertEquals(retObj,expectedObj);
+    }
+ else {
+      super.saveResultObject((Serializable)retObj,"caseName");
+    }
+    
+    //Verify DB result is ok
+    QueryInfoVO queryInfoVerify=new QueryInfoVO();
+    queryInfoVerify.setDatasource("datasourceName");
+    queryInfoVerify.setTableName("tableName");
+    queryInfoVerify.setCondition("where condition");
+    List<Object> actualObjects=super.getDBObjectClass(Object.class,queryInfoVerify);
+    Object actualObject=(Object)actualObjects.get(0);
+    Assert.assertEquals("actualObject.getxxx()",dp.get("colName").get(0));
+    
+    //Verify whether have exception information in log 
+    super.verifyLog("Error key word");
+  }
+  
+  @Test(description="",dependsOnMethods={},groups="",timeOut=100000,dataProvider="dp") 
+  public void setCreationtime(  Map<String,ArrayList<String>> dp){
+    
+    //Construct method parameters
+    UFDateTime creationtime=(UFDateTime)super.getSpringObj("ufdatetime");
+    
+    //Invoke tested method
+    rangeLineVO.setCreationtime(creationtime);
+    
+    //Verify result is ok
+    
+    //Verify Object1 == Object2
+    Assert.assertEquals("actual","expected");
+    Assert.assertNotNull("actual");
+    
+    //Verify DB result is ok
+    QueryInfoVO queryInfoVerify=new QueryInfoVO();
+    queryInfoVerify.setDatasource("datasourceName");
+    queryInfoVerify.setTableName("tableName");
+    queryInfoVerify.setCondition("where condition");
+    List<Object> actualObjects=super.getDBObjectClass(Object.class,queryInfoVerify);
+    Object actualObject=(Object)actualObjects.get(0);
+    Assert.assertEquals("actualObject.getxxx()",dp.get("colName").get(0));
+    
+    //Verify whether have exception information in log 
+    super.verifyLog("Error key word");
+  }
+  
+  @Test(description="",dependsOnMethods={},groups="",timeOut=100000,dataProvider="dp") 
+  public void getCreator(  Map<String,ArrayList<String>> dp){
+    
+    //Construct method parameters
+    
+    //Invoke tested method
+    String retObj="";
+    retObj=rangeLineVO.getCreator();
+    
+    //Verify result is ok
+    
+    //Verify Object1 == Object2
+    Assert.assertEquals(retObj,"expectValue");
+    
+    //Verify DB result is ok
+    QueryInfoVO queryInfoVerify=new QueryInfoVO();
+    queryInfoVerify.setDatasource("datasourceName");
+    queryInfoVerify.setTableName("tableName");
+    queryInfoVerify.setCondition("where condition");
+    List<Object> actualObjects=super.getDBObjectClass(Object.class,queryInfoVerify);
+    Object actualObject=(Object)actualObjects.get(0);
+    Assert.assertEquals("actualObject.getxxx()",dp.get("colName").get(0));
+    
+    //Verify whether have exception information in log 
+    super.verifyLog("Error key word");
+  }
+  
+  @Test(description="",dependsOnMethods={},groups="",timeOut=100000,dataProvider="dp") 
+  public void setCreator(  Map<String,ArrayList<String>> dp){
+    
+    //Construct method parameters
+    String creator=(String)dp.get("creator").get(0);
+    
+    //Invoke tested method
+    rangeLineVO.setCreator(creator);
+    
+    //Verify result is ok
+    
+    //Verify Object1 == Object2
+    Assert.assertEquals("actual","expected");
+    Assert.assertNotNull("actual");
+    
+    //Verify DB result is ok
+    QueryInfoVO queryInfoVerify=new QueryInfoVO();
+    queryInfoVerify.setDatasource("datasourceName");
+    queryInfoVerify.setTableName("tableName");
+    queryInfoVerify.setCondition("where condition");
+    List<Object> actualObjects=super.getDBObjectClass(Object.class,queryInfoVerify);
+    Object actualObject=(Object)actualObjects.get(0);
+    Assert.assertEquals("actualObject.getxxx()",dp.get("colName").get(0));
+    
+    //Verify whether have exception information in log 
+    super.verifyLog("Error key word");
+  }
+  
+  @Test(description="",dependsOnMethods={},groups="",timeOut=100000,dataProvider="dp") 
+  public void getEmployeeamount(  Map<String,ArrayList<String>> dp){
+    
+    //Construct method parameters
+    
+    //Invoke tested method
+    String retObj="";
+    retObj=rangeLineVO.getEmployeeamount();
+    
+    //Verify result is ok
+    
+    //Verify Object1 == Object2
+    Assert.assertEquals(retObj,"expectValue");
+    
+    //Verify DB result is ok
+    QueryInfoVO queryInfoVerify=new QueryInfoVO();
+    queryInfoVerify.setDatasource("datasourceName");
+    queryInfoVerify.setTableName("tableName");
+    queryInfoVerify.setCondition("where condition");
+    List<Object> actualObjects=super.getDBObjectClass(Object.class,queryInfoVerify);
+    Object actualObject=(Object)actualObjects.get(0);
+    Assert.assertEquals("actualObject.getxxx()",dp.get("colName").get(0));
+    
+    //Verify whether have exception information in log 
+    super.verifyLog("Error key word");
+  }
+  
+  @Test(description="",dependsOnMethods={},groups="",timeOut=100000,dataProvider="dp") 
+  public void setEmployeeamount(  Map<String,ArrayList<String>> dp){
+    
+    //Construct method parameters
+    String employeeamount=(String)dp.get("employeeamount").get(0);
+    
+    //Invoke tested method
+    rangeLineVO.setEmployeeamount(employeeamount);
+    
+    //Verify result is ok
+    
+    //Verify Object1 == Object2
+    Assert.assertEquals("actual","expected");
+    Assert.assertNotNull("actual");
+    
+    //Verify DB result is ok
+    QueryInfoVO queryInfoVerify=new QueryInfoVO();
+    queryInfoVerify.setDatasource("datasourceName");
+    queryInfoVerify.setTableName("tableName");
+    queryInfoVerify.setCondition("where condition");
+    List<Object> actualObjects=super.getDBObjectClass(Object.class,queryInfoVerify);
+    Object actualObject=(Object)actualObjects.get(0);
+    Assert.assertEquals("actualObject.getxxx()",dp.get("colName").get(0));
+    
+    //Verify whether have exception information in log 
+    super.verifyLog("Error key word");
+  }
+  
+  @Test(description="",dependsOnMethods={},groups="",timeOut=100000,dataProvider="dp") 
+  public void getEmployeramount(  Map<String,ArrayList<String>> dp){
+    
+    //Construct method parameters
+    
+    //Invoke tested method
+    String retObj="";
+    retObj=rangeLineVO.getEmployeramount();
+    
+    //Verify result is ok
+    
+    //Verify Object1 == Object2
+    Assert.assertEquals(retObj,"expectValue");
+    
+    //Verify DB result is ok
+    QueryInfoVO queryInfoVerify=new QueryInfoVO();
+    queryInfoVerify.setDatasource("datasourceName");
+    queryInfoVerify.setTableName("tableName");
+    queryInfoVerify.setCondition("where condition");
+    List<Object> actualObjects=super.getDBObjectClass(Object.class,queryInfoVerify);
+    Object actualObject=(Object)actualObjects.get(0);
+    Assert.assertEquals("actualObject.getxxx()",dp.get("colName").get(0));
+    
+    //Verify whether have exception information in log 
+    super.verifyLog("Error key word");
+  }
+  
+  @Test(description="",dependsOnMethods={},groups="",timeOut=100000,dataProvider="dp") 
+  public void setEmployeramount(  Map<String,ArrayList<String>> dp){
+    
+    //Construct method parameters
+    String employeramount=(String)dp.get("employeramount").get(0);
+    
+    //Invoke tested method
+    rangeLineVO.setEmployeramount(employeramount);
+    
+    //Verify result is ok
+    
+    //Verify Object1 == Object2
+    Assert.assertEquals("actual","expected");
+    Assert.assertNotNull("actual");
+    
+    //Verify DB result is ok
+    QueryInfoVO queryInfoVerify=new QueryInfoVO();
+    queryInfoVerify.setDatasource("datasourceName");
+    queryInfoVerify.setTableName("tableName");
+    queryInfoVerify.setCondition("where condition");
+    List<Object> actualObjects=super.getDBObjectClass(Object.class,queryInfoVerify);
+    Object actualObject=(Object)actualObjects.get(0);
+    Assert.assertEquals("actualObject.getxxx()",dp.get("colName").get(0));
+    
+    //Verify whether have exception information in log 
+    super.verifyLog("Error key word");
+  }
+  
+  @Test(description="",dependsOnMethods={},groups="",timeOut=100000,dataProvider="dp") 
+  public void getMemo(  Map<String,ArrayList<String>> dp){
+    
+    //Construct method parameters
+    
+    //Invoke tested method
+    String retObj="";
+    retObj=rangeLineVO.getMemo();
+    
+    //Verify result is ok
+    
+    //Verify Object1 == Object2
+    Assert.assertEquals(retObj,"expectValue");
+    
+    //Verify DB result is ok
+    QueryInfoVO queryInfoVerify=new QueryInfoVO();
+    queryInfoVerify.setDatasource("datasourceName");
+    queryInfoVerify.setTableName("tableName");
+    queryInfoVerify.setCondition("where condition");
+    List<Object> actualObjects=super.getDBObjectClass(Object.class,queryInfoVerify);
+    Object actualObject=(Object)actualObjects.get(0);
+    Assert.assertEquals("actualObject.getxxx()",dp.get("colName").get(0));
+    
+    //Verify whether have exception information in log 
+    super.verifyLog("Error key word");
+  }
+  
+  @Test(description="",dependsOnMethods={},groups="",timeOut=100000,dataProvider="dp") 
+  public void setMemo(  Map<String,ArrayList<String>> dp){
+    
+    //Construct method parameters
+    String memo=(String)dp.get("memo").get(0);
+    
+    //Invoke tested method
+    rangeLineVO.setMemo(memo);
+    
+    //Verify result is ok
+    
+    //Verify Object1 == Object2
+    Assert.assertEquals("actual","expected");
+    Assert.assertNotNull("actual");
+    
+    //Verify DB result is ok
+    QueryInfoVO queryInfoVerify=new QueryInfoVO();
+    queryInfoVerify.setDatasource("datasourceName");
+    queryInfoVerify.setTableName("tableName");
+    queryInfoVerify.setCondition("where condition");
+    List<Object> actualObjects=super.getDBObjectClass(Object.class,queryInfoVerify);
+    Object actualObject=(Object)actualObjects.get(0);
+    Assert.assertEquals("actualObject.getxxx()",dp.get("colName").get(0));
+    
+    //Verify whether have exception information in log 
+    super.verifyLog("Error key word");
+  }
+  
+  @Test(description="",dependsOnMethods={},groups="",timeOut=100000,dataProvider="dp") 
+  public void getModifiedtime(  Map<String,ArrayList<String>> dp){
+    
+    //Construct method parameters
+    
+    //Invoke tested method
+    UFDateTime retObj=null;
+    retObj=rangeLineVO.getModifiedtime();
+    
+    //Verify result is ok
+    
+    //Verify Object1 == Object2
+    Assert.assertNotNull(retObj);
+    Assert.assertNotNull(retObj.getBeginDate());
+    Assert.assertNotNull(retObj.getDate());
+    Assert.assertNotNull(retObj.getDay());
+    Assert.assertEquals(retObj.getDay(),0);
+    Assert.assertNotNull(retObj.getDaysMonth());
+    Assert.assertEquals(retObj.getDaysMonth(),0);
+    Assert.assertNotNull(retObj.getEnMonth());
+    Assert.assertEquals(retObj.getEnMonth(),"expectValue");
+    Assert.assertNotNull(retObj.getEnWeek());
+    Assert.assertEquals(retObj.getEnWeek(),"expectValue");
+    Assert.assertNotNull(retObj.getEndDate());
+    Assert.assertNotNull(retObj.getHour());
+    Assert.assertEquals(retObj.getHour(),0);
+    Assert.assertNotNull(retObj.getLocalDay());
+    Assert.assertEquals(retObj.getLocalDay(),0);
+    Assert.assertNotNull(retObj.getLocalHour());
+    Assert.assertEquals(retObj.getLocalHour(),0);
+    Assert.assertNotNull(retObj.getLocalMinute());
+    Assert.assertEquals(retObj.getLocalMinute(),0);
+    Assert.assertNotNull(retObj.getLocalMonth());
+    Assert.assertEquals(retObj.getLocalMonth(),0);
+    Assert.assertNotNull(retObj.getLocalYear());
+    Assert.assertEquals(retObj.getLocalYear(),0);
+    Assert.assertNotNull(retObj.getMillis());
+    Assert.assertEquals(retObj.getMillis(),0);
+    Assert.assertNotNull(retObj.getMinute());
+    Assert.assertEquals(retObj.getMinute(),0);
+    Assert.assertNotNull(retObj.getMonth());
+    Assert.assertEquals(retObj.getMonth(),0);
+    Assert.assertNotNull(retObj.getSecond());
+    Assert.assertEquals(retObj.getSecond(),0);
+    Assert.assertNotNull(retObj.getStrDay());
+    Assert.assertEquals(retObj.getStrDay(),"expectValue");
+    Assert.assertNotNull(retObj.getStrMonth());
+    Assert.assertEquals(retObj.getStrMonth(),"expectValue");
+    Assert.assertNotNull(retObj.getTime());
+    Assert.assertEquals(retObj.getTime(),"expectValue");
+    Assert.assertNotNull(retObj.getUFTime());
+    Assert.assertNotNull(retObj.getWeek());
+    Assert.assertEquals(retObj.getWeek(),0);
+    Assert.assertNotNull(retObj.getWeekOfYear());
+    Assert.assertEquals(retObj.getWeekOfYear(),0);
+    Assert.assertNotNull(retObj.getYear());
+    Assert.assertEquals(retObj.getYear(),0);
+    
+    //Verify Return or middle Object == expect Object(from object file)
+    Object expectedObj=super.getExpectResultObject("caseName");
+    if (expectedObj != null) {
+      Assert.assertEquals(retObj,expectedObj);
+    }
+ else {
+      super.saveResultObject((Serializable)retObj,"caseName");
+    }
+    
+    //Verify DB result is ok
+    QueryInfoVO queryInfoVerify=new QueryInfoVO();
+    queryInfoVerify.setDatasource("datasourceName");
+    queryInfoVerify.setTableName("tableName");
+    queryInfoVerify.setCondition("where condition");
+    List<Object> actualObjects=super.getDBObjectClass(Object.class,queryInfoVerify);
+    Object actualObject=(Object)actualObjects.get(0);
+    Assert.assertEquals("actualObject.getxxx()",dp.get("colName").get(0));
+    
+    //Verify whether have exception information in log 
+    super.verifyLog("Error key word");
+  }
+  
+  @Test(description="",dependsOnMethods={},groups="",timeOut=100000,dataProvider="dp") 
+  public void setModifiedtime(  Map<String,ArrayList<String>> dp){
+    
+    //Construct method parameters
+    UFDateTime modifiedtime=(UFDateTime)super.getSpringObj("ufdatetime");
+    
+    //Invoke tested method
+    rangeLineVO.setModifiedtime(modifiedtime);
+    
+    //Verify result is ok
+    
+    //Verify Object1 == Object2
+    Assert.assertEquals("actual","expected");
+    Assert.assertNotNull("actual");
+    
+    //Verify DB result is ok
+    QueryInfoVO queryInfoVerify=new QueryInfoVO();
+    queryInfoVerify.setDatasource("datasourceName");
+    queryInfoVerify.setTableName("tableName");
+    queryInfoVerify.setCondition("where condition");
+    List<Object> actualObjects=super.getDBObjectClass(Object.class,queryInfoVerify);
+    Object actualObject=(Object)actualObjects.get(0);
+    Assert.assertEquals("actualObject.getxxx()",dp.get("colName").get(0));
+    
+    //Verify whether have exception information in log 
+    super.verifyLog("Error key word");
+  }
+  
+  @Test(description="",dependsOnMethods={},groups="",timeOut=100000,dataProvider="dp") 
+  public void getModifier(  Map<String,ArrayList<String>> dp){
+    
+    //Construct method parameters
+    
+    //Invoke tested method
+    String retObj="";
+    retObj=rangeLineVO.getModifier();
+    
+    //Verify result is ok
+    
+    //Verify Object1 == Object2
+    Assert.assertEquals(retObj,"expectValue");
+    
+    //Verify DB result is ok
+    QueryInfoVO queryInfoVerify=new QueryInfoVO();
+    queryInfoVerify.setDatasource("datasourceName");
+    queryInfoVerify.setTableName("tableName");
+    queryInfoVerify.setCondition("where condition");
+    List<Object> actualObjects=super.getDBObjectClass(Object.class,queryInfoVerify);
+    Object actualObject=(Object)actualObjects.get(0);
+    Assert.assertEquals("actualObject.getxxx()",dp.get("colName").get(0));
+    
+    //Verify whether have exception information in log 
+    super.verifyLog("Error key word");
+  }
+  
+  @Test(description="",dependsOnMethods={},groups="",timeOut=100000,dataProvider="dp") 
+  public void setModifier(  Map<String,ArrayList<String>> dp){
+    
+    //Construct method parameters
+    String modifier=(String)dp.get("modifier").get(0);
+    
+    //Invoke tested method
+    rangeLineVO.setModifier(modifier);
+    
+    //Verify result is ok
+    
+    //Verify Object1 == Object2
+    Assert.assertEquals("actual","expected");
+    Assert.assertNotNull("actual");
+    
+    //Verify DB result is ok
+    QueryInfoVO queryInfoVerify=new QueryInfoVO();
+    queryInfoVerify.setDatasource("datasourceName");
+    queryInfoVerify.setTableName("tableName");
+    queryInfoVerify.setCondition("where condition");
+    List<Object> actualObjects=super.getDBObjectClass(Object.class,queryInfoVerify);
+    Object actualObject=(Object)actualObjects.get(0);
+    Assert.assertEquals("actualObject.getxxx()",dp.get("colName").get(0));
+    
+    //Verify whether have exception information in log 
+    super.verifyLog("Error key word");
+  }
+  
+  @Test(description="",dependsOnMethods={},groups="",timeOut=100000,dataProvider="dp") 
+  public void getPk_group(  Map<String,ArrayList<String>> dp){
+    
+    //Construct method parameters
+    
+    //Invoke tested method
+    String retObj="";
+    retObj=rangeLineVO.getPk_group();
+    
+    //Verify result is ok
+    
+    //Verify Object1 == Object2
+    Assert.assertEquals(retObj,"expectValue");
+    
+    //Verify DB result is ok
+    QueryInfoVO queryInfoVerify=new QueryInfoVO();
+    queryInfoVerify.setDatasource("datasourceName");
+    queryInfoVerify.setTableName("tableName");
+    queryInfoVerify.setCondition("where condition");
+    List<Object> actualObjects=super.getDBObjectClass(Object.class,queryInfoVerify);
+    Object actualObject=(Object)actualObjects.get(0);
+    Assert.assertEquals("actualObject.getxxx()",dp.get("colName").get(0));
+    
+    //Verify whether have exception information in log 
+    super.verifyLog("Error key word");
+  }
+  
+  @Test(description="",dependsOnMethods={},groups="",timeOut=100000,dataProvider="dp") 
+  public void setPk_group(  Map<String,ArrayList<String>> dp){
+    
+    //Construct method parameters
+    String pk_group=(String)dp.get("pk_group").get(0);
+    
+    //Invoke tested method
+    rangeLineVO.setPk_group(pk_group);
+    
+    //Verify result is ok
+    
+    //Verify Object1 == Object2
+    Assert.assertEquals("actual","expected");
+    Assert.assertNotNull("actual");
+    
+    //Verify DB result is ok
+    QueryInfoVO queryInfoVerify=new QueryInfoVO();
+    queryInfoVerify.setDatasource("datasourceName");
+    queryInfoVerify.setTableName("tableName");
+    queryInfoVerify.setCondition("where condition");
+    List<Object> actualObjects=super.getDBObjectClass(Object.class,queryInfoVerify);
+    Object actualObject=(Object)actualObjects.get(0);
+    Assert.assertEquals("actualObject.getxxx()",dp.get("colName").get(0));
+    
+    //Verify whether have exception information in log 
+    super.verifyLog("Error key word");
+  }
+  
+  @Test(description="",dependsOnMethods={},groups="",timeOut=100000,dataProvider="dp") 
+  public void getPk_org(  Map<String,ArrayList<String>> dp){
+    
+    //Construct method parameters
+    
+    //Invoke tested method
+    String retObj="";
+    retObj=rangeLineVO.getPk_org();
+    
+    //Verify result is ok
+    
+    //Verify Object1 == Object2
+    Assert.assertEquals(retObj,"expectValue");
+    
+    //Verify DB result is ok
+    QueryInfoVO queryInfoVerify=new QueryInfoVO();
+    queryInfoVerify.setDatasource("datasourceName");
+    queryInfoVerify.setTableName("tableName");
+    queryInfoVerify.setCondition("where condition");
+    List<Object> actualObjects=super.getDBObjectClass(Object.class,queryInfoVerify);
+    Object actualObject=(Object)actualObjects.get(0);
+    Assert.assertEquals("actualObject.getxxx()",dp.get("colName").get(0));
+    
+    //Verify whether have exception information in log 
+    super.verifyLog("Error key word");
+  }
+  
+  @Test(description="",dependsOnMethods={},groups="",timeOut=100000,dataProvider="dp") 
+  public void setPk_org(  Map<String,ArrayList<String>> dp){
+    
+    //Construct method parameters
+    String pk_org=(String)dp.get("pk_org").get(0);
+    
+    //Invoke tested method
+    rangeLineVO.setPk_org(pk_org);
+    
+    //Verify result is ok
+    
+    //Verify Object1 == Object2
+    Assert.assertEquals("actual","expected");
+    Assert.assertNotNull("actual");
+    
+    //Verify DB result is ok
+    QueryInfoVO queryInfoVerify=new QueryInfoVO();
+    queryInfoVerify.setDatasource("datasourceName");
+    queryInfoVerify.setTableName("tableName");
+    queryInfoVerify.setCondition("where condition");
+    List<Object> actualObjects=super.getDBObjectClass(Object.class,queryInfoVerify);
+    Object actualObject=(Object)actualObjects.get(0);
+    Assert.assertEquals("actualObject.getxxx()",dp.get("colName").get(0));
+    
+    //Verify whether have exception information in log 
+    super.verifyLog("Error key word");
+  }
+  
+  @Test(description="",dependsOnMethods={},groups="",timeOut=100000,dataProvider="dp") 
+  public void getPk_org_v(  Map<String,ArrayList<String>> dp){
+    
+    //Construct method parameters
+    
+    //Invoke tested method
+    String retObj="";
+    retObj=rangeLineVO.getPk_org_v();
+    
+    //Verify result is ok
+    
+    //Verify Object1 == Object2
+    Assert.assertEquals(retObj,"expectValue");
+    
+    //Verify DB result is ok
+    QueryInfoVO queryInfoVerify=new QueryInfoVO();
+    queryInfoVerify.setDatasource("datasourceName");
+    queryInfoVerify.setTableName("tableName");
+    queryInfoVerify.setCondition("where condition");
+    List<Object> actualObjects=super.getDBObjectClass(Object.class,queryInfoVerify);
+    Object actualObject=(Object)actualObjects.get(0);
+    Assert.assertEquals("actualObject.getxxx()",dp.get("colName").get(0));
+    
+    //Verify whether have exception information in log 
+    super.verifyLog("Error key word");
+  }
+  
+  @Test(description="",dependsOnMethods={},groups="",timeOut=100000,dataProvider="dp") 
+  public void setPk_org_v(  Map<String,ArrayList<String>> dp){
+    
+    //Construct method parameters
+    String pk_org_v=(String)dp.get("pk_org_v").get(0);
+    
+    //Invoke tested method
+    rangeLineVO.setPk_org_v(pk_org_v);
+    
+    //Verify result is ok
+    
+    //Verify Object1 == Object2
+    Assert.assertEquals("actual","expected");
+    Assert.assertNotNull("actual");
+    
+    //Verify DB result is ok
+    QueryInfoVO queryInfoVerify=new QueryInfoVO();
+    queryInfoVerify.setDatasource("datasourceName");
+    queryInfoVerify.setTableName("tableName");
+    queryInfoVerify.setCondition("where condition");
+    List<Object> actualObjects=super.getDBObjectClass(Object.class,queryInfoVerify);
+    Object actualObject=(Object)actualObjects.get(0);
+    Assert.assertEquals("actualObject.getxxx()",dp.get("colName").get(0));
+    
+    //Verify whether have exception information in log 
+    super.verifyLog("Error key word");
+  }
+  
+  @Test(description="",dependsOnMethods={},groups="",timeOut=100000,dataProvider="dp") 
+  public void getPk_rangeline(  Map<String,ArrayList<String>> dp){
+    
+    //Construct method parameters
+    
+    //Invoke tested method
+    String retObj="";
+    retObj=rangeLineVO.getPk_rangeline();
+    
+    //Verify result is ok
+    
+    //Verify Object1 == Object2
+    Assert.assertEquals(retObj,"expectValue");
+    
+    //Verify DB result is ok
+    QueryInfoVO queryInfoVerify=new QueryInfoVO();
+    queryInfoVerify.setDatasource("datasourceName");
+    queryInfoVerify.setTableName("tableName");
+    queryInfoVerify.setCondition("where condition");
+    List<Object> actualObjects=super.getDBObjectClass(Object.class,queryInfoVerify);
+    Object actualObject=(Object)actualObjects.get(0);
+    Assert.assertEquals("actualObject.getxxx()",dp.get("colName").get(0));
+    
+    //Verify whether have exception information in log 
+    super.verifyLog("Error key word");
+  }
+  
+  @Test(description="",dependsOnMethods={},groups="",timeOut=100000,dataProvider="dp") 
+  public void setPk_rangeline(  Map<String,ArrayList<String>> dp){
+    
+    //Construct method parameters
+    String pk_rangeline=(String)dp.get("pk_rangeline").get(0);
+    
+    //Invoke tested method
+    rangeLineVO.setPk_rangeline(pk_rangeline);
+    
+    //Verify result is ok
+    
+    //Verify Object1 == Object2
+    Assert.assertEquals("actual","expected");
+    Assert.assertNotNull("actual");
+    
+    //Verify DB result is ok
+    QueryInfoVO queryInfoVerify=new QueryInfoVO();
+    queryInfoVerify.setDatasource("datasourceName");
+    queryInfoVerify.setTableName("tableName");
+    queryInfoVerify.setCondition("where condition");
+    List<Object> actualObjects=super.getDBObjectClass(Object.class,queryInfoVerify);
+    Object actualObject=(Object)actualObjects.get(0);
+    Assert.assertEquals("actualObject.getxxx()",dp.get("colName").get(0));
+    
+    //Verify whether have exception information in log 
+    super.verifyLog("Error key word");
+  }
+  
+  @Test(description="",dependsOnMethods={},groups="",timeOut=100000,dataProvider="dp") 
+  public void getPk_rangetable(  Map<String,ArrayList<String>> dp){
+    
+    //Construct method parameters
+    
+    //Invoke tested method
+    String retObj="";
+    retObj=rangeLineVO.getPk_rangetable();
+    
+    //Verify result is ok
+    
+    //Verify Object1 == Object2
+    Assert.assertEquals(retObj,"expectValue");
+    
+    //Verify DB result is ok
+    QueryInfoVO queryInfoVerify=new QueryInfoVO();
+    queryInfoVerify.setDatasource("datasourceName");
+    queryInfoVerify.setTableName("tableName");
+    queryInfoVerify.setCondition("where condition");
+    List<Object> actualObjects=super.getDBObjectClass(Object.class,queryInfoVerify);
+    Object actualObject=(Object)actualObjects.get(0);
+    Assert.assertEquals("actualObject.getxxx()",dp.get("colName").get(0));
+    
+    //Verify whether have exception information in log 
+    super.verifyLog("Error key word");
+  }
+  
+  @Test(description="",dependsOnMethods={},groups="",timeOut=100000,dataProvider="dp") 
+  public void setPk_rangetable(  Map<String,ArrayList<String>> dp){
+    
+    //Construct method parameters
+    String pk_rangetable=(String)dp.get("pk_rangetable").get(0);
+    
+    //Invoke tested method
+    rangeLineVO.setPk_rangetable(pk_rangetable);
+    
+    //Verify result is ok
+    
+    //Verify Object1 == Object2
+    Assert.assertEquals("actual","expected");
+    Assert.assertNotNull("actual");
+    
+    //Verify DB result is ok
+    QueryInfoVO queryInfoVerify=new QueryInfoVO();
+    queryInfoVerify.setDatasource("datasourceName");
+    queryInfoVerify.setTableName("tableName");
+    queryInfoVerify.setCondition("where condition");
+    List<Object> actualObjects=super.getDBObjectClass(Object.class,queryInfoVerify);
+    Object actualObject=(Object)actualObjects.get(0);
+    Assert.assertEquals("actualObject.getxxx()",dp.get("colName").get(0));
+    
+    //Verify whether have exception information in log 
+    super.verifyLog("Error key word");
+  }
+  
+  @Test(description="",dependsOnMethods={},groups="",timeOut=100000,dataProvider="dp") 
+  public void getRangegrade(  Map<String,ArrayList<String>> dp){
+    
+    //Construct method parameters
+    
+    //Invoke tested method
+    Integer retObj=0;
+    retObj=rangeLineVO.getRangegrade();
+    
+    //Verify result is ok
+    
+    //Verify Object1 == Object2
+    Assert.assertTrue(retObj.equals(0));
+    
+    //Verify DB result is ok
+    QueryInfoVO queryInfoVerify=new QueryInfoVO();
+    queryInfoVerify.setDatasource("datasourceName");
+    queryInfoVerify.setTableName("tableName");
+    queryInfoVerify.setCondition("where condition");
+    List<Object> actualObjects=super.getDBObjectClass(Object.class,queryInfoVerify);
+    Object actualObject=(Object)actualObjects.get(0);
+    Assert.assertEquals("actualObject.getxxx()",dp.get("colName").get(0));
+    
+    //Verify whether have exception information in log 
+    super.verifyLog("Error key word");
+  }
+  
+  @Test(description="",dependsOnMethods={},groups="",timeOut=100000,dataProvider="dp") 
+  public void setRangegrade(  Map<String,ArrayList<String>> dp){
+    
+    //Construct method parameters
+    Integer rangegrade=Integer.parseInt(dp.get("rangegrade").get(0));
+    
+    //Invoke tested method
+    rangeLineVO.setRangegrade(rangegrade);
+    
+    //Verify result is ok
+    
+    //Verify Object1 == Object2
+    Assert.assertEquals("actual","expected");
+    Assert.assertNotNull("actual");
+    
+    //Verify DB result is ok
+    QueryInfoVO queryInfoVerify=new QueryInfoVO();
+    queryInfoVerify.setDatasource("datasourceName");
+    queryInfoVerify.setTableName("tableName");
+    queryInfoVerify.setCondition("where condition");
+    List<Object> actualObjects=super.getDBObjectClass(Object.class,queryInfoVerify);
+    Object actualObject=(Object)actualObjects.get(0);
+    Assert.assertEquals("actualObject.getxxx()",dp.get("colName").get(0));
+    
+    //Verify whether have exception information in log 
+    super.verifyLog("Error key word");
+  }
+  
+  @Test(description="",dependsOnMethods={},groups="",timeOut=100000,dataProvider="dp") 
+  public void getRangelower(  Map<String,ArrayList<String>> dp){
+    
+    //Construct method parameters
+    
+    //Invoke tested method
+    UFDouble retObj=null;
+    retObj=rangeLineVO.getRangelower();
+    
+    //Verify result is ok
+    
+    //Verify Object1 == Object2
+    Assert.assertNotNull(retObj);
+    Assert.assertNotNull(retObj.getDV());
+    Assert.assertNotNull(retObj.getDouble());
+    Assert.assertEquals(retObj.getDouble(),0);
+    Assert.assertNotNull(retObj.getPower());
+    Assert.assertEquals(retObj.getPower(),0);
+    Assert.assertNotNull(retObj.getSIValue());
+    
+    //Verify Return or middle Object == expect Object(from object file)
+    Object expectedObj=super.getExpectResultObject("caseName");
+    if (expectedObj != null) {
+      Assert.assertEquals(retObj,expectedObj);
+    }
+ else {
+      super.saveResultObject((Serializable)retObj,"caseName");
+    }
+    
+    //Verify DB result is ok
+    QueryInfoVO queryInfoVerify=new QueryInfoVO();
+    queryInfoVerify.setDatasource("datasourceName");
+    queryInfoVerify.setTableName("tableName");
+    queryInfoVerify.setCondition("where condition");
+    List<Object> actualObjects=super.getDBObjectClass(Object.class,queryInfoVerify);
+    Object actualObject=(Object)actualObjects.get(0);
+    Assert.assertEquals("actualObject.getxxx()",dp.get("colName").get(0));
+    
+    //Verify whether have exception information in log 
+    super.verifyLog("Error key word");
+  }
+  
+  @Test(description="",dependsOnMethods={},groups="",timeOut=100000,dataProvider="dp") 
+  public void setRangelower(  Map<String,ArrayList<String>> dp){
+    
+    //Construct method parameters
+    UFDouble rangelower=(UFDouble)super.getSpringObj("ufdouble");
+    rangelower.setTrimZero(Boolean.parseBoolean(dp.get("trimzero").get(0)));
+    
+    //Invoke tested method
+    rangeLineVO.setRangelower(rangelower);
+    
+    //Verify result is ok
+    
+    //Verify Object1 == Object2
+    Assert.assertEquals("actual","expected");
+    Assert.assertNotNull("actual");
+    
+    //Verify DB result is ok
+    QueryInfoVO queryInfoVerify=new QueryInfoVO();
+    queryInfoVerify.setDatasource("datasourceName");
+    queryInfoVerify.setTableName("tableName");
+    queryInfoVerify.setCondition("where condition");
+    List<Object> actualObjects=super.getDBObjectClass(Object.class,queryInfoVerify);
+    Object actualObject=(Object)actualObjects.get(0);
+    Assert.assertEquals("actualObject.getxxx()",dp.get("colName").get(0));
+    
+    //Verify whether have exception information in log 
+    super.verifyLog("Error key word");
+  }
+  
+  @Test(description="",dependsOnMethods={},groups="",timeOut=100000,dataProvider="dp") 
+  public void getRangeupper(  Map<String,ArrayList<String>> dp){
+    
+    //Construct method parameters
+    
+    //Invoke tested method
+    UFDouble retObj=null;
+    retObj=rangeLineVO.getRangeupper();
+    
+    //Verify result is ok
+    
+    //Verify Object1 == Object2
+    Assert.assertNotNull(retObj);
+    Assert.assertNotNull(retObj.getDV());
+    Assert.assertNotNull(retObj.getDouble());
+    Assert.assertEquals(retObj.getDouble(),0);
+    Assert.assertNotNull(retObj.getPower());
+    Assert.assertEquals(retObj.getPower(),0);
+    Assert.assertNotNull(retObj.getSIValue());
+    
+    //Verify Return or middle Object == expect Object(from object file)
+    Object expectedObj=super.getExpectResultObject("caseName");
+    if (expectedObj != null) {
+      Assert.assertEquals(retObj,expectedObj);
+    }
+ else {
+      super.saveResultObject((Serializable)retObj,"caseName");
+    }
+    
+    //Verify DB result is ok
+    QueryInfoVO queryInfoVerify=new QueryInfoVO();
+    queryInfoVerify.setDatasource("datasourceName");
+    queryInfoVerify.setTableName("tableName");
+    queryInfoVerify.setCondition("where condition");
+    List<Object> actualObjects=super.getDBObjectClass(Object.class,queryInfoVerify);
+    Object actualObject=(Object)actualObjects.get(0);
+    Assert.assertEquals("actualObject.getxxx()",dp.get("colName").get(0));
+    
+    //Verify whether have exception information in log 
+    super.verifyLog("Error key word");
+  }
+  
+  @Test(description="",dependsOnMethods={},groups="",timeOut=100000,dataProvider="dp") 
+  public void setRangeupper(  Map<String,ArrayList<String>> dp){
+    
+    //Construct method parameters
+    UFDouble rangeupper=(UFDouble)super.getSpringObj("ufdouble");
+    rangeupper.setTrimZero(Boolean.parseBoolean(dp.get("trimzero").get(0)));
+    
+    //Invoke tested method
+    rangeLineVO.setRangeupper(rangeupper);
+    
+    //Verify result is ok
+    
+    //Verify Object1 == Object2
+    Assert.assertEquals("actual","expected");
+    Assert.assertNotNull("actual");
+    
+    //Verify DB result is ok
+    QueryInfoVO queryInfoVerify=new QueryInfoVO();
+    queryInfoVerify.setDatasource("datasourceName");
+    queryInfoVerify.setTableName("tableName");
+    queryInfoVerify.setCondition("where condition");
+    List<Object> actualObjects=super.getDBObjectClass(Object.class,queryInfoVerify);
+    Object actualObject=(Object)actualObjects.get(0);
+    Assert.assertEquals("actualObject.getxxx()",dp.get("colName").get(0));
+    
+    //Verify whether have exception information in log 
+    super.verifyLog("Error key word");
+  }
+  
+  @Test(description="",dependsOnMethods={},groups="",timeOut=100000,dataProvider="dp") 
+  public void getRangevalue(  Map<String,ArrayList<String>> dp){
+    
+    //Construct method parameters
+    
+    //Invoke tested method
+    UFDouble retObj=null;
+    retObj=rangeLineVO.getRangevalue();
+    
+    //Verify result is ok
+    
+    //Verify Object1 == Object2
+    Assert.assertNotNull(retObj);
+    Assert.assertNotNull(retObj.getDV());
+    Assert.assertNotNull(retObj.getDouble());
+    Assert.assertEquals(retObj.getDouble(),0);
+    Assert.assertNotNull(retObj.getPower());
+    Assert.assertEquals(retObj.getPower(),0);
+    Assert.assertNotNull(retObj.getSIValue());
+    
+    //Verify Return or middle Object == expect Object(from object file)
+    Object expectedObj=super.getExpectResultObject("caseName");
+    if (expectedObj != null) {
+      Assert.assertEquals(retObj,expectedObj);
+    }
+ else {
+      super.saveResultObject((Serializable)retObj,"caseName");
+    }
+    
+    //Verify DB result is ok
+    QueryInfoVO queryInfoVerify=new QueryInfoVO();
+    queryInfoVerify.setDatasource("datasourceName");
+    queryInfoVerify.setTableName("tableName");
+    queryInfoVerify.setCondition("where condition");
+    List<Object> actualObjects=super.getDBObjectClass(Object.class,queryInfoVerify);
+    Object actualObject=(Object)actualObjects.get(0);
+    Assert.assertEquals("actualObject.getxxx()",dp.get("colName").get(0));
+    
+    //Verify whether have exception information in log 
+    super.verifyLog("Error key word");
+  }
+  
+  @Test(description="",dependsOnMethods={},groups="",timeOut=100000,dataProvider="dp") 
+  public void setRangevalue(  Map<String,ArrayList<String>> dp){
+    
+    //Construct method parameters
+    UFDouble rangevalue=(UFDouble)super.getSpringObj("ufdouble");
+    rangevalue.setTrimZero(Boolean.parseBoolean(dp.get("trimzero").get(0)));
+    
+    //Invoke tested method
+    rangeLineVO.setRangevalue(rangevalue);
+    
+    //Verify result is ok
+    
+    //Verify Object1 == Object2
+    Assert.assertEquals("actual","expected");
+    Assert.assertNotNull("actual");
+    
+    //Verify DB result is ok
+    QueryInfoVO queryInfoVerify=new QueryInfoVO();
+    queryInfoVerify.setDatasource("datasourceName");
+    queryInfoVerify.setTableName("tableName");
+    queryInfoVerify.setCondition("where condition");
+    List<Object> actualObjects=super.getDBObjectClass(Object.class,queryInfoVerify);
+    Object actualObject=(Object)actualObjects.get(0);
+    Assert.assertEquals("actualObject.getxxx()",dp.get("colName").get(0));
+    
+    //Verify whether have exception information in log 
+    super.verifyLog("Error key word");
+  }
+  
+  @Test(description="",dependsOnMethods={},groups="",timeOut=100000,dataProvider="dp") 
+  public void getRowno(  Map<String,ArrayList<String>> dp){
+    
+    //Construct method parameters
+    
+    //Invoke tested method
+    String retObj="";
+    retObj=rangeLineVO.getRowno();
+    
+    //Verify result is ok
+    
+    //Verify Object1 == Object2
+    Assert.assertEquals(retObj,"expectValue");
+    
+    //Verify DB result is ok
+    QueryInfoVO queryInfoVerify=new QueryInfoVO();
+    queryInfoVerify.setDatasource("datasourceName");
+    queryInfoVerify.setTableName("tableName");
+    queryInfoVerify.setCondition("where condition");
+    List<Object> actualObjects=super.getDBObjectClass(Object.class,queryInfoVerify);
+    Object actualObject=(Object)actualObjects.get(0);
+    Assert.assertEquals("actualObject.getxxx()",dp.get("colName").get(0));
+    
+    //Verify whether have exception information in log 
+    super.verifyLog("Error key word");
+  }
+  
+  @Test(description="",dependsOnMethods={},groups="",timeOut=100000,dataProvider="dp") 
+  public void setRowno(  Map<String,ArrayList<String>> dp){
+    
+    //Construct method parameters
+    String rowno=(String)dp.get("rowno").get(0);
+    
+    //Invoke tested method
+    rangeLineVO.setRowno(rowno);
+    
+    //Verify result is ok
+    
+    //Verify Object1 == Object2
+    Assert.assertEquals("actual","expected");
+    Assert.assertNotNull("actual");
+    
+    //Verify DB result is ok
+    QueryInfoVO queryInfoVerify=new QueryInfoVO();
+    queryInfoVerify.setDatasource("datasourceName");
+    queryInfoVerify.setTableName("tableName");
+    queryInfoVerify.setCondition("where condition");
+    List<Object> actualObjects=super.getDBObjectClass(Object.class,queryInfoVerify);
+    Object actualObject=(Object)actualObjects.get(0);
+    Assert.assertEquals("actualObject.getxxx()",dp.get("colName").get(0));
+    
+    //Verify whether have exception information in log 
+    super.verifyLog("Error key word");
+  }
+  
+  @Test(description="",dependsOnMethods={},groups="",timeOut=100000,dataProvider="dp") 
+  public void getTs(  Map<String,ArrayList<String>> dp){
+    
+    //Construct method parameters
+    
+    //Invoke tested method
+    UFDateTime retObj=null;
+    retObj=rangeLineVO.getTs();
+    
+    //Verify result is ok
+    
+    //Verify Object1 == Object2
+    Assert.assertNotNull(retObj);
+    Assert.assertNotNull(retObj.getBeginDate());
+    Assert.assertNotNull(retObj.getDate());
+    Assert.assertNotNull(retObj.getDay());
+    Assert.assertEquals(retObj.getDay(),0);
+    Assert.assertNotNull(retObj.getDaysMonth());
+    Assert.assertEquals(retObj.getDaysMonth(),0);
+    Assert.assertNotNull(retObj.getEnMonth());
+    Assert.assertEquals(retObj.getEnMonth(),"expectValue");
+    Assert.assertNotNull(retObj.getEnWeek());
+    Assert.assertEquals(retObj.getEnWeek(),"expectValue");
+    Assert.assertNotNull(retObj.getEndDate());
+    Assert.assertNotNull(retObj.getHour());
+    Assert.assertEquals(retObj.getHour(),0);
+    Assert.assertNotNull(retObj.getLocalDay());
+    Assert.assertEquals(retObj.getLocalDay(),0);
+    Assert.assertNotNull(retObj.getLocalHour());
+    Assert.assertEquals(retObj.getLocalHour(),0);
+    Assert.assertNotNull(retObj.getLocalMinute());
+    Assert.assertEquals(retObj.getLocalMinute(),0);
+    Assert.assertNotNull(retObj.getLocalMonth());
+    Assert.assertEquals(retObj.getLocalMonth(),0);
+    Assert.assertNotNull(retObj.getLocalYear());
+    Assert.assertEquals(retObj.getLocalYear(),0);
+    Assert.assertNotNull(retObj.getMillis());
+    Assert.assertEquals(retObj.getMillis(),0);
+    Assert.assertNotNull(retObj.getMinute());
+    Assert.assertEquals(retObj.getMinute(),0);
+    Assert.assertNotNull(retObj.getMonth());
+    Assert.assertEquals(retObj.getMonth(),0);
+    Assert.assertNotNull(retObj.getSecond());
+    Assert.assertEquals(retObj.getSecond(),0);
+    Assert.assertNotNull(retObj.getStrDay());
+    Assert.assertEquals(retObj.getStrDay(),"expectValue");
+    Assert.assertNotNull(retObj.getStrMonth());
+    Assert.assertEquals(retObj.getStrMonth(),"expectValue");
+    Assert.assertNotNull(retObj.getTime());
+    Assert.assertEquals(retObj.getTime(),"expectValue");
+    Assert.assertNotNull(retObj.getUFTime());
+    Assert.assertNotNull(retObj.getWeek());
+    Assert.assertEquals(retObj.getWeek(),0);
+    Assert.assertNotNull(retObj.getWeekOfYear());
+    Assert.assertEquals(retObj.getWeekOfYear(),0);
+    Assert.assertNotNull(retObj.getYear());
+    Assert.assertEquals(retObj.getYear(),0);
+    
+    //Verify Return or middle Object == expect Object(from object file)
+    Object expectedObj=super.getExpectResultObject("caseName");
+    if (expectedObj != null) {
+      Assert.assertEquals(retObj,expectedObj);
+    }
+ else {
+      super.saveResultObject((Serializable)retObj,"caseName");
+    }
+    
+    //Verify DB result is ok
+    QueryInfoVO queryInfoVerify=new QueryInfoVO();
+    queryInfoVerify.setDatasource("datasourceName");
+    queryInfoVerify.setTableName("tableName");
+    queryInfoVerify.setCondition("where condition");
+    List<Object> actualObjects=super.getDBObjectClass(Object.class,queryInfoVerify);
+    Object actualObject=(Object)actualObjects.get(0);
+    Assert.assertEquals("actualObject.getxxx()",dp.get("colName").get(0));
+    
+    //Verify whether have exception information in log 
+    super.verifyLog("Error key word");
+  }
+  
+  @Test(description="",dependsOnMethods={},groups="",timeOut=100000,dataProvider="dp") 
+  public void setTs(  Map<String,ArrayList<String>> dp){
+    
+    //Construct method parameters
+    UFDateTime ts=(UFDateTime)super.getSpringObj("ufdatetime");
+    
+    //Invoke tested method
+    rangeLineVO.setTs(ts);
+    
+    //Verify result is ok
+    
+    //Verify Object1 == Object2
+    Assert.assertEquals("actual","expected");
+    Assert.assertNotNull("actual");
+    
+    //Verify DB result is ok
+    QueryInfoVO queryInfoVerify=new QueryInfoVO();
+    queryInfoVerify.setDatasource("datasourceName");
+    queryInfoVerify.setTableName("tableName");
+    queryInfoVerify.setCondition("where condition");
+    List<Object> actualObjects=super.getDBObjectClass(Object.class,queryInfoVerify);
+    Object actualObject=(Object)actualObjects.get(0);
+    Assert.assertEquals("actualObject.getxxx()",dp.get("colName").get(0));
+    
+    //Verify whether have exception information in log 
+    super.verifyLog("Error key word");
+  }
+  
+  @Test(description="",dependsOnMethods={},groups="",timeOut=100000,dataProvider="dp") 
+  public void getMetaData(  Map<String,ArrayList<String>> dp){
+    
+    //Construct method parameters
+    
+    //Invoke tested method
+    IVOMeta retObj=null;
+    retObj=rangeLineVO.getMetaData();
+    
+    //Verify result is ok
+    
+    //Verify Object1 == Object2
+    Assert.assertNotNull(retObj);
+    Assert.assertNotNull(retObj.getAttributes());
+    Assert.assertNotNull(retObj.getBusinessAttribute());
+    Assert.assertEquals(retObj.getBusinessAttribute().size(),0);
+    Assert.assertNotNull(retObj.getEntityName());
+    Assert.assertEquals(retObj.getEntityName(),"expectValue");
+    Assert.assertNotNull(retObj.getLabel());
+    Assert.assertEquals(retObj.getLabel(),"expectValue");
+    Assert.assertNotNull(retObj.getPrimaryAttribute());
+    Assert.assertNotNull(retObj.getStatisticInfo());
+    
+    //Verify DB result is ok
+    QueryInfoVO queryInfoVerify=new QueryInfoVO();
+    queryInfoVerify.setDatasource("datasourceName");
+    queryInfoVerify.setTableName("tableName");
+    queryInfoVerify.setCondition("where condition");
+    List<Object> actualObjects=super.getDBObjectClass(Object.class,queryInfoVerify);
+    Object actualObject=(Object)actualObjects.get(0);
+    Assert.assertEquals("actualObject.getxxx()",dp.get("colName").get(0));
+    
+    //Verify whether have exception information in log 
+    super.verifyLog("Error key word");
+  }
+}

@@ -1,0 +1,602 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE beans PUBLIC "-//SPRING//DTD BEAN//EN" "http://www.springframework.org/dtd/spring-beans.dtd">
+
+<beans>
+	<!-- 环境变量 -->
+	<bean id="context" class="nc.vo.wa.pub.WaLoginContext"></bean>
+
+	<!-- 模型部分配置 -->
+
+	<!-- 应用服务类，负责进行模型操作的处理 -->
+	<bean id="ManageModelService" class="nc.ui.wa.paydata.model.PaydataModelService" />
+
+
+	<!-- 对象转换器工厂，由此获取操作对象的特征信息 -->
+	<bean id="boadatorfactory" class="nc.ui.wa.paydata.model.PaydataIBDObjectAdapterFactory" />
+
+
+
+	<!-- 管理应用模型 -->
+	<bean id="ManageAppModel" class="nc.ui.wa.paydata.model.PaydataAppDataModel">
+		<property name="service" ref="ManageModelService"></property>
+		<property name="orderCondition" value=" org_dept_v.code , hi_psnjob.clerkcode"></property>
+		<property name="businessObjectAdapterFactory" ref="boadatorfactory">
+		</property>
+		<property name="context" ref="context"></property>
+	</bean>
+
+	<!-- 模板容器，负责对模板的统一装载 -->
+	<bean id="templateContainer" class="nc.ui.wa.paydata.model.PaydataTemplateContainer">
+		<property name="context" ref="context" />
+		<property name="paydataModel" ref="ManageAppModel"></property>
+	</bean>
+
+	<bean id="toftpanelActionContributors" class="nc.ui.uif2.actions.ActionContributors">
+		<property name="contributors">
+			<list>
+				<ref bean="listViewActions" />
+				<ref bean="cardEditorActions" />
+			</list>
+		</property>
+	</bean>
+
+	<!-- 数据模型管理器，主要负责各种方式的模型初始化 -->
+	<bean id="modelDataManager" class="nc.ui.wa.paydata.model.PaydataModelDataManager">
+		<property name="service" ref="ManageModelService"></property>
+		<property name="billtype" value="6302"></property>
+		<property name="context" ref="context"></property>
+		<property name="model" ref="ManageAppModel"></property>
+
+		<property name="paginationModel" ref="paginationModel" />
+		<property name="paginationBar" ref="paginationBar" />
+
+	</bean>
+
+	<!-- Actions -->
+	<bean id="cardEditorActions" class="nc.ui.uif2.actions.StandAloneToftPanelActionContainer">
+		<constructor-arg>
+			<ref bean="billFormEditor" />
+		</constructor-arg>
+		<property name="actions">
+			<list>
+				<ref bean="EditAction" />
+				<ref bean="nullaction" />
+				<ref bean="RefreshAction" />
+
+			</list>
+		</property>
+		<property name="editActions">
+			<list>
+				<ref bean="FormSaveAction" />
+				<ref bean="FormSaveEditAction" />
+				<ref bean="nullaction" />
+				<ref bean="CancelAction" />
+			</list>
+		</property>
+		<property name="model" ref="ManageAppModel" />
+	</bean>
+
+	<bean id="listViewActions" class="nc.ui.uif2.actions.StandAloneToftPanelActionContainer">
+		<constructor-arg>
+			<ref bean="mainListPanel" />
+		</constructor-arg>
+		<property name="actions">
+			<list>
+				<ref bean="EditAction" />
+
+				<ref bean="ReplaceAction" />
+				<ref bean="SpecialPsnAction" />
+				<ref bean="nullaction" />
+				<ref bean="QueryAction" />
+				<ref bean="RefreshAction" />
+				<ref bean="nullaction" />
+				<ref bean="OnTimeCaculateAction" />
+				<ref bean="CaculateAction" />
+				<ref bean="ReTotalAction" />
+				<ref bean="WaTimesCollectAction" />
+				<ref bean="ShowDetailAction" />
+				<ref bean="CheckGroupAction" />
+				<ref bean="PayGroupAction" />
+				<ref bean="nullaction" />
+				<ref bean="assistFunctionAction" />
+				<ref bean="nullaction" />
+				<ref bean="SortAction" />
+				<ref bean="DisplayAction" />
+				<ref bean="nullaction" />
+				<ref bean="ExportXlsAction" />
+				<ref bean="PrintGroupAction" />
+				<ref bean="nullaction" />
+				<ref bean="HealthGroupAction" />
+			</list>
+		</property>
+
+		<property name="editActions">
+			<list>
+				<ref bean="ListSaveAction" />
+				<ref bean="nullaction" />
+				<ref bean="CancelAction" />
+			</list>
+		</property>
+		<property name="model" ref="ManageAppModel" />
+	</bean>
+	
+	
+	<!-- start Ares.Tank 2018-9-19 17:18:19 添加二代健保计算按钮 -->
+	<bean id="HealthCaculateAction" class="nc.ui.wa.paydata.action.HealthCaculateAction">
+		<property name="editor" ref="paydataInfoEditor" />
+		<property name="model" ref="ManageAppModel" />
+		<property name="dataManager" ref="modelDataManager"></property>
+	</bean>
+	<!-- end mod -->
+	<!-- start Ares.Tank 2018-9-19 17:18:19 添加二代健保  取消计算按钮 -->
+	<bean id="HealthUnCaculateAction" class="nc.ui.wa.paydata.action.HealthUnCaculateAction">
+		<property name="editor" ref="paydataInfoEditor" />
+		<property name="model" ref="ManageAppModel" />
+		<property name="dataManager" ref="modelDataManager"></property>
+	</bean>
+	<!-- end mod -->
+	<bean id="nullaction" class="nc.funcnode.ui.action.SeparatorAction" />
+
+	
+	<bean id="EditAction" class="nc.ui.wa.paydata.action.EditPaydataAction">
+		<property name="model" ref="ManageAppModel" />
+		<property name="dataManager" ref="modelDataManager"></property>
+	</bean>
+	<bean id="QueryAction" class="nc.ui.wa.paydata.action.QueryPaydataAction">
+		<property name="model" ref="ManageAppModel" />
+		<property name="orgpanel" ref="orgpanel" />
+		<property name="dataManager" ref="modelDataManager" />
+		<property name="queryDelegator">
+			<bean class="nc.ui.wa.paydata.view.WaPaydataQueryDelegator">
+				<property name="nodeKey" value="" />
+				<property name="context" ref="context" />
+				<property name="model" ref="ManageAppModel" />
+			</bean>
+		</property>
+	</bean>
+	<bean id="FormSaveAction" class="nc.ui.wa.paydata.action.BillFormSavePaydataAction">
+		<property name="model" ref="ManageAppModel" />
+		<property name="dataManager" ref="modelDataManager"></property>
+		<property name="editor" ref="billFormEditor" />
+	</bean>
+	<bean id="FormSaveEditAction" class="nc.ui.wa.paydata.action.BillFormSaveEditPaydataAction">
+		<property name="model" ref="ManageAppModel" />
+		<property name="dataManager" ref="modelDataManager"></property>
+		<property name="editor" ref="billFormEditor" />
+		<property name="nextLineAction" ref="NextLineAction" />
+		<property name="editAction" ref="EditAction" />
+	</bean>
+
+	<bean id="ListSaveAction" class="nc.ui.wa.paydata.action.BillListSavePaydataAction">
+		<property name="model" ref="ManageAppModel" />
+		<property name="dataManager" ref="modelDataManager"></property>
+		<property name="editor" ref="listView" />
+	</bean>
+
+	<bean id="CancelAction" class="nc.ui.wa.paydata.action.PaydataCancelAction">
+		<property name="model" ref="ManageAppModel" />
+	</bean>
+
+	<bean id="SortAction" class="nc.ui.wa.paydata.action.SortPaydataAction">
+		<property name="model" ref="ManageAppModel" />
+		<property name="listView" ref="listView" />
+		<property name="dataManager" ref="modelDataManager" />
+	</bean>
+	<bean id="ReplaceAction" class="nc.ui.wa.paydata.action.ReplaceAction">
+		<property name="model" ref="ManageAppModel" />
+		<property name="dataManager" ref="modelDataManager" />
+	</bean>
+
+	<bean id="DisplayAction" class="nc.ui.wa.paydata.action.DisplayAction">
+		<property name="model" ref="ManageAppModel" />
+		<property name="dataManager" ref="modelDataManager" />
+	</bean>
+	<bean id="ShowDetailAction" class="nc.ui.wa.paydata.action.ShowDetailAction">
+		<property name="model" ref="ManageAppModel" />
+		<property name="dataManager" ref="modelDataManager"></property>
+		<property name="templateContainer" ref="templateContainer"></property>
+	</bean>
+
+	<bean id="RefreshAction" class="nc.ui.wa.paydata.action.PaydataRefreshAction">
+        <property name="listView" ref="listView"/>
+		<property name="model" ref="ManageAppModel" />
+		<property name="dataManager" ref="modelDataManager" />
+		<property name="orgpanel" ref="orgpanel" />
+		 <property name="formEditor" ref="billFormEditor" />
+	</bean>
+	
+
+	<!--
+		<bean id="ExportAction" class="nc.ui.wa.paydata.action.ExportAction">
+		<property name="model" ref="ManageAppModel" /> <property
+		name="listView" ref="listView" /> </bean>
+	-->
+
+	<!-- 分页面板 -->
+	<bean id="paginationBar" class="nc.ui.uif2.components.pagination.PaginationBar">
+		<property name="paginationModel" ref="paginationModel" />
+	</bean>
+
+	<bean id="paginationModel" class="nc.ui.uif2.components.pagination.PaginationModel"
+		init-method="init">
+		<property name="paginationQueryService" ref="ManageModelService" />
+	</bean>
+
+	<bean id="CaculateAction" class="nc.ui.wa.paydata.action.CaculateAction">
+		<property name="model" ref="ManageAppModel" />
+		<property name="dataManager" ref="modelDataManager" />
+	</bean>
+	<!--<bean id="SubmitAction" class="nc.ui.wa.paydata.action.SubmitAction">
+		<property name="model" ref="ManageAppModel" />
+		<property name="dataManager" ref="modelDataManager" />
+	</bean>
+	 <bean id="CallbackAction" class="nc.ui.wa.paydata.action.CallbackAction">
+		<property name="model" ref="ManageAppModel" />
+		<property name="dataManager" ref="modelDataManager" />
+	</bean> -->
+	<bean id="CheckAction" class="nc.ui.wa.paydata.action.CheckAction">
+		<property name="model" ref="ManageAppModel" />
+		<property name="dataManager" ref="modelDataManager" />
+	</bean>
+	<bean id="UnCheckAction" class="nc.ui.wa.paydata.action.UnCheckAction">
+		<property name="model" ref="ManageAppModel" />
+		<property name="dataManager" ref="modelDataManager" />
+	</bean>
+	<bean id="ReTotalAction" class="nc.ui.wa.paydata.action.ReTotalAction">
+		<property name="model" ref="ManageAppModel" />
+		<property name="dataManager" ref="modelDataManager"></property>
+	</bean>
+
+	<bean id="WaTimesCollectAction" class="nc.ui.wa.paydata.action.WaTimesCollectAction">
+		<property name="model" ref="ManageAppModel" />
+		<property name="dataManager" ref="modelDataManager"></property>
+	</bean>
+
+	<bean id="PayAction" class="nc.ui.wa.paydata.action.PayAction">
+		<property name="editor" ref="paydataInfoEditor" />
+		<property name="model" ref="ManageAppModel" />
+		<property name="dataManager" ref="modelDataManager"></property>
+	</bean>
+	<bean id="UnPayAction" class="nc.ui.wa.paydata.action.UnPayAction">
+		<property name="model" ref="ManageAppModel" />
+		<property name="dataManager" ref="modelDataManager"></property>
+	</bean>
+	<bean id="OnTimeCaculateAction" class="nc.ui.wa.paydata.action.OnTimeCacuAction">
+		<property name="model" ref="ManageAppModel" />
+		<property name="dataManager" ref="modelDataManager"></property>
+	</bean>
+	<bean id="SpecialPsnAction" class="nc.ui.wa.paydata.action.SpecialPsnAction">
+		<property name="model" ref="ManageAppModel" />
+		<property name="dataManager" ref="modelDataManager"></property>
+
+	</bean>
+	<bean id="FirstLineAction" class="nc.ui.uif2.actions.FirstLineAction">
+		<property name="model" ref="ManageAppModel" />
+	</bean>
+	<bean id="NextLineAction" class="nc.ui.uif2.actions.NextLineAction">
+		<property name="model" ref="ManageAppModel" />
+	</bean>
+	<bean id="PreLineAction" class="nc.ui.uif2.actions.PreLineAction">
+		<property name="model" ref="ManageAppModel" />
+	</bean>
+	<bean id="LastLineAction" class="nc.ui.uif2.actions.LastLineAction">
+		<property name="model" ref="ManageAppModel" />
+	</bean>
+	<bean id="ExportXlsAction" class="nc.ui.wa.paydata.action.ExportXlsAction">
+		<property name="model" ref="ManageAppModel" />
+		<property name="view" ref="listView" />
+	</bean>
+	<bean id="CheckGroupAction" class="nc.funcnode.ui.action.GroupAction">
+		<property name="code" value="checkgroup"></property>
+		<property name="name">
+			<bean class="nc.ui.uif2.I18nFB">
+				<property name="resDir" value="xmlcode" />
+				<property name="defaultValue" value="审核操作" />
+				<property name="resId" value="X60130024" />
+			</bean>
+		</property>
+		<property name="actions">
+			<list>
+				<ref bean="CheckAction" />
+				<ref bean="UnCheckAction" />
+			</list>
+		</property>
+	</bean>
+	<bean id="PayGroupAction" class="nc.funcnode.ui.action.GroupAction">
+		<property name="code" value="paygroup"></property>
+		<property name="name">
+			<bean class="nc.ui.uif2.I18nFB">
+				<property name="resDir" value="xmlcode" />
+				<property name="defaultValue" value="发放操作" />
+				<property name="resId" value="X60130025" />
+			</bean>
+		</property>
+		<property name="actions">
+			<list>
+				<ref bean="PayAction" />
+				<ref bean="UnPayAction" />
+			</list>
+		</property>
+	</bean>
+	<bean id="HealthGroupAction" class="nc.funcnode.ui.action.GroupAction">
+		<property name="code" value="paygroup"></property>
+		<property name="name">
+			<bean class="nc.ui.uif2.I18nFB">
+				<property name="resDir" value="60130paydata" />
+				<property name="defaultValue" value="二代健保计算" />
+				<property name="resId" value="60130paydata-001" />
+			</bean>
+		</property>
+		<property name="actions">
+			<list>
+				<ref bean="HealthCaculateAction" />
+				<ref bean="HealthUnCaculateAction" />
+			</list>
+		</property>
+	</bean>
+	
+
+	<bean id="PrintGroupAction" class="nc.funcnode.ui.action.GroupAction">
+		<property name="code" value="print"></property>
+		<property name="name" >
+			<bean class="nc.ui.uif2.I18nFB">
+				<property name="resDir" value="xmlcode" />
+				<property name="defaultValue" value="打印" />
+				<property name="resId" value="X60130002" />
+			</bean>
+		</property>
+		<property name="actions">
+			<list>
+				<ref bean="PrintAction" />
+				<ref bean="PreviewAction" />
+				<ref bean="outputAction" />
+				<ref bean="nullaction" />
+				<ref bean="TemplatePrintAction" />
+				<ref bean="TemplatePreviewAction" />
+
+
+			</list>
+		</property>
+	</bean>
+
+
+	<bean id="assistFunctionAction" class="nc.funcnode.ui.action.MenuAction">
+		<property name="code" value="assistFunction"></property>
+		<property name="name">
+			<bean class="nc.ui.uif2.I18nFB">
+				<property name="resDir" value="xmlcode" />
+				<property name="defaultValue" value="关联功能" />
+				<property name="resId" value="X60130026" />
+			</bean>
+		</property>
+		<property name="actions">
+			<list>
+				<ref bean="transferWaRedataAction" />
+				<ref bean="transferPayleaveAction" />
+				<ref bean="nullaction" />
+				<ref bean="transferPayApplyAction" />
+				<ref bean="nullaction" />
+				<ref bean="transferAmoAction" />
+				<ref bean="transferDatainterfaceAction" />
+				<ref bean="transferWabankAction" />
+				<ref bean="nullaction" />
+				<ref bean="transferMonthEndAction" />
+			</list>
+		</property>
+	</bean>
+	<bean id="transferPayleaveAction" class="nc.ui.wa.paydata.action.TransferPayleaveAction">
+		<property name="model" ref="ManageAppModel"></property>
+		<property name="openingFunCode" value="60130payleave"></property>
+	</bean>
+	<bean id="transferWaRedataAction" class="nc.ui.wa.paydata.action.TransferWaRedataAction">
+		<property name="model" ref="ManageAppModel"></property>
+		<property name="openingFunCode" value="60130repaydata"></property>
+	</bean>
+	<bean id="transferPayApplyAction" class="nc.ui.wa.paydata.action.TransferPayApplyAction">
+		<property name="model" ref="ManageAppModel"></property>
+		<property name="openingFunCode" value="60130payslipaly"></property>
+	</bean>
+	<bean id="transferAmoAction" class="nc.ui.wa.paydata.action.TransferAmoAction">
+		<property name="model" ref="ManageAppModel"></property>
+		<property name="openingFunCode" value="60130payamo"></property>
+	</bean>
+	<bean id="transferWabankAction" class="nc.ui.wa.paydata.action.TransferWabankAction">
+		<property name="model" ref="ManageAppModel"></property>
+		<property name="openingFunCode" value="60130bankitf"></property>
+	</bean>
+	<bean id="transferDatainterfaceAction" class="nc.ui.wa.paydata.action.TransferDatainterfaceAction">
+		<property name="model" ref="ManageAppModel"></property>
+		<property name="openingFunCode" value="60130dataitf"></property>
+	</bean>
+	<bean id="transferMonthEndAction" class="nc.ui.wa.paydata.action.TransferMonthEndAction">
+		<property name="model" ref="ManageAppModel"></property>
+		<property name="openingFunCode" value="60130monthend"></property>
+	</bean>
+
+	<bean id="PreviewAction" class="nc.ui.wa.paydata.action.DirectPrintAction">
+		<property name="model" ref="ManageAppModel" />
+		<property name="directPrint" value="false" />
+		<property name="listView" ref="listView" />
+	</bean>
+	<bean id="PrintAction" class="nc.ui.wa.paydata.action.DirectPrintAction">
+		<property name="model" ref="ManageAppModel" />
+		<property name="directPrint" value="true" />
+		<property name="listView" ref="listView" />
+	</bean>
+	<bean id="outputAction" class="nc.ui.wa.pub.WaOutputAction">
+		<property name="model" ref="ManageAppModel" />
+		<property name="listView" ref="listView"/>
+	</bean> 
+	
+	<bean id="datasource" class="nc.ui.wa.paydata.model.PaydataDataSource">
+		<property name="model" ref="ManageAppModel" />
+		<property name="listView" ref="listView"/>
+	</bean>
+	 <bean id="TemplatePreviewAction" class="nc.ui.wa.pub.action.WaTemplatePreviewAction">
+		<property name="model" ref="ManageAppModel" />
+		<property name="datasource" ref="datasource" />
+		<property name="nodeKey" value="paydata" />
+		
+	</bean>
+	<bean id="TemplatePrintAction" class="nc.ui.wa.pub.action.WaTemplatePrintAction">
+		<property name="model" ref="ManageAppModel" />
+		<property name="datasource" ref="datasource" />
+		 <property name="nodeKey" value="paydata" />
+	</bean> 
+	<!-- 界面元素 -->
+	<!-- 列表视图 -->
+	<bean id="listView" class="nc.ui.wa.paydata.view.PaydataListView"
+		init-method="initUI">
+		<property name="model" ref="ManageAppModel"></property>
+		<property name="multiSelectionEnable">
+			<value>false</value>
+		</property>
+		<!--property name="pos"><value>head</value></property-->
+		<property name="templateContainer" ref="templateContainer"></property>
+		<property name="billListPanelValueSetter">
+			<bean class="nc.ui.hr.append.model.AppendableBillListPanelSetter">
+			</bean>
+		</property>
+		<property name="dataManager" ref="modelDataManager"></property>
+	</bean>
+	<!--卡控件-->
+	<bean id="componentValueManager" class="nc.ui.uif2.editor.value.BillCardPanelHeadVOValueAdapter">
+		<property name="headVOName" value="nc.vo.wa.paydata.DataVO"></property>
+	</bean>
+	<bean id="billFormEditor" class="nc.ui.wa.paydata.view.PaydataFormEditor"
+		init-method="initUI">
+		<property name="model" ref="ManageAppModel"></property>
+		<property name="templateContainer" ref="templateContainer" />
+		<property name="componentValueManager" ref="componentValueManager">
+		</property>
+		<property name="showOnEditState" value="false"></property>
+		<property name="actions">
+			<list>
+				<ref bean="FirstLineAction" />
+				<ref bean="PreLineAction" />
+				<ref bean="NextLineAction" />
+				<ref bean="LastLineAction" />
+			</list>
+		</property>
+		<property name="dataManager" ref="modelDataManager"></property>
+	</bean>
+
+
+
+
+	<bean id="ClosingListener" class="nc.ui.uif2.FunNodeClosingHandler">
+		<property name="model" ref="ManageAppModel" />
+		<property name="saveaction" ref="FormSaveAction" />
+		<property name="cancelaction" ref="CancelAction" />
+	</bean>
+	<bean id="billNotNullValidator" class="nc.ui.hr.uif2.validator.BillNotNullValidateService">
+		<constructor-arg ref="billFormEditor">
+		</constructor-arg>
+	</bean>
+
+
+
+	<bean id="editorReturnAction" class="nc.ui.uif2.actions.ShowMeUpAction">
+		<property name="goComponent" ref="mainListPanel" />
+	</bean>
+
+	<bean id="editorToolBarPanel" class="nc.ui.uif2.tangramlayout.CardLayoutToolbarPanel">
+		<property name="model" ref="ManageAppModel" />
+		<property name="titleAction" ref="editorReturnAction" />
+		<property name="actions">
+			<list>
+				<ref bean="FirstLineAction" />
+				<ref bean="PreLineAction" />
+				<ref bean="NextLineAction" />
+				<ref bean="LastLineAction" />
+			</list>
+		</property>
+	</bean>
+
+	<!-- 界面布局总装 -->
+	<bean id="container" class="nc.ui.uif2.TangramContainer"
+		init-method="initUI">
+		<property name="tangramLayoutRoot">
+			<bean class="nc.ui.uif2.tangramlayout.node.TBNode">
+				<property name="showMode" value="CardLayout" />
+				<property name="tabs">
+					<list>
+						<bean class="nc.ui.uif2.tangramlayout.node.VSNode">
+							<property name="showMode" value="NoDivider" />
+							<property name="up">
+								<bean class="nc.ui.uif2.tangramlayout.node.CNode">
+									<property name="component" ref="orgpanel" />
+								</bean>
+							</property>
+							<property name="down">
+								<bean class="nc.ui.uif2.tangramlayout.node.CNode">
+									<property name="component" ref="mainListPanel"></property>
+								</bean>
+							</property>
+							<property name="dividerLocation" value="30f" />
+						</bean>
+
+						<bean class="nc.ui.uif2.tangramlayout.node.VSNode">
+							<property name="showMode" value="NoDivider" />
+							<property name="up">
+								<bean class="nc.ui.uif2.tangramlayout.node.CNode">
+									<property name="component" ref="editorToolBarPanel" />
+								</bean>
+							</property>
+							<property name="down">
+								<bean class="nc.ui.uif2.tangramlayout.node.CNode">
+									<property name="component" ref="billFormEditor" />
+								</bean>
+							</property>
+							<property name="dividerLocation" value="30f" />
+						</bean>
+					</list>
+				</property>
+			</bean>
+
+		</property>
+	</bean>
+
+	<!-- 界面零件 -->
+	<bean id="mainListPanel" class="nc.ui.hr.wizard.LayoutPanel"
+		init-method="initUI">
+		<constructor-arg>
+			<bean class="java.awt.BorderLayout"></bean>
+		</constructor-arg>
+		<property name="componentMap">
+			<map>
+				<entry key-ref="listView" value="Center"></entry>
+				<entry key-ref="paydataInfoEditor" value="South"></entry>
+
+				<!--<entry key-ref="paginationBar" value="South"></entry>-->
+			</map>
+		</property>
+	</bean>
+
+	<bean id="orgpanel" class="nc.ui.wa.pub.WaOrgHeadPanel"
+		init-method="initUI">
+		<constructor-arg>
+			<ref bean="mainListPanel" />
+		</constructor-arg>
+		<property name="model" ref="ManageAppModel" />
+		<property name="context" ref="context"></property>
+		<property name="dataManager" ref="modelDataManager" />
+		<property name="pk_orgtype" value="HRORGTYPE00000000000" />
+	</bean>
+	<!-- 发放信息 -->
+
+
+	<bean id="paydataInfoEditor" class="nc.ui.wa.paydata.view.PaydataInfoEditor"
+		init-method="initUI">
+		<property name="model" ref="ManageAppModel" />
+		<property name="context" ref="context"></property>
+		<property name="paginationBar" ref="paginationBar"></property>
+
+	</bean>
+
+
+
+</beans>
+
+

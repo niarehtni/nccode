@@ -1,0 +1,1 @@
+alter table tbm_overtimereg add approve_time nchar(19)

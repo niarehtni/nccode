@@ -1,0 +1,13 @@
+package nc.impl.ta.algorithm;
+
+import nc.vo.pub.BusinessException;
+import nc.vo.pub.lang.UFLiteralDate;
+
+public interface ITWHolidayOffdayValidate {
+	/**
+	 * Ð£òž·½·¨
+	 * 
+	 * @throws BusinessException
+	 */
+	public void validate(String pk_org, String pk_psndoc, UFLiteralDate checkDate) throws BusinessException;
+}

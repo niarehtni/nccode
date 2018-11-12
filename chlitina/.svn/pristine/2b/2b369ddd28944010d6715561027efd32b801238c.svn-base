@@ -1,0 +1,2 @@
+insert into pub_query_templet(description,devorg,dr,fixcondition,fixquerytree,id,layer,metaclass,model_code,model_name,node_code,parentid,pk_corp,pk_org,resid,ts) values( null,null,null,null,null,'1004Z710000000005LE2',0,'218971f0-e5dc-408b-9a32-56529dddd4db','6013amoschemecondquery','分摊方案条件查询模板','60130amoscheme',null,'@@@@',null,'06013amoschemecondquery0000','2018-09-16 14:02:41')
+go

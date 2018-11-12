@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding='UTF-8'?>
+<UIMeta flowmode="true" id="main_um" jquery="0" preferredHeight="0" preferredWidth="0">
+    <FlowvLayout  autoFill="0" id="flowvlayout7501" widgetId="main">
+        <FlowvPanel id="panelv_operate" widgetId="main">
+            <CanvasLayout className="rightcanvas" id="menucanvas" widgetId="main">
+                <CanvasPanel id="canvasp1" widgetId="main">
+                    <Menubar height="100%" id="menu_card" left="0" position="relative" top="0" widgetId="main" width="100%">
+                    </Menubar>
+                </CanvasPanel>
+            </CanvasLayout>
+        </FlowvPanel>
+        <FlowvPanel id="panelv06429" widgetId="main">
+            <PanelLayout className="small_panel_div" expand="true" i18nName="w_ta-000852" id="panellayout1247" langDir="node_ta-res" title="单据信息" widgetId="main">
+                <PanelPanel bottomPadding="0" id="panelpanel1247" topPadding="20" widgetId="main">
+                    <FormComp height="100%" id="headTab_card_stapply_form" label_position="" left="0" position="relative" top="0" widgetId="main" width="100%">
+                    </FormComp>
+                </PanelPanel>
+            </PanelLayout>
+        </FlowvPanel>
+        <FlowvPanel id="panelv16429" widgetId="main">
+            <PanelLayout className="small_panel_div" expand="true" i18nName="w_ta-000853" id="panellayout1248" langDir="node_ta-res" title="人员信息" widgetId="main">
+                <PanelPanel bottomPadding="0" id="panelpanel1248" topPadding="0" widgetId="main">
+                    <FormComp height="100%" id="headTab_card_psninfo_form" label_position="" left="0" position="relative" top="0" widgetId="main" width="100%">
+                    </FormComp>
+                </PanelPanel>
+            </PanelLayout>
+        </FlowvPanel>
+        <FlowvPanel id="panelv26429" widgetId="main">
+            <PanelLayout className="small_panel_div" expand="true" i18nName="w_trn-000025" id="panellayout1249" langDir="node_hi-res" title="离职前信息" widgetId="main">
+                <PanelPanel bottomPadding="0" id="panelpanel1249" topPadding="0" widgetId="main">
+                    <FormComp height="100%" id="headTab_card_before_form" label_position="" left="0" position="relative" top="0" widgetId="main" width="100%">
+                    </FormComp>
+                </PanelPanel>
+            </PanelLayout>
+        </FlowvPanel>
+        <FlowvPanel id="panelv36429" widgetId="main">
+            <PanelLayout className="small_panel_div" expand="true" i18nName="w_trn-000026" id="panellayout1250" langDir="node_hi-res" title="离职后信息" widgetId="main">
+                <PanelPanel bottomPadding="0" id="panelpanel1250" topPadding="0" widgetId="main">
+                    <FormComp height="100%" id="headTab_card_after_form" label_position="" left="0" position="relative" top="0" widgetId="main" width="100%">
+                    </FormComp>
+                </PanelPanel>
+            </PanelLayout>
+        </FlowvPanel>
+        <FlowvPanel id="panelv46429" widgetId="main">
+            <PanelLayout className="small_panel_div" expand="true" i18nName="w_trn-000027" id="panellayout1251" langDir="node_hi-res" title="离职后管理组织" widgetId="main">
+                <PanelPanel bottomPadding="0" id="panelpanel1251" topPadding="0" widgetId="main">
+                    <FormComp height="100%" id="headTab_card_hiorg_form" label_position="" left="0" position="relative" top="0" widgetId="main" width="100%">
+                    </FormComp>
+                </PanelPanel>
+            </PanelLayout>
+        </FlowvPanel>
+    </FlowvLayout>
+</UIMeta>

@@ -1,0 +1,90 @@
+package nc.ui.ta.psndocwadoc.view.labourjoin;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import nc.bs.framework.common.NCLocator;
+import nc.desktop.ui.WorkbenchEnvironment;
+import nc.itf.hr.hi.LabourHealthRegimentInsuranceEnum;
+import nc.itf.om.IAOSQueryService;
+import nc.itf.ta.IPsnCalendarManageMaintain;
+import nc.itf.ta.IPsnCalendarQueryMaintain;
+import nc.pub.fa.common.util.StringUtils;
+import nc.ui.hr.uif2.model.HRWizardModel;
+import nc.ui.pub.beans.MessageDialog;
+import nc.ui.pub.beans.wizard.IWizardDialogListener;
+import nc.ui.pub.beans.wizard.WizardActionException;
+import nc.ui.pub.beans.wizard.WizardEvent;
+import nc.ui.querytemplate.querytree.FromWhereSQL;
+import nc.ui.wa.psndocwadoc.model.PsndocwadocAppModel;
+import nc.vo.logging.Debug;
+import nc.vo.pub.BusinessException;
+import nc.vo.pub.lang.UFLiteralDate;
+import nc.vo.ta.psncalendar.PsnJobCalendarVO;
+
+public class WizardListenerForAddJoin implements IWizardDialogListener {
+
+	@Override
+	public void wizardCancel(WizardEvent event) throws WizardActionException {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void wizardFinish(WizardEvent event) throws WizardActionException {
+		String error = WorkbenchEnvironment.getInstance().getClientCache("Adderror") == null ? "" : 
+			           WorkbenchEnvironment.getInstance().getClientCache("Adderror").toString();
+		if(!StringUtils.isEmpty(error)){
+			WorkbenchEnvironment.getInstance().removeClientCache("Adderror");
+			MessageDialog.showErrorDlg(null, "错误信息", error);
+			throw new WizardActionException(new Exception(error));
+		}
+		HRWizardModel wizardModel = (HRWizardModel)event.getModel();
+		//取出日期范围
+		SelPsnStepForAddJoin step1 = (SelPsnStepForAddJoin)wizardModel.getSteps().get(0);
+		SelPsnPanelForAddJoin pane1 = step1.getSelPsnPanelForAddJoin();
+		String pk_org = pane1.getPK_BU();
+		
+		//取出人员主键
+		ConfirmPsnStepForAddJoin step2 = (ConfirmPsnStepForAddJoin)wizardModel.getSteps().get(1);
+		ConfirmPsnPanelForAddJoin pane2 = step2.getConfirmPsnPanelForAddJoin();
+		String[] pk_psndocs = pane2.getSelPkPsndocs();
+		
+		JoinSetStepForAddJoin step3 = (JoinSetStepForAddJoin) wizardModel.getSteps().get(2);
+		JoinSetPanelForAddJoin pane3 = step3.getJoinSetPanelForAddJoin();
+		//开始日期
+		String begindate = pane3.getRefBeginDate().getValueObj().toString();
+		//险种
+		String insurancetype = pane3.getxianZhongPk() == null ? "" : pane3.getxianZhongPk();
+		//团保基数
+		String regimentinsurancebasenumber = pane3.getRateRefPane().getValueObj() == null ? "" : 
+					  						 pane3.getRateRefPane().getValueObj().toString();
+		Map<LabourHealthRegimentInsuranceEnum,String> addMap = new HashMap<LabourHealthRegimentInsuranceEnum,String>();
+		addMap.put(LabourHealthRegimentInsuranceEnum.BEGINDATE, begindate);
+		addMap.put(LabourHealthRegimentInsuranceEnum.INSURANCETYPE, insurancetype);
+		addMap.put(LabourHealthRegimentInsuranceEnum.REGIMENTINSURANCEBASENUMBER, regimentinsurancebasenumber);
+		//取出遇假日排班取消标志
+//		IPsnCalendarQueryMaintain queryMaintain = NCLocator.getInstance().lookup(IPsnCalendarQueryMaintain.class);
+//		PsnJobCalendarVO[] calendarVOs = null;
+//		try {
+//			String pk_hrorg = NCLocator.getInstance().lookup(IAOSQueryService.class).queryHROrgByOrgPK(pk_org).getPk_org();
+//		} catch (BusinessException e) {
+//			Debug.error(e.getMessage(), e);
+//			WizardActionException wae = new WizardActionException(e);
+//			wae.addMsg("1", e.getMessage());
+//			throw wae;
+//		}
+//		PsndocwadocAppModel appModel = (PsndocwadocAppModel)wizardModel.getModel();
+////		appModel.setBeginEndDate(beginDate, endDate);
+//		appModel.initModel(calendarVOs);
+//		event.getModel().gotoStepForwardNoValidate(0);
+	}
+
+	@Override
+	public void wizardFinishAndContinue(WizardEvent event)
+			throws WizardActionException {
+		// TODO Auto-generated method stub
+
+	}
+
+}

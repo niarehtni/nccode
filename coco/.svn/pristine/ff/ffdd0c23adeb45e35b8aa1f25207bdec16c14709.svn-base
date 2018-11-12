@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding='UTF-8'?>
+<UIMeta chart="0" flowmode="true" id="main_um" jquery="0" jsEditor="0" jsExcel="0">
+	<FlowvLayout autoFill="0" id="flowvlayout5452" widgetId="main">
+		<FlowvPanel id="panelv05452" widgetId="main">
+			<CanvasLayout className="rightcanvas" id="menucanvas" widgetId="main">
+                <CanvasPanel id="canvasp1" widgetId="main">
+                	<Menubar id="menu_list" widgetId="main">
+            		</Menubar>
+                </CanvasPanel>
+            </CanvasLayout>
+        </FlowvPanel>
+        <FlowvPanel id="panelv25452" widgetId="main">
+			<GridComp id="gridPsnCalendar" widgetId="main" autoExpand="1">
+            </GridComp>
+        </FlowvPanel>
+        <FlowvPanel id="panelv15452" widgetId="main">
+        	<HtmlContent align="left" height="100%" id="explainHtml" left="0" position="relative" top="0" widgetId="main" width="100%">
+            </HtmlContent>
+        </FlowvPanel>
+    </FlowvLayout>
+</UIMeta>

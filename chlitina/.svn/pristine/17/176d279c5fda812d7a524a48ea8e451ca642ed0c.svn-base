@@ -1,0 +1,401 @@
+package nc.ui.ta.psncalendar.view.batchchangecalendarday;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import org.apache.commons.collections.MapUtils;
+
+import nc.bs.framework.common.NCLocator;
+import nc.hr.utils.ResHelper;
+import nc.itf.om.IAOSQueryService;
+import nc.itf.ta.IPsnCalendarManageMaintain;
+import nc.itf.ta.IPsnCalendarManageValidate;
+import nc.itf.ta.IPsnCalendarQueryMaintain;
+import nc.itf.ta.ITBMPsndocQueryService;
+import nc.itf.uap.IUAPQueryBS;
+import nc.jdbc.framework.processor.MapListProcessor;
+import nc.pubitf.para.SysInitQuery;
+import nc.ui.bd.workcalendar.view.WorkCalendarHolidayMemoDialog;
+import nc.ui.hr.uif2.model.HRWizardModel;
+import nc.ui.pub.beans.MessageDialog;
+import nc.ui.pub.beans.wizard.IWizardDialogListener;
+import nc.ui.pub.beans.wizard.WizardActionException;
+import nc.ui.pub.beans.wizard.WizardEvent;
+import nc.ui.querytemplate.querytree.FromWhereSQL;
+import nc.ui.ta.psncalendar.model.PsnCalendarAppModel;
+import nc.vo.logging.Debug;
+import nc.vo.pub.BusinessException;
+import nc.vo.pub.lang.UFBoolean;
+import nc.vo.pub.lang.UFLiteralDate;
+import nc.vo.ta.psncalendar.PsnJobCalendarVO;
+import nc.vo.ta.psndoc.TBMPsndocVO;
+
+public class WizardListenerForBatchChangeCalendarDay implements IWizardDialogListener {
+	private String pk_org = null;
+	private String[] pk_psndocs = null;
+	private WizardEvent event = null;
+
+	@Override
+	public void wizardCancel(WizardEvent event) throws WizardActionException {
+
+	}
+
+	@Override
+	public void wizardFinish(WizardEvent event) throws WizardActionException {
+		this.event = event;
+		HRWizardModel wizardModel = (HRWizardModel) event.getModel();
+
+		SelPsnStepForBatchChangeCalendarDay step1 = (SelPsnStepForBatchChangeCalendarDay) wizardModel.getSteps().get(0);
+		SelPsnPanelForBatchChangeCalendarDay panel1 = step1.getSelPsnPanelForBatchChangeCalendarDay();
+		this.pk_org = panel1.getPK_BU();
+		// 取出人员主键
+		ConfirmPsnStepForBatchChangeCalendarDay step2 = (ConfirmPsnStepForBatchChangeCalendarDay) wizardModel.getSteps()
+				.get(1);
+		ConfirmPsnPanelForBatchChangeCalendarDay panel2 = step2.getConfirmPsnPanelForBatchChangeCalendarDay();
+		this.pk_psndocs = panel2.getSelPkPsndocs();
+
+		// 取出是否调换日历天标志
+		ShiftSetStepForBatchChangeCalendarDay step3 = (ShiftSetStepForBatchChangeCalendarDay) wizardModel.getSteps()
+				.get(2);
+		ShiftSetPanelForBatchChangeCalendarDay panel3 = step3.getShiftSetPanelForBatchChangeCalendarDay();
+		boolean changeDayTypeCheckBox = panel3.getChangeDayTypeCheckBox().isSelected();
+		PsnJobCalendarVO[] calendarVOs = new PsnJobCalendarVO[0];// 返回值
+		//获取法人组织
+		 IUAPQueryBS iUAPQueryBS = (IUAPQueryBS)NCLocator.getInstance().lookup(IUAPQueryBS.class.getName());   
+		 String legal_pk_org = null;
+		try {
+			List<Map<String,String>> legal_pk_orgs = (List<Map<String,String>>) iUAPQueryBS. executeQuery("select legal_pk_org from org_leaglorg_mapping where pk_org='"+wizardModel.getModel().getContext().getPk_org()+"'",new MapListProcessor());
+			legal_pk_org = legal_pk_orgs.get(0).get("legal_pk_org");
+		} catch (BusinessException e1) {
+			e1.printStackTrace();
+		}
+		
+		if (changeDayTypeCheckBox) {
+			// 调换逻辑
+			// 读取两个调换逻辑和两个调换的日历天类型
+			UFLiteralDate firstDate = panel3.getFirstDate();
+			UFLiteralDate secondDate = panel3.getSecondDate();
+			//更新之前做一例一休的校验
+			//IHRHolidayQueryService
+			//在页面做一个弹出框
+			IPsnCalendarManageValidate manageValidate = NCLocator.getInstance().lookup(IPsnCalendarManageValidate.class);
+			try {
+				List<String> strMessage = manageValidate.updateValidate(wizardModel.getModel().getContext().getPk_org(),pk_psndocs, firstDate, secondDate);
+				UFBoolean isStrcheck = SysInitQuery.getParaBoolean(legal_pk_org, "TWHRT03");
+				if(strMessage.size()>0 ){
+					for(String strs : strMessage){
+						if(isStrcheck.booleanValue()){
+							//严格校验（有错误则取消保存）
+							MessageDialog.showHintsDlg(wizardModel.getModel().getContext().getEntranceUI(), "校验", "以下员工"+strs);
+							return;
+						} else {
+							//非严格校验（页面弹出一个框提醒用户哪些人不符合一例一休，然用户自己选择是否继续保存）
+							if( 2 == MessageDialog.showOkCancelDlg(wizardModel.getModel().getContext().getEntranceUI(), "校验", "以下员工"+strs+"是否继续保存?")){
+								return;
+							}
+							
+						}
+					}
+					
+				}
+			} catch (BusinessException e) {
+				Debug.error(e.getMessage(), e);
+				WizardActionException wae = new WizardActionException(e);
+				wae.addMsg("1", e.getMessage());
+				throw wae;
+			}
+			if (null == firstDate || null != secondDate) {
+				// 首先进行考勤档案的校验
+				try {
+					ITBMPsndocQueryService tbmPsndocQS = NCLocator.getInstance().lookup(ITBMPsndocQueryService.class);
+					// 调换天1的考勤档案//所有人员，key是人员主键
+					Map<String, List<TBMPsndocVO>> firstTbmpsndocVOMap = tbmPsndocQS.queryTBMPsndocMapByPsndocs(pk_org,
+							pk_psndocs, firstDate, firstDate, true, true, null);
+					// 第二天的考勤档案
+					Map<String, List<TBMPsndocVO>> secondTbmpsndocVOMap = tbmPsndocQS.queryTBMPsndocMapByPsndocs(pk_org,
+							pk_psndocs, secondDate, secondDate, true, true, null);
+					if (MapUtils.isEmpty(firstTbmpsndocVOMap)) {
+						WizardActionException wae = new WizardActionException(new BusinessException(
+								firstDate + ResHelper.getString("twhr_psncalendar", "psncalendar-0015")
+						/* @res "人员考勤档案为空,不会进行任何操作" */));
+						wae.addMsg("1", firstDate + ResHelper.getString("twhr_psncalendar",
+								"psncalendar-0015")/*
+													 * @res "人员考勤档案为空,不会进行任何操作"
+													 */);
+						throw wae;
+					}
+					if (MapUtils.isEmpty(secondTbmpsndocVOMap)) {
+						WizardActionException wae = new WizardActionException(new BusinessException(
+								secondDate + ResHelper.getString("twhr_psncalendar", "psncalendar-0015")
+						/* @res "人员考勤档案为空,不会进行任何操作" */));
+						wae.addMsg("1", secondDate + ResHelper.getString("twhr_psncalendar",
+								"psncalendar-0015")/*
+													 * @res "人员考勤档案为空,不会进行任何操作"
+													 */);
+						throw wae;
+					}
+
+					// 保存两个日期都有考勤档案的人员
+					Set<String> psndocListHasBothDate = new HashSet<>();// 这年头都没人用set的吗,连个set的包都要自己引
+					// 这些是考勤档案缺失的人员 <date,List<pk_psndoc>>
+					Map<UFLiteralDate, HashSet<String>> psndocListHasnotBothDate = new HashMap<>();// 这年头,HashMap也没人用
+					psndocListHasnotBothDate.put(firstDate, new HashSet<String>());
+					psndocListHasnotBothDate.put(secondDate, new HashSet<String>());
+					// 遍历各个人员,看是否考勤档案是否都存在
+					int signal = 0;
+					for (String pk_psndoc : pk_psndocs) {
+						signal = 0;
+						if (null == firstTbmpsndocVOMap.get(pk_psndoc)
+								|| firstTbmpsndocVOMap.get(pk_psndoc).isEmpty()) {
+							psndocListHasnotBothDate.get(firstDate).add(pk_psndoc);
+							signal++;
+						}
+						if (null == secondTbmpsndocVOMap.get(pk_psndoc)
+								|| secondTbmpsndocVOMap.get(pk_psndoc).isEmpty()) {
+							psndocListHasnotBothDate.get(secondDate).add(pk_psndoc);
+							signal++;
+						}
+						if (0 == signal) {// 两个考勤档案都存的
+							psndocListHasBothDate.add(pk_psndoc);
+						}
+					}
+
+					if (!psndocListHasnotBothDate.get(firstDate).isEmpty()
+							|| !psndocListHasnotBothDate.get(secondDate).isEmpty()) {
+						/*
+						 * WorkCalendarHolidayMemoDialog memoDialog = new
+						 * WorkCalendarHolidayMemoDialog( this,
+						 * nc.vo.ml.NCLangRes4VoTransl.getNCLangRes().getStrByID
+						 * ("10140wcb", "010140wcb0010") @res "节假日说明" ); String
+						 * memo = " "; if (memoDialog.showModal() ==
+						 * UIDialog.ID_OK) { memo = memoDialog.getHolidayMemo();
+						 * }
+						 */
+
+						//TODO: 導出人員考勤檔案不存在的人員Excel,而不是顯示在提示框上
+						int isForce = MessageDialog.showOkCancelDlg(null,
+								ResHelper.getString("twhr_psncalendar", "psncalendar-0016"),
+								ResHelper.getString("twhr_psncalendar", "psncalendar-0016"));
+						if (1 != isForce) {
+							// 不同意,什么也不改
+							return;
+						}
+					}
+					// 代码走到这,说明全部人都有考勤档案,丢到后台去更改日历天就行了
+
+					IPsnCalendarManageMaintain queryMaintain = NCLocator.getInstance()
+							.lookup(IPsnCalendarManageMaintain.class);
+
+					queryMaintain.batchChangeDateType(pk_org, psndocListHasBothDate.toArray(new String[0]), firstDate,
+							secondDate);
+
+				} catch (BusinessException e) {
+					Debug.error(e.getMessage(), e);
+					WizardActionException wae = new WizardActionException(e);
+					wae.addMsg("1", e.getMessage());
+					throw wae;
+				}
+
+			} else {
+				WizardActionException wae = new WizardActionException(
+						new BusinessException(ResHelper.getString("twhr_psncalendar", "psncalendar-0013")
+						/* @res "调换日期不能为空" */));
+				Debug.error(wae.getMessage(), wae);
+				// throw wae;
+				// wae.addMsg("1", e.getMessage());
+				throw wae;
+			}
+			
+			
+			refreshData(firstDate, secondDate);
+		} else {
+			
+			// 日历变更逻辑
+			// 读取一个日历即可
+			UFLiteralDate changeDate = panel3.getChangeDate();
+			//更新之前做一例一休的校验
+			//IHRHolidayQueryService
+			//在页面做一个弹出框
+			IPsnCalendarManageValidate manageValidate = NCLocator.getInstance().lookup(IPsnCalendarManageValidate.class);
+			try {
+				List<String> strMessage = manageValidate.updatedayValidate(wizardModel.getModel().getContext().getPk_org(),pk_psndocs, changeDate, panel3.getafterChangeDateType());
+				UFBoolean isStrcheck = SysInitQuery.getParaBoolean(legal_pk_org, "TWHRT03");
+				if(null != strMessage ){
+					for(String strs : strMessage){
+						if(isStrcheck.booleanValue()){
+							//严格校验（有错误则取消保存）
+							MessageDialog.showHintsDlg(wizardModel.getModel().getContext().getEntranceUI(), "校验", "以下员工"+strs);
+							return;
+						} else {
+							//非严格校验（页面弹出一个框提醒用户哪些人不符合一例一休，然用户自己选择是否继续保存）
+							if( 2 == MessageDialog.showOkCancelDlg(wizardModel.getModel().getContext().getEntranceUI(), "校验", "以下员工"+strs+"是否继续保存?")){
+								return;
+							}
+							
+						}
+					}
+					
+				}
+			} catch (BusinessException e) {
+				Debug.error(e.getMessage(), e);
+				WizardActionException wae = new WizardActionException(e);
+				wae.addMsg("1", e.getMessage());
+				throw wae;
+			}
+			if (null != changeDate) {
+				// 首先进行考勤档案的校验
+				ITBMPsndocQueryService tbmPsndocQS = NCLocator.getInstance().lookup(ITBMPsndocQueryService.class);
+				// 调换天1的考勤档案//所有人员，key是人员主键
+				try {
+					Map<String, List<TBMPsndocVO>> changeTbmpsndocVOMap = tbmPsndocQS.queryTBMPsndocMapByPsndocs(pk_org,
+							pk_psndocs, changeDate, changeDate, true, true, null);
+					if (MapUtils.isEmpty(changeTbmpsndocVOMap)) {
+						WizardActionException wae = new WizardActionException(new BusinessException(
+								changeDate + ResHelper.getString("twhr_psncalendar", "psncalendar-0015")
+						/* @res "人员考勤档案为空,不会进行任何操作" */));
+						wae.addMsg("1", changeDate + ResHelper.getString("twhr_psncalendar",
+								"psncalendar-0015")/*
+													 * @res "人员考勤档案为空,不会进行任何操作"
+													 */);
+						throw wae;
+					}
+					// 保存有考勤档案的人员
+					Set<String> psndocListHasDate = new HashSet<>();
+					Set<String> psndocListWithNoDate = new HashSet<>();
+					// 遍历各个人员,看是否考勤档案是否都存在
+					for (String pk_psndoc : pk_psndocs) {
+						if (null == changeTbmpsndocVOMap.get(pk_psndoc)
+								|| changeTbmpsndocVOMap.get(pk_psndoc).isEmpty()) {
+							psndocListWithNoDate.add(pk_psndoc);
+						}
+						else{// 两个考勤档案都存的
+							psndocListHasDate.add(pk_psndoc);
+						}
+					}
+					if (!psndocListWithNoDate.isEmpty()) {
+						/*
+						 * WorkCalendarHolidayMemoDialog memoDialog = new
+						 * WorkCalendarHolidayMemoDialog( this,
+						 * nc.vo.ml.NCLangRes4VoTransl.getNCLangRes().getStrByID
+						 * ("10140wcb", "010140wcb0010") @res "节假日说明" ); String
+						 * memo = " "; if (memoDialog.showModal() ==
+						 * UIDialog.ID_OK) { memo = memoDialog.getHolidayMemo();
+						 * }
+						 */
+						//StringBuilder msgBd = new StringBuilder();
+						//TODO: 導出人員考勤檔案不存在人員的Excel(因為數量較多),而不是顯示在提示框上
+						int isForce = MessageDialog.showOkCancelDlg(null,
+								ResHelper.getString("twhr_psncalendar", "psncalendar-0016"),
+								ResHelper.getString("twhr_psncalendar", "psncalendar-0016"));
+						if (1 != isForce) {
+							// 不同意,什么也不改
+							return;
+						}
+					}
+					// 代码走到这,说明全部人都有考勤档案,丢到后台去更改日历天就行了
+
+					IPsnCalendarManageMaintain queryMaintain = NCLocator.getInstance()
+							.lookup(IPsnCalendarManageMaintain.class);
+
+					queryMaintain.batchChangeDateType4OneDay(pk_org, psndocListHasDate.toArray(new String[0]),
+							changeDate, panel3.getafterChangeDateType());
+
+				} catch (BusinessException e) {
+					Debug.debug(e.getMessage(), e);
+					e.printStackTrace();
+				}
+			}
+			
+			refreshData(changeDate, changeDate);
+		}
+
+		/*
+		 * HRWizardModel wizardModel = (HRWizardModel)event.getModel(); //取出日期范围
+		 * SelPsnStepForBatchChange step1 =
+		 * (SelPsnStepForBatchChange)wizardModel.getSteps().get(0);
+		 * SelPsnPanelForBatchChange panel1 =
+		 * step1.getSelPsnPanelForBatchChange(); FromWhereSQL fromWhereSQL =
+		 * panel1.getQuerySQL(); UFLiteralDate beginDate =
+		 * panel1.getBeginDate(); UFLiteralDate endDate = panel1.getEndDate();
+		 * String pk_org = panel1.getPK_BU(); //取出人员主键
+		 * ConfirmPsnStepForBatchChange step2 =
+		 * (ConfirmPsnStepForBatchChange)wizardModel.getSteps().get(1);
+		 * ConfirmPsnPanelForBatchChange panel2 =
+		 * step2.getConfirmPsnPanelForBatchChange(); String[] pk_psndocs =
+		 * panel2.getSelPkPsndocs(); //取出遇假日排班取消标志 ShiftSetStepForBatchChange
+		 * step3 = (ShiftSetStepForBatchChange)wizardModel.getSteps().get(2);
+		 * ShiftSetPanelForBatchChange panel3 =
+		 * step3.getShiftSetPanelForBatchChange(); // boolean isHolidayCancel =
+		 * panel3.isHolidayCancel(); //取出班次主键 String old_Pk_shift =
+		 * panel3.getOldShiftPk();//老的班次主键 String new_Pk_shift =
+		 * panel3.getNewShiftPk();//新的班次主键
+		 * 
+		 * Boolean
+		 * withOldShift=panel3.getOldShiftCheckBox().isSelected();//原班次是否被选中
+		 * IPsnCalendarManageMaintain manageMaintain =
+		 * NCLocator.getInstance().lookup(IPsnCalendarManageMaintain.class);
+		 * IPsnCalendarQueryMaintain queryMaintain =
+		 * NCLocator.getInstance().lookup(IPsnCalendarQueryMaintain.class);
+		 * PsnJobCalendarVO[] calendarVOs = null; try {
+		 * manageMaintain.batchChangeShiftNew(pk_org, pk_psndocs, beginDate,
+		 * endDate,withOldShift, old_Pk_shift,new_Pk_shift); String pk_hrorg =
+		 * NCLocator.getInstance().lookup(IAOSQueryService.class).
+		 * queryHROrgByOrgPK(pk_org).getPk_org(); //calendarVOs=
+		 * queryMaintain.queryCalendarVOByPsndocs(pk_org, pk_psndocs, beginDate,
+		 * endDate); calendarVOs=
+		 * queryMaintain.queryCalendarVOByPsndocs(pk_hrorg, pk_psndocs,
+		 * beginDate, endDate);
+		 * 
+		 * 
+		 * } catch (BusinessException e) { Debug.error(e.getMessage(), e);
+		 * WizardActionException wae = new WizardActionException(e);
+		 * wae.addMsg("1", e.getMessage()); throw wae; } PsnCalendarAppModel
+		 * appModel = (PsnCalendarAppModel)wizardModel.getModel();
+		 * appModel.setBeginEndDate(beginDate, endDate);
+		 * appModel.initModel(calendarVOs);
+		 * event.getModel().gotoStepForwardNoValidate(0);
+		 */
+
+		System.out.println("确定逻辑开始..............");
+	}
+
+	private void refreshData(UFLiteralDate firstDate, UFLiteralDate secondDate) {
+		HRWizardModel wizardModel = (HRWizardModel) event.getModel();
+		PsnCalendarAppModel appModel = (PsnCalendarAppModel) wizardModel.getModel();
+		IPsnCalendarQueryMaintain queryMaintain = NCLocator.getInstance().lookup(IPsnCalendarQueryMaintain.class);
+		PsnJobCalendarVO[] calendarVOs = new PsnJobCalendarVO[0];
+		if (firstDate.before(secondDate)) {
+
+			appModel.setBeginEndDate(firstDate, secondDate);
+			try {
+				calendarVOs = queryMaintain.queryCalendarVOByPsndocs(pk_org, pk_psndocs, firstDate, secondDate);
+			} catch (BusinessException e) {
+				Debug.error(e.getMessage(), e);
+				e.printStackTrace();
+			}
+
+		} else {
+			appModel.setBeginEndDate(secondDate, firstDate);
+			try {
+				calendarVOs = queryMaintain.queryCalendarVOByPsndocs(pk_org, pk_psndocs, secondDate, firstDate);
+			} catch (BusinessException e) {
+				Debug.error(e.getMessage(), e);
+				e.printStackTrace();
+			}
+			// TODO 日历天类型都为0的bug
+		}
+		appModel.initModel(calendarVOs);
+
+		event.getModel().gotoStepForwardNoValidate(0);
+	}
+
+	@Override
+	public void wizardFinishAndContinue(WizardEvent event) throws WizardActionException {
+
+	}
+
+}

@@ -1,0 +1,605 @@
+package nc.impl.ta.psndoc.listener;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+import nc.bs.businessevent.BusinessEvent;
+import nc.bs.businessevent.IBusinessEvent;
+import nc.bs.businessevent.IBusinessListener;
+import nc.bs.businessevent.IEventType;
+import nc.bs.dao.BaseDAO;
+import nc.bs.framework.common.NCLocator;
+import nc.bs.logging.Logger;
+import nc.hr.utils.CommonUtils;
+import nc.hr.utils.InSQLCreator;
+import nc.hr.utils.StringPiecer;
+import nc.impl.ta.psncalendar.PsnCalendarDAO;
+import nc.impl.ta.psndoc.TBMPsndocChangeProcessor;
+import nc.impl.ta.psndoc.TBMPsndocMaintainImpl;
+import nc.itf.hi.IPsndocQryService;
+import nc.itf.om.IAOSQueryService;
+import nc.itf.ta.ILeaveBalanceManageMaintain;
+import nc.itf.ta.ITimeRuleQueryService;
+import nc.jdbc.framework.processor.ColumnListProcessor;
+import nc.pubitf.bd.team.team01.hr.ITeamQueryServiceForHR;
+import nc.vo.bd.team.team01.entity.TeamItemVO;
+import nc.vo.hi.psndoc.PsnJobVO;
+import nc.vo.hi.psndoc.PsnOrgVO;
+import nc.vo.hi.psndoc.enumeration.TrnseventEnum;
+import nc.vo.hi.pub.HICommonValue;
+import nc.vo.hi.pub.HiBatchEventValueObject;
+import nc.vo.hi.pub.HiEventValueObject;
+import nc.vo.hi.pub.IHiEventType;
+import nc.vo.org.OrgVO;
+import nc.vo.pub.BusinessException;
+import nc.vo.pub.lang.UFLiteralDate;
+import nc.vo.ta.psndoc.TBMPsndocCommonValue;
+import nc.vo.ta.psndoc.TBMPsndocVO;
+import nc.vo.ta.timerule.TimeRuleVO;
+
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang.StringUtils;
+
+/**
+ * 考勤档案对于人员各种变动时的监听 1. 事件源：转入人员档案 处理方式：添加该人员考勤档案记录。 2. 事件源：工作记录新增后
+ * 处理方式：如果异动事件为离职，则结束该人员的考勤档案 如果该人员已有未结束的考勤档案，则结束该考勤档案，再添加一条考勤档案记录。 3.
+ * 事件源：工作记录修改后 处理方式： 如果是离职信息，则不作任何处理； 如果修改的不是最新的工作记录，则不作任何处理
+ * 如果修改的是最新的工作记录，并且修改前和修改后均有结束日期或者均无结束日期，则不作任何处理；
+ * 如果修改的是最新的工作记录，并且修改前无结束日期，修改后有结束日期，则结束人员的考勤档案；-begindate=enddate;
+ * 其他情况修改该工作记录的考勤档案信息。 4. 事件源：工作记录删除前 处理方式：删除考勤档案信息。 5. 事件源：兼职记录修改后
+ * 处理方式：与工作记录修改处理方式（第3条）相同。 6. 事件源：兼职记录删除前 处理方式：如果该兼职记录考勤档案，则删除当前任职的考勤档案。 7.
+ * 事件源：兼职变更后
+ * 处理方式：如果该人员最新考勤档案的任职是工作记录而不是兼职记录，则不进行任何操作，如果该人员最新考勤档案的任职是兼职记录，则结束该考勤档案
+ * ，并添加一条考勤档案记录。
+ * 
+ * 2011-2-17 9:39:44
+ */
+public class PsnChangeEventListener implements IBusinessListener {
+
+	private TBMPsndocMaintainImpl manageMaintain;
+	private ILeaveBalanceManageMaintain leaveBalanceMM;
+
+	private ILeaveBalanceManageMaintain getLeaveBalanceMM() {
+		if (leaveBalanceMM == null) {
+			leaveBalanceMM = NCLocator.getInstance().lookup(ILeaveBalanceManageMaintain.class);
+		}
+		return leaveBalanceMM;
+	}
+
+	private TBMPsndocMaintainImpl getManageMaintain() {
+		if (manageMaintain == null) {
+			manageMaintain = new TBMPsndocMaintainImpl();
+		}
+		return manageMaintain;
+	}
+
+	@Override
+	public void doAction(final IBusinessEvent event) throws BusinessException {
+
+		// final String pk_group = PubEnv.getPk_group();
+		// final String bizCenterCode =
+		// InvocationInfoProxy.getInstance().getBizCenterCode();
+		// final long bizDateTime =
+		// InvocationInfoProxy.getInstance().getBizDateTime();
+		// final String langCode =
+		// InvocationInfoProxy.getInstance().getLangCode();
+		// final String userDataSource =
+		// InvocationInfoProxy.getInstance().getUserDataSource();
+		// final String userId = InvocationInfoProxy.getInstance().getUserId();
+		// final InvocationInfo invocationInfo =
+		// BDDistTokenUtil.getInvocationInfo();
+		// new Executor(new Runnable() {//另起线程不影响人员的响应时间
+		// @Override
+		// public void run() {
+		// 线程中环境信息会丢失，主动的设置一下
+		// InvocationInfoProxy.getInstance().setGroupId(pk_group);
+		// InvocationInfoProxy.getInstance().setBizCenterCode(bizCenterCode);
+		// InvocationInfoProxy.getInstance().setBizDateTime(bizDateTime);
+		// InvocationInfoProxy.getInstance().setLangCode(langCode);
+		// InvocationInfoProxy.getInstance().setUserDataSource(userDataSource);
+		// InvocationInfoProxy.getInstance().setUserId(userId);
+		// BDDistTokenUtil.setInvocationInfo(invocationInfo);
+		handleChange(event);
+		// }
+		// }).start();
+	}
+
+	private void handleChange(IBusinessEvent event) throws BusinessException {
+		BusinessEvent be = (BusinessEvent) event;
+		Object obj = be.getObject();
+		if (obj == null)
+			return;
+		PsnJobVO[] psnJobBefores = null;
+		PsnJobVO[] psnJobAfters = null;
+		// 人事业务变化后的工作记录。如果是转入人员档案，则变化前和变化后相同
+		if (obj instanceof HiBatchEventValueObject) {
+			HiBatchEventValueObject value = (HiBatchEventValueObject) obj;
+			psnJobBefores = value.getPsnjobs_before();
+			psnJobAfters = value.getPsnjobs_after();
+		} else {
+			HiEventValueObject value = (HiEventValueObject) obj;
+			if (value.getPsnjob_before() != null)
+				psnJobBefores = new PsnJobVO[] { value.getPsnjob_before() };
+			if (value.getPsnjob_after() != null)
+				psnJobAfters = new PsnJobVO[] { value.getPsnjob_after() };
+		}
+		String sourceID = event.getSourceID();
+		try { // 2013-04-01 人员不想让时间的监听影响人员业务的操作，因此把异常catch掉
+				// 工作记录变化处理
+			if (HICommonValue.PSNJOBSOURCEID.equals(sourceID)) {
+				handlePsnjobChange(event.getEventType(), psnJobBefores, psnJobAfters);
+			}
+			// 兼职记录变化处理
+			if (HICommonValue.PARTSOURCEID.equals(sourceID)) {
+				handlePsnPartjobChange(event.getEventType(), psnJobBefores, psnJobAfters);
+			}
+		} catch (Exception e) {
+			Logger.error("======== PsnChangeEventListener error " + e.getMessage(), e);
+			throw new BusinessException(e.getMessage(), e);
+		}
+	}
+
+	/**
+	 * 批量处理工作记录变化
+	 * 
+	 * @param eventType
+	 * @param psnJobBefores
+	 * @param psnJobAfters
+	 * @throws BusinessException
+	 */
+	private void handlePsnjobChange(String eventType, PsnJobVO[] psnJobBefores, PsnJobVO[] psnJobAfters)
+			throws BusinessException {
+		// 处理新增工作记录后
+		if (IEventType.TYPE_INSERT_AFTER.equals(eventType)) {
+			handleAddPsnJobChange(psnJobBefores, psnJobAfters);
+			getLeaveBalanceMM().translateLeaves(psnJobBefores, psnJobAfters);
+			return;
+		}
+		// 修改工作记录后
+		if (IEventType.TYPE_UPDATE_AFTER.equals(eventType)) {
+			handleUpdateJobOrPartChg(psnJobBefores, psnJobAfters);
+			return;
+		}
+		// 删除工作记录前
+		if (IEventType.TYPE_DELETE_BEFORE.equals(eventType)) {
+			deleteTBMPsndocByPsnjob(psnJobBefores, false);
+			return;
+		}
+	}
+
+	/**
+	 * 处理兼职记录信息变化
+	 * 
+	 * @param event
+	 * @throws BusinessException
+	 */
+	private void handlePsnPartjobChange(String eventType, PsnJobVO[] psnJobBefores, PsnJobVO[] psnJobAfters)
+			throws BusinessException {
+		// 修改兼职记录后
+		if (IEventType.TYPE_UPDATE_AFTER.equals(eventType)) {
+			handleUpdateJobOrPartChg(psnJobBefores, psnJobAfters);
+			return;
+		}
+		// 删除兼职记录前
+		if (IEventType.TYPE_DELETE_BEFORE.equals(eventType)) {
+			deleteTBMPsndocByPsnjob(psnJobBefores, true);
+			return;
+		}
+		// 兼职记录变更后，如果不是有效考勤档案对应的工作记录，则不作任何处理，如果是，则结束之前的考勤档案，再新增一条考勤档案
+		if (IHiEventType.PARTCHGAFTER.equals(eventType)) {
+			handlePartChange(psnJobBefores, psnJobAfters);
+			getLeaveBalanceMM().translateLeaves(psnJobBefores, psnJobAfters);
+		}
+	}
+
+	/**
+	 * 处理兼职记录变更
+	 * 
+	 * @param oldPsnjobVOs
+	 * @param psnjobVOs
+	 * @throws BusinessException
+	 */
+	private void handlePartChange(PsnJobVO[] oldPsnjobVOs, PsnJobVO[] psnjobVOs) throws BusinessException {
+		if (ArrayUtils.isEmpty(psnjobVOs))
+			return;
+		String pk_org = psnjobVOs[0].getPk_org(); // 按hrjf的业务，传入的工作记录所属业务单元应该都是一样的（若后续组织业务变化，此处应同步修改）
+		OrgVO hrorg = NCLocator.getInstance().lookup(IAOSQueryService.class).queryHROrgByOrgPK(pk_org);
+		TimeRuleVO timeRule = NCLocator.getInstance().lookup(ITimeRuleQueryService.class)
+				.queryByOrgWithoutException(hrorg.getPk_org());
+		boolean isNotIntoTBM = timeRule == null || timeRule.getTotbmpsntype() == null
+				|| 0 == timeRule.getTotbmpsntype().intValue(); // 新增人员是否转入考勤档案
+		Map<String, TBMPsndocVO> psndocMap = getManageMaintain().queryUnFinishPsnDoc(
+				StringPiecer.getStrArray(psnjobVOs, PsnJobVO.PK_PSNDOC));
+		if (MapUtils.isEmpty(psndocMap))
+			return;
+		TBMPsndocVO[] psndocs = psndocMap.values().toArray(new TBMPsndocVO[0]);
+		PsnJobVO[] latestPsnjobVOs = NCLocator.getInstance().lookup(IPsndocQryService.class)
+				.queryPsnjobByPKs(StringPiecer.getStrArrayDistinct(psndocs, TBMPsndocVO.PK_PSNJOB));
+		Map<String, PsnJobVO> psnjobMap = CommonUtils.toMap(PsnJobVO.PK_PSNJOB, latestPsnjobVOs);
+		if (MapUtils.isEmpty(psnjobMap))
+			return;
+		List<TBMPsndocVO> insertList = new ArrayList<TBMPsndocVO>();
+		List<TBMPsndocVO> updateList = new ArrayList<TBMPsndocVO>();
+		List<TBMPsndocVO> deleteList = new ArrayList<TBMPsndocVO>();
+		for (int i = 0; i < psnjobVOs.length; i++) {
+			PsnJobVO psnjobVO = psnjobVOs[i];
+			TBMPsndocVO unFinishPsndoc = psndocMap.get(oldPsnjobVOs[i].getPk_psnjob());
+			// 如果该人员没有有效地考勤档案,不处理
+			if (unFinishPsndoc == null)
+				continue;
+			// 如果该人员最新考勤档案的任职是工作记录而不是兼职记录，则不进行任何操作
+			PsnJobVO latestPsnjob = psnjobMap.get(unFinishPsndoc.getPk_psnjob());
+			if (latestPsnjob == null || latestPsnjob.getIsmainjob().booleanValue())
+				continue;
+			// 结束之前的考勤档案
+			// 如果考勤档案开始日期在工作记录结束日期之后，则直接删除此条考勤档案记录
+			if (psnjobVO.getEnddate() != null && unFinishPsndoc.getBegindate().after(psnjobVO.getEnddate())) {
+				deleteList.add(unFinishPsndoc);
+			} else { // 其余的则更新结束日期
+				unFinishPsndoc.setEnddate(psnjobVO.getBegindate().getDateBefore(1));
+				updateList.add(unFinishPsndoc);
+			}
+			if (isNotIntoTBM && (psndocMap.size() == 0 || psndocMap == null))// 2014-08-27添加条件(psndocMap.size()==0||psndocMap==null)，若是有未结束的考勤档案，则按自动加入考勤处理
+				continue;
+			// 否则新增一条考勤档案
+			TBMPsndocVO psndocVO = new TBMPsndocVO();
+			psndocVO.setPk_psndoc(psnjobVO.getPk_psndoc());
+			psndocVO.setPk_psnjob(psnjobVO.getPk_psnjob());
+			psndocVO.setPk_group(psnjobVO.getPk_group());
+			psndocVO.setPk_org(hrorg.getPk_org());
+			psndocVO.setPk_adminorg(hrorg.getPk_org());
+			psndocVO.setPk_psnorg(psnjobVO.getPk_psnorg());
+			psndocVO.setBegindate(psnjobVO.getBegindate());
+			psndocVO.setEnddate(psnjobVO.getEnddate() == null ? UFLiteralDate.getDate(TBMPsndocCommonValue.END_DATA)
+					: psnjobVO.getEnddate());
+			if (timeRule.getTotbmpsntype() != null) {
+				psndocVO.setTbm_prop(timeRule.getTotbmpsntype().intValue() == 1 ? TBMPsndocCommonValue.PROP_MANUAL
+						: TBMPsndocCommonValue.PROP_MACHINE);
+			} else {
+				psndocVO.setTbm_prop(TBMPsndocCommonValue.PROP_MACHINE);
+			}
+			if (unFinishPsndoc != null && unFinishPsndoc.getPk_org().equalsIgnoreCase(psndocVO.getPk_org())) {// 若是组织没法发送变化则把考勤卡号信息带入
+				psndocVO.setTimecardid(unFinishPsndoc.getTimecardid());
+				psndocVO.setSecondcardid(unFinishPsndoc.getSecondcardid());
+				psndocVO.setTbm_prop(unFinishPsndoc.getTbm_prop());
+				psndocVO.setPk_place(unFinishPsndoc.getPk_place());
+			}
+			insertList.add(psndocVO);
+			// v63add,这种情况结束了原来组织的考勤档案，新增了新组织的考勤档案，则需要处理假期结余转移
+			// getLeaveBalanceMM().translateLeave(oldPsnjobVOs[i], psnjobVO);
+		}
+		// 保存
+		getManageMaintain().delete(deleteList.toArray(new TBMPsndocVO[0]));
+		getManageMaintain().update(updateList.toArray(new TBMPsndocVO[0]), true);
+		getManageMaintain().insert(insertList.toArray(new TBMPsndocVO[0]), true);
+	}
+
+	/**
+	 * 处理新增工作记录
+	 * 
+	 * @param psnJobVO
+	 * @throws BusinessException
+	 */
+	private void handleAddPsnJobChange(PsnJobVO[] oldPsnjobVOs, PsnJobVO[] psnjobVOs) throws BusinessException {
+		if (ArrayUtils.isEmpty(psnjobVOs))
+			return;
+		String pk_org = psnjobVOs[0].getPk_org(); // 按hrjf的业务，传入的工作记录所属业务单元应该都是一样的（若后续组织业务变化，此处应同步修改）
+		OrgVO hrorg = NCLocator.getInstance().lookup(IAOSQueryService.class).queryHROrgByOrgPK(pk_org);
+		TimeRuleVO timeRule = NCLocator.getInstance().lookup(ITimeRuleQueryService.class)
+				.queryByOrgWithoutException(hrorg.getPk_org());
+		Map<String, TBMPsndocVO> psndocMap = getManageMaintain().queryUnFinishPsnDoc(
+				StringPiecer.getStrArray(psnjobVOs, PsnJobVO.PK_PSNDOC));
+		boolean isNotIntoTBM = timeRule == null || timeRule.getTotbmpsntype() == null
+				|| 0 == timeRule.getTotbmpsntype().intValue(); // 新增人员是否转入考勤档案
+		List<TBMPsndocVO> insertList = new ArrayList<TBMPsndocVO>();
+		List<TBMPsndocVO> insertNotArrangeList = new ArrayList<TBMPsndocVO>();// 633修改若组织没有发生变化，则不重新排班
+		List<TBMPsndocVO> updateList = new ArrayList<TBMPsndocVO>();
+		List<TBMPsndocVO> updateNotArrangeList = new ArrayList<TBMPsndocVO>();// 65修改若组织没有发生变化，则不重新排班
+		List<TBMPsndocVO> deleteList = new ArrayList<TBMPsndocVO>();
+
+		List<TeamItemVO> insertTeamItemVOs = new ArrayList<TeamItemVO>();// 65修改需要新增的班组人员(人员的组织、部门、岗位未变化不则不能结束班组，需要新增一条)
+		for (int i = 0; i < psnjobVOs.length; i++) {
+			PsnJobVO psnjobVO = psnjobVOs[i];
+			// 如果增加的是历史工作记录，不是最新的，则不处理
+			if (psnjobVO.getLastflag() == null || !psnjobVO.getLastflag().booleanValue())
+				continue;
+			PsnJobVO oldPsnJobvo = oldPsnjobVOs[i];
+			TBMPsndocVO unFinishPsndoc = psndocMap == null ? null : psndocMap.get(oldPsnJobvo.getPk_psnjob());
+			// 查询组织关系
+			BaseDAO dao = new BaseDAO();
+			List<String> flag = (List<String>) dao.executeQuery("select endflag from " + PsnOrgVO.getDefaultTableName()
+					+ " where " + PsnOrgVO.PK_PSNORG + " = '" + psnjobVO.getPk_psnorg() + "' ",
+					new ColumnListProcessor());
+			// 如果是离职人员，则结束当前考勤档案
+			if (psnjobVO.getTrnsevent().intValue() == TrnseventEnum.DISMISSION.toIntValue() || "Y".equals(flag.get(0))) {
+				if (psndocMap == null || psndocMap.size() == 0)
+					continue;
+				if (unFinishPsndoc != null) {// 处理考勤档案中是主职的情况
+					// 如果考勤档案开始日期在工作记录结束日期之后，则直接删除此条考勤档案记录
+					if (unFinishPsndoc.getBegindate().after(psnjobVO.getBegindate())) {
+						deleteList.add(unFinishPsndoc);
+						continue;
+					}
+					// 其余的则更新结束日期
+					unFinishPsndoc.setEnddate(psnjobVO.getBegindate().getDateBefore(1));
+					updateList.add(unFinishPsndoc);
+					continue;
+				} else {// 处理考勤档案中是兼职的情况,人员主职离职同时删除考勤档案中兼职记录20140901
+					for (String str : psndocMap.keySet()) {
+						if (psndocMap.get(str).getBegindate().after(psnjobVO.getBegindate())) {
+							deleteList.add(psndocMap.get(str));
+							continue;
+						}
+						psndocMap.get(str).setEnddate(psnjobVO.getBegindate().getDateBefore(1));
+						updateList.add(psndocMap.get(str));
+						continue;
+					}
+				}
+			}
+			// 如果没有未结束的考勤档案
+			if (psndocMap == null || psndocMap.size() == 0) {
+				if (isNotIntoTBM || timeRule == null)// 如果不需要加入考勤档案或者新组织没有考勤规则，则不需要再处理
+					continue;
+				// 否则新增一条考勤档案
+				TBMPsndocVO psndocVO = new TBMPsndocVO();
+				psndocVO.setPk_psndoc(psnjobVO.getPk_psndoc());
+				psndocVO.setPk_psnjob(psnjobVO.getPk_psnjob());
+				psndocVO.setPk_group(psnjobVO.getPk_group());
+				psndocVO.setPk_org(hrorg.getPk_org());
+				psndocVO.setPk_adminorg(hrorg.getPk_org());
+				psndocVO.setPk_psnorg(psnjobVO.getPk_psnorg());
+				psndocVO.setBegindate(psnjobVO.getBegindate());
+				psndocVO.setEnddate(psnjobVO.getEnddate() == null ? UFLiteralDate
+						.getDate(TBMPsndocCommonValue.END_DATA) : psnjobVO.getEnddate());
+				psndocVO.setTbm_prop(timeRule.getTotbmpsntype().intValue() == 1 ? TBMPsndocCommonValue.PROP_MANUAL
+						: TBMPsndocCommonValue.PROP_MACHINE);
+				insertList.add(psndocVO);
+				continue;
+			}
+			if (unFinishPsndoc == null) // 只处理考勤档案的主职记录不处理兼职
+				continue;
+			// 如果已有考勤档案开始日期在上一工作记录结束日期之后，为避免考勤档案结束日期在开始日期之前，只需将此考勤档案pk_psnjob换成当前工作记录的pk_psnjob即可
+			if (unFinishPsndoc.getBegindate().after(psnjobVO.getBegindate().getDateBefore(1))) {
+				TBMPsndocVO oldUnFinishPsndoc = (TBMPsndocVO) unFinishPsndoc.clone();
+				unFinishPsndoc.setPk_psnjob(psnjobVO.getPk_psnjob());
+				// 组织和管理组织改变,若组织没有发生变化则管理组织也不发生变化
+				if (!unFinishPsndoc.getPk_org().equals(hrorg.getPk_org())) {
+					unFinishPsndoc.setPk_adminorg(hrorg.getPk_org());
+				}
+				unFinishPsndoc.setPk_org(hrorg.getPk_org());
+				unFinishPsndoc.setPk_team(null);// 组织切换后，要将班组清空
+				// 一个人的考勤档案从A组织平移到B组织后，要将其在A组织下班组内对应的该人员的信息做处理，
+				// 如果班组人员日期段与考勤档案日期段相等，则直接删除班组人员记录即可，
+				// 如果日期段不相等，则修改班组人员结束日期为考勤档案开始日期前一天
+				new TBMPsndocChangeProcessor().processAfterTBMPsndocDelete(oldUnFinishPsndoc);
+				updateList.add(unFinishPsndoc);
+				continue;
+			}
+			// 原有的考勤档案在上一个工作记录的结束日期之后则正常结束该档案并且新增一条
+			unFinishPsndoc.setEnddate(psnjobVO.getBegindate().getDateBefore(1));
+			// v63 根据需求确认，若已有考勤档案了，则按自动加入考勤档案处理
+			// if(isNotIntoTBM) //如果不自动加入考勤档案，则只结束原有的不再新增
+			// continue;
+			TBMPsndocVO psndocVO = new TBMPsndocVO();
+			psndocVO.setPk_psndoc(psnjobVO.getPk_psndoc());
+			psndocVO.setPk_psnjob(psnjobVO.getPk_psnjob());
+			psndocVO.setPk_group(psnjobVO.getPk_group());
+			psndocVO.setPk_org(hrorg.getPk_org());
+			// 若组织没有发生变化则管理组织也不发生变化,且考勤卡号考勤地点也保持不变,633修改若组织没有发生变化，则不重新排班
+			if (unFinishPsndoc.getPk_org().equals(hrorg.getPk_org())) {
+				insertNotArrangeList.add(psndocVO);
+				updateNotArrangeList.add(unFinishPsndoc);
+				psndocVO.setPk_adminorg(unFinishPsndoc.getPk_adminorg());
+				psndocVO.setTimecardid(unFinishPsndoc.getTimecardid());
+				psndocVO.setSecondcardid(unFinishPsndoc.getSecondcardid());
+				psndocVO.setPk_place(unFinishPsndoc.getPk_place());
+				psndocVO.setTbm_prop(unFinishPsndoc.getTbm_prop());
+			} else {// 组织变动了必须要重新排班了
+				updateList.add(unFinishPsndoc);
+				if (timeRule != null) {// 新调配的组织没有设置考勤规则，则不在新组织插入加入考勤
+					insertList.add(psndocVO);
+					psndocVO.setPk_adminorg(hrorg.getPk_org());
+					psndocVO.setTbm_prop(timeRule.getTotbmpsntype().intValue() == 1 ? TBMPsndocCommonValue.PROP_MANUAL
+							: TBMPsndocCommonValue.PROP_MACHINE);
+				}
+			}
+			psndocVO.setPk_psnorg(psnjobVO.getPk_psnorg());
+			psndocVO.setBegindate(psnjobVO.getBegindate());
+			psndocVO.setEnddate(psnjobVO.getEnddate() == null ? UFLiteralDate.getDate(TBMPsndocCommonValue.END_DATA)
+					: psnjobVO.getEnddate());
+			// psndocVO.setTbm_prop(timeRule.getTotbmpsntype().intValue()==1 ?
+			// TBMPsndocCommonValue.PROP_MANUAL:TBMPsndocCommonValue.PROP_MACHINE);
+			// insertList.add(psndocVO);
+			// v63,结束了原来组织的考勤档案，新增了新组织的考勤档案，则需要处理假期结余转移
+			// getLeaveBalanceMM().translateLeave(oldPsnjobVOs[i], psnjobVO);
+
+			// V65新增，若组织、部门、岗位都没有变化则班组也不变化（结束原来的，新增个新的）//post 不为空判断 tangcht
+
+			if (StringUtils.isNotBlank(unFinishPsndoc.getPk_team())
+					&& psnjobVO.getPk_org().equalsIgnoreCase(oldPsnJobvo.getPk_org())
+					&& psnjobVO.getPk_dept().equalsIgnoreCase(oldPsnJobvo.getPk_dept())
+					&& ((psnjobVO.getPk_post() == null && oldPsnJobvo.getPk_post() == null) || (psnjobVO.getPk_post() != null && psnjobVO
+							.getPk_post().equalsIgnoreCase(oldPsnJobvo.getPk_post())))) {
+				TeamItemVO teamPsn = NCLocator
+						.getInstance()
+						.lookup(ITeamQueryServiceForHR.class)
+						.queryByPsnandDate(unFinishPsndoc.getPk_team(), unFinishPsndoc.getPk_psndoc(),
+								unFinishPsndoc.getBegindate(), unFinishPsndoc.getEnddate())[0];
+				if (null != teamPsn) {
+					TeamItemVO newTeamPsn = (TeamItemVO) teamPsn.clone();
+					newTeamPsn.setDstartdate(psnjobVO.getBegindate());
+					newTeamPsn.setPk_psnjob(psnjobVO.getPk_psnjob());
+					newTeamPsn.setDr(0);
+					insertTeamItemVOs.add(newTeamPsn);
+				}
+				psndocVO.setPk_team(unFinishPsndoc.getPk_team());
+			}
+		}
+		// 保存
+		getManageMaintain().delete(deleteList.toArray(new TBMPsndocVO[0]));
+		// updateListy与updateNotArrangeList合并，都不进行排班,清除旧的工作日历的工作在insert中完成
+		// getManageMaintain().update(updateList.toArray(new
+		// TBMPsndocVO[0]),false);
+		updateNotArrangeList.addAll(updateList);
+		getManageMaintain().update(updateNotArrangeList.toArray(new TBMPsndocVO[0]), false);
+		// 对新的考勤档案排班的时候清除该时间段的工作日历的垃圾数据
+		getManageMaintain().insert(insertList.toArray(new TBMPsndocVO[0]), true);
+		getManageMaintain().insert(insertNotArrangeList.toArray(new TBMPsndocVO[0]), false);
+
+		if (CollectionUtils.isNotEmpty(insertTeamItemVOs)) {
+			new BaseDAO().insertVOList(insertTeamItemVOs);
+		}
+	}
+
+	/**
+	 * 处理修改工作记录或者兼职记录
+	 * 
+	 * @param psnJobBefore
+	 * @param psnJobAfter
+	 * @throws BusinessException
+	 */
+	private void handleUpdateJobOrPartChg(PsnJobVO[] oldPsnjobVOs, PsnJobVO[] psnjobVOs) throws BusinessException {
+		if (ArrayUtils.isEmpty(psnjobVOs))
+			return;
+		String pk_org = psnjobVOs[0].getPk_org();
+		OrgVO hrorg = NCLocator.getInstance().lookup(IAOSQueryService.class).queryHROrgByOrgPK(pk_org);
+		TimeRuleVO timeRule = NCLocator.getInstance().lookup(ITimeRuleQueryService.class)
+				.queryByOrgWithoutException(hrorg.getPk_org());
+		Map<String, TBMPsndocVO> psndocMap = getManageMaintain().queryUnFinishPsnDoc(
+				StringPiecer.getStrArray(psnjobVOs, PsnJobVO.PK_PSNDOC));
+		// 若没有考勤规则或没有未完成的考勤档案，不用处理
+		if (timeRule == null || MapUtils.isEmpty(psndocMap))
+			return;
+		// boolean isNotIntoTBM =
+		// timeRule.getTotbmpsntype()==null||0==timeRule.getTotbmpsntype().intValue();
+		// //新增人员是否转入考勤档案
+		List<TBMPsndocVO> insertList = new ArrayList<TBMPsndocVO>();
+		List<TBMPsndocVO> updateList = new ArrayList<TBMPsndocVO>();
+		List<TBMPsndocVO> deleteList = new ArrayList<TBMPsndocVO>();
+		List<TBMPsndocVO> deleteCalendarList = new ArrayList<TBMPsndocVO>();
+
+		for (int i = 0; i < psnjobVOs.length; i++) {
+
+			PsnJobVO psnjobVO = psnjobVOs[i];
+
+			// 修改的内容和考勤档案没有关系则不用处理,比如所属组织、开始日期、结束日期这些值都没有变化
+			PsnJobVO oldVO = oldPsnjobVOs[i];
+			if (psnjobVO.getPk_psnjob().equalsIgnoreCase(oldVO.getPk_psnjob())
+					&& psnjobVO.getBegindate().isSameDate(oldVO.getBegindate())
+					&& psnjobVO.getPk_org().equals(oldVO.getPk_org())) {
+				UFLiteralDate enddate = psnjobVO.getEnddate();
+				UFLiteralDate oldenddate = oldVO.getEnddate();
+				if (null == enddate && null == oldenddate)
+					continue;
+				if (null != enddate && null != oldenddate && enddate.isSameDate(oldenddate))
+					continue;
+			}
+
+			// 离职记录不处理
+			if (oldPsnjobVOs[i].getTrnsevent() != null
+					&& oldPsnjobVOs[i].getTrnsevent().intValue() == TrnseventEnum.DISMISSION.toIntValue())
+				continue;
+			TBMPsndocVO unFinishPsndoc = psndocMap.get(psnjobVOs[i].getPk_psnjob());
+			// 如果修改的不是有效地考勤档案对应的工作记录，则不作任何处理
+			if (unFinishPsndoc == null || !oldPsnjobVOs[i].getPk_psnjob().equals(unFinishPsndoc.getPk_psnjob()))
+				continue;
+			if (psnjobVO.getPk_org().equals(oldPsnjobVOs[i].getPk_org())) {// 如果组织没变
+				// 如果修改的是最新的工作记录，并且修改前无结束日期，修改后有结束日期，则结束人员的考勤档案
+				if (oldPsnjobVOs[i].getEnddate() == null && psnjobVO.getEnddate() != null) {
+					// 如果考勤档案开始日期在工作记录结束日期之后，则直接删除此条考勤档案记录
+					if (unFinishPsndoc.getBegindate().after(psnjobVO.getEnddate())) {
+						deleteList.add(unFinishPsndoc);
+						continue;
+					}
+					// 其余的则更新结束日期
+					unFinishPsndoc.setEnddate(psnjobVO.getEnddate());
+					updateList.add(unFinishPsndoc);
+					continue;
+				} else {
+					unFinishPsndoc.setPk_psndoc(psnjobVO.getPk_psndoc());
+					unFinishPsndoc.setPk_psnjob(psnjobVO.getPk_psnjob());
+					unFinishPsndoc.setPk_group(psnjobVO.getPk_group());
+					unFinishPsndoc.setPk_org(hrorg.getPk_org());
+					unFinishPsndoc.setPk_adminorg(hrorg.getPk_org());
+					unFinishPsndoc.setPk_psnorg(psnjobVO.getPk_psnorg());
+					unFinishPsndoc.setEnddate(psnjobVO.getEnddate() == null ? UFLiteralDate
+							.getDate(TBMPsndocCommonValue.END_DATA) : psnjobVO.getEnddate());
+					updateList.add(unFinishPsndoc);
+				}
+				continue;
+			}
+			// 2013-08-12
+			// 修改若已有未结束的考勤档案了，则按自动加入考勤档案处理，考虑场景：a和b业务单元在同一个hr组织下，更改任职记录a->b即使hr组织的考勤规则不自动加入考勤档案，也不要删除
+			// if(isNotIntoT BM){//如果新组织自动转入考勤档案，则直接将老组织上该人员的考勤档案删除
+			// deleteList.add(unFinishPsndoc);
+			// }else{//如果新组织做考勤则直接将老的考勤档案更新到新组织下
+			// 这样直接修改会造成原业务单元下的工作日历删除不掉，新业务单元下的日历还是老的日历
+			TBMPsndocVO clearCalendarPsn = (TBMPsndocVO) unFinishPsndoc.clone();
+			deleteCalendarList.add(clearCalendarPsn);
+			unFinishPsndoc.setPk_psndoc(psnjobVO.getPk_psndoc());
+			unFinishPsndoc.setPk_psnjob(psnjobVO.getPk_psnjob());
+			unFinishPsndoc.setPk_group(psnjobVO.getPk_group());
+			// 当人力资源组织发生变化了才更新管理组织
+			if (!unFinishPsndoc.getPk_org().equals(hrorg.getPk_org()))
+				unFinishPsndoc.setPk_adminorg(hrorg.getPk_org());
+			unFinishPsndoc.setPk_org(hrorg.getPk_org());
+			unFinishPsndoc.setPk_psnorg(psnjobVO.getPk_psnorg());
+			unFinishPsndoc.setEnddate(psnjobVO.getEnddate() == null ? UFLiteralDate
+					.getDate(TBMPsndocCommonValue.END_DATA) : psnjobVO.getEnddate());
+			// 组织变化了班组应该清空了
+			unFinishPsndoc.setPk_team(null);
+			updateList.add(unFinishPsndoc);
+			// unFinishPsndoc.setBegindate(psnjobVO.getBegindate());// 使用原来的开始日期
+			// unFinishPsndoc.setTbm_prop(timeRule.getTotbmpsntype().intValue()==1
+			// ?
+			// TBMPsndocCommonValue.PROP_MANUAL:TBMPsndocCommonValue.PROP_MACHINE);
+			// }
+		}
+		// 保存
+		// 业务单元变化直接修改考勤档案的，先清空老的日历
+		new PsnCalendarDAO().deleteByTBMPsndocVOs(deleteCalendarList.toArray(new TBMPsndocVO[0]));
+		getManageMaintain().delete(deleteList.toArray(new TBMPsndocVO[0]));
+		getManageMaintain().update(updateList.toArray(new TBMPsndocVO[0]), true);
+		getManageMaintain().insert(insertList.toArray(new TBMPsndocVO[0]), true);
+	}
+
+	/**
+	 * 删除考勤档案
+	 * 
+	 * @param psnJobVO
+	 * @throws BusinessException
+	 */
+	private void deleteTBMPsndocByPsnjob(PsnJobVO[] psnjobVOs, boolean isPartJob) throws BusinessException {
+		if (ArrayUtils.isEmpty(psnjobVOs))
+			return;
+		String condition = TBMPsndocVO.PK_PSNJOB + " in("
+				+ new InSQLCreator().getInSQL(StringPiecer.getStrArray(psnjobVOs, PsnJobVO.PK_PSNJOB)) + ") order by "
+				+ TBMPsndocVO.ENDDATE + " desc ";
+		TBMPsndocVO[] psndocVOs = getManageMaintain().queryByCondition(condition);
+		if (ArrayUtils.isEmpty(psndocVOs))
+			return;
+		Map<String, TBMPsndocVO[]> psndocMap = CommonUtils.group2ArrayByField(TBMPsndocVO.PK_PSNJOB, psndocVOs);
+		Map<String, TBMPsndocVO> unFinishMap = getManageMaintain().queryUnFinishPsnDoc(
+				StringPiecer.getStrArray(psnjobVOs, PsnJobVO.PK_PSNDOC));
+		List<TBMPsndocVO> deleteList = new ArrayList<TBMPsndocVO>();
+		for (PsnJobVO psnjobVO : psnjobVOs) {
+			TBMPsndocVO[] psndocs = psndocMap.get(psnjobVO.getPk_psnjob());
+			// 没有对应的考勤档案
+			if (ArrayUtils.isEmpty(psndocs))
+				continue;
+			String unFinishPsnjob = MapUtils.isEmpty(unFinishMap) ? null
+					: (unFinishMap.get(psnjobVO.getPk_psnjob()) == null ? null : psnjobVO.getPk_psnjob());
+			// if(isPartJob &&
+			// !psnjobVO.getPk_psnjob().equals(unFinishPsnjob))//如果是兼职且修改的不是有效地考勤档案对应的工作记录，则不作任何处理
+			if (unFinishPsnjob == null)
+				continue;
+			deleteList.add(psndocs[0]);// 删除第一个，即最后的记录
+		}
+		// 保存
+		getManageMaintain().delete(deleteList.toArray(new TBMPsndocVO[0]));
+	}
+
+}

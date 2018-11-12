@@ -1,0 +1,84 @@
+insert into md_table(createtime,creator,databaseid,description,displayname,dr,fromsourcebmf,help,id,industry,isactive,isextendtable,modifier,modifytime,name,parenttable,resid,resmodule,ts,versiontype) values( '2009-11-11 14:20:57',null,null,null,'人员基本信息',null,'Y','BDMODE','bd_psndoc','0',null,null,'developer','2016-01-20 16:36:32','bd_psndoc',null,'26009psn-000154','6007psn','2018-09-16 13:58:24',0)
+go
+insert into md_table(createtime,creator,databaseid,description,displayname,dr,fromsourcebmf,help,id,industry,isactive,isextendtable,modifier,modifytime,name,parenttable,resid,resmodule,ts,versiontype) values( '2009-11-12 09:10:54',null,null,null,'出国境情况',null,'Y',null,'hi_psndoc_abroad','0',null,null,'developer','2016-01-20 16:36:32','hi_psndoc_abroad',null,'26009psn-000151','6007psn','2018-09-16 13:58:24',0)
+go
+insert into md_table(createtime,creator,databaseid,description,displayname,dr,fromsourcebmf,help,id,industry,isactive,isextendtable,modifier,modifytime,name,parenttable,resid,resmodule,ts,versiontype) values( '2011-12-27 16:54:10',null,null,null,'员工考核信息',null,'Y',null,'hi_psndoc_ass','0',null,null,'developer','2016-01-20 16:36:32','hi_psndoc_ass',null,'26007psn-000016','6007psn','2018-09-16 13:58:24',0)
+go
+insert into md_table(createtime,creator,databaseid,description,displayname,dr,fromsourcebmf,help,id,industry,isactive,isextendtable,modifier,modifytime,name,parenttable,resid,resmodule,ts,versiontype) values( '2011-12-29 09:04:28',null,null,null,'社保信息',null,'Y',null,'hi_psndoc_bminfo','0',null,null,'developer','2016-01-20 16:36:32','hi_psndoc_bminfo',null,'26007psn-000025','6007psn','2018-09-16 13:58:24',0)
+go
+insert into md_table(createtime,creator,databaseid,description,displayname,dr,fromsourcebmf,help,id,industry,isactive,isextendtable,modifier,modifytime,name,parenttable,resid,resmodule,ts,versiontype) values( '2011-12-27 16:54:04',null,null,null,'员工能力素质',null,'Y',null,'hi_psndoc_capa','0',null,null,'developer','2016-01-20 16:36:32','hi_psndoc_capa',null,'26007psn-000026','6007psn','2018-09-16 13:58:24',0)
+go
+insert into md_table(createtime,creator,databaseid,description,displayname,dr,fromsourcebmf,help,id,industry,isactive,isextendtable,modifier,modifytime,name,parenttable,resid,resmodule,ts,versiontype) values( '2011-01-12 14:30:40',null,null,null,'身份证件',null,'Y',null,'hi_psndoc_cert','0',null,null,'developer','2016-01-20 16:36:32','hi_psndoc_cert',null,'26009psn-000152','6007psn','2018-09-16 13:58:24',0)
+go
+insert into md_table(createtime,creator,databaseid,description,displayname,dr,fromsourcebmf,help,id,industry,isactive,isextendtable,modifier,modifytime,name,parenttable,resid,resmodule,ts,versiontype) values( '2009-11-12 09:12:46',null,null,null,'学历信息',null,'Y',null,'hi_psndoc_edu','0',null,null,'developer','2016-01-20 16:36:32','hi_psndoc_edu',null,'26009psn-000077','6007psn','2018-09-16 13:58:24',0)
+go
+insert into md_table(createtime,creator,databaseid,description,displayname,dr,fromsourcebmf,help,id,industry,isactive,isextendtable,modifier,modifytime,name,parenttable,resid,resmodule,ts,versiontype) values( '2009-11-12 09:11:50',null,null,null,'奖励情况',null,'Y',null,'hi_psndoc_enc','0',null,null,'developer','2016-01-20 16:36:32','hi_psndoc_enc',null,'26009psn-000147','6007psn','2018-09-16 13:58:24',0)
+go
+insert into md_table(createtime,creator,databaseid,description,displayname,dr,fromsourcebmf,help,id,industry,isactive,isextendtable,modifier,modifytime,name,parenttable,resid,resmodule,ts,versiontype) values( '2014-09-25 11:13:36',null,null,null,'企业内部资质证书',null,'Y',null,'hi_psndoc_enterqualcert','0',null,null,'developer','2016-01-20 16:36:32','hi_psndoc_enterqualcert',null,'26009psn-000201','6007psn','2018-09-16 13:58:24',0)
+go
+insert into md_table(createtime,creator,databaseid,description,displayname,dr,fromsourcebmf,help,id,industry,isactive,isextendtable,modifier,modifytime,name,parenttable,resid,resmodule,ts,versiontype) values( '2009-11-12 09:13:49',null,null,null,'家庭信息',null,'Y',null,'hi_psndoc_family','0',null,null,'developer','2016-01-20 16:36:32','hi_psndoc_family',null,'26009psn-000132','6007psn','2018-09-16 13:58:24',0)
+go
+insert into md_table(createtime,creator,databaseid,description,displayname,dr,fromsourcebmf,help,id,industry,isactive,isextendtable,modifier,modifytime,name,parenttable,resid,resmodule,ts,versiontype) values( null,null,null,null,'劳动合同信息',null,null,null,'hi_psndoc_glbdef1',null,null,null,null,null,'hi_psndoc_glbdef1',null,'hi_psndoc_glbdef1','6007psn','2018-09-16 13:58:24',0)
+go
+insert into md_table(createtime,creator,databaseid,description,displayname,dr,fromsourcebmf,help,id,industry,isactive,isextendtable,modifier,modifytime,name,parenttable,resid,resmodule,ts,versiontype) values( null,null,null,null,'勞保投保明細',null,null,null,'hi_psndoc_glbdef10',null,null,null,null,null,'hi_psndoc_glbdef10',null,null,'6007psn','2018-09-16 13:58:24',0)
+go
+insert into md_table(createtime,creator,databaseid,description,displayname,dr,fromsourcebmf,help,id,industry,isactive,isextendtable,modifier,modifytime,name,parenttable,resid,resmodule,ts,versiontype) values( null,null,null,null,'勞健保投保匯總',null,null,null,'hi_psndoc_glbdef11',null,null,null,null,null,'hi_psndoc_glbdef11',null,null,'6007psn','2018-09-16 13:58:24',0)
+go
+insert into md_table(createtime,creator,databaseid,description,displayname,dr,fromsourcebmf,help,id,industry,isactive,isextendtable,modifier,modifytime,name,parenttable,resid,resmodule,ts,versiontype) values( null,null,null,null,'二代健保資訊',null,null,null,'hi_psndoc_glbdef12',null,null,null,null,null,'hi_psndoc_glbdef12',null,'hi_psndoc_glbdef12','6007psn','2018-09-16 13:58:24',0)
+go
+insert into md_table(createtime,creator,databaseid,description,displayname,dr,fromsourcebmf,help,id,industry,isactive,isextendtable,modifier,modifytime,name,parenttable,resid,resmodule,ts,versiontype) values( null,null,null,null,'团保信息',null,null,null,'hi_psndoc_glbdef13',null,null,null,null,null,'hi_psndoc_glbdef13',null,'hi_psndoc_glbdef13','6007psn','2018-09-16 13:58:24',0)
+go
+insert into md_table(createtime,creator,databaseid,description,displayname,dr,fromsourcebmf,help,id,industry,isactive,isextendtable,modifier,modifytime,name,parenttable,resid,resmodule,ts,versiontype) values( null,null,null,null,'员工团保投保明细',null,null,null,'hi_psndoc_glbdef14',null,null,null,null,null,'hi_psndoc_glbdef14',null,'hi_psndoc_glbdef14','6007psn','2018-09-16 13:58:24',0)
+go
+insert into md_table(createtime,creator,databaseid,description,displayname,dr,fromsourcebmf,help,id,industry,isactive,isextendtable,modifier,modifytime,name,parenttable,resid,resmodule,ts,versiontype) values( null,null,null,null,'工作地点',null,null,null,'hi_psndoc_glbdef2',null,null,null,null,null,'hi_psndoc_glbdef2',null,'hi_psndoc_glbdef2','6007psn','2018-09-16 13:58:24',0)
+go
+insert into md_table(createtime,creator,databaseid,description,displayname,dr,fromsourcebmf,help,id,industry,isactive,isextendtable,modifier,modifytime,name,parenttable,resid,resmodule,ts,versiontype) values( null,null,null,null,'协议信息',null,null,null,'hi_psndoc_glbdef3',null,null,null,null,null,'hi_psndoc_glbdef3',null,'hi_psndoc_glbdef3','6007psn','2018-09-16 13:58:24',0)
+go
+insert into md_table(createtime,creator,databaseid,description,displayname,dr,fromsourcebmf,help,id,industry,isactive,isextendtable,modifier,modifytime,name,parenttable,resid,resmodule,ts,versiontype) values( null,null,null,null,'就业证信息',null,null,null,'hi_psndoc_glbdef4',null,null,null,null,null,'hi_psndoc_glbdef4',null,'hi_psndoc_glbdef4','6007psn','2018-09-16 13:58:24',0)
+go
+insert into md_table(createtime,creator,databaseid,description,displayname,dr,fromsourcebmf,help,id,industry,isactive,isextendtable,modifier,modifytime,name,parenttable,resid,resmodule,ts,versiontype) values( null,null,null,null,'居住证积分信息',null,null,null,'hi_psndoc_glbdef5',null,null,null,null,null,'hi_psndoc_glbdef5',null,'hi_psndoc_glbdef5','6007psn','2018-09-16 13:58:24',0)
+go
+insert into md_table(createtime,creator,databaseid,description,displayname,dr,fromsourcebmf,help,id,industry,isactive,isextendtable,modifier,modifytime,name,parenttable,resid,resmodule,ts,versiontype) values( null,null,null,null,'社保缴费地',null,null,null,'hi_psndoc_glbdef6',null,null,null,null,null,'hi_psndoc_glbdef6',null,'hi_psndoc_glbdef6','6007psn','2018-09-16 13:58:24',0)
+go
+insert into md_table(createtime,creator,databaseid,description,displayname,dr,fromsourcebmf,help,id,industry,isactive,isextendtable,modifier,modifytime,name,parenttable,resid,resmodule,ts,versiontype) values( null,null,null,null,'工伤信息',null,null,null,'hi_psndoc_glbdef7',null,null,null,null,null,'hi_psndoc_glbdef7',null,'hi_psndoc_glbdef7','6007psn','2018-09-16 13:58:24',0)
+go
+insert into md_table(createtime,creator,databaseid,description,displayname,dr,fromsourcebmf,help,id,industry,isactive,isextendtable,modifier,modifytime,name,parenttable,resid,resmodule,ts,versiontype) values( null,null,null,null,'勞保勞退信息',null,null,null,'hi_psndoc_glbdef8',null,null,null,null,null,'hi_psndoc_glbdef8',null,null,'6007psn','2018-09-16 13:58:24',0)
+go
+insert into md_table(createtime,creator,databaseid,description,displayname,dr,fromsourcebmf,help,id,industry,isactive,isextendtable,modifier,modifytime,name,parenttable,resid,resmodule,ts,versiontype) values( null,null,null,null,'健保信息',null,null,null,'hi_psndoc_glbdef9',null,null,null,null,null,'hi_psndoc_glbdef9',null,null,'6007psn','2018-09-16 13:58:24',0)
+go
+insert into md_table(createtime,creator,databaseid,description,displayname,dr,fromsourcebmf,help,id,industry,isactive,isextendtable,modifier,modifytime,name,parenttable,resid,resmodule,ts,versiontype) values( '2012-03-01 14:41:53',null,null,null,'关键人员历史信息',null,'Y',null,'hi_psndoc_keypsn','0',null,null,'developer','2016-01-20 16:36:32','hi_psndoc_keypsn',null,'26007psn-000055','6007psn','2018-09-16 13:58:24',0)
+go
+insert into md_table(createtime,creator,databaseid,description,displayname,dr,fromsourcebmf,help,id,industry,isactive,isextendtable,modifier,modifytime,name,parenttable,resid,resmodule,ts,versiontype) values( '2009-11-12 09:21:04',null,null,null,'语言能力',null,'Y',null,'hi_psndoc_langability','0',null,null,'developer','2016-01-20 16:36:32','hi_psndoc_langability',null,'26009psn-000087','6007psn','2018-09-16 13:58:24',0)
+go
+insert into md_table(createtime,creator,databaseid,description,displayname,dr,fromsourcebmf,help,id,industry,isactive,isextendtable,modifier,modifytime,name,parenttable,resid,resmodule,ts,versiontype) values( '2009-11-12 09:20:26',null,null,null,'紧急联系人',null,'Y',null,'hi_psndoc_linkman','0',null,null,'developer','2016-01-20 16:36:32','hi_psndoc_linkman',null,'26009psn-000143','6007psn','2018-09-16 13:58:24',0)
+go
+insert into md_table(createtime,creator,databaseid,description,displayname,dr,fromsourcebmf,help,id,industry,isactive,isextendtable,modifier,modifytime,name,parenttable,resid,resmodule,ts,versiontype) values( '2009-11-12 09:19:10',null,null,null,'职业资格',null,'Y',null,'hi_psndoc_nationduty','0',null,null,'developer','2016-01-20 16:36:32','hi_psndoc_nationduty',null,'26009psn-000049','6007psn','2018-09-16 13:58:24',0)
+go
+insert into md_table(createtime,creator,databaseid,description,displayname,dr,fromsourcebmf,help,id,industry,isactive,isextendtable,modifier,modifytime,name,parenttable,resid,resmodule,ts,versiontype) values( '2014-09-25 11:14:18',null,null,null,'其它证书',null,'Y',null,'hi_psndoc_othercert','0',null,null,'developer','2016-01-20 16:36:32','hi_psndoc_othercert',null,'26009psn-000202','6007psn','2018-09-16 13:58:24',0)
+go
+insert into md_table(createtime,creator,databaseid,description,displayname,dr,fromsourcebmf,help,id,industry,isactive,isextendtable,modifier,modifytime,name,parenttable,resid,resmodule,ts,versiontype) values( '2009-11-12 09:26:59',null,null,null,'参加党派记录',null,'Y',null,'hi_psndoc_partylog','0',null,null,'developer','2016-01-20 16:36:32','hi_psndoc_partylog',null,'26009psn-000177','6007psn','2018-09-16 13:58:24',0)
+go
+insert into md_table(createtime,creator,databaseid,description,displayname,dr,fromsourcebmf,help,id,industry,isactive,isextendtable,modifier,modifytime,name,parenttable,resid,resmodule,ts,versiontype) values( '2010-01-25 15:07:45',null,null,null,'流动情况',null,'Y',null,'hi_psndoc_psnchg','0',null,null,'developer','2016-01-20 16:36:32','hi_psndoc_psnchg',null,'26009psn-000161','6007psn','2018-09-16 13:58:24',0)
+go
+insert into md_table(createtime,creator,databaseid,description,displayname,dr,fromsourcebmf,help,id,industry,isactive,isextendtable,modifier,modifytime,name,parenttable,resid,resmodule,ts,versiontype) values( '2009-11-12 09:15:48',null,null,null,'惩罚信息',null,'Y',null,'hi_psndoc_pun','0',null,null,'developer','2016-01-20 16:36:32','hi_psndoc_pun',null,'26009psn-000130','6007psn','2018-09-16 13:58:24',0)
+go
+insert into md_table(createtime,creator,databaseid,description,displayname,dr,fromsourcebmf,help,id,industry,isactive,isextendtable,modifier,modifytime,name,parenttable,resid,resmodule,ts,versiontype) values( '2012-12-07 13:28:35',null,null,null,'企业内部任职资格',null,'Y',null,'hi_psndoc_qulify','0',null,null,'developer','2016-01-20 16:36:32','hi_psndoc_qulify',null,'26007psn-000123','6007psn','2018-09-16 13:58:24',0)
+go
+insert into md_table(createtime,creator,databaseid,description,displayname,dr,fromsourcebmf,help,id,industry,isactive,isextendtable,modifier,modifytime,name,parenttable,resid,resmodule,ts,versiontype) values( '2010-01-25 15:18:56',null,null,null,'离退待遇',null,'Y',null,'hi_psndoc_retire','0',null,null,'developer','2016-01-20 16:36:32','hi_psndoc_retire',null,'26009psn-000158','6007psn','2018-09-16 13:58:24',0)
+go
+insert into md_table(createtime,creator,databaseid,description,displayname,dr,fromsourcebmf,help,id,industry,isactive,isextendtable,modifier,modifytime,name,parenttable,resid,resmodule,ts,versiontype) values( '2009-11-12 09:09:13',null,null,null,'专业技术(项目)工作',null,'Y',null,'hi_psndoc_speitem','0',null,null,'developer','2016-01-20 16:36:32','hi_psndoc_speitem',null,'26009psn-000106','6007psn','2018-09-16 13:58:24',0)
+go
+insert into md_table(createtime,creator,databaseid,description,displayname,dr,fromsourcebmf,help,id,industry,isactive,isextendtable,modifier,modifytime,name,parenttable,resid,resmodule,ts,versiontype) values( '2009-11-12 09:19:53',null,null,null,'职称信息',null,'Y',null,'hi_psndoc_title','0',null,null,'developer','2016-01-20 16:36:32','hi_psndoc_title',null,'26009psn-000036','6007psn','2018-09-16 13:58:24',0)
+go
+insert into md_table(createtime,creator,databaseid,description,displayname,dr,fromsourcebmf,help,id,industry,isactive,isextendtable,modifier,modifytime,name,parenttable,resid,resmodule,ts,versiontype) values( '2011-12-27 16:54:08',null,null,null,'人员教育培训',null,'Y',null,'hi_psndoc_train','0',null,null,'developer','2016-01-20 16:36:32','hi_psndoc_train',null,'26007psn-000014','6007psn','2018-09-16 13:58:24',0)
+go
+insert into md_table(createtime,creator,databaseid,description,displayname,dr,fromsourcebmf,help,id,industry,isactive,isextendtable,modifier,modifytime,name,parenttable,resid,resmodule,ts,versiontype) values( '2014-09-25 09:14:04',null,null,null,'培训证书',null,'Y',null,'hi_psndoc_traincertfile','0',null,null,'developer','2016-01-20 16:36:32','hi_psndoc_traincertfile',null,'26009psn-000200','6007psn','2018-09-16 13:58:24',0)
+go
+insert into md_table(createtime,creator,databaseid,description,displayname,dr,fromsourcebmf,help,id,industry,isactive,isextendtable,modifier,modifytime,name,parenttable,resid,resmodule,ts,versiontype) values( '2010-01-25 15:22:30',null,null,null,'试用情况',null,'Y',null,'hi_psndoc_trial','0',null,null,'developer','2016-01-20 16:36:32','hi_psndoc_trial',null,'26009psn-000125','6007psn','2018-09-16 13:58:24',0)
+go
+insert into md_table(createtime,creator,databaseid,description,displayname,dr,fromsourcebmf,help,id,industry,isactive,isextendtable,modifier,modifytime,name,parenttable,resid,resmodule,ts,versiontype) values( '2011-12-27 16:54:18',null,null,null,'薪资信息',null,'Y',null,'hi_psndoc_wainfo','0',null,null,'developer','2016-01-20 16:36:32','hi_psndoc_wainfo',null,'26007psn-000049','6007psn','2018-09-16 13:58:24',0)
+go
+insert into md_table(createtime,creator,databaseid,description,displayname,dr,fromsourcebmf,help,id,industry,isactive,isextendtable,modifier,modifytime,name,parenttable,resid,resmodule,ts,versiontype) values( '2009-11-12 09:14:54',null,null,null,'履历记录',null,'Y',null,'hi_psndoc_work','0',null,null,'developer','2016-01-20 16:36:32','hi_psndoc_work',null,'26009psn-000107','6007psn','2018-09-16 13:58:24',0)
+go
+insert into md_table(createtime,creator,databaseid,description,displayname,dr,fromsourcebmf,help,id,industry,isactive,isextendtable,modifier,modifytime,name,parenttable,resid,resmodule,ts,versiontype) values( '2009-12-01 10:37:21',null,null,null,'组织关系',null,'Y',null,'hi_psnorg','0',null,null,'developer','2016-01-20 16:36:32','hi_psnorg',null,'26009psn-000145','6007psn','2018-09-16 13:58:24',0)
+go

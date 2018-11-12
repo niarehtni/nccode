@@ -1,0 +1,231 @@
+/**
+ * @(#)OutPutAction.java 1.0 2017年9月20日
+ *
+ * Copyright (c) 2013, Yonyou. All rights reserved.
+ * YONYOU PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
+ */
+package nc.ui.hrwa.allocate.ace.action;
+
+import java.awt.event.ActionEvent;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.swing.JFileChooser;
+import javax.swing.filechooser.FileFilter;
+
+import nc.bs.framework.common.NCLocator;
+import nc.hr.utils.MultiLangHelper;
+import nc.hr.utils.ResHelper;
+import nc.itf.uap.IUAPQueryBS;
+import nc.ui.hr.uif2.action.HrAction;
+import nc.ui.hrwa.pub.util.ExportDataUtil;
+import nc.ui.pub.beans.MessageDialog;
+import nc.ui.pub.beans.UIFileChooser;
+import nc.ui.pub.bill.BillModel;
+import nc.ui.pubapp.uif2app.model.BillManageModel;
+import nc.ui.pubapp.uif2app.view.BillListView;
+import nc.ui.uif2.IShowMsgConstant;
+import nc.ui.uif2.UIState;
+import nc.vo.hr.tools.pub.GeneralVO;
+import nc.vo.org.OrgVO;
+import nc.vo.pubapp.pattern.exception.ExceptionUtils;
+import nc.vo.wa.pub.WaLoginContext;
+
+import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang.StringUtils;
+
+/**
+ * @author niehg
+ * @since 6.3
+ */
+@SuppressWarnings({ "serial", "restriction" })
+public class OutPutAction extends HrAction {
+	public UIFileChooser fileChooser;
+	public String strFileName;
+	private BillListView listView;
+
+	public BillListView getListView() {
+		return listView;
+	}
+
+	public void setListView(BillListView listView) {
+		this.listView = listView;
+	}
+
+	public OutPutAction() {
+		setCode("output");
+		setBtnName(ResHelper.getString("pubapp_0", "0pubapp-0132"));
+		putValue("ShortDescription", ResHelper.getString("uif2", "ActionRegistry-000091"));
+	}
+
+	@Override
+	public void doAction(ActionEvent arg0) throws Exception {
+		if (((BillManageModel) getModel()).getSelectedOperaDatas() == null) {
+			ExceptionUtils.wrappBusinessException(ResHelper.getString("projsalary", "0pjsalary-00024")
+			/* @res "请选择要导出的数据！" */);
+			return;
+		}
+		WaLoginContext context = (WaLoginContext) getContext();
+		OrgVO orgVO = (OrgVO) NCLocator.getInstance().lookup(IUAPQueryBS.class)
+				.retrieveByPK(OrgVO.class, context.getPk_org());
+		StringBuilder fileName = new StringBuilder();
+		fileName.append(context.getCyear()).append(context.getCperiod());
+		fileName.append(MultiLangHelper.getName(orgVO));
+		fileName.append("allocate.xls");
+
+		fileChooser = getFileChooser();
+		fileChooser.setSelectedFile(new File(fileName.toString()));
+		int returnVal = fileChooser.showSaveDialog(getEntranceUI());
+		if (returnVal != JFileChooser.APPROVE_OPTION) {
+			putValue(MESSAGE_AFTER_ACTION, IShowMsgConstant.getCancelInfo());
+			return;
+		}
+		strFileName = fileChooser.getSelectedFile().getPath();
+		if (StringUtils.isBlank(strFileName)) {
+			ExceptionUtils.wrappBusinessException(ResHelper.getString("projsalary", "0pjsalary-00025")
+			/* @res "输出文件不能为空！" */);
+			return;
+		}
+		FileFilter fileFilter = fileChooser.getFileFilter();
+
+		if (fileFilter != null) {
+			if (fileFilter.getDescription().contains(".xlsx") && !strFileName.toUpperCase().endsWith("XLSX")) {
+				strFileName = strFileName + ".xlsx";
+			} else if (fileFilter.getDescription().contains(".xls") && !strFileName.toUpperCase().endsWith("XLS")) {
+				strFileName = strFileName + ".xls";
+			} else if (fileFilter.getDescription().contains(".txt") && !strFileName.toUpperCase().endsWith("TXT")) {
+				strFileName = strFileName + ".txt";
+			}
+		}
+		if (!strFileName.toUpperCase().endsWith("TXT") && !strFileName.toUpperCase().endsWith("XLSX")
+				&& !strFileName.toUpperCase().endsWith("XLS")) {
+			strFileName = strFileName + ".xls";
+		}
+		File file = new File(strFileName);
+		if (file.exists()) {
+			if (MessageDialog.ID_YES != MessageDialog.showYesNoDlg(getEntranceUI(), null,
+					ResHelper.getString("projsalary", "0pjsalary-00026")
+			/* @res "要导出的文件已存在或导出文件的路径、名称非法，继续执行吗?" */)) {
+				putValue(MESSAGE_AFTER_ACTION, null);
+				return;
+			}
+		}
+		// 以下进行业务操作
+		doExport();
+	}
+
+	public void doExport() throws Exception {
+		ExportDataUtil exportUtil = new ExportDataUtil();
+		GeneralVO[] exportDataVOs = getExportValues();
+		exportUtil.setFieldNames(getFieldNames());
+		exportUtil.setFieldDisplayNames(getFieldDisplayNames());
+		exportUtil.exportToFile(strFileName, exportDataVOs);
+
+	}
+
+	public GeneralVO[] getExportValues() {
+		BillModel billModel = getListView().getBillListPanel().getHeadBillModel();
+		Integer[] selRows = ((BillManageModel) getModel()).getSelectedOperaRows();
+		ArrayList<GeneralVO> exportDataVOs = new ArrayList<GeneralVO>();
+		for (int i = 0; i < selRows.length; i++) {
+			GeneralVO vo = new GeneralVO();
+			vo.setAttributeValue("pk_org", billModel.getValueAt(selRows[i], "pk_org"));
+			vo.setAttributeValue("cperiod", billModel.getValueAt(selRows[i], "cperiod"));
+			vo.setAttributeValue("psncode", billModel.getValueAt(selRows[i], "pk_psndoc.code"));
+			vo.setAttributeValue("psnname", billModel.getValueAt(selRows[i], "pk_psndoc.name"));
+			vo.setAttributeValue("itemname", billModel.getValueAt(selRows[i], "pk_classitem"));
+			vo.setAttributeValue("pjcode", billModel.getValueAt(selRows[i], "def3"));
+			vo.setAttributeValue("shareamt", billModel.getValueAt(selRows[i], "def2"));
+			exportDataVOs.add(vo);
+		}
+		return exportDataVOs.toArray(new GeneralVO[0]);
+	}
+
+	protected String[] getFieldNames() {
+		List<String> listName = new ArrayList<String>();
+		listName.add("pk_org");
+		listName.add("cperiod");
+		listName.add("psncode");
+		listName.add("psnname");
+		listName.add("itemname");
+		listName.add("pjcode");
+		listName.add("shareamt");
+
+		return ((String[]) listName.toArray(new String[0]));
+	}
+
+	protected String[] getFieldDisplayNames() {
+		List<String> listName = new ArrayList<String>();
+		listName.add(ResHelper.getString("allocate", "2allcate-000003"));
+		listName.add(ResHelper.getString("allocate", "2allcate-000007"));
+		listName.add(ResHelper.getString("projsalary", "0pjsalary-00027"));
+		listName.add(ResHelper.getString("projsalary", "0pjsalary-00031"));
+		listName.add(ResHelper.getString("allocate", "2allcate-000012"));
+		listName.add(ResHelper.getString("allocate", "2allcate-000005"));
+		listName.add(ResHelper.getString("allocate", "0allcate-ui-000004"));
+
+		return ((String[]) listName.toArray(new String[0]));
+	}
+
+	public UIFileChooser getFileChooser() {
+		if (fileChooser == null) {
+			fileChooser = new UIFileChooser();
+			fileChooser.setFileFilter(new FileFilter() {
+				String ext = ".xls";
+
+				@Override
+				public boolean accept(File f) {
+					if (f.isDirectory()) {
+						return true;
+					}
+					if (((f.getName().toLowerCase()).endsWith(ext))) {
+						return true;
+					} else {
+						return false;
+					}
+				}
+
+				@Override
+				public String getDescription() {
+					return ResHelper.getString("6029collec", "06029collec0028")
+					/* @res "EXCEL文件(*.xls)" */;
+				}
+
+			});
+			fileChooser.setFileFilter(new FileFilter() {
+				String ext = ".xlsx";
+
+				@Override
+				public boolean accept(File f) {
+					if (f.isDirectory()) {
+						return true;
+					}
+					if (((f.getName().toLowerCase()).endsWith(ext))) {
+						return true;
+					} else {
+						return false;
+					}
+				}
+
+				@Override
+				public String getDescription() {
+					return ResHelper.getString("6029collec", "06029collec0063")
+					/* @res "EXCEL文件(*.xlsx)" */;
+				}
+
+			});
+		}
+		return fileChooser;
+	}
+
+	@Override
+	protected boolean isActionEnable() {
+		Object[] datas = ((BillManageModel) getModel()).getSelectedOperaDatas();
+		boolean enable = (getModel().getUiState() == UIState.NOT_EDIT || getModel().getUiState() == UIState.INIT)
+				&& !ArrayUtils.isEmpty(datas); // && ((WaLoginContext)
+												// getContext()).isContextNotNull();
+		return super.isActionEnable() && enable;
+	}
+
+}

@@ -1,0 +1,245 @@
+package nc.impl.wa.datainterface;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+import nc.bs.dao.BaseDAO;
+import nc.bs.framework.common.NCLocator;
+import nc.hr.utils.ResHelper;
+import nc.impl.wa.datainterface.export.DataFormatter;
+import nc.itf.org.IOrgPubQryService;
+import nc.itf.wa.datainterface.IReportExportService;
+import nc.jdbc.framework.processor.ColumnListProcessor;
+import nc.jdbc.framework.processor.ColumnProcessor;
+import nc.jdbc.framework.processor.MapListProcessor;
+import nc.vo.ml.MultiLangUtil;
+import nc.vo.org.HROrgVO;
+import nc.vo.pub.BusinessException;
+import nc.vo.wa.category.WaClassVO;
+
+import org.apache.commons.lang.StringUtils;
+
+public class ReportExportServiceImpl implements IReportExportService {
+
+	public String[] getIITXTextReport(String[] pk_orgs, String startPeriod,
+			String endPeriod, String[] pk_wa_classes, String cYear,
+			String voucherType) throws BusinessException {
+		DataFormatter formatter = new DataFormatter("IITX_FMT_TW_2017");
+		formatter.setPk_orgs(pk_orgs);
+		formatter.setStartPeriod(startPeriod);
+		formatter.setEndPeriod(endPeriod);
+		formatter.setiYear(Integer.valueOf(cYear) + 1911);
+		formatter.setClassIDs(pk_wa_classes);
+		formatter.getRefsMap().put("VOUCHERTYPE", voucherType);
+		return formatter.getData();
+	}
+
+	public String[] getBankReportText(String pk_org, String offerPeriod,
+			String pk_wa_class) throws BusinessException {
+		DataFormatter formatter = new DataFormatter("FUBON_FMT_TW_2017");
+		formatter.setPk_org(pk_org);
+		formatter.setiYear(Integer.valueOf(offerPeriod.substring(0, 4)));
+		formatter.setStartPeriod(offerPeriod);
+		formatter.setClassid(pk_wa_class);
+		return formatter.getData();
+	}
+
+	@Override
+	public String getOrgVATNumber(String pk_org) throws BusinessException {
+		String strSQL = "SELECT glbdef7 FROM org_hrorg WHERE pk_hrorg='"
+				+ pk_org + "'";
+
+		BaseDAO dao = new BaseDAO();
+		String vatNo = (String) dao.executeQuery(strSQL, new ColumnProcessor());
+
+		if (vatNo != null) {
+			return vatNo;
+		} else {
+			return "";
+		}
+	}
+
+	@Override
+	public String[] getAllOrgVATNumber() throws BusinessException {
+		String strSQL = "SELECT DISTINCT glbdef7 FROM org_hrorg WHERE glbdef7 IS NOT NULL ORDER BY glbdef7";
+
+		BaseDAO dao = new BaseDAO();
+		List vatNos = (List) dao
+				.executeQuery(strSQL, new ColumnListProcessor());
+
+		if (vatNos != null && vatNos.size() > 0) {
+			List<String> retVals = new ArrayList<String>();
+			for (int i = 0; i < vatNos.size(); i++) {
+				retVals.add((String) vatNos.get(i));
+			}
+			return retVals.toArray(new String[0]);
+		} else {
+			return null;
+		}
+	}
+
+	@Override
+	public String[] getAllOrgByVATNumber(String strVATNumber)
+			throws BusinessException {
+		String strSQL = "SELECT DISTINCT pk_hrorg FROM org_hrorg WHERE glbdef7='"
+				+ strVATNumber + "'";
+
+		BaseDAO dao = new BaseDAO();
+		List vatNos = (List) dao
+				.executeQuery(strSQL, new ColumnListProcessor());
+
+		if (vatNos != null && vatNos.size() > 0) {
+			List<String> retVals = new ArrayList<String>();
+			for (int i = 0; i < vatNos.size(); i++) {
+				retVals.add((String) vatNos.get(i));
+			}
+			return retVals.toArray(new String[0]);
+		} else {
+			return null;
+		}
+	}
+
+	@Override
+	public int checkPeriodWaDataExists(String[] wa_classes, String startPeriod,
+			String endPeriod) throws BusinessException {
+		int foundCount = 0;
+		if (wa_classes != null && wa_classes.length > 0) {
+			String clsString = "";
+			for (String wa_class : wa_classes) {
+				if (clsString.equals("")) {
+					clsString = "'" + wa_class + "'";
+				} else {
+					clsString += ", '" + wa_class + "'";
+				}
+			}
+
+			String strSQL = " SELECT DISTINCT ";
+			strSQL += "        data.pk_org , ";
+			strSQL += "        data.pk_wa_class ";
+			strSQL += "FROM    wa_data data ";
+			strSQL += "        INNER JOIN wa_periodstate stat ON data.pk_wa_class = stat.pk_wa_class ";
+			strSQL += "WHERE   data.pk_wa_class IN ( " + clsString + " ) ";
+			strSQL += "        AND stat.isapproved = 'Y' ";
+			strSQL += "        AND ( CASE WHEN ( SELECT    sysref.value ";
+			strSQL += "                          FROM      pub_sysinit sysref ";
+			strSQL += "                          WHERE     sysref.initcode = 'TWHR07' ";
+			strSQL += "                                    AND sysref.pk_org = data.pk_org ";
+			strSQL += "                        ) = '發放日期' ";
+			strSQL += "                   THEN ( (LEFT(stat.cpaydate, 4) + RIGHT(LEFT(stat.cpaydate, ";
+			strSQL += "                                                              7), 2)) ) ";
+			strSQL += "                   ELSE ( (data.cyear + data.cperiod) ) ";
+			strSQL += "              END ) BETWEEN '" + startPeriod + "' ";
+			strSQL += "                    AND     '" + endPeriod + "' ";
+
+			BaseDAO basDAO = new BaseDAO();
+			List<Map> results = (List<Map>) basDAO.executeQuery(strSQL,
+					new MapListProcessor());
+
+			for (Map result : results) {
+				for (int i = 0; i < wa_classes.length; i++) {
+					if (wa_classes[i].equals(result.get("pk_wa_class"))) {
+						foundCount++;
+						wa_classes[i] = "";
+						break;
+					}
+				}
+			}
+
+			clsString = "";
+			// 查詢薪資方案數量與已有薪資方案數量數目不等時為某薪資方案無數據
+			// 構造方案報錯串
+			if (foundCount != 0 && foundCount != wa_classes.length) {
+				for (String wa_class : wa_classes) {
+					if (!StringUtils.isEmpty(wa_class)) {
+						if (clsString.equals("")) {
+							clsString = "'" + wa_class + "'";
+						} else {
+							clsString += ", '" + wa_class + "'";
+						}
+					}
+				}
+
+				strSQL = "SELECT hrorg.pk_hrorg, hrorg.code AS orgcode, cls.pk_wa_class, cls.code AS classcode "
+						+ " FROM wa_waclass cls "
+						+ " INNER JOIN org_hrorg hrorg ON hrorg.pk_hrorg = cls.pk_org "
+						+ " WHERE cls.pk_wa_class IN (" + clsString + " )";
+
+				results = (List<Map>) basDAO.executeQuery(strSQL,
+						new MapListProcessor());
+				List<String> pk_hrorgs = new ArrayList<String>();
+				String strMessage = "";
+				for (Map result : results) {
+					pk_hrorgs.add((String) result.get("pk_hrorg"));
+
+					// 取薪資方案VO
+					WaClassVO classVO = (WaClassVO) basDAO
+							.retrieveByPK(WaClassVO.class,
+									(String) result.get("pk_wa_class"));
+					// 取薪資方案多語名稱
+					String strName = MultiLangUtil.getSuperVONameOfCurrentLang(
+							classVO, "name", classVO.getName());
+					strMessage += (String) result.get("pk_hrorg") + " ["
+							+ (String) result.get("orgcode") + "]: " + strName
+							+ " [" + result.get("classcode") + "]\r\n";
+				}
+
+				// 取人力資源組織VO
+				IOrgPubQryService orgsrv = NCLocator.getInstance().lookup(
+						IOrgPubQryService.class);
+				List<HROrgVO> orgVOs = orgsrv.getVOListByClause(HROrgVO.class,
+						"pk_hrorg", pk_hrorgs, null);
+
+				if (orgVOs != null && orgVOs.size() > 0) {
+					for (HROrgVO orgvo : orgVOs) {
+						// 取人力資源組織多語名稱
+						String strName = MultiLangUtil
+								.getSuperVONameOfCurrentLang(orgvo, "name",
+										orgvo.getName());
+						strMessage = strMessage.replace(orgvo.getPk_hrorg(),
+								strName);
+					}
+
+					throw new BusinessException(strMessage);
+				}
+			}
+		}
+
+		return foundCount;
+	}
+
+	@Override
+	public void checkExportOrg(String[] pk_orgs) throws BusinessException {
+		String orgString = "";
+		for (String pk_org : pk_orgs) {
+			if (orgString.equals("")) {
+				orgString = "'" + pk_org + "'";
+			} else {
+				orgString += ", '" + pk_org + "'";
+			}
+		}
+
+		BaseDAO baseDAO = new BaseDAO();
+		List<Map> results = (List<Map>) baseDAO
+				.executeQuery("SELECT * FROM org_hrorg WHERE pk_hrorg IN ("
+						+ orgString + ")", new MapListProcessor());
+
+		if (results != null) {
+			for (Map result : results) {
+				if (result.get("glbdef27") == null) {
+					throw new BusinessException(ResHelper.getString(
+							"twhr_datainterface", "DataInterface-00076")
+							+ result.get("name")
+							+ "["
+							+ result.get("code")
+							+ "] "
+							+ ResHelper.getString("twhr_datainterface",
+									"DataInterface-00077"));
+				}
+			}
+		} else {
+			throw new BusinessException(ResHelper.getString(
+					"twhr_datainterface", "DataInterface-00077"));
+		}
+	}
+}

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="gb2312"?>
+<module name="HRSMSPLC">
+  <public>
+    <!-- 模板管理服务 -->
+    <component cluster="MASTER" priority="0" singleton="true" remote="true" supportAlias="true" tx="CMT">
+      <interface>nc.itf.hrsms.ta.common.ILFWLicenceCheck</interface>
+      <implementation>nc.impl.hrsms.ta.common.LFWLicenceCheck</implementation>
+    </component>
+  </public>
+</module>

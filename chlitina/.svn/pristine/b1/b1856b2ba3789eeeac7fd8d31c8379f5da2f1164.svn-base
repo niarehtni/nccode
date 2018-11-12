@@ -1,0 +1,69 @@
+package nc.ui.twhr.nhicalc.action;
+
+import java.awt.event.ActionEvent;
+
+import nc.ui.pubapp.uif2app.view.ShowUpableBillForm;
+import nc.ui.twhr.nhicalc.model.NhicalcAppModel;
+import nc.ui.uif2.UIState;
+
+
+
+
+
+public class SaveAction extends nc.ui.uif2.actions.SaveAction
+{
+  private static final long serialVersionUID = -6550993412375062575L;
+  
+  private NhicalcAppModel model = null;
+  
+  private ShowUpableBillForm editor = null;
+
+	public NhicalcAppModel getModel() {
+		return model;
+	}
+
+	public void setModel(NhicalcAppModel model) {
+		this.model = model;
+		model.addAppEventListener(this);
+	}
+	
+	
+	public ShowUpableBillForm getEditor() {
+		return editor;
+	}
+
+	public void setEditor(ShowUpableBillForm editor) {
+		this.editor = editor;
+	}
+
+	public void doAction(ActionEvent e)
+		    throws Exception
+		  {
+		    Object value = super.getEditor().getValue();
+
+		    validate(value);
+
+		    if (this.model.getUiState() == UIState.ADD)
+		      doAddSave(value);
+		    else if (this.model.getUiState() == UIState.EDIT) {
+		      doEditSave(value);
+		    }
+
+		    showSuccessInfo();
+		  }
+	
+	  protected void doEditSave(Object value) throws Exception
+	  {
+	    this.model.update(value);
+	    this.model.setUiState(UIState.NOT_EDIT);
+	    this.model.setOtherUiState(UIState.NOT_EDIT);
+	  }
+
+
+
+protected boolean isActionEnable()
+{
+  return ((this.getModel().getUiState() == UIState.EDIT) || (this.getModel().getUiState() == UIState.ADD));
+}
+}
+

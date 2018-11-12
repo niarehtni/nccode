@@ -1,0 +1,813 @@
+package nc.impl.hrwa;
+
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.TimeZone;
+
+import nc.bs.dao.BaseDAO;
+import nc.bs.dao.DAOException;
+import nc.bs.framework.common.NCLocator;
+import nc.bs.logging.Logger;
+import nc.hr.utils.InSQLCreator;
+import nc.hr.utils.SQLHelper;
+import nc.itf.hrwa.IWadaysalaryMaintain;
+import nc.itf.hrwa.IWadaysalaryQueryService;
+import nc.itf.hrwa.IWadaysalaryService;
+import nc.itf.ta.ILeaveRegisterInfoDisplayer;
+import nc.itf.ta.ITBMPsndocQueryMaintain;
+import nc.jdbc.framework.processor.ColumnProcessor;
+import nc.jdbc.framework.processor.MapListProcessor;
+import nc.jdbc.framework.processor.ResultSetProcessor;
+import nc.pubitf.ta.overtime.ISegDetailService;
+import nc.vo.hi.psndoc.PsnJobVO;
+import nc.vo.hr.tools.pub.GeneralVO;
+import nc.vo.pub.BusinessException;
+import nc.vo.pub.lang.UFBoolean;
+import nc.vo.pub.lang.UFDateTime;
+import nc.vo.pub.lang.UFDouble;
+import nc.vo.pub.lang.UFLiteralDate;
+import nc.vo.ta.leave.LeaveRegVO;
+import nc.vo.ta.overtime.QueryValueTypeEnum;
+import nc.vo.ta.psndoc.TBMPsndocVO;
+import nc.vo.wa.item.WaItemVO;
+import nc.vo.wa.paydata.AggDaySalaryVO;
+import nc.vo.wa.paydata.DaySalaryVO;
+import nc.vo.wa.paydata.LeaveRegDetailVO;
+import nc.vo.wa.pub.WaDayLoginContext;
+
+import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang.StringUtils;
+
+public class WadaysalaryServiceImpl implements IWadaysalaryService {
+
+	private BaseDAO dao;
+	private ILeaveRegisterInfoDisplayer displayer = null;
+	private IWadaysalaryQueryService daysalaryService = null;
+	private Map<Object, HashMap<Object, Object>> daysalaryMap = null;// 日薪记录Map
+	private StringBuffer updateleavereghistorySql = new StringBuffer();// 需要更新的休假历史记录的sql集合
+
+	@Override
+	public AggDaySalaryVO[] calculSalaryByHrorg(String pk_hrorg,
+			String calculDate) throws BusinessException {
+		String[] pk_psnjobs = getPkPsnjobs(pk_hrorg, calculDate);
+		return calculSalaryByPsnjobs2(null, pk_hrorg, pk_psnjobs, calculDate);
+	}
+
+	@Override
+	public AggDaySalaryVO[] calculSalaryByHrorg(WaDayLoginContext context,
+			String pk_hrorg, String calculDate) throws BusinessException {
+		String[] pk_psnjobs = getPkPsnjobs(pk_hrorg, calculDate);
+		return calculSalaryByPsnjobs2(context, pk_hrorg, pk_psnjobs, calculDate);
+	}
+
+	@Override
+	public AggDaySalaryVO[] calculSalaryByPsnjobs(String pk_hrorg,
+			String[] pk_psnjobs, String calculDate) throws BusinessException {
+		String[] pk_psnjobs2 = getPkPsnjobs(pk_hrorg, pk_psnjobs, calculDate);
+		return calculSalaryByPsnjobs2(null, pk_hrorg, pk_psnjobs2, calculDate);
+	}
+
+	@Override
+	public AggDaySalaryVO[] calculSalaryByPsnjobs(WaDayLoginContext context,
+			String pk_hrorg, String[] pk_psnjobs, String calculDate)
+			throws BusinessException {
+		String[] pk_psnjobs2 = getPkPsnjobs(pk_hrorg, pk_psnjobs, calculDate);
+		return calculSalaryByPsnjobs2(context, pk_hrorg, pk_psnjobs2,
+				calculDate);
+	}
+
+	public AggDaySalaryVO[] calculSalaryByPsnjobs2(WaDayLoginContext context,
+			String pk_hrorg, String[] pk_psnjobs, String calculDate)
+			throws BusinessException {
+		
+		if (ArrayUtils.isEmpty(pk_psnjobs)) {
+			throw new BusinessException("未查詢到需要計算的人員");
+		}
+		UFLiteralDate calculDate2 = null;
+		try {
+			calculDate2 = new UFLiteralDate(calculDate);
+		} catch (Exception e) {
+			Logger.error(e);
+			throw new BusinessException("日期格式錯誤，請檢查！");
+		}
+		//校驗薪資發放結果
+		validateWadataIssue(pk_hrorg, pk_psnjobs, calculDate2);
+		// 1、根據人員基本信息，構建初始化Vo
+		DaySalaryVO[] basicVos = createBaiscVO(context, pk_psnjobs, pk_hrorg,
+				calculDate2);
+		// 2、計算日薪，全薪，時薪
+		calculBasicSalary(pk_hrorg, basicVos, calculDate2);
+		// 3、计算加班相关信息
+		calculOvertimeInfo(pk_hrorg, basicVos, calculDate2);
+		// 4、计算假期时长等信息
+		AggDaySalaryVO[] aggSalaryVOs = calculLeaveRegInfo(pk_hrorg, basicVos,
+				calculDate2);
+
+		// 5、保存结果，并删除原结果
+		String[] psnjobs = SQLHelper.getStrArray(basicVos, "pk_psnjob");
+		String insql = new InSQLCreator().getInSQL(psnjobs, true);
+		getDao().deleteByClause(
+				DaySalaryVO.class,
+				"pk_psnjob in (" + insql + ") and salarydate='" + calculDate2
+						+ "'");
+		getDao().deleteByClause(
+				LeaveRegDetailVO.class,
+				"pk_psnjob in (" + insql + ") and effectivedate='"
+						+ calculDate2 + "'");
+		// 6、插入数据
+		IWadaysalaryMaintain wadayService = NCLocator.getInstance().lookup(
+				IWadaysalaryMaintain.class);
+		return wadayService.insert(aggSalaryVOs);
+	}
+
+	/**
+	 * 
+	 * 获取需要计算日薪的人员：根据考勤档案进行查询
+	 * 
+	 * @param pk_hrorg
+	 * @param calculDate
+	 * @return
+	 * @throws BusinessException
+	 */
+	public String[] getPkPsnjobs(String pk_hrorg, String calculDate)
+			throws BusinessException {
+		String condition = "pk_org ='" + pk_hrorg + "' and begindate<='"
+				+ calculDate + "' and enddate>='" + calculDate
+				+ "' and isnull(dr,0)=0";
+		ITBMPsndocQueryMaintain service = NCLocator.getInstance().lookup(
+				ITBMPsndocQueryMaintain.class);
+		TBMPsndocVO[] tbmPsndocVOs = service.queryByCondition(condition);
+		String[] psnjobpks = SQLHelper.getStrArray(tbmPsndocVOs,
+				TBMPsndocVO.PK_PSNJOB);
+		return psnjobpks;
+	}
+
+	public String[] getPkPsnjobs(String pk_hrorg, String[] pk_psnjobs,
+			String calculDate) throws BusinessException {
+		String insql = new InSQLCreator().getInSQL(pk_psnjobs, true);
+		String condition = "pk_org ='" + pk_hrorg + "' and begindate<='"
+				+ calculDate + "' and enddate>='" + calculDate
+				+ "' and pk_psnjob in (" + insql + ") and isnull(dr,0)=0";
+		ITBMPsndocQueryMaintain service = NCLocator.getInstance().lookup(
+				ITBMPsndocQueryMaintain.class);
+		TBMPsndocVO[] tbmPsndocVOs = service.queryByCondition(condition);
+		String[] psnjobpks = SQLHelper.getStrArray(tbmPsndocVOs,
+				TBMPsndocVO.PK_PSNJOB);
+		return psnjobpks;
+	}
+
+	public DaySalaryVO[] createBaiscVO(WaDayLoginContext context,
+			String[] pk_psnjobs, String pk_hrorg, UFLiteralDate calculDate)
+			throws BusinessException {
+		String insql = new InSQLCreator().getInSQL(pk_psnjobs, true);
+		PsnJobVO[] psnjobs = (PsnJobVO[]) getDao().retrieveByClause(
+				PsnJobVO.class, "pk_psnjob in (" + insql + ")").toArray(
+				new PsnJobVO[0]);
+		List<DaySalaryVO> listsalaryVo = new ArrayList<DaySalaryVO>();
+		String billmaker = null;
+		if (null != context) {
+			billmaker = context.getPk_loginUser();
+		} else {
+			billmaker = "NC_USER0000000000000";// 系統
+		}
+		for (int i = 0; i < psnjobs.length; i++) {
+			PsnJobVO psnjob = psnjobs[i];
+			DaySalaryVO daySalaryVO = new DaySalaryVO();
+			daySalaryVO.setPk_psndoc(psnjob.getPk_psndoc());
+			daySalaryVO.setPk_psnjob(psnjob.getPk_psnjob());
+			daySalaryVO.setPk_psnorg(psnjob.getPk_psnorg());
+			daySalaryVO.setPk_dept(psnjob.getPk_dept());
+			daySalaryVO.setPk_dept_v(psnjob.getPk_dept_v());
+			daySalaryVO.setPk_hrorg(pk_hrorg);
+			daySalaryVO.setPk_group(psnjob.getPk_group());
+			daySalaryVO.setPk_org(pk_hrorg);
+			daySalaryVO.setCyear(String.valueOf(calculDate.getYear()));
+			daySalaryVO.setCperiod(calculDate.getStrMonth());
+			daySalaryVO.setSalarydate(calculDate);
+			daySalaryVO.setBillmaker(billmaker);
+			daySalaryVO.setMaketime(new UFDateTime());
+			listsalaryVo.add(daySalaryVO);
+		}
+		return listsalaryVo.toArray(new DaySalaryVO[0]);
+
+	}
+
+	/**
+	 * 計算全薪，日薪，時薪
+	 * 
+	 * @param vo
+	 * @param calculDate
+	 * @return
+	 * @throws BusinessException
+	 */
+	public DaySalaryVO[] calculBasicSalary(String pk_hrorg, DaySalaryVO[] vos,
+			UFLiteralDate calculDate) throws BusinessException {
+		String[] psnjobs = SQLHelper.getStrArray(vos, "pk_psnjob");
+		String insql = new InSQLCreator().getInSQL(psnjobs, true);
+		String qrySql = "SELECT\n" + "	pk_psnjob,\n"
+				+ "	SUM (nmoney) as fullsalary\n" + "FROM\n"
+				+ "	hi_psndoc_wadoc\n" + "WHERE\n" + "	pk_psnjob IN (" + insql
+				+ ")\n" + "AND pk_org = '" + pk_hrorg + "'\n"
+				+ "AND begindate <= '" + calculDate + "'\n"
+				+ "AND (enddate >= '" + calculDate + "' OR enddate IS NULL)"
+				+ "GROUP BY\n" + "	pk_psnjob";
+		@SuppressWarnings("unchecked")
+		List<HashMap<String, Object>> listMaps = (ArrayList<HashMap<String, Object>>) getDao()
+				.executeQuery(qrySql.toString(), new MapListProcessor());
+		Map<String, UFDouble> fullMap = new HashMap<String, UFDouble>();
+		if (listMaps != null && listMaps.size() > 0) {
+			for (int i = 0; i < listMaps.size(); i++) {
+				HashMap<String, Object> hashMap = listMaps.get(i);
+				String pk_psnjob = hashMap.get("pk_psnjob").toString();
+				UFDouble fullsalary = new UFDouble(hashMap.get("fullsalary")
+						.toString());
+				fullMap.put(pk_psnjob, fullsalary);
+			}
+		}
+		for (int i = 0; i < vos.length; i++) {
+			DaySalaryVO daySalaryVO = vos[i];
+			if (fullMap.containsKey(daySalaryVO.getPk_psnjob())) {
+				UFDouble fullsalary = fullMap.get(daySalaryVO.getPk_psnjob());
+				daySalaryVO.setFullsalary(fullsalary);
+				daySalaryVO.setDaysalary(fullsalary.div(30.0));
+				daySalaryVO.setHoursalary(fullsalary.div(240.0));
+			}
+		}
+		return vos;
+	}
+
+	/**
+	 * 计算加班相关信息
+	 * 
+	 * @param pk_hrorg
+	 * @param vos
+	 * @param calculDate
+	 * @return
+	 * @throws BusinessException
+	 */
+	public DaySalaryVO[] calculOvertimeInfo(String pk_hrorg, DaySalaryVO[] vos,
+			UFLiteralDate calculDate) throws BusinessException {
+		// 请求参数：Sting pk_psndoc[],UFLiteralDate calculDate--加班日期
+		// 返回值：MAP<String,MAP<String,UFDouble>--->MAP<pk_psndoc,MAP<参数类型,数值>
+		// 参数类型：加班時長(overtime) 平日加班时长(dailyovertime)休息日加班時長(restovertime)
+		// 國定假日加班時長(holidayovertime)加班費(overtimesalary)
+		String[] psndocs = SQLHelper.getStrArray(vos, "pk_psndoc");
+		ISegDetailService segService = NCLocator.getInstance().lookup(
+				ISegDetailService.class);
+		Map<String, Map<QueryValueTypeEnum, UFDouble>> overtimes = segService
+				.getOvertimeHours(psndocs, calculDate);
+		if (null == overtimes || overtimes.size() < 1) {
+			return vos;
+		}
+		for (int i = 0; i < vos.length; i++) {
+			DaySalaryVO daySalaryVO = vos[i];
+			Map<QueryValueTypeEnum, UFDouble> overtimedetail = overtimes
+					.get(daySalaryVO.getPk_psndoc());
+			if (null == overtimedetail || overtimedetail.size() < 1) {
+				continue;
+			}
+			daySalaryVO
+					.setOvertime(overtimedetail.get(QueryValueTypeEnum.ALL) != null ? overtimedetail
+							.get(QueryValueTypeEnum.ALL) : UFDouble.ZERO_DBL);
+			daySalaryVO.setDailyovertime(overtimedetail
+					.get(QueryValueTypeEnum.NORMAL) != null ? overtimedetail
+					.get(QueryValueTypeEnum.NORMAL) : UFDouble.ZERO_DBL);
+			daySalaryVO.setRestovertime(overtimedetail
+					.get(QueryValueTypeEnum.OFFDAY) != null ? overtimedetail
+					.get(QueryValueTypeEnum.OFFDAY) : UFDouble.ZERO_DBL);
+			daySalaryVO.setHolidayovertime(overtimedetail
+					.get(QueryValueTypeEnum.HOLIDAY) != null ? overtimedetail
+					.get(QueryValueTypeEnum.HOLIDAY) : UFDouble.ZERO_DBL);
+			daySalaryVO.setOvertimesalary(overtimedetail
+					.get(QueryValueTypeEnum.TOTALFEE) != null ? overtimedetail
+					.get(QueryValueTypeEnum.TOTALFEE) : UFDouble.ZERO_DBL);
+		}
+		return vos;
+	}
+
+	/**
+	 * 计算假期相关信息
+	 * 
+	 * @param pk_hrorg
+	 * @param vos
+	 * @param calculDate
+	 * @return
+	 * @throws BusinessException
+	 */
+	public AggDaySalaryVO[] calculLeaveRegInfo(String pk_hrorg,
+			DaySalaryVO[] vos, UFLiteralDate calculDate)
+			throws BusinessException {
+		String[] psnjobs = SQLHelper.getStrArray(vos, "pk_psnjob");
+		String insql = new InSQLCreator().getInSQL(psnjobs, true);
+		// 查询用户在生效日期是当前日期的所有休假单据
+		String qrySql = "SELECT\n"
+				+ "	leavereg.pk_psnjob,\n"
+				+ "	leavereg.pk_leavereg,\n"
+				+ "	leavereg.pk_leavereg_history,\n"
+				+ "	leavereg.pk_psndoc,\n"
+				+ "	leavereg.pk_leavetype,\n"
+				+ "	leavereg.pk_leavetypecopy,\n"
+				+ "	leavereg.pk_org,\n"
+				+ "	leavereg.effectivedate,\n"
+				+ "	leavereg.leavebegindate,\n"
+				+ "	leavereg.leaveenddate,\n"
+				+ "	leavereg.leavebegintime,\n"
+				+ "	leavereg.leaveendtime,\n"
+				+ "	leavereg.leavehour,\n"
+				+ "	leavereg.ischarge,\n"
+				+ "	leavereg.charge,\n"
+				+ "	leavereg.actualcharge,\n"
+				+ "	leavereg.isleaveoff,\n"
+				+ "	leavereg2.effectivedate AS effectivedate2,\n"
+				+ "	leavereg2.ischarge AS ischarge2,\n"
+				+ "	leavereg2.charge AS charge2,\n"
+				+ "	leavereg2.actualcharge AS actualcharge2,\n"
+				+ "	timeitem.rate\n"
+				+ "FROM\n"
+				+ "	tbm_leavereg_history leavereg\n"
+				+ "LEFT JOIN tbm_timeitemcopy timeitem ON leavereg.pk_leavetypecopy = timeitem.pk_timeitemcopy\n"
+				+ "LEFT JOIN tbm_leavereg_history leavereg2 ON leavereg.pk_leavereg = leavereg2.pk_leavereg\n"
+				+ "WHERE\n" + "	leavereg.effectivedate = '" + calculDate
+				+ "'\n" + "AND timeitem.ischarge = 'Y'\n"
+				+ "AND ISNULL(leavereg.dr, 0) = 0\n"
+				+ "AND ISNULL(leavereg2.dr, 0) = 0\n"
+				+ "AND leavereg.pk_psnjob IN (" + insql + ")";
+		HashMap<Object, HashMap<Object, HashMap<Object, GeneralVO>>> psnJobLeaveVoMap = executeQuery(qrySql);
+		// 计算日薪
+		getDaySalaryMap(psnjobs, calculDate);
+		List<AggDaySalaryVO> listSalaryVOs = new ArrayList<AggDaySalaryVO>();
+		for (int i = 0; i < vos.length; i++) {
+			DaySalaryVO daySalaryVO = vos[i];
+			AggDaySalaryVO aggDaySalaryVO = new AggDaySalaryVO();
+			aggDaySalaryVO.setParentVO(daySalaryVO);
+			HashMap<Object, HashMap<Object, GeneralVO>> leaveVoMap = psnJobLeaveVoMap
+					.get(daySalaryVO.getPk_psnjob());
+			if (leaveVoMap == null || leaveVoMap.size() < 1) {
+				listSalaryVOs.add(aggDaySalaryVO);
+				continue;
+			}
+			for (Object pk_leavereg : leaveVoMap.keySet()) {
+
+				HashMap<Object, GeneralVO> leaveregMap = leaveVoMap
+						.get(pk_leavereg);
+				GeneralVO gvo = null;
+				for (Object pk_leavereg_history : leaveregMap.keySet()) {
+					if (null == gvo) {
+						gvo = leaveregMap.get(pk_leavereg_history);
+					} else {
+						UFBoolean ischarge1 = gvo
+								.getAttributeValue("ischarge2") != null ? new UFBoolean(
+								gvo.getAttributeValue("ischarge").toString())
+								: UFBoolean.FALSE;
+						GeneralVO gvo2 = leaveregMap.get(pk_leavereg_history);
+						UFBoolean ischarge2 = gvo2
+								.getAttributeValue("ischarge2") != null ? new UFBoolean(
+								gvo2.getAttributeValue("ischarge").toString())
+								: UFBoolean.FALSE;
+						if (!ischarge1.booleanValue()) {
+							gvo = gvo2;
+						} else if (ischarge2.booleanValue()) {
+							UFLiteralDate effectivedate1 = gvo
+									.getAttributeValue("effectivedate2") != null ? new UFLiteralDate(
+									gvo.getAttributeValue("effectivedate2")
+											.toString()) : calculDate;
+							UFLiteralDate effectivedate2 = gvo2
+									.getAttributeValue("effectivedate2") != null ? new UFLiteralDate(
+									gvo2.getAttributeValue("effectivedate2")
+											.toString()) : calculDate;
+							if (effectivedate2.before(calculDate)
+									&& effectivedate2.after(effectivedate1)) {
+								gvo = gvo2;
+							}
+						}
+					}
+				}
+				aggDaySalaryVO = createLeaveRegDetailVO(aggDaySalaryVO, gvo);
+				listSalaryVOs.add(aggDaySalaryVO);
+			}
+		}
+		return listSalaryVOs.toArray(new AggDaySalaryVO[0]);
+	}
+
+	/**
+	 * 添加一条休假记录产生的休假明细
+	 * 
+	 * @param aggSalaryVO
+	 * @param gvo
+	 * @return
+	 * @throws BusinessException
+	 */
+	public AggDaySalaryVO createLeaveRegDetailVO(AggDaySalaryVO aggSalaryVO,
+			GeneralVO gvo) throws BusinessException {
+		List<LeaveRegDetailVO> listRegDetailVOs = new ArrayList<LeaveRegDetailVO>();
+		UFLiteralDate leavebegindate = new UFLiteralDate(gvo.getAttributeValue(
+				"leavebegindate").toString());// 休假开始时间
+		UFLiteralDate leaveenddate = new UFLiteralDate(gvo.getAttributeValue(
+				"leaveenddate").toString());// 休假结束时间
+		UFBoolean ischarge = gvo.getAttributeValue("ischarge") != null ? new UFBoolean(
+				gvo.getAttributeValue("ischarge").toString()) : UFBoolean.FALSE;// 当前结算状态
+		UFBoolean ischarge2 = gvo.getAttributeValue("ischarge2") != null ? new UFBoolean(
+				gvo.getAttributeValue("ischarge2").toString())
+				: UFBoolean.FALSE;// 历史结算状态
+		String pk_leavereg_history = getStr(gvo
+				.getAttributeValue("pk_leavereg_history"));
+		LeaveRegVO leaveRegVO = generalVOToLeaveRegVO(gvo);
+		// 休假开始时间和休假结束时间相同
+		if (leavebegindate.equals(leaveenddate)) {
+			LeaveRegDetailVO detailVO = generalVOToLeaveRegDateilVO(gvo,
+					leaveRegVO, aggSalaryVO.getParentVO());
+			// 未结算，需要反写信息
+			if (!ischarge.booleanValue()) {
+				// 扣款金额
+				UFDouble charge = detailVO.getLeavecharge();
+				if (ischarge2.booleanValue()) {
+					UFDouble actualcharge2 = new UFDouble(gvo
+							.getAttributeValue("actualcharge2").toString());
+					detailVO.setLeavecharge(charge.sub(actualcharge2));
+					updateleavereghistorySql
+							.append("update tbm_leavereg_history set ischarge='Y',charge='"
+									+ charge.sub(actualcharge2)
+									+ "',actualcharge='"
+									+ charge
+									+ "' where pk_leavereg_history='"
+									+ pk_leavereg_history + "';");
+				} else {
+					detailVO.setLeavecharge(charge);
+					updateleavereghistorySql
+							.append("update tbm_leavereg_history set ischarge='Y',charge='"
+									+ charge
+									+ "',actualcharge='"
+									+ charge
+									+ "' where pk_leavereg_history='"
+									+ pk_leavereg_history + "';");
+				}
+			}
+			aggSalaryVO.getParentVO().setLeavecharge(
+					aggSalaryVO.getParentVO().getLeavecharge()
+							.add(detailVO.getLeavecharge()));
+			listRegDetailVOs.add(detailVO);
+		} else {
+			// 拆单
+			int betweens = UFLiteralDate.getDaysBetween(leavebegindate,
+					leaveenddate);
+			UFDouble totalCharge = UFDouble.ZERO_DBL;
+			for (int i = 0; i <= betweens; i++) {
+				if (i == 0) {// 开始日期第一天
+					String endtimeStr = leavebegindate.toString() + " 23:59:59";
+					leaveRegVO.setLeaveenddate(leavebegindate);
+					leaveRegVO.setLeaveendtime(new UFDateTime(endtimeStr));
+
+				} else if (i == betweens) {// 最后一天
+					String begintimeStr = leaveenddate.toString() + " 00:00:00";
+					leaveRegVO.setLeavebegindate(leaveenddate);
+					leaveRegVO.setLeavebegintime(new UFDateTime(begintimeStr));
+				} else {// 中间时间
+					UFLiteralDate calculDate = leavebegindate.getDateAfter(i);
+					String begintimeStr = calculDate.toString() + " 00:00:00";
+					String endtimeStr = calculDate.toString() + " 23:59:59";
+					leaveRegVO.setLeavebegindate(calculDate);
+					leaveRegVO.setLeaveenddate(calculDate);
+					leaveRegVO.setLeavebegintime(new UFDateTime(begintimeStr));
+					leaveRegVO.setLeaveendtime(new UFDateTime(endtimeStr));
+				}
+				// 计算休假时长
+				leaveRegVO = getDisplayer().calculate(leaveRegVO,
+						TimeZone.getDefault());
+				if (leaveRegVO.getLeavehour().equals(UFDouble.ZERO_DBL)) {
+					continue;
+				}
+				LeaveRegDetailVO detailVO = generalVOToLeaveRegDateilVO(gvo,
+						leaveRegVO, aggSalaryVO.getParentVO());
+				totalCharge.add(detailVO.getLeavecharge());
+				listRegDetailVOs.add(detailVO);
+			}
+			if (ischarge2.booleanValue()) {
+				LeaveRegDetailVO detailVO = generalVOToLeaveRegDateilVO(gvo,
+						leaveRegVO, aggSalaryVO.getParentVO());
+				UFDouble actualcharge2 = new UFDouble(gvo.getAttributeValue(
+						"actualcharge2").toString());
+				detailVO.setLeavecharge(totalCharge.sub(actualcharge2));
+				listRegDetailVOs.clear();
+				listRegDetailVOs.add(detailVO);
+				aggSalaryVO.getParentVO().setLeavecharge(
+						aggSalaryVO.getParentVO().getLeavecharge()
+								.add(detailVO.getLeavecharge()));
+				updateleavereghistorySql
+						.append("update tbm_leavereg_history set ischarge='Y',charge='"
+								+ totalCharge.sub(actualcharge2)
+								+ "',actualcharge='"
+								+ totalCharge
+								+ "' where pk_leavereg_history='"
+								+ pk_leavereg_history + "';");
+			} else {
+				aggSalaryVO.getParentVO().setLeavecharge(
+						aggSalaryVO.getParentVO().getLeavecharge()
+								.add(totalCharge));
+				updateleavereghistorySql
+						.append("update tbm_leavereg_history set ischarge='Y',charge='"
+								+ totalCharge
+								+ "',actualcharge='"
+								+ totalCharge
+								+ "' where pk_leavereg_history='"
+								+ pk_leavereg_history + "';");
+			}
+		}
+		LeaveRegDetailVO[] leaveRegDetailVOs = (LeaveRegDetailVO[]) aggSalaryVO
+				.getChildrenVO();
+		if (null == leaveRegDetailVOs || leaveRegDetailVOs.length < 1) {
+			aggSalaryVO.setChildrenVO(listRegDetailVOs
+					.toArray(new LeaveRegDetailVO[0]));
+		} else {
+			List<LeaveRegDetailVO> liDetailVOs = Arrays
+					.asList(leaveRegDetailVOs);
+			listRegDetailVOs.addAll(liDetailVOs);
+			aggSalaryVO.setChildrenVO(listRegDetailVOs
+					.toArray(new LeaveRegDetailVO[0]));
+		}
+		return aggSalaryVO;
+	}
+
+	/**
+	 * 创建休假登记实体
+	 * 
+	 * @param gvo
+	 * @return
+	 */
+	public LeaveRegVO generalVOToLeaveRegVO(GeneralVO gvo) {
+		LeaveRegVO leaveRegVO = new LeaveRegVO();
+		leaveRegVO.setPk_psnjob(getStr(gvo.getAttributeValue("pk_psnjob")));
+		leaveRegVO.setPk_psndoc(getStr(gvo.getAttributeValue("pk_psndoc")));
+		leaveRegVO.setPk_psnorg(getStr(gvo.getAttributeValue("pk_psnorg")));
+		leaveRegVO.setPk_org(getStr(gvo.getAttributeValue("pk_org")));
+		leaveRegVO
+				.setIsleaveoff(gvo.getAttributeValue("isleaveoff") != null ? new UFBoolean(
+						gvo.getAttributeValue("isleaveoff").toString())
+						: UFBoolean.FALSE);
+		leaveRegVO
+				.setPk_leavetype(getStr(gvo.getAttributeValue("pk_leavetype")));
+		leaveRegVO.setPk_leavetypecopy(getStr(gvo
+				.getAttributeValue("pk_leavetypecopy")));
+		leaveRegVO.setLeavebegindate(new UFLiteralDate(gvo.getAttributeValue(
+				"leavebegindate").toString()));
+		leaveRegVO.setLeaveenddate(new UFLiteralDate(gvo.getAttributeValue(
+				"leaveenddate").toString()));
+		leaveRegVO.setLeavebegintime(new UFDateTime(gvo.getAttributeValue(
+				"leavebegintime").toString()));
+		leaveRegVO.setLeaveendtime(new UFDateTime(gvo.getAttributeValue(
+				"leaveendtime").toString()));
+		leaveRegVO.setLeavehour(new UFDouble(gvo.getAttributeValue("leavehour")
+				.toString()));
+		return leaveRegVO;
+	}
+
+	/**
+	 * 创建请假扣款详细实体
+	 * 
+	 * @param gvo
+	 * @param leaveRegVO
+	 * @param daySalaryVO
+	 * @return
+	 * @throws BusinessException
+	 */
+	public LeaveRegDetailVO generalVOToLeaveRegDateilVO(GeneralVO gvo,
+			LeaveRegVO leaveRegVO, DaySalaryVO daySalaryVO)
+			throws BusinessException {
+		LeaveRegDetailVO detailVO = new LeaveRegDetailVO(daySalaryVO);
+		String pk_leavereg_history = getStr(gvo
+				.getAttributeValue("pk_leavereg_history"));
+		detailVO.setPk_leavereg_history(pk_leavereg_history);// 来源单据主键
+		detailVO.setBegindate(leaveRegVO.getLeavebegintime());// 休假开始时间
+		detailVO.setEnddate(leaveRegVO.getLeaveendtime());// 休假结束时间
+		detailVO.setLeavehour(leaveRegVO.getLeavehour());// 休假时长
+		detailVO.setSalarydate(leaveRegVO.getBegindate());// 日薪日
+		detailVO.setIsleaveoff(leaveRegVO.getIsleaveoff());// 是否销假
+		detailVO.setPk_leavetype(leaveRegVO.getPk_leavetype());// 休假类别
+		detailVO.setPk_leavetypecopy(leaveRegVO.getPk_leavetypecopy());// 休假类别copy
+		detailVO.setDaysalary(getDaySalary(daySalaryVO,
+				detailVO.getPk_psnjob(), leaveRegVO.getBegindate()));// 日薪
+		detailVO.setRate(new Integer(gvo.getAttributeValue("rate").toString()));// 扣款费率
+		// 扣款金额
+		UFDouble charge = detailVO.getDaysalary()
+				.multiply(detailVO.getLeavehour())
+				.multiply(detailVO.getRate().intValue() / 100.0);
+		detailVO.setLeavecharge(charge);
+		return detailVO;
+	}
+
+	/**
+	 * 字符串处理函数
+	 * 
+	 * @param o
+	 * @return
+	 */
+	public String getStr(Object o) {
+		if (null == o) {
+			return "";
+		} else {
+			return o.toString();
+		}
+	}
+
+	/**
+	 * 根据组织获取纳入薪酬体系的项目
+	 * 
+	 * @param pk_hrorg
+	 * @return
+	 * @throws BusinessException
+	 */
+	public WaItemVO[] getWaItem(String pk_hrorg, String pk_group)
+			throws BusinessException {
+		String qrySql = " where  (wa_item.pk_org = 'GLOBLE00000000000000' or\n"
+				+ "       wa_item.pk_org = '" + pk_hrorg + "' or\n"
+				+ "       wa_item.pk_org = '" + pk_group
+				+ "') and isinhi='Y'\n"
+				+ " order by wa_item.idisplayseq, wa_item.code";
+		@SuppressWarnings("unchecked")
+		Collection<WaItemVO> waitems = getDao().retrieveByClause(
+				WaItemVO.class, qrySql);
+		return waitems.toArray(new WaItemVO[0]);
+	}
+
+	public UFDouble getDaySalary(DaySalaryVO daysalary, String pk_psnjob,
+			UFLiteralDate calculDate) throws BusinessException {
+		if (daysalary.getSalarydate().isSameDate(calculDate)) {
+			return daysalary.getDaysalary();
+		}
+		if (null == daysalaryMap.get(pk_psnjob)
+				|| null == daysalaryMap.get(pk_psnjob).get(calculDate)) {
+			return getDaySalaryService().getDaySalary(pk_psnjob, calculDate);
+		}
+		return daysalaryMap.get(pk_psnjob).get(calculDate) != null ? new UFDouble(
+				daysalaryMap.get(pk_psnjob).get(calculDate).toString())
+				: UFDouble.ZERO_DBL;
+	}
+
+	/**
+	 * 获取当前人员列表30天内的日薪
+	 * 
+	 * @param pk_psnjobs
+	 * @param calculDate
+	 * @return
+	 * @throws BusinessException
+	 */
+	public Map<Object, HashMap<Object, Object>> getDaySalaryMap(
+			String[] pk_psnjobs, UFLiteralDate calculDate)
+			throws BusinessException {
+		daysalaryMap = getDaySalaryService().getDaySalaryMap(pk_psnjobs,
+				calculDate, calculDate.getDateAfter(30));
+		return daysalaryMap;
+	}
+
+	/**
+	 * 校验组织人员薪资是否已经计算，如已经计算则不允许重新计算
+	 * 
+	 * @param pk_hrorg
+	 * @param pk_psnjobs
+	 * @param calculDate
+	 * @throws BusinessException
+	 */
+	public void validateWadataIssue(String pk_hrorg, String[] pk_psnjobs,
+			UFLiteralDate calculDate) throws BusinessException {
+		int year=calculDate.getYear();
+		String month=calculDate.getStrMonth();
+		//查询当前组织薪资方案未发放的个数，当未发放的薪资方案的个数为0时，抛出异常：薪资方案已全部发放，不允许再次计算
+		String qryCountSql="SELECT\n" +
+				"	count(*)\n" +
+				"FROM\n" +
+				"	wa_periodstate wps\n" +
+				"INNER JOIN wa_waclass wc ON wps.pk_wa_class = wc.pk_wa_class\n" +
+				"INNER JOIN wa_period wp ON wps.pk_wa_period = wp.pk_wa_period\n" +
+				"WHERE\n" +
+				"	wc.pk_org = '"+pk_hrorg+"'\n" +
+				"AND (\n" +
+				"	wc.stopflag = N'~'\n" +
+				"	OR wc.stopflag = N'N'\n" +
+				")\n" +
+				"AND wp.cyear = '"+year+"'\n" +
+				"AND wp.cperiod = '"+month+"'\n" +
+				"and wps.payoffflag='N'";//薪资未发放
+		int count=(int) getDao().executeQuery(qryCountSql, new ColumnProcessor());
+		if(count==0){
+			throw new BusinessException("該人力資源組織對應的薪資方案已經全部發放，不允許重複計算！或者該人力資源組織未添加薪資方案或者未初始化薪資期間，請檢查！");
+		}
+	}
+
+	public BaseDAO getDao() {
+		if (null == dao) {
+			dao = new BaseDAO();
+		}
+		return dao;
+	}
+
+	@SuppressWarnings({ "unchecked", "serial" })
+	private HashMap<Object, HashMap<Object, HashMap<Object, GeneralVO>>> executeQuery(
+			String qrysql) throws DAOException {
+
+		HashMap<Object, HashMap<Object, HashMap<Object, GeneralVO>>> param1ParamsMap = (HashMap<Object, HashMap<Object, HashMap<Object, GeneralVO>>>) getDao()
+				.executeQuery(qrysql, new ResultSetProcessor() {
+
+					@Override
+					public Object handleResultSet(ResultSet rs)
+							throws SQLException {
+						HashMap<Object, HashMap<Object, HashMap<Object, GeneralVO>>> retMap = new HashMap<Object, HashMap<Object, HashMap<Object, GeneralVO>>>();
+
+						while (rs.next()) {
+
+							HashMap<Object, HashMap<Object, GeneralVO>> param2VoMap = retMap
+									.get(rs.getObject(1));
+
+							if (param2VoMap == null) {
+
+								param2VoMap = new HashMap<Object, HashMap<Object, GeneralVO>>();
+
+								HashMap<Object, GeneralVO> param3VoMap = new HashMap<Object, GeneralVO>();
+
+								param3VoMap.put(rs.getObject(3),
+										processorToGeneralVO(rs));
+								param2VoMap.put(rs.getObject(2), param3VoMap);
+								retMap.put(rs.getObject(1), param2VoMap);
+							} else {
+								HashMap<Object, GeneralVO> param3VoMap = param2VoMap
+										.get(rs.getObject(2));
+								if (param3VoMap == null) {
+									param3VoMap = new HashMap<Object, GeneralVO>();
+									param3VoMap.put(rs.getObject(3),
+											processorToGeneralVO(rs));
+								} else {
+									param3VoMap.put(rs.getObject(3),
+											processorToGeneralVO(rs));
+								}
+								param2VoMap.put(rs.getObject(2), param3VoMap);
+							}
+
+						}
+
+						return retMap;
+					}
+				});
+
+		return param1ParamsMap;
+	}
+
+	protected GeneralVO processorToGeneralVO(ResultSet rs) throws SQLException {
+
+		ResultSetMetaData meta = rs.getMetaData();
+		int cols = meta.getColumnCount();
+		GeneralVO result = new GeneralVO();
+
+		for (int i = 1; i <= cols; i++) {
+
+			String strRealName = StringUtils.isNotEmpty(meta.getColumnLabel(i)) ? meta
+					.getColumnLabel(i) : meta.getColumnName(i);
+			result.setAttributeValue(strRealName.toLowerCase(), rs.getObject(i));
+		}
+
+		return result;
+	}
+
+	public ILeaveRegisterInfoDisplayer getDisplayer() {
+		if (displayer == null) {
+			displayer = NCLocator.getInstance().lookup(
+					ILeaveRegisterInfoDisplayer.class);
+		}
+		return displayer;
+	}
+
+	public IWadaysalaryQueryService getDaySalaryService() {
+		if (daysalaryService == null) {
+			daysalaryService = NCLocator.getInstance().lookup(
+					IWadaysalaryQueryService.class);
+		}
+		return daysalaryService;
+	}
+
+	@Override
+	public Map<String, UFDouble> statisticLeavecharge(String[] pk_psndocs,
+			String cyear, String cperiod) throws BusinessException {
+		Map<String, UFDouble> leavechargeMap = new HashMap<String, UFDouble>();
+		String insql = new InSQLCreator().getInSQL(pk_psndocs, true);
+		String qrySql = "SELECT\n" + "	pk_psndoc,\n"
+				+ "	SUM (leavecharge) as totalleavecharge\n" + "FROM\n"
+				+ "	wa_daysalary\n" + "WHERE\n" + "	pk_psndoc IN (\n" + insql
+				+ "	)\n" + "AND cyear = '" + cyear + "'\n" + "AND cperiod = '"
+				+ cperiod + "'\n" + "GROUP BY\n" + "	pk_psndoc";
+		List<HashMap<String, Object>> listMaps = (ArrayList<HashMap<String, Object>>) getDao()
+				.executeQuery(qrySql.toString(), new MapListProcessor());
+		for (int i = 0; i < listMaps.size(); i++) {
+			HashMap<String, Object> hashMap = listMaps.get(i);
+			String pk_psndoc = hashMap.get("pk_psndoc").toString();
+			UFDouble totalleavecharge = hashMap.get("totalleavecharge") != null ? new UFDouble(
+					hashMap.get("totalleavecharge").toString())
+					: UFDouble.ZERO_DBL;
+			leavechargeMap.put(pk_psndoc, totalleavecharge);
+		}
+		return leavechargeMap;
+	}
+}

@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding='UTF-8'?>
+<UIMeta flowmode="true" id="main_um" jquery="0">
+    <FlowvLayout id="flowvlayout7496" widgetId="main">
+        <FlowvPanel id="panelv07496" widgetId="main">
+        	<CanvasLayout className="rightcanvas" id="menucanvas" widgetId="main">
+                <CanvasPanel id="canvasp1" widgetId="main">	
+                	<Menubar height="100%" id="menuTimeDataMain" left="0" position="relative" top="0" widgetId="main" width="100%">
+            		</Menubar>
+                </CanvasPanel>
+            </CanvasLayout>
+        </FlowvPanel>
+        <FlowvPanel id="panelv17496" widgetId="main">
+            <PanelLayout i18nName="w_ta-001163" langDir="node_ta-res" id="panellayout6473" title="人员" widgetId="main">
+                <PanelPanel bottomPadding="10" id="panelpanel9968" topPadding="20" widgetId="main" >
+                    <Label id="lblShowNameOrDate" left="10" position="relative" textAlign="left" top="0" widgetId="main" width="80%">
+                    </Label>
+                </PanelPanel>
+            </PanelLayout>
+        </FlowvPanel>
+        <FlowvPanel id="panelv27496" widgetId="main">
+            <TabLayout currentItem="0" id="tabTimeData" oneTabHide="false" widgetId="main">
+                <TabItems>
+                    <TabItem i18nName="w_ta-001161" langDir="node_ta-res" id="tabMachine" showCloseIcon="" text="机器考勤" widgetId="main">
+                        <FlowvLayout id="flowvlayout1756" widgetId="main">
+                            <FlowvPanel id="panelv01756" widgetId="main">
+                                <GridComp height="100%" id="tblMachineData" autoExpand="1"  left="0" position="relative" top="0" widgetId="main" width="100%">
+                        		</GridComp>
+                            </FlowvPanel>
+                            <FlowvPanel id="panelv11756" widgetId="main">
+					            <HtmlContent height="100%" id="machinecolorBrief" left="0" position="relative" top="0" widgetId="main" width="100%">
+					            </HtmlContent>
+                            </FlowvPanel>
+                        </FlowvLayout>
+                    </TabItem>
+                    <TabItem i18nName="w_ta-001162" langDir="node_ta-res" id="tabManual" showCloseIcon="" text="手工考勤" widgetId="main">
+                    	<FlowvLayout id="flowvlayout2756" widgetId="main">
+                            <FlowvPanel id="panelv02756" widgetId="main">
+                                 <GridComp height="100%" id="tblManualData" autoExpand="1"  left="0" position="relative" top="0" widgetId="main" width="100%">
+                        		 </GridComp>
+                            </FlowvPanel>
+                            <FlowvPanel id="panelv12756" widgetId="main">
+					            <HtmlContent height="100%" id="manualcolorBrief" left="0" position="relative" top="0" widgetId="main" width="100%">
+					            </HtmlContent>
+                            </FlowvPanel>
+                        </FlowvLayout>
+                    </TabItem>
+                </TabItems>
+                <Events>
+                    <Event async="true" jsEventClaszz="nc.uap.lfw.core.event.conf.TabListener" methodName="afterActivedTabItemChange" name="afterActivedTabItemChange" onserver="true">
+                        <SubmitRule cardSubmit="false" panelSubmit="false" tabSubmit="false">
+                            <Widget cardSubmit="false" id="main" panelSubmit="false" tabSubmit="true">
+                            	 <Dataset id="dsManualData" type="ds_all_line">
+                                </Dataset>
+                                <Dataset id="dsMachineData" type="ds_all_line">
+                                </Dataset>
+                            </Widget>
+                        </SubmitRule>
+                        <Params>
+                            <Param>
+                                <Name>tabEvent</Name>
+                                <Value></Value>
+                                <Desc>                                    <![CDATA[nc.uap.lfw.core.event.TabEvent]]>
+                                </Desc>
+                            </Param>
+                        </Params>
+                        <Action>
+                        </Action>
+                    </Event>
+                </Events>
+            </TabLayout>
+        </FlowvPanel>
+    </FlowvLayout>
+</UIMeta>

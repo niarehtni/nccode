@@ -1,0 +1,3 @@
+INSERT INTO sm_funcregister (cfunid, class_name, dr, fun_desc, fun_name, fun_property, funcode, funtype, help_name, isbuttonpower, iscauserusable, isenable, isfunctype, mdid, orgtypecode, own_module, parent_id, pk_group, ts) VALUES ('0001ZZ1000000005Q95L', 'nc.ui.pubapp.uif2app.ToftPanelAdaptorEx', '0', NULL, '日薪計算', '0', '60103daysalary', '0', NULL, 'N', NULL, 'Y', 'N', '~', 'HRORGTYPE00000000000', '6013', '1001Z7100000000086R5', '~', '2018-05-03 11:19:22');
+
+INSERT INTO sm_paramregister (dr, paramname, paramvalue, parentid, pk_param, ts) VALUES ('0', 'BeanConfigFilePath', 'nc/ui/hrwa/wadaysalary/ace/view/Wadaysalary_config.xml', '0001ZZ1000000005Q95L', '0001ZZ1000000005Q95M', '2018-05-03 11:19:22');

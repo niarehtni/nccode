@@ -1,0 +1,847 @@
+package nc.impl.wa.paydata;
+
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import nc.bs.dao.BaseDAO;
+import nc.bs.dao.DAOException;
+import nc.bs.framework.common.NCLocator;
+import nc.bs.logging.Logger;
+import nc.hr.utils.InSQLCreator;
+import nc.hr.utils.ResHelper;
+import nc.itf.hi.IPsndocQryService;
+import nc.itf.hr.wa.IHRWADataResCode;
+import nc.itf.hr.wa.WaPowerSqlHelper;
+import nc.jdbc.framework.SQLParameter;
+import nc.jdbc.framework.processor.BeanListProcessor;
+import nc.jdbc.framework.processor.ColumnListProcessor;
+import nc.jdbc.framework.processor.MapListProcessor;
+import nc.pub.encryption.util.SalaryDecryptUtil;
+import nc.pub.encryption.util.SalaryEncryptionUtil;
+import nc.vo.dataitem.pub.DataVOUtils;
+import nc.vo.hi.pub.HICommonValue;
+import nc.vo.hr.caculate.CaculateTypeVO;
+import nc.vo.hr.pub.FormatVO;
+import nc.vo.jcom.lang.StringUtil;
+import nc.vo.pub.BusinessException;
+import nc.vo.pub.SuperVO;
+import nc.vo.pub.lang.UFBoolean;
+import nc.vo.pub.lang.UFDouble;
+import nc.vo.wa.classitem.WaClassItemVO;
+import nc.vo.wa.func.FuncParse;
+import nc.vo.wa.func.SqlFragment;
+import nc.vo.wa.func.WherePartUtil;
+import nc.vo.wa.item.FromEnumVO;
+import nc.vo.wa.paydata.DataSVO;
+import nc.vo.wa.paydata.DataVO;
+import nc.vo.wa.pub.WaLoginContext;
+
+import org.apache.commons.lang.StringUtils;
+
+/**
+ * 
+ * 
+ * @author: zhangg
+ * @date: 2009-11-23 上午11:18:25
+ * @since: eHR V6.0
+ * @走查人:
+ * @走查日期:
+ * @修改人:
+ * @修改日期:
+ */
+public class DataCaculateService extends AbstractCaculateService {
+
+	private Set<String> pk_wa_itemSet = null;// 需要特殊值的项目
+	private TaxBindService taxBindService = null;
+
+	/**
+	 * @author zhangg on 2010-6-10
+	 * @return the taxBindService
+	 */
+	private TaxBindService getTaxBindService() {
+		if (taxBindService == null) {
+			taxBindService = new TaxBindService();
+		}
+		return taxBindService;
+	}
+
+	/**
+	 * @author zhangg on 2010-5-21
+	 * @return the pk_wa_itemSet
+	 * @throws DAOException
+	 */
+	private Set<String> setPk_wa_itemSet() throws DAOException {
+		pk_wa_itemSet = new HashSet<String>();
+		StringBuffer sqlBuffer = new StringBuffer();
+		sqlBuffer.append("select distinct pk_wa_classitem from wa_datas ");
+		sqlBuffer.append(" where wa_datas.pk_wa_data in  ");
+		sqlBuffer.append("     (select wa_cacu_data.pk_wa_data "); // 2
+		sqlBuffer.append("        from wa_cacu_data ");
+		sqlBuffer.append("       where wa_cacu_data.pk_wa_class = '"
+				+ getLoginContext().getWaLoginVO().getPk_wa_class() + "' )");
+
+		DataSVO[] dataSVOs = executeQueryVOs(sqlBuffer.toString(), DataSVO.class);
+		if (dataSVOs != null) {
+			for (DataSVO dataSVO : dataSVOs) {
+				pk_wa_itemSet.add(dataSVO.getPk_wa_classitem());
+			}
+		}
+
+		return pk_wa_itemSet;
+	}
+
+	/**
+	 * 
+	 * @author zhangg on 2009-9-27
+	 * @param selectWhere
+	 *            影响到的pk_wa_data范围
+	 * @throws DAOException
+	 */
+	public DataCaculateService(WaLoginContext loginContext, CaculateTypeVO caculateTypeVO, String selectWhere)
+			throws BusinessException {
+		super(loginContext);
+
+		// 设置计算范围
+		setWaDataCacuRange4Class(caculateTypeVO, selectWhere);
+		// 得到需要获得调整值的项目set
+		setPk_wa_itemSet();
+
+	}
+
+	@Override
+	public void doCaculate() throws BusinessException {
+
+		WaClassItemVO[] classItemVOs = getClassItemVOs();
+		doCaculate(classItemVOs);
+
+		// 算个人所得税
+		doPsnTax();
+
+		// 更改状态
+		updateSates();
+
+		// 计算完毕，如果不是调试状态，清空中间表数据
+		clearMidData();
+	}
+
+	public void clearMidData() throws BusinessException {
+		// 薪资计算完毕。如果不是调试状态，则删除wa_cacu_data 中所有数据
+
+		StringBuffer deleteWa_cacu_data = new StringBuffer();
+		deleteWa_cacu_data.append("delete from wa_cacu_data  ");
+		deleteWa_cacu_data.append(" where pk_wa_class = '" + getLoginContext().getWaLoginVO().getPk_wa_class() + "' ");
+		executeSQLs(deleteWa_cacu_data);
+
+	}
+
+	public void doPsnTax() throws BusinessException {
+		new PsntaxService().doPsnTax(getLoginContext());
+	}
+
+	/**
+	 * 主要为合并计税提出的方法
+	 * 
+	 * @author zhangg on 2010-6-11
+	 * @param classItemVOs
+	 * @throws BusinessException
+	 */
+	public void doCaculate(WaClassItemVO[] classItemVOs) throws BusinessException {
+
+		if (classItemVOs == null) {
+			return;
+		}
+		// 清零
+		updateItem2Zero(classItemVOs);
+
+		// 检查并计算是否有合并计税
+		getTaxBindService().doCaculateTaxBind(getLoginContext(), getCacuRangeWhere());
+
+		// 将薪资发放表中的 已扣税 已扣税基数 补发扣税 补发金额 同步到中间表，方便税率计算。
+		updateTaxAndRedata(getLoginContext());
+
+		for (WaClassItemVO waClassItemVO : classItemVOs) {
+
+			if (waClassItemVO.getVformula() != null && !waClassItemVO.getVformula().equals("")) {
+				IPsndocQryService queryservice = NCLocator.getInstance().lookup(IPsndocQryService.class);
+				String tableName = "";
+				if (waClassItemVO.getVformula().contains("psnSubinf(")) {
+					String formula = waClassItemVO.getVformula().replace("psnSubinf(", "").trim();
+					tableName = formula.split(",")[0];
+				}
+				String sql2 = "select bd.pk_psndoc from bd_psndoc bd left join wa_data wad on bd.pk_psndoc = wad.PK_PSNDOC where wad.PK_WA_CLASS = '"
+						+ waClassItemVO.getPk_wa_class()
+						+ "' and wad.CPERIOD = '"
+						+ waClassItemVO.getCperiod()
+						+ "' and wad.CYEAR='" + waClassItemVO.getCyear() + "'";
+				ArrayList<String> pk_psndocs = (ArrayList<String>) new BaseDAO().executeQuery(sql2,
+						new ColumnListProcessor());
+				String[] pks = new String[pk_psndocs.size()];
+				for (int i = 0; i < pk_psndocs.size(); i++) {
+					pks[i] = pk_psndocs.get(i);
+				}
+				InSQLCreator parms = new InSQLCreator();
+				String wherePart = " pk_psndoc in (" + parms.getInSQL(pks) + ")";
+				for (String code : tableCode) {
+					SuperVO[] vos2 = null;
+					String tablename = XMLUtils.getXmlInfo(code);
+					String className = XMLUtils.getClassInfo(code);
+					if (tableName.equals(tablename)) {
+						Class clazz = null;
+						try {
+							clazz = Class.forName(className);
+						} catch (ClassNotFoundException e) {
+							e.printStackTrace();
+						}
+						vos2 = queryservice.querySubVO(clazz, wherePart, null);
+						if (vos2 != null) {
+							getBaseDao().updateVOArray(vos2);
+						}
+					}
+
+				}
+			}
+
+			doCaculateSingle(waClassItemVO);
+
+			// 特殊人员数据调整
+			updateSepecalItem(waClassItemVO);
+
+			// 对于代缴税特殊处理f2扣款合计
+			updateF2(waClassItemVO);
+
+		}
+
+	}
+
+	/**
+	 * 对于代缴税，系统默认公式中， 本次扣税与本次补发扣税是不应该计入扣款合计的
+	 * 
+	 * @param itemVO
+	 * @throws BusinessException
+	 */
+	private void updateF2(WaClassItemVO itemVO) throws BusinessException {
+		if (itemVO.getItemkey().equalsIgnoreCase("f_2") && itemVO.getIssysformula().booleanValue()) {// 系统定义项目，客户没有变化.
+			String sql = "update wa_data set f_2 = (f_2 - f_5 - f_9) " + getCacuRangeWhere()
+					+ " and wa_data.taxtype = 1";
+			executeSQLs(sql);
+		}
+	}
+
+	/**
+	 * 这几个项目没有提供公式 f_6 已扣税基数 f_7 已扣税 f_8 补发金额 f_9 补发扣税
+	 * 
+	 * @author zhangg on 2010-6-4
+	 * @param itemVO
+	 * @return
+	 */
+	private boolean isF6TOF9(WaClassItemVO itemVO) {
+		return (itemVO.getItemkey().equalsIgnoreCase("f_6") || itemVO.getItemkey().equalsIgnoreCase("f_7")
+				|| itemVO.getItemkey().equalsIgnoreCase("f_8") || itemVO.getItemkey().equalsIgnoreCase("f_9"));
+	}
+
+	/**
+	 * 计算薪资项目
+	 * 
+	 * @author zhangg on 2009-9-28
+	 * @throws DAOException
+	 * @throws BusinessException
+	 */
+	private void doCaculateSingle(WaClassItemVO itemVO) throws BusinessException {
+		try {
+			getLoginContext().setInitData(itemVO);
+			getLoginContext().getWaLoginVO().setClassItemVOs(this.classItemVOs);
+
+			if (itemVO == null) {
+				return;
+			}
+			if (isF6TOF9(itemVO)) {
+				return;
+			}
+			// 如果是手工输入， 返回
+			if (itemVO.getIfromflag().equals(FromEnumVO.USER_INPUT.value())) {
+				return;
+			}
+			// 如果是固定值
+			if (itemVO.getIfromflag().equals(FromEnumVO.FIX_VALUE.value())) {
+				updateConstantItem(itemVO);
+				return;
+			}
+
+			if (itemVO.getVformula() == null) {
+				return;
+			}
+			// 公式和其他数据源
+			if (!itemVO.getIfromflag().equals(FromEnumVO.FORMULA.value())) {
+				execute(itemVO);
+				// 对于薪资取社保项目，如果是数值型而且选了取值条件则要判断是否进行清零处理
+				if (itemVO.getIfromflag().equals(FromEnumVO.BM.value()) && itemVO.getIitemtype() == 0) {
+					String param = itemVO.getVformula().substring(itemVO.getVformula().indexOf("(") + 1,
+							itemVO.getVformula().indexOf(")"));
+					String[] params = param.split(",");
+					if (params.length == 4) {
+						// 取值条件没有选择的时候不清零（即为f_f）
+						if (params[3] != null && !params[3].equals("f_f")) {
+							updateBmItem(itemVO);
+						}
+					}
+				}
+			} else if (itemVO.getVformula() != null) {
+				IPreTranslate waPreTranslate = new WaPreTranslate();
+				String formua = waPreTranslate.parse(itemVO.getPk_org(), itemVO.getVformula());
+				itemVO.setVformula(formua);
+				List<SqlFragment> fragmentList = FuncParse.parse(formua);
+				if (fragmentList != null && fragmentList.size() > 0) {
+					for (SqlFragment sqlFragment : fragmentList) {
+						execute(itemVO, sqlFragment);
+					}
+				}
+			}
+		} catch (Exception e) {
+			if (e instanceof DAOException) {
+				throw new BusinessException(ResHelper.getString("60130paydata", "060130paydata0444")/*
+																									 * @
+																									 * res
+																									 * "薪资项目:"
+																									 */
+						+ itemVO.getMultilangName() + ResHelper.getString("60130paydata", "060130paydata0445")/*
+																											 * @
+																											 * res
+																											 * "公式设置错误。 请检查。"
+																											 */);
+
+			} else if (e instanceof BusinessException) {
+				throw (BusinessException) e;
+			} else {
+				throw new BusinessException(e);
+			}
+		}
+	}
+
+	/**
+	 * 更新社保项目（根据取值条件按人进行清零，只有为N时才设为0）
+	 * 
+	 * @author guoqt on 2014-5-30
+	 * @throws DAOException
+	 */
+	private void updateBmItem(WaClassItemVO itemVO) throws DAOException {
+		String where = getCacuRangeWhere();
+		String sql = "update wa_data set wa_data." + itemVO.getItemkey() + " = 0 " + where;
+		String param = itemVO.getVformula().substring(itemVO.getVformula().indexOf("(") + 1,
+				itemVO.getVformula().indexOf(")"));
+		String[] params = param.split(",");
+		StringBuilder sbd = new StringBuilder();
+		sbd.append("  and wa_data.pk_wa_data in ( select pk_wa_data from wa_data where pk_wa_class = ? and cyear= ? and cperiod= ?  ");
+		sbd.append("  and wa_data." + params[3] + " in ('N','n') ) ");
+		sql = sql + sbd.toString();
+		SQLParameter parameter = new SQLParameter();
+		parameter.addParam(itemVO.getPk_wa_class());
+		parameter.addParam(itemVO.getCyear());
+		parameter.addParam(itemVO.getCperiod());
+		getBaseDao().executeUpdate(sql, parameter);
+	}
+
+	private void execute(WaClassItemVO itemVO) throws BusinessException {
+		String formula = itemVO.getVformula();
+		formula = parse(formula);
+		SqlFragment sqlFragment = new SqlFragment();
+		sqlFragment.setValue(formula);
+		execute(itemVO, sqlFragment);
+	}
+
+	private static final String[] tableCode = new String[] { "LABORINS", "HEALTHINS", "LABORDETAIL", "LABORSUM",
+			"EXTHEALTHINS", "GROUPINS" };
+	private String[] LABORINS = new String[] { "glbdef2", "glbdef3", "glbdef4", "glbdef7", "glbdef8" };
+	private String[] HEALTHINS = new String[] { "glbdef6", "glbdef7", "glbdef16" };
+	private String[] LABORDETAIL = new String[] { "glbdef3", "glbdef4", "glbdef5", "glbdef6", "glbdef7", "glbdef8",
+			"glbdef9", "glbdef10", "glbdef11", "glbdef12", "glbdef13", "glbdef14", "glbdef15", "glbdef16", "glbdef17",
+			"glbdef18", "glbdef19", "glbdef20", "glbdef21", "glbdef22", "glbdef23", "glbdef24", "glbdef25", "glbdef44",
+			"glbdef27", "glbdef28", "glbdef29", "glbdef30", "glbdef31", "glbdef32", "glbdef33", "glbdef34", "glbdef35",
+			"glbdef36", "glbdef45", "glbdef39" };
+	private String[] LABORSUM = new String[] { "glbdef3", "glbdef4", "glbdef5", "glbdef6", "glbdef7", "glbdef8",
+			"glbdef9", "glbdef10", "glbdef11", "glbdef12", "glbdef13", "glbdef15", "glbdef16", "glbdef26", "glbdef17",
+			"glbdef19", "glbdef20", "glbdef21", "glbdef22", "glbdef14" };
+	private String[] EXTHEALTHINS = new String[] { "glbdef3", "glbdef5", "glbdef16" };
+
+	private void execute(WaClassItemVO itemVO, SqlFragment sqlFragment) throws BusinessException {
+		// 2016-11-24 zhosuze 薪资加密：薪资发放计算前，先将数据wa_data表中数据恢复，方便计算 begin
+		String where = getCacuRangeWhere();
+		String sql = "select * from wa_data " + where;
+		ArrayList<DataVO> voList = (ArrayList<DataVO>) getBaseDao().executeQuery(sql,
+				new BeanListProcessor(DataVO.class));
+
+		// MOD (處理上期取值解密) by ssx on 2018-07-24
+		if (itemVO.getVformula().contains("waOtherPeriodData")) {
+			String itemkey = itemVO.getVformula().substring(itemVO.getVformula().indexOf("f_"),
+					itemVO.getVformula().indexOf(",", itemVO.getVformula().indexOf("f_") + 1));
+			String strSQL = "SELECT distinct pk_psndoc," + sqlFragment.getValue() + " " + itemkey + " from wa_data "
+					+ where;
+			List<Map> midvalues = (List<Map>) getBaseDao().executeQuery(strSQL, new MapListProcessor());
+			for (DataVO vo : voList) {
+				for (Map midvalue : midvalues) {
+					if (vo.getPk_psndoc().equals(midvalue.get("pk_psndoc"))) {
+						vo.setAttributeValue(itemVO.getItemkey(), midvalue.get(itemkey));
+					}
+				}
+			}
+			sqlFragment.setValue("");
+		}
+		// END
+
+		DataVO[] list2Array = new DataVO[voList.size()];
+		for (int i = 0; i < voList.size(); i++) {
+			list2Array[i] = voList.get(i);
+		}
+		DataVO[] vos = SalaryDecryptUtil.decrypt4Array(list2Array);
+
+		getBaseDao().updateVOArray(vos);
+		// end
+		// 但强 更新数据
+
+		// 更新数据
+		try {
+			if (!StringUtils.isBlank(sqlFragment.getValue())) {
+
+				String sql1 = "select cacu_value from wa_cacu_data";
+				getBaseDao().executeQuery(sql1, new ColumnListProcessor());
+
+				getBaseDao().executeUpdate(translate2ExecutableSql(itemVO, sqlFragment));
+			}
+
+			// 2016-11-24 zhosuze 薪资加密：薪资发放计算后，将数据加密更新wa_data表中的数据 begin
+			String where1 = getCacuRangeWhere();
+			String sql1 = "select * from wa_data " + where;
+			ArrayList<DataVO> voList1 = (ArrayList<DataVO>) getBaseDao().executeQuery(sql,
+					new BeanListProcessor(DataVO.class));
+			DataVO[] list2Array1 = new DataVO[voList.size()];
+			for (int i = 0; i < voList1.size(); i++) {
+				list2Array1[i] = voList1.get(i);
+			}
+			DataVO[] vos1 = SalaryEncryptionUtil.encryption4Array(list2Array1);
+			getBaseDao().updateVOArray(vos1);
+			// end
+
+			IPsndocQryService queryservice = NCLocator.getInstance().lookup(IPsndocQryService.class);
+			String tableName = "";
+			if (itemVO.getVformula() != null && !itemVO.getVformula().equals("")
+					&& itemVO.getVformula().contains("psnSubinf(")) {
+				String formula = itemVO.getVformula().replace("psnSubinf(", "").trim();
+				tableName = formula.split(",")[0];
+				String sql2 = "select bd.pk_psndoc from bd_psndoc bd left join wa_data wad on bd.pk_psndoc = wad.PK_PSNDOC where wad.PK_WA_CLASS = '"
+						+ itemVO.getPk_wa_class()
+						+ "' and wad.CPERIOD = '"
+						+ itemVO.getCperiod()
+						+ "' and wad.CYEAR='"
+						+ itemVO.getCyear() + "'";
+				ArrayList<String> pk_psndocs = (ArrayList<String>) new BaseDAO().executeQuery(sql2,
+						new ColumnListProcessor());
+				String[] pks = new String[pk_psndocs.size()];
+				for (int i = 0; i < pk_psndocs.size(); i++) {
+					pks[i] = pk_psndocs.get(i);
+				}
+				InSQLCreator parms = new InSQLCreator();
+				String wherePart = " pk_psndoc in (" + parms.getInSQL(pks) + ")";
+				for (String code : tableCode) {
+					SuperVO[] tableVO = null;
+					String tablename = XMLUtils.getXmlInfo(code);
+					String className = XMLUtils.getClassInfo(code);
+					if (tableName.equals(tablename)) {
+						Class clazz = null;
+						try {
+							clazz = Class.forName(className);
+						} catch (ClassNotFoundException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+						tableVO = queryservice.querySubVOWithoutS(clazz, wherePart, null);
+						if (tableVO != null) {
+							if (code.equals("LABORINS")) {
+								for (int ii = 0; ii < tableVO.length; ii++) {
+									for (String glbdef : LABORINS) {
+										UFDouble i = new UFDouble(0);
+										if (tableVO[ii].getAttributeValue(glbdef) != null) {
+											i = (UFDouble) tableVO[ii].getAttributeValue(glbdef);
+										} else {
+											i = new UFDouble(0);
+										}
+										double encryption = SalaryEncryptionUtil.encryption(i.doubleValue());
+										tableVO[ii].setAttributeValue(glbdef, encryption);
+									}
+
+								}
+							} else if (code.equals("HEALTHINS")) {
+								for (int ii = 0; ii < tableVO.length; ii++) {
+									for (String glbdef : HEALTHINS) {
+										UFDouble i = new UFDouble(0);
+										if (tableVO[ii].getAttributeValue(glbdef) != null) {
+											i = (UFDouble) tableVO[ii].getAttributeValue(glbdef);
+										} else {
+											i = new UFDouble(0);
+										}
+										double encryption = SalaryEncryptionUtil.encryption(i.doubleValue());
+										tableVO[ii].setAttributeValue(glbdef, encryption);
+									}
+
+								}
+							} else if (code.equals("LABORDETAIL")) {
+								for (int ii = 0; ii < tableVO.length; ii++) {
+									for (String glbdef : LABORDETAIL) {
+										UFDouble i = new UFDouble(0);
+										if (tableVO[ii].getAttributeValue(glbdef) != null) {
+											i = (UFDouble) tableVO[ii].getAttributeValue(glbdef);
+										} else {
+											i = new UFDouble(0);
+										}
+										double encryption = SalaryEncryptionUtil.encryption(i.doubleValue());
+										tableVO[ii].setAttributeValue(glbdef, encryption);
+									}
+
+								}
+							} else if (code.equals("LABORSUM")) {
+								for (int ii = 0; ii < tableVO.length; ii++) {
+									for (String glbdef : LABORSUM) {
+										UFDouble i = new UFDouble(0);
+										if (tableVO[ii].getAttributeValue(glbdef) != null) {
+											i = (UFDouble) tableVO[ii].getAttributeValue(glbdef);
+										} else {
+											i = new UFDouble(0);
+										}
+										double encryption = SalaryEncryptionUtil.encryption(i.doubleValue());
+										tableVO[ii].setAttributeValue(glbdef, encryption);
+									}
+
+								}
+							} else if (code.equals("EXTHEALTHINS")) {
+								for (int ii = 0; ii < tableVO.length; ii++) {
+									for (String glbdef : EXTHEALTHINS) {
+										UFDouble i = new UFDouble(0);
+										if (tableVO[ii].getAttributeValue(glbdef) != null) {
+											i = (UFDouble) tableVO[ii].getAttributeValue(glbdef);
+										} else {
+											i = new UFDouble(0);
+										}
+										double encryption = SalaryEncryptionUtil.encryption(i.doubleValue());
+										tableVO[ii].setAttributeValue(glbdef, encryption);
+									}
+								}
+							} else if (code.equals("GROUPINS")) {
+								for (int ii = 0; ii < tableVO.length; ii++) {
+									double dv = 0;
+									if (tableVO[ii].getAttributeValue("glbdef6") != null) {
+										UFDouble value = (UFDouble) tableVO[ii].getAttributeValue("glbdef6");
+										dv = value.doubleValue();
+									}
+									double decrypt = SalaryEncryptionUtil.encryption(dv);
+									tableVO[ii].setAttributeValue("glbdef6", decrypt);
+								}
+							}
+
+							getBaseDao().updateVOArray(tableVO);
+
+						}
+					}
+				}
+			}
+			updateDigits(itemVO);
+		} catch (Exception e) {
+			Logger.error(e.getMessage(), e);
+			throw new BusinessException(ResHelper.getString("60130paydata", "060130paydata0444")/*
+																								 * @
+																								 * res
+																								 * "薪资项目:"
+																								 */
+					+ itemVO.getMultilangName() + ResHelper.getString("60130paydata", "060130paydata0445")/*
+																										 * @
+																										 * res
+																										 * "公式设置错误。 请检查。"
+																										 */);
+		}
+	}
+
+	/**
+	 * 更新固定项目（常数项目）
+	 * 
+	 * @author zhangg on 2009-9-27
+	 * @throws DAOException
+	 */
+	private void updateItem2Zero(WaClassItemVO... itemVOs) throws DAOException {
+		String where = getCacuRangeWhere();
+		List<String> items = new LinkedList<String>();
+		for (WaClassItemVO itemVO : itemVOs) {
+			// 如果是手工输入， 返回
+			if (needUpdate2Zero(itemVO)) {
+				if (DataVOUtils.isDigitsAttribute(itemVO.getItemkey())) {
+					items.add("wa_data." + itemVO.getItemkey() + " = 0 ");
+				} else {
+					items.add("wa_data." + itemVO.getItemkey() + " = null ");
+				}
+			}
+		}
+		String sql = "update wa_data set " + FormatVO.formatListToString(items, "") + where;
+		getBaseDao().executeUpdate(sql);
+	}
+
+	/**
+	 * 
+	 * @param itemVO
+	 * @return
+	 */
+	private boolean needUpdate2Zero(WaClassItemVO itemVO) {
+		// 判断一个项目在发放计算前是否需要清空，f_6\f_7\f_8\f_9 不需要清空
+		// 手工输入的项目不需要清空
+
+		if (itemVO.getItemkey().equals("f_6") || itemVO.getItemkey().equals("f_7") || itemVO.getItemkey().equals("f_8")
+				|| itemVO.getItemkey().equals("f_9")) {
+			return false;
+		}
+		// 手工输入，不需要清空
+		if (itemVO.getIfromflag().equals(FromEnumVO.USER_INPUT.value())) {
+			return false;
+		}
+
+		// 剩余的项目需要去清空
+		return true;
+	}
+
+	/**
+	 * 
+	 * @param itemVOs
+	 * @throws DAOException
+	 */
+	private void updateTaxAndRedata(WaLoginContext context) throws DAOException {
+
+		StringBuilder sbd = new StringBuilder();
+		sbd.append(" update wa_cacu_data   set taxed=  (select f_7  from wa_data where wa_data.pk_wa_data = wa_cacu_data.pk_wa_data), ");
+		sbd.append(" taxedBase=  (select f_6  from wa_data where wa_data.pk_wa_data = wa_cacu_data.pk_wa_data), ");
+		sbd.append(" retaxed= ( select f_9  from wa_data where wa_data.pk_wa_data = wa_cacu_data.pk_wa_data), ");
+		sbd.append(" redata =  (select f_8  from wa_data where wa_data.pk_wa_data = wa_cacu_data.pk_wa_data) ");
+
+		sbd.append(" where wa_cacu_data.pk_wa_class = '" + context.getPk_wa_class() + "' ");
+		getBaseDao().executeUpdate(sbd.toString());
+	}
+
+	/**
+	 * 更新固定项目（常数项目）
+	 * 
+	 * @author zhangg on 2009-9-27
+	 * @throws BusinessException
+	 */
+	private void updateSepecalItem(WaClassItemVO itemVO) throws BusinessException {
+		if (!pk_wa_itemSet.contains(itemVO.getPk_wa_classitem())) {
+			return;
+		}
+
+		// 更新wa_datas中的计算值
+		StringBuffer sqlBuffer = new StringBuffer();
+		sqlBuffer.append("update wa_datas "); // 1
+		sqlBuffer.append("   set wa_datas.caculatevalue = (select " + itemVO.getItemkey() + " "); // 2
+		sqlBuffer.append("                                   from wa_data ");
+		sqlBuffer.append("                                  where wa_data.pk_wa_data = ");
+		sqlBuffer.append("                                        wa_datas.pk_wa_data) ");
+		sqlBuffer.append(" where wa_datas.pk_wa_data in  ");
+		sqlBuffer.append("     (select wa_cacu_data.pk_wa_data "); // 2
+		sqlBuffer.append("        from wa_cacu_data ");
+		sqlBuffer.append("       where wa_cacu_data.pk_wa_class = '"
+				+ getLoginContext().getWaLoginVO().getPk_wa_class() + "' )");
+		sqlBuffer.append("       and wa_datas.pk_wa_classitem = '" + itemVO.getPk_wa_classitem() + "'");
+		String updateWa_datasSql = sqlBuffer.toString();
+
+		// 更新wa_data中的特殊值
+		String where = getCacuRangeWhere()
+				+ " and wa_data.pk_wa_data in (select pk_wa_data from wa_datas where pk_wa_classitem = '"
+				+ itemVO.getPk_wa_classitem() + "') ";
+
+		sqlBuffer = new StringBuffer();
+		sqlBuffer.append("update wa_data "); // 1
+		sqlBuffer.append("   set " + itemVO.getItemkey() + " = (select value "); // 2
+		sqlBuffer.append("                from wa_datas ");
+		sqlBuffer
+				.append("               where wa_datas.pk_wa_data = wa_data.pk_wa_data and wa_datas.pk_wa_classitem = '"
+						+ itemVO.getPk_wa_classitem() + "') ");
+		sqlBuffer.append(where);
+
+		String updateWa_dataSql = sqlBuffer.toString();
+		// TODO
+		// 2016-11-28 zhosuze 薪资加密：薪资发放计算前，先将数据wa_data表中数据恢复，方便计算 begin
+		String where1 = getCacuRangeWhere();
+		String sql = "select * from wa_data " + where1;
+		ArrayList<DataVO> voList = (ArrayList<DataVO>) getBaseDao().executeQuery(sql,
+				new BeanListProcessor(DataVO.class));
+		DataVO[] list2Array = new DataVO[voList.size()];
+		for (int i = 0; i < voList.size(); i++) {
+			list2Array[i] = voList.get(i);
+		}
+		DataVO[] vos = SalaryDecryptUtil.decrypt4Array(list2Array);
+		getBaseDao().updateVOArray(vos);
+		// end
+		executeSQLs(updateWa_datasSql, updateWa_dataSql);
+		// 2016-11-28 zhosuze 薪资加密：薪资发放计算后，将数据加密更新wa_data表中的数据 begin
+		String where2 = getCacuRangeWhere();
+		String sql1 = "select * from wa_data " + where;
+		ArrayList<DataVO> voList1 = (ArrayList<DataVO>) getBaseDao().executeQuery(sql,
+				new BeanListProcessor(DataVO.class));
+		DataVO[] list2Array1 = new DataVO[voList.size()];
+		for (int i = 0; i < voList1.size(); i++) {
+			list2Array1[i] = voList1.get(i);
+		}
+		DataVO[] vos1 = SalaryEncryptionUtil.encryption4Array(list2Array1);
+		getBaseDao().updateVOArray(vos1);
+		// end
+	}
+
+	@Override
+	public String getCacuRangeWhere() {
+		return WherePartUtil.addWhereKeyWord2Condition(WherePartUtil.getCacuRange(getLoginContext().getWaLoginVO()));
+	}
+
+	/**
+	 * 更新固定项目（常数项目）
+	 * 
+	 * @author zhangg on 2009-9-27
+	 * @throws DAOException
+	 */
+	private void updateConstantItem(WaClassItemVO itemVO) throws DAOException {
+		String where = getCacuRangeWhere();
+		String sql = "update wa_data set wa_data." + itemVO.getItemkey() + " = ? " + where;
+		SQLParameter parameter = new SQLParameter();
+		// 但强 固定值加密
+		String vformula = itemVO.getVformula();
+		double value = Double.valueOf(vformula);
+		double encryption = SalaryEncryptionUtil.encryption(value);
+		UFDouble dd = new UFDouble(encryption);
+		parameter.addParam(dd);
+		getBaseDao().executeUpdate(sql, parameter);
+	}
+
+	/**
+	 * 同setWaDataCacuRange4Psn采用不同的策略
+	 * 
+	 * @author zhangg on 2010-5-18
+	 * @param where
+	 * @throws BusinessException
+	 */
+
+	private void setWaDataCacuRange4Class(CaculateTypeVO caculateTypeVO, String where) throws BusinessException {
+		if (caculateTypeVO != null) {
+			// 计算范围
+			boolean all = caculateTypeVO.getRange().booleanValue();
+			if (where == null || all) {
+				where = null;
+			}
+
+			// 计算方式
+			boolean type = caculateTypeVO.getType().booleanValue();
+			if (type) {
+				String addWhere = "  wa_data.checkflag = 'N'  ";
+				where = where == null ? addWhere : (where + " and   " + addWhere);
+			} else {
+				String addWhere = "  wa_data.checkflag = 'N' and wa_data.caculateflag = 'N'   ";
+				where = where == null ? addWhere : (where + " and   " + addWhere);
+			}
+		}
+		// 添加业务权限限制
+		// String poweConditon =
+		// DataPermissionUtils.getDataPermissionSQLWherePart(IHRWADataResCode.WADATA,
+		// IHRWAActionCode.CALCULATE);
+
+		// String poweConditon =
+		// WaPowerSqlHelper.getWaPowerSql("",IHRWADataResCode.WADATA,
+		// IHRWAActionCode.CALCULATE,"");
+		// // 添加 add
+		// if (where == null) {
+		// where = poweConditon;
+		// } else {
+		// where = where + WherePartUtil.formatAddtionalWhere(poweConditon);
+		// }
+		// 数据权限guoqt数据使用权
+		StringBuffer wherepart = new StringBuffer();
+		wherepart.append(where);
+		String powerSql = WaPowerSqlHelper.getWaPowerSql(getLoginContext().getWaLoginVO().getPk_group(),
+				HICommonValue.RESOUCECODE_6007PSNJOB, IHRWADataResCode.WADEFAULT, "wa_data");
+		if (!StringUtil.isEmptyWithTrim(powerSql) && where != null) {
+			wherepart.append(" and " + powerSql);
+			where = wherepart.toString();
+		}
+
+		setWaDataCacuRange4Class(where);
+
+	}
+
+	/**
+	 * 更新标志状态
+	 * 
+	 * @author zhangg on 2009-9-27
+	 * @throws DAOException
+	 */
+	private void updateSates() throws BusinessException {
+		String where = getCacuRangeWhere();
+		String sql = "update wa_data set  wa_data.caculateflag = 'Y' " + where;
+
+		getBaseDao().executeUpdate(sql);
+
+		// liangxr判断是否已经全部计算，如果全部计算修改期间状态
+		where = WherePartUtil.getCommonWhereCondtion4Data(getLoginContext().getWaLoginVO());
+		sql = "select 1 from wa_data where caculateflag = 'N' and stopflag = 'N' and " + where;
+		if (!isValueExist(sql)) {
+			where = WherePartUtil.getCommonWhereCondtion4PeriodState(getLoginContext().getWaLoginVO());
+			updateTableByColKey("wa_periodstate", "caculateflag", UFBoolean.TRUE, where);
+		}
+	}
+
+	/**
+	 * 
+	 * @author zhangg on 2010-7-27
+	 * @param itemVO
+	 * @throws BusinessException
+	 */
+	private void updateDigits(WaClassItemVO itemVO) throws BusinessException {
+		if (DataVOUtils.isDigitsAttribute(itemVO.getItemkey())) {
+
+			int digits = itemVO.getIflddecimal();
+			/**
+			 * 四舍五入， 进位， 舍位 薪资提供的进行方式同普通意义上的进位不同， 需求如下：
+			 * 
+			 * 在小数位数后增加进位方式属性,下拉选择,系统提供进位 舍位和四舍五入三种舍位方式
+			 * 进位，根据用户设定的小数位数,当计算结果中小数位数的的后一位不等于0时小数位数的最后一位加1
+			 * 舍位，根据用户设定的小数位数,不论计算结果中小数位数的后一位是否等于0,均直接舍弃
+			 * 四舍五入,根据用户设定的小数位数,计算结果中小数位数的后一位按照四舍五入的规则进行进位或舍位计算
+			 */
+
+			if (itemVO.getRound_type() == null || itemVO.getRound_type().intValue() == 0) {// 四舍五入
+
+				// String where = getCacuRangeWhere();
+				// String sql = "update wa_data set wa_data." +
+				// itemVO.getItemkey() + " = round((wa_data." +
+				// itemVO.getItemkey() + "), " + digits + " )" + where;
+				// executeSQLs(sql);
+			} else {
+				UFDouble f = UFDouble.ZERO_DBL;
+				if (itemVO.getRound_type().intValue() == 1) {// 进位
+					f = new UFDouble(0.4f);
+				} else if (itemVO.getRound_type().intValue() == 2) {// 舍位操作
+					f = new UFDouble(-0.5f);
+				} else {// 默认四舍五入
+					f = UFDouble.ZERO_DBL;
+				}
+
+				f = f.multiply(Math.pow(0.1, digits));
+				String where = getCacuRangeWhere() + " and wa_data." + itemVO.getItemkey() + " > 0";
+				String sql = "update wa_data set wa_data." + itemVO.getItemkey() + " = round(((wa_data."
+						+ itemVO.getItemkey() + ") + " + f + "), " + digits + " )" + where;
+
+				String where1 = getCacuRangeWhere() + " and wa_data." + itemVO.getItemkey() + " < 0";
+				f = f.multiply(-1);
+				String sql1 = "update wa_data set wa_data." + itemVO.getItemkey() + " = round(((wa_data."
+						+ itemVO.getItemkey() + ") + " + f + "), " + digits + " )" + where1;
+
+				executeSQLs(sql, sql1);
+			}
+
+		}
+
+	}
+
+}

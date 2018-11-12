@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding='UTF-8'?>
+<UIMeta flowmode="true" id="ShopAttendanceMng_um" includejs="ta.js,render.js" jquery="1" jsEditor="0" jsExcel="0">
+    <Widget id="main">
+    </Widget>
+</UIMeta>

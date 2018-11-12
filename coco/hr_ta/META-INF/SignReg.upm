@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="nc.itf.hrsms.shift.SignRegEJB">
+	<public>
+		<component priority="0" singleton="true" remote="true" tx="CMT"  supportAlias="false">
+			<interface>nc.itf.hrsms.ta.SignReg.ISignRegManageMaintain</interface>
+			<implementation>nc.impl.hrsms.ta.SignReg.SignRegManageMaintainImpl</implementation>
+		</component>
+		<component priority="0" singleton="true" remote="true" tx="CMT"  supportAlias="false">
+			<interface>nc.itf.hrsms.ta.SignReg.ISignRegQueryMaintain</interface>
+			<implementation>nc.impl.hrsms.ta.SignReg.SignRegQueryMaintainImpl</implementation>
+		</component>
+	</public>
+</module>

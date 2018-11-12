@@ -1,0 +1,2 @@
+insert into md_component(createtime,creator,description,displayname,dr,fromsourcebmf,help,id,industry,isbizmodel,modifier,modifytime,name,namespace,ownmodule,preload,resid,resmodule,ts,version,versiontype) values( '2009-11-19 10:34:25',null,null,'转正申请',null,'Y',null,'70a0dcc1-69f6-4110-9efe-58cc433f7190','0','N','developer','2016-01-20 09:08:13','regmng','hrtrn','hrtrn',null,'26009reg-000017','6009reg','2018-09-16 13:58:43','160',0)
+/

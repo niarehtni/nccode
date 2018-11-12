@@ -1,0 +1,14 @@
+insert into pub_billtemplet_t(basetab,dr,metadataclass,metadatapath,mixindex,pk_billtemplet,pk_billtemplet_t,pk_layout,pos,position,resid,tabcode,tabindex,tabname,ts,vdef1,vdef2,vdef3) values( 'req',0,'hrtrn.hi_regapply',null,null,'1001Z710000000005HJB','1001ZZ1000000000MQOC',null,0,0,'16009reg0014','psninfo',1,'人员信息','2018-09-16 13:59:28',null,null,null)
+/
+insert into pub_billtemplet_t(basetab,dr,metadataclass,metadatapath,mixindex,pk_billtemplet,pk_billtemplet_t,pk_layout,pos,position,resid,tabcode,tabindex,tabname,ts,vdef1,vdef2,vdef3) values( 'req',0,'hrtrn.hi_regapply',null,1,'1001Z710000000005HJB','1001ZZ1000000000MQOD',null,0,0,'16009reg0016','newinfo',3,'转正后信息','2018-09-16 13:59:28',null,null,null)
+/
+insert into pub_billtemplet_t(basetab,dr,metadataclass,metadatapath,mixindex,pk_billtemplet,pk_billtemplet_t,pk_layout,pos,position,resid,tabcode,tabindex,tabname,ts,vdef1,vdef2,vdef3) values( 'tailinfo',0,'hrtrn.hi_regapply',null,2,'1001Z710000000005HJB','1001ZZ1000000000MQOE',null,2,2,'UC001-0000095','auditinfo',1,'审计信息','2018-09-16 13:59:28',null,null,null)
+/
+insert into pub_billtemplet_t(basetab,dr,metadataclass,metadatapath,mixindex,pk_billtemplet,pk_billtemplet_t,pk_layout,pos,position,resid,tabcode,tabindex,tabname,ts,vdef1,vdef2,vdef3) values( null,0,'hrtrn.hi_regapply',null,null,'1001Z710000000005HJB','1001ZZ1000000000MQOF',null,0,0,'16009reg0013','req',0,'转正申请单','2018-09-16 13:59:28',null,null,null)
+/
+insert into pub_billtemplet_t(basetab,dr,metadataclass,metadatapath,mixindex,pk_billtemplet,pk_billtemplet_t,pk_layout,pos,position,resid,tabcode,tabindex,tabname,ts,vdef1,vdef2,vdef3) values( 'req',0,'hrtrn.hi_regapply',null,1,'1001Z710000000005HJB','1001ZZ1000000000MQOG',null,0,0,'16009reg0015','oldinfo',2,'转正前信息','2018-09-16 13:59:28',null,null,null)
+/
+insert into pub_billtemplet_t(basetab,dr,metadataclass,metadatapath,mixindex,pk_billtemplet,pk_billtemplet_t,pk_layout,pos,position,resid,tabcode,tabindex,tabname,ts,vdef1,vdef2,vdef3) values( null,0,'hrtrn.hi_regapply',null,1,'1001Z710000000005HJB','1001ZZ1000000000MQOH',null,2,2,'16009reg0018','tailinfo',0,'表尾信息','2018-09-16 13:59:28',null,null,null)
+/
+insert into pub_billtemplet_t(basetab,dr,metadataclass,metadatapath,mixindex,pk_billtemplet,pk_billtemplet_t,pk_layout,pos,position,resid,tabcode,tabindex,tabname,ts,vdef1,vdef2,vdef3) values( 'req',0,'hrtrn.hi_regapply',null,null,'1001Z710000000005HJB','1001ZZ1000000000MQOI',null,0,0,'16009reg0041','execinfo',4,'执行信息','2018-09-16 13:59:28',null,null,null)
+/

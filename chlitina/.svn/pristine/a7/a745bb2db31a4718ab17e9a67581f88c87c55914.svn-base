@@ -1,0 +1,199 @@
+package nc.impl.wa.func;
+
+import java.math.BigDecimal;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+
+import org.apache.commons.lang.StringUtils;
+
+import nc.bs.dao.DAOException;
+import nc.bs.framework.common.NCLocator;
+import nc.bs.logging.Logger;
+import nc.hr.frame.persistence.SimpleDocServiceTemplate;
+
+import nc.impl.wa.paydata.caculate.AbstractFormulaExecutor;
+import nc.itf.bd.psn.psndoc.IPsndocQueryService;
+import nc.jdbc.framework.processor.ColumnProcessor;
+import nc.jdbc.framework.processor.MapListProcessor;
+import nc.pubitf.para.SysInitQuery;
+
+
+
+import nc.vo.bd.psn.PsndocVO;
+import nc.vo.hi.psndoc.PsnJobVO;
+import nc.vo.hi.psndoc.PsndocDefVO;
+import nc.vo.pub.BusinessException;
+import nc.vo.pub.lang.UFDate;
+import nc.vo.pub.lang.UFDouble;
+import nc.vo.pub.lang.UFLiteralDate;
+import nc.vo.ta.timeitem.TimeItemCopyVO;
+import nc.vo.wa.classitem.WaClassItemVO;
+import nc.vo.wa.payfile.PayfileVO;
+import nc.vo.wa.period.PeriodVO;
+import nc.vo.wa.pub.WaLoginContext;
+
+public class AvgSalaryFormulaExcutor extends AbstractFormulaExecutor{
+
+	public void excute(Object inarguments, WaLoginContext context)
+			throws BusinessException {
+		//通过pk_wa_class和cyear和cperiod筛选出人员
+		String[] arguments = (String[])inarguments;
+		String pk_wa_class = context.getPk_wa_class();
+		/*String cyear = context.getWaYear();
+		String cperiod = context.getWaPeriod();*/
+		WaClassItemVO vo = (WaClassItemVO)	context.getInitData();
+		String itemkey =  vo.getItemkey();
+		String pk_org = context.getPk_org();
+		String strsql = getbegindate(context, arguments);
+		String sql = "";
+		//跟新临时表wa_cacu_data
+		String updatesql = "";
+		if (isSqlDbs()) {
+			sql += "select (sum((DATEDIFF(day,   begindate,   enddate)+1)*"+itemkey+"/csubdays)/(sum(DATEDIFF(day,   begindate,   enddate)+1)-1))*30 as avgsalary , pk_wa_class, pk_psndoc from (";
+			sql +="select case when "+itemkey+"=0 then enddate else begindate end begindate,";
+			sql +="enddate,cyear,cperiod,"+itemkey+",pk_psndoc, pk_wa_class, cstartdate, ";
+			sql +="cenddate,DATEDIFF(day,   cstartdate,   cenddate)+1 as  csubdays ";
+			sql +=" from (select case when begindate > enddate then null else begindate end begindate, case when begindate > enddate then null else enddate end enddate,";
+			sql +="cyear,cperiod,"+itemkey+",pk_psndoc, pk_wa_class, cstartdate, cenddate,DATEDIFF(day,   cstartdate,   cenddate)+1 as  csubdays";
+			sql +=" from (select case when hbegindate>cstartdate  then hbegindate else cstartdate end begindate,";
+			sql +="case when henddate < cenddate  then henddate else cenddate end enddate,";
+			sql +="cyear,cperiod,"+itemkey+",pk_psndoc, pk_wa_class, cstartdate, cenddate from (";
+			sql +="select hbegindate, henddate,m.pk_psndoc,cyear,cperiod,"+itemkey+", pk_wa_class, cstartdate, cenddate from";
+			sql +="( "+ strsql +" )m,(";
+			sql +="select wa_data.cyear,wa_data.cperiod,wa_data."+itemkey+",wa_data.pk_psndoc,wa_data.pk_wa_class ,waperiod.cstartdate ,waperiod.cenddate";
+			sql +=" from wa_data, wa_waclass waclass, wa_period waperiod,wa_item, wa_classitem  where wa_data.pk_wa_class='"+pk_wa_class +"'";
+			sql +=" and wa_data.pk_wa_class=waclass.pk_wa_class";
+			sql +=" and waclass.pk_periodscheme =waperiod.pk_periodscheme ";
+			sql +=" and waperiod.cyear=wa_data.cyear and waperiod.cperiod=wa_data.cperiod";
+			sql +=" and wa_classitem.pk_wa_class=wa_data.pk_wa_class";
+			sql +=" and wa_item.pk_wa_item=wa_classitem.pk_wa_item and wa_classitem.cyear=wa_data.cyear";
+			sql +=" and wa_classitem.cperiod=wa_data.cperiod and wa_item.avgcalcsalflag='Y'";
+			sql +=" and wa_item.itemkey='"+itemkey+"' and wa_data.pk_org='"+pk_org+"'";
+			sql +=") n where m.pk_psndoc = n.pk_psndoc";
+			sql +=")c )d) j )e where  begindate is not null  group by pk_psndoc,pk_wa_class ";
+			
+			updatesql += "UPDATE wa_cacu_data set cacu_value=avgsalary from ("+sql+") bbb where "
+					+ " bbb.pk_psndoc=wa_cacu_data.pk_psndoc and wa_cacu_data.pk_wa_class=bbb.pk_wa_class and "
+					+ " wa_cacu_data.pk_wa_class='"+pk_wa_class+"' and wa_cacu_data.creator = '"+context.getPk_loginUser()+"'";
+			
+		}else{
+			sql +="select (sum((to_date(enddate,'yyyy-mm-dd')-to_date(begindate,'yyyy-mm-dd')+1)*"+itemkey+"/csubdays)/(sum(to_date(enddate,'yyyy-mm-dd')"
+					+ "-to_date(begindate,'yyyy-mm-dd')+1)-1))*30 as avgsalary , ";
+			sql +="pk_wa_class, pk_psndoc from (";
+			sql +="select case when "+itemkey+"=0 then enddate else begindate end begindate,";
+			sql +="enddate,cyear,cperiod,"+itemkey+",pk_psndoc, pk_wa_class, cstartdate, cenddate,csubdays from (";
+			sql +=" select case when begindate > enddate then null else begindate end begindate, ";
+			sql +="case when begindate > enddate then null else enddate end enddate,";
+			sql +="cyear,cperiod,"+itemkey+",pk_psndoc, pk_wa_class, cstartdate, "
+					+ "cenddate,to_date(cenddate,'yyyy-mm-dd')-to_date(CSTARTDATE,'yyyy-mm-dd')+1 as  csubdays from (";
+			sql +="select case when hbegindate>to_date(cstartdate, 'YYYY-MM-DD')  "
+					+ " then hbegindate else to_date(cstartdate, 'YYYY-MM-DD') end begindate,";
+			sql +="case when henddate < to_date(cenddate, 'YYYY-MM-DD')  then henddate else to_date(cenddate, 'YYYY-MM-DD') end enddate,";
+			sql +="cyear,cperiod,"+itemkey+",pk_psndoc, pk_wa_class, cstartdate, cenddate from (";
+			sql +=" select hbegindate, henddate,m.pk_psndoc,cyear,cperiod,"+itemkey+", pk_wa_class, cstartdate, cenddate from ";
+			sql +="("+strsql+")m,(";
+			sql +=" select wa_data.cyear,wa_data.cperiod,wa_data."+itemkey+",wa_data.pk_psndoc,wa_data.pk_wa_class ,";
+			sql +="waperiod.cstartdate ,waperiod.cenddate from wa_data, wa_waclass waclass, wa_period waperiod,wa_item, wa_classitem  ";
+			sql +=" where wa_data.pk_wa_class='"+pk_wa_class+"' and wa_data.pk_wa_class=waclass.pk_wa_class and";
+			sql +=" waclass.pk_periodscheme =waperiod.pk_periodscheme  and waperiod.cyear=wa_data.cyear and waperiod.cperiod=wa_data.cperiod ";
+			sql +=" and wa_classitem.pk_wa_class=wa_data.pk_wa_class and wa_item.pk_wa_item=wa_classitem.pk_wa_item and wa_classitem.cyear=wa_data.cyear ";
+			sql +=" and wa_classitem.cperiod=wa_data.cperiod and wa_item.avgcalcsalflag='Y' and wa_item.itemkey='"+itemkey+"' and wa_data.pk_org='"+pk_org+"'";
+			sql +=" ) n where m.pk_psndoc = n.pk_psndoc)c )d ) j )e where  begindate is not null  group by pk_psndoc,pk_wa_class ";
+			//sql +="";
+			updatesql +="update wa_cacu_data  set "
+					+ " cacu_value=(select avgsalary from ("+sql+")z,wa_cacu_data wacacu where z.pk_psndoc=wacacu.pk_psndoc "
+							+ " and  wacacu.pk_wa_class ='"+pk_wa_class+"'"
+							+ " and wa_cacu_data.creator = '"+context.getPk_loginUser()+"')";
+		}
+		getBaseDao().executeUpdate(updatesql.toString());
+
+
+	}
+	@SuppressWarnings("all")
+	private String getbegindate(WaLoginContext context, String[] arguments) throws DAOException {
+		String pk_wa_class = context.getPk_wa_class();
+		String cyear = context.getWaYear();
+		String cperiod = context.getWaPeriod();
+		WaClassItemVO vo = (WaClassItemVO)	context.getInitData();
+		String itemkey =  vo.getItemkey();
+		String pk_org = context.getPk_org();
+		Integer month = Integer.parseInt(arguments[1]);
+		String strsql = "";
+		String basedate = ""; 
+		if(arguments[0].equals("salarybegindate")){
+			basedate = "cstartdate";
+		}else if(arguments[0].equals("salaryenddate")){
+			basedate = "cenddate";
+		}else if(arguments[0].equals("sepaydate")){
+			basedate = "sepaydate";
+		}else if(arguments[0].equals("retirementdate")){
+			basedate = "retirementdate";
+		} else {
+			try {
+				String code = SysInitQuery.getParaString(pk_org, "TBMTWHR01");
+				List <TimeItemCopyVO> listvo = (List<TimeItemCopyVO>) this.getBaseDao().retrieveByClause(TimeItemCopyVO.class, "pk_timeitem=(select pk_timeitem from tbm_timeitem "
+						+ "where timeitemcode='"+code+"' and pk_org='"+pk_org+"')");
+				if(null != listvo.get(0).getLeavesetperiod() && listvo.get(0).getLeavesetperiod().toString().equals("3")){
+					basedate = "workagestartdate";
+				}else{
+					basedate = "joinsysdate";
+				}
+			} catch (BusinessException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		if(isSqlDbs()){
+			/**
+			 * sqlserver数据库
+			 */
+			strsql += "select CASE when (DATEADD(MONTH,-"+month+","+basedate+"))<begindate then begindate else DATEADD(MONTH,-"+month+","+basedate+") end hbegindate,";
+			strsql += "CASE when "+basedate+"<enddate or enddate is null or enddate='~' then DATEADD(day,-1,"+basedate+") else enddate end henddate,a.pk_psndoc from (";
+			strsql += "select wa_data.cyear,wa_data.cperiod,wa_data."+itemkey+",wa_data.pk_psndoc,wa_data.pk_wa_class ,"
+					+ "waperiod.cstartdate ,waperiod.cenddate ";
+			strsql += " from wa_data, wa_waclass waclass, wa_period waperiod,wa_item, wa_classitem  where wa_data.pk_wa_class='"+pk_wa_class+"'";
+			strsql += "and wa_data.pk_wa_class=waclass.pk_wa_class and waclass.pk_periodscheme =waperiod.pk_periodscheme ";
+			strsql += "AND waperiod.cyear = wa_data.cyear AND waperiod.cperiod = wa_data.cperiod ";
+			strsql += " and wa_classitem.pk_wa_class=wa_data.pk_wa_class and wa_item.pk_wa_item=wa_classitem.pk_wa_item";
+			strsql += " and wa_classitem.cyear=wa_data.cyear and wa_classitem.cperiod=wa_data.cperiod and wa_item.avgcalcsalflag='Y'";
+			strsql += " and wa_item.itemkey='"+itemkey+"' and wa_data.pk_org='"+pk_org+"' ) a INNER  JOIN (";
+			strsql += "select bd_psndoc.pk_psndoc,hi_psnjob.begindate, hi_psnjob.enddate, hi_psnorg.workagestartdate,"
+					+ "hi_psnorg.joinsysdate,bd_psndoc.retirementdate,bd_psndoc.sepaydate";
+			strsql += " from bd_psndoc ,hi_psnorg, hi_psnjob where bd_psndoc.pk_psndoc = hi_psnjob.pk_psndoc ";
+			strsql += " and hi_psnorg.pk_psndoc=bd_psndoc.pk_psndoc and hi_psnjob.ismonsalary=1 and bd_psndoc.pk_org='"+pk_org+"'";
+			strsql += ")b on a.pk_psndoc=b.pk_psndoc where cyear='"+cyear+"' and cperiod='"+cperiod+"'";
+		}else {
+			/**
+			 * oracle数据库
+			 */
+			strsql +="select CASE when (ADD_MONTHS(to_date("+basedate+", 'YYYY-MM-DD'), -"+month+"))<TO_DATE(begindate, 'YYYY-MM-DD') "
+					+ " then TO_DATE(begindate,'YYYY-MM-DD') else ADD_MONTHS(to_date("+basedate+", 'YYYY-MM-DD'), -"+month+") end hbegindate,";
+			strsql +="CASE when TO_DATE("+basedate+", 'YYYY-MM-DD')<TO_DATE(enddate, 'YYYY-MM-DD') or TO_DATE(enddate, 'YYYY-MM-DD') "
+					+ " is null or TO_DATE(enddate, 'YYYY-MM-DD')='~' then TO_DATE("+basedate+",'YYYY-MM-DD') - 1 else TO_DATE(enddate, 'YYYY-MM-DD') end henddate,a.pk_psndoc from (";
+			strsql +="select wa_data.cyear,wa_data.cperiod,wa_data."+itemkey+",wa_data.pk_psndoc,wa_data.pk_wa_class ,waperiod.cstartdate ,";
+			strsql +=" waperiod.cenddate  from wa_data, wa_waclass waclass, wa_period waperiod,wa_item, wa_classitem  ";
+			strsql +=" where wa_data.pk_wa_class='"+pk_wa_class+"'and wa_data.pk_wa_class=waclass.pk_wa_class and ";
+			strsql +=" waclass.pk_periodscheme =waperiod.pk_periodscheme AND waperiod.cyear = wa_data.cyear AND waperiod.cperiod = wa_data.cperiod  ";
+			strsql +=" and wa_classitem.pk_wa_class=wa_data.pk_wa_class and wa_item.pk_wa_item=wa_classitem.pk_wa_item and wa_classitem.cyear=wa_data.cyear ";
+			strsql +=" and wa_classitem.cperiod=wa_data.cperiod and wa_item.avgcalcsalflag='Y' and wa_item.itemkey='"+itemkey+"' and wa_data.pk_org='"+pk_org+"'";
+			strsql +=" ) a INNER  JOIN (";
+			strsql +=" select bd_psndoc.pk_psndoc,hi_psnjob.begindate, hi_psnjob.enddate, hi_psnorg.workagestartdate,";
+			strsql +=" hi_psnorg.joinsysdate,bd_psndoc.retirementdate,bd_psndoc.sepaydate ";
+			strsql +=" from bd_psndoc ,hi_psnorg, hi_psnjob ";
+			strsql +=" where bd_psndoc.pk_psndoc = hi_psnjob.pk_psndoc  and hi_psnorg.pk_psndoc=bd_psndoc.pk_psndoc ";
+			strsql +=" and hi_psnjob.ismonsalary=1 and bd_psndoc.pk_org='"+pk_org+"')b on a.pk_psndoc=b.pk_psndoc where cyear='"+cyear+"' and cperiod='"+cperiod+"' ";
+			//strsql +="";
+		}
+		
+		return strsql;
+	}
+
+}

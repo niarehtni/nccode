@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding='UTF-8'?>
+<UIMeta flowmode="true" id="main_um" jquery="0">
+    <FlowvLayout autoFill="0" id="flowvlayout4640" widgetId="main">
+        <FlowvPanel id="panelv04640" widgetId="main">
+        	<CanvasLayout className="rightcanvas" id="menucanvas" widgetId="main">
+                <CanvasPanel id="canvasp1" widgetId="main">	
+                	<Menubar height="100%" id="menuMthReport" left="0" position="relative" top="0" widgetId="main" width="100%">
+            		</Menubar>
+                </CanvasPanel>
+            </CanvasLayout>
+        </FlowvPanel>
+        <FlowvPanel id="panelv14640" widgetId="main">
+            <GridComp height="100%" id="gridMonthReport" left="0" position="relative" top="0" widgetId="main" width="100%" autoExpand="1">
+            </GridComp>
+        </FlowvPanel>
+    </FlowvLayout>
+</UIMeta>

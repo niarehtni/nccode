@@ -1,0 +1,320 @@
+package nc.ui.wa.psndocwadoc.model;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import nc.pub.encryption.util.SalaryEncryptionUtil;
+import nc.ui.uif2.model.BillManageModel;
+import nc.ui.wa.salaryadjmgt.WASalaryadjmgtDelegator;
+import nc.vo.hi.wadoc.AdjustWadocPsnInfoVO;
+import nc.vo.hi.wadoc.PsndocWadocMainVO;
+import nc.vo.hi.wadoc.PsndocWadocVO;
+import nc.vo.hi.wadoc.PsndocwadocCommonDef;
+import nc.vo.pub.BusinessException;
+import nc.vo.pub.lang.UFDouble;
+import nc.vo.uif2.LoginContext;
+import nc.vo.wa.adjust.AdjustWadocVO;
+import nc.vo.wa.adjust.BatchAdjustVO;
+import nc.vo.wa.grade.WaGradeVO;
+import nc.vo.wa.item.WaItemVO;
+
+/**
+ * 定调资信息维护 model
+ * 
+ * @author: xuhw
+ * @date: 2009-12-26 上午09:27:04
+ * @since: eHR V6.0
+ * @走查人:
+ * @走查日期:
+ * @修改人:
+ * @修改日期:
+ */
+public class PsndocwadocAppModel extends BillManageModel {
+	private String state = PsndocwadocCommonDef.UNKNOWN_STATE;
+	protected final int UI_MAIN = 0;
+	protected final int UI_MGR_SELF = 1;
+	private boolean isFromHeadOut;
+	private String partflag = "N";
+
+	/** 表头VOS */
+	private PsndocWadocMainVO[] vos;
+	private String querywhere;
+	/** 薪资普调过滤后的VO */
+	private AdjustWadocPsnInfoVO[] adjustWadocPsnInfoVOs;
+
+	/** 定调资信息维护 薪资普调VO */
+	private AdjustWadocVO adjustWadocVO;
+
+	private Map<String, WaItemVO[]> cachedWaItemVOs = new HashMap<String, WaItemVO[]>();
+
+	/**
+	 * 保存 插入
+	 * 
+	 * @author xuhw on 2009-12-31
+	 * @param selectVO
+	 * @throws BusinessException
+	 */
+	public void saveInsertSelectVO(PsndocWadocVO selectVO)
+			throws BusinessException {
+		WASalaryadjmgtDelegator.getPsndocwadocManageService()
+				.insertPsndocWadocVO(selectVO);
+	}
+
+	/**
+	 * 保存 新增
+	 * 
+	 * @author xuhw on 2009-12-31
+	 * @param selectVO
+	 * @throws BusinessException
+	 */
+	public void saveModifySelectVO(PsndocWadocVO selectVO)
+			throws BusinessException {
+		WASalaryadjmgtDelegator.getPsndocwadocManageService()
+				.updatePsndocWadoc(selectVO);
+	}
+
+	/**
+	 * 删除
+	 * 
+	 * @author xuhw on 2009-12-31
+	 * @param selectVO
+	 * @throws BusinessException
+	 */
+	public void deleteByPsndocWadocVO(PsndocWadocVO selectVO) throws Exception {
+		((PsndocwadocModelService) getService()).delete(selectVO);
+	}
+
+	/**
+	 * 批量插入 定调资记录
+	 * 
+	 * @author xuhw on 2009-12-31
+	 * @param selectVO
+	 * @throws BusinessException
+	 */
+	public void insertArray(PsndocWadocVO[] selectVOs) throws BusinessException {
+		WASalaryadjmgtDelegator.getPsndocwadocManageService().insertArray(
+				selectVOs);
+	}
+
+	/**
+	 * 表头 初始化查询 //TODO
+	 * 
+	 * @author xuhw on 2010-1-6
+	 * @param pkOrg
+	 * @param querywhere
+	 * @return
+	 * @throws BusinessException
+	 */
+	public PsndocWadocMainVO[] getWadocMain(String partFlag, String querywhere)
+			throws BusinessException {
+
+		// 保存查询条件
+		setQuerywhere(querywhere);
+		String strWhere = null;
+		// if (deptPower.length() > 0) {//TODO 没有使用DeptPower方法
+		// strWhere += " and " + deptPower;
+		// }
+		vos = getWadocMain(partFlag, querywhere, null, null);
+
+		return vos;
+	}
+
+	/**
+	 * 表头 初始化查询
+	 * 
+	 * @author xuhw on 2010-1-6
+	 * @param pkOrg
+	 * @param querywhere
+	 * @return
+	 * @throws BusinessException
+	 */
+	private PsndocWadocMainVO[] getWadocMain(String partFlag,
+			String querywhere, String strItemPK, String strGrdPK)
+			throws BusinessException {
+		return WASalaryadjmgtDelegator.getPsndocWadocQueryService()
+				.queryWadocMainData(this.getContext(), partFlag, querywhere,
+						null, strItemPK, strGrdPK);
+
+	}
+
+	public String[][] queryAllItemForWadoc(LoginContext context)
+			throws BusinessException {
+		return WASalaryadjmgtDelegator.getPsndocWadocQueryService()
+				.queryAllItemForWadoc(context);
+	}
+
+	/**
+	 * 薪资普调查询<BR>
+	 * 薪资普调是在薪资信息维护的查询基础上进行操作，所以这里借用信息维护的查询对象再次查询，相当于刷新操作<BR>
+	 * 
+	 * @param strPkWaItem
+	 * @param strPkWaGrd
+	 * @return
+	 * @throws BusinessException
+	 */
+	public AdjustWadocVO[] onRefresh4BatchAdjust(BatchAdjustVO batchadjustVO)
+			throws BusinessException {
+		return getWadocMain4BatchAdjust(getContext(), getQuerywhere(),
+				batchadjustVO);
+	}
+
+	/**
+	 * 薪资普调
+	 * 
+	 * @param corpPK
+	 * @param queryConditionDLG
+	 * @param strPkWaItem
+	 * @param strPkWaGrd
+	 * @return
+	 * @throws BusinessException
+	 */
+	private AdjustWadocVO[] getWadocMain4BatchAdjust(LoginContext loginContext,
+			String strWhere, BatchAdjustVO batchadjustVO)
+			throws BusinessException {
+
+		return WASalaryadjmgtDelegator.getPsndocwadocManageService()
+				.queryWadocMainData4AdjustInfo(loginContext, strWhere, null,
+						batchadjustVO);
+
+	}
+
+	/**
+	 * 根据pk查询薪资标准类别
+	 * 
+	 * @author xuhw on 2009-12-22
+	 * @param strPK
+	 * @return
+	 * @throws BusinessException
+	 */
+	public WaGradeVO queryWagradeVoByGradePk(String strPK)
+			throws BusinessException {
+		return WASalaryadjmgtDelegator.getAdjustQueryService()
+				.queryWagradeVoByGradePk(strPK);
+	}
+
+	/**
+	 * 数据导入到
+	 * 
+	 * @author xuhw on 2010-4-20
+	 * @param psndocWadocVOs
+	 * @return
+	 */
+	public PsndocWadocVO[] importData2DB(PsndocWadocVO[] psndocWadocVOs,
+			LoginContext context) throws BusinessException {
+		// 2016-12-06 zhousze 薪资加密：这里处理定调资信息维护导入数据加密处理 begin
+		for (PsndocWadocVO vo : psndocWadocVOs) {
+			vo.setCriterionvalue(vo.getCriterionvalue() == null ? null
+					: new UFDouble(SalaryEncryptionUtil.encryption(vo
+							.getCriterionvalue().toDouble())));
+			vo.setNmoney(vo.getNmoney() == null ? null : new UFDouble(
+					SalaryEncryptionUtil.encryption(vo.getNmoney().toDouble())));
+		}
+		// end
+		return WASalaryadjmgtDelegator.getPsndocwadocManageService()
+				.importData2DB(psndocWadocVOs, context);
+	}
+
+	/**
+	 * 导出数据到Excel<BR>
+	 * 根据查询条件查询出所有符合规则的人员，根据人员PK找出相应的最新标志为true的定调资记录<BR>
+	 * 
+	 * @author xuhw on 2010-5-21
+	 * @param vos
+	 * @return
+	 * @throws BusinessException
+	 */
+	public PsndocWadocVO[] exportData2Excel() throws BusinessException {
+		return WASalaryadjmgtDelegator.getPsndocwadocManageService()
+				.exportData2Excel(vos);
+	}
+
+	public void clear() {
+		this.setAdjustWadocVO(null);
+		setAdjustWadocPsnInfoVOs(null);
+	}
+
+	public PsndocWadocMainVO[] getVos() {
+		return vos;
+	}
+
+	public void setVos(PsndocWadocMainVO[] vos) {
+		this.vos = vos;
+	}
+
+	public String getState() {
+		return state;
+	}
+
+	public void setState(String state) {
+		this.state = state;
+	}
+
+	public int getNodeFlag() {
+		return UI_MAIN;
+	}
+
+	/** 定调资信息维护 薪资普调VO */
+	public AdjustWadocVO getAdjustWadocVO() {
+		if (adjustWadocVO == null) {
+			adjustWadocVO = new AdjustWadocVO();
+		}
+		return adjustWadocVO;
+	}
+
+	/** 定调资信息维护 薪资普调VO */
+	public void setAdjustWadocVO(AdjustWadocVO adjustWadocVO) {
+		this.adjustWadocVO = adjustWadocVO;
+	}
+
+	public AdjustWadocPsnInfoVO[] getAdjustWadocPsnInfoVOs() {
+		return adjustWadocPsnInfoVOs;
+	}
+
+	public void setAdjustWadocPsnInfoVOs(
+			AdjustWadocPsnInfoVO[] adjustWadocPsnInfoVOs) {
+		this.adjustWadocPsnInfoVOs = adjustWadocPsnInfoVOs;
+	}
+
+	public String getQuerywhere() {
+		return querywhere;
+	}
+
+	public void setQuerywhere(String querywhere) {
+		this.querywhere = querywhere;
+	}
+
+	public boolean isFromHeadOut() {
+		return isFromHeadOut;
+	}
+
+	public void setFromHeadOut(boolean isFromHeadOut) {
+		this.isFromHeadOut = isFromHeadOut;
+	}
+
+	public String getPartflag() {
+		return partflag;
+	}
+
+	public void setPartflag(String partflag) {
+		this.partflag = partflag;
+	}
+
+	public Map<String, WaItemVO[]> getCachedWaItemVOs() {
+		return cachedWaItemVOs;
+	}
+
+	// patch to v636 wangqim NCdp205253327
+	// 根据psncode 查询 psndocwadoc
+	public PsndocWadocVO[] queryPsndocWadocsByPsncode(String[] psncodes)
+			throws BusinessException {
+		return WASalaryadjmgtDelegator.getPsndocWadocQueryService()
+				.queryPsndocWadocsByPsncode(psncodes);
+	}
+
+	// 同步人员
+	public void psndocWadocSaveToWainfoVO(PsndocWadocVO[] psndocWadocs)
+			throws BusinessException {
+		WASalaryadjmgtDelegator.getPsndocWadocQueryService()
+				.psndocWadocSaveToWainfoVO(psndocWadocs);
+	}
+}

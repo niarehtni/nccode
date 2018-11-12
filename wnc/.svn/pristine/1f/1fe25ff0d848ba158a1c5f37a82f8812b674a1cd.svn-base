@@ -1,0 +1,13 @@
+<?xml version='1.0' encoding='gb2312'?>
+<module name="jfssvc">
+	<public>
+		<component priority="0" singleton="true" remote="true" tx="CMT" supportAlias="true">
+		  <interface>nc.itf.hi.IContinuousOutOfOfficeAlertService</interface>
+		  <implementation>nc.impl.hi.ContinuousOutOfOfficeAlertServiceImpl</implementation>
+		</component>
+		<component priority="0" singleton="true" remote="true" tx="CMT" supportAlias="true">
+		  <interface>nc.itf.hi.IPsndocSubInfoService4JFS</interface>
+		  <implementation>nc.impl.hi.PsndocSubInfoService4JFSImpl</implementation>
+		</component>
+	</public>
+</module> 

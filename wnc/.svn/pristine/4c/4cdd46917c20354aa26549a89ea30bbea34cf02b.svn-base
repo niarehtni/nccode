@@ -1,0 +1,9 @@
+01035001-0000=Group Insurance
+01035001-0001=Salary Base
+01035001-0002=Define Documents
+01035001-0003=undefine
+01035001-0004=INFOSET code
+01035001-0005=Save failed: Insurance and insurers combined setting exists in the adding data.
+01035001-0006=Save failed: Insurance and insurers combined setting exists in the modifing data.
+01035001-0007=Save failed: Insurance and insurers combined setting exists in the saving data.
+01035001-0008=Current record was operated by another user, please wait for a while and retry.

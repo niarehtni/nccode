@@ -1,0 +1,119 @@
+package nc.ui.hrjf.deptadj.action;
+
+import nc.bs.framework.common.NCLocator;
+import nc.itf.om.IDeptAdjustService;
+import nc.ui.pub.beans.MessageDialog;
+import nc.ui.pubapp.uif2app.actions.DifferentVOSaveAction;
+import nc.ui.uif2.UIState;
+import nc.vo.om.hrdept.AggHRDeptAdjustVO;
+import nc.vo.om.hrdept.HRDeptAdjustVO;
+import nc.vo.pub.BusinessException;
+import nc.vo.pub.lang.UFBoolean;
+import nc.vo.pubapp.pattern.model.entity.bill.IBill;
+import nc.vo.pubapp.pattern.model.transfer.bill.ClientBillCombinServer;
+import nc.vo.pubapp.pattern.model.transfer.bill.ClientBillToServer;
+
+public class DeptadjSaveAction extends DifferentVOSaveAction {
+
+	@Override
+	protected void doAddSave(Object value) throws Exception {
+		IBill[] clientVOs = { (IBill) value };
+
+		ClientBillToServer tool = new ClientBillToServer();
+		String pk_org = getModel().getContext().getPk_org();
+		IBill[] lightVOs = tool.constructInsert(clientVOs);
+		AggHRDeptAdjustVO aggvo = (AggHRDeptAdjustVO) lightVOs[0];
+		if (null == aggvo.getParentVO().getBilldate()) {
+			MessageDialog.showErrorDlg(getModel().getContext().getEntranceUI(), "報錯信息", "制單日期不能為空!");
+			return;
+		}
+		String message = null;
+		try {
+			UFBoolean flag = validatevo(aggvo.getParentVO());
+			if (null != message) {
+				MessageDialog.showErrorDlg(getModel().getContext().getEntranceUI(), "報錯信息", message);
+				return;
+			}
+			if (!flag.booleanValue()) {
+				return;
+			}
+		} catch (BusinessException e) {
+			message = e.getMessage();
+		}
+		if (null == aggvo.getParentVO().getPk_org()) {
+			aggvo.getParentVO().setPk_org(pk_org);
+		}
+		if (null == aggvo.getParentVO().getPk_group()) {
+			aggvo.getParentVO().setPk_group(getModel().getContext().getPk_group());
+		}
+		IBill[] afterUpdateVOs = null;
+
+		if (getService() == null) {
+			throw new BusinessException("service不能为空。");
+		}
+		afterUpdateVOs = getService().insert(lightVOs);
+
+		new ClientBillCombinServer().combine(clientVOs, afterUpdateVOs);
+
+		getModel().directlyAdd(clientVOs[0]);
+		getModel().setUiState(UIState.NOT_EDIT);
+	}
+
+	private UFBoolean validatevo(HRDeptAdjustVO deptadjvo) throws BusinessException {
+		IDeptAdjustService managequery = NCLocator.getInstance().lookup(IDeptAdjustService.class);
+		UFBoolean deptflag = managequery.validateDept(deptadjvo);
+		UFBoolean psnflag = managequery.validatePsn(deptadjvo);
+		if (deptflag.booleanValue() && psnflag.booleanValue()) {
+			return UFBoolean.TRUE;
+		} else {
+			return UFBoolean.FALSE;
+		}
+	}
+
+	@Override
+	protected void doEditSave(Object value) throws Exception {
+		IBill[] clientVOs = { (IBill) value };
+		String pk_org = getModel().getContext().getPk_org();
+		ClientBillToServer tool = new ClientBillToServer();
+
+		IBill[] oldVO = { (IBill) getModel().getSelectedData() };
+
+		IBill[] lightVOs = tool.construct(oldVO, clientVOs);
+		AggHRDeptAdjustVO aggvo = (AggHRDeptAdjustVO) lightVOs[0];
+		String message = null;
+		try {
+			UFBoolean flag = validatevo(aggvo.getParentVO());
+			if (null != message) {
+				MessageDialog.showErrorDlg(getModel().getContext().getEntranceUI(), "報錯信息", message);
+				return;
+			}
+			if (!flag.booleanValue()) {
+				return;
+			}
+		} catch (BusinessException e) {
+			message = e.getMessage();
+		}
+		if (null == aggvo.getParentVO().getBilldate()) {
+			MessageDialog.showErrorDlg(getModel().getContext().getEntranceUI(), "報錯信息", "制單日期不能為空!");
+			return;
+		}
+		if (null == aggvo.getParentVO().getPk_org()) {
+			aggvo.getParentVO().setPk_org(pk_org);
+		}
+		if (null == aggvo.getParentVO().getPk_group()) {
+			aggvo.getParentVO().setPk_group(getModel().getContext().getPk_group());
+		}
+		IBill[] afterUpdateVOs = null;
+
+		if (getService() == null) {
+			throw new BusinessException("service不能为空。");
+		}
+		afterUpdateVOs = getService().update(lightVOs);
+
+		new ClientBillCombinServer().combine(clientVOs, afterUpdateVOs);
+
+		getModel().directlyUpdate(clientVOs[0]);
+		getModel().setUiState(UIState.NOT_EDIT);
+	}
+
+}

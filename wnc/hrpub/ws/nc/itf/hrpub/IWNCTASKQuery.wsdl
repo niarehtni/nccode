@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wsdl:definitions
+xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+xmlns:wsaw="http://www.w3.org/2006/05/addressing/wsdl"
+xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+xmlns:jaxb="http://java.sun.com/xml/ns/jaxb"
+xmlns:jaxws="http://java.sun.com/xml/ns/jaxws"
+jaxb:version="2.0"
+xmlns:ns0="http://hrpub.itf.nc/IWNCTASKQuery"
+targetNamespace="http://hrpub.itf.nc/IWNCTASKQuery">
+
+<jaxws:bindings>
+	<jaxws:package name="nc.itf.hrpub"/>
+</jaxws:bindings>
+
+<wsdl:types>
+   <xsd:schema xmlns:ns="http://hrpub.itf.nc/IWNCTASKQuery"
+			xmlns:nclang="http://ws.uap.nc/lang"
+			attributeFormDefault="unqualified"
+			elementFormDefault="unqualified"
+			targetNamespace="http://hrpub.itf.nc/IWNCTASKQuery" jaxb:version="2.0">
+	<xsd:annotation>
+    	<xsd:appinfo>
+   			<jaxb:schemaBindings>
+    			<jaxb:package name="nc.itf.hrpub"/>
+    		</jaxb:schemaBindings>
+   		</xsd:appinfo>
+   	</xsd:annotation>
+	 <xsd:import namespace="http://ws.uap.nc/lang" schemaLocation="/nc/uap/ws/lang.xsd"/>
+	<xsd:element name="doQuery">
+         <xsd:complexType>
+            <xsd:sequence>
+				<xsd:element name="string"  minOccurs="0" nillable="true" type="xsd:string"/>
+             </xsd:sequence>  
+         </xsd:complexType>
+     </xsd:element>
+	<xsd:element name="doQueryResponse">
+         <xsd:complexType>
+            <xsd:sequence>
+				<xsd:element name="return"  minOccurs="0" nillable="true" type="xsd:string"/>
+             </xsd:sequence>  
+         </xsd:complexType>
+     </xsd:element>
+   </xsd:schema>
+</wsdl:types>
+    <wsdl:message name="doQueryRequest">
+        <wsdl:part name="parameters"  element="ns0:doQuery"/>
+    </wsdl:message>
+    <wsdl:message name="doQueryResponse">
+        <wsdl:part name="parameters"  element="ns0:doQueryResponse"/>
+    </wsdl:message>
+    <wsdl:message name="Exception">
+        <wsdl:part name="Exception"  xmlns:nclang="http://ws.uap.nc/lang"  element="nclang:Exception"/>
+    </wsdl:message>
+
+    <wsdl:portType name="IWNCTASKQueryPortType">
+        <wsdl:operation name="doQuery">
+            <wsdl:input message="ns0:doQueryRequest" wsaw:Action="urn:doQuery"/>
+            <wsdl:output message="ns0:doQueryResponse" wsaw:Action="urn:doQueryResponse"/>
+            <wsdl:fault name="Exception" message="ns0:Exception"/>
+        </wsdl:operation>
+    </wsdl:portType>
+    
+    
+    <wsdl:binding name="IWNCTASKQuerySOAP11Binding" type="ns0:IWNCTASKQueryPortType">
+        <soap:binding transport="http://schemas.xmlsoap.org/soap/http" style="document"/>
+        <wsdl:operation name="doQuery">
+            <soap:operation soapAction="urn:doQuery" style="document"/>
+            <wsdl:input>
+                <soap:body use="literal"/>
+            </wsdl:input>
+            <wsdl:output>
+                <soap:body use="literal"/>
+            </wsdl:output>
+     		<wsdl:fault name="Exception">
+        		<soap:fault name="Exception" use="literal"/>
+      		</wsdl:fault>
+
+        </wsdl:operation>
+    </wsdl:binding>
+    <wsdl:service name="IWNCTASKQuery">
+        <wsdl:port name="IWNCTASKQuerySOAP11port_http" binding="ns0:IWNCTASKQuerySOAP11Binding">
+            <soap:address location="http://localhost/uapws/service/IWNCTASKQuery"/>
+        </wsdl:port>
+    </wsdl:service>
+</wsdl:definitions>

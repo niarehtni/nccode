@@ -1,0 +1,696 @@
+<?xml version="1.0" encoding='UTF-8'?>
+<Widget controllerClazz="nc.bs.hrsms.ta.sss.calendar.ctrl.BatchChangeShiftViewMain" i18nName="a_pub-000160" langDir="node_pub-res" caption="批量调班详细界面" id="main" refId="main" sourcePackage="src/public/">
+    <Attributes>
+    </Attributes>
+    <PageMetas>
+    </PageMetas>
+    <PlugoutDescs>
+        <PlugoutDesc id="scty_outid">
+        </PlugoutDesc>
+    </PlugoutDescs>
+    <PluginDescs>
+        <PluginDesc id="psnList">
+            <PluginDescItem clazztype="java.lang.String" id="psnList">
+            </PluginDescItem>
+        </PluginDesc>
+        <PluginDesc id="deptList">
+            <PluginDescItem clazztype="java.lang.String" id="deptList">
+            </PluginDescItem>
+        </PluginDesc>
+    </PluginDescs>
+    <Events>
+        <Event async="true" methodName="pluginpsnList" onserver="true">
+            <Params>
+                <Param>
+                    <Name>keys</Name>
+                    <Value>
+                    </Value>
+                    <Desc>                        <![CDATA[java.util.Map]]>
+                    </Desc>
+                </Param>
+            </Params>
+            <Action>
+            </Action>
+        </Event>
+        <Event async="true" methodName="plugindeptList" onserver="true">
+            <Params>
+                <Param>
+                    <Name>keys</Name>
+                    <Value>
+                    </Value>
+                    <Desc>                        <![CDATA[java.util.Map]]>
+                    </Desc>
+                </Param>
+            </Params>
+            <Action>
+            </Action>
+        </Event>
+    </Events>
+    <Models>
+        <Datasets>
+            <RefMdDataset caption="HR部门" controlwidgetopeStatus="false" enabled="true" id="$refds_hrjf_hrdept" lazyLoad="true" notNullBody="false" objMeta="hrjf.hrdept" voMeta="nc.vo.om.hrdept.HRDeptVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset caption="用户" controlwidgetopeStatus="false" enabled="false" id="$refds_uap_user" lazyLoad="true" notNullBody="false" objMeta="uap.user" voMeta="nc.vo.sm.UserVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset caption="人员基本信息" controlwidgetopeStatus="false" enabled="true" id="$refds_hrhi_bd_psndoc" lazyLoad="true" notNullBody="false" objMeta="hrhi.bd_psndoc" voMeta="nc.vo.hi.psndoc.PsndocVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset caption="职务" controlwidgetopeStatus="false" enabled="true" id="$refds_hrjf_om_job" lazyLoad="true" notNullBody="false" objMeta="hrjf.om_job" voMeta="nc.vo.om.job.JobVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset caption="地址簿" controlwidgetopeStatus="false" enabled="false" id="$refds_uap_address" lazyLoad="true" notNullBody="false" objMeta="uap.address" voMeta="nc.vo.bd.address.AddressVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset caption="人员类别" controlwidgetopeStatus="false" enabled="true" id="$refds_uap_psncl" lazyLoad="true" notNullBody="false" objMeta="uap.psncl" voMeta="nc.vo.bd.psn.PsnClVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset caption="岗位基本信息" controlwidgetopeStatus="false" enabled="true" id="$refds_hrjf_om_post" lazyLoad="true" notNullBody="false" objMeta="hrjf.om_post" voMeta="nc.vo.om.post.PostVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+             <RefMdDataset caption="组织_集团" controlwidgetopeStatus="false" enabled="true" id="$refds_uap_group" lazyLoad="true" notNullBody="false" objMeta="uap.group" voMeta="nc.vo.org.GroupVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset caption="部门级别(自定义档案)" controlwidgetopeStatus="false" enabled="true" id="$refds_uap_Defdoc-ORG002" lazyLoad="true" notNullBody="false" objMeta="uap.Defdoc-ORG002_0xx" voMeta="nc.vo.bd.defdoc.DefdocVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <Dataset controlwidgetopeStatus="false" enabled="false" id="dsPerson" lazyLoad="true" notNullBody="false" pageSize="10">
+                <FieldRelations>
+                    <FieldRelation id="ref_psn_job" needProcess="true" refDataset="$refds_hrjf_om_job" useCache="false">
+                        <MatchFields>
+                            <Field iscontains="Y" ismatch="Y" readField="pk_job" writeField="pk_job">
+                            </Field>
+                            <Field readField="jobname" writeField="pk_job_jobname">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_job" value="pk_job">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="ref_psn_dept" needProcess="true" refDataset="$refds_hrjf_hrdept" useCache="false">
+                        <MatchFields>
+                            <Field iscontains="Y" ismatch="Y" readField="pk_dept" writeField="pk_dept">
+                            </Field>
+                            <Field readField="name" writeField="pk_dept_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_dept" value="pk_dept">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="ref_psn_post" needProcess="true" refDataset="$refds_hrjf_om_post" useCache="false">
+                        <MatchFields>
+                            <Field iscontains="Y" ismatch="Y" readField="pk_post" writeField="pk_post">
+                            </Field>
+                            <Field readField="postname" writeField="pk_post_postname">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_post" value="pk_post">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="ref_psn_psncl" needProcess="true" refDataset="$refds_uap_psncl" useCache="false">
+                        <MatchFields>
+                            <Field iscontains="Y" ismatch="Y" readField="pk_psncl" writeField="pk_psncl">
+                            </Field>
+                            <Field readField="name" writeField="pk_psncl_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_psncl" value="pk_psncl">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="ref_psn_psndoc" needProcess="true" refDataset="$refds_hrhi_bd_psndoc" useCache="false">
+                        <MatchFields>
+                            <Field readField="name" writeField="pk_psndoc_name">
+                            </Field>
+                            <Field readField="code" writeField="pk_psndoc_code">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_psndoc" value="pk_psndoc">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                </FieldRelations>
+                <Fields>
+                    <Field dataType="String" field="pk_psnjob" id="pk_psnjob" nullAble="true" primaryKey="false" text="pk_psnjob">
+                    </Field>
+                    <Field dataType="String" field="pk_psndoc" id="pk_psndoc" nullAble="true" primaryKey="false" text="pk_psndoc">
+                    </Field>
+                    <Field dataType="String" field="pk_dept" id="pk_dept" nullAble="true" primaryKey="false" text="pk_dept">
+                    </Field>
+                    <Field dataType="String" field="pk_job" id="pk_job" nullAble="true" primaryKey="false" text="pk_job">
+                    </Field>
+                    <Field dataType="String" field="pk_post" id="pk_post" nullAble="true" primaryKey="false" text="pk_post">
+                    </Field>
+                    <Field dataType="String" field="pk_psncl" id="pk_psncl" nullAble="true" primaryKey="false" text="pk_psncl">
+                    </Field>
+                    <Field dataType="String" field="clerkcode" i18nName="w_ta-000054" id="clerkcode" langDir="node_ta-res" nullAble="true" primaryKey="false" text="员工号">
+                    </Field>
+                    <Field dataType="String" i18nName="w_ta-000057" id="pk_psndoc_code" langDir="node_ta-res" nullAble="true" primaryKey="false" sourceField="pk_psndoc" text="人员编码">
+                    </Field>
+                    <Field dataType="String" i18nName="w_ta-000034" id="pk_psndoc_name" langDir="node_ta-res" nullAble="true" primaryKey="false" sourceField="pk_psndoc" text="姓名">
+                    </Field>
+                    <Field dataType="String" i18nName="w_ta-000026" id="pk_dept_name" langDir="node_ta-res" nullAble="true" primaryKey="false" sourceField="pk_dept" text="部门">
+                    </Field>
+                    <Field dataType="String" i18nName="w_ta-000029" id="pk_job_jobname" langDir="node_ta-res" nullAble="true" primaryKey="false" sourceField="pk_job" text="职务">
+                    </Field>
+                    <Field dataType="String" i18nName="w_ta-000033" id="pk_post_postname" langDir="node_ta-res" nullAble="true" primaryKey="false" sourceField="pk_post" text="岗位">
+                    </Field>
+                    <Field dataType="String" i18nName="w_ta-000031" id="pk_psncl_name" langDir="node_ta-res" nullAble="true" primaryKey="false" sourceField="pk_psncl" text="人员类别">
+                    </Field>
+                </Fields>
+                <Events>
+                    <Event async="true" methodName="onDatasetLoad_dsPerson" name="onDataLoad" onserver="true">
+                        <SubmitRule>
+                        </SubmitRule>
+                        <Params>
+                            <Param>
+                                <Name>dataLoadEvent</Name>
+                                <Value>
+                                </Value>
+                                <Desc>                                    <![CDATA[nc.uap.lfw.core.event.DataLoadEvent]]>
+                                </Desc>
+                            </Param>
+                        </Params>
+                        <Action>
+                        </Action>
+                    </Event>
+                </Events>
+            </Dataset>
+            <MdDataset caption="HR部门" controlwidgetopeStatus="false" enabled="false" id="dsDept" lazyLoad="true" notNullBody="false" objMeta="hrjf.hrdept" pageSize="10" voMeta="nc.vo.om.hrdept.HRDeptVO">
+                <FieldRelations>
+                    <FieldRelation id="pk_fatherorg_rel" needProcess="true" refDataset="$refds_hrjf_hrdept" useCache="false">
+                        <MatchFields>
+                            <Field readField="name" writeField="pk_fatherorg_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_dept" value="pk_fatherorg">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_group_rel" needProcess="true" refDataset="$refds_uap_group" useCache="false">
+                        <MatchFields>
+                            <Field readField="name" writeField="pk_group_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_group" value="pk_group">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_org_rel" needProcess="true" refDataset="$refds_uap_org" useCache="false">
+                        <MatchFields>
+                            <Field readField="name" writeField="pk_org_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_org" value="pk_org">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="deptlevel_rel" needProcess="true" refDataset="$refds_uap_Defdoc-ORG002" useCache="false">
+                        <MatchFields>
+                            <Field readField="name" writeField="deptlevel_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_defdoc" value="deptlevel">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="creator_rel" needProcess="true" refDataset="$refds_uap_user" useCache="false">
+                        <MatchFields>
+                            <Field readField="user_name" writeField="creator_user_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="cuserid" value="creator">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="modifier_rel" needProcess="true" refDataset="$refds_uap_user" useCache="false">
+                        <MatchFields>
+                            <Field readField="user_name" writeField="modifier_user_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="cuserid" value="modifier">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="principal_rel" needProcess="true" refDataset="$refds_hrhi_bd_psndoc" useCache="false">
+                        <MatchFields>
+                            <Field readField="name" writeField="principal_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_psndoc" value="principal">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="address_rel" needProcess="true" refDataset="$refds_uap_address" useCache="false">
+                        <MatchFields>
+                            <Field readField="pk_address" writeField="address_pk_address">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_address" value="address">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                </FieldRelations>
+                <Fields>
+                </Fields>
+                <Events>
+                    <Event async="true" methodName="onDatasetLoad_dsDept" name="onDataLoad" onserver="true">
+                        <SubmitRule>
+                        </SubmitRule>
+                        <Params>
+                            <Param>
+                                <Name>dataLoadEvent</Name>
+                                <Value>
+                                </Value>
+                                <Desc>                                    <![CDATA[nc.uap.lfw.core.event.DataLoadEvent]]>
+                                </Desc>
+                            </Param>
+                        </Params>
+                        <Action>
+                        </Action>
+                    </Event>
+                </Events>
+            </MdDataset>
+            <RefMdDataset caption="组织" controlwidgetopeStatus="false" enabled="false" id="$refds_uap_org" lazyLoad="true" notNullBody="false" objMeta="uap.org" voMeta="nc.vo.org.OrgVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset caption="部门级别" controlwidgetopeStatus="false" enabled="false" id="$refds_uap_Defdoc_ORG002" lazyLoad="true" notNullBody="false" objMeta="uap.Defdoc-ORG002_0xx" voMeta="nc.vo.bd.defdoc.DefdocVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            
+            <RefMdDataset caption="班次" controlwidgetopeStatus="false" enabled="false" id="$refds_hrta_bdshift" lazyLoad="true" notNullBody="false" objMeta="hrta.bdshift" voMeta="nc.vo.bd.shift.ShiftVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            
+            <Dataset controlwidgetopeStatus="false" enabled="false" id="dsChangeClassInfo" lazyLoad="false" notNullBody="false">
+                <FieldRelations>
+                
+                	<FieldRelation id="pk_shift_rel" needProcess="true" refDataset="$refds_hrta_bdshift">
+                        <MatchFields>
+                            <Field readField="name" writeField="pk_shift_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_shift" value="pk_shift">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                </FieldRelations>
+                
+                <Fields>
+                    <Field dataType="UFLiteralDate" id="begindate" nullAble="false" primaryKey="false" text="begindate">
+                    </Field>
+                    <Field dataType="UFLiteralDate" id="enddate" nullAble="false" primaryKey="false" text="enddate">
+                    </Field>
+                    <Field dataType="UFBoolean" id="byOriClass" nullAble="true" primaryKey="false" text="byOriClass">
+                    </Field>
+                    <Field dataType="String" id="oriClass" nullAble="true" primaryKey="false" text="oriClass">
+                    </Field>
+                    <Field dataType="String" id="newClass" nullAble="true" primaryKey="false" text="newClass">
+                    </Field>
+                    <Field dataType="String" id="oriClassName" nullAble="true" primaryKey="false" text="oriClassName">
+                    </Field>
+                    <Field dataType="String" id="newClassName" nullAble="true" primaryKey="false" text="newClassName">
+                    </Field>
+                </Fields>
+                <Events>
+                    <Event async="true" methodName="onDatasetLoad_dsChangeClassInfo" name="onDataLoad" onserver="true">
+                        <SubmitRule>
+                        </SubmitRule>
+                        <Params>
+                            <Param>
+                                <Name>dataLoadEvent</Name>
+                                <Value>
+                                </Value>
+                                <Desc>                                    <![CDATA[nc.uap.lfw.core.event.DataLoadEvent]]>
+                                </Desc>
+                            </Param>
+                        </Params>
+                        <Action>
+                        </Action>
+                    </Event>
+                    <Event async="true" methodName="onAfterClassInfoDataChange" name="onAfterDataChange" onserver="true">
+                        <SubmitRule>
+                        </SubmitRule>
+                        <Params>
+                            <Param>
+                                <Name>datasetCellEvent</Name>
+                                <Value>
+                                </Value>
+                                <Desc>                                    <![CDATA[nc.uap.lfw.core.event.DatasetCellEvent]]>
+                                </Desc>
+                            </Param>
+                        </Params>
+                        <Action>
+                        </Action>
+                    </Event>
+                </Events>
+            </Dataset>
+        </Datasets>
+        <ComboDatas>
+            <MDComboDataConf caption="HR部门" fullclassName="32d8fdf6-9428-40a2-8201-d10dc0efb3f9" id="combo_dsDept_depttype">
+            </MDComboDataConf>
+            <MDComboDataConf caption="HR部门" fullclassName="6b533ffa-3e43-4147-8670-ba0f5471fd40" id="combo_dsDept_enablestate">
+            </MDComboDataConf>
+            <MDComboDataConf caption="HR部门" fullclassName="2e8fa516-2b27-4ac5-981b-264f7e34cb09" id="combo_dsDept_dataoriginflag">
+            </MDComboDataConf>
+        </ComboDatas>
+        <RefNodes>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" hrOrgs="false" i18nName="w_ta-000016" id="refnode_dsDept_deptlevel_name" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" read="false" readDs="masterDs" readFields="pk_defdoc,name" refId="" refcode="部门级别(自定义档案)" refnodeDelegator="" relationRefNodeId="" selLeafOnly="false" text="HR部门_部门级别(自定义档案)" usePower="false" writeDs="dsDept" writeFields="deptlevel,deptlevel_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" hrOrgs="false" i18nName="w_ta-000018" id="refnode_dsDept_principal_name" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" read="false" readDs="masterDs" readFields="pk_psndoc,name" refId="" refcode="HR人员(集团树)" refnodeDelegator="" relationRefNodeId="" selLeafOnly="false" text="HR部门_HR人员(集团树)" usePower="false" writeDs="dsDept" writeFields="principal,principal_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" hrOrgs="false" i18nName="w_ta-000017" id="refnode_dsDept_pk_group_name" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" read="false" readDs="masterDs" readFields="pk_group,name" refId="" refcode="集团" refnodeDelegator="" relationRefNodeId="" selLeafOnly="false" text="HR部门_集团" usePower="false" writeDs="dsDept" writeFields="pk_group,pk_group_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" hrOrgs="false" i18nName="w_ta-000020" id="refOriClass" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" read="false" readDs="masterDs" readFields="pk_shift,name" refId="" refcode="班次(业务单元含本门店)" refnodeDelegator="" relationRefNodeId="" selLeafOnly="false" text="班次" usePower="false" writeDs="dsChangeClassInfo" writeFields="oriClass,oriClassName">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" hrOrgs="false" i18nName="w_ta-000021" id="refnode_dsDept_creator_user_name" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" read="false" readDs="masterDs" readFields="cuserid,user_name" refId="" refcode="用户" refnodeDelegator="" relationRefNodeId="" selLeafOnly="false" text="HR部门_用户" usePower="false" writeDs="dsDept" writeFields="creator,creator_user_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" hrOrgs="false" i18nName="w_ta-000022" id="refnode_dsDept_pk_org_name" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" read="false" readDs="masterDs" readFields="pk_org,name" refId="" refcode="业务单元" refnodeDelegator="" relationRefNodeId="" selLeafOnly="false" text="HR部门_业务单元" usePower="false" writeDs="dsDept" writeFields="pk_org,pk_org_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" hrOrgs="false" i18nName="w_ta-000021" id="refnode_dsDept_modifier_user_name" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" read="false" readDs="masterDs" readFields="cuserid,user_name" refId="" refcode="用户" refnodeDelegator="" relationRefNodeId="" selLeafOnly="false" text="HR部门_用户" usePower="false" writeDs="dsDept" writeFields="modifier,modifier_user_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" hrOrgs="false" i18nName="w_ta-000020" id="refNewClass" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" read="false" readDs="masterDs" readFields="pk_shift,name" refId="" refcode="班次(业务单元含本门店)" refnodeDelegator="" relationRefNodeId="" selLeafOnly="false" text="班次" usePower="false" writeDs="dsChangeClassInfo" writeFields="newClass,newClassName">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" hrOrgs="false" i18nName="w_ta-000025" id="refnode_dsDept_pk_fatherorg_name" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" read="false" readDs="masterDs" readFields="pk_dept,name" refId="" refcode="部门HR" refnodeDelegator="" relationRefNodeId="" selLeafOnly="false" text="HR部门_部门HR" usePower="false" writeDs="dsDept" writeFields="pk_fatherorg,pk_fatherorg_name">
+            </NCRefNode>
+        </RefNodes>
+    </Models>
+    <Components>
+        <GridComp autoRowHeight="false" canCopy="false" dataset="dsPerson" editable="false" enabled="true" expandTree="false" id="tblPerson" multiSelect="true" multiSelectShow="false" onPaste="" pagenationTop="false" reference="false" selfDefImageBtnRender="" showColInfo="false" showHeader="true" showImageBtn="false" showNumCol="false" showSumRow="false" sortable="true" visible="true">
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="pk_psnjob" fixedHeader="false" id="pk_psnjob" imageOnly="false" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="pk_psnjob" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="pk_psndoc" fixedHeader="false" id="pk_psndoc" imageOnly="false" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="pk_psndoc" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="pk_dept" fixedHeader="false" id="pk_dept" imageOnly="false" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="pk_dept" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="pk_job" fixedHeader="false" id="pk_job" imageOnly="false" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="pk_job" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="pk_post" fixedHeader="false" id="pk_post" imageOnly="false" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="pk_post" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="pk_psncl" fixedHeader="false" id="pk_psncl" imageOnly="false" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="pk_psncl" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="clerkcode" fixedHeader="false" i18nName="w_ta-000054" langDir="node_ta-res" id="clerkcode" imageOnly="false" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="员工号" textAlign="left" visible="true" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="pk_psndoc_code" fixedHeader="false" i18nName="w_ta-000057" langDir="node_ta-res" id="pk_psndoc_code" imageOnly="false" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="人员编码" textAlign="left" visible="true" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="pk_psndoc_name" fixedHeader="false" i18nName="w_ta-000034" langDir="node_ta-res" id="pk_psndoc_name" imageOnly="false" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="姓名" textAlign="left" visible="true" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="pk_dept_name" fixedHeader="false" i18nName="w_ta-000026" langDir="node_ta-res" id="pk_dept_name" imageOnly="false" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="部门" textAlign="left" visible="true" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="pk_job_jobname" fixedHeader="false" i18nName="w_ta-000029" langDir="node_ta-res" id="pk_job_jobname" imageOnly="false" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="职务" textAlign="left" visible="true" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="pk_post_postname" fixedHeader="false" i18nName="w_ta-000033" langDir="node_ta-res" id="pk_post_postname" imageOnly="false" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="岗位" textAlign="left" visible="true" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="pk_psncl_name" fixedHeader="false" i18nName="w_ta-000031" langDir="node_ta-res" id="pk_psncl_name" imageOnly="false" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="人员类别" textAlign="left" visible="false" width="120">
+            </Column>
+        </GridComp>
+        <FormComp columnCount="2" dataset="dsChangeClassInfo" eleWidth="180" ellipsis="false" enabled="false" id="frmChangeClassInfo" labelMinWidth="0" renderType="1" rowHeight="22" visible="true">
+            <Element allowExtendValue="false" attachNext="false" colSpan="1" dataType="UFLiteralDate" editable="true" editorType="DateText" enabled="true" field="begindate" height="" i18nName="w_ta-000457" id="begindate" imageOnly="false" langDir="node_ta-res" nextLine="false" nullAble="false" rowSpan="1" selectOnly="true" text="开始日期" toolbarType="Custom" visible="true" width="">
+            </Element>
+            <Element allowExtendValue="false" attachNext="false" colSpan="1" dataType="UFLiteralDate" editable="true" editorType="DateText" enabled="true" field="enddate" height="" i18nName="w_ta-000458" id="enddate" imageOnly="false" langDir="node_ta-res" nextLine="false" nullAble="false" rowSpan="1" selectOnly="true" text="结束日期" toolbarType="Custom" visible="true" width="">
+            </Element>
+            <Element allowExtendValue="false" attachNext="false" colSpan="1" dataType="String" editable="true" editorType="Reference" enabled="true" field="newClassName" height="" i18nName="w_ta-000038" id="newClassName" imageOnly="false" langDir="node_ta-res" nextLine="false" nullAble="true" refNode="refNewClass" rowSpan="1" selectOnly="true" text="新班次" toolbarType="Custom" visible="true" width="">
+            </Element>
+            <Element allowExtendValue="false" attachNext="false" colSpan="1" dataType="UFBoolean" editable="true" editorType="CheckBox" enabled="true" field="byOriClass" height="" i18nName="w_ta-000040" id="byOriClass" imageOnly="false" langDir="node_ta-res" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" text="按原班次调整" toolbarType="Custom" visible="true" width="">
+            </Element>
+            <Element allowExtendValue="false" attachNext="false" colSpan="1" dataType="String" editable="true" editorType="Reference" enabled="false" field="oriClassName" height="" i18nName="w_ta-000039" id="oriClassName" imageOnly="false" langDir="node_ta-res" nextLine="true" nullAble="true" refNode="refOriClass" rowSpan="1" selectOnly="true" text="原班次" toolbarType="Custom" visible="true" width="">
+            </Element>
+            <Events>
+                <Event async="true" methodName="onclick" name="onclick" onserver="true">
+                    <SubmitRule>
+                    </SubmitRule>
+                    <Params>
+                        <Param>
+                            <Name>mouseEvent</Name>
+                            <Value>
+                            </Value>
+                            <Desc>                                <![CDATA[nc.uap.lfw.core.event.MouseEvent]]>
+                            </Desc>
+                        </Param>
+                    </Params>
+                    <Action>
+                    </Action>
+                </Event>
+            </Events>
+        </FormComp>
+        <LinkComp hasImg="false" i18nName="w_ta-001148" id="lnkDept" langDir="node_ta-res" target="_blank">
+            <Events>
+                <Event async="true" methodName="onChangeClassByDept" name="onclick" onserver="true">
+                    <SubmitRule>
+                    </SubmitRule>
+                    <Params>
+                        <Param>
+                            <Name>linkEvent</Name>
+                            <Value>
+                            </Value>
+                            <Desc>                                <![CDATA[nc.uap.lfw.core.event.LinkEvent]]>
+                            </Desc>
+                        </Param>
+                    </Params>
+                    <Action>
+                    </Action>
+                </Event>
+            </Events>
+        </LinkComp>
+        <LinkComp hasImg="false" i18nName="w_ta-001149" id="lnkPsn" langDir="node_ta-res" target="_blank">
+            <Events>
+                <Event async="true" methodName="onChangeClassByPsn" name="onclick" onserver="true">
+                    <SubmitRule>
+                    </SubmitRule>
+                    <Params>
+                        <Param>
+                            <Name>linkEvent</Name>
+                            <Value>
+                            </Value>
+                            <Desc>                                <![CDATA[nc.uap.lfw.core.event.LinkEvent]]>
+                            </Desc>
+                        </Param>
+                    </Params>
+                    <Action>
+                    </Action>
+                </Event>
+            </Events>
+        </LinkComp>
+        <ButtonComp enabled="true" i18nName="w_ta-001259" id="btnCancel" langDir="node_ta-res" text="取消" visible="true">
+            <Events>
+                <Event async="true" methodName="doCancel" name="onclick" onserver="false">
+                    <SubmitRule>
+                    </SubmitRule>
+                    <Params>
+                        <Param>
+                            <Name>mouseEvent</Name>
+                            <Value>
+                            </Value>
+                            <Desc>                                <![CDATA[nc.uap.lfw.core.event.MouseEvent]]>
+                            </Desc>
+                        </Param>
+                    </Params>
+                    <Action>                        <![CDATA[parent.hideDialog();]]>
+                    </Action>
+                </Event>
+            </Events>
+        </ButtonComp>
+        <LabelComp enabled="true" i18nName="w_ta-000043" id="lblDept" langDir="node_ta-res" text="按部门调班：" visible="true">
+        </LabelComp>
+        <GridComp autoRowHeight="false" canCopy="false" caption="HR部门" dataset="dsDept" editable="true" enabled="true" expandTree="false" id="tblDept" multiSelect="true" multiSelectShow="false" onPaste="" pagenationTop="false" reference="false" selfDefImageBtnRender="" showColInfo="false" showHeader="true" showImageBtn="false" showNumCol="false" showSumRow="false" sortable="true" visible="true">
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="pk_dept" fixedHeader="false" i18nName="2UC000-000973" id="pk_dept" imageOnly="false" nullAble="false" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="部门主键" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="code" fixedHeader="false" i18nName="w_ta-001287" langDir="node_ta-res" id="code" imageOnly="false" nullAble="false" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="部门编码" textAlign="left" visible="true" width="300">
+            </Column>
+            <Column autoExpand="true" dataType="String" editable="true" editorType="StringText" field="name" fixedHeader="false" i18nName="w_ta-001286" langDir="node_ta-res" id="name" imageOnly="false" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="部门名称" textAlign="left" visible="true" width="300">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="innercode" fixedHeader="false" i18nName="2UC000-000136" id="innercode" imageOnly="false" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="内部编码" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="pk_fatherorg" fixedHeader="false" i18nName="2dept-000009" id="pk_fatherorg" imageOnly="false" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="上级部门" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="Reference" field="pk_fatherorg_name" fixedHeader="false" i18nName="2dept-000009" id="pk_fatherorg_name" imageOnly="false" nullAble="true" refNode="refnode_dsDept_pk_fatherorg_name" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="上级部门" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="pk_group" fixedHeader="false" i18nName="2UC000-000367" id="pk_group" imageOnly="false" nullAble="false" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="所属集团" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="Reference" field="pk_group_name" fixedHeader="false" i18nName="2UC000-000367" id="pk_group_name" imageOnly="false" nullAble="true" refNode="refnode_dsDept_pk_group_name" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="所属集团" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="pk_org" fixedHeader="false" i18nName="2UC000-000356" langDir="node_ta-res" id="pk_org" imageOnly="false" nullAble="false" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="所属业务单元" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="Reference" field="pk_org_name" fixedHeader="false" i18nName="2UC000-000356" langDir="node_ta-res" id="pk_org_name" imageOnly="false" nullAble="true" refNode="refnode_dsDept_pk_org_name" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="所属业务单元" textAlign="left" visible="true" width="300">
+            </Column>
+            <Column autoExpand="false" dataType="Integer" editable="true" editorType="ComboBox" field="depttype" fixedHeader="false" i18nName="2dept-000002" langDir="node_ta-res" id="depttype" imageOnly="false" nullAble="false" refComboData="combo_dsDept_depttype" renderType="ComboRender" showCheckBox="true" sortable="true" sumCol="false" text="部门类型" textAlign="right" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="deptlevel" fixedHeader="false" i18nName="2dept-000005" langDir="node_ta-res" id="deptlevel" imageOnly="false" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="部门级别" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="Reference" field="deptlevel_name" fixedHeader="false" i18nName="2dept-000005" id="deptlevel_name" imageOnly="false" nullAble="true" refNode="refnode_dsDept_deptlevel_name" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="部门级别" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="Memo" editable="true" editorType="TextArea" field="deptduty" fixedHeader="false" i18nName="2dept-000001" id="deptduty" imageOnly="false" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="部门职责" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="UFLiteralDate" editable="true" editorType="DateText" field="createdate" fixedHeader="false" i18nName="2dept-000006" id="createdate" imageOnly="false" nullAble="false" renderType="DateRender" showCheckBox="true" sortable="true" sumCol="false" text="部门成立时间" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="shortname" fixedHeader="false" i18nName="2UC000-000675" id="shortname" imageOnly="false" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="简称" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="mnecode" fixedHeader="false" i18nName="2UC000-000172" id="mnecode" imageOnly="false" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="助记码" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="UFBoolean" editable="true" editorType="CheckBox" field="hrcanceled" fixedHeader="false" i18nName="2dept-000003" id="hrcanceled" imageOnly="false" nullAble="true" renderType="BooleanRender" showCheckBox="true" sortable="true" sumCol="false" text="HR撤销标志" textAlign="center" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="creator" fixedHeader="false" i18nName="2UC000-000155" id="creator" imageOnly="false" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="创建人" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="Reference" field="creator_user_name" fixedHeader="false" i18nName="2UC000-000155" id="creator_user_name" imageOnly="false" nullAble="true" refNode="refnode_dsDept_creator_user_name" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="创建人" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="UFLiteralDate" editable="true" editorType="DateText" field="deptcanceldate" fixedHeader="false" i18nName="2dept-000007" id="deptcanceldate" imageOnly="false" nullAble="true" renderType="DateRender" showCheckBox="true" sortable="true" sumCol="false" text="部门撤销日期" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="UFDateTime" editable="true" editorType="DateTimeText" field="creationtime" fixedHeader="false" i18nName="2UC000-000157" id="creationtime" imageOnly="false" nullAble="true" renderType="DateTimeRender" showCheckBox="true" sortable="true" sumCol="false" text="创建时间" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="modifier" fixedHeader="false" i18nName="2UC000-000490" id="modifier" imageOnly="false" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="最后修改人" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="Reference" field="modifier_user_name" fixedHeader="false" i18nName="2UC000-000490" id="modifier_user_name" imageOnly="false" nullAble="true" refNode="refnode_dsDept_modifier_user_name" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="最后修改人" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="UFDateTime" editable="true" editorType="DateTimeText" field="modifiedtime" fixedHeader="false" i18nName="2UC000-000491" id="modifiedtime" imageOnly="false" nullAble="true" renderType="DateTimeRender" showCheckBox="true" sortable="true" sumCol="false" text="最后修改时间" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="Integer" editable="true" editorType="ComboBox" field="enablestate" fixedHeader="false" i18nName="2UC000-000249" id="enablestate" imageOnly="false" nullAble="true" refComboData="combo_dsDept_enablestate" renderType="ComboRender" showCheckBox="true" sortable="true" sumCol="false" text="启用状态" textAlign="right" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="Integer" editable="true" editorType="IntegerText" field="displayorder" fixedHeader="false" i18nName="2UC000-000489" id="displayorder" imageOnly="false" nullAble="true" renderType="IntegerRender" showCheckBox="true" sortable="true" sumCol="false" text="显示顺序" textAlign="right" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="Integer" editable="true" editorType="ComboBox" field="dataoriginflag" fixedHeader="false" i18nName="2UC000-000151" id="dataoriginflag" imageOnly="false" nullAble="true" refComboData="combo_dsDept_dataoriginflag" renderType="ComboRender" showCheckBox="true" sortable="true" sumCol="false" text="分布式" textAlign="right" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="pk_vid" fixedHeader="false" i18nName="2UC000-000589" id="pk_vid" imageOnly="false" nullAble="false" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="版本主键" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="vname" fixedHeader="false" i18nName="2UC000-000591" id="vname" imageOnly="false" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="版本名称" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="vno" fixedHeader="false" i18nName="2UC000-000590" id="vno" imageOnly="false" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="版本号" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="UFDate" editable="true" editorType="DateText" field="vstartdate" fixedHeader="false" i18nName="2dept-000051" id="vstartdate" imageOnly="false" nullAble="true" renderType="DateRender" showCheckBox="true" sortable="true" sumCol="false" text="版本生效时间" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="UFDate" editable="true" editorType="DateText" field="venddate" fixedHeader="false" i18nName="2dept-000038" id="venddate" imageOnly="false" nullAble="true" renderType="DateRender" showCheckBox="true" sortable="true" sumCol="false" text="版本失效时间" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="UFBoolean" editable="true" editorType="CheckBox" field="orgtype13" fixedHeader="false" i18nName="2dept-000010" id="orgtype13" imageOnly="false" nullAble="true" renderType="BooleanRender" showCheckBox="true" sortable="true" sumCol="false" text="报表" textAlign="center" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="UFBoolean" editable="true" editorType="CheckBox" field="orgtype17" fixedHeader="false" i18nName="2dept-000008" id="orgtype17" imageOnly="false" nullAble="true" renderType="BooleanRender" showCheckBox="true" sortable="true" sumCol="false" text="预算" textAlign="center" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="principal" fixedHeader="false" i18nName="2UC000-000906" id="principal" imageOnly="false" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="负责人" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="Reference" field="principal_name" fixedHeader="false" i18nName="2UC000-000906" id="principal_name" imageOnly="false" nullAble="true" refNode="refnode_dsDept_principal_name" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="负责人" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="tel" fixedHeader="false" i18nName="2UC000-000652" id="tel" imageOnly="false" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="电话" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="address" fixedHeader="false" i18nName="2UC000-000251" id="address" imageOnly="false" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="地址" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="address_pk_address" fixedHeader="false" i18nName="2UC000-000251" id="address_pk_address" imageOnly="false" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="地址" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="Memo" editable="true" editorType="TextArea" field="memo" fixedHeader="false" i18nName="2UC000-000258" id="memo" imageOnly="false" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="备注" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="Integer" editable="true" editorType="IntegerText" field="status" fixedHeader="false" id="status" imageOnly="false" nullAble="true" renderType="IntegerRender" showCheckBox="true" sortable="true" sumCol="false" text="vostatus" textAlign="right" visible="false" width="120">
+            </Column>
+        </GridComp>
+        <ButtonComp enabled="true" i18nName="w_ta-000972" id="btnOK" langDir="node_ta-res" text="确定" visible="true">
+            <Events>
+                <Event async="true" methodName="doOK" name="onclick" onserver="true">
+                    <SubmitRule>
+                        <Widget id="main">
+                            <Dataset id="dsChangeClassInfo" type="ds_all_line">
+                            </Dataset>
+                            <Dataset id="dsDept" type="ds_all_line">
+                            </Dataset>
+                            <Dataset id="dsPerson" type="ds_all_line">
+                            </Dataset>
+                        </Widget>
+                    </SubmitRule>
+                    <Params>
+                        <Param>
+                            <Name>mouseEvent</Name>
+                            <Value>
+                            </Value>
+                            <Desc>                                <![CDATA[nc.uap.lfw.core.event.MouseEvent]]>
+                            </Desc>
+                        </Param>
+                    </Params>
+                    <Action>
+                    </Action>
+                </Event>
+            </Events>
+        </ButtonComp>
+        <ButtonComp enabled="true" i18nName="w_ta-000046" id="btnDept" langDir="node_ta-res" text="按部门调班" visible="true">
+        </ButtonComp>
+        <ButtonComp enabled="true" i18nName="w_ta-000045" id="btnPsn" langDir="node_ta-res" text="按人员调班" visible="true">
+        </ButtonComp>
+        <LabelComp enabled="true" i18nName="w_ta-000044" id="lblPsn" langDir="node_ta-res" text="按人员调班：" visible="true">
+        </LabelComp>
+    </Components>
+    <Menus>
+        <MenuBarComp id="mainMenubar">
+            <MenuItem i18nName="w_TeamBtchChngClss-000013" id="onSave" langDir="ta_nodes" modifiers="2" text="确定">
+                <Events>
+                    <Event async="true" methodName="onSave" name="onclick" onserver="true">
+                        <SubmitRule>
+                            <Widget id="main">
+                                <Dataset id="dsChangeClassInfo" type="ds_all_line">
+                                </Dataset>
+                                <Dataset id="dsDept" type="ds_all_line">
+                                </Dataset>
+                                <Dataset id="dsPerson" type="ds_all_line">
+                                </Dataset>
+                            </Widget>
+                        </SubmitRule>
+                        <Params>
+                            <Param>
+                                <Name>mouseEvent</Name>
+                                <Value>
+                                </Value>
+                                <Desc>                                    <![CDATA[nc.uap.lfw.core.event.MouseEvent]]>
+                                </Desc>
+                            </Param>
+                        </Params>
+                        <Action>
+                        </Action>
+                    </Event>
+                </Events>
+            </MenuItem>
+            <MenuItem id="m_" modifiers="3" sep="true" text="m_">
+            </MenuItem>
+            <MenuItem i18nName="w_TeamBtchChngClss-000012" id="onCancel" langDir="ta_nodes" modifiers="2" text="取消">
+                <Events>
+                    <Event async="true" methodName="onCancel" name="onclick" onserver="true">
+                        <SubmitRule>
+                        </SubmitRule>
+                        <Params>
+                            <Param>
+                                <Name>mouseEvent</Name>
+                                <Value>
+                                </Value>
+                                <Desc>                                    <![CDATA[nc.uap.lfw.core.event.MouseEvent]]>
+                                </Desc>
+                            </Param>
+                        </Params>
+                        <Action>
+                        </Action>
+                    </Event>
+                </Events>
+            </MenuItem>
+        </MenuBarComp>
+    </Menus>
+</Widget>

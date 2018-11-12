@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="gbk"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+	<bean id="general" class="nc.pubapp.pade.code.funnode.FunNodePara">
+        <property name="moduleName" value="twhr" />
+	    <property name="bpfPath" value="test.bpf"/>
+	    <property name="funcode" value="68J61035"/>
+	    <property name="clientPackName" value="nc.ui.twhr.groupinsurance"/>
+			    <property name="metaData" value="groupinsurance\METADATA\groupinsurance.bmf"/>
+	    <property name="xmlPath" value="groupinsurance\src\client\nc\ui\twhr\groupinsurance\ace\view\Groupinsurance_config.xml"/>
+	    <property name="metaDataType" value="singleType" />
+		<property name="funcregispath" value="groupinsurance/funcmodel/groupinsurance/funcregis/68J61035.func" />
+		<property name="quetempath" value="${quetempath}" />
+		<property name="printtempath" value="${printtempath}" />
+		<property name="systembasepath" value="groupinsurance/systemplatebase/groupinsurance/68J61035/68J61035.stb" />
+		<property name="extendSuffix" value=""/>
+		<property name="uif2ModelFilePath" value="groupinsurance\ace\uif2model\68J61035.umf"/>
+		<property name="busiCompName" value="groupinsurance"/>
+		<property name="metaDataId" value="1d40b9cd-7fb8-4868-bc08-ad3f8602595d"/>
+	</bean>
+
+	<bean id="templet" class="nc.pubapp.pade.code.funnode.Templet">
+		<property name="tempStyle" value="1" />
+		<property name="nodeKey" value="" />
+		<property name="templetPath" value="groupinsurance/templet/groupinsurance/billtemplet/68J61035.btf" />
+	</bean>
+	
+	<bean id="FilePackNameBean" class="nc.pubapp.pade.code.engine.FilePackNamePara">
+		<property name="filePackNameList">
+			 <list>
+				  <value>nc.ui.twhr.groupinsurance.action.GroupinsuranceAddLineAction.java</value>
+				  <value>nc.ui.twhr.groupinsurance.handler.BodyAfterEditHandler.java</value>
+				  <value>nc.ui.twhr.groupinsurance.handler.BodyBeforeEditHandler.java</value>
+			 </list>
+		</property>
+	</bean>
+
+</beans>

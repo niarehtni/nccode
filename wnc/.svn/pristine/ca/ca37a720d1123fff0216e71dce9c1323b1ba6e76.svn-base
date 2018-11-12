@@ -1,0 +1,8 @@
+package nc.vo.bd.workcalendar;
+
+public enum CalendarDateType
+{
+  WORKINGDAY,  WEEKENDDAY,  HOLIDAY, OTHERDAY ,OFFICALHOLIDAY;
+  
+  private CalendarDateType() {}
+}

@@ -1,0 +1,55 @@
+package nc.ui.ta.overtime.refmodel;
+
+import nc.ui.bd.ref.AbstractRefModel;
+
+public class SegruleRefModel extends AbstractRefModel {
+
+	public SegruleRefModel() {
+		super();
+		init();
+	}
+	
+	private void init(){
+	
+		setRefNodeName("加班分段依据");
+		setRefTitle("加班分段依据");
+		setFieldCode(new String[] {
+		"code",
+		"name",
+		"datetype",
+		"additionaldays",
+		"isdefault"
+				});
+		setFieldName(new String[] {
+		"编码",
+		"名称",
+		"日历天类型",
+		"外加补休基准天数",
+		"是否默认"
+				});
+		setHiddenFieldCode(new String[] {
+		"pk_segrule",
+		"pk_segrule",
+		"pk_group",
+		"pk_org",
+		"pk_org_v",
+		"creator",
+		"creationtime",
+		"modifier",
+		"modifiedtime",
+		"unittype",
+		"roundtype",
+		"additionalmode",
+		"isenabled",
+		"memo",
+		"makedate"
+			});
+		setPkFieldCode("pk_segrule");
+		setWherePart("1=1 and isenabled='Y' and isnull(dr,0)=0");
+		setTableName("hrta_segrule");
+		setRefCodeField("code");
+		setRefNameField("name");
+	
+	}
+	
+}

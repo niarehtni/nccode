@@ -1,0 +1,475 @@
+package nc.impl.wa.func;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import nc.bs.dao.BaseDAO;
+import nc.bs.dao.DAOException;
+import nc.bs.framework.common.NCLocator;
+import nc.hr.frame.persistence.BaseDAOManager;
+import nc.hr.utils.ResHelper;
+import nc.impl.hr.formula.parser.AbstractFormulaParser;
+import nc.impl.hr.formula.parser.FormulaParseHelper;
+import nc.impl.pubapp.pattern.database.TempTable;
+import nc.impl.wa.paydata.CalculatingDataDEUtil;
+import nc.itf.hr.wa.IItemQueryService;
+import nc.jdbc.framework.SQLParameter;
+import nc.jdbc.framework.processor.ColumnProcessor;
+import nc.jdbc.framework.processor.MapListProcessor;
+import nc.pub.wa.salaryencryption.util.SalaryDecryptUtil;
+import nc.vo.hr.func.FunctionReplaceVO;
+import nc.vo.hr.func.FunctionVO;
+import nc.vo.hr.itemsource.TypeEnumVO;
+import nc.vo.pub.BusinessException;
+import nc.vo.pub.JavaType;
+import nc.vo.pub.lang.UFDouble;
+import nc.vo.wa.category.AssignclsVO;
+import nc.vo.wa.classitem.WaClassItemVO;
+import nc.vo.wa.item.WaItemVO;
+import nc.vo.wa.pub.WaLoginContext;
+import nc.vo.wa.pub.YearPeriodSeperatorVO;
+
+import org.apache.commons.lang.ArrayUtils;
+
+/**
+ * 
+ * @author: zhangg
+ * @date: 2010-5-4 下午02:08:07
+ * @since: eHR V6.0
+ * @走查人:
+ * @走查日期:
+ * @修改人:
+ * @修改日期:
+ */
+public abstract class AbstractWAFormulaParse extends AbstractFormulaParser {
+	private static final long serialVersionUID = 1L;
+	private BaseDAOManager daoManager = null;
+	WaLoginContext context = null;
+	FunctionVO functionVO = null;
+
+	public FunctionVO getFunctionVO() {
+		return functionVO;
+	}
+
+	public void setFunctionVO(FunctionVO functionVO) {
+		this.functionVO = functionVO;
+	}
+
+	String pk_org = null;
+
+	/**
+	 * @author zhangg on 2010-5-10
+	 * @return the daoManager
+	 */
+	public BaseDAOManager getDaoManager() {
+		if (daoManager == null) {
+			daoManager = new BaseDAOManager();
+		}
+		return daoManager;
+	}
+
+	public String coalesce(String selectSql) {
+
+		// 如果是数值型，使用0 ，如果是字符型，使用空字符串代替
+		// 1 字符型
+		// 0 数值型
+		Integer iitemtype = TypeEnumVO.CHARTYPE.value();
+		Object o = getContext().getInitData();
+		if (o != null && o instanceof WaClassItemVO) {
+			WaClassItemVO vo = (WaClassItemVO) o;
+			iitemtype = vo.getIitemtype();
+
+		}
+		if (iitemtype.equals(TypeEnumVO.FLOATTYPE.value())) {
+			return " coalesce((" + selectSql + "), 0)";
+		} else {
+			return " (" + selectSql + ")";
+		}
+
+	}
+
+	public WaLoginContext getContext() {
+		// TODO Auto-generated method stub
+		return this.context;
+	}
+
+	public void setContext(WaLoginContext context) {
+		this.context = context;
+	}
+
+	public abstract FunctionReplaceVO getReplaceStr(String formula) throws BusinessException;
+
+	@Override
+	public String parseAfterValidate(String pk_org, String formula, Object... params) throws BusinessException {
+		String outFormula = formula;
+
+		String tempformula = getFormula(outFormula);
+		while (tempformula != null) {
+
+			FunctionReplaceVO replaceStr = null;
+
+			// zhoumxc 合并补丁，跨薪资方案取值 20140902
+			if (tempformula.contains("waOtherPeriodData")) {
+				replaceStr = getReplaceStr(pk_org, formula);
+			} else {
+				replaceStr = getReplaceStr(tempformula);
+			}
+
+			// guoqt薪资取社保数据公式由3个参数改为了4个参数，
+			// 在对历史数据不做改动的情况下要能正常解析，即使是3个参数也要识别为取社保数据的公式
+			if (!formula.equals(tempformula) && formula.startsWith("valueOfBM")) {
+				outFormula = outFormula.replace(formula, replaceStr.getReplaceStr());
+			} else {
+				outFormula = outFormula.replace(tempformula, replaceStr.getReplaceStr());
+			}
+			tempformula = getFormula(outFormula);
+		}
+
+		return outFormula;
+
+	}
+
+	/**
+	 * zhoumxc 跨薪资方案取值 20140902
+	 */
+	public FunctionReplaceVO getReplaceStr(String pk_org, String formula) throws BusinessException {
+		String[] arguments = getArguments(formula);
+
+		FunctionReplaceVO fvo = new FunctionReplaceVO();
+		String classpk = arguments[0];
+
+		String itemid = arguments[1];
+		String period = arguments[2];
+		// guoqt该方法没有用，而且影响效率
+		// classpk = trans2OrgPk(classpk);
+		String pk_wa_class = arguments[0];
+
+		// zhoumxc 20140819
+		// 单写sql查pk_wa_class，会快十几秒，但会多一个连接数；如果单写sql，直接用pk_wa_class =
+		// XXX，否则用下面的sql
+		String sql = "select classid from  wa_assigncls where pk_sourcecls=? and pk_org=?  ";
+		SQLParameter par = new SQLParameter();
+		par.addParam(pk_wa_class);
+		par.addParam(pk_org);
+		Object value = getDaoManager().getBaseDao().executeQuery(sql, par, new ColumnProcessor());
+		pk_wa_class = (String) (value != null ? value : pk_wa_class);
+
+		// guoqt薪资取本方案或跨方案的上一期间
+		setWa_class(pk_wa_class);
+		YearPeriodSeperatorVO yearPeriodSeperatorVO = trans2YearPeriodSeperatorVO(period);
+
+		fvo.setAliTableName("wa_data");
+		StringBuffer sqlBuffer = new StringBuffer();
+		sqlBuffer.append("select data_source." + itemid + " "); // 1
+		sqlBuffer.append("  from wa_data data_source ");
+		sqlBuffer.append(" where data_source.pk_wa_class = '" + pk_wa_class + "' ");
+		// sqlBuffer.append(" where data_source.pk_wa_class in ('"+pk_wa_class+"',(select classid from  wa_assigncls where pk_sourcecls='"+pk_wa_class+"' and pk_org='"+pk_org+"' ))");
+		sqlBuffer.append("   and data_source.cyear = '" + yearPeriodSeperatorVO.getYear() + "' ");
+		sqlBuffer.append("   and data_source.cperiod = '" + yearPeriodSeperatorVO.getPeriod() + "' ");
+		sqlBuffer.append("   and data_source.pk_psndoc = wa_data.pk_psndoc and  data_source.stopflag = 'N' ");
+		fvo.setReplaceStr(coalesce(sqlBuffer.toString()));
+
+		return fvo;
+
+	}
+
+	/**
+	 * guoqt 跨薪资方案取值 20141015
+	 */
+	public void setWa_class(String pk_wa_class) throws BusinessException {
+		setClassforPeriod(pk_wa_class);
+	}
+
+	public void setClassforPeriod(String pk_wa_class) throws BusinessException {
+	}
+
+	public String getFormula(String inFormula) throws BusinessException {
+
+		Pattern pattern = Pattern.compile(functionVO.getPattern());
+		Matcher matcher = pattern.matcher(inFormula);
+		// 含有函数
+		if (matcher.find()) {
+			return matcher.group();
+		}
+		// guoqt薪资取社保数据公式由3个参数改为了4个参数，
+		// 在对历史数据不做改动的情况下要能正常解析，即使是3个参数也要识别为取社保数据的公式
+		if (inFormula.startsWith("valueOfBM") && functionVO.getPattern().startsWith("valueOfBM") && !matcher.find()) {
+			return inFormula.replace(")", ",f_f)");
+		}
+		return null;
+
+	}
+
+	@Override
+	public String parse(String pk_org, String formula, Object... params) throws BusinessException {
+		context = (WaLoginContext) params[0];
+
+		// 得到functionvo
+		functionVO = (FunctionVO) params[1];
+		this.pk_org = pk_org;
+
+		if (validate(formula)) {
+			return parseAfterValidate(pk_org, formula, params);
+		}
+
+		return formula;
+	}
+
+	public boolean validate(String formula) throws BusinessException {
+		if (formula == null || functionVO == null || functionVO.getPattern() == null) {
+			throw new BusinessException(ResHelper.getString("6001formula", "06001formula0020")
+			/* @res "公式解析器得到变量为空。" */);
+		}
+
+		return FormulaParseHelper.isExist(formula, functionVO);
+	}
+
+	/**
+	 * 解决集团分配到组织下， 应该找到相应的分配类别的问题
+	 * 
+	 * @author zhangg on 2010-5-10
+	 * @param pk_wa_class
+	 * @return
+	 */
+	public String trans2OrgPk(String pk_wa_class) throws BusinessException {
+		String sql = "select classid from wa_assigncls where pk_sourcecls = ? and pk_org = ? ";
+		SQLParameter parameter = new SQLParameter();
+		parameter.addParam(pk_wa_class);
+		parameter.addParam(pk_org);
+
+		AssignclsVO wa_class = getDaoManager().executeQueryVO(sql, parameter, AssignclsVO.class);
+		if (wa_class != null) {
+			pk_wa_class = wa_class.getClassid();
+		}
+
+		return pk_wa_class;
+	}
+
+	/**
+	 * 
+	 * 
+	 * @author zhangg on 2010-5-10
+	 * @param pk_wa_class
+	 * @return
+	 */
+	public WaClassItemVO getClassItemVO(String itemKey) throws BusinessException {
+		String sql = "select * from wa_classitem where pk_wa_class = ? and cyear = ? and cperiod = ? and itemkey = ?";
+		SQLParameter parameter = new SQLParameter();
+		parameter.addParam(getContext().getPk_wa_class());
+		parameter.addParam(getContext().getWaYear());
+		parameter.addParam(getContext().getWaPeriod());
+		parameter.addParam(itemKey);
+
+		WaClassItemVO wa_class = getDaoManager().executeQueryVO(sql, parameter, WaClassItemVO.class);
+
+		return wa_class;
+	}
+
+	/**
+	 * 根据薪资项目ItemKey取得本组织下的对应的薪资项目的pK
+	 * 
+	 * @param itemKey
+	 * @return
+	 * @throws BusinessException
+	 */
+	public String getItemPkByItemKey(String itemKey) throws BusinessException {
+		// String sql =
+		// "select pk_wa_item from wa_item where  itemkey = ? and pk_org = ?";
+
+		String condition = " itemkey = '" + itemKey + "' ";
+
+		IItemQueryService queryService = NCLocator.getInstance().lookup(IItemQueryService.class);
+
+		WaItemVO[] itemvo = queryService.queryWaItemVOsByCondition(getContext(), condition);
+
+		// SQLParameter parameter = new SQLParameter();
+		// parameter.addParam(itemKey);
+		// parameter.addParam(getContext().getPk_org());
+		// WaItemVO wa_itemVO = getDaoManager().executeQueryVO(sql, parameter,
+		// WaItemVO.class);
+		if (ArrayUtils.isEmpty(itemvo)) {
+			return null;
+		} else {
+			return itemvo[0].getPk_wa_item();
+		}
+		// WaItemVO wa_itemVO = itemvo[0];
+		// return wa_itemVO == null? null:wa_itemVO.getPk_wa_item();
+	}
+
+	/**
+	 * 小于该期间的最大期间， 就是上一期间
+	 * 
+	 * @param waGlobalVO
+	 * @return
+	 * @throws BusinessException
+	 *             2007-12-4 上午11:27:27
+	 * @author zhoucx
+	 */
+	public YearPeriodSeperatorVO getPrePeriod() throws BusinessException {
+
+		return getAbsPeriod(1);
+	}
+
+	/**
+	 * 通过相对期间找绝对期间，若找不到则返回{1900，01}
+	 * 
+	 * @param i
+	 *            int 相对偏移数（前几期间，》0时有效，否则直接返回当前；若找不到则返回{1900，01}）
+	 * @exception javsql.SQLException
+	 *                异常说明。
+	 */
+	public YearPeriodSeperatorVO getAbsPeriod(int i) throws BusinessException {
+		if (i == 0) {
+			return getSamePeriod();// 返回当前期间
+		}
+		YearPeriodSeperatorVO yearPeriodSeperatorVO = new YearPeriodSeperatorVO("190001");
+
+		StringBuffer sqlB = new StringBuffer();
+		sqlB.append("select (cyear || cperiod) yearperiod "); // 1
+		sqlB.append("  from wa_periodstate ");
+		sqlB.append(" inner join wa_period on (wa_periodstate.pk_wa_period = ");
+		sqlB.append("                         wa_period.pk_wa_period) ");
+		sqlB.append(" where pk_wa_class = '" + getContext().getPk_wa_class() + "' ");
+		sqlB.append("   and (cyear || cperiod) <= '" + getContext().getWaYear() + getContext().getWaPeriod() + "' ");
+		sqlB.append(" order by yearperiod desc");
+
+		YearPeriodSeperatorVO[] periodSeperatorVOs = getDaoManager().executeQueryVOs(sqlB.toString(),
+				YearPeriodSeperatorVO.class);
+		if (periodSeperatorVOs != null) {
+			for (int j = 0; j < periodSeperatorVOs.length; j++) {
+				if (j == i) {// 找到啦,则附值、退出
+					return periodSeperatorVOs[j];
+				}
+			}
+		}
+		return yearPeriodSeperatorVO;
+	}
+
+	/**
+	 * 
+	 * @author zhangg on 2010-5-11
+	 * @return
+	 */
+
+	public YearPeriodSeperatorVO getSamePeriod() {
+
+		return new YearPeriodSeperatorVO(getContext().getWaYear() + getContext().getWaPeriod());
+	}
+
+	/**
+	 * period syntax '201008'
+	 * 
+	 * @author zhangg on 2010-5-11
+	 * @param period
+	 * @return
+	 * @throws BusinessException
+	 */
+	public YearPeriodSeperatorVO trans2YearPeriodSeperatorVO(String period) throws BusinessException {
+		if (period.equals(same_period)) {
+			return getSamePeriod();
+		} else if (period.equals(pre_period)) {
+			return getPrePeriod();
+		}
+
+		return new YearPeriodSeperatorVO(period);
+
+	}
+
+	protected int getDataBaseType() {
+		return getDaoManager().getBaseDao().getDBType();
+	}
+
+	/**
+	 * 根据update语句判断是否第一次计算来自考勤的数据
+	 * 
+	 * @author guoqt on 2014-7-10
+	 * @return
+	 * @throws BusinessException
+	 */
+	public boolean isFirstupdateTa(String update) throws BusinessException {
+		// 20150824 xiejie3 截取sql
+		// String exist=update.substring(115, 1331);
+		String exist = update.substring(update.indexOf("from"), update.lastIndexOf("where"));
+		// if (new BaseDAO().getDBType() == DBUtil.SQLSERVER) {
+		// exist=update.substring(107, 1317);
+		// }
+		// end
+		StringBuffer sqlBuffer = new StringBuffer();
+		sqlBuffer.append(" select wa_cacu_data.pk_ta_org  ");
+		sqlBuffer.append(exist);
+		// 2015-09-22 zhousze
+		// NCdp205497544当发放项目取值为考勤休假病假数据时，薪资发放计算时计算不了，这里截取的SQL在
+		// inner join的时候重复了，导致报相同的表名称 begin
+		String str = sqlBuffer.toString();
+		if (!str.substring(str.lastIndexOf(",") + 1).trim().equalsIgnoreCase("wa_cacu_data")) {
+			sqlBuffer
+					.append("  , wa_cacu_data where tadata.workorg = wa_cacu_data.workorg and wa_cacu_data.tayear is null or wa_cacu_data.taperiod is null or wa_cacu_data.pk_ta_org is null ");
+		} else {
+			sqlBuffer
+					.append(" where tadata.workorg = wa_cacu_data.workorg and wa_cacu_data.tayear is null or wa_cacu_data.taperiod is null or wa_cacu_data.pk_ta_org is null ");
+		}
+		// end
+		BaseDAOManager manager = new BaseDAOManager();
+		// guoqt如果薪资计算中间表的考勤年度、期间、组织存在一个为空，则证明是第一次计算考勤项目
+		// todo DB2数据库
+		return manager.isValueExist(sqlBuffer.toString());
+	}
+
+	@SuppressWarnings("unchecked")
+	protected String getLastPeriodSQL(String pk_wa_class, String itemid, YearPeriodSeperatorVO lastPeriodVO)
+			throws DAOException, BusinessException {
+		// 上一期間
+		StringBuffer strSQL = new StringBuffer();
+		strSQL.append("select pk_wa_data, pk_psndoc, " + itemid + " "); // 1
+		strSQL.append("  from wa_data ");
+		strSQL.append(" where pk_wa_class = '" + pk_wa_class + "' ");
+		strSQL.append("   and cyear = '" + lastPeriodVO.getYear() + "' ");
+		strSQL.append("   and cperiod = '" + lastPeriodVO.getPeriod() + "' and stopflag='N'");
+
+		List<Map<String, Object>> valueMapList = (List<Map<String, Object>>) new BaseDAO().executeQuery(
+				strSQL.toString(), new MapListProcessor());
+		List<List<Object>> valueList = new ArrayList<List<Object>>();
+		StringBuffer sqlBuffer = new StringBuffer();
+		if (valueMapList != null && valueMapList.size() > 0) {
+			List<String> checkedList = new ArrayList<String>();
+			for (Map<String, Object> valueMap : valueMapList) {
+				checkedList.add((String) valueMap.get("pk_wa_data"));
+			}
+
+			List<String> decryptedList = CalculatingDataDEUtil.filterDecryptedExists(checkedList);
+
+			for (Map<String, Object> valueMap : valueMapList) {
+				UFDouble value = valueMap.get(itemid) == null ? UFDouble.ZERO_DBL : (UFDouble) valueMap.get(itemid);
+				if (!decryptedList.contains(valueMap.get("pk_wa_data"))) {
+					// 未解密
+					value = new UFDouble(SalaryDecryptUtil.decrypt(value.doubleValue()));
+				}
+
+				List<Object> values = new ArrayList<Object>();
+				values.add(valueMap.get("pk_wa_data"));
+				values.add(valueMap.get("pk_psndoc"));
+				values.add(value);
+				valueList.add(values);
+			}
+
+			TempTable tmpTbl = new TempTable();
+			String tableName = tmpTbl.getTempTable("wa_cacu_temp_" + this.getContext().getPk_loginUser().substring(14),
+					new String[] { "pk_wa_data", "pk_psndoc", "itemvalue" }, new String[] { "char(20)", "char(20)",
+							"number(31,8)" }, new JavaType[] { JavaType.String, JavaType.String, JavaType.UFDouble },
+					valueList);
+
+			sqlBuffer.append("select data_source." + itemid + " "); // 1
+			sqlBuffer.append("  from " + tableName + " data_source ");
+			sqlBuffer.append(" where data_source.pk_wa_class = '" + getPk_wa_class() + "' ");
+			sqlBuffer.append("   and data_source.cyear = '" + lastPeriodVO.getYear() + "' ");
+			sqlBuffer.append("   and data_source.cperiod = '" + lastPeriodVO.getPeriod() + "' ");
+			sqlBuffer.append("   and data_source.pk_psndoc = wa_data.pk_psndoc ");
+		} else {
+			sqlBuffer.append("0");
+		}
+		return sqlBuffer.toString();
+	}
+}

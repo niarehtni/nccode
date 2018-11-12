@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<SSOConfig>
+	<regTimeOut>200</regTimeOut>
+	<authenticator classname="nc.sso.bs.DefaultSSOAuthenticator">
+		<listParam key="IPAddress">
+			<string>*.*.*.*</string>
+		</listParam>	
+	</authenticator>
+</SSOConfig>

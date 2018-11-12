@@ -1,0 +1,12 @@
+package nc.itf.hrpub;
+
+public interface IMDExchangeService {
+	/**
+	 * 通过Json做数据交换
+	 * 
+	 * @param jSONString
+	 *            导入的Json串
+	 * @return 返回的Json串
+	 */
+	public String JsonDataExchange(String jSONString);
+}

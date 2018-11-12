@@ -1,0 +1,281 @@
+<?xml version="1.0" encoding='UTF-8'?>
+<Widget controllerClazz="nc.bs.hrsms.ta.sss.calendar.ctrl.ViewShiftDetailViewMain" i18nName="" langDir="" caption="店员班次详细" id="main" refId="main" sourcePackage="src/public/">
+    <Attributes>
+    </Attributes>
+    <PageMetas>
+    </PageMetas>
+    <PlugoutDescs>
+    </PlugoutDescs>
+    <PluginDescs>
+    </PluginDescs>
+    <Models>
+        <Datasets>
+            <Dataset controlwidgetopeStatus="false" enabled="false" id="dsPsnCalHoliday" lazyLoad="true" notNullBody="false" voMeta="nc.vo.ta.psncalendar.PsnCalHoliday">
+                <Fields>
+                    <Field dataType="UFDateTime" field="beginTime" i18nName="w_ta-000080" id="beginTime" langDir="node_ta-res" nullAble="true" primaryKey="false" text="开始时间">
+                    </Field>
+                    <Field dataType="UFDateTime" field="endTime" i18nName="w_ta-000081" id="endTime" langDir="node_ta-res" nullAble="true" primaryKey="false" text="结束时间">
+                    </Field>
+                    <Field dataType="String" field="holidayName" i18nName="w_ta-000082" id="holidayName" langDir="node_ta-res" nullAble="true" primaryKey="false" text="节日名称">
+                    </Field>
+                </Fields>
+                <Events>
+                    <Event async="true" methodName="onDataLoad_dsPsnCalHoliday" name="onDataLoad" onserver="true">
+                        <SubmitRule>
+                        </SubmitRule>
+                        <Params>
+                            <Param>
+                                <Name>dataLoadEvent</Name>
+                                <Value>
+                                </Value>
+                                <Desc>                                    <![CDATA[nc.uap.lfw.core.event.DataLoadEvent]]>
+                                </Desc>
+                            </Param>
+                        </Params>
+                        <Action>
+                        </Action>
+                    </Event>
+                </Events>
+            </Dataset>
+            <Dataset controlwidgetopeStatus="false" enabled="false" id="dsPsnWorkTime" lazyLoad="true" notNullBody="false">
+                <Fields>
+                    <Field dataType="UFDateTime" i18nName="w_ta-000080" id="kssj" langDir="node_ta-res" nullAble="true" primaryKey="false" text="开始时间">
+                    </Field>
+                    <Field dataType="UFDateTime" i18nName="w_ta-000081" id="jssj" langDir="node_ta-res" nullAble="true" primaryKey="false" text="结束时间">
+                    </Field>
+                    <Field dataType="String" i18nName="w_ta-000083" id="checkinflag" langDir="node_ta-res" nullAble="true" primaryKey="false" text="上班刷卡">
+                    </Field>
+                    <Field dataType="String" i18nName="w_ta-000084" id="checkoutflag" langDir="node_ta-res" nullAble="true" primaryKey="false" text="下班刷卡">
+                    </Field>
+                </Fields>
+                <Events>
+                    <Event async="true" methodName="onDataLoad_dsPsnWorkTime" name="onDataLoad" onserver="true">
+                        <SubmitRule>
+                        </SubmitRule>
+                        <Params>
+                            <Param>
+                                <Name>dataLoadEvent</Name>
+                                <Value>
+                                </Value>
+                                <Desc>                                    <![CDATA[nc.uap.lfw.core.event.DataLoadEvent]]>
+                                </Desc>
+                            </Param>
+                        </Params>
+                        <Action>
+                        </Action>
+                    </Event>
+                </Events>
+            </Dataset>
+            <RefMdDataset caption="组织" controlwidgetopeStatus="false" enabled="false" id="$refds_uap_org" lazyLoad="true" notNullBody="false" objMeta="uap.org" voMeta="nc.vo.org.OrgVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <Dataset controlwidgetopeStatus="false" enabled="false" id="dsShift" lazyLoad="false" notNullBody="false">
+                <FieldRelations>
+                    <FieldRelation id="pk_org_rel" needProcess="true" refDataset="$refds_uap_org">
+                        <MatchFields>
+                            <Field iscontains="Y" ismatch="Y" readField="pk_org" writeField="pk_org">
+                            </Field>
+                            <Field readField="name" writeField="pk_org_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_org" value="pk_org">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_shifttype_rel" needProcess="true" refDataset="$refds_hrta_bdshifttype">
+                        <MatchFields>
+                            <Field iscontains="Y" ismatch="Y" readField="pk_shifttype" writeField="pk_shifttype">
+                            </Field>
+                            <Field readField="name" writeField="pk_shifttype_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_shifttype" value="pk_shifttype">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                </FieldRelations>
+                <Fields>
+                    <Field dataType="String" i18nName="w_ta-000086" id="psnname" langDir="node_ta-res" nullAble="true" primaryKey="false" text="人员姓名">
+                    </Field>
+                    <Field dataType="UFLiteralDate" i18nName="w_ta-000087" id="calendar" langDir="node_ta-res" nullAble="true" primaryKey="false" text="日期">
+                    </Field>
+                    <Field dataType="String" i18nName="w_ta-000088" id="shiftcode" langDir="node_ta-res" nullAble="true" primaryKey="false" text="班次编码">
+                    </Field>
+                    <Field dataType="String" i18nName="w_ta-000089" id="shiftname" langDir="node_ta-res" nullAble="true" primaryKey="false" text="班次名称">
+                    </Field>
+                    <Field dataType="String" i18nName="w_ta-000090" id="pk_shifttype" langDir="node_ta-res" nullAble="true" primaryKey="false" text="班次类别">
+                    </Field>
+                    <Field dataType="String" i18nName="w_ta-000090" id="pk_shifttype_name" langDir="node_ta-res" nullAble="true" primaryKey="false" sourceField="pk_shifttype" text="班次类别">
+                    </Field>
+                    <Field dataType="String" i18nName="w_ta-000091" id="pk_org" langDir="node_ta-res" nullAble="true" primaryKey="false" text="业务单元">
+                    </Field>
+                    <Field dataType="String" i18nName="w_ta-000091" id="pk_org_name" langDir="node_ta-res" nullAble="true" primaryKey="false" sourceField="pk_org" text="业务单元">
+                    </Field>
+                    <Field dataType="UFDateTime" i18nName="w_ta-000092" id="timebegintime" langDir="node_ta-res" nullAble="true" primaryKey="false" text="刷卡开始时间">
+                    </Field>
+                    <Field dataType="UFDateTime" i18nName="w_ta-000093" id="timeendtime" langDir="node_ta-res" nullAble="true" primaryKey="false" text="刷卡结束时间">
+                    </Field>
+                    <Field dataType="String" i18nName="w_TeamClassDetail-000037" id="issinglecard" langDir="ta_nodes" nullAble="true" primaryKey="false" text="支持单次刷卡">
+                    </Field>
+                    <Field dataType="String" i18nName="w_ta-000094" id="isotflexible" langDir="node_ta-res" nullAble="true" primaryKey="false" text="上下班时间弹性">
+                    </Field>
+                    <Field dataType="Decimal" i18nName="w_ta-000095" id="gzsj" langDir="node_ta-res" nullAble="true" primaryKey="false" text="工作时长">
+                    </Field>
+                    <Field dataType="UFDateTime" i18nName="w_ta-000096" id="begintime" langDir="node_ta-res" nullAble="true" primaryKey="false" text="上班时间">
+                    </Field>
+                    <Field dataType="UFDateTime" i18nName="w_ta-000097" id="endtime" langDir="node_ta-res" nullAble="true" primaryKey="false" text="下班时间">
+                    </Field>
+                    <Field dataType="String" i18nName="w_ta-000098" id="isrttimeflexible" langDir="node_ta-res" nullAble="true" primaryKey="false" text="工休时间是否弹性">
+                    </Field>
+                    <Field dataType="String" i18nName="w_ta-000099" id="cancelflag" langDir="node_ta-res" nullAble="true" primaryKey="false" text="遇假日排班是否取消">
+                    </Field>
+                    <Field dataType="UFDateTime" i18nName="w_ta-000100" id="earlyBeginTime" langDir="node_ta-res" nullAble="true" primaryKey="false" text="最早上班时间">
+                    </Field>
+                    <Field dataType="UFDateTime" i18nName="w_ta-000101" id="lateEndTime" langDir="node_ta-res" nullAble="true" primaryKey="false" text="最晚下班时间">
+                    </Field>
+                    <Field dataType="UFDateTime" i18nName="w_ta-000102" id="lateBeginTime" langDir="node_ta-res" nullAble="true" primaryKey="false" text="最晚上班时间">
+                    </Field>
+                    <Field dataType="UFDateTime" i18nName="w_ta-000103" id="earlyEndTime" langDir="node_ta-res" nullAble="true" primaryKey="false" text="最早下班时间">
+                    </Field>
+                    <Field dataType="String" i18nName="w_ta-000104" id="includenightshift" langDir="node_ta-res" nullAble="true" primaryKey="false" text="是否夜班">
+                    </Field>
+                    <Field dataType="UFDateTime" i18nName="w_ta-000105" id="nightbegintime" langDir="node_ta-res" nullAble="true" primaryKey="false" text="夜班开始时间">
+                    </Field>
+                    <Field dataType="UFDateTime" i18nName="w_ta-000106" id="nightendtime" langDir="node_ta-res" nullAble="true" primaryKey="false" text="夜班结束时间">
+                    </Field>
+                </Fields>
+                <Events>
+                    <Event async="true" methodName="onDataLoad_dsShift" name="onDataLoad" onserver="true">
+                        <SubmitRule>
+                        </SubmitRule>
+                        <Params>
+                            <Param>
+                                <Name>dataLoadEvent</Name>
+                                <Value>
+                                </Value>
+                                <Desc>                                    <![CDATA[nc.uap.lfw.core.event.DataLoadEvent]]>
+                                </Desc>
+                            </Param>
+                        </Params>
+                        <Action>
+                        </Action>
+                    </Event>
+                </Events>
+            </Dataset>
+            <RefMdDataset caption="班次类别" controlwidgetopeStatus="false" enabled="false" id="$refds_hrta_bdshifttype" lazyLoad="true" notNullBody="false" objMeta="hrta.bdshifttype" voMeta="nc.vo.bd.shift.ShiftTypeVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <Dataset controlwidgetopeStatus="false" enabled="false" id="dsRestTime" lazyLoad="true" notNullBody="false">
+                <Fields>
+                    <Field dataType="UFDateTime" i18nName="w_ta-000080" id="begintime" langDir="node_ta-res" nullAble="true" primaryKey="false" text="开始时间">
+                    </Field>
+                    <Field dataType="UFDateTime" i18nName="w_ta-000081" id="endtime" langDir="node_ta-res" nullAble="true" primaryKey="false" text="结束时间">
+                    </Field>
+                    <Field dataType="UFDouble" i18nName="w_ta-000107" id="resttime" langDir="node_ta-res" nullAble="true" primaryKey="false" text="休息时长">
+                    </Field>
+                    <Field dataType="String" i18nName="w_ta-000108" id="checkflag" langDir="node_ta-res" nullAble="true" primaryKey="false" text="是否刷卡">
+                    </Field>
+                </Fields>
+                <Events>
+                    <Event async="true" methodName="onDataLoad_dsRestTime" name="onDataLoad" onserver="true">
+                        <SubmitRule>
+                        </SubmitRule>
+                        <Params>
+                            <Param>
+                                <Name>dataLoadEvent</Name>
+                                <Value>
+                                </Value>
+                                <Desc>                                    <![CDATA[nc.uap.lfw.core.event.DataLoadEvent]]>
+                                </Desc>
+                            </Param>
+                        </Params>
+                        <Action>
+                        </Action>
+                    </Event>
+                </Events>
+            </Dataset>
+        </Datasets>
+    </Models>
+    <Components>
+        <GridComp autoRowHeight="false" canCopy="false" dataset="dsRestTime" editable="true" enabled="true" expandTree="false" id="gridRestTime" multiSelect="false" onPaste="" pagenationTop="false" reference="false" selfDefImageBtnRender="" showColInfo="false" showHeader="true" showImageBtn="false" showNumCol="false" showSumRow="false" sortable="true" visible="true">
+            <Column autoExpand="false" dataType="UFDateTime" editable="true" editorType="DateTimeText" field="begintime" fixedHeader="false" i18nName="w_ta-000080" id="begintime" imageOnly="false" langDir="node_ta-res" nullAble="true" renderType="DateTimeRender" showCheckBox="true" sortable="true" sumCol="false" text="开始时间" textAlign="left" visible="true" width="150">
+            </Column>
+            <Column autoExpand="false" dataType="UFDateTime" editable="true" editorType="DateTimeText" field="endtime" fixedHeader="false" i18nName="w_ta-000081" id="endtime" imageOnly="false" langDir="node_ta-res" nullAble="true" renderType="DateTimeRender" showCheckBox="true" sortable="true" sumCol="false" text="结束时间" textAlign="left" visible="true" width="150">
+            </Column>
+            <Column autoExpand="false" dataType="UFDouble" editable="true" editorType="DecimalText" field="resttime" fixedHeader="false" i18nName="w_ta-000107" id="resttime" imageOnly="false" langDir="node_ta-res" nullAble="true" renderType="DecimalRender" showCheckBox="true" sortable="true" sumCol="false" text="休息时长" textAlign="right" visible="true" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="UFBoolean" editable="true" editorType="StringText" field="checkflag" fixedHeader="false" i18nName="w_ta-000108" id="checkflag" imageOnly="false" langDir="node_ta-res" nullAble="true" renderType="DefaultRender" showCheckBox="false" sortable="true" sumCol="false" text="是否刷卡" textAlign="left" visible="true" width="120">
+            </Column>
+        </GridComp>
+        <FormComp columnCount="2" dataset="dsShift" eleWidth="150" ellipsis="false" enabled="false" id="frmshift" labelMinWidth="0" renderType="6" rowHeight="22" visible="true">
+            <Element attachNext="false" colSpan="1" dataType="String" editable="true" editorType="StringText" enabled="true" field="psnname" height="" i18nName="w_ta-000086" id="psnname" imageOnly="false" langDir="node_ta-res" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" text="人员姓名" toolbarType="Custom" visible="true" width="150">
+            </Element>
+            <Element attachNext="false" colSpan="1" dataType="UFLiteralDate" editable="true" editorType="DateText" enabled="true" field="calendar" height="" i18nName="w_ta-000087" id="calendar" imageOnly="false" langDir="node_ta-res" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" text="日期" toolbarType="Custom" visible="true" width="150">
+            </Element>
+            <Element attachNext="false" colSpan="1" dataType="String" editable="true" editorType="StringText" enabled="true" field="shiftcode" height="" i18nName="w_ta-000088" id="shiftcode" imageOnly="false" langDir="node_ta-res" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" text="班次编码" toolbarType="Custom" visible="false" width="150">
+            </Element>
+            <Element attachNext="false" colSpan="1" dataType="String" editable="true" editorType="StringText" enabled="true" field="shiftname" height="" i18nName="w_ta-000089" id="shiftname" imageOnly="false" langDir="node_ta-res" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" text="班次名称" toolbarType="Custom" visible="true" width="150">
+            </Element>
+            <Element attachNext="false" colSpan="1" dataType="String" editable="true" editorType="StringText" enabled="true" field="pk_shifttype_name" height="" i18nName="w_ta-000090" id="pk_shifttype_name" imageOnly="false" langDir="node_ta-res" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" text="班次类别" toolbarType="Custom" visible="false" width="150">
+            </Element>
+            <Element attachNext="false" colSpan="1" dataType="String" editable="true" editorType="StringText" enabled="true" field="pk_org_name" height="" i18nName="w_ta-000091" id="pk_org_name" imageOnly="false" langDir="node_ta-res" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" text="业务单元" toolbarType="Custom" visible="true" width="150">
+            </Element>
+            <Element attachNext="false" colSpan="1" dataType="UFDateTime" editable="true" editorType="DateTimeText" enabled="true" field="timebegintime" height="" i18nName="w_ta-000092" id="timebegintime" imageOnly="false" langDir="node_ta-res" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" text="刷卡开始时间" toolbarType="Custom" visible="true" width="150">
+            </Element>
+            <Element attachNext="false" colSpan="1" dataType="UFDateTime" editable="true" editorType="DateTimeText" enabled="true" field="timeendtime" height="" i18nName="w_ta-000093" id="timeendtime" imageOnly="false" langDir="node_ta-res" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" text="刷卡结束时间" toolbarType="Custom" visible="true" width="150">
+            </Element>
+            <Element attachNext="false" colSpan="1" dataType="String" editable="true" editorType="StringText" enabled="true" field="isotflexible" height="" i18nName="w_ta-000094" id="isotflexible" imageOnly="false" langDir="node_ta-res" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" text="上下班时间弹性" toolbarType="Custom" visible="true" width="150">
+            </Element>
+            <Element attachNext="false" colSpan="1" dataType="Decimal" editable="true" editorType="DecimalText" enabled="true" field="gzsj" height="" i18nName="w_ta-000095" id="gzsj" imageOnly="false" langDir="node_ta-res" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" text="工作时长" toolbarType="Custom" visible="true" width="150">
+            </Element>
+            <Element attachNext="false" colSpan="1" dataType="UFDateTime" editable="true" editorType="DateTimeText" enabled="true" field="begintime" height="" i18nName="w_ta-000096" id="begintime" imageOnly="false" langDir="node_ta-res" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" text="上班时间" toolbarType="Custom" visible="true" width="150">
+            </Element>
+            <Element attachNext="false" colSpan="1" dataType="UFDateTime" editable="true" editorType="DateTimeText" enabled="true" field="endtime" height="" i18nName="w_ta-000097" id="endtime" imageOnly="false" langDir="node_ta-res" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" text="下班时间" toolbarType="Custom" visible="true" width="150">
+            </Element>
+            <Element attachNext="false" colSpan="1" dataType="UFDateTime" editable="true" editorType="DateTimeText" enabled="true" field="earlyBeginTime" height="" i18nName="w_ta-000100" id="earlyBeginTime" imageOnly="false" langDir="node_ta-res" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" text="最早上班时间" toolbarType="Custom" visible="true" width="150">
+            </Element>
+            <Element attachNext="false" colSpan="1" dataType="UFDateTime" editable="true" editorType="DateTimeText" enabled="true" field="lateBeginTime" height="" i18nName="w_ta-000102" id="lateBeginTime" imageOnly="false" langDir="node_ta-res" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" text="最晚上班时间" toolbarType="Custom" visible="true" width="150">
+            </Element>
+            <Element attachNext="false" colSpan="1" dataType="UFDateTime" editable="true" editorType="DateTimeText" enabled="true" field="earlyEndTime" height="" i18nName="w_ta-000103" id="earlyEndTime" imageOnly="false" langDir="node_ta-res" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" text="最早下班时间" toolbarType="Custom" visible="true" width="150">
+            </Element>
+            <Element attachNext="false" colSpan="1" dataType="UFDateTime" editable="true" editorType="DateTimeText" enabled="true" field="lateEndTime" height="" i18nName="w_ta-000101" id="lateEndTime" imageOnly="false" langDir="node_ta-res" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" text="最晚下班时间" toolbarType="Custom" visible="true" width="150">
+            </Element>
+            <Element attachNext="false" colSpan="1" dataType="String" editable="true" editorType="StringText" enabled="true" field="issinglecard" height="" i18nName="w_TeamClassDetail-000037" id="issinglecard" imageOnly="false" langDir="ta_nodes" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" text="支持单次刷卡" toolbarType="Custom" visible="true" width="150">
+            </Element>
+            <Element attachNext="false" colSpan="1" dataType="String" editable="true" editorType="StringText" enabled="true" field="isrttimeflexible" height="" i18nName="w_ta-000098" id="isrttimeflexible" imageOnly="false" langDir="node_ta-res" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" text="工休时间是否弹性" toolbarType="Custom" visible="true" width="150">
+            </Element>
+            <Element attachNext="false" colSpan="1" dataType="String" editable="true" editorType="StringText" enabled="true" field="cancelflag" height="" i18nName="w_ta-000099" id="cancelflag" imageOnly="false" langDir="node_ta-res" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" text="遇假日排班是否取消" toolbarType="Custom" visible="true" width="150">
+            </Element>
+            <Element attachNext="false" colSpan="1" dataType="String" editable="true" editorType="StringText" enabled="true" field="includenightshift" height="" i18nName="w_ta-000104" id="includenightshift" imageOnly="false" langDir="node_ta-res" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" text="是否夜班" toolbarType="Custom" visible="true" width="150">
+            </Element>
+            <Element attachNext="false" colSpan="1" dataType="UFDateTime" editable="true" editorType="DateTimeText" enabled="true" field="nightbegintime" height="" i18nName="w_ta-000105" id="nightbegintime" imageOnly="false" langDir="node_ta-res" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" text="夜班开始时间" toolbarType="Custom" visible="true" width="150">
+            </Element>
+            <Element attachNext="false" colSpan="1" dataType="UFDateTime" editable="true" editorType="DateTimeText" enabled="true" field="nightendtime" height="" i18nName="w_ta-000106" id="nightendtime" imageOnly="false" langDir="node_ta-res" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" text="夜班结束时间" toolbarType="Custom" visible="true" width="150">
+            </Element>
+        </FormComp>
+        <GridComp autoRowHeight="false" canCopy="true" dataset="dsPsnCalHoliday" editable="false" enabled="true" expandTree="false" id="gridHoliday" multiSelect="false" onPaste="" pagenationTop="false" reference="false" selfDefImageBtnRender="" showColInfo="false" showHeader="true" showImageBtn="false" showNumCol="false" showSumRow="false" sortable="true" visible="true">
+            <Column autoExpand="false" dataType="UFDateTime" editable="true" editorType="DateTimeText" field="beginTime" fixedHeader="false" i18nName="w_ta-000080" id="beginTime" imageOnly="false" langDir="node_ta-res" nullAble="true" renderType="DateTimeRender" showCheckBox="true" sortable="true" sumCol="false" text="开始时间" textAlign="left" visible="true" width="150">
+            </Column>
+            <Column autoExpand="false" dataType="UFDateTime" editable="true" editorType="DateTimeText" field="endTime" fixedHeader="false" i18nName="w_ta-000081" id="endTime" imageOnly="false" langDir="node_ta-res" nullAble="true" renderType="DateTimeRender" showCheckBox="true" sortable="true" sumCol="false" text="结束时间" textAlign="left" visible="true" width="150">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="holidayName" fixedHeader="false" i18nName="w_ta-000082" id="holidayName" imageOnly="false" langDir="node_ta-res" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="节日名称" textAlign="left" visible="true" width="240">
+            </Column>
+        </GridComp>
+        <GridComp autoRowHeight="false" canCopy="true" dataset="dsPsnWorkTime" editable="false" enabled="true" expandTree="false" id="gridWorkTime" multiSelect="false" onPaste="" pagenationTop="false" reference="false" selfDefImageBtnRender="" showColInfo="false" showHeader="true" showImageBtn="false" showNumCol="false" showSumRow="false" sortable="true" visible="true">
+            <Column autoExpand="false" dataType="UFDateTime" editable="true" editorType="DateTimeText" field="kssj" fixedHeader="false" i18nName="w_ta-000080" id="kssj" imageOnly="false" langDir="node_ta-res" nullAble="true" renderType="DateTimeRender" showCheckBox="true" sortable="true" sumCol="false" text="开始时间" textAlign="left" visible="true" width="150">
+            </Column>
+            <Column autoExpand="false" dataType="UFDateTime" editable="true" editorType="DateTimeText" field="jssj" fixedHeader="false" i18nName="w_ta-000081" id="jssj" imageOnly="false" langDir="node_ta-res" nullAble="true" renderType="DateTimeRender" showCheckBox="true" sortable="true" sumCol="false" text="结束时间" textAlign="left" visible="true" width="150">
+            </Column>
+            <Column autoExpand="false" dataType="UFBoolean" editable="true" editorType="StringText" field="checkinflag" fixedHeader="false" i18nName="w_ta-000083" id="checkinflag" imageOnly="false" langDir="node_ta-res" nullAble="true" renderType="DefaultRender" showCheckBox="false" sortable="true" sumCol="false" text="上班刷卡" textAlign="left" visible="true" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="UFBoolean" editable="true" editorType="StringText" field="checkoutflag" fixedHeader="false" i18nName="w_ta-000084" id="checkoutflag" imageOnly="false" langDir="node_ta-res" nullAble="true" renderType="DefaultRender" showCheckBox="false" sortable="true" sumCol="false" text="下班刷卡" textAlign="left" visible="true" width="120">
+            </Column>
+        </GridComp>
+    </Components>
+    <Menus>
+    </Menus>
+</Widget>

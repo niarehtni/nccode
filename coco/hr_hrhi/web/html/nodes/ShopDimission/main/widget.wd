@@ -1,0 +1,1070 @@
+<?xml version="1.0" encoding='UTF-8'?>
+<Widget caption="店员离职列表界面" controllerClazz="nc.bs.hrsms.hi.employ.ShopDimission.DimissionListViewMain" i18nName="a_pub-000050" id="main" langDir="node_pub-res" refId="main" sourcePackage="hi/src/public/">
+    <Attributes>
+        <Attribute>
+            <Key>$QueryTemplate</Key>
+            <Value>
+            </Value>
+        </Attribute>
+    </Attributes>
+    <PageMetas>
+    </PageMetas>
+    <PlugoutDescs>
+    </PlugoutDescs>
+    <PluginDescs>
+        <PluginDesc id="inParam">
+            <PluginDescItem clazztype="java.util.Map" id="selid">
+            </PluginDescItem>
+        </PluginDesc>
+        <PluginDesc id="DeptChange">
+            <PluginDescItem clazztype="java.util.Map" id="deptout">
+            </PluginDescItem>
+        </PluginDesc>
+        <PluginDesc id="openMain">
+        </PluginDesc>
+        <PluginDesc id="ReSearch">
+            <PluginDescItem clazztype="java.lang.String" id="closewindow">
+            </PluginDescItem>
+        </PluginDesc>
+    </PluginDescs>
+    <Events>
+        <Event async="true" methodName="plugininParam" onserver="true">
+            <Params>
+                <Param>
+                    <Name>keys</Name>
+                    <Value>
+                    </Value>
+                    <Desc>                        <![CDATA[java.util.Map]]>
+                    </Desc>
+                </Param>
+            </Params>
+            <Action>
+            </Action>
+        </Event>
+        <Event async="true" methodName="pluginDeptChange" onserver="true">
+            <Params>
+                <Param>
+                    <Name>keys</Name>
+                    <Value>
+                    </Value>
+                    <Desc>                        <![CDATA[java.util.Map]]>
+                    </Desc>
+                </Param>
+            </Params>
+            <Action>
+            </Action>
+        </Event>
+        <Event async="true" methodName="pluginReSearch" onserver="true">
+            <Params>
+                <Param>
+                    <Name>keys</Name>
+                    <Value>
+                    </Value>
+                    <Desc>                        <![CDATA[java.util.Map]]>
+                    </Desc>
+                </Param>
+            </Params>
+            <Action>
+            </Action>
+        </Event>
+        <Event async="true" methodName="pluginopenMain" onserver="true">
+            <Params>
+                <Param>
+                    <Name>keys</Name>
+                    <Value>
+                    </Value>
+                    <Desc>                        <![CDATA[java.util.Map]]>
+                    </Desc>
+                </Param>
+            </Params>
+            <Action>
+            </Action>
+        </Event>
+    </Events>
+    <Models>
+        <Datasets>
+            <RefMdDataset caption="HR部门" controlwidgetopeStatus="false" enabled="false" id="$refds_hrjf_hrdept" lazyLoad="true" notNullBody="false" objMeta="hrjf.hrdept" voMeta="nc.vo.om.hrdept.HRDeptVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset caption="异动原因(自定义档案)" controlwidgetopeStatus="false" enabled="false" id="$refds_uap_Defdoc__HRHI001" lazyLoad="true" notNullBody="false" objMeta="uap.Defdoc-HRHI001_0xx" voMeta="nc.vo.bd.defdoc.DefdocVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset caption="人员基本信息" controlwidgetopeStatus="false" enabled="false" id="$refds_hrhi_bd_psndoc" lazyLoad="true" notNullBody="false" objMeta="hrhi.bd_psndoc" voMeta="nc.vo.hi.psndoc.PsndocVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset caption="业务流程" controlwidgetopeStatus="false" enabled="false" id="$refds_uap_BusitypeVO" lazyLoad="true" notNullBody="false" objMeta="uap.BusitypeVO" voMeta="nc.vo.pf.pub.BusitypeVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset caption="人员类别" controlwidgetopeStatus="false" enabled="false" id="$refds_uap_psncl" lazyLoad="true" notNullBody="false" objMeta="uap.psncl" voMeta="nc.vo.bd.psn.PsnClVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset caption="组织_集团" controlwidgetopeStatus="false" enabled="false" id="$refds_uap_group" lazyLoad="true" notNullBody="false" objMeta="uap.group" voMeta="nc.vo.org.GroupVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset caption="职级" controlwidgetopeStatus="false" enabled="false" id="$refds_hrjf_om_jobgrade" lazyLoad="true" notNullBody="false" objMeta="hrjf.om_joblevel" voMeta="nc.vo.om.joblevelsys.JobLevelVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset caption="任职类型(自定义档案)" controlwidgetopeStatus="false" enabled="false" id="$refds_uap_Defdoc__HRHI012" lazyLoad="true" notNullBody="false" objMeta="uap.Defdoc-HRHI012_0xx" voMeta="nc.vo.bd.defdoc.DefdocVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset caption="岗位序列" controlwidgetopeStatus="false" enabled="false" id="$refds_hrjf_postseries" lazyLoad="true" notNullBody="false" objMeta="hrjf.postseries" voMeta="nc.vo.om.post.PostSeriesVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset caption="职务类别" controlwidgetopeStatus="false" enabled="false" id="$refds_hrjf_jobtype" lazyLoad="true" notNullBody="false" objMeta="hrjf.jobtype" voMeta="nc.vo.om.job.JobTypeVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset caption="免职方式(自定义档案)" controlwidgetopeStatus="false" enabled="false" id="$refds_uap_Defdoc__HRHI004" lazyLoad="true" notNullBody="false" objMeta="uap.Defdoc-HRHI004_0xx" voMeta="nc.vo.bd.defdoc.DefdocVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset caption="组织_业务单元_人力资源组织" controlwidgetopeStatus="false" enabled="false" id="$refds_uap_hrorg" lazyLoad="true" notNullBody="false" objMeta="uap.hrorg" voMeta="nc.vo.org.HROrgVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset caption="任职方式(自定义档案)" controlwidgetopeStatus="false" enabled="false" id="$refds_uap_Defdoc__HRHI003" lazyLoad="true" notNullBody="false" objMeta="uap.Defdoc-HRHI003_0xx" voMeta="nc.vo.bd.defdoc.DefdocVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <MdDataset caption="调配/离职申请单" controlwidgetopeStatus="false" enabled="false" id="hi_stapply" lazyLoad="false" notNullBody="false" objMeta="trn.stapply" voMeta="nc.vo.trn.transmng.StapplyVO">
+                <FieldRelations>
+                    <FieldRelation id="transtypeid_rel" needProcess="true" refDataset="$refds_uap_BilltypeVO" useCache="true">
+                        <MatchFields>
+                            <Field readField="billtypename" writeField="transtypeid_billtypename">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_billtypeid" value="transtypeid">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="business_type_rel" needProcess="true" refDataset="$refds_uap_BusitypeVO" useCache="true">
+                        <MatchFields>
+                            <Field readField="businame" writeField="business_type_businame">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_busitype" value="business_type">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_psnjob_rel" needProcess="true" refDataset="$refds_hrhi_hi_psnjob" useCache="true">
+                        <MatchFields>
+                            <Field readField="pk_psndoc" writeField="pk_psnjob_pk_psndoc">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_psnjob" value="pk_psnjob">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_psndoc_rel" needProcess="true" refDataset="$refds_hrhi_bd_psndoc" useCache="true">
+                        <MatchFields>
+                            <Field readField="name" writeField="pk_psndoc_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_psndoc" value="pk_psndoc">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_trnstype_rel" needProcess="true" refDataset="$refds_hrhi_trnstype" useCache="true">
+                        <MatchFields>
+                            <Field readField="trnstypename" writeField="pk_trnstype_trnstypename">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_trnstype" value="pk_trnstype">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="sreason_rel" needProcess="true" refDataset="$refds_uap_Defdoc__HRHI001" useCache="true">
+                        <MatchFields>
+                            <Field readField="name" writeField="sreason_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_defdoc" value="sreason">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="billmaker_rel" needProcess="true" refDataset="$refds_uap_user" useCache="true">
+                        <MatchFields>
+                            <Field readField="user_name" writeField="billmaker_user_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="cuserid" value="billmaker">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_group_rel" needProcess="true" refDataset="$refds_uap_group" useCache="true">
+                        <MatchFields>
+                            <Field readField="name" writeField="pk_group_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_group" value="pk_group">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_org_rel" needProcess="true" refDataset="$refds_uap_org" useCache="true">
+                        <MatchFields>
+                            <Field readField="name" writeField="pk_org_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_org" value="pk_org">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="approver_rel" needProcess="true" refDataset="$refds_uap_user" useCache="true">
+                        <MatchFields>
+                            <Field readField="user_name" writeField="approver_user_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="cuserid" value="approver">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="creator_rel" needProcess="true" refDataset="$refds_uap_user" useCache="true">
+                        <MatchFields>
+                            <Field readField="user_name" writeField="creator_user_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="cuserid" value="creator">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="modifier_rel" needProcess="true" refDataset="$refds_uap_user" useCache="true">
+                        <MatchFields>
+                            <Field readField="user_name" writeField="modifier_user_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="cuserid" value="modifier">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_old_hi_org_rel" needProcess="true" refDataset="$refds_uap_hrorg" useCache="true">
+                        <MatchFields>
+                            <Field readField="name" writeField="pk_old_hi_org_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_hrorg" value="pk_old_hi_org">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_hi_org_rel" needProcess="true" refDataset="$refds_uap_hrorg" useCache="true">
+                        <MatchFields>
+                            <Field readField="name" writeField="pk_hi_org_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_hrorg" value="pk_hi_org">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="oldpk_org_rel" needProcess="true" refDataset="$refds_uap_org" useCache="true">
+                        <MatchFields>
+                            <Field readField="name" writeField="oldpk_org_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_org" value="oldpk_org">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="newpk_org_rel" needProcess="true" refDataset="$refds_uap_org" useCache="true">
+                        <MatchFields>
+                            <Field readField="name" writeField="newpk_org_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_org" value="newpk_org">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="oldpk_dept_rel" needProcess="true" refDataset="$refds_hrjf_hrdept" useCache="true">
+                        <MatchFields>
+                            <Field readField="name" writeField="oldpk_dept_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_dept" value="oldpk_dept">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="newpk_dept_rel" needProcess="true" refDataset="$refds_hrjf_hrdept" useCache="true">
+                        <MatchFields>
+                            <Field readField="name" writeField="newpk_dept_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_dept" value="newpk_dept">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="oldpk_post_rel" needProcess="true" refDataset="$refds_hrjf_om_post" useCache="true">
+                        <MatchFields>
+                            <Field readField="postname" writeField="oldpk_post_postname">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_post" value="oldpk_post">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="newpk_post_rel" needProcess="true" refDataset="$refds_hrjf_om_post" useCache="true">
+                        <MatchFields>
+                            <Field readField="postname" writeField="newpk_post_postname">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_post" value="newpk_post">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="newpk_postseries_rel" needProcess="true" refDataset="$refds_hrjf_postseries" useCache="true">
+                        <MatchFields>
+                            <Field readField="postseriesname" writeField="newpk_postseries_postseriesname">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_postseries" value="newpk_postseries">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="oldpk_postseries_rel" needProcess="true" refDataset="$refds_hrjf_postseries" useCache="true">
+                        <MatchFields>
+                            <Field readField="postseriesname" writeField="oldpk_postseries_postseriesname">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_postseries" value="oldpk_postseries">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="oldpk_job_rel" needProcess="true" refDataset="$refds_hrjf_om_job" useCache="true">
+                        <MatchFields>
+                            <Field readField="jobname" writeField="oldpk_job_jobname">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_job" value="oldpk_job">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="newpk_job_rel" needProcess="true" refDataset="$refds_hrjf_om_job" useCache="true">
+                        <MatchFields>
+                            <Field readField="jobname" writeField="newpk_job_jobname">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_job" value="newpk_job">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="oldpk_jobgrade_rel" needProcess="true" refDataset="$refds_hrjf_om_jobgrade" useCache="true">
+                        <MatchFields>
+                            <Field readField="name" writeField="oldpk_jobgrade_jobgradename">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_joblevel" value="oldpk_jobgrade">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="newpk_jobgrade_rel" needProcess="true" refDataset="$refds_hrjf_om_jobgrade" useCache="true">
+                        <MatchFields>
+                            <Field readField="name" writeField="newpk_jobgrade_jobgradename">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_joblevel" value="newpk_jobgrade">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="oldpk_jobrank_rel" needProcess="true" refDataset="$refds_hrjf_jobrank" useCache="true">
+                        <MatchFields>
+                            <Field readField="jobrankname" writeField="oldpk_jobrank_jobrankname">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_jobrank" value="oldpk_jobrank">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="newpk_jobrank_rel" needProcess="true" refDataset="$refds_hrjf_jobrank" useCache="true">
+                        <MatchFields>
+                            <Field readField="jobrankname" writeField="newpk_jobrank_jobrankname">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_jobrank" value="newpk_jobrank">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="oldpk_psncl_rel" needProcess="true" refDataset="$refds_uap_psncl" useCache="true">
+                        <MatchFields>
+                            <Field readField="name" writeField="oldpk_psncl_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_psncl" value="oldpk_psncl">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="newpk_psncl_rel" needProcess="true" refDataset="$refds_uap_psncl" useCache="true">
+                        <MatchFields>
+                            <Field readField="name" writeField="newpk_psncl_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_psncl" value="newpk_psncl">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="olddeposemode_rel" needProcess="true" refDataset="$refds_uap_Defdoc__HRHI004" useCache="true">
+                        <MatchFields>
+                            <Field readField="name" writeField="olddeposemode_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_defdoc" value="olddeposemode">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="newdeposemode_rel" needProcess="true" refDataset="$refds_uap_Defdoc__HRHI004" useCache="true">
+                        <MatchFields>
+                            <Field readField="name" writeField="newdeposemode_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_defdoc" value="newdeposemode">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="oldjobmode_rel" needProcess="true" refDataset="$refds_uap_Defdoc__HRHI003" useCache="true">
+                        <MatchFields>
+                            <Field readField="name" writeField="oldjobmode_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_defdoc" value="oldjobmode">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="newjobmode_rel" needProcess="true" refDataset="$refds_uap_Defdoc__HRHI003" useCache="true">
+                        <MatchFields>
+                            <Field readField="name" writeField="newjobmode_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_defdoc" value="newjobmode">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="oldoccupation_rel" needProcess="true" refDataset="$refds_uap_Defdoc__HR016" useCache="true">
+                        <MatchFields>
+                            <Field readField="name" writeField="oldoccupation_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_defdoc" value="oldoccupation">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="newoccupation_rel" needProcess="true" refDataset="$refds_uap_Defdoc__HR016" useCache="true">
+                        <MatchFields>
+                            <Field readField="name" writeField="newoccupation_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_defdoc" value="newoccupation">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="oldpk_job_type_rel" needProcess="true" refDataset="$refds_uap_Defdoc__HRHI012" useCache="true">
+                        <MatchFields>
+                            <Field readField="name" writeField="oldpk_job_type_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_defdoc" value="oldpk_job_type">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="newpk_job_type_rel" needProcess="true" refDataset="$refds_uap_Defdoc__HRHI012" useCache="true">
+                        <MatchFields>
+                            <Field readField="name" writeField="newpk_job_type_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_defdoc" value="newpk_job_type">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="oldseries_rel" needProcess="true" refDataset="$refds_hrjf_jobtype" useCache="true">
+                        <MatchFields>
+                            <Field readField="jobtypename" writeField="oldseries_jobtypename">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_jobtype" value="oldseries">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="newseries_rel" needProcess="true" refDataset="$refds_hrjf_jobtype" useCache="true">
+                        <MatchFields>
+                            <Field readField="jobtypename" writeField="newseries_jobtypename">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_jobtype" value="newseries">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="oldworktype_rel" needProcess="true" refDataset="$refds_uap_Defdoc__BD004" useCache="true">
+                        <MatchFields>
+                            <Field readField="name" writeField="oldworktype_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_defdoc" value="oldworktype">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="newworktype_rel" needProcess="true" refDataset="$refds_uap_Defdoc__BD004" useCache="true">
+                        <MatchFields>
+                            <Field readField="name" writeField="newworktype_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_defdoc" value="newworktype">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                </FieldRelations>
+                <Fields>
+                    <Field dataType="String" id="oldpk_jobgrade_jobgradename" nullAble="true" primaryKey="false" text="oldpk_jobgrade_jobgradename">
+                    </Field>
+                    <Field dataType="String" id="newpk_jobgrade_jobgradename" nullAble="true" primaryKey="false" text="newpk_jobgrade_jobgradename">
+                    </Field>
+                </Fields>
+                <Events>
+                    <Event async="true" methodName="dataLoad" name="onDataLoad" onserver="true">
+                        <SubmitRule>
+                        </SubmitRule>
+                        <Params>
+                            <Param>
+                                <Name>dataLoadEvent</Name>
+                                <Value>
+                                </Value>
+                                <Desc>                                    <![CDATA[nc.uap.lfw.core.event.DataLoadEvent]]>
+                                </Desc>
+                            </Param>
+                        </Params>
+                        <Action>
+                        </Action>
+                    </Event>
+                    <Event async="true" methodName="onAfterRowSelect" name="onAfterRowSelect" onserver="true">
+                        <SubmitRule>
+                        </SubmitRule>
+                        <Params>
+                            <Param>
+                                <Name>datasetEvent</Name>
+                                <Value></Value>
+                                <Desc>                                    <![CDATA[nc.uap.lfw.core.event.DatasetEvent]]>
+                                </Desc>
+                            </Param>
+                        </Params>
+                        <Action>
+                        </Action>
+                    </Event>
+                </Events>
+            </MdDataset>
+            <RefMdDataset caption="用户" controlwidgetopeStatus="false" enabled="false" id="$refds_uap_user" lazyLoad="true" notNullBody="false" objMeta="uap.user" voMeta="nc.vo.sm.UserVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset caption="单据类型" controlwidgetopeStatus="false" enabled="false" id="$refds_uap_BilltypeVO" lazyLoad="true" notNullBody="false" objMeta="uap.BilltypeVO" voMeta="nc.vo.pub.billtype.BilltypeVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset caption="职务" controlwidgetopeStatus="false" enabled="false" id="$refds_hrjf_om_job" lazyLoad="true" notNullBody="false" objMeta="hrjf.om_job" voMeta="nc.vo.om.job.JobVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset caption="职业(自定义档案)" controlwidgetopeStatus="false" enabled="false" id="$refds_uap_Defdoc__HR016" lazyLoad="true" notNullBody="false" objMeta="uap.Defdoc-HR016_0xx" voMeta="nc.vo.bd.defdoc.DefdocVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset caption="岗位基本信息" controlwidgetopeStatus="false" enabled="false" id="$refds_hrjf_om_post" lazyLoad="true" notNullBody="false" objMeta="hrjf.om_post" voMeta="nc.vo.om.post.PostVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset caption="组织" controlwidgetopeStatus="false" enabled="false" id="$refds_uap_org" lazyLoad="true" notNullBody="false" objMeta="uap.org" voMeta="nc.vo.org.OrgVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset caption="异动类型" controlwidgetopeStatus="false" enabled="false" id="$refds_hrhi_trnstype" lazyLoad="true" notNullBody="false" objMeta="hrhi.trnstype" voMeta="nc.vo.hi.trnstype.TrnstypeVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset caption="职等" controlwidgetopeStatus="false" enabled="false" id="$refds_hrjf_jobrank" lazyLoad="true" notNullBody="false" objMeta="hrjf.jobrank" voMeta="nc.vo.om.jobrank.JobRankVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset caption="工种" controlwidgetopeStatus="false" enabled="false" id="$refds_uap_Defdoc__BD004" lazyLoad="true" notNullBody="false" objMeta="uap.Defdoc-BD004_0xx" voMeta="nc.vo.bd.defdoc.DefdocVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset caption="工作记录" controlwidgetopeStatus="false" enabled="false" id="$refds_hrhi_hi_psnjob" lazyLoad="true" notNullBody="false" objMeta="hrhi.hi_psnjob" voMeta="nc.vo.hi.psndoc.PsnJobVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+        </Datasets>
+        <ComboDatas>
+            <MDComboDataConf caption="调配/离职申请单" fullclassName="155570dd-891e-4854-bd75-246e5808790d" id="combo_hi_stapply_stapply_mode">
+            </MDComboDataConf>
+            <MDComboDataConf caption="调配/离职申请单" fullclassName="4a56756b-fda4-4438-847f-45237421a20d" id="combo_hi_stapply_approve_state">
+            </MDComboDataConf>
+        </ComboDatas>
+        <RefNodes>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" hrOrgs="false" i18nName="" id="refnode_hi_stapply_newpk_jobgrade_jobgradename" langDir="" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" read="false" readDs="masterDs" readFields="pk_joblevel,name" refId="" refcode="职级(设置职务主键)" refnodeDelegator="" relationRefNodeId="" selLeafOnly="false" text="调配/离职申请单_职级HR" usePower="false" writeDs="hi_stapply" writeFields="newpk_jobgrade,newpk_jobgrade_jobgradename">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" hrOrgs="false" i18nName="" id="refnode_hi_stapply_sreason_name" langDir="" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" read="false" readDs="masterDs" readFields="pk_defdoc,name" refId="" refcode="异动原因(自定义档案)" refnodeDelegator="" relationRefNodeId="" selLeafOnly="false" text="调配/离职申请单_异动原因(自定义档案)" usePower="false" writeDs="hi_stapply" writeFields="sreason,sreason_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" hrOrgs="false" i18nName="" id="refnode_hi_stapply_creator_user_name" langDir="" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" read="false" readDs="masterDs" readFields="cuserid,user_name" refId="" refcode="用户" refnodeDelegator="" relationRefNodeId="" selLeafOnly="false" text="调配/离职申请单_用户" usePower="false" writeDs="hi_stapply" writeFields="creator,creator_user_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" hrOrgs="false" i18nName="" id="refnode_hi_stapply_pk_group_name" langDir="" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" read="false" readDs="masterDs" readFields="pk_group,name" refId="" refcode="集团" refnodeDelegator="" relationRefNodeId="" selLeafOnly="false" text="调配/离职申请单_集团" usePower="false" writeDs="hi_stapply" writeFields="pk_group,pk_group_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" hrOrgs="false" i18nName="" id="refnode_hi_stapply_business_type_businame" langDir="" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" read="false" readDs="masterDs" readFields="pk_busitype,businame" refId="" refcode="业务流程" refnodeDelegator="" relationRefNodeId="" selLeafOnly="false" text="调配/离职申请单_业务流程" usePower="false" writeDs="hi_stapply" writeFields="business_type,business_type_businame">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" hrOrgs="false" i18nName="" id="refnode_hi_stapply_oldseries_jobtypename" langDir="" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" read="false" readDs="masterDs" readFields="pk_jobtype,jobtypename" refId="" refcode="职务类别HR" refnodeDelegator="" relationRefNodeId="" selLeafOnly="false" text="调配/离职申请单_职务类别HR" usePower="false" writeDs="hi_stapply" writeFields="oldseries,oldseries_jobtypename">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" hrOrgs="false" i18nName="" id="refnode_hi_stapply_oldjobmode_name" langDir="" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" read="false" readDs="masterDs" readFields="pk_defdoc,name" refId="" refcode="任职方式(自定义档案)" refnodeDelegator="" relationRefNodeId="" selLeafOnly="false" text="调配/离职申请单_任职方式(自定义档案)" usePower="false" writeDs="hi_stapply" writeFields="oldjobmode,oldjobmode_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" hrOrgs="false" i18nName="" id="refnode_hi_stapply_newjobmode_name" langDir="" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" read="false" readDs="masterDs" readFields="pk_defdoc,name" refId="" refcode="任职方式(自定义档案)" refnodeDelegator="" relationRefNodeId="" selLeafOnly="false" text="调配/离职申请单_任职方式(自定义档案)" usePower="false" writeDs="hi_stapply" writeFields="newjobmode,newjobmode_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" hrOrgs="false" i18nName="" id="refnode_hi_stapply_newpk_job_type_name" langDir="" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" read="false" readDs="masterDs" readFields="pk_defdoc,name" refId="" refcode="任职类型(自定义档案)" refnodeDelegator="" relationRefNodeId="" selLeafOnly="false" text="调配/离职申请单_任职类型(自定义档案)" usePower="false" writeDs="hi_stapply" writeFields="newpk_job_type,newpk_job_type_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" hrOrgs="false" i18nName="" id="refnode_hi_stapply_oldpk_org_name" langDir="" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" read="false" readDs="masterDs" readFields="pk_org,name" refId="" refcode="业务单元(所有)" refnodeDelegator="" relationRefNodeId="" selLeafOnly="false" text="调配/离职申请单_业务单元(所有)" usePower="false" writeDs="hi_stapply" writeFields="oldpk_org,oldpk_org_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" hrOrgs="false" i18nName="" id="refnode_hi_stapply_billmaker_user_name" langDir="" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" read="false" readDs="masterDs" readFields="cuserid,user_name" refId="" refcode="用户" refnodeDelegator="" relationRefNodeId="" selLeafOnly="false" text="调配/离职申请单_用户" usePower="false" writeDs="hi_stapply" writeFields="billmaker,billmaker_user_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" hrOrgs="false" i18nName="" id="refnode_hi_stapply_olddeposemode_name" langDir="" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" read="false" readDs="masterDs" readFields="pk_defdoc,name" refId="" refcode="免职方式(自定义档案)" refnodeDelegator="" relationRefNodeId="" selLeafOnly="false" text="调配/离职申请单_免职方式(自定义档案)" usePower="false" writeDs="hi_stapply" writeFields="olddeposemode,olddeposemode_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" hrOrgs="false" i18nName="" id="refnode_hi_stapply_pk_psndoc_name" langDir="" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" read="false" readDs="masterDs" readFields="pk_psndoc,name" refId="" refcode="SHOP门店人员" refnodeDelegator="" relationRefNodeId="" selLeafOnly="false" text="调配/离职申请单_HR人员" usePower="false" writeDs="hi_stapply" writeFields="pk_psndoc,pk_psndoc_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" hrOrgs="false" i18nName="" id="refnode_hi_stapply_newpk_jobrank_jobrankname" langDir="" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" read="false" readDs="masterDs" readFields="pk_jobrank,jobrankname" refId="" refcode="职等HR" refnodeDelegator="" relationRefNodeId="" selLeafOnly="false" text="调配/离职申请单_职等HR" usePower="false" writeDs="hi_stapply" writeFields="newpk_jobrank,newpk_jobrank_jobrankname">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" hrOrgs="false" i18nName="" id="refnode_hi_stapply_newpk_org_name" langDir="" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" read="false" readDs="masterDs" readFields="pk_org,name" refId="" refcode="业务单元(所有)" refnodeDelegator="" relationRefNodeId="" selLeafOnly="false" text="调配/离职申请单_业务单元(所有)" usePower="false" writeDs="hi_stapply" writeFields="newpk_org,newpk_org_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" hrOrgs="false" i18nName="" id="refnode_hi_stapply_oldpk_job_type_name" langDir="" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" read="false" readDs="masterDs" readFields="pk_defdoc,name" refId="" refcode="任职类型(自定义档案)" refnodeDelegator="" relationRefNodeId="" selLeafOnly="false" text="调配/离职申请单_任职类型(自定义档案)" usePower="false" writeDs="hi_stapply" writeFields="oldpk_job_type,oldpk_job_type_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" hrOrgs="false" i18nName="" id="refnode_hi_stapply_newworktype_name" langDir="" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" read="false" readDs="masterDs" readFields="pk_defdoc,name" refId="" refcode="工种(自定义档案)" refnodeDelegator="" relationRefNodeId="" selLeafOnly="false" text="调配/离职申请单_工种(自定义档案)" usePower="false" writeDs="hi_stapply" writeFields="newworktype,newworktype_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" hrOrgs="false" i18nName="" id="refnode_hi_stapply_pk_trnstype_trnstypename" langDir="" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" read="false" readDs="masterDs" readFields="pk_trnstype,trnstypename" refId="" refcode="异动类型" refnodeDelegator="" relationRefNodeId="" selLeafOnly="false" text="调配/离职申请单_异动类型" usePower="false" writeDs="hi_stapply" writeFields="pk_trnstype,pk_trnstype_trnstypename">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" hrOrgs="false" i18nName="" id="refnode_hi_stapply_oldworktype_name" langDir="" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" read="false" readDs="masterDs" readFields="pk_defdoc,name" refId="" refcode="工种(自定义档案)" refnodeDelegator="" relationRefNodeId="" selLeafOnly="false" text="调配/离职申请单_工种(自定义档案)" usePower="false" writeDs="hi_stapply" writeFields="oldworktype,oldworktype_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" hrOrgs="false" i18nName="" id="refnode_hi_stapply_newseries_jobtypename" langDir="" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" read="false" readDs="masterDs" readFields="pk_jobtype,jobtypename" refId="" refcode="职务类别HR" refnodeDelegator="" relationRefNodeId="" selLeafOnly="false" text="调配/离职申请单_职务类别HR" usePower="false" writeDs="hi_stapply" writeFields="newseries,newseries_jobtypename">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" hrOrgs="false" i18nName="" id="refnode_hi_stapply_newpk_post_postname" langDir="" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" read="false" readDs="masterDs" readFields="pk_post,postname" refId="" refcode="岗位(左部门树)" refnodeDelegator="" relationRefNodeId="" selLeafOnly="false" text="调配/离职申请单_岗位(左部门树)" usePower="false" writeDs="hi_stapply" writeFields="newpk_post,newpk_post_postname">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" hrOrgs="false" i18nName="" id="refnode_hi_stapply_pk_old_hi_org_name" langDir="" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" read="false" readDs="masterDs" readFields="pk_hrorg,name" refId="" refcode="人力资源组织" refnodeDelegator="" relationRefNodeId="" selLeafOnly="false" text="调配/离职申请单_人力资源组织" usePower="false" writeDs="hi_stapply" writeFields="pk_old_hi_org,pk_old_hi_org_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" hrOrgs="false" i18nName="" id="refnode_hi_stapply_oldpk_jobrank_jobrankname" langDir="" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" read="false" readDs="masterDs" readFields="pk_jobrank,jobrankname" refId="" refcode="职等HR" refnodeDelegator="" relationRefNodeId="" selLeafOnly="false" text="调配/离职申请单_职等HR" usePower="false" writeDs="hi_stapply" writeFields="oldpk_jobrank,oldpk_jobrank_jobrankname">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" hrOrgs="false" i18nName="" id="refnode_hi_stapply_newpk_psncl_name" langDir="" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" read="false" readDs="masterDs" readFields="pk_psncl,name" refId="" refcode="人员类别" refnodeDelegator="" relationRefNodeId="" selLeafOnly="false" text="调配/离职申请单_人员类别" usePower="false" writeDs="hi_stapply" writeFields="newpk_psncl,newpk_psncl_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" hrOrgs="false" i18nName="" id="refnode_hi_stapply_pk_hi_org_name" langDir="" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" read="false" readDs="masterDs" readFields="pk_hrorg,name" refId="" refcode="人力资源组织" refnodeDelegator="" relationRefNodeId="" selLeafOnly="false" text="调配/离职申请单_人力资源组织" usePower="false" writeDs="hi_stapply" writeFields="pk_hi_org,pk_hi_org_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" hrOrgs="false" i18nName="" id="refnode_hi_stapply_newpk_postseries_postseriesname" langDir="" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" read="false" readDs="masterDs" readFields="pk_postseries,postseriesname" refId="" refcode="岗位序列HR" refnodeDelegator="" relationRefNodeId="" selLeafOnly="false" text="调配/离职申请单_岗位序列HR" usePower="false" writeDs="hi_stapply" writeFields="newpk_postseries,newpk_postseries_postseriesname">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" hrOrgs="false" i18nName="" id="refnode_hi_stapply_pk_psnjob_pk_psndoc" langDir="" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" read="false" readDs="masterDs" readFields="pk_psnjob,name" refId="" refcode="人员工作记录" refnodeDelegator="" relationRefNodeId="" selLeafOnly="false" text="调配/离职申请单_人员工作记录" usePower="false" writeDs="hi_stapply" writeFields="pk_psnjob,pk_psnjob_pk_psndoc">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" hrOrgs="false" i18nName="" id="refnode_hi_stapply_modifier_user_name" langDir="" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" read="false" readDs="masterDs" readFields="cuserid,user_name" refId="" refcode="用户" refnodeDelegator="" relationRefNodeId="" selLeafOnly="false" text="调配/离职申请单_用户" usePower="false" writeDs="hi_stapply" writeFields="modifier,modifier_user_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" hrOrgs="false" i18nName="" id="refnode_hi_stapply_oldpk_psncl_name" langDir="" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" read="false" readDs="masterDs" readFields="pk_psncl,name" refId="" refcode="人员类别" refnodeDelegator="" relationRefNodeId="" selLeafOnly="false" text="调配/离职申请单_人员类别" usePower="false" writeDs="hi_stapply" writeFields="oldpk_psncl,oldpk_psncl_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" hrOrgs="false" i18nName="" id="refnode_hi_stapply_oldpk_jobgrade_jobgradename" langDir="" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" read="false" readDs="masterDs" readFields="pk_jobgrade,jobgradename" refId="" refcode="职级HR" refnodeDelegator="" relationRefNodeId="" selLeafOnly="false" text="调配/离职申请单_职级HR" usePower="false" writeDs="hi_stapply" writeFields="oldpk_jobgrade,oldpk_jobgrade_jobgradename">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" hrOrgs="false" i18nName="" id="refnode_hi_stapply_newpk_job_jobname" langDir="" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" read="false" readDs="masterDs" readFields="pk_job,jobname" refId="" refcode="职务(设置业务单元主键)" refnodeDelegator="" relationRefNodeId="" selLeafOnly="false" text="调配/离职申请单_职务HR" usePower="false" writeDs="hi_stapply" writeFields="newpk_job,newpk_job_jobname">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" hrOrgs="false" i18nName="" id="refnode_hi_stapply_approver_user_name" langDir="" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" read="false" readDs="masterDs" readFields="cuserid,user_name" refId="" refcode="用户" refnodeDelegator="" relationRefNodeId="" selLeafOnly="false" text="调配/离职申请单_用户" usePower="false" writeDs="hi_stapply" writeFields="approver,approver_user_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" hrOrgs="false" i18nName="" id="refnode_hi_stapply_oldpk_job_jobname" langDir="" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" read="false" readDs="masterDs" readFields="pk_job,jobname" refId="" refcode="职务HR" refnodeDelegator="" relationRefNodeId="" selLeafOnly="false" text="调配/离职申请单_职务HR" usePower="false" writeDs="hi_stapply" writeFields="oldpk_job,oldpk_job_jobname">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" hrOrgs="false" i18nName="" id="refnode_hi_stapply_oldpk_postseries_postseriesname" langDir="" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" read="false" readDs="masterDs" readFields="pk_postseries,postseriesname" refId="" refcode="岗位序列HR" refnodeDelegator="" relationRefNodeId="" selLeafOnly="false" text="调配/离职申请单_岗位序列HR" usePower="false" writeDs="hi_stapply" writeFields="oldpk_postseries,oldpk_postseries_postseriesname">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" hrOrgs="false" i18nName="" id="refnode_hi_stapply_oldpk_post_postname" langDir="" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" read="false" readDs="masterDs" readFields="pk_post,postname" refId="" refcode="岗位(左部门树)" refnodeDelegator="" relationRefNodeId="" selLeafOnly="false" text="调配/离职申请单_岗位(左部门树)" usePower="false" writeDs="hi_stapply" writeFields="oldpk_post,oldpk_post_postname">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" hrOrgs="false" i18nName="" id="refnode_hi_stapply_oldpk_dept_name" langDir="" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" read="false" readDs="masterDs" readFields="pk_dept,name" refId="" refcode="部门HR" refnodeDelegator="" relationRefNodeId="" selLeafOnly="false" text="调配/离职申请单_部门HR" usePower="false" writeDs="hi_stapply" writeFields="oldpk_dept,oldpk_dept_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" hrOrgs="false" i18nName="" id="refnode_hi_stapply_newpk_dept_name" langDir="" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" read="false" readDs="masterDs" readFields="pk_dept,name" refId="" refcode="部门HR" refnodeDelegator="" relationRefNodeId="" selLeafOnly="false" text="调配/离职申请单_部门HR" usePower="false" writeDs="hi_stapply" writeFields="newpk_dept,newpk_dept_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" hrOrgs="false" i18nName="" id="refnode_hi_stapply_newoccupation_name" langDir="" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" read="false" readDs="masterDs" readFields="pk_defdoc,name" refId="" refcode="职业(自定义档案)" refnodeDelegator="" relationRefNodeId="" selLeafOnly="false" text="调配/离职申请单_职业(自定义档案)" usePower="false" writeDs="hi_stapply" writeFields="newoccupation,newoccupation_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" hrOrgs="false" i18nName="" id="refnode_hi_stapply_pk_org_name" langDir="" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" read="false" readDs="masterDs" readFields="pk_org,name" refId="" refcode="业务单元(所有)" refnodeDelegator="" relationRefNodeId="" selLeafOnly="false" text="调配/离职申请单_业务单元(所有)" usePower="false" writeDs="hi_stapply" writeFields="pk_org,pk_org_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" hrOrgs="false" i18nName="" id="refnode_hi_stapply_newdeposemode_name" langDir="" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" read="false" readDs="masterDs" readFields="pk_defdoc,name" refId="" refcode="免职方式(自定义档案)" refnodeDelegator="" relationRefNodeId="" selLeafOnly="false" text="调配/离职申请单_免职方式(自定义档案)" usePower="false" writeDs="hi_stapply" writeFields="newdeposemode,newdeposemode_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" hrOrgs="false" i18nName="" id="refnode_hi_stapply_transtypeid_billtypename" langDir="" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" read="false" readDs="masterDs" readFields="pk_billtypeid,billtypename" refId="" refcode="影响因素单据类型" refnodeDelegator="" relationRefNodeId="" selLeafOnly="false" text="调配/离职申请单_影响因素单据类型" usePower="false" writeDs="hi_stapply" writeFields="transtypeid,transtypeid_billtypename">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" hrOrgs="false" i18nName="" id="refnode_hi_stapply_oldoccupation_name" langDir="" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" read="false" readDs="masterDs" readFields="pk_defdoc,name" refId="" refcode="职业(自定义档案)" refnodeDelegator="" relationRefNodeId="" selLeafOnly="false" text="调配/离职申请单_职业(自定义档案)" usePower="false" writeDs="hi_stapply" writeFields="oldoccupation,oldoccupation_name">
+            </NCRefNode>
+        </RefNodes>
+    </Models>
+    <Components>
+        <GridComp autoRowHeight="false" canCopy="true" caption="调配/离职申请单" checkBoxModel="1" dataset="hi_stapply" editable="true" enabled="true" expandTree="false" id="hi_stapplyGrid" multiSelect="false" multiSelectShow="true" onPaste="" pagenationTop="false" reference="false" selfDefImageBtnRender="" showColInfo="false" showForm="false" showHeader="true" showImageBtn="false" showNumCol="false" showSumRow="false" showTree="true" sortable="true" visible="true">
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="pk_hi_stapply" fixedHeader="false" i18nName="26009tran-000013" id="pk_hi_stapply" imageOnly="false" nullAble="false" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="调配申请主键" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="pk_billtype" fixedHeader="false" i18nName="26009tran-000007" id="pk_billtype" imageOnly="false" nullAble="false" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="交易" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="transtypeid" fixedHeader="false" i18nName="2UC000-000036" id="transtypeid" imageOnly="false" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="交易类型主键" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="Reference" field="transtypeid_billtypename" fixedHeader="false" i18nName="2UC000-000036" id="transtypeid_billtypename" imageOnly="false" nullAble="true" refNode="refnode_hi_stapply_transtypeid_billtypename" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="交易类型主键" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="transtype" fixedHeader="false" i18nName="2UC000-000035" id="transtype" imageOnly="false" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="交易类型" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="business_type" fixedHeader="false" i18nName="2UC000-000570" id="business_type" imageOnly="false" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="流程类型" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="pk_psnjob" fixedHeader="false" i18nName="UC000-0003765" id="pk_psnjob" imageOnly="false" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="调配人" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="pk_psndoc" fixedHeader="false" i18nName="2UC000-000047" id="pk_psndoc" imageOnly="false" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="人员主键" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="Integer" editable="true" editorType="IntegerText" field="assgid" fixedHeader="false" i18nName="2UC000-000048" id="assgid" imageOnly="false" nullAble="true" renderType="IntegerRender" showCheckBox="true" sortable="true" sumCol="false" text="人员任职ID" textAlign="right" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="pk_psnorg" fixedHeader="false" i18nName="26009tran-000040" id="pk_psnorg" imageOnly="false" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="人员组织关系" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="bill_code" fixedHeader="false" i18nName="26009tran-000037" id="bill_code" imageOnly="false" langDir="6009tran" nullAble="true" renderType="LnkCompRender" showCheckBox="true" sortable="true" sumCol="false" text="申请单编号" textAlign="left" visible="true" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="Reference" field="business_type_businame" fixedHeader="false" i18nName="2UC000-000570" id="business_type_businame" imageOnly="false" nullAble="true" refNode="refnode_hi_stapply_business_type_businame" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="流程类型" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="Integer" editable="true" editorType="ComboBox" field="approve_state" fixedHeader="false" i18nName="UC000-0001558" id="approve_state" imageOnly="false" langDir="common" nullAble="true" refComboData="combo_hi_stapply_approve_state" renderType="ComboRender" showCheckBox="true" sortable="true" sumCol="false" text="审批状态" textAlign="right" visible="true" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="Reference" field="pk_psndoc_name" fixedHeader="false" i18nName="2UC000-000047" id="pk_psndoc_name" imageOnly="false" nullAble="true" refNode="refnode_hi_stapply_pk_psndoc_name" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="人员姓名" textAlign="left" visible="true" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="Reference" field="pk_trnstype_trnstypename" fixedHeader="false" i18nName="w_hi-000655" id="pk_trnstype_trnstypename" imageOnly="false" langDir="node_hi-res" nullAble="true" refNode="refnode_hi_stapply_pk_trnstype_trnstypename" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="离职类型" textAlign="left" visible="true" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="UFLiteralDate" editable="true" editorType="DateText" field="effectdate" fixedHeader="false" i18nName="2UC000-000632" id="effectdate" imageOnly="false" langDir="common" nullAble="false" renderType="DateRender" showCheckBox="true" sortable="true" sumCol="false" text="生效日期" textAlign="left" visible="true" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="UFLiteralDate" editable="true" editorType="DateText" field="apply_date" fixedHeader="false" i18nName="2UC000-000648" id="apply_date" imageOnly="false" langDir="common" nullAble="true" renderType="DateRender" showCheckBox="true" sortable="true" sumCol="false" text="申请日期" textAlign="left" visible="true" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="Reference" field="billmaker_user_name" fixedHeader="false" i18nName="2UC000-000646" id="billmaker_user_name" imageOnly="false" nullAble="true" refNode="refnode_hi_stapply_billmaker_user_name" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="申请人" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="Reference" field="pk_psnjob_pk_psndoc" fixedHeader="false" i18nName="UC000-0003765" id="pk_psnjob_pk_psndoc" imageOnly="false" nullAble="true" refNode="refnode_hi_stapply_pk_psnjob_pk_psndoc" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="离职人员" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="Reference" field="sreason_name" fixedHeader="false" i18nName="26009tran-000041" id="sreason_name" imageOnly="false" langDir="6009tran" nullAble="true" refNode="refnode_hi_stapply_sreason_name" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="调配/离职原因" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="Memo" editable="true" editorType="TextArea" field="memo" fixedHeader="false" i18nName="26009tran-000016" id="memo" imageOnly="false" langDir="6009tran" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="调配/离职说明" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="Integer" editable="true" editorType="ComboBox" field="stapply_mode" fixedHeader="false" i18nName="26009tran-000042" id="stapply_mode" imageOnly="false" langDir="6009tran" nullAble="true" refComboData="combo_hi_stapply_stapply_mode" renderType="ComboRender" showCheckBox="true" sortable="true" sumCol="false" text="调配方式" textAlign="right" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="pk_trnstype" fixedHeader="false" i18nName="w_hi-000655" id="pk_trnstype" imageOnly="false" langDir="node_hi-res" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="离职类型" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="sreason" fixedHeader="false" i18nName="26009tran-000041" id="sreason" imageOnly="false" langDir="6009tran" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="调配/离职原因" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="billmaker" fixedHeader="false" i18nName="2UC000-000646" id="billmaker" imageOnly="false" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="申请人" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="pk_group" fixedHeader="false" i18nName="2UC000-000367" id="pk_group" imageOnly="false" nullAble="false" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="所属集团" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="Reference" field="pk_group_name" fixedHeader="false" i18nName="2UC000-000367" id="pk_group_name" imageOnly="false" nullAble="true" refNode="refnode_hi_stapply_pk_group_name" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="所属集团" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="pk_org" fixedHeader="false" i18nName="26009tran-000019" id="pk_org" imageOnly="false" nullAble="false" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="人事组织" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="Reference" field="pk_org_name" fixedHeader="false" i18nName="26009tran-000019" id="pk_org_name" imageOnly="false" nullAble="true" refNode="refnode_hi_stapply_pk_org_name" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="人事组织" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="fun_code" fixedHeader="false" i18nName="26009tran-000008" id="fun_code" imageOnly="false" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="制单节点编码" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="UFBoolean" editable="true" editorType="CheckBox" field="ishrssbill" fixedHeader="false" i18nName="26009tran-000020" id="ishrssbill" imageOnly="false" nullAble="true" renderType="BooleanRender" showCheckBox="true" sortable="true" sumCol="false" text="是否自助" textAlign="center" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="Integer" editable="true" editorType="IntegerText" field="trialdays" fixedHeader="false" i18nName="26009tran-000004" id="trialdays" imageOnly="false" nullAble="true" renderType="IntegerRender" showCheckBox="true" sortable="true" sumCol="false" text="岗位试用期限" textAlign="right" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="UFLiteralDate" editable="true" editorType="DateText" field="trialbegindate" fixedHeader="false" i18nName="UC000-0003624" id="trialbegindate" imageOnly="false" nullAble="true" renderType="DateRender" showCheckBox="true" sortable="true" sumCol="false" text="试用开始日期" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="UFLiteralDate" editable="true" editorType="DateText" field="trialenddate" fixedHeader="false" i18nName="UC000-0003632" id="trialenddate" imageOnly="false" nullAble="true" renderType="DateRender" showCheckBox="true" sortable="true" sumCol="false" text="试用结束日期" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="approver" fixedHeader="false" i18nName="UC000-0001559" id="approver" imageOnly="false" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="审批人" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="Reference" field="approver_user_name" fixedHeader="false" i18nName="UC000-0001559" id="approver_user_name" imageOnly="false" nullAble="true" refNode="refnode_hi_stapply_approver_user_name" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="审批人" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="UFDateTime" editable="true" editorType="DateTimeText" field="approve_time" fixedHeader="false" i18nName="2UC000-000275" id="approve_time" imageOnly="false" nullAble="true" renderType="DateTimeRender" showCheckBox="true" sortable="true" sumCol="false" text="审批时间" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="approve_note" fixedHeader="false" i18nName="2UC000-000273" id="approve_note" imageOnly="false" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="审批批语" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="UFDateTime" editable="true" editorType="DateTimeText" field="creationtime" fixedHeader="false" i18nName="UC001-0000092" id="creationtime" imageOnly="false" nullAble="true" renderType="DateTimeRender" showCheckBox="true" sortable="true" sumCol="false" text="创建时间" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="creator" fixedHeader="false" i18nName="UC001-0000091" id="creator" imageOnly="false" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="创建人" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="Reference" field="creator_user_name" fixedHeader="false" i18nName="UC001-0000091" id="creator_user_name" imageOnly="false" nullAble="true" refNode="refnode_hi_stapply_creator_user_name" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="创建人" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="UFDateTime" editable="true" editorType="DateTimeText" field="modifiedtime" fixedHeader="false" i18nName="2UC000-000491" id="modifiedtime" imageOnly="false" nullAble="true" renderType="DateTimeRender" showCheckBox="true" sortable="true" sumCol="false" text="最后修改时间" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="modifier" fixedHeader="false" i18nName="2UC000-000490" id="modifier" imageOnly="false" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="最后修改人" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="Reference" field="modifier_user_name" fixedHeader="false" i18nName="2UC000-000490" id="modifier_user_name" imageOnly="false" nullAble="true" refNode="refnode_hi_stapply_modifier_user_name" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="最后修改人" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="pk_old_hi_org" fixedHeader="false" i18nName="26009tran-000027" id="pk_old_hi_org" imageOnly="false" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="原人员信息组织" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="Reference" field="pk_old_hi_org_name" fixedHeader="false" i18nName="26009tran-000027" id="pk_old_hi_org_name" imageOnly="false" nullAble="true" refNode="refnode_hi_stapply_pk_old_hi_org_name" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="原人员信息组织" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="pk_hi_org" fixedHeader="false" i18nName="26009tran-000025" id="pk_hi_org" imageOnly="false" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="新人员信息组织" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="Reference" field="pk_hi_org_name" fixedHeader="false" i18nName="26009tran-000025" id="pk_hi_org_name" imageOnly="false" nullAble="true" refNode="refnode_hi_stapply_pk_hi_org_name" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="新人员信息组织" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="oldpk_org" fixedHeader="false" i18nName="2UC000-000693" id="oldpk_org" imageOnly="false" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="组织" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="Reference" field="oldpk_org_name" fixedHeader="false" i18nName="2UC000-000693" id="oldpk_org_name" imageOnly="false" nullAble="true" refNode="refnode_hi_stapply_oldpk_org_name" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="组织" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="newpk_org" fixedHeader="false" i18nName="26009tran-000030" id="newpk_org" imageOnly="false" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="新组织" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="Reference" field="newpk_org_name" fixedHeader="false" i18nName="26009tran-000030" id="newpk_org_name" imageOnly="false" nullAble="true" refNode="refnode_hi_stapply_newpk_org_name" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="新组织" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="oldpk_dept" fixedHeader="false" i18nName="UC000-0004064" id="oldpk_dept" imageOnly="false" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="部门" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="Reference" field="oldpk_dept_name" fixedHeader="false" i18nName="UC000-0004064" id="oldpk_dept_name" imageOnly="false" nullAble="true" refNode="refnode_hi_stapply_oldpk_dept_name" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="部门" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="newpk_dept" fixedHeader="false" i18nName="26009tran-000034" id="newpk_dept" imageOnly="false" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="新部门" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="Reference" field="newpk_dept_name" fixedHeader="false" i18nName="26009tran-000034" id="newpk_dept_name" imageOnly="false" nullAble="true" refNode="refnode_hi_stapply_newpk_dept_name" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="新部门" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="oldpk_post" fixedHeader="false" i18nName="UC000-0001653" id="oldpk_post" imageOnly="false" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="岗位" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="Reference" field="oldpk_post_postname" fixedHeader="false" i18nName="UC000-0001653" id="oldpk_post_postname" imageOnly="false" nullAble="true" refNode="refnode_hi_stapply_oldpk_post_postname" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="岗位" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="newpk_post" fixedHeader="false" i18nName="26009tran-000049" id="newpk_post" imageOnly="false" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="新岗位" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="Reference" field="newpk_post_postname" fixedHeader="false" i18nName="26009tran-000049" id="newpk_post_postname" imageOnly="false" nullAble="true" refNode="refnode_hi_stapply_newpk_post_postname" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="新岗位" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="newpk_postseries" fixedHeader="false" i18nName="UC000-0001658" id="newpk_postseries" imageOnly="false" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="岗位序列" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="Reference" field="newpk_postseries_postseriesname" fixedHeader="false" i18nName="UC000-0001658" id="newpk_postseries_postseriesname" imageOnly="false" nullAble="true" refNode="refnode_hi_stapply_newpk_postseries_postseriesname" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="岗位序列" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="oldpk_postseries" fixedHeader="false" i18nName="26009tran-000044" id="oldpk_postseries" imageOnly="false" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="新岗位序列" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="Reference" field="oldpk_postseries_postseriesname" fixedHeader="false" i18nName="26009tran-000044" id="oldpk_postseries_postseriesname" imageOnly="false" nullAble="true" refNode="refnode_hi_stapply_oldpk_postseries_postseriesname" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="新岗位序列" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="oldpk_job" fixedHeader="false" i18nName="UC000-0003300" id="oldpk_job" imageOnly="false" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="职务" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="Reference" field="oldpk_job_jobname" fixedHeader="false" i18nName="UC000-0003300" id="oldpk_job_jobname" imageOnly="false" nullAble="true" refNode="refnode_hi_stapply_oldpk_job_jobname" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="职务" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="newpk_job" fixedHeader="false" i18nName="26009tran-000002" id="newpk_job" imageOnly="false" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="新职务" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="Reference" field="newpk_job_jobname" fixedHeader="false" i18nName="26009tran-000002" id="newpk_job_jobname" imageOnly="false" nullAble="true" refNode="refnode_hi_stapply_newpk_job_jobname" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="新职务" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="oldpk_jobgrade" fixedHeader="false" i18nName="26009tran-000023" id="oldpk_jobgrade" imageOnly="false" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="职级" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="Reference" field="oldpk_jobgrade_jobgradename" fixedHeader="false" i18nName="26009tran-000023" id="oldpk_jobgrade_jobgradename" imageOnly="false" nullAble="true" refNode="refnode_hi_stapply_oldpk_jobgrade_jobgradename" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="职级" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="newpk_jobgrade" fixedHeader="false" i18nName="26009tran-000036" id="newpk_jobgrade" imageOnly="false" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="新职级" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="Reference" field="newpk_jobgrade_jobgradename" fixedHeader="false" i18nName="26009tran-000036" id="newpk_jobgrade_jobgradename" imageOnly="false" nullAble="true" refNode="refnode_hi_stapply_newpk_jobgrade_jobgradename" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="新职级" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="oldpk_jobrank" fixedHeader="false" i18nName="26009tran-000014" id="oldpk_jobrank" imageOnly="false" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="职等" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="Reference" field="oldpk_jobrank_jobrankname" fixedHeader="false" i18nName="26009tran-000014" id="oldpk_jobrank_jobrankname" imageOnly="false" nullAble="true" refNode="refnode_hi_stapply_oldpk_jobrank_jobrankname" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="职等" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="newpk_jobrank" fixedHeader="false" i18nName="26009tran-000032" id="newpk_jobrank" imageOnly="false" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="新职等" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="Reference" field="newpk_jobrank_jobrankname" fixedHeader="false" i18nName="26009tran-000032" id="newpk_jobrank_jobrankname" imageOnly="false" nullAble="true" refNode="refnode_hi_stapply_newpk_jobrank_jobrankname" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="新职等" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="oldpk_psncl" fixedHeader="false" i18nName="UC000-0000140" id="oldpk_psncl" imageOnly="false" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="人员类别" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="Reference" field="oldpk_psncl_name" fixedHeader="false" i18nName="UC000-0000140" id="oldpk_psncl_name" imageOnly="false" nullAble="true" refNode="refnode_hi_stapply_oldpk_psncl_name" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="人员类别" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="newpk_psncl" fixedHeader="false" i18nName="26009tran-000000" id="newpk_psncl" imageOnly="false" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="新人员类别" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="Reference" field="newpk_psncl_name" fixedHeader="false" i18nName="26009tran-000000" id="newpk_psncl_name" imageOnly="false" nullAble="true" refNode="refnode_hi_stapply_newpk_psncl_name" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="新人员类别" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="UFBoolean" editable="true" editorType="CheckBox" field="trial_flag" fixedHeader="false" i18nName="26009tran-000005" id="trial_flag" imageOnly="false" nullAble="true" renderType="BooleanRender" showCheckBox="true" sortable="true" sumCol="false" text="试用" textAlign="center" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="olddeposemode" fixedHeader="false" i18nName="26009tran-000050" id="olddeposemode" imageOnly="false" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="免职方式" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="Reference" field="olddeposemode_name" fixedHeader="false" i18nName="26009tran-000050" id="olddeposemode_name" imageOnly="false" nullAble="true" refNode="refnode_hi_stapply_olddeposemode_name" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="免职方式" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="newdeposemode" fixedHeader="false" i18nName="26009tran-000051" id="newdeposemode" imageOnly="false" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="新免职方式" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="Reference" field="newdeposemode_name" fixedHeader="false" i18nName="26009tran-000051" id="newdeposemode_name" imageOnly="false" nullAble="true" refNode="refnode_hi_stapply_newdeposemode_name" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="新免职方式" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="oldjobmode" fixedHeader="false" i18nName="26009tran-000052" id="oldjobmode" imageOnly="false" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="任职方式" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="Reference" field="oldjobmode_name" fixedHeader="false" i18nName="26009tran-000052" id="oldjobmode_name" imageOnly="false" nullAble="true" refNode="refnode_hi_stapply_oldjobmode_name" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="任职方式" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="newjobmode" fixedHeader="false" i18nName="26009tran-000053" id="newjobmode" imageOnly="false" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="新任职方式" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="Reference" field="newjobmode_name" fixedHeader="false" i18nName="26009tran-000053" id="newjobmode_name" imageOnly="false" nullAble="true" refNode="refnode_hi_stapply_newjobmode_name" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="新任职方式" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="Memo" editable="true" editorType="TextArea" field="oldmemo" fixedHeader="false" i18nName="26009tran-000054" id="oldmemo" imageOnly="false" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="备注" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="Memo" editable="true" editorType="TextArea" field="newmemo" fixedHeader="false" i18nName="26009tran-000055" id="newmemo" imageOnly="false" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="新备注" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="oldoccupation" fixedHeader="false" i18nName="26009tran-000056" id="oldoccupation" imageOnly="false" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="职业" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="Reference" field="oldoccupation_name" fixedHeader="false" i18nName="26009tran-000056" id="oldoccupation_name" imageOnly="false" nullAble="true" refNode="refnode_hi_stapply_oldoccupation_name" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="职业" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="newoccupation" fixedHeader="false" i18nName="26009tran-000057" id="newoccupation" imageOnly="false" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="新职业" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="Reference" field="newoccupation_name" fixedHeader="false" i18nName="26009tran-000057" id="newoccupation_name" imageOnly="false" nullAble="true" refNode="refnode_hi_stapply_newoccupation_name" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="新职业" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="oldpk_job_type" fixedHeader="false" i18nName="26009tran-000058" id="oldpk_job_type" imageOnly="false" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="任职类型" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="Reference" field="oldpk_job_type_name" fixedHeader="false" i18nName="26009tran-000058" id="oldpk_job_type_name" imageOnly="false" nullAble="true" refNode="refnode_hi_stapply_oldpk_job_type_name" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="任职类型" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="newpk_job_type" fixedHeader="false" i18nName="26009tran-000059" id="newpk_job_type" imageOnly="false" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="新任职类型" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="Reference" field="newpk_job_type_name" fixedHeader="false" i18nName="26009tran-000059" id="newpk_job_type_name" imageOnly="false" nullAble="true" refNode="refnode_hi_stapply_newpk_job_type_name" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="新任职类型" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="UFBoolean" editable="true" editorType="CheckBox" field="oldpoststat" fixedHeader="false" i18nName="26009tran-000060" id="oldpoststat" imageOnly="false" nullAble="true" renderType="BooleanRender" showCheckBox="true" sortable="true" sumCol="false" text="是否在岗" textAlign="center" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="UFBoolean" editable="true" editorType="CheckBox" field="newpoststat" fixedHeader="false" i18nName="26009tran-000061" id="newpoststat" imageOnly="false" nullAble="true" renderType="BooleanRender" showCheckBox="true" sortable="true" sumCol="false" text="新是否在岗" textAlign="center" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="oldseries" fixedHeader="false" i18nName="26009tran-000062" id="oldseries" imageOnly="false" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="职务类别" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="Reference" field="oldseries_jobtypename" fixedHeader="false" i18nName="26009tran-000062" id="oldseries_jobtypename" imageOnly="false" nullAble="true" refNode="refnode_hi_stapply_oldseries_jobtypename" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="职务类别" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="newseries" fixedHeader="false" i18nName="26009tran-000063" id="newseries" imageOnly="false" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="新职务类别" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="Reference" field="newseries_jobtypename" fixedHeader="false" i18nName="26009tran-000063" id="newseries_jobtypename" imageOnly="false" nullAble="true" refNode="refnode_hi_stapply_newseries_jobtypename" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="新职务类别" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="oldworktype" fixedHeader="false" i18nName="26009tran-000064" id="oldworktype" imageOnly="false" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="工种" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="Reference" field="oldworktype_name" fixedHeader="false" i18nName="26009tran-000064" id="oldworktype_name" imageOnly="false" nullAble="true" refNode="refnode_hi_stapply_oldworktype_name" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="工种" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="newworktype" fixedHeader="false" i18nName="26009tran-000065" id="newworktype" imageOnly="false" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="新工种" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="Reference" field="newworktype_name" fixedHeader="false" i18nName="26009tran-000065" id="newworktype_name" imageOnly="false" nullAble="true" refNode="refnode_hi_stapply_newworktype_name" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="新工种" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="UFBoolean" editable="true" editorType="CheckBox" field="ifendpart" fixedHeader="false" i18nName="26009tran-000046" id="ifendpart" imageOnly="false" nullAble="true" renderType="BooleanRender" showCheckBox="true" sortable="true" sumCol="false" text="结束兼职" textAlign="center" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="UFBoolean" editable="true" editorType="CheckBox" field="ifsynwork" fixedHeader="false" i18nName="26009tran-000021" id="ifsynwork" imageOnly="false" nullAble="true" renderType="BooleanRender" showCheckBox="true" sortable="true" sumCol="false" text="同步工作履历" textAlign="center" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="UFBoolean" editable="true" editorType="CheckBox" field="ifaddblack" fixedHeader="false" i18nName="26009tran-000045" id="ifaddblack" imageOnly="false" nullAble="true" renderType="BooleanRender" showCheckBox="true" sortable="true" sumCol="false" text="加入黑名单" textAlign="center" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="Memo" editable="true" editorType="TextArea" field="addreason" fixedHeader="false" i18nName="26009tran-000028" id="addreason" imageOnly="false" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="加入理由" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="UFBoolean" editable="true" editorType="CheckBox" field="ifaddpsnchg" fixedHeader="false" i18nName="26009tran-000017" id="ifaddpsnchg" imageOnly="false" nullAble="true" renderType="BooleanRender" showCheckBox="true" sortable="true" sumCol="false" text="跨组织调配增加流动记录" textAlign="center" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="Integer" editable="true" editorType="IntegerText" field="status" fixedHeader="false" id="status" imageOnly="false" nullAble="true" renderType="IntegerRender" showCheckBox="true" sortable="true" sumCol="false" text="vostatus" textAlign="right" visible="false" width="120">
+            </Column>
+        </GridComp>
+    </Components>
+    <Menus>
+        <MenuBarComp id="menu_list">
+            <MenuItem i18nName="w_ta-001019" id="list_add" langDir="node_ta-res" modifiers="2" showModel="1" stateManager="nc.bs.hrss.ta.common.dft.Init_StateManager" text="新增">
+                <Events>
+                    <Event async="true" methodName="addBill" name="onclick" onserver="true">
+                        <SubmitRule>
+                        </SubmitRule>
+                        <Params>
+                            <Param>
+                                <Name>mouseEvent</Name>
+                                <Value>
+                                </Value>
+                                <Desc>                                    <![CDATA[]]>
+                                </Desc>
+                            </Param>
+                        </Params>
+                        <Action>
+                        </Action>
+                    </Event>
+                </Events>
+            </MenuItem>
+            <MenuItem i18nName="w_ta-001021" id="list_delete" langDir="node_ta-res" modifiers="2" showModel="1" stateManager="nc.bs.hrss.ta.common.dft.Init_StateManager" text="删除">
+                <Events>
+                    <Event async="true" methodName="deleteBill" name="onclick" onserver="true">
+                        <SubmitRule>
+                        </SubmitRule>
+                        <Params>
+                            <Param>
+                                <Name>mouseEvent</Name>
+                                <Value>
+                                </Value>
+                                <Desc>                                    <![CDATA[]]>
+                                </Desc>
+                            </Param>
+                        </Params>
+                        <Action>
+                        </Action>
+                    </Event>
+                </Events>
+            </MenuItem>
+            <MenuItem id="m_" modifiers="3" sep="true" showModel="1" text="m_">
+            </MenuItem>
+            <MenuItem i18nName="w_ta-001023" id="list_submit" langDir="node_ta-res" modifiers="2" showModel="1" stateManager="nc.bs.hrss.ta.common.dft.Init_StateManager" text="提交">
+                <Events>
+                    <Event async="true" methodName="sumbitBill" name="onclick" onserver="true">
+                        <SubmitRule>
+                        </SubmitRule>
+                        <Params>
+                            <Param>
+                                <Name>mouseEvent</Name>
+                                <Value>
+                                </Value>
+                                <Desc>                                    <![CDATA[]]>
+                                </Desc>
+                            </Param>
+                        </Params>
+                        <Action>
+                        </Action>
+                    </Event>
+                </Events>
+            </MenuItem>
+            <MenuItem i18nName="w_ta-001024" id="list_callback" langDir="node_ta-res" modifiers="2" showModel="1" stateManager="nc.bs.hrss.trn.Callback_StateManager" text="收回">
+                <Events>
+                    <Event async="true" methodName="callBackBill" name="onclick" onserver="true">
+                        <SubmitRule>
+                        </SubmitRule>
+                        <Params>
+                            <Param>
+                                <Name>mouseEvent</Name>
+                                <Value>
+                                </Value>
+                                <Desc>                                    <![CDATA[]]>
+                                </Desc>
+                            </Param>
+                        </Params>
+                        <Action>
+                        </Action>
+                    </Event>
+                </Events>
+            </MenuItem>
+            <MenuItem id="m_" modifiers="3" sep="true" showModel="1" text="m_">
+            </MenuItem>
+            <MenuItem  id="list_refresh" modifiers="2" showModel="1" stateManager="nc.bs.hrsms.hi.common.Init_StateManager" text="刷新">
+                <Events>
+                    <Event async="true" methodName="RefreshBill" name="onclick" onserver="true">
+                        <SubmitRule>
+                        </SubmitRule>
+                        <Params>
+                            <Param>
+                                <Name>mouseEvent</Name>
+                                <Value>
+                                </Value>
+                                <Desc>                                    <![CDATA[]]>
+                                </Desc>
+                            </Param>
+                        </Params>
+                        <Action>
+                        </Action>
+                    </Event>
+                </Events>
+            </MenuItem>
+        </MenuBarComp>
+    </Menus>
+</Widget>

@@ -1,0 +1,78 @@
+package nc.pubitf.ta.overtime;
+
+import java.util.Map;
+
+import nc.vo.pub.BusinessException;
+import nc.vo.pub.lang.UFDouble;
+import nc.vo.pub.lang.UFLiteralDate;
+import nc.vo.ta.leave.LeaveRegVO;
+import nc.vo.ta.overtime.OvertimeRegVO;
+
+public interface ISegDetailService {
+	/**
+	 * 註冊加班分段明細（批量）
+	 * 
+	 * 業務邏輯：根據給定的加班登記單對象集合，逐個註冊加班分段明細節點 增加加班分段明細時，父節點的判斷：小於等於當前節點編碼的最近一個節點，
+	 * 如新節點編碼不存在，則新增節點，並鏈接原父節點後續節點（更新父節點PK為當前父節點PK的節點之父節點PK=當然節點PK）
+	 * 
+	 * @param overtimeRegVOs
+	 *            加班登記單數組
+	 * @throws BusinessException
+	 */
+	public void regOvertimeSegDetail(OvertimeRegVO[] overtimeRegVOs)
+			throws BusinessException;
+
+	/**
+	 * 註冊加班分段核銷記錄（批量）
+	 * 
+	 * 業務邏輯：根據給定的休假登記單對象集合，逐個註冊加班分段核銷記錄，
+	 * 休假登記註冊時，根據SegDetailAggVO在運行時構造轉補休、未作廢、未核銷完成、未結算、核銷剩餘時數>0的快捷訪問單向鏈表（用於快速核銷）
+	 * 休假登記保存時發生核銷動作
+	 * ，只核銷加班轉調休類的單據，核銷時使用快捷訪問單向鏈表按節點序號由小到大進行逐個核銷，並重新計算已核銷時數及金額、核銷剩餘時數及金額
+	 * 、更新是否核銷完成
+	 * 
+	 * 
+	 * @param leaveRegVOs
+	 *            休假登記單數組
+	 * @throws BusinessException
+	 */
+	public void regOvertimeSegDetailConsume(LeaveRegVO[] leaveRegVOs)
+			throws BusinessException;
+
+	/**
+	 * 按起迄時間計算時間段內應稅加班時數及應稅加班薪資（批量）
+	 * 
+	 * 業務邏輯：根據給定的員工及時間範圍，以及考勤規則上的加班一個月/三個月的限制，超限部分做為應稅加班費，限內部分作為免稅加班費返回
+	 * 
+	 * @param pk_psndocs
+	 *            計算員工數組
+	 * @param startDate
+	 *            開始日期
+	 * @param endDate
+	 *            結束日期
+	 * @return Map.Key=員工PK，Map.Value=UFDoube[0]:免稅加班費合計金額，UFDouble[1]:應稅加班費合計金額
+	 * @throws BusinessException
+	 */
+	Map<String, UFDouble[]> calculateTaxableByDate(String[] pk_psndocs,
+			UFLiteralDate startDate, UFLiteralDate endDate)
+			throws BusinessException;
+
+	/**
+	 * 按給定固定時薪及起迄時間結算（批量）
+	 * 
+	 * 業務邏輯：根據給定的員工時薪及時間範圍，以及考勤規則上的加班一個月/三個月的限制，超限部分做為應稅加班費，限內部分作為免稅加班費返回
+	 * 
+	 * @param psnFixSalary
+	 *            員工固定時薪集合
+	 * @param startDate
+	 *            開始日期
+	 * @param endDate
+	 *            結束日期
+	 * @return Map.Key=員工PK，Map.Value=UFDoube[0]:免稅加班費合計金額，UFDouble[1]:應稅加班費合計金額
+	 * @throws BusinessException
+	 */
+	Map<String, UFDouble[]> settleByFixSalary(
+			Map<String, UFDouble> psnFixSalary, UFLiteralDate startDate,
+			UFLiteralDate endDate) throws BusinessException;
+
+}

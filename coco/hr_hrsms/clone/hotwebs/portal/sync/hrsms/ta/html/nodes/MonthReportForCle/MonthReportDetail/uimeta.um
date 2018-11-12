@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding='UTF-8'?>
+<UIMeta flowmode="true" id="MonthReportDetail_um" jquery="0">
+	<FlowvLayout id="flowvlayout0776" widgetId="MonthReportDetail">
+        <FlowvPanel id="panelv10776" widgetId="MonthReportDetail">
+            <GridComp height="100%" id="gridMthDetail" left="15" position="relative" top="0" widgetId="main" width="94%">
+            </GridComp>
+        </FlowvPanel>
+    </FlowvLayout>
+</UIMeta>

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="gbk"?>
+<module name="twhr">
+	<public>
+		<!-- 接口 -->
+		<component priority="0" singleton="true" remote="true" tx="CMT" supportAlias="true">
+		  <interface>nc.itf.twhr.IAllowanceMaintain</interface>
+		  <implementation>nc.impl.twhr.AllowanceMaintainImpl</implementation>
+		</component>
+		<component priority="0" singleton="true" remote="true" tx="CMT" supportAlias="true">
+		  <interface>nc.pubitf.twhr.IAllowancePubQuery</interface>
+		  <implementation>nc.pubimpl.twhr.AllowancePubQueryImpl</implementation>
+		</component>    
+	</public>
+</module>

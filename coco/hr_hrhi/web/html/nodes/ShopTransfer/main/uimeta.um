@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding='UTF-8'?>
+<UIMeta flowmode="true" id="list_um" jquery="0">
+    <FlowvLayout autoFill="0" id="flowvlayout6428" widgetId="list">
+        <FlowvPanel id="panelv06428" widgetId="list">
+            <CanvasLayout className="rightcanvas" id="canvaslayout2912" widgetId="list">
+                <CanvasPanel id="canvaspanel2912" widgetId="list">
+            <Menubar id="menu_list" widgetId="list">
+            </Menubar>
+                </CanvasPanel>
+            </CanvasLayout>
+        </FlowvPanel>
+        <FlowvPanel id="panelv16428" widgetId="list">
+            <GridComp id="hi_stapplyGrid" widgetId="list">
+            </GridComp>
+        </FlowvPanel>
+    </FlowvLayout>
+</UIMeta>

@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding='UTF-8'?>
+<UIMeta flowmode="true" id="regapply_um" jquery="0">
+    <FlowvLayout autoFill="0" id="flowvlayout7501" widgetId="regapply">
+        <FlowvPanel id="panelv_operate" widgetId="regapply">
+         <CanvasLayout className="rightcanvas" id="menucanvas" widgetId="regapply">
+           <CanvasPanel id="canvasp1" widgetId="regapply">
+       	  	 <Menubar height="100%" id="menu_card" left="0" position="relative" top="0" widgetId="regapply" width="100%">
+              </Menubar> 
+           </CanvasPanel>
+         </CanvasLayout>
+        </FlowvPanel>
+        <FlowvPanel id="panelv06429" widgetId="regapply">
+             <PanelLayout i18nName="w_ta-000852" langDir="node_ta-res" id="panellayout1247" title="单据信息" widgetId="regapply" className="small_panel_div">
+                <PanelPanel bottomPadding="0" id="panelpanel1247" topPadding="20" widgetId="regapply">
+                   <FormComp id="headTab_card_regapply_form" widgetId="regapply">
+                   </FormComp>
+                </PanelPanel>
+            </PanelLayout>
+        </FlowvPanel>
+        <FlowvPanel id="panelv16429" widgetId="regapply">
+             <PanelLayout i18nName="w_ta-000853" langDir="node_ta-res" id="panellayout1248" title="人员信息" widgetId="regapply" className="small_panel_div">
+                <PanelPanel bottomPadding="0" id="panelpanel1248" topPadding="0" widgetId="regapply">
+                   <FormComp id="headTab_card_psninfo_form" widgetId="regapply">
+                   </FormComp>
+                </PanelPanel>
+            </PanelLayout>
+        </FlowvPanel>
+        <FlowvPanel id="panelv26429" widgetId="regapply">
+             <PanelLayout i18nName="w_trn-000020" langDir="node_hi-res" id="panellayout1249" title="转正前信息" widgetId="regapply" className="small_panel_div">
+                <PanelPanel bottomPadding="0" id="panelpanel1249" topPadding="0" widgetId="regapply">
+                   <FormComp id="headTab_card_before_form" widgetId="regapply">
+                   </FormComp>
+                </PanelPanel>
+            </PanelLayout>
+        </FlowvPanel>
+        <FlowvPanel id="panelv36429" widgetId="regapply">
+             <PanelLayout i18nName="w_trn-000021" langDir="node_hi-res" id="panellayout1250" title="转正后信息" widgetId="regapply" className="small_panel_div">
+                <PanelPanel bottomPadding="0" id="panelpanel1250" topPadding="0" widgetId="regapply">
+                   <FormComp id="headTab_card_after_form" widgetId="regapply">
+                   </FormComp>
+                </PanelPanel>
+            </PanelLayout>
+        </FlowvPanel>
+    </FlowvLayout>
+</UIMeta>

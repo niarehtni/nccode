@@ -1,0 +1,2 @@
+
+alter table tbm_leaveh add varchar(20);

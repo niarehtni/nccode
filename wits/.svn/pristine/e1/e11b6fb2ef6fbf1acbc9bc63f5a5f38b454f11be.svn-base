@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component conRouterType="手动" createIndustry="0"
+	createTime="2017-09-08 16:00:47" creator="" description=""
+	displayName="专案代码(自定义档案)业务操作" fromSourceBmf="true"
+	gencodestyle="NC传统样式" help="" id="d2da6940-946b-11e7-864a-958d5472e92a"
+	industry="0" industryChanged="false" industryIncrease="false"
+	industryName="基础行业" isSource="false" isbizmodel="true" mainEntity=""
+	modifier="" modifyIndustry="0" modifyTime="2017-09-08 16:00:47"
+	name="bo_Defdoc-UHRP001" namespace="uap" ownModule="uapbd"
+	preLoad="false" programcode="" resModuleName="bo_Defdoc-UHRP001"
+	resid="" version="1" versionType="0">
+	<celllist>
+		<busioperation componentID="d2da6940-946b-11e7-864a-958d5472e92a"
+			createIndustry="0" createTime="2017-09-08 16:00:47" creator=""
+			dataType="1001AA10000000001GHW" dbtype="" description=""
+			displayName="修改" fullClassName="nc.vouap.bo_Defdoc-UHRP001.edit"
+			height="100" help="" id="d2da6944-946b-11e7-864a-958d5472e92a"
+			industryChanged="false" isAuthorization="true" isBusiActivity="false"
+			isSource="false" logtype="MODIFY" modifier="" modifyIndustry="0"
+			modifyTime="2017-09-08 16:00:47" name="edit" needlog="true"
+			resid="2UC000-001103" typeDisplayName="专案代码(自定义档案)"
+			typeName="Defdoc-UHRP001" version=""
+			versionType="0" visibility="public" width="80" x="150" y="120">
+			<refoperationlist />
+		</busioperation>
+		<busioperation componentID="d2da6940-946b-11e7-864a-958d5472e92a"
+			createIndustry="0" createTime="2017-09-08 16:00:47" creator=""
+			dataType="1001AA10000000001GHW" dbtype="" description=""
+			displayName="删除" fullClassName="nc.vouap.bo_Defdoc-UHRP001.delete"
+			height="100" help="" id="d2da6942-946b-11e7-864a-958d5472e92a"
+			industryChanged="false" isAuthorization="true" isBusiActivity="false"
+			isSource="false" logtype="DELETE" modifier="" modifyIndustry="0"
+			modifyTime="2017-09-08 16:00:47" name="delete" needlog="true"
+			resid="2UC000-001104" typeDisplayName="专案代码(自定义档案)"
+			typeName="Defdoc-UHRP001" version=""
+			versionType="0" visibility="public" width="80" x="250" y="120">
+			<refoperationlist />
+		</busioperation>
+		<busioperation componentID="d2da6940-946b-11e7-864a-958d5472e92a"
+			createIndustry="0" createTime="2017-09-08 16:00:47" creator=""
+			dataType="1001AA10000000001GHW" dbtype="" description=""
+			displayName="启用" fullClassName="nc.vouap.bo_Defdoc-UHRP001.enable"
+			height="100" help="" id="d2da6945-946b-11e7-864a-958d5472e92a"
+			industryChanged="false" isAuthorization="true" isBusiActivity="false"
+			isSource="false" logtype="MODIFY" modifier="" modifyIndustry="0"
+			modifyTime="2017-09-08 16:00:47" name="enable" needlog="true"
+			resid="2UC000-001105" typeDisplayName="专案代码(自定义档案)"
+			typeName="Defdoc-UHRP001" version=""
+			versionType="0" visibility="public" width="80" x="350" y="120">
+			<refoperationlist />
+		</busioperation>
+		<busioperation componentID="d2da6940-946b-11e7-864a-958d5472e92a"
+			createIndustry="0" createTime="2017-09-08 16:00:47" creator=""
+			dataType="1001AA10000000001GHW" dbtype="" description=""
+			displayName="停用" fullClassName="nc.vouap.bo_Defdoc-UHRP001.disable"
+			height="100" help="" id="d2da6943-946b-11e7-864a-958d5472e92a"
+			industryChanged="false" isAuthorization="true" isBusiActivity="false"
+			isSource="false" logtype="MODIFY" modifier="" modifyIndustry="0"
+			modifyTime="2017-09-08 16:00:47" name="disable" needlog="true"
+			resid="2UC000-001106" typeDisplayName="专案代码(自定义档案)"
+			typeName="Defdoc-UHRP001" version=""
+			versionType="0" visibility="public" width="80" x="450" y="120">
+			<refoperationlist />
+		</busioperation>
+		<busioperation componentID="d2da6940-946b-11e7-864a-958d5472e92a"
+			createIndustry="0" createTime="2017-09-08 16:00:47" creator=""
+			dataType="1001AA10000000001GHW" dbtype="" description=""
+			displayName="新增" fullClassName="nc.vouap.bo_Defdoc-UHRP001.add"
+			height="100" help="" id="d2da6941-946b-11e7-864a-958d5472e92a"
+			industryChanged="false" isAuthorization="true" isBusiActivity="false"
+			isSource="false" logtype="ADD" modifier="" modifyIndustry="0"
+			modifyTime="2017-09-08 16:00:47" name="add" needlog="true"
+			resid="2UC000-001114" typeDisplayName="专案代码(自定义档案)"
+			typeName="Defdoc-UHRP001" version=""
+			versionType="0" visibility="public" width="80" x="50" y="120">
+			<refoperationlist />
+		</busioperation>
+	</celllist>
+	<connectlist />
+	<refdepends />
+	<refdependLoseIDs />
+	<cellRemoveLog />
+	<rulers>
+		<ruler isHorizontal="true" unit="0">
+			<guideList />
+		</ruler>
+		<ruler isHorizontal="false" unit="0">
+			<guideList />
+		</ruler>
+	</rulers>
+</component>

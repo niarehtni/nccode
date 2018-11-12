@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE beans PUBLIC "-//SPRING//DTD BEAN//EN" "http://www.springframework.org/dtd/spring-beans.dtd">
+
+<beans>
+	<import resource="classpath:nc/ui/wa/datainterface/common_config.xml" />
+
+	<bean id="container" class="nc.ui.wa.datainterface.view.DataIOTangramContainer" init-method="initUI"> 		
+		<property name="model" ref="dataIOAppModel"/>
+		<property name = "mainPanel" ref = "mainPanel"/>
+		<property name = "ioPanel" ref = "ioPanel"/>
+		
+		<property name="actions">
+			<list>
+				<ref bean="addAction" />    
+				<ref bean="editAction" />    
+				<ref bean="delAction" />    
+			 	<ref bean="copyAction" />
+				<ref bean="nullAction" /> 
+				<ref bean="refreshAction" />  
+				<ref bean="nullAction" />
+				<ref bean="fipAndExportActionMenu" />
+			</list> 
+		</property> 
+		<property name="exportActions">
+			<list>
+				<ref bean="queryAction" />
+				<ref bean="outDataAction" />
+				<ref bean="nullAction" />
+  				<ref bean="printActionMenu" />
+  				<ref bean="nullAction" /> 
+  				<ref bean="returnAction" />    
+			</list>
+		</property> 
+		<property name="importActions">
+			<list>
+				<ref bean="inDataAction" />
+				<ref bean="dataIntoDBAction" />  
+				<ref bean="nullAction" />
+  				<ref bean="printActionMenu" />
+  				<ref bean="nullAction" />
+  				<ref bean="returnAction" />  
+			</list>
+		</property> 
+    </bean>  
+	<bean id="fipAndExportActionMenu" class="nc.funcnode.ui.action.MenuAction">
+		<property name="code" value="fipAndExport"></property>
+		<property name="name">
+			<bean class="nc.ui.uif2.I18nFB">
+				<property name="resDir" value="xmlcode" />
+				<property name="defaultValue" value="导入导出" />
+				<property name="resId" value="X60130040" />
+			</bean>
+		</property>
+		<property name="actions">
+			<list>
+				<ref bean="importAction" />
+				<ref bean="nullAction" />
+				<ref bean="exportAction" />
+				<!--MOD 薪资、奖金明细代扣项导入 kevin.nie 2018-01-29 start-->
+				<ref bean="nullAction" />
+				<ref bean="importPayDataAction" />
+				<!--MOD 薪资、奖金明细代扣项导入 kevin.nie 2018-01-29 start-->
+			</list>
+		</property>
+	</bean>
+	<!--MOD 薪资、奖金明细代扣项导入 kevin.nie 2018-01-29 start-->
+	<bean id="importPayDataAction" class="nc.ui.wa.datainterface.action.ImportPayDataAction">
+     	<property name="model" ref="dataIOAppModel" />
+     </bean>
+	<!--MOD 薪资、奖金明细代扣项导入 kevin.nie 2018-01-29 start-->
+</beans>
+

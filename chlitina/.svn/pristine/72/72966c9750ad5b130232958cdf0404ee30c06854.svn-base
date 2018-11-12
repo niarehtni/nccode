@@ -1,0 +1,142 @@
+package nc.ui.wa.paydata.action;
+
+import java.awt.Event;
+import java.awt.event.ActionEvent;
+import java.awt.event.KeyEvent;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+import javax.swing.Action;
+import javax.swing.KeyStroke;
+import javax.swing.SwingUtilities;
+import javax.swing.SwingWorker;
+
+import nc.bs.framework.common.NCLocator;
+import nc.bs.uif2.LockFailedException;
+import nc.bs.uif2.VersionConflictException;
+import nc.funcnode.ui.action.INCAction;
+import nc.hr.utils.ResHelper;
+import nc.itf.hr.wa.IHRWAActionCode;
+import nc.itf.twhr.ICalculateTWNHI;
+import nc.pubitf.para.SysInitQuery;
+import nc.ui.hr.caculate.view.BannerTimerDialog;
+import nc.ui.hr.caculate.view.RecacuTypeChooseDialog;
+import nc.ui.pub.beans.MessageDialog;
+import nc.ui.pub.beans.UIDialog;
+import nc.ui.uif2.ShowStatusBarMsgUtil;
+import nc.ui.wa.paydata.view.DateLarborDelDlg;
+import nc.vo.hr.caculate.CaculateTypeVO;
+import nc.vo.pub.BusinessException;
+import nc.vo.pub.SuperVO;
+import nc.vo.pub.lang.UFDate;
+import nc.vo.pub.lang.UFLiteralDate;
+import nc.vo.wa.paydata.DataVO;
+import nc.vo.wa.pub.PeriodStateVO;
+import nc.vo.wa.pub.WaLoginVOHelper;
+import nc.vo.wa.pub.WaState;
+import nc.vo.wa.pub.WadataState;
+
+/**
+ * 二代健保计算
+ *
+ * @author: Ares.Tank
+ * @date: 2018-9-19 17:31:59
+ * @since: eHR V6.5
+ */											
+public class HealthCaculateAction extends PayDataBaseAction {
+	private static final long serialVersionUID = 1L;
+
+	public HealthCaculateAction() {
+		putValue("Code", "HealthCaculateAction");
+		setBtnName(ResHelper.getString("60130paydata","60130paydata-001"));
+
+		putValue("ShortDescription",
+				ResHelper.getString("60130paydata","60130paydata-001")
+						+ "(Ctrl+F)");
+		putValue("AcceleratorKey", javax.swing.KeyStroke.getKeyStroke(KeyEvent.VK_F, Event.CTRL_MASK));
+	}
+
+	public void doActionForExtend(ActionEvent e) throws Exception {
+		//PeriodStateVO periodStateVO = (PeriodStateVO) getEditor().getValue();
+		
+		// 退保日期确认
+		DateLarborDelDlg dlg = new DateLarborDelDlg(getEntranceUI(), "預計發放日期", "發放日期");
+
+		dlg.initUI();
+		dlg.showModal();
+		
+		
+		UFDate payDate = dlg.getdEffectiveDate();
+		//String payComment = periodStateVO.getVpaycomment();
+
+		// ssx added on 2015-12-07
+		// for SysInit code = TW07
+		/*String payDateTWSetting = SysInitQuery.getParaString(this.getContext()
+				.getPk_org(), "TWHR07");*/
+		if (payDate == null) { // payDateTWSetting.equals("發放日期") remarked by
+								// ssx on 2017/7/4, for 二代健保強制限制發放日期不能為空
+			MessageDialog.showErrorDlg(SwingUtilities
+					.getWindowAncestor(getWaContext().getEntranceUI()),
+					ResHelper.getString("twhr_paydata",
+							"TaiwanNHICalculator-0007"), ResHelper.getString(
+							"twhr_paydata", "TaiwanNHICalculator-0008")); // 薪資發放日期不允許為空。
+			return;
+		}
+
+		/*String keyName = ResHelper.getString("60130paydata",
+				"060130paydata0343");
+		String[] files = getPaydataManager().getAlterFiles(keyName);
+		showAlertInfo(files);
+
+		getPeriodVO().setCpaydate(payDate);
+		getPeriodVO().setVpaycomment(payComment);
+
+		getPaydataManager().onPay();
+*/
+		// ssx added for extend NHI on 2017/7/4
+		
+		
+		
+		
+		ICalculateTWNHI nhiSrv = NCLocator.getInstance().lookup(
+				ICalculateTWNHI.class);
+		nhiSrv.updateExtendNHIInfo(getWaContext().getPk_group(), getWaContext()
+				.getPk_org(), getWaContext().getPk_wa_class(), getWaContext()
+				.getWaLoginVO().getPk_periodscheme(), getWaContext()
+				.getWaLoginVO().getPeriodVO().getPk_wa_period(), payDate);
+		//
+	}
+	/**
+	 * 薪資發放完成才能計算二代健保--補充保費需要
+	 */
+	public Set<WaState> getEnableStateSet() {
+		if (waStateSet == null) {
+			waStateSet = new HashSet<WaState>();
+			waStateSet.add(WaState.CLASS_ALL_PAY);
+		}
+		return waStateSet;
+	}
+	
+	/*protected boolean isActionEnable() {
+		boolean enable = super.isActionEnable();
+		if (enable) {
+			Set<WadataState> set = getEnableDataStateSet();
+			if (set != null) {
+				enable = set.contains(getWadataState());
+			}
+		}
+		if (enable) {
+			if (!WaLoginVOHelper.isMultiClass(getWaContext().getWaLoginVO()))
+				return true;
+		}
+		return false;
+	}*/
+
+	public void doAction(ActionEvent e) throws Exception {
+		super.doAction(e);
+		putValue("message_after_action",
+				ResHelper.getString("60130paydata", "60130paydata-004"));
+	}
+
+}

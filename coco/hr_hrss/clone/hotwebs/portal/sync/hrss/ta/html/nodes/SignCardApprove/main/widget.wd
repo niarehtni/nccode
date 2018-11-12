@@ -1,0 +1,462 @@
+<?xml version="1.0" encoding='UTF-8'?>
+<Widget controllerClazz="nc.bs.hrss.ta.signcard.ctrl.SignCardApproveView" dialog="false" i18nName="a_pub-000186" langDir="node_pub-res" caption="签卡审批详细界面" id="main" refId="main" sourcePackage="src/public/">
+    <PlugoutDescs>
+    </PlugoutDescs>
+    <PluginDescs>
+        <PluginDesc id="plugin_exetask">
+            <PluginDescItem clazztype="java.util.Map" id="key1">
+            </PluginDescItem>
+        </PluginDesc>
+    </PluginDescs>
+    <Events>
+        <Event async="true" methodName="pluginplugin_exetask" onserver="true">
+            <Params>
+                <Param>
+                    <Name>keys</Name>
+                    <Value>
+                    </Value>
+                    <Desc>                        <![CDATA[java.util.Map]]>
+                    </Desc>
+                </Param>
+            </Params>
+            <Action>
+            </Action>
+        </Event>
+    </Events>
+    <Models>
+        <Datasets>
+            <DatasetRelations>
+                <DatasetRelation detailDataset="hrtasignb" detailForeignKey="pk_signh" id="tbm_signb_tbm_signh" masterDataset="hrtasigncardh" masterKeyField="pk_signh">
+                </DatasetRelation>
+            </DatasetRelations>
+            <MdDataset i18nName="w_ta-000917" langDir="node_ta-res" caption="签卡申请单子表" controlwidgetopeStatus="true" enabled="true" id="hrtasignb" lazyLoad="true" notNullBody="false" objMeta="hrta.hrtasignb" voMeta="nc.vo.ta.signcard.SignbVO">
+                <FieldRelations>
+                    <FieldRelation id="pk_group_rel" refDataset="$refds_uap_group">
+                        <MatchFields>
+                            <Field readField="name" writeField="pk_group_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_group" value="pk_group">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_org_rel" refDataset="$refds_uap_hrorg">
+                        <MatchFields>
+                            <Field readField="name" writeField="pk_org_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_hrorg" value="pk_org">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="signreason_rel" refDataset="$refds_uap_Defdoc__HRTA004">
+                        <MatchFields>
+                            <Field readField="name" writeField="signreason_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_defdoc" value="signreason">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                </FieldRelations>
+                <Fields>
+                    <ModifyField i18nName="w_ta-000918" langDir="node_ta-res" id="signstatus" nullAble="false" text="签卡状态">
+                    </ModifyField>
+                    <ModifyField id="signtime" nullAble="false">
+                    </ModifyField>
+                </Fields>
+            </MdDataset>
+            <RefMdDataset i18nName="w_ta-000919" langDir="node_ta-res" caption="人员基本信息" controlwidgetopeStatus="false" enabled="true" id="$refds_hrhi_bd_psndoc" lazyLoad="true" notNullBody="false" objMeta="hrhi.bd_psndoc" voMeta="nc.vo.hi.psndoc.PsndocVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset i18nName="w_ta-000920" langDir="node_ta-res" caption="组织_部门版本信息" controlwidgetopeStatus="false" enabled="true" id="$refds_uap_dept_v" lazyLoad="true" notNullBody="false" objMeta="uap.dept_v" voMeta="nc.vo.vorg.DeptVersionVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset i18nName="w_ta-000921" langDir="node_ta-res" caption="组织_集团" controlwidgetopeStatus="false" enabled="true" id="$refds_uap_group" lazyLoad="true" notNullBody="false" objMeta="uap.group" voMeta="nc.vo.org.GroupVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <MdDataset i18nName="w_ta-000922" langDir="node_ta-res" caption="签卡申请单主表" controlwidgetopeStatus="false" enabled="true" id="hrtasigncardh" lazyLoad="false" notNullBody="false" objMeta="hrta.hrtasigncardh" voMeta="nc.vo.ta.signcard.SignhVO">
+                <FieldRelations>
+                    <FieldRelation id="pk_group_rel" refDataset="$refds_uap_group">
+                        <MatchFields>
+                            <Field readField="name" writeField="pk_group_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_group" value="pk_group">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_org_rel" refDataset="$refds_uap_hrorg">
+                        <MatchFields>
+                            <Field readField="name" writeField="pk_org_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_hrorg" value="pk_org">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="transtypeid_rel" refDataset="$refds_uap_BilltypeVO">
+                        <MatchFields>
+                            <Field readField="billtypename" writeField="transtypeid_billtypename">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_billtypeid" value="transtypeid">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="billmaker_rel" refDataset="$refds_uap_user">
+                        <MatchFields>
+                            <Field readField="user_name" writeField="billmaker_user_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="cuserid" value="billmaker">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_psndoc_rel" refDataset="$refds_hrhi_hi_psnjob">
+                        <MatchFields>
+                            <Field readField="pk_psndoc" writeField="pk_psnjob_pk_psndoc">
+                            </Field>
+                            <Field readField="clerkcode" writeField="pk_psnjob_clerkcode">
+                            </Field>
+                            <Field readField="pk_dept" writeField="pk_psnjob_pk_dept">
+                            </Field>
+                            <Field readField="pk_job" writeField="pk_psnjob_pk_job">
+                            </Field>
+                            <Field readField="pk_post" writeField="pk_psnjob_pk_post">
+                            </Field>
+                            <Field readField="pk_org" writeField="pk_psnjob_pk_org">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_psnjob" value="pk_psnjob">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_psnjob_pk_psndoc_rel" refDataset="$refds_hrhi_bd_psndoc">
+                        <MatchFields>
+                            <Field readField="code" writeField="pk_psnjob_pk_psndoc_code">
+                            </Field>
+                            <Field readField="name" writeField="pk_psnjob_pk_psndoc_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_psndoc" value="pk_psnjob_pk_psndoc">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="approver_rel" refDataset="$refds_uap_user">
+                        <MatchFields>
+                            <Field readField="user_name" writeField="approver_user_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="cuserid" value="approver">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="creator_rel" refDataset="$refds_uap_user">
+                        <MatchFields>
+                            <Field readField="user_name" writeField="creator_user_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="cuserid" value="creator">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="modifier_rel" refDataset="$refds_uap_user">
+                        <MatchFields>
+                            <Field readField="user_name" writeField="modifier_user_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="cuserid" value="modifier">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_org_v_rel" refDataset="$refds_uap_hrorg_v">
+                        <MatchFields>
+                            <Field readField="name" writeField="pk_org_v_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_vid" value="pk_org_v">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_dept_v_rel" refDataset="$refds_uap_dept_v">
+                        <MatchFields>
+                            <Field readField="name" writeField="pk_dept_v_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_vid" value="pk_dept_v">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_psnjob_pk_post_rel" refDataset="$refds_hrjf_om_post">
+                        <MatchFields>
+                            <Field readField="postname" writeField="pk_psnjob_pk_post_postname">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_post" value="pk_psnjob_pk_post">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_psnjob_pk_job_rel" refDataset="$refds_hrjf_om_job">
+                        <MatchFields>
+                            <Field iscontains="Y" ismatch="Y" readField="pk_job" writeField="pk_psnjob_pk_job">
+                            </Field>
+                            <Field readField="jobname" writeField="pk_psnjob_pk_job_jobname">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_job" value="pk_psnjob_pk_job">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_psnjob_pk_org_rel" refDataset="$refds_uap_org">
+                        <MatchFields>
+                            <Field iscontains="Y" ismatch="Y" readField="pk_org" writeField="pk_psnjob_pk_org">
+                            </Field>
+                            <Field readField="name" writeField="pk_psnjob_pk_org_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_org" value="pk_psnjob_pk_org">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_psnjob_pk_dept_rel" refDataset="$refds_uap_dept">
+                        <MatchFields>
+                            <Field iscontains="Y" ismatch="Y" readField="pk_dept" writeField="pk_psnjob_pk_dept">
+                            </Field>
+                            <Field readField="name" writeField="pk_psnjob_pk_dept_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_dept" value="pk_psnjob_pk_dept">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                </FieldRelations>
+                <Fields>
+                    <ModifyField i18nName="w_ta-000923" langDir="node_ta-res" id="bill_code" nullAble="false" text="申请单编码">
+                    </ModifyField>
+                    <ModifyField i18nName="2UC000-000570" id="transtypeid_billtypename" text="流程类型">
+                    </ModifyField>
+					<Field dataType="String" i18nName="w_ta-000298" id="pk_psnjob_pk_psndoc_name" langDir="node_ta-res" nullAble="true" primaryKey="false" sourceField="pk_psnjob_pk_psndoc" text="姓名">
+                    </Field>
+                    <Field i18nName="w_ta-000924" langDir="node_ta-res" dataType="String" id="pk_psnjob_clerkcode" nullAble="true" primaryKey="false" sourceField="pk_psnjob" text="员工号">
+                    </Field>
+                    <Field i18nName="w_ta-000925" langDir="node_ta-res" dataType="String" id="pk_psnjob_pk_post" nullAble="true" primaryKey="false" sourceField="pk_psnjob" text="岗位">
+                    </Field>
+                    <Field i18nName="w_ta-000926" langDir="node_ta-res" dataType="String" id="pk_psnjob_pk_job" nullAble="true" primaryKey="false" sourceField="pk_psnjob" text="职务">
+                    </Field>
+                    <Field i18nName="w_ta-000927" langDir="node_ta-res" dataType="String" id="pk_psnjob_pk_dept" nullAble="true" primaryKey="false" sourceField="pk_psnjob" text="部门">
+                    </Field>
+                    <Field i18nName="w_ta-000928" langDir="node_ta-res" dataType="String" id="pk_psnjob_pk_org" nullAble="true" primaryKey="false" sourceField="pk_psnjob" text="组织">
+                    </Field>
+                    <Field i18nName="w_ta-000929" langDir="node_ta-res" dataType="String" id="pk_psnjob_pk_psndoc_code" nullAble="true" primaryKey="false" sourceField="pk_psnjob_pk_psndoc" text="人员编码">
+                    </Field>
+                    <Field i18nName="w_ta-000925" langDir="node_ta-res" dataType="String" id="pk_psnjob_pk_post_postname" nullAble="true" primaryKey="false" sourceField="pk_psnjob_pk_post" text="岗位">
+                    </Field>
+                    <Field i18nName="w_ta-000926" langDir="node_ta-res" dataType="String" id="pk_psnjob_pk_job_jobname" nullAble="true" primaryKey="false" sourceField="pk_psnjob_pk_job" text="职务">
+                    </Field>
+                    <Field i18nName="w_ta-000928" langDir="node_ta-res" dataType="String" id="pk_psnjob_pk_org_name" nullAble="true" primaryKey="false" sourceField="pk_psnjob_pk_org" text="组织">
+                    </Field>
+                    <Field i18nName="w_ta-000927" langDir="node_ta-res" dataType="String" id="pk_psnjob_pk_dept_name" nullAble="true" primaryKey="false" sourceField="pk_psnjob_pk_dept" text="部门">
+                    </Field>
+                </Fields>
+                <Events>
+                    <Event async="true" jsEventClaszz="nc.uap.lfw.core.event.conf.DatasetListener" methodName="onDataLoad_masterDs" name="onDataLoad" onserver="true">
+                        <SubmitRule cardSubmit="false" panelSubmit="false" tabSubmit="false">
+                        </SubmitRule>
+                        <Params>
+                            <Param>
+                                <Name>dataLoadEvent</Name>
+                                <Value>
+                                </Value>
+                                <Desc>                                    <![CDATA[]]>
+                                </Desc>
+                            </Param>
+                        </Params>
+                        <Action>
+                        </Action>
+                    </Event>
+                </Events>
+            </MdDataset>
+            <RefMdDataset i18nName="w_ta-000922" langDir="node_ta-res" caption="签卡申请单主表" controlwidgetopeStatus="false" enabled="true" id="$refds_hrta_hrtasigncardh" lazyLoad="true" notNullBody="false" objMeta="hrta.hrtasigncardh" voMeta="nc.vo.ta.signcard.SignhVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset i18nName="w_ta-000930" langDir="node_ta-res" caption="组织_业务单元_人力资源组织" controlwidgetopeStatus="false" enabled="true" id="$refds_uap_hrorg" lazyLoad="true" notNullBody="false" objMeta="uap.hrorg" voMeta="nc.vo.org.HROrgVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset i18nName="w_ta-000931" langDir="node_ta-res" caption="签卡原因(自定义档案)" controlwidgetopeStatus="false" enabled="true" id="$refds_uap_Defdoc__HRTA004" lazyLoad="true" notNullBody="false" objMeta="uap.Defdoc-HRTA004_0xx" voMeta="nc.vo.bd.defdoc.DefdocVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset i18nName="w_ta-000932" langDir="node_ta-res" caption="用户" controlwidgetopeStatus="false" enabled="true" id="$refds_uap_user" lazyLoad="true" notNullBody="false" objMeta="uap.user" voMeta="nc.vo.sm.UserVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset i18nName="w_ta-000933" langDir="node_ta-res" caption="单据类型" controlwidgetopeStatus="false" enabled="true" id="$refds_uap_BilltypeVO" lazyLoad="true" notNullBody="false" objMeta="uap.BilltypeVO" voMeta="nc.vo.pub.billtype.BilltypeVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset i18nName="w_ta-000926" langDir="node_ta-res" caption="职务" controlwidgetopeStatus="false" enabled="false" id="$refds_hrjf_om_job" lazyLoad="true" notNullBody="false" objMeta="hrjf.om_job" voMeta="nc.vo.om.job.JobVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset i18nName="w_ta-000934" langDir="node_ta-res" caption="组织_部门" controlwidgetopeStatus="false" enabled="false" id="$refds_uap_dept" lazyLoad="true" notNullBody="false" objMeta="uap.dept" voMeta="nc.vo.org.DeptVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset i18nName="w_ta-000935" langDir="node_ta-res" caption="组织关系" controlwidgetopeStatus="false" enabled="true" id="$refds_hrhi_hi_psnorg" lazyLoad="true" notNullBody="false" objMeta="hrhi.hi_psnorg" voMeta="nc.vo.hi.psndoc.PsnOrgVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <MdDataset i18nName="w_ta-000936" langDir="node_ta-res" caption="岗位基本信息" controlwidgetopeStatus="false" enabled="false" id="$refds_hrjf_om_post" lazyLoad="true" notNullBody="false" objMeta="hrjf.om_post" voMeta="nc.vo.om.post.PostVO">
+                <Fields>
+                </Fields>
+            </MdDataset>
+            <RefMdDataset i18nName="w_ta-000937" langDir="node_ta-res" caption="组织_业务单元_人力资源组织版本信息" controlwidgetopeStatus="false" enabled="true" id="$refds_uap_hrorg_v" lazyLoad="true" notNullBody="false" objMeta="uap.hrorg_v" voMeta="nc.vo.vorg.HROrgVersionVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <MdDataset i18nName="w_ta-000928" langDir="node_ta-res" caption="组织" controlwidgetopeStatus="false" enabled="false" id="$refds_uap_org" lazyLoad="true" notNullBody="false" objMeta="uap.org" voMeta="nc.vo.org.OrgVO">
+                <Fields>
+                </Fields>
+            </MdDataset>
+            <RefMdDataset i18nName="w_ta-000938" langDir="node_ta-res" caption="工作记录" controlwidgetopeStatus="false" enabled="true" id="$refds_hrhi_hi_psnjob" lazyLoad="true" notNullBody="false" objMeta="hrhi.hi_psnjob" voMeta="nc.vo.hi.psndoc.PsnJobVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+        </Datasets>
+        <ComboDatas>
+            <MDComboDataConf i18nName="w_ta-000922" langDir="node_ta-res" caption="签卡申请单主表" fullclassName="957c7ecd-b733-4839-9c46-c6828da14f00" id="combo_hrtasigncardh_approve_state">
+            </MDComboDataConf>
+            <MDComboDataConf i18nName="w_ta-000917" langDir="node_ta-res" caption="签卡申请单子表" fullclassName="0e47ddc6-3c6c-4736-8c65-4f657fecc2e5" id="combo_hrtasignb_signstatus">
+            </MDComboDataConf>
+        </ComboDatas>
+        <RefNodes>
+            <NCRefNode allowInput="false" dataListener="" dialog="true" i18nName="w_ta-000902" id="refnode_hrtasigncardh_pk_org_name" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" path="reference/reftree.jsp" readDs="masterDs" readFields="pk_hrorg,name" refId="" refcode="人力资源组织" refnodeDelegator="" refresh="false" selLeafOnly="false" text="签卡申请单主表_人力资源组织" usePower="false" writeDs="hrtasigncardh" writeFields="pk_org,pk_org_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialog="true" i18nName="w_ta-000903" id="refnode_hrtasigncardh_billmaker_user_name" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" path="reference/refgrid.jsp" readDs="masterDs" readFields="cuserid,user_name" refId="" refcode="用户" refnodeDelegator="" refresh="false" selLeafOnly="false" text="签卡申请单主表_用户" usePower="false" writeDs="hrtasigncardh" writeFields="billmaker,billmaker_user_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialog="true" i18nName="w_ta-000903" id="refnode_hrtasigncardh_approver_user_name" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" path="reference/refgrid.jsp" readDs="masterDs" readFields="cuserid,user_name" refId="" refcode="用户" refnodeDelegator="" refresh="false" selLeafOnly="false" text="签卡申请单主表_用户" usePower="false" writeDs="hrtasigncardh" writeFields="approver,approver_user_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialog="true" i18nName="w_ta-000905" id="refnode_hrtasigncardh_pk_group_name" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" path="reference/reftree.jsp" readDs="masterDs" readFields="pk_group,name" refId="" refcode="集团" refnodeDelegator="" refresh="false" selLeafOnly="false" text="签卡申请单主表_集团" usePower="false" writeDs="hrtasigncardh" writeFields="pk_group,pk_group_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialog="true" i18nName="w_ta-000903" id="refnode_hrtasigncardh_modifier_user_name" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" path="reference/refgrid.jsp" readDs="masterDs" readFields="cuserid,user_name" refId="" refcode="用户" refnodeDelegator="" refresh="false" selLeafOnly="false" text="签卡申请单主表_用户" usePower="false" writeDs="hrtasigncardh" writeFields="modifier,modifier_user_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialog="true" i18nName="w_ta-000907" id="refnode_hrtasignb_pk_org_name" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" path="reference/reftree.jsp" readDs="masterDs" readFields="pk_hrorg,name" refId="" refcode="人力资源组织" refnodeDelegator="" refresh="false" selLeafOnly="false" text="签卡申请单子表_人力资源组织" usePower="false" writeDs="hrtasignb" writeFields="pk_org,pk_org_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialog="true" i18nName="w_ta-000908" id="refnode_hrtasigncardh_pk_psndoc_name" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" path="reference/refgrid.jsp" readDs="masterDs" readFields="pk_psndoc,name" refId="" refcode="HR人员" refnodeDelegator="" refresh="false" selLeafOnly="false" text="签卡申请单主表_HR人员" usePower="false" writeDs="hrtasigncardh" writeFields="pk_psndoc,pk_psndoc_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialog="true" i18nName="w_ta-000909" id="refnode_hrtasigncardh_pk_psnjob_pk_psndoc_name" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" path="reference/refgrid.jsp" readDs="masterDs" readFields="pk_psnjob,name" refId="" refcode="人员工作记录" refnodeDelegator="" refresh="false" selLeafOnly="false" text="签卡申请单主表_人员工作记录" usePower="false" writeDs="hrtasigncardh" writeFields="pk_psnjob,pk_psnjob_pk_psndoc_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialog="true" i18nName="w_ta-000910" id="refnode_hrtasigncardh_pk_psnorg" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" path="reference/refgrid.jsp" readDs="masterDs" readFields="pk_psnorg,enddate" refId="" refcode="HR组织关系" refnodeDelegator="" refresh="false" selLeafOnly="false" text="签卡申请单主表_HR组织关系" usePower="false" writeDs="hrtasigncardh" writeFields="pk_psnorg,pk_psnorg_null">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialog="true" i18nName="w_ta-000911" id="refnode_hrtasignb_signreason_name" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" path="reference/refgrid.jsp" readDs="masterDs" readFields="pk_defdoc,name" refId="" refcode="签卡原因(自定义档案)" refnodeDelegator="" refresh="false" selLeafOnly="false" text="签卡申请单子表_签卡原因(自定义档案)" usePower="false" writeDs="hrtasignb" writeFields="signreason,signreason_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialog="true" i18nName="w_ta-000912" id="refnode_hrtasigncardh_transtypeid_billtypename" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" path="reference/refgrid.jsp" readDs="masterDs" readFields="pk_billtypeid,billtypename,pk_billtypecode" refId="" refcode="影响因素交 易类型" refnodeDelegator="" refresh="false" selLeafOnly="false" text="交易类型参照" usePower="false" writeDs="hrtasigncardh" writeFields="transtypeid,transtypeid_billtypename,transtype">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialog="true" i18nName="w_ta-000913" id="refnode_hrtasigncardh_pk_dept_v_name" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" path="reference/reftree.jsp" readDs="masterDs" readFields="pk_vid,name" refId="" refcode="部门版本" refnodeDelegator="" refresh="false" selLeafOnly="false" text="签卡申请单主表_部门版本" usePower="false" writeDs="hrtasigncardh" writeFields="pk_dept_v,pk_dept_v_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialog="true" i18nName="w_ta-000914" id="refnode_hrtasigncardh_pk_org_v_name" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" path="reference/reftree.jsp" readDs="masterDs" readFields="pk_vid,name" refId="" refcode="人力资源组织版本" refnodeDelegator="" refresh="false" selLeafOnly="false" text="签卡申请单主表_人力资源组织版本" usePower="false" writeDs="hrtasigncardh" writeFields="pk_org_v,pk_org_v_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialog="true" i18nName="w_ta-000903" id="refnode_hrtasigncardh_creator_user_name" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" path="reference/refgrid.jsp" readDs="masterDs" readFields="cuserid,user_name" refId="" refcode="用户" refnodeDelegator="" refresh="false" selLeafOnly="false" text="签卡申请单主表_用户" usePower="false" writeDs="hrtasigncardh" writeFields="creator,creator_user_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialog="true" i18nName="w_ta-000916" id="refnode_hrtasignb_pk_group_name" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" path="reference/reftree.jsp" readDs="masterDs" readFields="pk_group,name" refId="" refcode="集团" refnodeDelegator="" refresh="false" selLeafOnly="false" text="签卡申请单子表_集团" usePower="false" writeDs="hrtasignb" writeFields="pk_group,pk_group_name">
+            </NCRefNode>
+        </RefNodes>
+    </Models>
+    <Components>
+        <FormComp i18nName="w_ta-000922" langDir="node_ta-res" caption="签卡申请单主表" columnCount="3" dataset="hrtasigncardh" eleWidth="150" enabled="false" id="headTab_card_psninfo_form" labelMinWidth="0" renderType="1" rowHeight="22" visible="true">
+            <Element i18nName="w_ta-000924" langDir="node_ta-res" attachNext="false" colSpan="1" dataType="String" editable="true" editorType="StringText" enabled="false" field="pk_psnjob_clerkcode" height="" id="pk_psnjob_clerkcode" imageOnly="false" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" text="员工号" toolbarType="Custom" visible="true" width="">
+            </Element>
+            <Element i18nName="w_ta-000929" langDir="node_ta-res" attachNext="false" colSpan="1" dataType="String" editable="true" editorType="StringText" enabled="false" field="pk_psnjob_pk_psndoc_code" height="" id="pk_psnjob_pk_psndoc_code" imageOnly="false" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" text="人员编码" toolbarType="Custom" visible="true" width="">
+            </Element>
+            <Element i18nName="w_ta-000939" langDir="node_ta-res" attachNext="false" colSpan="1" dataType="String" editable="true" editorType="StringText" enabled="false" field="pk_psnjob_pk_psndoc_name" height="" id="pk_psnjob_pk_psndoc_name" imageOnly="false" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" text="姓名" toolbarType="Custom" visible="true" width="">
+            </Element>
+            <Element i18nName="w_ta-000926" langDir="node_ta-res" attachNext="false" colSpan="1" dataType="String" editable="true" editorType="StringText" enabled="false" field="pk_psnjob_pk_job_jobname" height="" id="pk_psnjob_pk_job_jobname" imageOnly="false" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" text="职务" toolbarType="Custom" visible="true" width="">
+            </Element>
+            <Element i18nName="w_ta-000925" langDir="node_ta-res" attachNext="false" colSpan="1" dataType="String" editable="true" editorType="StringText" enabled="false" field="pk_psnjob_pk_post_postname" height="" id="pk_psnjob_pk_post_postname" imageOnly="false" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" text="岗位" toolbarType="Custom" visible="true" width="">
+            </Element>
+            <Element i18nName="w_ta-000928" langDir="node_ta-res" attachNext="false" colSpan="1" dataType="String" editable="true" editorType="StringText" enabled="false" field="pk_psnjob_pk_org_name" height="" id="pk_psnjob_pk_org_name" imageOnly="false" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" text="组织" toolbarType="Custom" visible="true" width="">
+            </Element>
+            <Element i18nName="w_ta-000927" langDir="node_ta-res" attachNext="false" colSpan="1" dataType="String" editable="true" editorType="StringText" enabled="false" field="pk_psnjob_pk_dept_name" height="" id="pk_psnjob_pk_dept_name" imageOnly="false" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" text="部门" toolbarType="Custom" visible="true" width="">
+            </Element>
+        </FormComp>
+        <GridComp canCopy="true" i18nName="w_ta-000917" langDir="node_ta-res" autoRowHeight="false" caption="签卡申请单子表" dataset="hrtasignb" editable="true" enabled="true" expandTree="false" id="bodyTab_card_signb_sub_grid" multiSelect="false" pagenationTop="false" reference="false" selfDefImageBtnRender="" showColInfo="false" showHeader="true" showImageBtn="false" showNumCol="false" showSumRow="false" sortable="true" visible="true">
+            <Column i18nName="w_ta-000943" langDir="node_ta-res" autoExpand="false" dataType="UFDateTime" editable="true" editorType="DateTimeText" field="signtime" fixedHeader="false" id="signtime" imageOnly="false" nullAble="false" renderType="DateTimeRender" showCheckBox="true" sortable="true" sumCol="false" text="签卡时间" textAlign="left" visible="true" width="200">
+            </Column>
+            <Column i18nName="w_ta-000918" langDir="node_ta-res" autoExpand="false" dataType="Integer" editable="true" editorType="ComboBox" field="signstatus" fixedHeader="false" id="signstatus" imageOnly="false" nullAble="false" refComboData="combo_hrtasignb_signstatus" renderType="ComboRender" showCheckBox="true" sortable="true" sumCol="false" text="签卡状态" textAlign="right" visible="false" width="200">
+            </Column>
+            <Column i18nName="w_ta-000944" langDir="node_ta-res" autoExpand="false" dataType="String" editable="true" editorType="Reference" field="signreason_name" fixedHeader="false" id="signreason_name" imageOnly="false" nullAble="true" refNode="refnode_hrtasignb_signreason_name" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="签卡原因" textAlign="left" visible="true" width="200">
+            </Column>
+            <Column i18nName="w_ta-000945" langDir="node_ta-res" autoExpand="true" dataType="String" editable="true" editorType="StringText" field="signremark" fixedHeader="false" id="signremark" imageOnly="false" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="签卡说明" textAlign="left" visible="true" width="200">
+            </Column>
+        </GridComp>
+        <FormComp i18nName="w_ta-000946" langDir="node_ta-res" caption="签卡申请单" columnCount="3" dataset="hrtasigncardh" eleWidth="150" enabled="true" id="headTab_card_signmain_form" labelMinWidth="0" renderType="1" rowHeight="22" visible="true">
+            <Element i18nName="w_ta-000923" langDir="node_ta-res" attachNext="false" colSpan="1" dataType="String" editable="true" editorType="StringText" enabled="true" field="bill_code" height="" id="bill_code" imageOnly="false" nextLine="false" nullAble="false" rowSpan="1" selectOnly="true" text="申请单编码" toolbarType="Custom" visible="true" width="">
+            </Element>
+            <Element i18nName="w_ta-000947" langDir="node_ta-res" attachNext="false" colSpan="1" dataType="String" editable="true" editorType="Reference" enabled="true" field="transtypeid_billtypename" height="" id="transtypeid_billtypename" imageOnly="false" nextLine="false" nullAble="true" refNode="refnode_hrtasigncardh_transtypeid_billtypename" rowSpan="1" selectOnly="true" text="流程类型" toolbarType="Custom" visible="true" width="">
+            </Element>
+            <Element i18nName="w_ta-000948" langDir="node_ta-res" attachNext="false" colSpan="1" dataType="Integer" editable="true" editorType="ComboBox" enabled="false" field="approve_state" height="" id="approve_state" imageOnly="false" nextLine="false" nullAble="true" refComboData="combo_hrtasigncardh_approve_state" rowSpan="1" selectOnly="true" text="单据状态" toolbarType="Custom" visible="true" width="">
+            </Element>
+            <Element i18nName="w_ta-000949" langDir="node_ta-res" attachNext="false" colSpan="1" dataType="String" editable="true" editorType="Reference" enabled="false" field="billmaker_user_name" height="" id="billmaker_user_name" imageOnly="false" nextLine="false" nullAble="true" refNode="refnode_hrtasigncardh_billmaker_user_name" rowSpan="1" selectOnly="true" text="申请人" toolbarType="Custom" visible="true" width="">
+            </Element>
+            <Element i18nName="w_ta-000950" langDir="node_ta-res" attachNext="false" colSpan="1" dataType="UFLiteralDate" editable="true" editorType="DateText" enabled="false" field="apply_date" height="" id="apply_date" imageOnly="false" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" text="申请日期" toolbarType="Custom" visible="true" width="">
+            </Element>
+        </FormComp>
+        <FormComp i18nName="w_ta-000951" langDir="node_ta-res" caption="审计信息" columnCount="3" dataset="hrtasigncardh" eleWidth="150" enabled="false" id="tailTab_card_audition_form" labelMinWidth="0" renderType="1" rowHeight="22" visible="true">
+            <Element i18nName="w_ta-000952" langDir="node_ta-res" attachNext="false" colSpan="1" dataType="String" editable="true" editorType="Reference" enabled="false" field="creator_user_name" height="" id="creator_user_name" imageOnly="false" nextLine="false" nullAble="true" refNode="refnode_hrtasigncardh_creator_user_name" rowSpan="1" selectOnly="true" text="创建人" toolbarType="Custom" visible="true" width="">
+            </Element>
+            <Element i18nName="w_ta-000953" langDir="node_ta-res" attachNext="false" colSpan="1" dataType="UFDateTime" editable="true" editorType="DateTimeText" enabled="false" field="creationtime" height="" id="creationtime" imageOnly="false" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" text="创建时间" toolbarType="Custom" visible="true" width="">
+            </Element>
+            <Element i18nName="w_ta-000954" langDir="node_ta-res" attachNext="false" colSpan="1" dataType="String" editable="true" editorType="Reference" enabled="false" field="modifier_user_name" height="" id="modifier_user_name" imageOnly="false" nextLine="false" nullAble="true" refNode="refnode_hrtasigncardh_modifier_user_name" rowSpan="1" selectOnly="true" text="最后修改人" toolbarType="Custom" visible="true" width="">
+            </Element>
+            <Element i18nName="w_ta-000955" langDir="node_ta-res" attachNext="false" colSpan="1" dataType="UFDateTime" editable="true" editorType="DateTimeText" enabled="false" field="modifiedtime" height="" id="modifiedtime" imageOnly="false" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" text="最后修改时间" toolbarType="Custom" visible="true" width="">
+            </Element>
+        </FormComp>
+    </Components>
+    <Menus>
+        <MenuBarComp id="mainMenubar">
+            <MenuItem i18nName="w_ta-000378" langDir="node_ta-res" id="attachment" modifiers="2" stateManager="" text="附件管理">
+                <Events>
+                    <Event async="true" jsEventClaszz="nc.uap.lfw.core.event.conf.MouseListener" methodName="addAttachment" name="onclick" onserver="true">
+                        <SubmitRule cardSubmit="false" panelSubmit="false" tabSubmit="false">
+                        </SubmitRule>
+                        <Params>
+                            <Param>
+                                <Name>mouseEvent</Name>
+                                <Value>
+                                </Value>
+                                <Desc>                                    <![CDATA[nc.uap.lfw.core.event.MouseEvent]]>
+                                </Desc>
+                            </Param>
+                        </Params>
+                        <Action>
+                        </Action>
+                    </Event>
+                </Events>
+            </MenuItem>
+        </MenuBarComp>
+    </Menus>
+</Widget>

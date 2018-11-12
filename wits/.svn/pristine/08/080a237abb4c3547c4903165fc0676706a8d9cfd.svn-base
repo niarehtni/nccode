@@ -1,0 +1,1 @@
+INSERT INTO sm_menuitemreg (ts, iconpath , pk_menu , menuitemname , resid , ismenutype , pk_menuitem , menudes , funcode , menuitemcode , dr ) VALUES ('2017-08-13 15:21:11', null , '1004ZZ10000000000FFL' , '团保费率表' , 'D60401035' , 'N' , '0001ZZ10000000007S3F' , null , '68J61035' , '60401035' , 0 );

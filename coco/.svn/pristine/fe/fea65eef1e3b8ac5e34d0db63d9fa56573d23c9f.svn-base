@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="nc.itf.hrsms.ta.leaveoff.ShopLeaveOffEJB">
+	<public>
+		<component priority="0" singleton="true" remote="true" tx="CMT"  supportAlias="false">
+			<interface>nc.itf.hrsms.ta.leaveoff.IShopLeaveOffApplyQueryMaintain</interface>
+			<implementation>nc.impl.hrsms.ta.leaveoff.ShopLeaveOffApplyQueryMaintainImpl</implementation>
+		</component>
+	</public>
+</module>

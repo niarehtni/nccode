@@ -1,0 +1,418 @@
+﻿package nc.vo.ta.overtime;
+
+import nc.vo.pub.*;
+import nc.vo.pubapp.pattern.model.meta.entity.vo.VOMetaFactory;
+
+/**
+ * <b> 此處簡要描述此類功能 </b>
+ * <p>
+ *   此處添加類的描述信息
+ * </p>
+ *  創建日期:2018/4/23
+ * @author 
+ * @version NCPrj ??
+ */
+public class SegRuleTermVO extends nc.vo.pub.SuperVO{
+	
+    private java.lang.String pk_segrule;
+    private java.lang.String pk_segruleterm;
+    private java.lang.String pk_group;
+    private java.lang.String pk_org;
+    private java.lang.String pk_org_v;
+    private java.lang.String creator;
+    private nc.vo.pub.lang.UFDateTime creationtime;
+    private java.lang.String modifier;
+    private nc.vo.pub.lang.UFDateTime modifiedtime;
+    private java.lang.Integer segno;
+    private nc.vo.pub.lang.UFDouble startpoint;
+    private nc.vo.pub.lang.UFDouble endpoint;
+    private nc.vo.pub.lang.UFDouble otrate;
+    private nc.vo.pub.lang.UFDouble additionalweight;
+    private java.lang.String memo;
+    private java.lang.String rowno;
+    private java.lang.Integer dr = 0;
+    private nc.vo.pub.lang.UFDateTime ts;    
+	
+	
+    public static final String PK_SEGRULE = "pk_segrule";
+    public static final String PK_SEGRULETERM = "pk_segruleterm";
+    public static final String PK_GROUP = "pk_group";
+    public static final String PK_ORG = "pk_org";
+    public static final String PK_ORG_V = "pk_org_v";
+    public static final String CREATOR = "creator";
+    public static final String CREATIONTIME = "creationtime";
+    public static final String MODIFIER = "modifier";
+    public static final String MODIFIEDTIME = "modifiedtime";
+    public static final String SEGNO = "segno";
+    public static final String STARTPOINT = "startpoint";
+    public static final String ENDPOINT = "endpoint";
+    public static final String OTRATE = "otrate";
+    public static final String ADDITIONALWEIGHT = "additionalweight";
+    public static final String MEMO = "memo";
+    public static final String ROWNO = "rowno";
+
+	/**
+	 * 屬性 pk_segrule的Getter方法.屬性名：parentPK
+	 *  創建日期:2018/4/23
+	 * @return java.lang.String
+	 */
+	public java.lang.String getPk_segrule () {
+		return pk_segrule;
+	}   
+	/**
+	 * 屬性pk_segrule的Setter方法.屬性名：parentPK
+	 * 創建日期:2018/4/23
+	 * @param newPk_segrule java.lang.String
+	 */
+	public void setPk_segrule (java.lang.String newPk_segrule ) {
+	 	this.pk_segrule = newPk_segrule;
+	} 	 
+	
+	/**
+	 * 屬性 pk_segruleterm的Getter方法.屬性名：加班分段規則主鍵
+	 *  創建日期:2018/4/23
+	 * @return java.lang.String
+	 */
+	public java.lang.String getPk_segruleterm () {
+		return pk_segruleterm;
+	}   
+	/**
+	 * 屬性pk_segruleterm的Setter方法.屬性名：加班分段規則主鍵
+	 * 創建日期:2018/4/23
+	 * @param newPk_segruleterm java.lang.String
+	 */
+	public void setPk_segruleterm (java.lang.String newPk_segruleterm ) {
+	 	this.pk_segruleterm = newPk_segruleterm;
+	} 	 
+	
+	/**
+	 * 屬性 pk_group的Getter方法.屬性名：集團
+	 *  創建日期:2018/4/23
+	 * @return java.lang.String
+	 */
+	public java.lang.String getPk_group () {
+		return pk_group;
+	}   
+	/**
+	 * 屬性pk_group的Setter方法.屬性名：集團
+	 * 創建日期:2018/4/23
+	 * @param newPk_group java.lang.String
+	 */
+	public void setPk_group (java.lang.String newPk_group ) {
+	 	this.pk_group = newPk_group;
+	} 	 
+	
+	/**
+	 * 屬性 pk_org的Getter方法.屬性名：組織
+	 *  創建日期:2018/4/23
+	 * @return java.lang.String
+	 */
+	public java.lang.String getPk_org () {
+		return pk_org;
+	}   
+	/**
+	 * 屬性pk_org的Setter方法.屬性名：組織
+	 * 創建日期:2018/4/23
+	 * @param newPk_org java.lang.String
+	 */
+	public void setPk_org (java.lang.String newPk_org ) {
+	 	this.pk_org = newPk_org;
+	} 	 
+	
+	/**
+	 * 屬性 pk_org_v的Getter方法.屬性名：組織版本
+	 *  創建日期:2018/4/23
+	 * @return java.lang.String
+	 */
+	public java.lang.String getPk_org_v () {
+		return pk_org_v;
+	}   
+	/**
+	 * 屬性pk_org_v的Setter方法.屬性名：組織版本
+	 * 創建日期:2018/4/23
+	 * @param newPk_org_v java.lang.String
+	 */
+	public void setPk_org_v (java.lang.String newPk_org_v ) {
+	 	this.pk_org_v = newPk_org_v;
+	} 	 
+	
+	/**
+	 * 屬性 creator的Getter方法.屬性名：創建人
+	 *  創建日期:2018/4/23
+	 * @return java.lang.String
+	 */
+	public java.lang.String getCreator () {
+		return creator;
+	}   
+	/**
+	 * 屬性creator的Setter方法.屬性名：創建人
+	 * 創建日期:2018/4/23
+	 * @param newCreator java.lang.String
+	 */
+	public void setCreator (java.lang.String newCreator ) {
+	 	this.creator = newCreator;
+	} 	 
+	
+	/**
+	 * 屬性 creationtime的Getter方法.屬性名：創建時間
+	 *  創建日期:2018/4/23
+	 * @return nc.vo.pub.lang.UFDateTime
+	 */
+	public nc.vo.pub.lang.UFDateTime getCreationtime () {
+		return creationtime;
+	}   
+	/**
+	 * 屬性creationtime的Setter方法.屬性名：創建時間
+	 * 創建日期:2018/4/23
+	 * @param newCreationtime nc.vo.pub.lang.UFDateTime
+	 */
+	public void setCreationtime (nc.vo.pub.lang.UFDateTime newCreationtime ) {
+	 	this.creationtime = newCreationtime;
+	} 	 
+	
+	/**
+	 * 屬性 modifier的Getter方法.屬性名：修改人
+	 *  創建日期:2018/4/23
+	 * @return java.lang.String
+	 */
+	public java.lang.String getModifier () {
+		return modifier;
+	}   
+	/**
+	 * 屬性modifier的Setter方法.屬性名：修改人
+	 * 創建日期:2018/4/23
+	 * @param newModifier java.lang.String
+	 */
+	public void setModifier (java.lang.String newModifier ) {
+	 	this.modifier = newModifier;
+	} 	 
+	
+	/**
+	 * 屬性 modifiedtime的Getter方法.屬性名：修改時間
+	 *  創建日期:2018/4/23
+	 * @return nc.vo.pub.lang.UFDateTime
+	 */
+	public nc.vo.pub.lang.UFDateTime getModifiedtime () {
+		return modifiedtime;
+	}   
+	/**
+	 * 屬性modifiedtime的Setter方法.屬性名：修改時間
+	 * 創建日期:2018/4/23
+	 * @param newModifiedtime nc.vo.pub.lang.UFDateTime
+	 */
+	public void setModifiedtime (nc.vo.pub.lang.UFDateTime newModifiedtime ) {
+	 	this.modifiedtime = newModifiedtime;
+	} 	 
+	
+	/**
+	 * 屬性 segno的Getter方法.屬性名：分段序號
+	 *  創建日期:2018/4/23
+	 * @return java.lang.Integer
+	 */
+	public java.lang.Integer getSegno () {
+		return segno;
+	}   
+	/**
+	 * 屬性segno的Setter方法.屬性名：分段序號
+	 * 創建日期:2018/4/23
+	 * @param newSegno java.lang.Integer
+	 */
+	public void setSegno (java.lang.Integer newSegno ) {
+	 	this.segno = newSegno;
+	} 	 
+	
+	/**
+	 * 屬性 startpoint的Getter方法.屬性名：分段起點
+	 *  創建日期:2018/4/23
+	 * @return nc.vo.pub.lang.UFDouble
+	 */
+	public nc.vo.pub.lang.UFDouble getStartpoint () {
+		return startpoint;
+	}   
+	/**
+	 * 屬性startpoint的Setter方法.屬性名：分段起點
+	 * 創建日期:2018/4/23
+	 * @param newStartpoint nc.vo.pub.lang.UFDouble
+	 */
+	public void setStartpoint (nc.vo.pub.lang.UFDouble newStartpoint ) {
+	 	this.startpoint = newStartpoint;
+	} 	 
+	
+	/**
+	 * 屬性 endpoint的Getter方法.屬性名：分段終點
+	 *  創建日期:2018/4/23
+	 * @return nc.vo.pub.lang.UFDouble
+	 */
+	public nc.vo.pub.lang.UFDouble getEndpoint () {
+		return endpoint;
+	}   
+	/**
+	 * 屬性endpoint的Setter方法.屬性名：分段終點
+	 * 創建日期:2018/4/23
+	 * @param newEndpoint nc.vo.pub.lang.UFDouble
+	 */
+	public void setEndpoint (nc.vo.pub.lang.UFDouble newEndpoint ) {
+	 	this.endpoint = newEndpoint;
+	} 	 
+	
+	/**
+	 * 屬性 otrate的Getter方法.屬性名：加班費率
+	 *  創建日期:2018/4/23
+	 * @return nc.vo.pub.lang.UFDouble
+	 */
+	public nc.vo.pub.lang.UFDouble getOtrate () {
+		return otrate;
+	}   
+	/**
+	 * 屬性otrate的Setter方法.屬性名：加班費率
+	 * 創建日期:2018/4/23
+	 * @param newOtrate nc.vo.pub.lang.UFDouble
+	 */
+	public void setOtrate (nc.vo.pub.lang.UFDouble newOtrate ) {
+	 	this.otrate = newOtrate;
+	} 	 
+	
+	/**
+	 * 屬性 additionalweight的Getter方法.屬性名：外加補休係數
+	 *  創建日期:2018/4/23
+	 * @return nc.vo.pub.lang.UFDouble
+	 */
+	public nc.vo.pub.lang.UFDouble getAdditionalweight () {
+		return additionalweight;
+	}   
+	/**
+	 * 屬性additionalweight的Setter方法.屬性名：外加補休係數
+	 * 創建日期:2018/4/23
+	 * @param newAdditionalweight nc.vo.pub.lang.UFDouble
+	 */
+	public void setAdditionalweight (nc.vo.pub.lang.UFDouble newAdditionalweight ) {
+	 	this.additionalweight = newAdditionalweight;
+	} 	 
+	
+	/**
+	 * 屬性 memo的Getter方法.屬性名：備註
+	 *  創建日期:2018/4/23
+	 * @return java.lang.String
+	 */
+	public java.lang.String getMemo () {
+		return memo;
+	}   
+	/**
+	 * 屬性memo的Setter方法.屬性名：備註
+	 * 創建日期:2018/4/23
+	 * @param newMemo java.lang.String
+	 */
+	public void setMemo (java.lang.String newMemo ) {
+	 	this.memo = newMemo;
+	} 	 
+	
+	/**
+	 * 屬性 rowno的Getter方法.屬性名：接口行號
+	 *  創建日期:2018/4/23
+	 * @return java.lang.String
+	 */
+	public java.lang.String getRowno () {
+		return rowno;
+	}   
+	/**
+	 * 屬性rowno的Setter方法.屬性名：接口行號
+	 * 創建日期:2018/4/23
+	 * @param newRowno java.lang.String
+	 */
+	public void setRowno (java.lang.String newRowno ) {
+	 	this.rowno = newRowno;
+	} 	 
+	
+	/**
+	 * 屬性 dr的Getter方法.屬性名：dr
+	 *  創建日期:2018/4/23
+	 * @return java.lang.Integer
+	 */
+	public java.lang.Integer getDr () {
+		return dr;
+	}   
+	/**
+	 * 屬性dr的Setter方法.屬性名：dr
+	 * 創建日期:2018/4/23
+	 * @param newDr java.lang.Integer
+	 */
+	public void setDr (java.lang.Integer newDr ) {
+	 	this.dr = newDr;
+	} 	 
+	
+	/**
+	 * 屬性 ts的Getter方法.屬性名：ts
+	 *  創建日期:2018/4/23
+	 * @return nc.vo.pub.lang.UFDateTime
+	 */
+	public nc.vo.pub.lang.UFDateTime getTs () {
+		return ts;
+	}   
+	/**
+	 * 屬性ts的Setter方法.屬性名：ts
+	 * 創建日期:2018/4/23
+	 * @param newTs nc.vo.pub.lang.UFDateTime
+	 */
+	public void setTs (nc.vo.pub.lang.UFDateTime newTs ) {
+	 	this.ts = newTs;
+	} 	 
+	
+	
+	/**
+	  * <p>取得父VO主鍵字段.
+	  * <p>
+	  * 創建日期:2018/4/23
+	  * @return java.lang.String
+	  */
+	public java.lang.String getParentPKFieldName() {		
+		return "pk_segrule";
+	}   
+    
+	/**
+	  * <p>取得表主鍵.
+	  * <p>
+	  * 創建日期:2018/4/23
+	  * @return java.lang.String
+	  */
+	public java.lang.String getPKFieldName() {
+			
+		return "pk_segruleterm";
+	}
+    
+	/**
+	 * <p>返回表名稱
+	 * <p>
+	 * 創建日期:2018/4/23
+	 * @return java.lang.String
+	 */
+	public java.lang.String getTableName() {
+		return "hrta_segruleterm";
+	}    
+	
+	/**
+	 * <p>返回表名稱.
+	 * <p>
+	 * 創建日期:2018/4/23
+	 * @return java.lang.String
+	 */
+	public static java.lang.String getDefaultTableName() {
+		return "hrta_segruleterm";
+	}    
+    
+    /**
+	  * 按照默認方式創建構造子.
+	  *
+	  * 創建日期:2018/4/23
+	  */
+     public SegRuleTermVO() {
+		super();	
+	}    
+	
+	
+	@nc.vo.annotation.MDEntityInfo(beanFullclassName = "nc.vo.ta.overtime.SegRuleTermVO" )
+	public IVOMeta getMetaData() {
+		return VOMetaFactory.getInstance().getVOMeta("overtime.segruleterm");
+		
+   	}
+     
+}

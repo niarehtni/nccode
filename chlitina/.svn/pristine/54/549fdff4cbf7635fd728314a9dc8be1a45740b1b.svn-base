@@ -1,0 +1,2 @@
+insert into md_component(createtime,creator,description,displayname,dr,fromsourcebmf,help,id,industry,isbizmodel,modifier,modifytime,name,namespace,ownmodule,preload,resid,resmodule,ts,version,versiontype) values( '2018-08-15 15:34:02',null,null,'平均月数(自定义档案)业务操作',null,'Y',null,'2b6869e5-a049-11e8-839d-79b29e477abc','0','Y',null,'2018-08-15 15:34:02','bo_Defdoc-avgmoncount','uap','uapbd',null,null,'bo_Defdoc-avgmoncount','2018-08-15 15:34:02','3',0)
+go

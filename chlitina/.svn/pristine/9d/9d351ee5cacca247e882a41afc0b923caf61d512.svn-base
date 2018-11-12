@@ -1,0 +1,14 @@
+insert into md_enumvalue(description,dr,enumsequence,hidden,id,industry,name,resid,ts,value,versiontype) values( null,null,0,'N','58142259-247b-47e0-a930-fe5df2e32063','0','岗位协议','2center-000070','2018-09-16 13:58:37','postcont',0)
+go
+insert into md_enumvalue(description,dr,enumsequence,hidden,id,industry,name,resid,ts,value,versiontype) values( null,null,1,'N','58142259-247b-47e0-a930-fe5df2e32063','0','保密协议','2center-000059','2018-09-16 13:58:37','secrerycont',0)
+go
+insert into md_enumvalue(description,dr,enumsequence,hidden,id,industry,name,resid,ts,value,versiontype) values( null,null,2,'N','58142259-247b-47e0-a930-fe5df2e32063','0','培训协议','2center-000075','2018-09-16 13:58:37','traincont',0)
+go
+insert into md_enumvalue(description,dr,enumsequence,hidden,id,industry,name,resid,ts,value,versiontype) values( null,null,0,'N','b5e619a4-d723-454e-8b8f-e3c2bebe643e','0','签订','2center-000042','2018-09-16 13:58:37','1',0)
+go
+insert into md_enumvalue(description,dr,enumsequence,hidden,id,industry,name,resid,ts,value,versiontype) values( null,null,1,'N','b5e619a4-d723-454e-8b8f-e3c2bebe643e','0','变更','2center-000038','2018-09-16 13:58:37','3',0)
+go
+insert into md_enumvalue(description,dr,enumsequence,hidden,id,industry,name,resid,ts,value,versiontype) values( null,null,2,'N','b5e619a4-d723-454e-8b8f-e3c2bebe643e','0','解除','2center-000041','2018-09-16 13:58:37','4',0)
+go
+insert into md_enumvalue(description,dr,enumsequence,hidden,id,industry,name,resid,ts,value,versiontype) values( null,null,3,'N','b5e619a4-d723-454e-8b8f-e3c2bebe643e','0','终止','2center-000094','2018-09-16 13:58:37','5',0)
+go

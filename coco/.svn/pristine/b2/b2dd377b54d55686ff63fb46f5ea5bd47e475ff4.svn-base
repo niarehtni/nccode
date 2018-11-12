@@ -1,0 +1,75 @@
+package nc.ui.pubapp.uif2app.model;
+
+import nc.ui.pubapp.pub.smart.SmartBatchAppModelService;
+import nc.ui.uif2.model.AbstractBatchAppModel;
+import nc.ui.uif2.model.IAppModelDataManagerEx;
+import nc.vo.pub.BusinessRuntimeException;
+
+
+public class BatchModelDataManager implements IAppModelDataManagerEx {
+
+  protected AbstractBatchAppModel model;
+
+  protected SmartBatchAppModelService service;
+
+  private String sqlWhere;
+
+  protected String getSqlWhere() {
+    return sqlWhere;
+  }
+
+  protected void setSqlWhere(String sqlWhere) {
+    this.sqlWhere = sqlWhere;
+  }
+
+  public AbstractBatchAppModel getModel() {
+    return this.model;
+  }
+
+  public SmartBatchAppModelService getService() {
+    return this.service;
+  }
+
+  @Override
+  public void initModel() {
+    try {
+      this.model.initModel(this.service.queryByDataVisibilitySetting(this.model
+          .getContext()));
+    }
+    catch (Exception e) {
+      throw new BusinessRuntimeException("", e);
+    }
+  }
+
+  @Override
+  public void initModelBySqlWhere(String sqlwhere) {
+    this.setSqlWhere(sqlwhere);
+    try {
+      this.model.initModel(this.service.queryByWhereSql(sqlwhere));
+    }
+    catch (Exception e) {
+      throw new BusinessRuntimeException("", e);
+    }
+
+  }
+
+  @Override
+  public void refresh() {
+    this.initModelBySqlWhere(this.getSqlWhere());
+
+  }
+
+  public void setModel(AbstractBatchAppModel model) {
+    this.model = model;
+  }
+
+  public void setService(SmartBatchAppModelService service) {
+    this.service = service;
+  }
+
+  @Override
+  public void setShowSealDataFlag(boolean showSealDataFlag) {
+    //
+  }
+
+}

@@ -1,0 +1,75 @@
+package nc.ui.ta.psndocwadoc.view.labourjoin;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import nc.bs.framework.common.NCLocator;
+import nc.itf.hr.wa.IPsndocwadocLabourService;
+import nc.ui.hr.uif2.model.HRWizardModel;
+import nc.ui.pub.beans.wizard.IWizardStepListener;
+import nc.ui.pub.beans.wizard.WizardStepEvent;
+import nc.ui.pub.beans.wizard.WizardStepException;
+import nc.ui.querytemplate.filter.IFilter;
+import nc.ui.querytemplate.querytree.IQueryScheme;
+import nc.ui.querytemplate.value.IFieldValueElement;
+import nc.vo.hi.psndoc.PsnJobVO;
+import nc.vo.logging.Debug;
+import nc.vo.pm.util.CollectionUtils;
+import nc.vo.pub.BusinessException;
+import nc.vo.pub.BusinessRuntimeException;
+
+@SuppressWarnings("restriction")
+public class ConfirmPsnStepListenerForAddJoin implements IWizardStepListener {
+
+	@Override
+	public void stepActived(WizardStepEvent event) throws WizardStepException {
+		Debug.debug("multiselect step will be actived");
+		ConfirmPsnStepForAddJoin currStep = (ConfirmPsnStepForAddJoin)event.getStep();
+		HRWizardModel model = (HRWizardModel)currStep.getModel();
+		if(!(model.getStepWhenAction() instanceof SelPsnStepForAddJoin))
+			return;
+		SelPsnStepForAddJoin selPsnStep = (SelPsnStepForAddJoin)model.getSteps().get(0);
+		SelPsnPanelForAddJoin selPsnPanel = selPsnStep.getSelPsnPanelForAddJoin();
+//		FromWhereSQL fromWhereSQL =  selPsnPanel.getQuerySQL();
+		
+		IQueryScheme scheme = selPsnPanel.getSelPsnPanelForAddJoin().getQueryEditor().getQueryScheme();
+		List<IFieldValueElement> psndocList = null;
+		List<String> pk_psndocs = new ArrayList<String>();
+		if(null != scheme){
+			IFilter[] ifilter = (IFilter[]) scheme.get("filters");
+			if(ifilter.length > 1){
+			    psndocList = ifilter[0].getFieldValue().getFieldValues();
+			    if(!CollectionUtils.isEmpty(psndocList)){
+			    	for(IFieldValueElement field : psndocList){
+			    		String pk_psndoc = field.getSqlString();
+			    		pk_psndocs.add(pk_psndoc);
+			    	}
+			    }
+			}
+		}
+		
+//		UFLiteralDate beginDate = selPsnPanel.getBeginDate();
+//		UFLiteralDate endDate = selPsnPanel.getEndDate();
+		PsnJobVO[] vos = null;
+		try {
+			boolean isHROrg = !selPsnPanel.isNeedBURef();
+			String pk_org=isHROrg?model.getModel().getContext().getPk_org():selPsnPanel.getPK_BU();
+			IPsndocwadocLabourService wadocQs = NCLocator.getInstance().lookup(IPsndocwadocLabourService.class);
+			vos = wadocQs.queryPsnJobVOsByConditionAndOverrideOrg(pk_org, pk_psndocs);
+			if(null == vos){
+				return;
+			}
+		} catch (BusinessException e) {
+			Debug.error(e.getMessage(), e);
+			throw new BusinessRuntimeException(e.getMessage(), e);
+		}
+		currStep.getConfirmPsnPanelForAddJoin().setFormVOs(vos);
+	}
+
+	@Override
+	public void stepDisactived(WizardStepEvent event)
+			throws WizardStepException {
+
+	}	
+	
+}

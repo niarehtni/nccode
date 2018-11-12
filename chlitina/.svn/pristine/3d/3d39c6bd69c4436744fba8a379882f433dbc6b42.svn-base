@@ -1,0 +1,24 @@
+insert into md_bizitfmap(bizinterfaceid,bizitfimpclassname,classattrid,classattrpath,classid,dr,industry,intattrid,ts,versiontype) values( '2b226ae1-aad9-4abe-a405-36bcacaa94a8',null,'f890b977-34a0-4466-bca8-0c139154a0af',null,'1d40b9cd-7fb8-4868-bc08-ad3f8602595d',0,null,'0abfd569-b9cf-4c44-a8d9-45979c083b08','2018-09-17 13:23:17',null)
+/
+insert into md_bizitfmap(bizinterfaceid,bizitfimpclassname,classattrid,classattrpath,classid,dr,industry,intattrid,ts,versiontype) values( 'ede1e93f-a86e-4588-b441-9db78f30219f',null,'b39281a5-cc61-4ae2-b43b-74f60f8eea55',null,'1d40b9cd-7fb8-4868-bc08-ad3f8602595d',0,null,'0c37faa9-6e38-4e27-b596-dabc8d5ad732','2018-09-17 13:23:17',null)
+/
+insert into md_bizitfmap(bizinterfaceid,bizitfimpclassname,classattrid,classattrpath,classid,dr,industry,intattrid,ts,versiontype) values( '2b226ae1-aad9-4abe-a405-36bcacaa94a8',null,'8270a7dc-ae30-4fac-b72b-6aa21d0f5f83',null,'1d40b9cd-7fb8-4868-bc08-ad3f8602595d',0,null,'49b6b1ae-cd5b-4b54-99cd-a6bb9fee7343','2018-09-17 13:23:17',null)
+/
+insert into md_bizitfmap(bizinterfaceid,bizitfimpclassname,classattrid,classattrpath,classid,dr,industry,intattrid,ts,versiontype) values( '2b226ae1-aad9-4abe-a405-36bcacaa94a8',null,'92cc31e6-afe0-48e1-9cc5-66e04b37584f',null,'1d40b9cd-7fb8-4868-bc08-ad3f8602595d',0,null,'54c42368-5a43-4295-a7d4-74d276eed522','2018-09-17 13:23:17',null)
+/
+insert into md_bizitfmap(bizinterfaceid,bizitfimpclassname,classattrid,classattrpath,classid,dr,industry,intattrid,ts,versiontype) values( '6c8722b9-911a-489b-8d0d-18bd3734fcf6',null,'050c92f2-7785-4d25-a477-72c22c84f399',null,'1d40b9cd-7fb8-4868-bc08-ad3f8602595d',0,null,'5dd3c721-22ad-42b1-9c10-4351c236bc77','2018-09-17 13:23:17',null)
+/
+insert into md_bizitfmap(bizinterfaceid,bizitfimpclassname,classattrid,classattrpath,classid,dr,industry,intattrid,ts,versiontype) values( 'ede1e93f-a86e-4588-b441-9db78f30219f',null,'b3fdd35d-f43f-4492-82d1-b10b52f5f12c',null,'1d40b9cd-7fb8-4868-bc08-ad3f8602595d',0,null,'72145ab5-b7fa-448e-ad62-8e13cd547191','2018-09-17 13:23:17',null)
+/
+insert into md_bizitfmap(bizinterfaceid,bizitfimpclassname,classattrid,classattrpath,classid,dr,industry,intattrid,ts,versiontype) values( '6c8722b9-911a-489b-8d0d-18bd3734fcf6',null,'c51e6023-622e-4d64-b038-ac4ba367be4e',null,'1d40b9cd-7fb8-4868-bc08-ad3f8602595d',0,null,'89578a97-42fe-439b-827c-8eabd9e3604c','2018-09-17 13:23:17',null)
+/
+insert into md_bizitfmap(bizinterfaceid,bizitfimpclassname,classattrid,classattrpath,classid,dr,industry,intattrid,ts,versiontype) values( '6c8722b9-911a-489b-8d0d-18bd3734fcf6',null,'b8acd575-7f0e-4ee7-b425-669bfc4b94e5',null,'1d40b9cd-7fb8-4868-bc08-ad3f8602595d',0,null,'a47e6cda-09e4-480b-923f-ec6f41e3e06c','2018-09-17 13:23:17',null)
+/
+insert into md_bizitfmap(bizinterfaceid,bizitfimpclassname,classattrid,classattrpath,classid,dr,industry,intattrid,ts,versiontype) values( '6c8722b9-911a-489b-8d0d-18bd3734fcf6',null,null,null,'1d40b9cd-7fb8-4868-bc08-ad3f8602595d',0,null,'c8334364-7ab9-4266-8d4b-e74537935e46','2018-09-17 13:23:17',null)
+/
+insert into md_bizitfmap(bizinterfaceid,bizitfimpclassname,classattrid,classattrpath,classid,dr,industry,intattrid,ts,versiontype) values( '6c8722b9-911a-489b-8d0d-18bd3734fcf6',null,'ae100732-548d-4016-8a40-f9ca85baf386',null,'1d40b9cd-7fb8-4868-bc08-ad3f8602595d',0,null,'d32cc17b-f415-415a-923f-0764443eb102','2018-09-17 13:23:17',null)
+/
+insert into md_bizitfmap(bizinterfaceid,bizitfimpclassname,classattrid,classattrpath,classid,dr,industry,intattrid,ts,versiontype) values( '2b226ae1-aad9-4abe-a405-36bcacaa94a8',null,'8123d1a6-d5b8-4e6d-af9d-696ed9ac44fe',null,'1d40b9cd-7fb8-4868-bc08-ad3f8602595d',0,null,'e5a2aef6-8d58-416a-b8b7-4dd10e13d788','2018-09-17 13:23:17',null)
+/
+insert into md_bizitfmap(bizinterfaceid,bizitfimpclassname,classattrid,classattrpath,classid,dr,industry,intattrid,ts,versiontype) values( '6c8722b9-911a-489b-8d0d-18bd3734fcf6',null,'b3fdd35d-f43f-4492-82d1-b10b52f5f12c',null,'1d40b9cd-7fb8-4868-bc08-ad3f8602595d',0,null,'ecf1b76a-6e44-42e2-a55e-87596504775b','2018-09-17 13:23:17',null)
+/

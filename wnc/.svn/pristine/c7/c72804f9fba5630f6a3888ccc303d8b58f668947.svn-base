@@ -1,0 +1,416 @@
+package nc.impl.wa.paydata;
+
+import nc.bs.dao.BaseDAO;
+import nc.bs.dao.DAOException;
+import nc.bs.framework.common.NCLocator;
+import nc.hr.frame.persistence.AppendBaseDAO;
+import nc.hr.utils.ResHelper;
+import nc.impl.wa.classitem.WaFormulaXmlImpl;
+import nc.itf.hr.wa.IClassItemManageService;
+import nc.jdbc.framework.SQLParameter;
+import nc.jdbc.framework.processor.ColumnProcessor;
+import nc.pubitf.accperiod.AccountCalendar;
+import nc.pubitf.uapbd.CurrencyRateUtil;
+import nc.vo.bd.period2.AccperiodmonthVO;
+import nc.vo.dataitem.pub.DataVOUtils;
+import nc.vo.hr.itemsource.TypeEnumVO;
+import nc.vo.hr.tools.dbtool.util.db.DBUtil;
+import nc.vo.pub.BusinessException;
+import nc.vo.pub.lang.UFDate;
+import nc.vo.pub.lang.UFDouble;
+import nc.vo.pub.lang.UFLiteralDate;
+import nc.vo.wa.classitem.WaClassItemVO;
+import nc.vo.wa.func.FuncParse;
+import nc.vo.wa.func.SqlFragment;
+import nc.vo.wa.func.WherePartUtil;
+import nc.vo.wa.pub.WaLoginContext;
+import nc.vo.wabm.util.HRWADateConvertor;
+
+import org.apache.commons.lang.StringUtils;
+
+/**
+ * 为薪资发放, 合并计税, 薪资补发提供的Abstract类
+ * 
+ * @author: zhangg
+ * @date: 2010-7-14 上午09:25:50
+ * @since: eHR V6.0
+ * @走查人:
+ * @走查日期:
+ * @修改人:
+ * @修改日期:
+ */
+public abstract class AbstractCaculateService extends AppendBaseDAO {
+	private WaLoginContext loginContext = null;// 薪资方案
+	protected WaClassItemVO[] classItemVOs = null;// 薪资发放项目
+
+	// ssx add on 20181105
+	// for Decrypt before payment calculation.
+	private CalculatingDataDEUtil deutil = null;
+
+	public CalculatingDataDEUtil getDEUtil() throws BusinessException {
+		if (deutil == null) {
+			deutil = new CalculatingDataDEUtil(this.getLoginContext());
+		}
+		return deutil;
+	}
+
+	// end
+
+	/**
+	 * @author zhangg on 2010-7-14
+	 * @return the classItemVOs
+	 */
+	public WaClassItemVO[] getClassItemVOs() {
+		return classItemVOs;
+	}
+
+	/**
+	 * @author zhangg on 2010-7-14
+	 * @return the loginContext
+	 */
+	public WaLoginContext getLoginContext() {
+		return loginContext;
+	}
+
+	public void setWaDataCacuRange4Class(String where) throws BusinessException {
+
+		if (StringUtils.isBlank(where)) {
+			where = WherePartUtil.getCommonWhereCondtion4Data(getLoginContext().getWaLoginVO());
+		} else {
+			where = where + " and " + WherePartUtil.getCommonWhereCondtion4Data(getLoginContext().getWaLoginVO());
+		}
+
+		String creator = getLoginContext().getPk_loginUser();
+		String pk_wa_class = getLoginContext().getPk_wa_class();
+		// 删除该该方案计算范围内的数据
+		StringBuffer deleteWa_cacu_data = new StringBuffer();
+		deleteWa_cacu_data.append("delete from wa_cacu_data  ");
+		deleteWa_cacu_data.append(" where pk_wa_class = '" + pk_wa_class + "' ");
+
+		// 增加.
+		StringBuffer insert2Wa_cacu_data = new StringBuffer();
+		insert2Wa_cacu_data.append("insert into wa_cacu_data "); // 1
+		insert2Wa_cacu_data
+				.append("  (pk_cacu_data,  taxtype , taxtableid , isndebuct,pk_wa_class, pk_wa_data, pk_psndoc, cacu_value, creator, currencyrate,redatamode,workorg) "); // 2
+		insert2Wa_cacu_data
+				.append("  select pk_wa_data , taxtype , taxtableid , isndebuct, pk_wa_class, pk_wa_data, pk_psndoc, 0, '"
+						+ creator + "',  " + getCurrenyRate() + "," + getRedataMode() + ",workorg "); // 3
+		insert2Wa_cacu_data.append("    from wa_data ");
+		insert2Wa_cacu_data.append("   where " + where);
+
+		executeSQLs(deleteWa_cacu_data, insert2Wa_cacu_data);
+	}
+
+	/**
+	 * @author zhangg on 2010-7-14
+	 * @throws BusinessException
+	 */
+	public AbstractCaculateService(WaLoginContext loginContext) throws BusinessException {
+		this.loginContext = loginContext;
+		initClassItems();
+
+		// ssx add on 20181105
+		// for Decrypt before payment calculation.
+		// 初始化人員子集解密信息
+		this.getDEUtil().initPsnInfosets();
+		doDecryptPsnInfoset();
+		// end
+	}
+
+	// ssx added on 2018-11-05
+	// for salary encryption
+	public void doEncrypt() throws BusinessException {
+		// 加密人員信息子集
+		this.getDEUtil().encryptPsnInfosetData();
+		// 加密薪資數據
+		this.getDEUtil().encryptWaData();
+	}
+
+	public void doDecryptPsnInfoset() throws BusinessException {
+		// 設置解密方案、期間範圍
+		this.getDEUtil().addCalculateScope();
+		// 解密人員子集
+		this.getDEUtil().decryptPsnInfosetData();
+	}
+
+	public void doDecryptWaData() throws BusinessException {
+		// 取通用薪資數據解密條件
+		String where = getCacuRangeWhere();
+		// 解密薪資數據
+		this.getDEUtil().decryptWaDataByCondition(where);
+	}
+
+	// end
+
+	public UFDouble getCurrenyRate() throws BusinessException {
+		UFDouble rate = UFDouble.ONE_DBL;
+		if (getLoginContext().getWaLoginVO().getCurrid().equals(getLoginContext().getWaLoginVO().getTaxcurrid())) {
+			// 方案币种同发放币种
+			rate = UFDouble.ONE_DBL;
+		} else {
+			// 得到本 期间对应的基准期间的上一个月的最后一天
+
+			// 得到基准期间对应的开始日期
+			// 传入　会计年，会计期间。　得到基准期间的开始日期
+			String caccyear = getLoginContext().getWaLoginVO().getPeriodVO().getCaccyear();
+			String caccperiod = getLoginContext().getWaLoginVO().getPeriodVO().getCaccperiod();
+			// String caccday = "01";
+
+			UFLiteralDate start = getAccountStartDate(caccyear, caccperiod);// new
+																			// UFLiteralDate(caccyear
+																			// +
+																			// "-"
+																			// +
+																			// caccperiod
+																			// +
+																			// "-"
+																			// +
+																			// caccday);
+
+			String src_currency_pk = getLoginContext().getWaLoginVO().getCurrid();
+			String dest_currency_pk = getLoginContext().getWaLoginVO().getTaxcurrid();
+			UFLiteralDate date = start.getDateBefore(1);
+			CurrencyRateUtil currencyRateUtil = CurrencyRateUtil.getInstanceByOrg(getLoginContext().getPk_org());
+			UFDate ufdate = new UFDate(date.toDate());
+			UFDouble currrate = currencyRateUtil.getRate(src_currency_pk, dest_currency_pk, ufdate);
+
+			if (currrate == null || currrate.equals(UFDouble.ZERO_DBL)) {
+				throw new BusinessException(ResHelper.getString("60130paydata", "060130paydata0442", date.toString())/*
+																													 * @
+																													 * res
+																													 * "日期为：{0}的汇率没有设置。"
+																													 */);
+			}
+
+			return currrate;
+
+			// String pk_exratescheme =
+			// CurrencyRateUtilHelper.getInstance().getExrateschemeByOrgID(getLoginContext().getPk_org());
+
+			// StringBuffer sqlBuffer = new StringBuffer();
+			// sqlBuffer.append("SELECT bd_currrate.rate "); // 1
+			// sqlBuffer.append("  FROM bd_currrate "); // 2
+			// sqlBuffer.append(" WHERE pk_currinfo in (select bd_currinfo.pk_currinfo ");
+			// // 3
+			// sqlBuffer.append("                         from bd_currinfo ");
+			// sqlBuffer.append("                        where bd_currinfo.pk_exratescheme = ? ");
+			// sqlBuffer.append("                          and bd_currinfo.pk_currtype = ? ");
+			// sqlBuffer.append("                          and bd_currinfo.oppcurrtype = ?) ");
+			// sqlBuffer.append("   and bd_currrate.ratedate = ? ");
+			//
+			// SQLParameter parameter = new SQLParameter();
+			// parameter.addParam(pk_exratescheme);
+			// parameter.addParam(src_currency_pk);
+			// parameter.addParam(dest_currency_pk);
+			// parameter.addParam(date);
+
+			// Object value = getBaseDao().executeQuery(sqlBuffer.toString(),
+			// parameter, new ColumnProcessor());
+			// if (value == null) {
+			// throw new BusinessException("日期为：" + date + "的汇率没有设置.");
+			// }
+			// return new UFDouble(value.toString());
+
+		}
+		return rate;
+	}
+
+	private UFLiteralDate getAccountStartDate(String year, String month) throws BusinessException {
+		AccountCalendar cal = AccountCalendar.getInstance();
+		cal.set(year, month);
+		AccperiodmonthVO vo = cal.getMonthVO();
+		if (vo == null) {
+			throw new BusinessException("not find the corresponding account period");// 没有招到对应的会计期间
+		}
+		return HRWADateConvertor.toUFLiteralDate(vo.getBegindate());
+
+	}
+
+	/**
+	 * 得到补发方式
+	 * 
+	 * @throws DAOException
+	 */
+
+	protected int getRedataMode() throws DAOException {
+		int defaultmode = Integer.parseInt("1");
+		StringBuffer sqlBuffer = new StringBuffer();
+		sqlBuffer.append("  select taxmode from wa_waclass where pk_wa_class  = ?  "); // 1
+
+		SQLParameter parameter = new SQLParameter();
+		// 首选父方案
+		String classpk = (getLoginContext().getPk_prnt_class()) == null ? getLoginContext().getPk_wa_class()
+				: getLoginContext().getPk_prnt_class();
+
+		parameter.addParam(classpk);
+		Object value = getBaseDao().executeQuery(sqlBuffer.toString(), parameter, new ColumnProcessor());
+		if (value == null) {
+			value = defaultmode;
+		}
+		return (Integer) value;
+	}
+
+	/**
+	 * 获取薪资计算的发放项目
+	 * 
+	 * @author liangxr on 2010-5-13
+	 * @param waLoginVO
+	 * @return
+	 * @throws BusinessException
+	 */
+	protected void initClassItems() throws BusinessException {
+
+		// （1）系统项目系统公式（非自定义项）重新生成一遍。
+		// （2）计算顺序重新设置一遍。
+		String pk_org = getLoginContext().getWaLoginVO().getPk_org();
+		String pk_wa_class = getLoginContext().getWaLoginVO().getPk_wa_class();
+		String cyear = getLoginContext().getWaLoginVO().getCyear();
+		String cperiod = getLoginContext().getWaLoginVO().getCperiod();
+
+		IClassItemManageService ClassItemManageService = NCLocator.getInstance().lookup(IClassItemManageService.class);
+		ClassItemManageService.regenerateSystemFormula(pk_org, pk_wa_class, cyear, cperiod);
+		ClassItemManageService.resetCompuSeq(getLoginContext().getWaLoginVO());
+
+		StringBuffer sqlBuffer = new StringBuffer();
+		sqlBuffer
+				.append("select wa_item.itemkey, wa_item.iitemtype, wa_item.ifldwidth,wa_item.category_id, wa_classitem.iflddecimal, wa_item.defaultflag, wa_item.iproperty, wa_classitem.*, 'Y' editflag"); // 1
+		sqlBuffer.append("  from wa_classitem, wa_item");
+		sqlBuffer.append("  where wa_classitem.pk_wa_item = wa_item.pk_wa_item and wa_classitem.pk_wa_class = ? ");
+		sqlBuffer.append("  and wa_classitem.cyear = ?  and wa_classitem.cperiod = ?  ");
+
+		sqlBuffer.append(" order by icomputeseq");
+
+		SQLParameter parameter = WherePartUtil.getCommonParameter(getLoginContext().getWaLoginVO());
+		classItemVOs = executeQueryVOs(sqlBuffer.toString(), parameter, WaClassItemVO.class);
+
+	}
+
+	/**
+	 * 
+	 * @author zhangg on 2010-5-14
+	 * @param formula
+	 * @return
+	 * @throws BusinessException
+	 */
+	public String parse(String formula) throws BusinessException {
+		return WaFormulaXmlImpl.parse(formula, getLoginContext());
+
+	}
+
+	public String translate2ExecutableSql(WaClassItemVO itemVO, SqlFragment sqlFragment) throws BusinessException {
+		String value = sqlFragment.getValue();
+
+		value = parse(value);
+		value = FuncParse.addSourceTable2Value(value);
+		String valuebase = value;
+		// guoqt ORACLE数据库datediff精度
+		if (getBaseDao().getDBType() == DBUtil.ORACLE && value.startsWith("datediff")) {
+			String param = value.substring(value.indexOf("(") + 1, value.indexOf(")"));
+			String begin = value.substring(0, value.indexOf("datediff"));
+			String end = value.substring(value.indexOf(")") + 1, value.length());
+			String[] params = param.split(",");
+			String type = params[0].toString().trim().toLowerCase();
+			// 不包含如isnull等公式
+			if ((params[1].trim().startsWith("'") || params[1].trim().startsWith("wa_data"))
+					&& (params[2].trim().startsWith("'") || params[2].trim().startsWith("wa_data"))) {
+				// 计算月份、年份差异时，对 date2 做加1处理，以和业务运算一致
+				if (type.equals("year")) {
+					value = "trunc(months_between(" + "to_date(" + params[2] + ",'yyyy-mm-dd')+1,to_date(" + params[1]
+							+ ",'yyyy-mm-dd')" + ")/12)";
+				} else if (type.equals("month")) {
+					value = "trunc(months_between(" + "to_date(" + params[2] + ",'yyyy-mm-dd')+1,to_date(" + params[1]
+							+ ",'yyyy-mm-dd')" + "))";
+				} else if (type.equals("day")) {
+					value = "(to_date(" + params[2] + ",'yyyy-mm-dd')-to_date(" + params[1] + ",'yyyy-mm-dd'))";
+				} else {
+					throw new RuntimeException(nc.vo.ml.NCLangRes4VoTransl.getNCLangRes().getStrByID("1413002_0",
+							"01413002-1048")/* @res "时间单位指定错误!" */
+							+ type);
+				}
+				value = begin + value + end;
+			}
+		}
+		// guoqt DB2数据库datediff精度
+		if (getBaseDao().getDBType() == DBUtil.DB2 && value.startsWith("datediff")) {
+			String param = value.substring(value.indexOf("(") + 1, value.indexOf(")"));
+			String begin = value.substring(0, value.indexOf("datediff"));
+			String end = value.substring(value.indexOf(")") + 1, value.length());
+			String[] params = param.split(",");
+			String type = params[0].toString().trim().toLowerCase();
+			// 不包含如isnull等公式
+			if ((params[1].trim().startsWith("'") || params[1].trim().startsWith("wa_data"))
+					&& (params[2].trim().startsWith("'") || params[2].trim().startsWith("wa_data"))) {
+				if (type.equals("year")) {
+					value = "(year(" + params[2] + ")-year(" + params[1] + "))";
+				} else if (type.equals("month")) {
+					value = "((year(" + params[2] + ")-year(" + params[1] + "))*12+month(" + params[2] + ")-month("
+							+ params[1] + "))";
+				} else if (type.equals("day")) {
+					value = "(days(" + params[2] + ")-days(" + params[1] + "))";
+				} else {
+					throw new RuntimeException(nc.vo.ml.NCLangRes4VoTransl.getNCLangRes().getStrByID("1413002_0",
+							"01413002-1048")/* @res "时间单位指定错误!" */
+							+ type);
+				}
+				value = begin + value + end;
+			}
+		}
+		String condition = sqlFragment.getCondition();
+		condition = parse(condition);
+		condition = FuncParse.addSourceTable2Conditon(condition);
+
+		String where = getCacuRangeWhere();
+		if (condition != null) {
+			condition = WherePartUtil.formatAddtionalWhere(condition);
+			where += condition;
+		}
+
+		// 对于数值型，添加默认值0
+		value = addDefaultVaule(itemVO, value);
+		StringBuilder sbd = new StringBuilder();
+		if (DataVOUtils.isDigitsAttribute(itemVO.getItemkey())
+				&& (itemVO.getRound_type() == null || itemVO.getRound_type().intValue() == 0)) {
+			int digits = itemVO.getIflddecimal();
+			sbd.append(" update wa_data set wa_data." + itemVO.getItemkey() + " = round((" + value + "), " + digits
+					+ " ) " + where);
+		} else {
+			// guoqt sqlserver数据库dateadd返回格式NCdp205034621
+			if (getBaseDao().getDBType() == DBUtil.SQLSERVER && value.trim().startsWith("dateadd")) {
+				// YYYY-MM-DD
+				int type = 23;
+				value = "convert(varchar,(" + value + ")," + type + ")";
+			}
+			// DB2不生效
+			// if (getBaseDao().getDBType() == DBUtil.DB2
+			// &&value.trim().startsWith("dateadd")) {
+			// // //YYYY-MM-DD
+			// // value="char(" +value+ ",iso)";
+			// }
+			// guoqt解决ORACLE数据环境下，使用dateadd、datediff后转成字符格式不为'yyyy-mm-dd'的问题
+			if (getBaseDao().getDBType() == DBUtil.ORACLE && value.contains("dateadd")) {
+				// //YYYY-MM-DD
+				new BaseDAO().executeUpdate("alter session set nls_date_format='yyyy-mm-dd'; ");
+			}
+			sbd.append("update wa_data set wa_data." + itemVO.getItemkey() + " = (" + value + ") " + where);
+		}
+		return sbd.toString();
+
+	}
+
+	private String addDefaultVaule(WaClassItemVO itemVO, String value) {
+		if (itemVO.getIitemtype().equals(TypeEnumVO.FLOATTYPE.value())) {
+			return " isnull((" + value + "),0)";
+		}
+
+		return value;
+
+	}
+
+	/**
+	 * @author zhangg on 2010-7-14
+	 * @return
+	 */
+	public abstract String getCacuRangeWhere();
+
+	public abstract void doCaculate() throws BusinessException;
+}

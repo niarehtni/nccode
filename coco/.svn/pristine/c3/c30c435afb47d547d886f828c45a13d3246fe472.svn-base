@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding='UTF-8'?>
+<UIMeta flowmode="true" id="main_um" jquery="0">
+    <FlowvLayout autoFill="0" id="flowvlayout7501" widgetId="main">
+      <FlowvPanel id="panelv_operate" widgetId="main">
+         <CanvasLayout className="rightcanvas" id="menucanvas" widgetId="main">
+           <CanvasPanel id="canvasp1" widgetId="main">
+       	  	 <Menubar height="100%" id="menu_operate" left="0" position="relative" top="0" widgetId="main" width="100%">
+             </Menubar>
+           </CanvasPanel>
+         </CanvasLayout>
+        </FlowvPanel>
+        <FlowvPanel id="panelv02979" widgetId="main">
+            <PanelLayout i18nName="w_ta-000719" langDir="node_ta-res" id="panellayout8836" title="单据信息" widgetId="main" className="small_panel_div">
+                <PanelPanel bottomPadding="10" id="panelpanel8836" topPadding="20" widgetId="main">
+                    <FormComp height="100%" id="headTab_card_pk_overtime_form" label_position="" left="0" position="relative" top="0" widgetId="main" width="100%">
+                    </FormComp>
+                </PanelPanel>
+            </PanelLayout>
+        </FlowvPanel>
+        <FlowvPanel id="panelv12979" widgetId="main">
+            <PanelLayout i18nName="w_ta-000721" langDir="node_ta-res" id="panellayout4851" title="员工信息" widgetId="main" className="small_panel_div" expand="true">
+                <PanelPanel bottomPadding="10" id="panelpanel4851" topPadding="20" widgetId="main">
+                    <FormComp height="100%" id="headTab_card_psninfo_form" label_position="" left="0" position="relative" top="0" widgetId="main" width="100%">
+                    </FormComp>
+                </PanelPanel>
+            </PanelLayout>
+        </FlowvPanel>
+        <FlowvPanel id="panelv22979" widgetId="main">
+            <PanelLayout i18nName="w_ta-000722" langDir="node_ta-res" id="panellayout9553" title="加班信息" widgetId="main" className="small_panel_div">
+                <PanelPanel bottomPadding="10" id="panelpanel9553" topPadding="20" widgetId="main">
+                    <FormComp height="100%" id="headTab_card_overtimeinf_form" label_position="" left="0" position="relative" top="0" widgetId="main" width="100%">
+                    </FormComp>
+                </PanelPanel>
+            </PanelLayout>
+        </FlowvPanel>
+        <FlowvPanel id="panelv42979" widgetId="main">          
+	        <PanelLayout i18nName="w_ta-001275" langDir="node_ta-res" id="panellayout6903" title="单据明细" widgetId="main" className="small_panel_div">
+	            <PanelPanel bottomPadding="10" id="panelpanel6902" topPadding="20" widgetId="main">
+			        <GridComp height="100%" id="bodyTab_card_overtimeb_sub_grid" left="0" position="relative" top="0" widgetId="main" width="100%">
+			        </GridComp>
+	            </PanelPanel>
+	        </PanelLayout>  
+        </FlowvPanel>
+        <FlowvPanel id="panelv52979" widgetId="main">
+            <PanelLayout i18nName="w_ta-000787" langDir="node_ta-res" id="panellayout6567" title="审计信息" widgetId="main" className="small_panel_div" expand="false">
+                <PanelPanel bottomPadding="10" id="panelpanel6567" topPadding="20" widgetId="main">
+                    <FormComp height="100%" id="tailTab_card_audition_form" label_position="" left="0" position="relative" top="0" widgetId="main" width="100%">
+                    </FormComp>
+                </PanelPanel>
+            </PanelLayout>
+        </FlowvPanel>
+    </FlowvLayout>
+</UIMeta>

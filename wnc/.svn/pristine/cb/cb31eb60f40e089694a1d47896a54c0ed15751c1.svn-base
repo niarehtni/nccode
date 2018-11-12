@@ -1,0 +1,15 @@
+package nc.impl.hrpub;
+
+import nc.bs.framework.common.NCLocator;
+import nc.itf.hrpub.IMDExchangeService;
+import nc.itf.hrpub.IWNCDataExchange;
+
+public class WNCDataExchangeImpl implements IWNCDataExchange {
+
+	@Override
+	public String doTransfer(String requestContext) throws Exception {
+		IMDExchangeService deSrv = NCLocator.getInstance().lookup(
+				IMDExchangeService.class);
+		return deSrv.JsonDataExchange(requestContext);
+	}
+}

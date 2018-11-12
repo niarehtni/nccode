@@ -1,0 +1,208 @@
+package nc.impl.hi.utils;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import nc.bs.dao.BaseDAO;
+import nc.bs.dao.DAOException;
+import nc.hr.utils.InSQLCreator;
+import nc.jdbc.framework.processor.MapListProcessor;
+import nc.vo.logging.Debug;
+import nc.vo.pub.BusinessException;
+import nc.vo.pub.lang.UFBoolean;
+
+import org.mozilla.javascript.edu.emory.mathcs.backport.java.util.Arrays;
+
+/**
+ * 法人组织相关的工具类
+ * 
+ * @author Ares.Tank
+ * @date 2018-9-13 15:54:20
+ * 
+ */
+public class LegalOrgUtils {
+    // 组织信息
+    private static Map<String, OrgDTO> orgMap;
+
+    private static BaseDAO baseDAO;
+
+    private static BaseDAO getBaseDAO() {
+	if (null == baseDAO) {
+	    baseDAO = new BaseDAO();
+	}
+	return baseDAO;
+    }
+
+    /**
+     * 获取这些哥们儿的法人组织
+     * 
+     * @param psndoc
+     * @return Map<psndoc,pk_org>
+     */
+    @SuppressWarnings("unchecked")
+    public static Map<String, String> getLegalOrgByPsndoc(String[] psndocs) {
+	if (null == psndocs || psndocs.length <= 0) {
+	    return new HashMap<>();
+	}
+	InSQLCreator isc = new InSQLCreator();
+	String psndocSql;
+	try {
+	    psndocSql = isc.getInSQL(psndocs);
+	} catch (BusinessException e1) {
+	    Debug.debug(e1.getMessage());
+	    return new HashMap<>();
+	}
+	String sqlStr = "select bd_psndoc.pk_psndoc,bd_psndoc.pk_org " + "from bd_psndoc " + "WHERE pk_psndoc in ("
+		+ psndocSql + ") ";
+
+	List<Map<String, String>> pkOrgMapList;
+	try {
+	    pkOrgMapList = (List<Map<String, String>>) getBaseDAO().executeQuery(sqlStr, new MapListProcessor());
+	} catch (DAOException e) {
+	    Debug.debug(e.getMessage());
+	    return new HashMap<>();
+	}
+	if (pkOrgMapList != null && pkOrgMapList.size() > 0) {
+	    // 所有的要查询的组织
+	    Set<String> orgSet = new HashSet<>();
+	    // map<psndoc,pk_org>
+	    Map<String, String> resultMap = new HashMap<>();
+
+	    for (Map<String, String> psnOrgMap : pkOrgMapList) {
+		if (psnOrgMap != null && psnOrgMap.get("pk_psndoc") != null && psnOrgMap.get("pk_org") != null) {
+		    resultMap.put(psnOrgMap.get("pk_psndoc"), psnOrgMap.get("pk_org"));
+		    orgSet.add(psnOrgMap.get("pk_org"));
+		}
+	    }
+	    // 查询组织对应的法人组织 map<组织,法人组织>
+	    Map<String, String> orgToLegalOrgMap = getLegalOrgByOrgs(orgSet.toArray(new String[0]));
+	    if (orgToLegalOrgMap != null && orgToLegalOrgMap.size() > 0) {
+		for (Map.Entry<String, String> entry : resultMap.entrySet()) {
+		    // 将法人组织与人员对应
+		    resultMap.put(entry.getKey(), orgToLegalOrgMap.get(entry.getValue()));
+		}
+	    }
+	    return resultMap;
+	}
+	return new HashMap<>();
+
+    }
+
+    /**
+     * 获取本组织的法人组织,如果本身是法人组织,那么就返回本身, 如果不是,那么查找上级,返回关系最近的法人组织
+     * 
+     * @param pkOrg
+     * @return<组织pk,法人组织pk>
+     */
+    @SuppressWarnings("unchecked")
+    public static Map<String, String> getLegalOrgByOrgs(String[] pkOrgs) {
+	Map<String, String> resultMap = new HashMap<>();
+	if (null == pkOrgs || pkOrgs.length <= 0) {
+	    return resultMap;
+	}
+
+	// 先去重,不过好像没什么意义
+	Set<String> pkOrgsSet = new HashSet<>(Arrays.asList(pkOrgs));
+	// 初始化组织信息
+	initOrgInfo();
+	// 查找组织的法人组织
+	for (String pkOrg : pkOrgsSet) {
+	    resultMap.put(pkOrg, findLegalOrg(pkOrg));
+	}
+
+	return resultMap;
+    }
+
+    /**
+     * 初始化组织信息,用于查出法人组织
+     */
+    private static void initOrgInfo() {
+	String sqlStr = "select org_orgs.pk_org,org_orgs.pk_fatherorg,orgtype2 " + "from org_orgs where dr=0 ";
+	List<Map<String, Object>> mapList;
+	try {
+	    mapList = (List<Map<String, Object>>) getBaseDAO().executeQuery(sqlStr, new MapListProcessor());
+	} catch (DAOException e) {
+	    Debug.debug(e.getMessage());
+	    mapList = new ArrayList<>();
+	}
+	if (null != mapList && mapList.size() > 0) {
+	    // 封装一下数据结果,用来查询信息,<pk_org,orgdto>
+	    orgMap = new HashMap<>();
+
+	    for (Map<String, Object> map : mapList) {
+		if (null != map.get("pk_org")) {
+		    OrgDTO temp = new OrgDTO();
+		    temp.setPkOrg((String) map.get("pk_org"));
+		    temp.setPkFatherOrg((String) map.get("pk_fatherorg"));
+		    temp.setLegalOrg(new UFBoolean((String) map.get("orgtype2")).booleanValue());
+
+		    orgMap.put(temp.getPkOrg(), temp);
+		}
+	    }
+	}
+    }
+
+    /**
+     * 向上查找此组织的法人组织
+     * 
+     * @param pkOrg
+     * @param orgMap
+     * @return 法人组织pk
+     */
+    private static String findLegalOrg(String pkOrg) {
+
+	if (null == orgMap || null == orgMap.get(pkOrg)) {
+	    return null;
+	}
+	// 当前组织为法人组织则返回
+	if (orgMap.get(pkOrg).isLegalOrg()) {
+	    return pkOrg;
+	}
+	// 如果当前组织没有父组织,而且不是法人组织,说明没有所属的法人组织
+	if (null == orgMap.get(pkOrg).getPkFatherOrg()) {
+	    return null;
+	}
+	// 否则查找上级组织
+	return findLegalOrg(orgMap.get(pkOrg).getPkFatherOrg());
+    }
+
+}
+
+// 临时封装一下递归所需的数据结构
+class OrgDTO {
+    // 组织pk
+    private String pkOrg;
+    // 父组织的pk
+    private String pkFatherOrg;
+    // 是否是法人组织
+    private boolean isLegalOrg;
+
+    public String getPkOrg() {
+	return pkOrg;
+    }
+
+    public void setPkOrg(String pkOrg) {
+	this.pkOrg = pkOrg;
+    }
+
+    public String getPkFatherOrg() {
+	return pkFatherOrg;
+    }
+
+    public void setPkFatherOrg(String pkFatherOrg) {
+	this.pkFatherOrg = pkFatherOrg;
+    }
+
+    public boolean isLegalOrg() {
+	return isLegalOrg;
+    }
+
+    public void setLegalOrg(boolean isLegalOrg) {
+	this.isLegalOrg = isLegalOrg;
+    }
+
+}

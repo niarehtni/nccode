@@ -1,0 +1,215 @@
+/**
+ * @(#)SetEditInfoWizardStep.java 1.0 2018年1月17日
+ *
+ * Copyright (c) 2013, Yonyou. All rights reserved.
+ * YONYOU PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
+ */
+package nc.ui.bm.bmfile.view.dialog;
+
+import java.awt.BorderLayout;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.util.ArrayList;
+
+import nc.bs.logging.Logger;
+import nc.hr.utils.ResHelper;
+import nc.ui.bm.rule.ref.BmRuleRefmodel;
+import nc.ui.pub.beans.UILabel;
+import nc.ui.pub.beans.UIPanel;
+import nc.ui.pub.beans.UIRefPane;
+import nc.ui.pub.beans.UIScrollPane;
+import nc.ui.pub.beans.UITabbedPane;
+import nc.ui.pub.beans.wizard.IWizardStepListener;
+import nc.ui.pub.beans.wizard.WizardStep;
+import nc.ui.pub.beans.wizard.WizardStepEvent;
+import nc.ui.pub.beans.wizard.WizardStepException;
+import nc.ui.pub.beans.wizard.WizardStepValidateException;
+import nc.ui.pub.bill.BillCardPanel;
+import nc.ui.pub.bill.BillData;
+import nc.vo.bm.data.BmDataVO;
+import nc.vo.bm.pub.BmLoginContext;
+import nc.vo.bm.pub.DefRefUtils;
+import nc.vo.pub.bill.BillTempletVO;
+
+
+import org.apache.commons.lang.StringUtils;
+
+/**
+ * @author niehg
+ * @since 6.3
+ */
+public class SetEditInfoWizardStep extends WizardStep implements IWizardStepListener {
+	private UITabbedPane tabbedPanel;
+	private BillCardPanel classPanel = null;
+	private BmLoginContext loginContext;
+
+	public BmLoginContext getLoginContext() {
+		return loginContext;
+	}
+
+	public SetEditInfoWizardStep(BmLoginContext context) {
+		super();
+		setTitle(ResHelper.getString("60150bmfile", "060150bmfile0075"));
+		setDescription(ResHelper.getString("60150bmfile", "060150bmfile0036")
+		/* @res "设置信息" */);
+		this.loginContext = context;
+
+		setComp(getScrollPanel());
+		addListener(this);
+	}
+
+	private UIScrollPane scrollPanel;
+	private UIRefPane agentcompRef;
+	private UIRefPane compVenderRef;
+	private UIRefPane psnVenderRef;
+
+	public UIScrollPane getScrollPanel() {
+		if (null == scrollPanel) {
+			UIPanel headPanel = new UIPanel();
+			headPanel.setLayout(new FlowLayout(FlowLayout.LEFT));
+			UILabel lebel = new UILabel(ResHelper.getString("60150bmfile", "160150bmfile0031")); // 社保代理公司
+			headPanel.add(lebel);
+			headPanel.add(getAgentcompRef());
+
+			UIPanel bodyPanel = new UIPanel();
+			bodyPanel.setLayout(new FlowLayout(FlowLayout.LEFT));
+			UILabel comLebel = new UILabel(ResHelper.getString("60150bmfile", "160150bmfile0032")); // 社保供应商代码(公司)
+			UILabel psnLebel = new UILabel(ResHelper.getString("60150bmfile", "160150bmfile0033")); // 社保供应商代码(个人)
+			bodyPanel.add(comLebel);
+			bodyPanel.add(getCompVenderRef());
+			bodyPanel.add(psnLebel);
+			bodyPanel.add(getPsnVenderRef());
+
+			UIPanel panel = new UIPanel();
+			panel.setLayout(new BorderLayout());
+			panel.add(headPanel, BorderLayout.NORTH);
+			//panel.add(bodyPanel, BorderLayout.CENTER);
+			panel.add(getUICompont(), BorderLayout.CENTER);
+
+			scrollPanel = new UIScrollPane(panel);
+		}
+		return scrollPanel;
+	}
+
+	public UIRefPane getAgentcompRef() {
+		if (null == agentcompRef) {
+			agentcompRef = new UIRefPane();
+			agentcompRef.setRefNodeName(DefRefUtils.qryRefNameByDefCode(DefRefUtils.DEF_AGENTCOMP)); // "社保代理公司(自定义档案)"
+			agentcompRef.setCacheEnabled(false);
+			agentcompRef.setPreferredSize(new Dimension(120, 25));
+		}
+		return agentcompRef;
+	}
+
+	public UIRefPane getCompVenderRef() {
+		if (null == compVenderRef) {
+			compVenderRef = new UIRefPane();
+			compVenderRef.setRefNodeName(DefRefUtils.qryRefNameByDefCode(DefRefUtils.DEF_VENDERCODE)); // "社保供应商代码(自定义档案)"
+			compVenderRef.setCacheEnabled(false);
+			compVenderRef.setPreferredSize(new Dimension(120, 25));
+		}
+		return compVenderRef;
+	}
+
+	public UIRefPane getPsnVenderRef() {
+		if (null == psnVenderRef) {
+			psnVenderRef = new UIRefPane();
+			psnVenderRef.setRefNodeName(DefRefUtils.qryRefNameByDefCode(DefRefUtils.DEF_VENDERCODE)); // "社保供应商代码(自定义档案)"
+			psnVenderRef.setCacheEnabled(false);
+			psnVenderRef.setPreferredSize(new Dimension(120, 25));
+		}
+		return psnVenderRef;
+	}
+	
+	// {社保档案批量新增、修改社保代理公司、险种社保供应商代码（公司）、险种社保供应商代码（个人）} kevin.nie 2018-01-17 end
+	public UITabbedPane getUICompont() {
+		if (tabbedPanel == null) {
+			tabbedPanel = new UITabbedPane();
+		}
+		return tabbedPanel;
+	}
+	//by hepingyang 设置信息界面加载模版
+	@Override
+	public void stepActived(WizardStepEvent paramWizardStepEvent) throws WizardStepException {
+		getUICompont().removeAll();
+		getUICompont().addTab("修改",getClassPanel());
+		
+		
+	}
+	
+	private BillCardPanel getClassPanel() {
+		classPanel = new BillCardPanel();
+		classPanel.setBillType(getBmLoginContext().getNodeCode());
+		classPanel.setBusiType(null);
+		classPanel.setOperator(getBmLoginContext().getPk_loginUser());
+		classPanel.setCorp(getBmLoginContext().getPk_org());
+		BillTempletVO template = classPanel.getDefaultTemplet(classPanel.getBillType(), null,
+				classPanel.getOperator(), classPanel.getCorp(), "bmfileba", null);
+
+		if (template == null) {
+			Logger.error("没有找到nodekey：bmfileba 对应的卡片模板");
+			throw new IllegalArgumentException(ResHelper.getString("60150bmfile", "060150bmfile0037")
+			/* @res "没有找到设置的单据模板信息" */);
+		}
+
+		classPanel.setBillData(new BillData(template));
+		classPanel.setPreferredSize(new Dimension(600, 400));
+		UIRefPane panel = (UIRefPane) classPanel.getHeadItem(BmDataVO.PAYLOCATION).getComponent();
+		BmRuleRefmodel refModel = (BmRuleRefmodel) panel.getRefModel();
+		refModel.setPk_org(getBmLoginContext().getPk_org());
+		//refModel.setEndperiod(getCyear() + getCperiod());
+		return classPanel;
+	}
+	
+	@Override
+	public void stepDisactived(WizardStepEvent paramWizardStepEvent) throws WizardStepException {
+		BmDataVO bmdata = null;
+		if (classPanel != null) {
+			bmdata = (BmDataVO) classPanel.getBillData().getHeaderValueVO(BmDataVO.class.getName());
+			}
+		BmDataVO[] dataVOs = (BmDataVO[]) getModel().getAttr("selectedBmData");
+		String agentComPk = getAgentcompRef().getRefPK();
+		String comVenderPK = getCompVenderRef().getRefPK();
+		String psnVenderPK = getPsnVenderRef().getRefPK();
+		for (BmDataVO vo : dataVOs) {
+			vo.setDef1(agentComPk);
+			vo.setDef2(bmdata.getDef2());
+			vo.setDef3(bmdata.getDef3());
+			vo.setDbegindate(bmdata.getDbegindate());
+			vo.setPaylocation(bmdata.getPaylocation());
+		}
+		getModel().putAttr("selectedPsn", dataVOs);
+	}
+	public BillCardPanel getBillCardPanel() {
+		return (BillCardPanel) getUICompont().getComponent(0);
+	}
+
+	private BmLoginContext getBmLoginContext() {
+		return loginContext;
+	}
+	
+	/*public void validate() throws WizardStepValidateException {
+		super.validate();
+		String agentComPk = getAgentcompRef().getRefPK();
+		String comVenderPK = getCompVenderRef().getRefPK();
+		String psnVenderPK = getPsnVenderRef().getRefPK();
+		if (StringUtils.isBlank(agentComPk)) {
+			WizardStepValidateException e = new WizardStepValidateException();
+			e.addMsg(ResHelper.getString("60150bmfile", "060150bmfile0014"),
+					ResHelper.getString("60150bmfile", "060150bmfile0078"));
+			throw e;
+		}
+		if (StringUtils.isBlank(comVenderPK)) {
+			WizardStepValidateException e = new WizardStepValidateException();
+			e.addMsg(ResHelper.getString("60150bmfile", "060150bmfile0014"),
+					ResHelper.getString("60150bmfile", "060150bmfile0079"));
+			throw e;
+		}
+		if (StringUtils.isBlank(psnVenderPK)) {
+			WizardStepValidateException e = new WizardStepValidateException();
+			e.addMsg(ResHelper.getString("60150bmfile", "060150bmfile0014"),
+					ResHelper.getString("60150bmfile", "060150bmfile0080"));
+			throw e;
+		}
+	}*/
+}

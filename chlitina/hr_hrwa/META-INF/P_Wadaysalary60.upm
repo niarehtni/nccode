@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding='gb2312'?>
+<module name="hrwa">
+  <public>
+	<component remote="true" singleton="true"  tx="CMT">
+	  <interface>nc.itf.hrwa.IWadaysalaryQueryService</interface>
+	  <implementation>nc.impl.hrwa.WadaysalaryQueryServiceImpl</implementation>
+	</component>
+	<component remote="true" singleton="true"  tx="CMT">
+	  <interface>nc.itf.hrwa.IWadaysalaryService</interface>
+	  <implementation>nc.impl.hrwa.WadaysalaryServiceImpl</implementation>
+	</component>
+	<component remote="true" singleton="true"  tx="CMT">
+	  <interface>nc.itf.hrwa.IWaTbmdaysalaryService</interface>
+	  <implementation>nc.impl.hrwa.WaTbmdaysalaryServiceImpl</implementation>
+	</component>
+  </public> 
+</module> 

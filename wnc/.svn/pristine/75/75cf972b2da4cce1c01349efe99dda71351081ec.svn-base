@@ -1,0 +1,525 @@
+package nc.ui.wa.amo.action;
+
+import java.awt.event.ActionEvent;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
+
+import javax.swing.Action;
+
+import org.apache.commons.lang.StringUtils;
+
+import nc.bs.framework.common.NCLocator;
+import nc.funcnode.ui.action.INCAction;
+import nc.hr.utils.ResHelper;
+import nc.itf.hr.wa.IAmoScheme;
+import nc.itf.hr.wa.IAmoSchemeQuery;
+import nc.itf.hr.wa.IHRWAActionCode;
+import nc.pub.wa.salaryencryption.util.SalaryDecryptUtil;
+import nc.ui.hr.uif2.action.HrAction;
+import nc.ui.pub.beans.UIDialog;
+import nc.ui.pub.bill.BillItem;
+import nc.ui.pub.bill.BillModel;
+import nc.ui.uif2.UIState;
+import nc.ui.wa.amo.validator.ApportionValidator;
+import nc.ui.wa.amo.view.ApportionDialog;
+import nc.vo.hr.append.AppendableVO;
+import nc.vo.om.pub.SuperVOHelper;
+import nc.vo.pub.BusinessException;
+import nc.vo.pub.lang.UFDouble;
+import nc.vo.wa.amoscheme.AggAmoSchemeVO;
+import nc.vo.wa.amoscheme.AmoFactorVO;
+import nc.vo.wa.amoscheme.AmoSchemeVO;
+import nc.vo.wa.datainterface.AggDataPoolVO;
+import nc.vo.wa.datainterface.DataPoolBVO;
+import nc.vo.wa.datainterface.DataPoolVO;
+import nc.vo.wa.pub.WaLoginContext;
+
+/**
+ * 分摊
+ */
+public class ApportionAction extends HrAction{
+
+
+	public ApportionAction(){
+		super();
+		// 设置按钮
+		setBtnName(ResHelper.getString("60130payamo","060130payamo0517")/*@res "分摊"*/);
+		putValue(INCAction.CODE, IHRWAActionCode.APPORTION);
+		//setBtnChinaName("分摊");
+		putValue(Action.SHORT_DESCRIPTION, ResHelper.getString("60130payamo","060130payamo0518")/*@res "分摊(Ctrl+A)"*/);
+	}
+
+	@Override
+	protected boolean isActionEnable() {
+		boolean isEnable= super.isActionEnable();
+		if(isEnable)
+		{
+			//未选择组织和薪资方案时不可用
+			WaLoginContext context = (WaLoginContext)getModel().getContext();
+			if(context.getPk_org()==null||context.getPk_wa_class()==null)
+			{
+				return false;
+			}
+
+			Object obj = getModel().getSelectedData();
+			if(obj==null)
+			{
+				//未选择行，不可用
+				return false;
+			}
+			else
+			{
+				AmoSchemeVO vo = (AmoSchemeVO)((AggAmoSchemeVO)obj).getParentVO();
+				if(vo==null) return false;
+				//				if(vo.getType()==null)return false;
+				return true;
+			}
+		}
+		return isEnable;
+	}
+
+
+	private String getAlterName(AmoFactorVO factorVO){
+		if(factorVO != null && factorVO.getEntity_attr() != null){
+			String attr = factorVO.getEntity_attr();
+			if(attr.startsWith("#")){
+				attr = attr.substring(1);
+			}
+			int lastIndex = attr.lastIndexOf(".");
+			if(lastIndex > 0){
+				return attr.substring(lastIndex+1)+ "_name";
+			}else{
+				return attr+ "_name";
+			}
+		}
+		return null;
+	}
+	/**
+	 *
+	 * @author zhangg on 2010-8-10
+	 * @param billtype
+	 * @param amotypeid
+	 * @return
+	 * @throws BusinessException
+	 */
+	public String getPk_wa_datapool(String billtype, String amotypeid) throws BusinessException {
+		WaLoginContext context = (WaLoginContext) getModel().getContext();
+		IAmoSchemeQuery service = NCLocator.getInstance().lookup(IAmoSchemeQuery.class);
+		return service.getPk_wa_datapool(context.getWaLoginVO(), amotypeid,  billtype);
+	}
+	/**
+	 * @see nc.ui.uif2.NCAction#doAction(java.awt.event.ActionEvent)
+	 */
+	@Override
+	public void doAction(ActionEvent e) throws Exception {
+
+		Object obj = getModel().getSelectedData();
+		if(obj==null)return;
+
+		AggAmoSchemeVO aggVO = (AggAmoSchemeVO)obj;
+		AmoSchemeVO vo = (AmoSchemeVO) aggVO.getParentVO();
+		boolean isShowItem = vo.getIitem() == null? false: vo.getIitem().booleanValue();
+
+		String pk_billtype = vo.getPk_billtypecode();
+		String pk_wa_datapool = getPk_wa_datapool(pk_billtype, vo.getPk_amoscheme());
+		if(pk_wa_datapool != null){//已经制单
+			showDialog(pk_billtype, pk_wa_datapool, aggVO);
+			return;
+		}
+		WaLoginContext context = (WaLoginContext) getModel().getContext();
+		ApportionValidator apportionValidator=new ApportionValidator();
+		//校验多次发放薪资方案
+		apportionValidator.validater(context, pk_billtype);
+		//初始化分摊数据界面
+
+		ArrayList<BillItem> items = new ArrayList<BillItem> ();
+
+		//分摊组织
+		BillItem itemOrg = new BillItem();
+		itemOrg.setKey("amoOrg");
+		itemOrg.setName(ResHelper.getString("60130payamo","060130payamo0519")/*@res "分摊组织"*/);
+		itemOrg.setDataType(BillItem.STRING);
+		itemOrg.setEnabled(false);
+		itemOrg.setEdit(false);
+		itemOrg.setWidth(120);
+		itemOrg.setNull(false);
+		items.add(itemOrg);
+
+		AmoFactorVO[] amoFactorVOs = (AmoFactorVO[])aggVO.getTableVO("factor");
+		for(int i=0;amoFactorVOs!=null&&i<amoFactorVOs.length;i++)
+		{
+			BillItem item = new BillItem();
+			item.setKey(getAlterName(amoFactorVOs[i]));
+			item.setName(amoFactorVOs[i].getFactor_doc_name());
+			item.setDataType(BillItem.STRING);
+			item.setEnabled(false);
+			item.setEdit(false);
+			item.setWidth(120);
+			item.setNull(false);
+			items.add(item);
+		}
+		//薪资发放项目
+		BillItem amoItem = new BillItem();
+		amoItem.setKey("item_name");
+		amoItem.setName(ResHelper.getString("60130payamo","060130payamo0521")/*@res "薪资发放项目"*/);
+		amoItem.setDataType(BillItem.STRING);
+		amoItem.setEnabled(false);
+		amoItem.setEdit(false);
+		amoItem.setWidth(120);
+		amoItem.setNull(false);
+		amoItem.setShow(isShowItem);
+		items.add(amoItem);
+		//分摊比例
+		BillItem fratio = new BillItem();
+		fratio.setKey("fratio");
+		fratio.setName(ResHelper.getString("60130payamo","060130payamo0520")/*@res "分摊比例"*/);
+		fratio.setDataType(BillItem.DECIMAL);
+		fratio.setEnabled(false);
+		fratio.setEdit(false);
+		fratio.setWidth(120);
+		fratio.setNull(false);
+		items.add(fratio);
+
+		//分摊金额
+		BillItem itemMoney = new BillItem();
+		itemMoney.setKey("fmny");
+		itemMoney.setName(ResHelper.getString("60130payamo","060130payamo0522")/*@res "分摊金额"*/);
+		itemMoney.setDataType(BillItem.DECIMAL);
+		itemMoney.setEnabled(false);
+		itemMoney.setEdit(false);
+		itemMoney.setWidth(120);
+		itemMoney.setNull(false);
+		items.add(itemMoney);
+
+		BillModel billModel = new BillModel();
+
+		billModel.setBodyItems(items.toArray( new BillItem[0]));
+
+		//初始化分摊界面查询
+		IAmoSchemeQuery service = NCLocator.getInstance().lookup(IAmoSchemeQuery.class);
+		//		WaLoginContext context = (WaLoginContext)getModel().getContext();
+		AppendableVO[] results = service.queryApportionData(aggVO, context.getWaLoginVO());
+		
+		// 2016-12-22 zhousze 薪资加密：这里处理分摊金额数据解密
+		for (AppendableVO vo1 : results) {
+			vo1.setAttributeValue("fmny", new UFDouble(vo1.getAttributeValue("fmny") == null ? 
+					0 : SalaryDecryptUtil.decrypt(((UFDouble)vo1.getAttributeValue("fmny")).toDouble())));
+		}
+
+		billModel.setBodyDataVO(results);
+
+		ApportionDialog dialog = new ApportionDialog(context,billModel);
+		dialog.setResizable(false);
+		dialog.setHint(ResHelper.getString("60130payamo","060130payamo0523")/*@res "点击 [确定] 按钮将进行 制单 操作"*/);
+
+		dialog.showModal();
+
+		if(dialog.getResult() == UIDialog.ID_OK){
+			ArrayList<BillItem> dateList = new ArrayList<BillItem> ();
+			//guoqt请输入来源业务日期！
+			BillItem sourceDate = new BillItem();
+			sourceDate.setKey("date");
+			sourceDate.setName(ResHelper.getString("60130payamo","060130payamo0549")/*@res "请输入来源业务日期！"*/);
+			sourceDate.setDataType(BillItem.DATE);
+			sourceDate.setEnabled(true);
+			sourceDate.setEdit(true);
+			sourceDate.setWidth(150);
+			sourceDate.setNull(true);
+			dateList.add(sourceDate);
+			BillModel billModel2 = new BillModel();
+			billModel2.setBodyItems(dateList.toArray( new BillItem[0]));
+			billModel2.setBodyDataVO(new AppendableVO[1]);
+			ApportionDialog dialog2 = new ApportionDialog(context,billModel2);
+			dialog2.setResizable(false);
+//			20151217  xiejie3  NCdp205561627  英文登录，分摊日期对话框太小了不易用，调整大小 begin
+//			dialog2.setSize(200, 150);
+			dialog2.setSize(250, 150);
+//			end
+			dialog2.showModal();
+			
+			// 2015-09-17 zhousze ”分摊方案“分摊时，选择来源业务日期后点击取消，会保存单据，是由于
+			// 下面没有对当前的dialog2取校验点击的是确认还是取消，以及来源业务日期不生效 begin
+			if(billModel2.getItemByKey("date").getValue()!=null && dialog2.getResult() == UIDialog.ID_OK){
+			// end
+				String sourceDate2 = billModel2.getItemByKey("date").getValue().toString().substring(0, 10);
+				onSave(results,sourceDate2);
+				putValue(HrAction.MESSAGE_AFTER_ACTION, ResHelper.getString("60130payamo", "060130payamo0546")/* @res "分摊成功。" */);
+			}else{
+				throw new BusinessException(ResHelper.getString("60130payamo","060130payamo0549")/*@res "请输入来源业务日期！"*/);
+			}
+			
+		}
+		getModel().setUiState(UIState.NOT_EDIT);
+	}
+
+	public void onSave(AppendableVO[] results,String sourceDate) throws BusinessException{
+		AggDataPoolVO aggDataPoolVO = getAggDataPoolVO(results,sourceDate);
+		IAmoScheme service = NCLocator.getInstance().lookup(IAmoScheme.class);
+
+		Object obj = getModel().getSelectedData();
+		if (obj == null)
+			return;
+
+		AggAmoSchemeVO aggVO = (AggAmoSchemeVO)obj;
+		AmoSchemeVO vo = (AmoSchemeVO) aggVO.getParentVO();
+		getModel().getContext().setInitData(vo);
+
+		service.insert(aggDataPoolVO, getModel().getContext(), vo);
+
+	}
+
+	public AggDataPoolVO getAggDataPoolVO(AppendableVO[] results,String sourceDate) {
+		WaLoginContext context = (WaLoginContext) getModel().getContext();
+		Object obj = getModel().getSelectedData();
+		if (obj == null)
+			return null;
+
+		AggAmoSchemeVO aggVO = (AggAmoSchemeVO) obj;
+		AmoSchemeVO vo = (AmoSchemeVO) aggVO.getParentVO();
+
+		AggDataPoolVO aggDataPoolVO = new AggDataPoolVO();
+
+		DataPoolVO dataPoolVO = new DataPoolVO();
+		dataPoolVO.setDate(sourceDate);
+		dataPoolVO.setPk_wa_class(context.getPk_wa_class());
+		dataPoolVO.setCyear(context.getWaYear());
+		dataPoolVO.setCperiod(context.getWaPeriod());
+		dataPoolVO.setCurrid(context.getWaLoginVO().getCurrid());
+		dataPoolVO.setBillmaker(context.getPk_loginUser());
+		dataPoolVO.setPk_group(context.getPk_group());
+		dataPoolVO.setPk_billtype(vo.getPk_billtypecode());
+		dataPoolVO.setPk_wa_amotype(vo.getPk_amoscheme());
+
+		aggDataPoolVO.setParentVO(dataPoolVO);
+		aggDataPoolVO.setChildrenVO(getDataPoolBVOs(results));
+
+		return aggDataPoolVO;
+	}
+
+	public DataPoolBVO[] getDataPoolBVOs(AppendableVO[] results) {
+
+		if (results == null) {
+			return null;
+		}
+		List<DataPoolBVO> list = new LinkedList<DataPoolBVO>();
+		for (AppendableVO appendableVO : results) {
+			DataPoolBVO dataPoolBVO = new DataPoolBVO();
+
+			String[] attributeNames = appendableVO.getAttributeNames();
+			for (String name : attributeNames) {
+				dataPoolBVO.setAttributeValue(name, appendableVO.getAttributeValue(name));
+			}
+			// 2015-10-19 zhousze 分摊时，生成单据时会在wa_datapool_b中插入psnid，但是没有给pk_psnbasdoc赋值，
+			// 导致在分摊后取这个值时为空 begin
+			dataPoolBVO.setPk_psnbasdoc(dataPoolBVO.getPsnid());
+			// end
+			list.add(dataPoolBVO);
+		}
+		return list.toArray(new DataPoolBVO[0]);
+
+	}
+
+	public void showDialog(String pk_billtype, String pk_wa_datapool,
+			AggAmoSchemeVO aggVO) throws BusinessException {
+
+		WaLoginContext context = (WaLoginContext) getModel().getContext();
+		IAmoSchemeQuery service = NCLocator.getInstance().lookup(IAmoSchemeQuery.class);
+		AmoSchemeVO vo = (AmoSchemeVO) aggVO.getParentVO();
+		boolean isShowItem = vo.getIitem() == null ? false : vo.getIitem()
+				.booleanValue();
+		//初始化分摊数据界面
+		ArrayList<BillItem> items = new ArrayList<BillItem> ();
+
+		BillItem itemOrg = new BillItem();
+		// 分摊组织
+		if (pk_billtype.endsWith("WA01") || pk_billtype.endsWith("WA02")) {
+			itemOrg.setKey("amoorgvidname");
+			itemOrg.setName(ResHelper.getString("60130payamo",
+					"060130payamo0519")/* @res "分摊组织" */);
+		} else {
+			itemOrg.setKey("pk_amo_orgname");
+			itemOrg.setName(ResHelper.getString("60130payamo",
+					"060130payamo0519")/* @res "分摊组织" */);
+		}
+		itemOrg.setDataType(BillItem.STRING);
+		itemOrg.setEnabled(false);
+		itemOrg.setEdit(false);
+		itemOrg.setWidth(120);
+		itemOrg.setNull(false);
+		items.add(itemOrg);
+		
+		AmoFactorVO[] oldamoFactorVOs = (AmoFactorVO[]) aggVO.getTableVO("factor");
+		
+		AmoFactorVO[] amoFactorVOs = null ;
+		
+		if(null!=oldamoFactorVOs){
+			amoFactorVOs = new AmoFactorVO[oldamoFactorVOs.length];
+			for(int i=0;i<oldamoFactorVOs.length;i++){
+				amoFactorVOs[i] = new AmoFactorVO();
+			}
+			
+			SuperVOHelper.copySuperVOAttributes(oldamoFactorVOs, amoFactorVOs);
+		}
+
+		for(int i=0;amoFactorVOs!=null&&i<amoFactorVOs.length;i++)
+		{
+			fillFactorInfo_v(amoFactorVOs[i]);
+			BillItem item = new BillItem();
+			item.setKey(amoFactorVOs[i].getAttrname() + "name");
+			item.setName(amoFactorVOs[i].getFactor_doc_name());
+			item.setDataType(BillItem.STRING);
+			item.setEnabled(false);
+			item.setEdit(false);
+			item.setWidth(120);
+			item.setNull(false);
+			items.add(item);
+		}
+
+		//薪资发放项目
+		BillItem amoItem = new BillItem();
+		amoItem.setKey("pk_wa_itemname");
+		amoItem.setName(ResHelper.getString("60130payamo", "060130payamo0521")/*
+		 * @res
+		 * "薪资发放项目"
+		 */);
+		amoItem.setDataType(BillItem.STRING);
+		amoItem.setEnabled(false);
+		amoItem.setEdit(false);
+		amoItem.setWidth(120);
+		amoItem.setNull(false);
+		amoItem.setShow(isShowItem);
+		items.add(amoItem);
+		// 分摊比例
+		BillItem fratio = new BillItem();
+		fratio.setKey("frationame");
+		fratio.setName(ResHelper.getString("60130payamo", "060130payamo0520")/*
+		 * @res
+		 * "分摊比例"
+		 */);
+		fratio.setDataType(BillItem.DECIMAL);
+		fratio.setEnabled(false);
+		fratio.setEdit(false);
+		fratio.setWidth(120);
+		fratio.setNull(false);
+		items.add(fratio);
+
+		//分摊金额
+		BillItem itemMoney = new BillItem();
+		itemMoney.setKey("fmny");
+		itemMoney.setName(ResHelper.getString("60130payamo","060130payamo0522")/*@res "分摊金额"*/);
+		itemMoney.setDataType(BillItem.DECIMAL);
+		itemMoney.setEnabled(false);
+		itemMoney.setEdit(false);
+		itemMoney.setWidth(120);
+		itemMoney.setNull(false);
+		items.add(itemMoney);
+
+		BillModel billModel = new BillModel();
+
+		billModel.setBodyItems(items.toArray( new BillItem[0]));
+
+		amoFactorVOs = fillFactorInfo_ext(amoFactorVOs, pk_billtype);
+		AppendableVO[] results = service.qyeryGeneralVOsByPk_datapool(pk_wa_datapool, amoFactorVOs);
+
+
+		billModel.setBodyDataVO(results);
+
+
+		/*		BillListPanel panel = new BillListPanel();
+		panel.getParentListPanel().setAutoAddLine(false);
+		panel.getParentListPanel().setTableModel(billModel);
+		panel.getParentListPanel().setAutoscrolls(true);
+		panel.getParentListPanel().setEnabled(false);
+		panel.getUISplitPane().getRightComponent().setVisible(false);
+		panel.setPreferredSize( new Dimension(648, 450));*/
+
+
+		ApportionDialog dialog = new ApportionDialog(context,billModel);
+		dialog.setResizable(false);
+		//		dialog.setMainPane(panel);
+		dialog.setHint(ResHelper.getString("60130payamo","060130payamo0524")/*@res "已经制单"*/);
+
+		dialog.showModal();
+		if(dialog.getResult() == UIDialog.ID_OK){
+			throw new BusinessException( ResHelper.getString("60130payamo","060130payamo0525")/*@res "已经制单!"*/ );
+		}
+	}
+
+	private AmoFactorVO[] fillFactorInfo_ext(AmoFactorVO[] amoFactorVOs,
+			String pk_billtype) {
+
+		List<AmoFactorVO> voList = new ArrayList<AmoFactorVO>();
+		if (amoFactorVOs != null) {
+			for (AmoFactorVO factorVO : amoFactorVOs) {
+				voList.add(factorVO);
+			}
+		}
+
+		AmoFactorVO amoFactorVO = new AmoFactorVO();
+		amoFactorVO.setAttrname("pk_wa_item");
+		amoFactorVO.setTable_name("wa_item");
+		amoFactorVO.setNamefieldname("name");
+		amoFactorVO.setTablepkname("pk_wa_item");
+		voList.add(amoFactorVO);
+
+		AmoFactorVO amoFactorVO2 = new AmoFactorVO();
+		if (pk_billtype.endsWith("WA01") || pk_billtype.endsWith("WA02")) {
+
+			amoFactorVO2.setAttrname("amoorgvid");
+			amoFactorVO2.setTable_name("org_orgs_v");
+			amoFactorVO2.setNamefieldname("name");
+			amoFactorVO2.setTablepkname("pk_vid");
+		} else {
+			amoFactorVO2.setAttrname("pk_amo_org");
+			amoFactorVO2.setTable_name("org_orgs");
+			amoFactorVO2.setNamefieldname("name");
+			amoFactorVO2.setTablepkname("pk_org");
+
+		}
+		voList.add(amoFactorVO2);
+
+		AmoFactorVO amoFactorVO3 = new AmoFactorVO();
+		amoFactorVO3.setAttrname("fratio");
+		voList.add(amoFactorVO3);
+
+		return voList.toArray(new AmoFactorVO[0]);
+	}
+
+	private void fillFactorInfo_v(AmoFactorVO factorVO) {
+		if (factorVO != null) {
+			String tableName = factorVO.getTable_name();
+			if (tableName.equals("org_dept")) {
+				factorVO.setEntity_attr("$wa_datapool_b.deptvid");
+				factorVO.setTable_name("org_dept_v");
+				factorVO.setNamefieldname("name");
+				factorVO.setTablepkname("pk_vid");
+			} else if (tableName.equals("bd_psncl")) {
+				factorVO.setNamefieldname("name");
+				factorVO.setTablepkname("pk_psncl");
+
+			} else if (tableName.equals("bd_psndoc")) {
+				factorVO.setNamefieldname("name");
+				factorVO.setTablepkname("pk_psndoc");
+			} else if (tableName.equals("bd_defdoc")) {
+				factorVO.setNamefieldname("name");
+				factorVO.setTablepkname("pk_defdoc");
+			}
+			factorVO.setAttrname(getAlterName_v(factorVO));
+		}
+	}
+
+	private String getAlterName_v(AmoFactorVO factorVO) {
+		if (factorVO != null && factorVO.getEntity_attr() != null) {
+			String attr = factorVO.getEntity_attr();
+
+			int lastIndex = attr.lastIndexOf(".");
+			if (lastIndex > 0) {
+				return attr.substring(lastIndex + 1);
+			} else {
+				return attr.replace("#", "");
+			}
+		}
+		return null;
+	}
+}

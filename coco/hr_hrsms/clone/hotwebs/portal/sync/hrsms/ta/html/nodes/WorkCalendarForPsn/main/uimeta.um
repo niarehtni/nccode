@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding='UTF-8'?>
+<UIMeta flowmode="true" id="main_um" jquery="0">
+    <FlowvLayout id="flowvlayout5452" widgetId="main">
+        <FlowvPanel id="panelv05452" widgetId="main">
+            <CanvasLayout className="rightcanvas" id="menucanvas" widgetId="main">
+                <CanvasPanel id="canvasp1" widgetId="main">
+                    <Menubar height="100%" id="menu_list" left="0" position="relative" top="0" widgetId="main" width="100%">
+                    </Menubar>
+                </CanvasPanel>
+            </CanvasLayout>
+        </FlowvPanel>
+        <FlowvPanel id="panelv15452" widgetId="main">
+            <PanelLayout i18nName="w_ta-000070" langDir="node_ta-res" id="panellayout1031" title="人员姓名" widgetId="main" className="small_panel_div">
+                <PanelPanel bottomPadding="10" id="panelpanel0952" topPadding="20" widgetId="main">
+                    <HtmlContent height="100%" id="psnHtml" left="0" position="relative" top="0" widgetId="main" width="100%">
+                    </HtmlContent>
+                </PanelPanel>
+            </PanelLayout>
+        </FlowvPanel>
+        <FlowvPanel id="panelv25452" widgetId="main">
+            <Border bottomColor="" bottomWidth="1" className="" color="" id="border3280" leftColor="" leftWidth="1" rightColor="" rightWidth="1" showBottom="true" showLeft="true" showRight="true" showTop="true" topColor="" topWidth="1" widgetId="main" width="100">
+                <BorderTrue id="bordertrue3296" widgetId="main">
+                    <FlowvLayout id="flowvlayout9829" widgetId="main">
+                        <FlowvPanel id="panelv09829" widgetId="main">
+                        	<HtmlContent height="100%" id="canlendarHtml" left="0" position="relative" top="0" widgetId="main" width="100%">
+				            </HtmlContent>
+                        </FlowvPanel>
+                        <FlowvPanel id="panelv19829" widgetId="main">
+				            <HtmlContent height="100%" id="explainHtml" left="0" position="relative" top="0" widgetId="main" width="100%">
+				            </HtmlContent>
+                        </FlowvPanel>
+                    </FlowvLayout>
+                </BorderTrue>
+            </Border>
+        </FlowvPanel>
+    </FlowvLayout>
+</UIMeta>

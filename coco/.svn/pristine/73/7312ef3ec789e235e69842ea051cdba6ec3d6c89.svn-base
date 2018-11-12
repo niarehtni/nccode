@@ -1,0 +1,26 @@
+package nc.bs.hrss.ta.signcard;
+
+import nc.bs.hrsms.pub.advpanel.mngdept.MngShopPanel;
+import nc.bs.hrss.pub.advpanel.IPagePanel;
+import nc.bs.hrss.pub.advpanel.panels.CanvasPanel;
+import nc.bs.hrss.pub.advpanel.panels.SimpleQueryPanel;
+import nc.bs.hrss.ta.common.pagemode.TaListBasePageMode;
+import nc.uap.lfw.core.page.LfwWindow;
+import nc.uap.lfw.jsp.uimeta.UIMeta;
+
+public class SignCardListPageModel extends TaListBasePageMode {
+	public String getBusinessEtag() {
+		return "E20200917";
+	}
+
+	@Override
+	protected IPagePanel[] getLeftComponents(LfwWindow pm, UIMeta um) {
+		// CatagoryPanel cp = new CatagoryPanel();
+		// cp.setTitle(NCLangRes4VoTransl.getNCLangRes().getStrByID("c_ta-res",
+		// "0c_ta-res0209"));
+		// cp.setDataProvider(new TaApplyCatDataProvider());
+		// return new IPagePanel[] { new CanvasPanel(), cp, new
+		// SimpleQueryPanel() };
+		return new IPagePanel[] { new CanvasPanel(), new MngShopPanel(), new SimpleQueryPanel() };
+	}
+}

@@ -1,0 +1,320 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!DOCTYPE beans PUBLIC "-//SPRING//DTD BEAN//EN" "http://www.springframework.org/dtd/spring-beans.dtd">
+
+<beans>
+	<!-- 环境变量 -->
+	<bean id="context" class="nc.vo.ta.pub.TALoginContext"> 
+	</bean>
+	
+	<!-- 模型部分配置 -->
+	
+	<!-- 应用服务类，负责进行模型操作的处理 -->
+	
+	
+	<!-- 对象转换器工厂，由此获取操作对象的特征信息 -->
+	<bean id="boadatorfactory" class="nc.vo.bd.meta.BDObjectAdpaterFactory"/>
+	
+	<!-- 管理应用模型 -->
+	<bean id="model" class="nc.ui.ta.psncalendar.model.PsnCalendarAppModel">
+		<property name="context" ref="context"></property>
+	</bean>
+	<bean id="queryEditorListener" class="nc.ui.ta.pub.QueryEditorListener">
+	</bean>
+	<bean id="toftpanelActionContributors" class="nc.ui.uif2.actions.ActionContributors">
+		<property name="contributors">
+			<list>
+				<ref bean="calendarActions"/>
+				<ref bean="gridActions"/>
+			</list>
+		</property>
+	</bean>
+	
+	<!-- 日历界面的按钮 -->
+	<bean id="calendarActions" class="nc.ui.uif2.actions.StandAloneToftPanelActionContainer">
+		<constructor-arg><ref bean="calendarView" /></constructor-arg>
+		<property name="actions">
+			<list>
+				<ref bean="EditAction"/>
+				<ref bean="QueryAction"/>
+				<ref bean="RefreshAction"/>
+				<ref bean="nullaction" />
+				<ref bean="ViewDetailAction"/>
+			</list>
+		</property>
+		<property name="editActions">
+			<list>
+				<ref bean="SaveAction"/>
+				<ref bean="nullaction" />
+				<ref bean="CancelAction"/>
+			</list>
+		</property>
+		<property name="model" ref="model"/>
+	</bean>
+	<!-- grid界面(时间段界面)的按钮 -->
+	<bean id="gridActions" class="nc.ui.uif2.actions.StandAloneToftPanelActionContainer">
+		<constructor-arg><ref bean="gridView"/></constructor-arg>
+		<property name="actions">
+			<list>
+				<ref bean="editActionGroup"/>
+				<ref bean="nullaction" />
+				<ref bean="QueryAction"/>
+				<ref bean="RefreshAction"/>
+				<ref bean="nullaction" />
+				<ref bean="arrangeCalendarActionGroup"/>
+				<ref bean="ViewDetailAction"/>
+				<ref bean="nullaction" />
+				<ref bean="exOrImpActionGroup"/>
+				<ref bean="PrintActiongroup"/>
+			</list>
+		</property>
+		<property name="editActions">
+			<list>
+				<ref bean="SaveAction"/>
+				<ref bean="nullaction" />
+				<ref bean="CancelAction"/>
+			</list>
+		</property>
+		<property name="model" ref="model"/>
+	</bean>
+	
+	<!-- 数据模型管理器，主要负责各种方式的模型初始化 -->
+	<bean id="modelDataManager" class="nc.ui.ta.psncalendar.model.PsnCalendarAppModelDataManager">
+		<property name="context" ref="context"></property>
+		<property name="model" ref="model"></property>
+	</bean>
+	
+	<!-- 界面元素 -->
+	<!-- 时间段界面 -->
+	<bean id="gridView" class="nc.ui.ta.psncalendar.view.GridPanel" init-method="initUI">
+		<property name="model" ref="model"></property>
+		<property name="manager" ref="modelDataManager"></property>
+	</bean>
+	<!-- 日历界面 -->
+	<bean id="calendarView" class="nc.ui.ta.psncalendar.view.CalendarPanel" init-method="initUI">
+		<property name="model" ref="model"></property>
+	</bean>
+	<bean id="nullaction" class="nc.funcnode.ui.action.SeparatorAction" />
+	
+	<!-- 排班菜单按钮 -->
+	<bean id="arrangeCalendarActionGroup" class="nc.funcnode.ui.action.MenuAction">
+		<property name="code">
+			<value>arrangeClass</value>
+		</property>
+		
+		<property name="name">
+		<bean class="nc.ui.uif2.I18nFB">
+		     <property name="resDir" value="6017psncalendar"></property> 
+		    <property name="defaultValue" value="排班" />
+		    <property name="resId" value="X6017psncal01"></property>
+		     </bean>
+		</property>
+		
+		<property name="actions">
+			<list>
+				<ref bean="CircularlyArrangeAction" />
+				<ref bean="UseDefaultAction" />
+			</list>
+		</property>
+	</bean>
+	<bean id="CircularlyArrangeAction" class="nc.ui.ta.psncalendar.action.CircularlyArrangeAction">
+		<property name="model" ref="model"/>
+		<property name="ncActionStatusJudge" ref="enableJudge"/>
+	</bean>
+	
+	<bean id="UseDefaultAction" class="nc.ui.ta.psncalendar.action.UseDefaultAction">
+		<property name="model" ref="model"/>
+		<property name="ncActionStatusJudge" ref="enableJudge"/>
+	</bean>
+	
+	<!-- 修改菜单按钮 -->
+	<bean id="editActionGroup" class="nc.funcnode.ui.action.GroupAction">
+		<property name="code">
+			<value>edit</value>
+		</property>
+		<property name="name" >
+		<bean class="nc.ui.uif2.I18nFB">
+		     <property name="resDir" value="common"></property> 
+		    <property name="defaultValue" value="修改" />
+		    <property name="resId" value="UC001-0000045"></property>
+	     </bean>
+		</property>
+		<property name="actions">
+			<list>
+				<ref bean="EditAction" />
+				<ref bean="BatchChangeAction" />
+			</list>
+		</property>
+	</bean>
+	<bean id="EditAction" class="nc.ui.ta.psncalendar.action.EditCalendarAction">
+		<property name="model" ref="model"/>
+	</bean>
+	
+	<bean id="BatchChangeAction" class="nc.ui.ta.psncalendar.action.BatchChangeCalendarAction">
+		<property name="model" ref="model"/>
+		<property name="ncActionStatusJudge" ref="enableJudge"/>
+	</bean>
+	<bean id="QueryAction" class="nc.ui.ta.psncalendar.action.QueryCalendarAction">
+		<property name="model" ref="model"/>
+		<property name="dataManager" ref="modelDataManager"/>
+		<property name="psnCalendarAppModelDataManager" ref="modelDataManager"/>
+		<property name="queryDelegator">
+			<bean class="nc.ui.ta.psncalendar.action.PsnCalendarQueryDelegator" init-method="getQueryDlg">
+				<property name="nodeKey" value="psnquery"/>
+				<property name="context" ref="context"/>
+				<property name="model" ref="model"/>
+				<property name="queryEditorListener" ref="queryEditorListener"/>
+			</bean>
+		</property>
+		<property name="ncActionStatusJudge" ref="enableJudge"/>
+	</bean>
+	
+	<bean id="RefreshAction" class="nc.ui.ta.psncalendar.action.RefreshCalendarAction">
+		<property name="model" ref="model"/>
+		<property name="dataManager" ref="modelDataManager"/>
+		<property name="ncActionStatusJudge" ref="enableJudge"/>
+	</bean>
+	
+	<bean id="SaveAction" class="nc.ui.ta.psncalendar.action.SaveCalendarAction">
+		<property name="model" ref="model"/>
+		<property name="editor" ref="editor"/>
+	</bean>
+	
+	<bean id="CancelAction" class="nc.ui.ta.pub.action.CancelAction">
+		<property name="model" ref="model"/>
+	</bean>
+	
+   	<bean id="ViewDetailAction" class="nc.ui.ta.psncalendar.action.ViewDetailAction">
+		<property name="model" ref="model"/>
+   	</bean> 
+	
+	<!-- 导入导出菜单按钮 -->
+	<bean id="exOrImpActionGroup" class="nc.funcnode.ui.action.MenuAction">
+		<property name="code">
+			<value>exOrImp</value>
+		</property>
+		<property name="name" >
+		<bean class="nc.ui.uif2.I18nFB">
+		     <property name="resDir" value="6017basedoc"></property> 
+		    <property name="defaultValue" value="导入导出" />
+		    <property name="resId" value="06017basedoc1818"></property>
+	     </bean>
+		</property>
+		<property name="actions">
+			<list>
+				<ref bean="ImportAction" />
+				<ref bean="ExportAction" />
+			</list>
+		</property>
+	</bean>
+	
+	<bean id="ImportAction" class="nc.ui.ta.psncalendar.action.ImportAction">
+		<property name="model" ref="model"/>
+		<property name="dataManager" ref="modelDataManager"></property>
+		<property name="ncActionStatusJudge" ref="enableJudge"/>
+   	</bean> 
+   	<bean id="ExportAction" class="nc.ui.ta.psncalendar.action.ExportAction">
+		<property name="model" ref="model"/>
+   	</bean>
+	<bean id="PrintActiongroup" class="nc.funcnode.ui.action.GroupAction">
+		<!--<property name="code"><value>printgroup</value> </property>
+		<property name="name"><value>打印</value> </property>
+		--><property name="actions">
+	 	<list>
+	  		<ref bean="printDirectAction"/>
+	  		<ref bean="printPreviewAction"/>
+	  		<ref bean="exportListAction"/>
+	 	</list>
+		</property>
+	</bean>
+    
+    <bean id="printPreviewAction" class="nc.ui.ta.psncalendar.action.PrintPsnCalendarPreviewAction">
+    	<property name="model" ref="model" />
+    	<property name="panel" ref="gridView" />
+   </bean>
+
+   <bean id="printDirectAction" class="nc.ui.ta.psncalendar.action.PrintPsnCalendarAction">
+   		<property name="model" ref="model" />
+   		<property name="panel" ref="gridView" />
+   </bean>
+   <bean id="exportListAction" class="nc.ui.ta.psncalendar.action.OutputPsnCalendarAction">
+  		<property name="model" ref="model" />
+   		<property name="panel" ref="gridView" />
+ 	 </bean>
+	
+	<bean id="ClosingListener" class="nc.ui.uif2.FunNodeClosingHandler">
+		<property name="model" ref="model" />
+		<property name="saveaction" ref="SaveAction" />
+		<property name="cancelaction" ref="CancelAction" />
+	</bean>
+	<bean id="ShowDetailpreprocessor" class="nc.ui.ta.psncalendar.view.PsnCalendarShiftDetailHandler">
+		<property name="model" ref="model" />
+	</bean>
+	<!-- 
+	<bean id="InitDataListener" class="nc.ui.hr.uif2.model.HrDefaultModelDataManager">
+		<property name="queryDelegater" ref="treeModelService"/>
+		<property name="model" ref="jobTypeAppModel"/>
+		<property name="context" ref="context"/> 
+	</bean>-->
+
+	
+	<!-- 界面布局总装 -->
+	<bean id="container" class="nc.ui.uif2.TangramContainer" init-method="initUI">
+		
+		<property name="tangramLayoutRoot">
+			<bean class="nc.ui.uif2.tangramlayout.node.VSNode">
+				<property name="up">
+					<bean class="nc.ui.uif2.tangramlayout.node.CNode">
+						<property name="component" ref="orgpanel"></property>
+					</bean>
+				</property>
+				<property name="down">
+					<bean class="nc.ui.uif2.tangramlayout.node.TBNode">
+						<property name="tabs">
+							<list>
+								<bean class="nc.ui.uif2.tangramlayout.node.CNode">
+									<property name="name" >
+									<bean class="nc.ui.uif2.I18nFB">
+									     <property name="resDir" value="6017psncalendar"></property> 
+									    <property name="defaultValue" value="时间段" />
+									    <property name="resId" value="X6017psncal03"></property>
+								     </bean>
+									</property>
+									<property name="component" ref="gridView"></property>
+								</bean>
+								<bean class="nc.ui.uif2.tangramlayout.node.CNode">
+									<property name="name" >
+									<bean class="nc.ui.uif2.I18nFB">
+									     <property name="resDir" value="6017basedoc"></property> 
+									    <property name="defaultValue" value="日历" />
+									    <property name="resId" value="06017basedoc1768"></property>
+								     </bean>
+									</property>
+									<property name="component" ref="calendarView"></property>
+								</bean>
+							</list>
+						</property>
+					</bean>
+				</property>
+				<property name="dividerLocation"><value>30</value></property>
+			</bean>			
+		</property>
+	</bean>
+	<!-- 界面零件 -->
+	<!-- editor -->
+	<bean id="editor" class="nc.ui.ta.psncalendar.view.Editor" >
+		<property name="gridPanel" ref="gridView" />
+		<property name="calendarPanel" ref="calendarView" />
+	</bean>
+	<bean id="orgpanel" class="nc.ui.ta.pub.view.TAParamOrgPanel" init-method="initUI">
+		<property name="model" ref="model" />
+		<property name="dataManager" ref="modelDataManager" />
+		<property name="pk_orgtype" value="HRORGTYPE00000000000" />
+	</bean>
+	<bean id="enableJudge" class="nc.ui.ta.pub.action.EnableJudge">
+		<property name="model" ref="model"/>
+	</bean>
+		 
+</beans>
+
+

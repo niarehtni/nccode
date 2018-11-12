@@ -1,0 +1,370 @@
+package nc.ui.ta.teamcalendar.view;
+
+import java.awt.CardLayout;
+import java.awt.Dimension;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+
+import javax.swing.JSplitPane;
+import javax.swing.ListSelectionModel;
+
+import nc.bs.framework.common.NCLocator;
+import nc.itf.ta.ITBMPsndocManageMaintain;
+import nc.pubitf.para.SysInitQuery;
+import nc.ui.hr.frame.util.BillPanelUtils;
+import nc.ui.pub.beans.MessageDialog;
+import nc.ui.pub.beans.UIDialog;
+import nc.ui.pub.beans.UIRefPane;
+import nc.ui.pub.beans.UISplitPane;
+import nc.ui.pub.bill.BillEditEvent;
+import nc.ui.pub.bill.BillEditListener2;
+import nc.ui.pub.bill.BillItem;
+import nc.ui.pub.bill.BillListPanel;
+import nc.ui.pub.bill.BillModel;
+import nc.ui.pub.bill.IBillItem;
+import nc.ui.ta.calendar.pub.CalendarAppEventConst;
+import nc.ui.ta.calendar.pub.CalendarTempletCreator;
+import nc.ui.ta.teamcalendar.model.TeamCalendarAppModel;
+import nc.ui.uif2.AppEvent;
+import nc.ui.uif2.UIState;
+import nc.ui.uif2.model.AppEventConst;
+import nc.ui.uif2.model.RowOperationInfo;
+import nc.vo.bd.pub.IPubEnumConst;
+import nc.vo.pub.BusinessException;
+import nc.vo.pub.lang.UFLiteralDate;
+import nc.vo.ta.psncalendar.PsnJobCalendarVO;
+import nc.vo.ta.teamcalendar.TeamInfoCalendarVO;
+
+import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang.StringUtils;
+
+/**
+ * 班组排班 人员界面
+ * 
+ * @author yucheng
+ * 
+ */
+@SuppressWarnings("serial")
+public class TeamPsnPanel extends AbstractTeamPanel implements BillEditListener2 {
+
+	private TeamBillListPanel teamListPanel;
+	private PsnBillListPanel psnListPanel;
+	private UISplitPane splitPane;
+
+	public void initUI() {
+		addTabbedPaneAwareComponentListener(tabbedAwareListener);
+		setLayout(new CardLayout());
+		// 构造主界面
+		UISplitPane mainSplitPane = new UISplitPane(JSplitPane.VERTICAL_SPLIT);
+		mainSplitPane.setName("mainPanel");
+		mainSplitPane.setResizeWeight(1f);
+		mainSplitPane.setTopComponent(getSplitPane());
+		mainSplitPane.setBottomComponent(createDescriptionPanel());
+		add(mainSplitPane, mainSplitPane.getName());
+	}
+
+	/**
+	 * 初始化班组日历和人员日历列表界面
+	 */
+	protected void initListPanel() {
+		// 此处billListPanel必须重新new一次，不然第二次调用initTeamListPanel的时候，构造的单据模板不正确，原因未知
+		getSplitPane().remove(getTeamListPanel());
+		getSplitPane().remove(getPsnListPanel());
+		teamListPanel = new TeamBillListPanel();
+		// 去除右键功能和回车加行的功能
+		BillPanelUtils.disabledRightMenuAndAutoAddLine(teamListPanel);
+		teamListPanel.setModel(getAppModel());
+		teamListPanel.initUI(getAppModel().getBeginDate(), getAppModel().getEndDate());
+		teamListPanel.getHeadTable().getTableHeader().setPreferredSize(new Dimension(100000, getTableHeaderHeight()));
+		psnListPanel = new PsnBillListPanel();
+		psnListPanel.setModel(getAppModel());
+		psnListPanel.initUI(getAppModel().getBeginDate(), getAppModel().getEndDate());
+		psnListPanel.getHeadTable().getTableHeader().setPreferredSize(new Dimension(100000, getTableHeaderHeight()));
+		// psnListPanel.getHeadTable().getSelectionModel().addListSelectionListener(this);
+		psnListPanel.getHeadTable().setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+
+		getSplitPane().setTopComponent(teamListPanel);
+		getSplitPane().setBottomComponent(psnListPanel);
+
+		initConnection();
+	}
+
+	/**
+	 * 注册监听
+	 */
+	@SuppressWarnings("restriction")
+	private void initConnection() {
+		// 使用同一个滚动条
+		psnListPanel.getParentListPanel().setHorizontalScrollBar(
+				teamListPanel.getParentListPanel().getHorizontalScrollBar());
+		// teamListPanel.getParentListPanel().setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+		teamListPanel.getHeadTable().getSelectionModel().addListSelectionListener(this);
+		teamListPanel.getParentListPanel().addEditListener(this);
+		teamListPanel.getParentListPanel().addEditListener2(this);
+		teamListPanel.getHeadTable().addMouseListener(mouseListener);
+		teamListPanel.getHeadBillModel().addSortRelaObjectListener(getAppModel());
+		teamListPanel.getHeadBillModel().addSortListener(getAppModel());
+		// 锁定表双击
+		teamListPanel.getParentListPanel().getFixColTable().addMouseListener(new MouseAdapter() {// 双击切换界面
+					@Override
+					public void mouseClicked(MouseEvent e) {
+						if (getModel().getUiState() == UIState.EDIT)// 编辑状态下不切换
+							return;
+						if (e.getClickCount() != 2)
+							return;
+						getModel().fireEvent(new AppEvent(CalendarAppEventConst.SWITCH_TO_CALENDAR, getModel(), null));
+					}
+				});
+		// 正常表双击
+		teamListPanel.getHeadTable().addMouseListener(new MouseAdapter() {// 双击切换界面
+					// 界面点击修改 但强
+					@Override
+					public void mousePressed(MouseEvent e) {
+						if (getModel().getUiState() == UIState.EDIT)// 编辑状态下不切换
+							return;
+						TeamCalendarAppModel obj = getAppModel();
+						UFLiteralDate date = obj.getSelectedDate();
+						TeamInfoCalendarVO data = (TeamInfoCalendarVO) obj.getSelectedData();
+						String cteamid = data.getCteamid();
+						if (e.getButton() == e.BUTTON3) {
+							QueryDialog dialog = new QueryDialog();
+							dialog.showModal();
+							String OkorNo = dialog.getOkCanel() == null ? "" : dialog.getOkCanel();// 按钮点击判断
+							if (OkorNo.equals("") || OkorNo.equals("取消")) { // 如果没有点击或点击取消则退出
+								return;
+							}
+							int type = dialog.getDateType();// 否者，取得参数，进行业务操作
+
+							boolean isCheck = true;
+							try {
+								isCheck = SysInitQuery.getParaBoolean(obj.getContext().getPk_org(), "TWHRT03")
+										.booleanValue();
+							} catch (BusinessException ex1) {
+								MessageDialog.showErrorDlg(null, "錯誤", ex1.getMessage());
+								return;
+							}
+
+							// MOD (一例一休校驗)
+							// ssx added on 2018-06-10
+							try {
+								NCLocator.getInstance().lookup(ITBMPsndocManageMaintain.class)
+										.updateTeam(cteamid, date.toString(), type, true);
+								getAppModel().refreshPsnCalendars();
+							} catch (BusinessException ex) {
+								if (isCheck) {
+									MessageDialog.showErrorDlg(null, "錯誤", ex.getMessage());
+								} else {
+									try {
+										if (UIDialog.ID_OK == MessageDialog.showOkCancelDlg(null, "警告", ex.getMessage()
+												+ "按<確定>忽略所有相似警告，按<取消>中止。")) {
+											NCLocator.getInstance().lookup(ITBMPsndocManageMaintain.class)
+													.updateTeam(cteamid, date.toString(), type, false);
+											getAppModel().refreshPsnCalendars();
+										}
+									} catch (BusinessException e1) {
+										MessageDialog.showErrorDlg(null, "錯誤", ex.getMessage());
+									}
+								}
+							}
+							// end
+						}
+					}
+
+					@Override
+					public void mouseClicked(MouseEvent e) {
+						if (getModel().getUiState() == UIState.EDIT)// 编辑状态下不切换
+							return;
+						if (e.getClickCount() != 2)
+							return;
+						// 如果现在是被锁定，则双击的肯定是日期格，因为前5列人员信息已经被挪到锁定表中去了
+						if (teamListPanel.getParentListPanel().isLockCol()) {
+							getModel().fireEvent(new AppEvent(CalendarAppEventConst.SHOW_DETAIL, getModel(), null));
+							return;
+						}
+						int selCol = teamListPanel.getHeadTable().getSelectedColumn();
+						if (selCol > CalendarTempletCreator.getTeamBasicVisibleItemCount() - 1) {// 双击前5列才切换，因为从6列开始都是日期，双击日期应该弹出排班的详细信息，不应该切换界面
+							getModel().fireEvent(new AppEvent(CalendarAppEventConst.SHOW_DETAIL, getModel(), null));
+							return;
+						}
+						getModel().fireEvent(new AppEvent(CalendarAppEventConst.SWITCH_TO_CALENDAR, getModel(), null));
+					}
+				});
+	}
+
+	@Override
+	public void afterEdit(BillEditEvent e) {
+		int row = e.getRow();
+		TeamInfoCalendarVO vo = (TeamInfoCalendarVO) getAppModel().getData()[row];
+		String date = e.getKey().substring(0, 10);
+		String newPkShift = (String) getTeamListPanel().getHeadBillModel().getValueAt(row, date);
+		String pkShift = vo.getCalendarMap().get(date);
+		if (StringUtils.isEmpty(newPkShift))
+			newPkShift = null;
+		if (StringUtils.isEmpty(pkShift))
+			pkShift = null;
+		// 如果新旧班次一样，则将ModifiedCalendarMap中的记录去掉，即不持久化这一天的数据(因为持久化和不持久化的结果一样)
+		if (StringUtils.equals(newPkShift, pkShift)) {
+			vo.getModifiedCalendarMap().remove(date);
+			return;
+		}
+		vo.getModifiedCalendarMap().put(date, newPkShift);
+	}
+
+	@Override
+	public void handleEvent(AppEvent event) {
+		super.handleEvent(event);
+		if (AppEventConst.DATA_UPDATED.equals(event.getType())) {
+			RowOperationInfo info = (RowOperationInfo) event.getContextObject();
+			if (info == null)
+				return;
+			getTeamListPanel().updateValue(info);
+			getAppModel().refreshPsnCalendars();
+			return;
+		}
+		if (AppEventConst.MODEL_INITIALIZED.equals(event.getType())) {
+			if (ArrayUtils.isEmpty(getAppModel().getData()))
+				return;
+			getTeamListPanel().initValue(getAppModel().getData());
+			return;
+		}
+		if (AppEventConst.SELECTION_CHANGED.equals(event.getType())) {
+			getAppModel().refreshPsnCalendars();
+			return;
+		}
+		if (CalendarAppEventConst.DATE_CHANGED.equals(event.getType())) {
+			UFLiteralDate beginDate = getAppModel().getBeginDate();
+			UFLiteralDate endDate = getAppModel().getEndDate();
+			if (beginDate == null || endDate == null)
+				return;
+			initListPanel();
+			return;
+		}
+		if (CalendarAppEventConst.EDIT_CANCELED.equals(event.getType())) {// 点击取消事件
+			if (!isComponentVisible())// 本界面为当前编辑界面时，才需要处理取消事件
+				return;
+			if (ArrayUtils.isEmpty(getAppModel().getData()))
+				return;
+			BillModel billModel = getPsnBillListPanel().getHeadBillModel();
+			for (int i = 0; i < billModel.getRowCount(); i++) {
+				TeamInfoCalendarVO vo = (TeamInfoCalendarVO) getAppModel().getData()[i];
+				if (vo.getModifiedCalendarMap().isEmpty())
+					continue;
+				// 将用户修改过的单元格恢复
+				String[] modifiedDates = vo.getModifiedCalendarMap().keySet().toArray(new String[0]);
+				for (String date : modifiedDates) {
+					billModel.setValueAt(vo.getCalendarMap().get(date), i, date);
+				}
+			}
+			getPsnBillListPanel().getHeadBillModel().updateValue();
+			BillPanelUtils.dealWithRefShowNameByPk(getPsnBillListPanel(), IBillItem.HEAD);
+			return;
+		}
+		if (CalendarAppEventConst.BODY_CHANGED.equals(event.getType())) {
+			PsnJobCalendarVO[] psnJobCalendarVOs = getAppModel().getPsnCalendarVOs();
+			psnListPanel.getBillListData().setHeaderValueObjectByMetaData(psnJobCalendarVOs);
+			psnListPanel.getHeadBillModel().updateValue();
+			if (!ArrayUtils.isEmpty(psnJobCalendarVOs))
+				psnListPanel.initValue(psnJobCalendarVOs);
+			return;
+		}
+		if (AppEventConst.UISTATE_CHANGED.equals(event.getType())) {
+			if (model.getUiState() == UIState.EDIT)
+				return;
+			// 先将横向滚动条置到最左，再锁定列
+			int selectedRow = getPsnBillListPanel().getHeadTable().getSelectedRow();
+			getTeamListPanel().getHeadTable().changeSelection(selectedRow, 0, false, true);
+			getTeamListPanel().getParentListPanel().lockTableCol(getTeamListPanel().getBasicVisibleItemCount() - 1);
+			// 锁定表双击
+			getTeamListPanel().getParentListPanel().getFixColTable().addMouseListener(new MouseAdapter() {// 双击切换界面
+						@Override
+						public void mouseClicked(MouseEvent e) {
+							if (getModel().getUiState() == UIState.EDIT)// 编辑状态下不切换
+								return;
+							if (e.getClickCount() != 2)
+								return;
+							getModel().fireEvent(
+									new AppEvent(CalendarAppEventConst.SWITCH_TO_CALENDAR, getModel(), null));
+						}
+					});
+		}
+		if (CalendarAppEventConst.SWITCH_TO_GRID.equals(event.getType())) {
+			if (getModel().getUiState() == UIState.EDIT)
+				return;
+			showMeUp();
+		}
+	}
+
+	@Override
+	public boolean beforeEdit(BillEditEvent e) {
+		int row = e.getRow();
+		TeamInfoCalendarVO vo = (TeamInfoCalendarVO) getAppModel().getData()[row];
+		// 如果班组已停用，不允许编辑
+		if (IPubEnumConst.ENABLESTATE_ENABLE != vo.getEnablestate())
+			return false;
+		String key = e.getKey();
+		if (!key.endsWith(BillPanelUtils.REF_SHOW_NAME)) {
+			return false;
+		}
+		String date = key.substring(0, 10);
+		boolean canEdit = vo.getCtrlMap().get(date) == null || !vo.getCtrlMap().get(date).booleanValue();
+		if (canEdit) {
+			BillItem item = teamListPanel.getHeadBillModel().getItemByKey(e.getKey());
+			UIRefPane refPane = (UIRefPane) item.getComponent();
+			if (refPane.getRefModel() == null)
+				return true;
+			refPane.getRefModel().setPk_org(vo.getPk_org());
+		}
+		return canEdit;
+	}
+
+	@Override
+	public void resetSelectedDate() {
+		int col = getPsnBillListPanel().getHeadTable().getSelectedColumn();
+		String key = getPsnBillListPanel().getParentListPanel().getBodyKeyByCol(col);
+		UFLiteralDate thisDate = null;
+		if (key != null && key.length() > 10) {
+			String date = key.substring(0, 10);
+			try {
+				thisDate = UFLiteralDate.getDate(date);
+			} catch (IllegalArgumentException e1) {
+				thisDate = null;
+			}
+		}
+		getAppModel().setSelectedDate(thisDate);
+		getModel().fireEvent(new AppEvent(CalendarAppEventConst.MOUSE_SELECTED_CHANGED, this, null));
+	}
+
+	@Override
+	protected BillListPanel getPsnBillListPanel() {
+		return getTeamListPanel();
+	}
+
+	@Override
+	protected void setEditable(boolean isEdit) {
+		if (!isEdit && getTeamListPanel().getHeadTable().getCellEditor() != null)
+			getTeamListPanel().getHeadTable().getCellEditor().stopCellEditing();
+		getTeamListPanel().setEnabled(isEdit);
+	}
+
+	public TeamBillListPanel getTeamListPanel() {
+		if (teamListPanel == null)
+			teamListPanel = new TeamBillListPanel();
+		return teamListPanel;
+	}
+
+	public PsnBillListPanel getPsnListPanel() {
+		if (psnListPanel == null)
+			psnListPanel = new PsnBillListPanel();
+		return psnListPanel;
+	}
+
+	public UISplitPane getSplitPane() {
+		if (splitPane == null) {
+			splitPane = new UISplitPane(JSplitPane.VERTICAL_SPLIT);
+			splitPane.setName("splitpanel");
+			splitPane.setResizeWeight(0.5f);
+		}
+		return splitPane;
+	}
+
+}

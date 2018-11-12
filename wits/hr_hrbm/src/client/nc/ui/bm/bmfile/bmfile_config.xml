@@ -1,0 +1,464 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE beans PUBLIC "-//SPRING//DTD BEAN//EN" "http://www.springframework.org/dtd/spring-beans.dtd">
+
+
+<beans>
+	<!-- 环境变量 -->
+	<bean id="context" class="nc.vo.bm.pub.BmLoginContext">
+	</bean>
+
+	<!-- 模型部分配置 -->
+
+	<!-- 应用服务类，负责进行模型操作的处理 -->
+	<bean id="ManageModelService" class="nc.ui.bm.bmfile.model.BmfileModelService"/>
+
+
+	<!-- 对象转换器工厂，由此获取操作对象的特征信息 -->
+	<bean id="boadatorfactory" class="nc.vo.bd.meta.BDObjectAdpaterFactory"/>
+
+	<!-- 管理应用模型 -->
+	<bean id="ManageAppModel" class="nc.ui.bm.bmfile.model.BmfileAppModel">
+		<property name="service" ref="ManageModelService">
+		</property>
+		<property name="businessObjectAdapterFactory" ref="boadatorfactory">
+		</property>
+		<property name="context" ref="context">
+		</property>
+	</bean>
+
+
+	<bean id="toftpanelActionContributors" class="nc.ui.uif2.actions.ActionContributors">
+		<property name="contributors">
+			<list>
+				<ref bean="listViewActions"/>
+				<ref bean="cardEditorActions"/>
+			</list>
+		</property>
+	</bean>
+
+	<!-- Actions -->
+	<bean id="cardEditorActions" class="nc.ui.uif2.actions.StandAloneToftPanelActionContainer">
+		<constructor-arg>
+			<ref bean="billFormEditor" />
+		</constructor-arg>
+		<property name="actions">
+			<list>
+				<ref bean="AddAction"/>
+				<ref bean="EditAction"/>
+				<ref bean="DeleteCardAction"/>
+			</list>
+		</property>
+		<property name="editActions">
+			<list>
+				<ref bean="SaveAction"/>
+				<ref bean="nullaction" />
+				<ref bean="CancelAction"/>
+			</list>
+		</property>
+		<property name="model" ref="ManageAppModel"/>
+	</bean>
+
+	<bean id="listViewActions" class="nc.ui.uif2.actions.StandAloneToftPanelActionContainer">
+		<constructor-arg>
+			<ref bean="listView"/>
+		</constructor-arg>
+		<property name="actions">
+			<list>
+				<ref bean="AddActionGroup"/>
+				<!--MOD 社保档案批量新增、修改社保代理公司、险种社保供应商代码（公司）、险种社保供应商代码（个人）kevin.nie 2018-01-16 start-->
+				<!--<ref bean="EditAction"/>-->
+				<ref bean="EditActionGroup"/>
+				<!-- 社保档案批量新增、修改社保代理公司、险种社保供应商代码（公司）、险种社保供应商代码（个人）kevin.nie 2018-01-16 end-->
+				<ref bean="DelActionGroup"/>
+				<ref bean="nullaction" />
+				<ref bean="QueryAction"/>
+				<ref bean="RefreshAction"/>
+				<ref bean="nullaction" />
+				<ref bean="PsnChangeAction"/>
+				<ref bean="BmfielManageMenu"/>
+				<ref bean="nullaction" />
+				<ref bean="SortBmdataAction" />
+				<ref bean="nullaction" />
+				<ref bean="printgroupAction"/>
+
+
+			</list>
+		</property>
+	</bean>
+
+	<!-- 模板容器，负责对模板的统一装载 -->
+	<bean id="templateContainer" class="nc.ui.uif2.editor.TemplateContainer" init-method="load">
+		<property name="context" ref="context"/>
+		<property name="nodeKeies">
+			<list>
+				<value>bmfile</value>
+			</list>
+		</property>
+	</bean>
+
+	<!-- 数据模型管理器，主要负责各种方式的模型初始化 -->
+	<bean id="modelDataManager" class="nc.ui.bm.bmfile.model.BmfileModelDataManager">
+		<property name="service" ref="ManageModelService">
+		</property>
+		<property name="context" ref="context">
+		</property>
+		<property name="model" ref="ManageAppModel">
+		</property>
+		<property name="paginationModel" ref="paginationModel" />
+		<property name="paginationBar" ref="paginationBar" />
+	</bean>
+
+	<!-- 界面元素 -->
+
+
+	<!-- 分页面板 -->
+	<bean id="paginationBar" class="nc.ui.uif2.components.pagination.PaginationBar">
+		<property name="paginationModel" ref="paginationModel" />
+	</bean>
+
+	<bean id="paginationModel" class="nc.ui.uif2.components.pagination.PaginationModel"
+		init-method="init">
+		<property name="paginationQueryService" ref="ManageModelService" />
+	</bean>
+
+	<!-- 列表视图 -->
+	<bean id="listView" class="nc.ui.bm.bmfile.view.BmfileListView" init-method="initUI">
+		<property name="model" ref="ManageAppModel">
+		</property>
+		<property name="multiSelectionEnable">
+			<value>false</value>
+		</property>
+		<property name="pos">
+			<value>head</value>
+		</property>
+		<property name="templateContainer" ref="templateContainer">
+		</property>
+		<property name="nodekey" value="bmfile"/>
+		<property name="south" ref="paginationBar" />
+	</bean>
+	<!--卡控件-->
+	<bean id="billFormEditor" class="nc.ui.bm.bmfile.view.BmfileCardForm" init-method="initUI">
+		<property name="model" ref="ManageAppModel">
+		</property>
+		<property name="templateContainer" ref="templateContainer"/>
+		<property name="nodekey" value="bmfile"/>
+		<property name="actions">
+			<list>
+			</list>
+		</property>
+		<property name="tabActions">
+			<list>
+			</list>
+		</property>
+	</bean>
+
+	<bean id="nullaction" class="nc.funcnode.ui.action.SeparatorAction" />
+	<bean id="PsnChangeAction" class="nc.ui.bm.bmfile.action.BmfilePsnChangeAction">
+		<property name="model" ref="ManageAppModel"/>
+		<property name="dataManager" ref="modelDataManager"/>
+	</bean>
+	<bean id="BmfielManageMenu" class="nc.funcnode.ui.action.MenuAction">
+		<property name="code" value = "BmfielManageMenu"/>
+		<property name="name">
+			<bean class="nc.ui.uif2.I18nFB">
+				<property name="resDir" value="xmlcode" />
+				<property name="defaultValue" value="业务处理" />
+				<property name="resId" value="X60150010" />
+			</bean>
+		</property>
+		<property name="actions">
+			<list>
+				<ref bean="TransferOutAction" />
+				<ref bean="TransferInAction" />
+				<ref bean="SealBmfileAction" />
+				<ref bean="UnSealBmfileAction" />
+				<ref bean="UnregBmfileAction" />
+			</list>
+		</property>
+	</bean>
+	<bean id="TransferOutAction" class="nc.ui.bm.bmfile.action.TransferOutAction">
+		<property name="model" ref="ManageAppModel"/>
+		<property name="dataManager" ref="modelDataManager"/>
+	</bean>
+	<bean id="TransferInAction" class="nc.ui.bm.bmfile.action.TransferInAction">
+		<property name="model" ref="ManageAppModel"/>
+		<property name="dataManager" ref="modelDataManager"/>
+	</bean>
+	<bean id="SealBmfileAction" class="nc.ui.bm.bmfile.action.SealBmfileAction">
+		<property name="model" ref="ManageAppModel"/>
+		<property name="dataManager" ref="modelDataManager"/>
+	</bean>
+	<bean id="UnSealBmfileAction" class="nc.ui.bm.bmfile.action.UnSealBmfileAction">
+		<property name="model" ref="ManageAppModel"/>
+		<property name="dataManager" ref="modelDataManager"/>
+	</bean>
+	<bean id="UnregBmfileAction" class="nc.ui.bm.bmfile.action.UnregBmfileAction">
+		<property name="model" ref="ManageAppModel"/>
+		<property name="dataManager" ref="modelDataManager"/>
+	</bean>
+	<bean id="AddActionGroup" class="nc.funcnode.ui.action.GroupAction">
+		<property name="actions">
+			<list>
+				<ref bean="AddAction" />
+				<ref bean="BatchAddAction" />
+			</list>
+		</property>
+	</bean>
+	<bean id="AddAction" class="nc.ui.bm.bmfile.action.AddBmfileAction">
+		<property name="model" ref="ManageAppModel"/>
+	</bean>
+	<bean id="BatchAddAction" class="nc.ui.bm.bmfile.action.BatchAddBmfileAction">
+		<property name="model" ref="ManageAppModel"/>
+		<property name="dataManager" ref="modelDataManager"/>
+	</bean>
+	<!--MOD 社保档案批量新增、修改社保代理公司、险种社保供应商代码（公司）、险种社保供应商代码（个人）kevin.nie 2018-01-16 start-->
+	<bean id="EditActionGroup" class="nc.funcnode.ui.action.GroupAction">
+		<property name="actions">
+			<list>
+				<ref bean="EditAction"/>
+				<ref bean="BatchEditAction" />
+			</list>
+		</property>
+	</bean>
+	<bean id="BatchEditAction" class="nc.ui.bm.bmfile.action.BatchEditBmfileAction">
+		<property name="model" ref="ManageAppModel"/>
+		<property name="dataManager" ref="modelDataManager"/>
+	</bean>
+	<!-- 社保档案批量新增、修改社保代理公司、险种社保供应商代码（公司）、险种社保供应商代码（个人）kevin.nie 2018-01-16 end-->
+	<bean id="EditAction" class="nc.ui.bm.bmfile.action.EditBmfileAction">
+		<property name="model" ref="ManageAppModel"/>
+	</bean>
+	<bean id="DelActionGroup" class="nc.funcnode.ui.action.GroupAction">
+		<property name="actions">
+			<list>
+				<ref bean="DeleteAction" />
+				<ref bean="BatchDelBmfileAction" />
+			</list>
+		</property>
+	</bean>
+	<bean id="DeleteAction" class="nc.ui.bm.bmfile.action.DeleteBmfileAction">
+		<property name="model" ref="ManageAppModel"/>
+	</bean>
+	<bean id="DeleteCardAction" class="nc.ui.bm.bmfile.action.DeleteCardBmfileAction">
+		<property name="model" ref="ManageAppModel"/>
+	</bean>
+	<bean id="BatchDelBmfileAction" class="nc.ui.bm.bmfile.action.BatchDelBmfileAction">
+		<property name="model" ref="ManageAppModel"/>
+		<property name="dataManager" ref="modelDataManager"/>
+	</bean>
+
+	<!-- 查询时流量连接数超标，故更改 -->
+	<!-- <bean id="QueryAction" class="nc.ui.bm.bmfile.action.QueryBmfileAction"> <property
+		name="model"
+		ref="ManageAppModel"/>
+		<property
+		name="dataManager" ref="modelDataManager"/>
+		property
+		name="queryDelegator"
+		class="nc.ui.hr.uif2.HrQueryDelegator">
+				<property
+		name="nodeKey"
+		value="bmfile"/>
+				<property
+		name="context" ref="context"/>
+				<property
+		name="queryEditorListener"
+		ref="queryEditorListener"/>
+		</property>
+		<property
+		name="queryDelegator"
+		ref="queryDelegator"/>
+	</bean>
+		<bean id="queryDelegator"
+		class="nc.ui.hr.uif2.HrQueryDelegator2">
+		<property
+		name="nodeKey"
+		value="bmfile"/>
+		<property
+		name="context" ref="context"/>
+		<property
+		name="queryEditorListener"
+		ref="queryEditorListener"/>
+		<property name="model" ref="ManageAppModel"/>
+	</bean>
+	
+		<bean
+		id="queryEditorListener"
+		class="nc.ui.bm.pub.QueryEditorListener"/>
+	-->
+
+	
+	<bean id="QueryAction" class="nc.ui.bm.bmfile.action.QueryBmfileAction">
+		<property name="model" ref="ManageAppModel"/>
+		<property name="dataManager" ref="modelDataManager"/>
+		<property name="queryDelegator" >
+			<bean class="nc.ui.bm.pub.QueryEditorListener">
+				<property name="nodeKey" value="bmfile"/>
+				<property name="context" ref="context"/>
+				<property name="model" ref="ManageAppModel"/>
+			</bean>
+		</property>
+	</bean>
+
+	<bean id="RefreshAction" class="nc.ui.bm.bmfile.action.RefreshBmfileAction">
+		<property name="model" ref="ManageAppModel"/>
+		<property name="dataManager" ref="modelDataManager"/>
+	</bean>
+
+	<bean id="SaveAction" class="nc.ui.bm.bmfile.action.SaveBmfileAction">
+		<property name="model" ref="ManageAppModel"/>
+		<property name="editor" ref="billFormEditor"/>
+	</bean>
+	<bean id="CancelAction" class="nc.ui.bm.bmfile.action.CancelBmfileAction">
+		<property name="model" ref="ManageAppModel"/>
+	</bean>
+
+	<bean id="printgroupAction" class="nc.funcnode.ui.action.GroupAction">
+		<property name="code" value="print"/>
+		<property name="name">
+			<bean class="nc.ui.uif2.I18nFB">
+				<property name="resDir" value="xmlcode" />
+				<property name="defaultValue" value="打印" />
+				<property name="resId" value="X60150002" />
+			</bean>
+		</property>
+		<property name="actions">
+			<list>
+				<ref bean="directPrintAction" />
+				<ref bean="directPreviewAction" />
+				<ref bean="exportListAction" />
+				<ref bean="nullaction" />
+				<!-- <ref bean="TemplatePrintAction" />
+				<ref bean="TemplatePreviewAction" />
+					-->
+			</list>
+		</property>
+	</bean>
+
+
+	<bean id="SortBmdataAction" class="nc.ui.bm.bmfile.action.SortBmfileAction">
+		<property name="model" ref="ManageAppModel" />
+		<property name="dataManager" ref="modelDataManager" />
+	</bean>
+
+	<bean id="exportListAction" class="nc.ui.hr.uif2.action.print.ExportListAction">
+		<property name="model" ref="ManageAppModel" />
+		<property name="listView" ref="listView" />
+	</bean>
+	<bean id="directPreviewAction" class="nc.ui.hr.uif2.action.print.DirectPreviewAction">
+		<property name="model" ref="ManageAppModel" />
+		<property name="listView" ref="listView" />
+	</bean>
+	<bean id="directPrintAction" class="nc.ui.hr.uif2.action.print.DirectPrintAction">
+		<property name="model" ref="ManageAppModel" />
+		<property name="listView" ref="listView" />
+	</bean>
+	<bean id="TemplatePreviewAction" class="nc.ui.hr.uif2.action.print.TemplatePreviewAction">
+		<property name="model" ref="ManageAppModel" />
+		<property name="printDlgParentConatiner" ref="billFormEditor" />
+		<property name="nodeKey" value="bmfile" />
+		<property name="datasource" ref="datasource" />
+	</bean>
+	<bean id="datasource" class="nc.ui.hrcp.cindex.model.HRListMetaDataDataSource">
+		<property name="model" ref="ManageAppModel" />
+	</bean>
+	<bean id="TemplatePrintAction" class="nc.ui.hr.uif2.action.print.TemplatePrintAction">
+		<property name="model" ref="ManageAppModel" />
+		<property name="printDlgParentConatiner" ref="billFormEditor" />
+		<property name="nodeKey" value="bmfile" />
+		<property name="datasource" ref="datasource" />
+	</bean>
+	<bean id="FirstLineAction" class="nc.ui.uif2.actions.FirstLineAction">
+		<property name="model" ref="ManageAppModel" />
+	</bean>
+	<bean id="PreLineAction" class="nc.ui.uif2.actions.PreLineAction">
+		<property name="model" ref="ManageAppModel" />
+	</bean>
+	<bean id="NextLineAction" class="nc.ui.uif2.actions.NextLineAction">
+		<property name="model" ref="ManageAppModel" />
+	</bean>
+	<bean id="LastLineAction" class="nc.ui.uif2.actions.LastLineAction">
+		<property name="model" ref="ManageAppModel" />
+	</bean>
+	<bean id="editorReturnAction" class="nc.ui.uif2.actions.ShowMeUpAction">
+		<property name="goComponent" ref="listView" />
+	</bean>
+	<bean id="ClosingListener" class="nc.ui.uif2.FunNodeClosingHandler">
+		<property name="model" ref="ManageAppModel" />
+		<property name="saveaction" ref="SaveAction" />
+		<property name="cancelaction" ref="CancelAction" />
+	</bean>
+
+	<!-- 界面布局总装 -->
+	<bean id="container" class="nc.ui.uif2.TangramContainer" init-method="initUI">
+		<property name="tangramLayoutRoot">
+			<bean class="nc.ui.uif2.tangramlayout.node.TBNode">
+				<property name="showMode" value="CardLayout" />
+				<property name="tabs">
+					<list>
+						<bean class="nc.ui.uif2.tangramlayout.node.VSNode">
+							<property name="showMode" value="NoDivider" />
+							<property name="up">
+								<bean class="nc.ui.uif2.tangramlayout.node.CNode">
+									<property name="component" ref="orgpanel" />
+								</bean>
+							</property>
+							<property name="down">
+								<bean class="nc.ui.uif2.tangramlayout.node.CNode">
+									<property name="component" ref="listView" />
+								</bean>
+							</property>
+							<property name="dividerLocation" value="30f" />
+						</bean>
+						<bean class="nc.ui.uif2.tangramlayout.node.VSNode">
+							<property name="showMode" value="NoDivider" />
+							<property name="up">
+								<bean class="nc.ui.uif2.tangramlayout.node.CNode">
+									<property name="component" ref="editorToolBarPanel" />
+								</bean>
+							</property>
+							<property name="down">
+								<bean class="nc.ui.uif2.tangramlayout.node.CNode">
+									<property name="component" ref="billFormEditor" />
+								</bean>
+							</property>
+							<property name="dividerLocation" value="26f" />
+						</bean>
+					</list>
+				</property>
+			</bean>
+		</property>
+	</bean>
+	<!-- 界面零件 -->
+	<bean id="orgpanel" class="nc.ui.bm.bmfile.view.BmfileOrgHeadPanel" init-method="initUI">
+		<property name="model" ref="ManageAppModel" />
+		<property name="dataManager" ref="modelDataManager" />
+		<property name="pk_orgtype" value="HRORGTYPE00000000000" />
+	</bean>
+	<bean id="editorToolBarPanel" class="nc.ui.uif2.tangramlayout.CardLayoutToolbarPanel">
+		<property name="model" ref="ManageAppModel" />
+		<property name="titleAction" ref="editorReturnAction" />
+		<property name="actions">
+			<list>
+				<ref bean="FirstLineAction" />
+				<ref bean="PreLineAction" />
+				<ref bean="NextLineAction" />
+				<ref bean="LastLineAction" />
+			</list>
+		</property>
+	</bean>
+	<!-- 超链接  -->
+	<!-- bean id="mouseClickShowPanelMediator" class="nc.ui.hr.uif2.mediator.HyperLinkClickMediator">
+		<property
+		name="model"
+		ref="ManageAppModel"/>
+		<property
+		name="showUpComponent" ref="billFormEditor"/>
+		<property
+		name="hyperLinkColumn"
+		value="pk_psnjob.clerkcode"/>
+		</bean> -->
+</beans>
+
+

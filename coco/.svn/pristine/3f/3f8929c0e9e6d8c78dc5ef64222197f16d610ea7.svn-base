@@ -1,0 +1,676 @@
+<?xml version="1.0" encoding='UTF-8'?>
+<Widget controllerClazz="nc.bs.hrsms.ta.sss.shopleave.ctrl.ShopLeaveApplyListView" dialog="false" i18nName="" langDir="" caption="店员休假申请列表界面" id="main" refId="main" sourcePackage="src/public/">
+    <PlugoutDescs>
+    </PlugoutDescs>
+    <PluginDescs>
+        <PluginDesc id="Search">
+            <PluginDescItem clazztype="java.util.Map" id="key1">
+            </PluginDescItem>
+        </PluginDesc>
+         <PluginDesc id="DeptChange">
+            <PluginDescItem clazztype="java.util.Map" id="deptout">
+            </PluginDescItem>
+        </PluginDesc>
+        <PluginDesc id="ReSearch">
+            <PluginDescItem clazztype="java.lang.String" id="closewindow">
+            </PluginDescItem>
+        </PluginDesc>
+        <PluginDesc id="ReLaSearch">
+            <PluginDescItem clazztype="java.lang.String" id="closewindow">
+            </PluginDescItem>
+        </PluginDesc>
+    </PluginDescs>
+    <Events>
+        <Event async="true" methodName="pluginSearch" onserver="true">
+            <Params>
+                <Param>
+                    <Name>keys</Name>
+                    <Value>
+                    </Value>
+                    <Desc>                        <![CDATA[java.util.Map]]>
+                    </Desc>
+                </Param>
+            </Params>
+            <Action>
+            </Action>
+        </Event>
+       <Event async="true" methodName="pluginDeptChange" onserver="true">
+            <Params>
+                <Param>
+                    <Name>keys</Name>
+                    <Value>
+                    </Value>
+                    <Desc>                        <![CDATA[java.util.Map]]>
+                    </Desc>
+                </Param>
+            </Params>
+            <Action>
+            </Action>
+        </Event>
+        <Event async="true" methodName="pluginReSearch" onserver="true">
+            <Params>
+                <Param>
+                    <Name>keys</Name>
+                    <Value>
+                    </Value>
+                    <Desc>                        <![CDATA[java.util.Map]]>
+                    </Desc>
+                </Param>
+            </Params>
+            <Action>
+            </Action>
+        </Event>
+        <Event async="true" methodName="pluginReLaSearch" onserver="true">
+            <Params>
+                <Param>
+                    <Name>keys</Name>
+                    <Value>
+                    </Value>
+                    <Desc>                        <![CDATA[java.util.Map]]>
+                    </Desc>
+                </Param>
+            </Params>
+            <Action>
+            </Action>
+        </Event>
+    </Events>
+    <Models>
+        <Datasets>
+            <RefMdDataset i18nName="w_ta-000728" langDir="node_ta-res" caption="用户" controlwidgetopeStatus="false" enabled="false" id="$refds_uap_user" lazyLoad="true" notNullBody="false" objMeta="uap.user" voMeta="nc.vo.sm.UserVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset i18nName="w_ta-000729" langDir="node_ta-res" caption="单据类型" controlwidgetopeStatus="false" enabled="false" id="$refds_uap_BilltypeVO" lazyLoad="true" notNullBody="false" objMeta="uap.BilltypeVO" voMeta="nc.vo.pub.billtype.BilltypeVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset i18nName="w_ta-000730" langDir="node_ta-res" caption="人员基本信息" controlwidgetopeStatus="false" enabled="false" id="$refds_hrhi_bd_psndoc" lazyLoad="true" notNullBody="false" objMeta="hrhi.bd_psndoc" voMeta="nc.vo.hi.psndoc.PsndocVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset i18nName="w_ta-000731" langDir="node_ta-res" caption="组织_部门版本信息" controlwidgetopeStatus="false" enabled="false" id="$refds_uap_dept_v" lazyLoad="true" notNullBody="false" objMeta="uap.dept_v" voMeta="nc.vo.vorg.DeptVersionVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset i18nName="w_ta-000732" langDir="node_ta-res" caption="组织_业务单元_行政组织版本信息" controlwidgetopeStatus="false" enabled="false" id="$refds_uap_adminorg_v" lazyLoad="true" notNullBody="false" objMeta="uap.adminorg_v" voMeta="nc.vo.vorg.AdminOrgVersionVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset i18nName="w_ta-000733" langDir="node_ta-res" caption="组织_集团" controlwidgetopeStatus="false" enabled="false" id="$refds_uap_group" lazyLoad="true" notNullBody="false" objMeta="uap.group" voMeta="nc.vo.org.GroupVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset i18nName="w_ta-000734" langDir="node_ta-res" caption="组织关系" controlwidgetopeStatus="false" enabled="false" id="$refds_hrhi_hi_psnorg" lazyLoad="true" notNullBody="false" objMeta="hrhi.hi_psnorg" voMeta="nc.vo.hi.psndoc.PsnOrgVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset i18nName="w_ta-000735" langDir="node_ta-res" caption="休假类别copy" controlwidgetopeStatus="false" enabled="false" id="$refds_hrta_leavetypecopy" lazyLoad="true" notNullBody="false" objMeta="hrta.leavetypecopy" voMeta="nc.vo.ta.timeitem.LeaveTypeCopyVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset i18nName="w_ta-000735" langDir="node_ta-res" caption="休假类别" controlwidgetopeStatus="false" enabled="false" id="$refds_hrta_leavetype" lazyLoad="true" notNullBody="false" objMeta="hrta.leavetype" voMeta="nc.vo.ta.timeitem.LeaveTypeVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <MdDataset i18nName="w_ta-000736" langDir="node_ta-res" caption="休假申请单" controlwidgetopeStatus="false" enabled="false" id="hrtaleave" lazyLoad="false" notNullBody="false" objMeta="hrta.hrtaleave" pageSize="20" voMeta="nc.vo.ta.leave.LeavehVO">
+                <FieldRelations>
+                    <FieldRelation id="pk_group_rel" refDataset="$refds_uap_group">
+                        <MatchFields>
+                            <Field readField="name" writeField="pk_group_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_group" value="pk_group">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_org_rel" refDataset="$refds_uap_hrorg">
+                        <MatchFields>
+                            <Field readField="name" writeField="pk_org_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_hrorg" value="pk_org">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_psnjob_rel" refDataset="$refds_hrhi_hi_psnjob">
+                        <MatchFields>
+                            <Field readField="pk_psndoc" writeField="pk_psnjob_pk_psndoc">
+                            </Field>
+                            <Field readField="clerkcode" writeField="pk_psnjob_clerkcode">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_psnjob" value="pk_psnjob">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_psndoc_rel" refDataset="$refds_hrhi_bd_psndoc">
+                        <MatchFields>
+                        	<Field readField="code" writeField="pk_psnjob_pk_psndoc_code">
+                            </Field>
+                            <Field readField="name" writeField="pk_psndoc_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_psndoc" value="pk_psndoc">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_org_v_rel" refDataset="$refds_uap_adminorg_v">
+                        <MatchFields>
+                            <Field readField="name" writeField="pk_org_v_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_vid" value="pk_org_v">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_dept_v_rel" refDataset="$refds_uap_dept_v">
+                        <MatchFields>
+                            <Field readField="name" writeField="pk_dept_v_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_vid" value="pk_dept_v">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_leavetype_rel" refDataset="$refds_hrta_leavetype">
+                        <MatchFields>
+                            <Field readField="timeitemname" writeField="pk_leavetype_timeitemname">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_timeitem" value="pk_leavetype">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_timeitem_rel" refDataset="$refds_hrta_leavetypecopy">
+                        <MatchFields>
+                            <Field readField="pk_timeitem" writeField="pk_leavetypecopy_pk_timeitem">
+                            </Field>
+                            <Field readField="timeitemunit" writeField="pk_leavetypecopy_timeitemunit">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_timeitemcopy" value="pk_leavetypecopy">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_leavetypecopy_pk_timeitem_rel" refDataset="$refds_hrta_leavetype">
+                        <MatchFields>
+                            <Field readField="timeitemname" writeField="pk_leavetypecopy_pk_timeitem_timeitemname">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_timeitem" value="pk_leavetypecopy_pk_timeitem">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="transtypeid_rel" refDataset="$refds_uap_BilltypeVO">
+                        <MatchFields>
+                            <Field readField="billtypename" writeField="transtypeid_billtypename">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_billtypeid" value="transtypeid">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="billmaker_rel" refDataset="$refds_uap_user">
+                        <MatchFields>
+                            <Field readField="user_name" writeField="billmaker_user_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="cuserid" value="billmaker">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="approver_rel" refDataset="$refds_uap_user">
+                        <MatchFields>
+                            <Field readField="user_name" writeField="approver_user_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="cuserid" value="approver">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="creator_rel" refDataset="$refds_uap_user">
+                        <MatchFields>
+                            <Field readField="user_name" writeField="creator_user_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="cuserid" value="creator">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="modifier_rel" refDataset="$refds_uap_user">
+                        <MatchFields>
+                            <Field readField="user_name" writeField="modifier_user_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="cuserid" value="modifier">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                </FieldRelations>
+                <Fields>
+                    <ModifyField i18nName="w_ta-000737" langDir="node_ta-res" id="bill_code" nullAble="true" text="申请单编码">
+                    </ModifyField>
+                    <Field i18nName="w_ta-000738" langDir="node_ta-res" dataType="Integer" id="pk_leavetypecopy_timeitemunit" nullAble="true" primaryKey="false" sourceField="pk_leavetypecopy" text="考勤单位">
+                    </Field>
+                    
+                    <Field dataType="String" i18nName="w_ta-000686" id="pk_psnjob_clerkcode" langDir="node_ta-res" nullAble="true" primaryKey="false" sourceField="pk_psnjob" text="员工号">
+                    </Field>
+                    <Field dataType="String" i18nName="w_ta-000689" id="pk_psnjob_pk_psndoc_code" langDir="node_ta-res" nullAble="true" primaryKey="false" sourceField="pk_psnjob_pk_psndoc" text="人员编码">
+                    </Field>
+                </Fields>
+                <Events>
+                    <Event async="true" jsEventClaszz="nc.uap.lfw.core.event.conf.DatasetListener" methodName="onAfterRowSelect" name="onAfterRowSelect" onserver="true">
+                        <SubmitRule cardSubmit="false" panelSubmit="false" tabSubmit="false">
+                            <Widget cardSubmit="false" id="main" panelSubmit="false" tabSubmit="false">
+                                <Dataset id="hrtaleave" type="ds_current_line">
+                                </Dataset>
+                            </Widget>
+                        </SubmitRule>
+                        <Params>
+                            <Param>
+                                <Name>datasetEvent</Name>
+                                <Value>
+                                </Value>
+                                <Desc>                                    <![CDATA[nc.uap.lfw.core.event.DatasetEvent]]>
+                                </Desc>
+                            </Param>
+                        </Params>
+                        <Action>
+                        </Action>
+                    </Event>
+                    <Event async="true" jsEventClaszz="nc.uap.lfw.core.event.conf.DatasetListener" methodName="onDataLoad_hrtaleave" name="onDataLoad" onserver="true">
+                        <SubmitRule cardSubmit="false" panelSubmit="false" tabSubmit="false">
+                        </SubmitRule>
+                        <Params>
+                            <Param>
+                                <Name>dataLoadEvent</Name>
+                                <Value>
+                                </Value>
+                                <Desc>                                    <![CDATA[nc.uap.lfw.core.event.DataLoadEvent]]>
+                                </Desc>
+                            </Param>
+                        </Params>
+                        <Action>
+                        </Action>
+                    </Event>
+                </Events>
+            </MdDataset>
+            <RefMdDataset i18nName="w_ta-000739" langDir="node_ta-res" caption="工作记录" controlwidgetopeStatus="false" enabled="false" id="$refds_hrhi_hi_psnjob" lazyLoad="true" notNullBody="false" objMeta="hrhi.hi_psnjob" voMeta="nc.vo.hi.psndoc.PsnJobVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset i18nName="w_ta-000740" langDir="node_ta-res" caption="组织_业务单元_人力资源组织" controlwidgetopeStatus="false" enabled="false" id="$refds_uap_hrorg" lazyLoad="true" notNullBody="false" objMeta="uap.hrorg" voMeta="nc.vo.org.HROrgVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+        </Datasets>
+        <ComboDatas>
+            <MDComboDataConf i18nName="w_ta-000736" langDir="node_ta-res" caption="休假申请单" fullclassName="55469794-d821-4365-a3ed-0339065a18ce" id="combo_hrtaleave_leaveyear">
+            </MDComboDataConf>
+            <MDComboDataConf i18nName="w_ta-000736" langDir="node_ta-res" caption="休假申请单" fullclassName="957c7ecd-b733-4839-9c46-c6828da14f00" id="combo_hrtaleave_approve_state">
+            </MDComboDataConf>
+            <MDComboDataConf i18nName="w_ta-000736" langDir="node_ta-res" caption="休假申请单" fullclassName="81998d32-8398-4c34-b546-ea99a6d07a87" id="combo_pk_leavetypecopy_timeitemunit">
+            </MDComboDataConf>
+            <MDComboDataConf i18nName="w_ta-000736" langDir="node_ta-res" caption="休假申请单" fullclassName="55469794-d821-4365-a3ed-0339065a18ce" id="combo_hrtaleave_leavemonth">
+            </MDComboDataConf>
+        </ComboDatas>
+        <RefNodes>
+            <NCRefNode allowInput="false" dataListener="" dialog="true" i18nName="w_ta-000659" id="refnode_hrtaleave_pk_psndoc_name" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" path="reference/refgrid.jsp" readDs="masterDs" readFields="pk_psndoc,name" refId="" refcode="HR人员" refnodeDelegator="" refresh="true" selLeafOnly="false" text="休假申请单_HR人员" usePower="false" writeDs="hrtaleave" writeFields="pk_psndoc,pk_psndoc_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialog="true" i18nName="w_ta-000662" id="refnode_hrtaleave_approver_user_name" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" path="reference/refgrid.jsp" readDs="masterDs" readFields="cuserid,user_name" refId="" refcode="用户" refnodeDelegator="" refresh="true" selLeafOnly="false" text="休假申请单_用户" usePower="false" writeDs="hrtaleave" writeFields="approver,approver_user_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialog="true" i18nName="w_ta-000666" id="refnode_hrtaleave_pk_leavetype_timeitemname" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" path="reference/refgrid.jsp" readDs="masterDs" readFields="pk_timeitem,timeitemname" refId="" refcode="休假类别" refnodeDelegator="" refresh="true" selLeafOnly="false" text="休假申请单_休假类别" usePower="false" writeDs="hrtaleave" writeFields="pk_leavetype,pk_leavetype_timeitemname">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialog="true" i18nName="w_ta-000718" id="refnode_hrtaleave_pk_dept_v_name" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" path="reference/reftree.jsp" readDs="masterDs" readFields="pk_vid,name" refId="" refcode="部门版本" refnodeDelegator="" refresh="true" selLeafOnly="false" text="休假申请单_部门版本" usePower="false" writeDs="hrtaleave" writeFields="pk_dept_v,pk_dept_v_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialog="true" i18nName="w_ta-000662" id="refnode_hrtaleave_billmaker_user_name" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" path="reference/refgrid.jsp" readDs="masterDs" readFields="cuserid,user_name" refId="" refcode="用户" refnodeDelegator="" refresh="true" selLeafOnly="false" text="休假申请单_用户" usePower="false" writeDs="hrtaleave" writeFields="billmaker,billmaker_user_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialog="true" i18nName="w_ta-000720" id="refnode_hrtaleave_pk_psnjob_pk_psndoc_name" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" path="reference/refgrid.jsp" readDs="masterDs" readFields="pk_psnjob,name,pk_psndoc,clerkcode" refId="" refcode="人员工作记录" refnodeDelegator="" refresh="true" selLeafOnly="false" text="休假申请单_人员工作记录" usePower="false" writeDs="hrtaleave" writeFields="pk_psnjob,pk_psnjob_pk_psndoc_name,pk_psnjob_pk_psndoc,pk_psnjob_clerkcode">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialog="true" i18nName="w_ta-000662" id="refnode_hrtaleave_modifier_user_name" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" path="reference/refgrid.jsp" readDs="masterDs" readFields="cuserid,user_name" refId="" refcode="用户" refnodeDelegator="" refresh="true" selLeafOnly="false" text="休假申请单_用户" usePower="false" writeDs="hrtaleave" writeFields="modifier,modifier_user_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialog="true" i18nName="w_ta-000662" id="refnode_hrtaleave_creator_user_name" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" path="reference/refgrid.jsp" readDs="masterDs" readFields="cuserid,user_name" refId="" refcode="用户" refnodeDelegator="" refresh="true" selLeafOnly="false" text="休假申请单_用户" usePower="false" writeDs="hrtaleave" writeFields="creator,creator_user_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialog="true" i18nName="w_ta-000723" id="refnode_hrtaleave_pk_leavetypecopy_pk_timeitem_timeitemname" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" path="reference/refgrid.jsp" readDs="masterDs" readFields="pk_timeitemcopy,timeitemname" refId="" refcode="休假类别拷贝" refnodeDelegator="" refresh="true" selLeafOnly="false" text="休假申请单_休假类别拷贝" usePower="false" writeDs="hrtaleave" writeFields="pk_leavetypecopy,pk_leavetypecopy_pk_timeitem.timeitemname">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialog="true" i18nName="w_ta-000724" id="refnode_hrtaleave_pk_group_name" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" path="reference/reftree.jsp" readDs="masterDs" readFields="pk_group,name" refId="" refcode="集团" refnodeDelegator="" refresh="true" selLeafOnly="false" text="休假申请单_集团" usePower="false" writeDs="hrtaleave" writeFields="pk_group,pk_group_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialog="true" i18nName="w_ta-000725" id="refnode_hrtaleave_pk_org_name" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" path="reference/reftree.jsp" readDs="masterDs" readFields="pk_hrorg,name" refId="" refcode="人力资源组织" refnodeDelegator="" refresh="true" selLeafOnly="false" text="休假申请单_人力资源组织" usePower="false" writeDs="hrtaleave" writeFields="pk_org,pk_org_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialog="true" i18nName="w_ta-000726" id="refnode_hrtaleave_transtypeid_billtypename" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" path="reference/refgrid.jsp" readDs="masterDs" readFields="pk_billtypeid,billtypename,pk_billtypecode" refId="" refcode="影响因素交 易类型" refnodeDelegator="" refresh="true" selLeafOnly="false" text="交易类型参照" usePower="false" writeDs="hrtaleave" writeFields="transtypeid,transtypeid_billtypename,transtype">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialog="true" i18nName="w_ta-000727" id="refnode_hrtaleave_pk_org_v_name" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" path="reference/reftree.jsp" readDs="masterDs" readFields="pk_vid,name" refId="" refcode="行政组织版本" refnodeDelegator="" refresh="true" selLeafOnly="false" text="休假申请单_行政组织版本" usePower="false" writeDs="hrtaleave" writeFields="pk_org_v,pk_org_v_name">
+            </NCRefNode>
+        </RefNodes>
+    </Models>
+    <Components>
+        <GridComp i18nName="w_ta-000736" langDir="node_ta-res" autoRowHeight="false" caption="休假申请单" dataset="hrtaleave" editable="true" enabled="true" expandTree="false" id="grid_hrtaleave" multiSelect="false" pagenationTop="false" reference="false" selfDefImageBtnRender="" showColInfo="false" showHeader="true" showImageBtn="false" showNumCol="false" showSumRow="false" sortable="true" visible="false">
+            <Column i18nName="w_ta-000737" langDir="node_ta-res" autoExpand="false" dataType="String" editable="true" editorType="StringText" field="bill_code" fixedHeader="false" id="bill_code" imageOnly="false" nullAble="true" renderType="LnkCompRender" showCheckBox="true" sortable="true" sumCol="false" text="申请单编码" textAlign="left" visible="true" width="100">
+            </Column>
+            <Column i18nName="w_ta-000741" langDir="node_ta-res" autoExpand="false" dataType="String" editable="true" editorType="Reference" field="transtypeid_billtypename" fixedHeader="false" id="transtypeid_billtypename" imageOnly="false" nullAble="true" refNode="refnode_hrtaleave_transtypeid_billtypename" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="流程类型" textAlign="left" visible="true" width="100">
+            </Column>
+            <Column i18nName="w_ta-000742" langDir="node_ta-res" autoExpand="false" dataType="Integer" editable="true" editorType="ComboBox" field="approve_state" fixedHeader="false" id="approve_state" imageOnly="false" nullAble="true" refComboData="combo_hrtaleave_approve_state" renderType="ComboRender" showCheckBox="true" sortable="true" sumCol="false" text="单据状态" textAlign="right" visible="true" width="70">
+            </Column>
+            <Column i18nName="w_ta-000743" langDir="node_ta-res" autoExpand="false" dataType="UFLiteralDate" editable="true" editorType="DateText" field="apply_date" fixedHeader="false" id="apply_date" imageOnly="false" nullAble="true" renderType="DateRender" showCheckBox="true" sortable="true" sumCol="false" text="申请日期" textAlign="left" visible="true" width="90">
+            </Column>
+            
+            <Column i18nName="w_ta-000753" langDir="node_ta-res" autoExpand="false" dataType="String" editable="true" editorType="StringText" field="pk_psndoc" fixedHeader="false" id="pk_psndoc" imageOnly="false" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="人员档案" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column i18nName="w_ta-000753" langDir="node_ta-res" autoExpand="false" dataType="String" editable="true" editorType="Reference" field="pk_psndoc_name" fixedHeader="false" id="pk_psndoc_name" imageOnly="false" nullAble="true" refNode="refnode_hrtaleave_pk_psndoc_name" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="人员档案" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column i18nName="w_ta-000754" langDir="node_ta-res" autoExpand="false" dataType="String" editable="true" editorType="StringText" field="pk_psnorg" fixedHeader="false" id="pk_psnorg" imageOnly="false" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="人员组织关系" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column i18nName="w_ta-000755" langDir="node_ta-res" autoExpand="false" dataType="String" editable="true" editorType="StringText" field="pk_psnjob" fixedHeader="false" id="pk_psnjob" imageOnly="false" nullAble="false" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="人员任职" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column i18nName="w_ta-000755" langDir="node_ta-res" autoExpand="false" dataType="String" editable="true" editorType="StringText" field="pk_psnjob_pk_psndoc" fixedHeader="false" id="pk_psnjob_pk_psndoc" imageOnly="false" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="人员任职" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column i18nName="" langDir="" autoExpand="false" dataType="String" editable="true" editorType="StringText" field="pk_psnjob_clerkcode" fixedHeader="false" id="pk_psnjob_clerkcode" imageOnly="false" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="员工号" textAlign="left" visible="true" width="80">
+            </Column>
+             <Column i18nName="" langDir="" autoExpand="false" dataType="String" editable="true" editorType="StringText" field="pk_psnjob_pk_psndoc_code" fixedHeader="false" id="pk_psnjob_pk_psndoc_code" imageOnly="false" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="人员编码" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column i18nName="" langDir="" autoExpand="false" dataType="String" editable="true" editorType="Reference" field="pk_psndoc_name" fixedHeader="false" id="pk_psndoc_name" imageOnly="false" nullAble="true" refNode="refnode_hrtaleave_pk_psnjob_pk_psndoc_name" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="姓名" textAlign="left" visible="true" width="80">
+            </Column>
+            
+            
+            <Column i18nName="w_ta-000735" langDir="node_ta-res" autoExpand="false" dataType="String" editable="true" editorType="Reference" field="pk_leavetype_timeitemname" fixedHeader="false" id="pk_leavetype_timeitemname" imageOnly="false" nullAble="true" refNode="refnode_hrtaleave_pk_leavetype_timeitemname" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="休假类别" textAlign="left" visible="true" width="80">
+            </Column>
+            <Column i18nName="w_ta-000744" langDir="node_ta-res" autoExpand="false" dataType="String" editable="true" editorType="ComboBox" field="leaveyear" fixedHeader="false" id="leaveyear" imageOnly="false" nullAble="true" refComboData="combo_hrtaleave_leaveyear" renderType="ComboRender" showCheckBox="true" sortable="true" sumCol="false" text="年度" textAlign="left" visible="true" width="60">
+            </Column>
+            <Column i18nName="w_ta-000745" langDir="node_ta-res" autoExpand="false" dataType="String" editable="true" editorType="ComboBox" field="leavemonth" fixedHeader="false" id="leavemonth" imageOnly="false" nullAble="true" refComboData="combo_hrtaleave_leavemonth" renderType="ComboRender" showCheckBox="true" sortable="true" sumCol="false" text="期间" textAlign="left" visible="true" width="60">
+            </Column>
+            <Column i18nName="w_ta-000746" langDir="node_ta-res" autoExpand="false" dataType="UFDouble" editable="true" editorType="DecimalText" field="sumhour" fixedHeader="false" id="sumhour" imageOnly="false" nullAble="true" renderType="DecimalRender" showCheckBox="true" sortable="true" sumCol="false" text="合计时长" textAlign="right" visible="true" width="80">
+            </Column>
+            <Column i18nName="w_ta-000747" langDir="node_ta-res" autoExpand="false" dataType="UFDouble" editable="true" editorType="DecimalText" field="resteddayorhour" fixedHeader="false" id="resteddayorhour" imageOnly="false" nullAble="true" renderType="DecimalRender" showCheckBox="true" sortable="true" sumCol="false" text="已休时长" textAlign="right" visible="true" width="80">
+            </Column>
+            <Column i18nName="w_ta-000748" langDir="node_ta-res" autoExpand="false" dataType="UFDouble" editable="true" editorType="DecimalText" field="restdayorhour" fixedHeader="false" id="restdayorhour" imageOnly="false" nullAble="true" renderType="DecimalRender" showCheckBox="true" sortable="true" sumCol="false" text="结余时长" textAlign="right" visible="true" width="80">
+            </Column>
+            
+            <Column i18nName="" langDir="" autoExpand="false" dataType="UFDouble" editable="true" editorType="DecimalText" field="lactationhour" fixedHeader="false" id="lactationhour" imageOnly="false" nullAble="true" renderType="DecimalRender" showCheckBox="true" sortable="true" sumCol="false" text="单日哺乳时长" textAlign="right" visible="true" width="80">
+            </Column>
+            
+            <Column i18nName="w_ta-000868" langDir="node_ta-res" autoExpand="false" dataType="Integer" editable="true" editorType="ComboBox" field="pk_leavetypecopy_timeitemunit" fixedHeader="false" id="pk_leavetypecopy_timeitemunit" imageOnly="false" nullAble="true" refComboData="combo_pk_leavetypecopy_timeitemunit" renderType="ComboRender" showCheckBox="true" sortable="true" sumCol="false" text="考勤单位" textAlign="right" visible="true" width="60">
+            </Column>
+            <Column i18nName="w_ta-000750" langDir="node_ta-res" autoExpand="false" dataType="String" editable="true" editorType="StringText" field="pk_leaveh" fixedHeader="false" id="pk_leaveh" imageOnly="false" nullAble="false" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="休假单主键" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column i18nName="w_ta-000751" langDir="node_ta-res" autoExpand="false" dataType="String" editable="true" editorType="StringText" field="pk_group" fixedHeader="false" id="pk_group" imageOnly="false" nullAble="false" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="所属集团" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column i18nName="w_ta-000751" langDir="node_ta-res" autoExpand="false" dataType="String" editable="true" editorType="Reference" field="pk_group_name" fixedHeader="false" id="pk_group_name" imageOnly="false" nullAble="true" refNode="refnode_hrtaleave_pk_group_name" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="所属集团" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column i18nName="w_ta-000752" langDir="node_ta-res" autoExpand="false" dataType="String" editable="true" editorType="StringText" field="pk_org" fixedHeader="false" id="pk_org" imageOnly="false" nullAble="false" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="所属组织" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column i18nName="w_ta-000752" langDir="node_ta-res" autoExpand="false" dataType="String" editable="true" editorType="Reference" field="pk_org_name" fixedHeader="false" id="pk_org_name" imageOnly="false" nullAble="true" refNode="refnode_hrtaleave_pk_org_name" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="所属组织" textAlign="left" visible="false" width="120">
+            </Column>
+            
+            <Column i18nName="w_ta-000756" langDir="node_ta-res" autoExpand="false" dataType="String" editable="true" editorType="StringText" field="pk_org_v" fixedHeader="false" id="pk_org_v" imageOnly="false" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="组织" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column i18nName="w_ta-000756" langDir="node_ta-res" autoExpand="false" dataType="String" editable="true" editorType="Reference" field="pk_org_v_name" fixedHeader="false" id="pk_org_v_name" imageOnly="false" nullAble="true" refNode="refnode_hrtaleave_pk_org_v_name" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="组织" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column i18nName="w_ta-000757" langDir="node_ta-res" autoExpand="false" dataType="String" editable="true" editorType="StringText" field="pk_dept_v" fixedHeader="false" id="pk_dept_v" imageOnly="false" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="部门" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column i18nName="w_ta-000757" langDir="node_ta-res" autoExpand="false" dataType="String" editable="true" editorType="Reference" field="pk_dept_v_name" fixedHeader="false" id="pk_dept_v_name" imageOnly="false" nullAble="true" refNode="refnode_hrtaleave_pk_dept_v_name" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="部门" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column i18nName="w_ta-000735" langDir="node_ta-res" autoExpand="false" dataType="String" editable="true" editorType="StringText" field="pk_leavetype" fixedHeader="false" id="pk_leavetype" imageOnly="false" nullAble="false" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="休假类别" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column i18nName="w_ta-000758" langDir="node_ta-res" autoExpand="false" dataType="String" editable="true" editorType="StringText" field="pk_leavetypecopy" fixedHeader="false" id="pk_leavetypecopy" imageOnly="false" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="休假类别实例" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column i18nName="w_ta-000758" langDir="node_ta-res" autoExpand="false" dataType="String" editable="true" editorType="StringText" field="pk_leavetypecopy_pk_timeitem" fixedHeader="false" id="pk_leavetypecopy_pk_timeitem" imageOnly="false" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="休假类别实例" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column i18nName="w_ta-000758" langDir="node_ta-res" autoExpand="false" dataType="String" editable="true" editorType="Reference" field="pk_leavetypecopy_pk_timeitem_timeitemname" fixedHeader="false" id="pk_leavetypecopy_pk_timeitem_timeitemname" imageOnly="false" nullAble="true" refNode="refnode_hrtaleave_pk_leavetypecopy_pk_timeitem_timeitemname" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="休假类别实例" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column i18nName="w_ta-000759" langDir="node_ta-res" autoExpand="false" dataType="Integer" editable="true" editorType="IntegerText" field="leaveindex" fixedHeader="false" id="leaveindex" imageOnly="false" nullAble="true" renderType="IntegerRender" showCheckBox="true" sortable="true" sumCol="false" text="假期结算记录顺序号" textAlign="right" visible="false" width="120">
+            </Column>
+            <Column i18nName="w_ta-000760" langDir="node_ta-res" autoExpand="false" dataType="Memo" editable="true" editorType="TextArea" field="leaveremark" fixedHeader="false" id="leaveremark" imageOnly="false" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="休假说明" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column i18nName="w_ta-000761" langDir="node_ta-res" autoExpand="false" dataType="String" editable="true" editorType="StringText" field="relatetel" fixedHeader="false" id="relatetel" imageOnly="false" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="假期联系电话" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column i18nName="w_ta-000762" langDir="node_ta-res" autoExpand="false" dataType="UFDouble" editable="true" editorType="DecimalText" field="realdayorhour" fixedHeader="false" id="realdayorhour" imageOnly="false" nullAble="true" renderType="DecimalRender" showCheckBox="true" sortable="true" sumCol="false" text="享有时长" textAlign="right" visible="false" width="120">
+            </Column>
+            <Column i18nName="w_ta-000763" langDir="node_ta-res" autoExpand="false" dataType="UFDouble" editable="true" editorType="DecimalText" field="freezedayorhour" fixedHeader="false" id="freezedayorhour" imageOnly="false" nullAble="true" renderType="DecimalRender" showCheckBox="true" sortable="true" sumCol="false" text="冻结时长" textAlign="right" visible="false" width="120">
+            </Column>
+            <Column i18nName="w_ta-000764" langDir="node_ta-res" autoExpand="false" dataType="UFDouble" editable="true" editorType="DecimalText" field="usefuldayorhour" fixedHeader="false" id="usefuldayorhour" imageOnly="false" nullAble="true" renderType="DecimalRender" showCheckBox="true" sortable="true" sumCol="false" text="可用时长" textAlign="right" visible="false" width="120">
+            </Column>
+            <Column i18nName="w_ta-000765" langDir="node_ta-res" autoExpand="false" dataType="UFDouble" editable="true" editorType="DecimalText" field="lactationhour" fixedHeader="false" id="lactationhour" imageOnly="false" nullAble="true" renderType="DecimalRender" showCheckBox="true" sortable="true" sumCol="false" text="单日哺乳时长" textAlign="right" visible="false" width="120">
+            </Column>
+            <Column i18nName="w_ta-000766" langDir="node_ta-res" autoExpand="false" dataType="UFBoolean" editable="true" editorType="CheckBox" field="islactation" fixedHeader="false" id="islactation" imageOnly="false" nullAble="true" renderType="BooleanRender" showCheckBox="true" sortable="true" sumCol="false" text="是否哺乳假" textAlign="center" visible="false" width="120">
+            </Column>
+            <Column i18nName="w_ta-000767" langDir="node_ta-res" autoExpand="false" dataType="String" editable="true" editorType="StringText" field="fun_code" fixedHeader="false" id="fun_code" imageOnly="false" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="审批流节点号" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column i18nName="w_ta-000768" langDir="node_ta-res" autoExpand="false" dataType="UFBoolean" editable="true" editorType="CheckBox" field="ishrssbill" fixedHeader="false" id="ishrssbill" imageOnly="false" nullAble="true" renderType="BooleanRender" showCheckBox="true" sortable="true" sumCol="false" text="是否员工自助增加" textAlign="center" visible="false" width="120">
+            </Column>
+            <Column i18nName="w_ta-000729" langDir="node_ta-res" autoExpand="false" dataType="String" editable="true" editorType="StringText" field="pk_billtype" fixedHeader="false" id="pk_billtype" imageOnly="false" nullAble="false" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="单据类型" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column i18nName="w_ta-000769" langDir="node_ta-res" autoExpand="false" dataType="String" editable="true" editorType="StringText" field="transtype" fixedHeader="false" id="transtype" imageOnly="false" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="交易类型code" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column i18nName="w_ta-000741" langDir="node_ta-res" autoExpand="false" dataType="String" editable="true" editorType="StringText" field="transtypeid" fixedHeader="false" id="transtypeid" imageOnly="false" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="流程类型" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column i18nName="w_ta-000770" langDir="node_ta-res" autoExpand="false" dataType="String" editable="true" editorType="StringText" field="billmaker" fixedHeader="false" id="billmaker" imageOnly="false" nullAble="false" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="申请人" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column i18nName="w_ta-000770" langDir="node_ta-res" autoExpand="false" dataType="String" editable="true" editorType="Reference" field="billmaker_user_name" fixedHeader="false" id="billmaker_user_name" imageOnly="false" nullAble="true" refNode="refnode_hrtaleave_billmaker_user_name" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="申请人" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column i18nName="w_ta-000771" langDir="node_ta-res" autoExpand="false" dataType="String" editable="true" editorType="StringText" field="approver" fixedHeader="false" id="approver" imageOnly="false" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="审批人" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column i18nName="w_ta-000771" langDir="node_ta-res" autoExpand="false" dataType="String" editable="true" editorType="Reference" field="approver_user_name" fixedHeader="false" id="approver_user_name" imageOnly="false" nullAble="true" refNode="refnode_hrtaleave_approver_user_name" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="审批人" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column i18nName="w_ta-000772" langDir="node_ta-res" autoExpand="false" dataType="String" editable="true" editorType="StringText" field="approve_note" fixedHeader="false" id="approve_note" imageOnly="false" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="审批意见" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column i18nName="w_ta-000773" langDir="node_ta-res" autoExpand="false" dataType="UFDateTime" editable="true" editorType="DateTimeText" field="approve_time" fixedHeader="false" id="approve_time" imageOnly="false" nullAble="true" renderType="DateTimeRender" showCheckBox="true" sortable="true" sumCol="false" text="审批时间" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column i18nName="w_ta-000774" langDir="node_ta-res" autoExpand="false" dataType="UFDateTime" editable="true" editorType="DateTimeText" field="creationtime" fixedHeader="false" id="creationtime" imageOnly="false" nullAble="true" renderType="DateTimeRender" showCheckBox="true" sortable="true" sumCol="false" text="创建时间" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column i18nName="w_ta-000775" langDir="node_ta-res" autoExpand="false" dataType="String" editable="true" editorType="StringText" field="creator" fixedHeader="false" id="creator" imageOnly="false" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="创建人" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column i18nName="w_ta-000775" langDir="node_ta-res" autoExpand="false" dataType="String" editable="true" editorType="Reference" field="creator_user_name" fixedHeader="false" id="creator_user_name" imageOnly="false" nullAble="true" refNode="refnode_hrtaleave_creator_user_name" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="创建人" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column i18nName="w_ta-000776" langDir="node_ta-res" autoExpand="false" dataType="UFDateTime" editable="true" editorType="DateTimeText" field="modifiedtime" fixedHeader="false" id="modifiedtime" imageOnly="false" nullAble="true" renderType="DateTimeRender" showCheckBox="true" sortable="true" sumCol="false" text="修改时间" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column i18nName="w_ta-000777" langDir="node_ta-res" autoExpand="false" dataType="String" editable="true" editorType="StringText" field="modifier" fixedHeader="false" id="modifier" imageOnly="false" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="修改人" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column i18nName="w_ta-000777" langDir="node_ta-res" autoExpand="false" dataType="String" editable="true" editorType="Reference" field="modifier_user_name" fixedHeader="false" id="modifier_user_name" imageOnly="false" nullAble="true" refNode="refnode_hrtaleave_modifier_user_name" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="修改人" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column i18nName="w_ta-000778" langDir="node_ta-res" autoExpand="false" dataType="String" editable="true" editorType="StringText" field="splitid" fixedHeader="false" id="splitid" imageOnly="false" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="拆单id" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="Integer" editable="true" editorType="IntegerText" field="status" fixedHeader="false" id="status" imageOnly="false" nullAble="true" renderType="IntegerRender" showCheckBox="true" sortable="true" sumCol="false" text="vostatus" textAlign="right" visible="false" width="120">
+            </Column>
+        </GridComp>
+    </Components>
+    <Menus>
+        <MenuBarComp id="menu_list">
+            <MenuItem i18nName="w_ta-000779" langDir="node_ta-res" id="list_add" modifiers="2" stateManager="nc.bs.hrss.ta.common.dft.Init_StateManager" text="新增">
+                <Events>
+                    <Event async="true" jsEventClaszz="nc.uap.lfw.core.event.conf.MouseListener" methodName="addBill" name="onclick" onserver="true">
+                        <SubmitRule cardSubmit="false" panelSubmit="false" tabSubmit="false">
+                            <Widget cardSubmit="false" id="main" panelSubmit="false" tabSubmit="false">
+                            </Widget>
+                        </SubmitRule>
+                        <Params>
+                            <Param>
+                                <Name>mouseEvent</Name>
+                                <Value>
+                                </Value>
+                                <Desc>                                    <![CDATA[]]>
+                                </Desc>
+                            </Param>
+                        </Params>
+                        <Action>
+                        </Action>
+                    </Event>
+                </Events>
+            </MenuItem>
+            <MenuItem i18nName="" langDir="" id="list_addLactation" modifiers="2" stateManager="" text="新增哺乳假">
+                <Events>
+                    <Event async="true" jsEventClaszz="nc.uap.lfw.core.event.conf.MouseListener" methodName="addLactation" name="onclick" onserver="true">
+                        <SubmitRule cardSubmit="false" panelSubmit="false" tabSubmit="false">
+                            <Widget cardSubmit="false" id="main" panelSubmit="false" tabSubmit="false">
+                            </Widget>
+                        </SubmitRule>
+                        <Params>
+                            <Param>
+                                <Name>mouseEvent</Name>
+                                <Value>
+                                </Value>
+                                <Desc>                                    <![CDATA[]]>
+                                </Desc>
+                            </Param>
+                        </Params>
+                        <Action>
+                        </Action>
+                    </Event>
+                </Events>
+            </MenuItem>
+            <MenuItem i18nName="w_ta-000781" langDir="node_ta-res" id="list_delete" modifiers="2" stateManager="nc.bs.hrss.ta.common.dft.Init_StateManager" text="删除">
+                <Events>
+                    <Event async="true" jsEventClaszz="nc.uap.lfw.core.event.conf.MouseListener" methodName="deleteBill" name="onclick" onserver="true">
+                        <SubmitRule cardSubmit="false" panelSubmit="false" tabSubmit="false">
+                            <Widget cardSubmit="false" id="main" panelSubmit="false" tabSubmit="false">
+                                <Dataset id="hrtaleave" type="ds_current_page">
+                                </Dataset>
+                            </Widget>
+                        </SubmitRule>
+                        <Params>
+                            <Param>
+                                <Name>mouseEvent</Name>
+                                <Value>
+                                </Value>
+                                <Desc>                                    <![CDATA[]]>
+                                </Desc>
+                            </Param>
+                        </Params>
+                        <Action>
+                        </Action>
+                    </Event>
+                </Events>
+            </MenuItem>
+            <!--<MenuItem i18nName="w_ta-000782" langDir="node_ta-res" id="list_copy" modifiers="2" stateManager="nc.bs.hrss.ta.common.dft.Init_StateManager" text="复制">
+                <Events>
+                    <Event async="true" jsEventClaszz="nc.uap.lfw.core.event.conf.MouseListener" methodName="copyBill" name="onclick" onserver="true">
+                        <SubmitRule cardSubmit="false" panelSubmit="false" tabSubmit="false">
+                            <Widget cardSubmit="false" id="main" panelSubmit="false" tabSubmit="false">
+                                <Dataset id="hrtaleave" type="ds_current_line">
+                                </Dataset>
+                            </Widget>
+                        </SubmitRule>
+                        <Params>
+                            <Param>
+                                <Name>mouseEvent</Name>
+                                <Value>
+                                </Value>
+                                <Desc>                                    <![CDATA[]]>
+                                </Desc>
+                            </Param>
+                        </Params>
+                        <Action>
+                        </Action>
+                    </Event>
+                </Events>
+            </MenuItem>-->
+            <MenuItem id="split1" modifiers="3" sep="true" text="split">
+            </MenuItem>
+            <MenuItem i18nName="w_ta-000783" langDir="node_ta-res" id="list_submit" modifiers="2" stateManager="nc.bs.hrss.ta.common.dft.Init_StateManager" text="提交">
+                <Events>
+                    <Event async="true" jsEventClaszz="nc.uap.lfw.core.event.conf.MouseListener" methodName="sumbitBill" name="onclick" onserver="true">
+                        <SubmitRule cardSubmit="false" panelSubmit="false" tabSubmit="false">
+                            <Widget cardSubmit="false" id="main" panelSubmit="false" tabSubmit="false">
+                                <Dataset id="hrtaleave" type="ds_current_line">
+                                </Dataset>
+                            </Widget>
+                        </SubmitRule>
+                        <Params>
+                            <Param>
+                                <Name>mouseEvent</Name>
+                                <Value>
+                                </Value>
+                                <Desc>                                    <![CDATA[]]>
+                                </Desc>
+                            </Param>
+                        </Params>
+                        <Action>
+                        </Action>
+                    </Event>
+                </Events>
+            </MenuItem>
+            <MenuItem i18nName="w_ta-000784" langDir="node_ta-res" id="list_callback" modifiers="2" stateManager="nc.bs.hrss.ta.common.dft.Init_StateManager" text="收回">
+                <Events>
+                    <Event async="true" jsEventClaszz="nc.uap.lfw.core.event.conf.MouseListener" methodName="callBackBill" name="onclick" onserver="true">
+                        <SubmitRule cardSubmit="false" panelSubmit="false" tabSubmit="false">
+                            <Widget cardSubmit="false" id="main" panelSubmit="false" tabSubmit="false">
+                                <Dataset id="hrtaleave" type="ds_current_line">
+                                </Dataset>
+                            </Widget>
+                        </SubmitRule>
+                        <Params>
+                            <Param>
+                                <Name>mouseEvent</Name>
+                                <Value>
+                                </Value>
+                                <Desc>                                    <![CDATA[]]>
+                                </Desc>
+                            </Param>
+                        </Params>
+                        <Action>
+                        </Action>
+                    </Event>
+                </Events>
+            </MenuItem>
+            <MenuItem id="split2" modifiers="3" sep="true" text="split">
+            </MenuItem>
+            <MenuItem i18nName="w_ta-000785" langDir="node_ta-res" id="list_apporvestate" modifiers="2" stateManager="nc.bs.hrss.ta.common.dft.Init_StateManager" text="查看审批流">
+                <Events>
+                    <Event async="true" jsEventClaszz="nc.uap.lfw.core.event.conf.MouseListener" methodName="showApproveState" name="onclick" onserver="true">
+                        <SubmitRule cardSubmit="false" panelSubmit="false" tabSubmit="false">
+                            <Widget cardSubmit="false" id="main" panelSubmit="false" tabSubmit="false">
+                                <Dataset id="hrtaleave" type="ds_current_line">
+                                </Dataset>
+                            </Widget>
+                        </SubmitRule>
+                        <Params>
+                            <Param>
+                                <Name>mouseEvent</Name>
+                                <Value>
+                                </Value>
+                                <Desc>                                    <![CDATA[]]>
+                                </Desc>
+                            </Param>
+                        </Params>
+                        <Action>
+                        </Action>
+                    </Event>
+                </Events>
+            </MenuItem>
+            <MenuItem id="split3" modifiers="3" sep="true" text="split">
+            </MenuItem>
+            <MenuItem i18nName="w_ta-000786" langDir="node_ta-res" id="attachment" modifiers="2" stateManager="nc.bs.hrss.ta.common.dft.Init_StateManager" text="附件管理">
+                <Events>
+                    <Event async="true" jsEventClaszz="nc.uap.lfw.core.event.conf.MouseListener" methodName="addAttachment" name="onclick" onserver="true">
+                        <SubmitRule cardSubmit="false" panelSubmit="false" tabSubmit="false">
+                        </SubmitRule>
+                        <Params>
+                            <Param>
+                                <Name>mouseEvent</Name>
+                                <Value>
+                                </Value>
+                                <Desc>                                    <![CDATA[nc.uap.lfw.core.event.MouseEvent]]>
+                                </Desc>
+                            </Param>
+                        </Params>
+                        <Action>
+                        </Action>
+                    </Event>
+                </Events>
+            </MenuItem>
+        </MenuBarComp>
+    </Menus>
+</Widget>

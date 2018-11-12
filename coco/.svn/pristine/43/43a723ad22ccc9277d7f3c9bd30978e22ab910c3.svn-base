@@ -1,0 +1,10 @@
+.right{
+		background: url('/lfw/frame/device_pc/themes/${theme}/ext/hrss/ta/right.png');
+		background-position:center;
+		background-repeat: no-repeat;
+		width:14px;
+		height:14px;
+}
+.blue{
+		color:blue;
+}

@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE beans PUBLIC "-//SPRING//DTD BEAN//EN" "http://www.springframework.org/dtd/spring-beans.dtd">
+
+<beans>
+
+	<!-- Actions -->
+	<bean id="cardEditorActions" class="nc.ui.uif2.actions.StandAloneToftPanelActionContainer">
+		<constructor-arg>
+			<ref bean="billFormEditor" />
+		</constructor-arg>
+		<property name="actions">
+			<list>
+				<ref bean="EditAction" />
+				<ref bean="nullaction" />
+				<ref bean="RefreshAction" />
+				<ref bean="nullaction" />
+				<!-- 薪资发放行明细 -->
+				<ref bean="PsnDetailAction" />
+			</list>
+		</property>
+		<property name="editActions">
+			<list>
+				<ref bean="FormSaveAction" />
+				<ref bean="FormSaveEditAction" />
+				<ref bean="nullaction" />
+				<ref bean="CancelAction" />
+			</list>
+		</property>
+		<property name="model" ref="ManageAppModel" />
+	</bean>
+
+	<bean id="listViewActions" class="nc.ui.uif2.actions.StandAloneToftPanelActionContainer">
+		<constructor-arg>
+			<ref bean="mainListPanel" />
+		</constructor-arg>
+		<property name="actions">
+			<list>
+				<ref bean="EditAction" />
+
+				<ref bean="ReplaceAction" />
+				<ref bean="SpecialPsnAction" />
+				<ref bean="nullaction" />
+				<ref bean="QueryAction" />
+				<ref bean="RefreshAction" />
+				<ref bean="nullaction" />
+				<ref bean="OnTimeCaculateAction" />
+				<ref bean="CaculateAction" />
+				<ref bean="ReTotalAction" />
+				<ref bean="WaTimesCollectAction" />
+				<ref bean="ShowDetailAction" />
+				<ref bean="CheckGroupAction" />
+				<ref bean="PayGroupAction" />
+				<ref bean="nullaction" />
+				<ref bean="assistFunctionAction" />
+				<ref bean="nullaction" />
+				<ref bean="SortAction" />
+				<ref bean="DisplayAction" />
+				<ref bean="nullaction" />
+				<ref bean="ExportXlsAction" />
+				<ref bean="PrintGroupAction" />
+				
+				<ref bean="nullaction" />
+				<!-- 薪资发放行明细 -->
+				<ref bean="PsnDetailAction" />
+			</list>
+		</property>
+
+		<property name="editActions">
+			<list>
+				<ref bean="ListSaveAction" />
+				<ref bean="nullaction" />
+				<ref bean="CancelAction" />
+			</list>
+		</property>
+		<property name="model" ref="ManageAppModel" />
+	</bean>
+	
+	
+	<bean id="PsnDetailAction" class="nc.ui.wa.paydata.action.PsnDetailAction">
+		<property name="model" ref="ManageAppModel" />
+	</bean>
+	
+	<!-- zhouwq 2015-10-26 薪资发放 
+	             薪资方案 参照 只选多部门薪资方案 -->
+	<bean id="orgpanel" class="nc.ui.wa.shop.mclassitem.pub.SingleWaOrgHeadPanel" init-method="initUI">
+		<property name="model" ref="ManageAppModel" />
+		<property name="context" ref="context"></property>
+		<property name="dataManager" ref="modelDataManager" />
+		<property name="pk_orgtype" value="HRORGTYPE00000000000" />
+	</bean>	 
+
+</beans>

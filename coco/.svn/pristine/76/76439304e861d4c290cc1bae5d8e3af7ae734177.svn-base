@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Manifest>
+  <BusinessComponet name="hi" dispname="店员管理">
+    <public/>
+    <client/>
+    <private/>
+    <test/>
+    <resource/>
+  </BusinessComponet>
+  <BusinessComponet name="ta" dispname="考勤管理">
+    <public/>
+    <client/>
+    <private/>
+    <test/>
+    <resource/>
+  </BusinessComponet>
+  <BusinessComponet name="wabs" dispname="薪资管理_业务">
+    <public/>
+    <client/>
+    <private/>
+    <test/>
+    <resource/>
+  </BusinessComponet>
+  <BusinessComponet name="wapt" dispname="薪资管理_portal">
+    <public/>
+    <client/>
+    <private/>
+    <test/>
+    <resource/>
+  </BusinessComponet>
+  <BusinessComponet name="drp" dispname="drp数据同步">
+    <public/>
+    <client/>
+    <private/>
+    <test/>
+    <resource/>
+  </BusinessComponet>
+</Manifest>

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding='UTF-8'?>
+<UIMeta flowmode="true" id="DailyReportDetail_um" jquery="0">
+	<FlowvLayout id="flowvlayout0776" widgetId="DailyReportDetail">
+        <FlowvPanel id="panelv10776" widgetId="DailyReportDetail">
+            <GridComp height="100%" id="gridDayDetail" left="15" position="relative" top="0" widgetId="main" width="94%">
+            </GridComp>
+        </FlowvPanel>
+    </FlowvLayout>
+</UIMeta>

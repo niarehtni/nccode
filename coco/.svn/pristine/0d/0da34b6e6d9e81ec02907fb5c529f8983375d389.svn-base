@@ -1,0 +1,384 @@
+package nc.ui.bd.workcalendar.pub;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import nc.bs.bd.workcalendar.util.WorkCalendarDateUtil;
+import nc.bs.framework.common.NCLocator;
+import nc.bs.logging.Logger;
+import nc.itf.bd.workcalendrule.IWorkCalendarRuleQueryService;
+import nc.pubitf.uapbd.IWorkCalendarHolidayRuleService;
+import nc.pubitf.uapbd.IWorkCalendarHolidayRuleService.IHolidayParam;
+import nc.vo.bd.workcalendar.CalendarDateType;
+import nc.vo.bd.workcalendar.WorkCalendarDateVO;
+import nc.vo.bd.workcalendar.WorkCalendarYearVO;
+import nc.vo.bd.workcalendrule.WorkCalendarRuleVO;
+import nc.vo.jcom.lang.StringUtil;
+import nc.vo.ml.AbstractNCLangRes;
+import nc.vo.ml.NCLangRes4VoTransl;
+import nc.vo.pub.BusinessException;
+import nc.vo.pub.lang.UFBoolean;
+import nc.vo.pub.lang.UFLiteralDate;
+import nc.vo.pub.lang.UFTime;
+
+public class WorkCalendarTool {
+	private static final String DAYBEGINTIME = "00:00:00";
+	private static final String DAYENDTIME = "23:59:59";
+	private static final int ONE = 1;
+	private UFLiteralDate beginDate = null;
+
+	private IWorkCalendarHolidayRuleService calendarHolidayRuleService = null;
+
+	private IWorkCalendarRuleQueryService calendRuleService = null;
+
+	private WorkCalendarRuleVO calendRuleVO = null;
+
+	private UFLiteralDate endDate = null;
+
+	private String pk_holidayrule = null;
+
+	private String pkCalendRuleVO = null;
+
+	private Set<Integer> ruleSet = new HashSet();
+	private Set<Integer> ruleSet2 = new HashSet();
+
+	public WorkCalendarTool() {
+	}
+
+	public WorkCalendarTool(String pkCalendRuleVO, UFLiteralDate beginDate,
+			UFLiteralDate endDate) {
+		this.pkCalendRuleVO = pkCalendRuleVO;
+		this.beginDate = beginDate;
+		this.endDate = endDate;
+	}
+
+	public WorkCalendarTool(String pkCalendRuleVO, UFLiteralDate beginDate,
+			UFLiteralDate endDate, String pk_holidayrule) {
+		this(pkCalendRuleVO, beginDate, endDate);
+		this.pk_holidayrule = pk_holidayrule;
+	}
+
+	public WorkCalendarTool(WorkCalendarRuleVO calendRuleVO,
+			UFLiteralDate beginDate, UFLiteralDate endDate) {
+		this.calendRuleVO = calendRuleVO;
+		this.beginDate = beginDate;
+		this.endDate = endDate;
+	}
+
+	public WorkCalendarTool(WorkCalendarRuleVO calendRuleVO,
+			UFLiteralDate beginDate, UFLiteralDate endDate,
+			String pk_holidayrule) {
+		this(calendRuleVO, beginDate, endDate);
+		this.pk_holidayrule = pk_holidayrule;
+	}
+
+	public static HashMap<Integer, WorkCalendarYearVO> getCalendarYearMap(
+			WorkCalendarYearVO[] yearWeekVOs) {
+		HashMap<Integer, WorkCalendarYearVO> weekVOMap = new HashMap();
+		if (yearWeekVOs == null) {
+			return weekVOMap;
+		}
+		for (WorkCalendarYearVO weekVO : yearWeekVOs) {
+			weekVOMap.put(weekVO.getWorkyear(), weekVO);
+		}
+		return weekVOMap;
+	}
+
+	public static WorkCalendarYearVO[] getCalendarYearVOs(int beginWorkYear,
+			UFLiteralDate yearStartDate, UFLiteralDate calendarEndDate) {
+		WorkCalendarYearVO[] years = WorkCalendarDateUtil.getCalendarYearVOs(
+				yearStartDate, calendarEndDate);
+
+		for (WorkCalendarYearVO yearVO : years) {
+			yearVO.setWorkyear(Integer.valueOf(beginWorkYear));
+			beginWorkYear++;
+		}
+		return years;
+	}
+
+	public static String toDateString(int year, int month, int day) {
+		String strYear = String.valueOf(year);
+		for (int j = strYear.length(); j < 4; j++) {
+			strYear = "0" + strYear;
+		}
+		String strMonth = String.valueOf(month);
+		if (strMonth.length() < 2) {
+			strMonth = "0" + strMonth;
+		}
+		String strDay = String.valueOf(day);
+		if (strDay.length() < 2) {
+			strDay = "0" + strDay;
+		}
+		return strYear + "-" + strMonth + "-" + strDay;
+	}
+
+	public IWorkCalendarHolidayRuleService getCalendarHolidayRuleService() {
+		if (calendarHolidayRuleService == null) {
+			calendarHolidayRuleService = ((IWorkCalendarHolidayRuleService) NCLocator
+					.getInstance()
+					.lookup(IWorkCalendarHolidayRuleService.class));
+		}
+
+		return calendarHolidayRuleService;
+	}
+
+	public WorkCalendarDateVO[] getWorkCalendarDateVOs()
+			throws BusinessException {
+		if ((calendRuleVO == null) && (pkCalendRuleVO != null)
+				&& (pkCalendRuleVO.trim().length() != 0)) {
+			try {
+				calendRuleVO = getCalendRuleService()
+						.queryWorkCalendRuleVoByPk(pkCalendRuleVO);
+			} catch (Exception e) {
+				Logger.error(e);
+			}
+			if (calendRuleVO == null) {
+				throw new BusinessException(NCLangRes4VoTransl.getNCLangRes()
+						.getStrByID("10140wcb", "010140wcb0028"));
+			}
+		}
+
+		if ((beginDate == null) || (endDate == null)) {
+			return null;
+		}
+
+		initRestDayRules();
+
+		UFLiteralDate[] calendarDates = getCalendarDates();
+		ArrayList<WorkCalendarDateVO> alist = new ArrayList();
+		WorkCalendarDateVO calendarDateVO = null;
+		Map<String, IWorkCalendarHolidayRuleService.IHolidayParam> holidayMap = new HashMap();
+		if (!StringUtil.isEmpty(pk_holidayrule)) {
+			holidayMap = getCalendarHolidayRuleService().getHolidayRule(
+					pk_holidayrule, beginDate, endDate);
+
+			if (holidayMap == null) {
+				holidayMap = new HashMap();
+			}
+		}
+		for (UFLiteralDate date : calendarDates) {
+			calendarDateVO = new WorkCalendarDateVO();
+			calendarDateVO.setCalendardate(date);
+			if (isWorkingDay(date)) {
+				if(!isOffDay(date)){
+					calendarDateVO.setDatetype(Integer
+							.valueOf(CalendarDateType.OFFICALHOLIDAY.ordinal()));
+				}else{
+					calendarDateVO.setDatetype(Integer
+							.valueOf(CalendarDateType.WORKINGDAY.ordinal()));
+					if (calendRuleVO.getOndutytime() != null) {
+						calendarDateVO.setOndutytime(calendRuleVO.getOndutytime());
+					}
+					if (calendRuleVO.getOffdutytime() != null) {
+						calendarDateVO
+								.setOffdutytime(calendRuleVO.getOffdutytime());
+					}
+				}
+			}
+			else {
+				if(!isOffDay(date)){
+					calendarDateVO.setDatetype(Integer
+							.valueOf(CalendarDateType.OFFICALHOLIDAY.ordinal()));
+				}else {
+					calendarDateVO.setDatetype(Integer
+							.valueOf(CalendarDateType.WEEKENDDAY.ordinal()));
+				}
+			}
+
+			dealHolidayRule(calendarDateVO, holidayMap);
+			calendarDateVO.setStatus(2);
+			alist.add(calendarDateVO);
+		}
+		return (WorkCalendarDateVO[]) alist.toArray(new WorkCalendarDateVO[0]);
+	}
+
+	public void setBeginDate(UFLiteralDate beginDate) {
+		this.beginDate = beginDate;
+	}
+
+	public void setCalendRuleVO(WorkCalendarRuleVO calendRuleVO) {
+		this.calendRuleVO = calendRuleVO;
+	}
+
+	public void setEndDate(UFLiteralDate endDate) {
+		this.endDate = endDate;
+	}
+
+	public void setPkCalendRuleVO(String pkCalendRuleVO) {
+		this.pkCalendRuleVO = pkCalendRuleVO;
+	}
+
+	private void dealHolidayRule(
+			WorkCalendarDateVO calendarDateVO,
+			Map<String, IWorkCalendarHolidayRuleService.IHolidayParam> holidayMap) {
+		if ((holidayMap == null) || (holidayMap.size() < 1)) {
+			return;
+		}
+		if (!holidayMap
+				.containsKey(calendarDateVO.getCalendardate().toString())) {
+			return;
+		}
+		IWorkCalendarHolidayRuleService.IHolidayParam param = (IWorkCalendarHolidayRuleService.IHolidayParam) holidayMap
+				.get(calendarDateVO.getCalendardate().toString());
+
+		calendarDateVO.setDatetype(param.getDatetype());
+
+		if (!StringUtil.isEmpty(param.getMemo())) {
+			calendarDateVO.setMemo(param.getMemo());
+		}
+
+		if (param.getDatetype().intValue() == CalendarDateType.WORKINGDAY
+				.ordinal()) {
+			if (calendRuleVO.getOndutytime() != null) {
+				calendarDateVO.setOndutytime(calendRuleVO.getOndutytime());
+			}
+			if (calendRuleVO.getOffdutytime() != null) {
+				calendarDateVO.setOffdutytime(calendRuleVO.getOffdutytime());
+			}
+			if ((StringUtil.isEmpty(param.getHolidayStartTime()))
+					|| (StringUtil.isEmpty(param.getHolidayEndTime()))) {
+				return;
+			}
+
+			UFTime ondutytime = new UFTime(calendRuleVO.getOndutytime() + ":00");
+
+			UFTime offdutytime = new UFTime(calendRuleVO.getOffdutytime()
+					+ ":00");
+
+			UFTime holdayontime = new UFTime(param.getHolidayStartTime());
+
+			UFTime holdayofftime = new UFTime(param.getHolidayEndTime());
+
+			if ((holdayontime.before(ondutytime))
+					|| (holdayontime.equals(ondutytime))) {
+				if (holdayofftime.before(offdutytime)) {
+					calendarDateVO.setOndutytime(holdayofftime.toLocalString()
+							.substring(0,
+									param.getHolidayStartTime().length() - 3));
+				} else {
+					calendarDateVO.setDatetype(Integer
+							.valueOf(CalendarDateType.HOLIDAY.ordinal()));
+
+					calendarDateVO.setOndutytime(null);
+					calendarDateVO.setOffdutytime(null);
+				}
+			} else if ((holdayontime.after(ondutytime))
+					&& (holdayontime.before(offdutytime))
+					&& (holdayofftime.after(offdutytime))) {
+				calendarDateVO.setOffdutytime(holdayontime.toLocalString()
+						.substring(0, param.getHolidayEndTime().length() - 3));
+
+			}
+
+		} else if (param.getDatetype().intValue() == CalendarDateType.HOLIDAY
+				.ordinal()) {
+			calendarDateVO.setOndutytime(null);
+			calendarDateVO.setOffdutytime(null);
+		} else if (param.getDatetype().intValue() == CalendarDateType.WEEKENDDAY
+				.ordinal()) {
+			calendarDateVO.setOndutytime(null);
+			calendarDateVO.setOffdutytime(null);
+		}
+	}
+
+	private UFLiteralDate[] getCalendarDates() {
+		UFLiteralDate date = beginDate;
+		ArrayList<UFLiteralDate> dateList = new ArrayList();
+		while (date.before(endDate)) {
+			dateList.add(date);
+			date = date.getDateAfter(1);
+		}
+		dateList.add(endDate);
+		return (UFLiteralDate[]) dateList.toArray(new UFLiteralDate[0]);
+	}
+
+	private IWorkCalendarRuleQueryService getCalendRuleService() {
+		if (calendRuleService == null) {
+			calendRuleService = ((IWorkCalendarRuleQueryService) NCLocator
+					.getInstance().lookup(IWorkCalendarRuleQueryService.class));
+		}
+		return calendRuleService;
+	}
+
+	private void initRestDayRules() {
+		ruleSet.clear();
+		if ((calendRuleVO.getSunday() != null)
+				&& (calendRuleVO.getSunday().booleanValue())) {
+			ruleSet.add(Integer.valueOf(1));
+		}
+		if ((calendRuleVO.getMonday() != null)
+				&& (calendRuleVO.getMonday().booleanValue())) {
+			ruleSet.add(Integer.valueOf(2));
+		}
+		if ((calendRuleVO.getTuesday() != null)
+				&& (calendRuleVO.getTuesday().booleanValue())) {
+			ruleSet.add(Integer.valueOf(3));
+		}
+		if ((calendRuleVO.getWednesday() != null)
+				&& (calendRuleVO.getWednesday().booleanValue())) {
+			ruleSet.add(Integer.valueOf(4));
+		}
+		if ((calendRuleVO.getThursday() != null)
+				&& (calendRuleVO.getThursday().booleanValue())) {
+			ruleSet.add(Integer.valueOf(5));
+		}
+		if ((calendRuleVO.getFriday() != null)
+				&& (calendRuleVO.getFriday().booleanValue())) {
+			ruleSet.add(Integer.valueOf(6));
+		}
+		if ((calendRuleVO.getSaturday() != null)
+				&& (calendRuleVO.getSaturday().booleanValue())) {
+			ruleSet.add(Integer.valueOf(7));
+		}
+		
+		//但强 台湾本地化 2018-4-19 09:21:30
+		if ((calendRuleVO.getSunday1() != null)
+				&& (calendRuleVO.getSunday1().booleanValue())) {
+			ruleSet2.add(Integer.valueOf(1));
+		}
+		if ((calendRuleVO.getMonday1() != null)
+				&& (calendRuleVO.getMonday1().booleanValue())) {
+			ruleSet2.add(Integer.valueOf(2));
+		}
+		if ((calendRuleVO.getTuesday1() != null)
+				&& (calendRuleVO.getTuesday1().booleanValue())) {
+			ruleSet2.add(Integer.valueOf(3));
+		}
+		if ((calendRuleVO.getWednesday1() != null)
+				&& (calendRuleVO.getWednesday1().booleanValue())) {
+			ruleSet2.add(Integer.valueOf(4));
+		}
+		if ((calendRuleVO.getThursday1() != null)
+				&& (calendRuleVO.getThursday1().booleanValue())) {
+			ruleSet2.add(Integer.valueOf(5));
+		}
+		if ((calendRuleVO.getFriday1() != null)
+				&& (calendRuleVO.getFriday1().booleanValue())) {
+			ruleSet2.add(Integer.valueOf(6));
+		}
+		if ((calendRuleVO.getSaturday1() != null)
+				&& (calendRuleVO.getSaturday1().booleanValue())) {
+			ruleSet2.add(Integer.valueOf(7));
+		}
+	}
+
+	private boolean isWorkingDay(UFLiteralDate date) {
+		int week = date.getWeek() + 1;
+
+		if (ruleSet.contains(Integer.valueOf(week))) {
+			return false;
+		}
+		return true;
+	}
+	//isOffDay 例假日
+	private boolean isOffDay(UFLiteralDate date) {
+		int week = date.getWeek() + 1;
+
+		if (ruleSet2.contains(Integer.valueOf(week))) {
+			return false;
+		}
+		return true;
+	}
+}

@@ -1,0 +1,32 @@
+package nc.itf.twhr;
+
+import nc.ui.querytemplate.querytree.IQueryScheme;
+import nc.vo.twhr.twhr_declaration.AggDeclarationVO;
+import nc.vo.pub.BusinessException;
+
+public interface ITwhr_declarationMaintain {
+
+	public void delete(AggDeclarationVO[] clientFullVOs,
+			AggDeclarationVO[] originBills) throws BusinessException;
+
+	public AggDeclarationVO[] insert(AggDeclarationVO[] clientFullVOs,
+			AggDeclarationVO[] originBills) throws BusinessException;
+
+	public AggDeclarationVO[] update(AggDeclarationVO[] clientFullVOs,
+			AggDeclarationVO[] originBills) throws BusinessException;
+
+	public AggDeclarationVO[] query(IQueryScheme queryScheme)
+			throws BusinessException;
+
+	public AggDeclarationVO[] save(AggDeclarationVO[] clientFullVOs,
+			AggDeclarationVO[] originBills) throws BusinessException;
+
+	public AggDeclarationVO[] unsave(AggDeclarationVO[] clientFullVOs,
+			AggDeclarationVO[] originBills) throws BusinessException;
+
+	public AggDeclarationVO[] approve(AggDeclarationVO[] clientFullVOs,
+			AggDeclarationVO[] originBills) throws BusinessException;
+
+	public AggDeclarationVO[] unapprove(AggDeclarationVO[] clientFullVOs,
+			AggDeclarationVO[] originBills) throws BusinessException;
+}

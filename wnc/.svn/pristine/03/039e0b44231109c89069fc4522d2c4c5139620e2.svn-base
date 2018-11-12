@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="gbk"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+	<bean id="general" class="nc.pubapp.pade.code.funnode.FunNodePara">
+        <property name="moduleName" value="twhr" />
+	    <property name="bpfPath" value="test.bpf" />
+	    <property name="funcode" value="68861025"/>
+	    <property name="funNodeName" value="rangetable"/>
+	    <property name="clientPackName" value="nc.ui.twhr.rangetable"/>
+			  		<property name="dbilldDate" value="Doctime" />
+			    <property name="metaData" value="rangetable\METADATA\rangetable.bmf" />
+	    <property name="xmlPath" value="rangetable\src\client\nc\ui\twhr\rangetable\ace\view\Rangetable_config.xml" />
+	    <property name="metaDataType" value="multiType" />
+	    <property name="funcregispath" value="rangetable/funcmodel/rangetable/funcregis/68861025.func" />
+	    <property name="quetempath" value="rangetable/templet/rangetable/querytemplet/68861025.qtf" />
+	    <property name="printtempath" value="rangetable/templet/rangetable/outtemplet/68861025.otf" />
+	    <property name="systembasepath" value="rangetable/systemplatebase/rangetable/68861025/68861025.stb" />
+	    <property name="extendSuffix" value=""/>
+	    <property name="uif2ModelFilePath" value="rangetable\ace\uif2model\68861025.umf"/>
+	    <property name="busiCompName" value="rangetable"/>
+	    <property name="metaDataId" value="c1aba202-c319-41d7-9225-b4622f59ee93"/>
+	</bean>
+	
+	<bean id="templet" class="nc.pubapp.pade.code.funnode.Templet">
+	    <property name="tempStyle" value="2" />
+	    <property name="nodeKey" value="" />
+		<property name="templetPath" value="rangetable/templet/rangetable/billtemplet/68861025.btf" />
+	</bean>
+
+	<bean id="BAEHpara" class="nc.pubapp.pade.code.funnode.BodyAfterEditHandlerPara">
+		<property name="itemList">
+			<list>
+							</list>
+		</property>
+	</bean>
+
+	<bean id="BBEHpara" class="nc.pubapp.pade.code.funnode.BodyBeforeEditHandlerPara">
+		<property name="itemList">
+			<list>
+							</list>
+		</property>
+	</bean>
+	
+	<bean id="HTBEHpara" class="nc.pubapp.pade.code.funnode.HeadTailBeforeEditHandlerPara">
+	</bean>
+	
+	<bean id="HTAEHpara" class="nc.pubapp.pade.code.funnode.HeadTailAfterEditHandlerPara">
+	</bean>
+	
+	<bean id="SerPropara" class="nc.pubapp.pade.code.funnode.ServiceProxyPara">
+				<property name="delete">
+			<bean class="nc.pubapp.pade.code.funnode.ServiceProxyItemPara">
+				<property name="fullClassName" value="nc.itf.twhr.IRangetableMaintain" />
+				<property name="itmClassName" value=".IRangetableMaintain" />
+				<property name="methodName" value="delete" />
+			</bean>
+		</property>
+				<property name="insert">
+			<bean class="nc.pubapp.pade.code.funnode.ServiceProxyItemPara">
+				<property name="fullClassName" value="nc.itf.twhr.IRangetableMaintain" />
+				<property name="itmClassName" value=".IRangetableMaintain" />
+				<property name="methodName" value="insert" />
+			</bean>
+		</property>
+				<property name="update">
+			<bean class="nc.pubapp.pade.code.funnode.ServiceProxyItemPara">
+				<property name="fullClassName" value="nc.itf.twhr.IRangetableMaintain" />
+				<property name="itmClassName" value=".IRangetableMaintain" />
+				<property name="methodName" value="update" />
+			</bean>
+		</property>
+					<property name="queryByQueryScheme">
+			<bean class="nc.pubapp.pade.code.funnode.ServiceProxyItemPara">
+				<property name="fullClassName" value="nc.itf.twhr.IRangetableMaintain" />
+				<property name="itmClassName" value=".IRangetableMaintain" />
+				<property name="methodName" value="query" />
+			</bean>
+		</property>
+				</bean>
+	
+	<bean id="FilePackNameBean" class="nc.pubapp.pade.code.engine.FilePackNamePara">
+    	<property name="filePackNameList">
+	    	<list>
+							       <value>nc.ui.twhr.rangetable.ace.serviceproxy.AceRangetableDeleteProxy.java</value>
+			    			       <value>nc.ui.twhr.rangetable.handler.OrgChangedHandler.java</value>
+			       <value>nc.ui.twhr.rangetable.ace.handler.AceAddHandler.java</value>
+			       <value>nc.ui.twhr.rangetable.ace.handler.AceBodyAfterEditHandler.java</value>
+			       <value>nc.ui.twhr.rangetable.ace.handler.AceBodyBeforeEditHandler.java</value>
+			       <value>nc.ui.twhr.rangetable.ace.handler.AceHeadTailAfterEditHandler.java</value>
+			       <value>nc.ui.twhr.rangetable.ace.handler.AceHeadTailBeforeEditHandler.java</value>
+			       <value>nc.ui.twhr.rangetable.ace.handler.AceOrgChangedHandler.java</value>
+			       <value>nc.ui.twhr.rangetable.ace.serviceproxy.AceRangetableMaintainProxy.java</value>
+			       <value>nc.ui.twhr.rangetable.action.RangetableAddAction.java</value>
+			       <value>nc.ui.twhr.rangetable.action.RangetableDeleteAction.java</value>
+			       <value>nc.ui.twhr.rangetable.action.RangetableEditAction.java</value>
+			       <value>nc.ui.twhr.rangetable.action.CopyActionProcessor.java</value>
+			     			       <value>nc.ui.twhr.rangetable.query.RangetableQueryConditionInitializer.java</value>
+		     </list>
+	   </property>
+	</bean>
+
+</beans>

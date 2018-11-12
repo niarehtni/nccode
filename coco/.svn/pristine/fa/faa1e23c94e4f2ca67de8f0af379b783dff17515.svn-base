@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding='UTF-8'?>
+<UIMeta flowmode="true" id="main_um" jquery="0">
+    <FlowvLayout autoFill="0" id="flowvlayout5576" widgetId="main">
+    	<FlowvPanel id="panelv07192" widgetId="main">
+            <CanvasLayout className="rightcanvas" id="menucanvas" widgetId="main">
+                <CanvasPanel id="canvasp1" widgetId="main">
+                    <Menubar height="100%" id="menu_list" left="0" position="relative" top="0" widgetId="main" width="100%">
+                    </Menubar>
+                </CanvasPanel>
+            </CanvasLayout>
+        </FlowvPanel>
+        <FlowvPanel height="100%" id="panelv05576" widgetId="main">
+            <PanelLayout i18nName="w_ta-000150" langDir="node_ta-res" borderWidth="1px" display="0" height="100%" id="panellayout1031" left="0" paddingBottom="1" paddingLeft="1" paddingRight="1" paddingTop="1" roundRect="1" scroll="1" title="休假类别" top="0" transparent="1" visibility="1" widgetId="main" width="100" withBorder="1">
+                <PanelPanel id="panelpanel1031" widgetId="main">
+                    <HtmlContent height="100%" id="htmlcontent3805" left="0" position="relative" top="0" widgetId="main" width="100%">
+                    </HtmlContent>
+                </PanelPanel>
+            </PanelLayout>
+        </FlowvPanel>
+        <FlowvPanel id="panelv15576" widgetId="main">
+            <GridComp height="100%" id="tblLeavebalance" left="0" position="relative" top="0" widgetId="main" width="100%">
+            </GridComp>
+        </FlowvPanel>
+    </FlowvLayout>
+</UIMeta>

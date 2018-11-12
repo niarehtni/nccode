@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="gbk"?>
+<component conRouterType="手动" createIndustry="0" createTime="2011-11-11 15:44:21" creator="" description="" displayName="rangetable" fromSourceBmf="true" gencodestyle="NC传统样式" help="" id="eeaed962-68c1-495d-9a15-2509bcce7dc3" industry="0" industryChanged="false" industryIncrease="false" industryName="基础行业" isSource="false" isbizmodel="true" mainEntity="" modifier="" modifyIndustry="0" modifyTime="2012-06-26 20:43:55" name="rangetable" namespace="twhr" ownModule="twhr" preLoad="false" resModuleName="rangetable" resid="" version="54" versionType="0">
+    <celllist>
+        <opinterface componentID="eeaed962-68c1-495d-9a15-2509bcce7dc3" createIndustry="0" createTime="2011-11-11 15:44:24" creator="" description="" displayName="操作接口" fullClassName="nc.itf.twhr.IRangetableMaintain" height="155" help="" id="61b7e1bf-627a-45f9-a166-59f0555b22b3" implClsName="nc.impl.twhr.RangetableMaintainImpl" industryChanged="false" isAuthorization="true" isBusiActivity="false" isBusiOperation="false" isSource="false" modifier="" modifyIndustry="0" modifyTime="2012-06-26 20:43:55" name="OpInterface" remote="true" resid="" singleton="true" transprop="NONE" version="" versionType="0" visibility="public" width="136" x="68" y="52">
+            <operationlist>
+                   <operation dataTypeStyle="SINGLE" defclassname="" displayName="删除" forBusinessEntity="N" help="" id="4a5eb867-d331-4a23-8f31-82e170d74cc1" isAggVOReturn="false" isBusiActivity="false" methodException="nc.vo.pub.BusinessException" name="delete" opItfID="61b7e1bf-627a-45f9-a166-59f0555b22b3" ownerElementID="61b7e1bf-627a-45f9-a166-59f0555b22b3" transKind="REQUIRED" versionType="0" visibility="public">
+                    <paramlist>
+                        <parameter dataType="c1aba202-c319-41d7-9225-b4622f59ee93" dataTypeStyle="ARRAY" dbtype="" description="" displayName="vo" isAggVO="true" name="vo" operationID="4a5eb867-d331-4a23-8f31-82e170d74cc1" paramTypeForLog="7" paramdefclassname="" sequence="0" typeDisplayName="级距表" typeName="rangetable" versionType="0"/>
+                    </paramlist>
+                </operation>
+                <operation dataType="c1aba202-c319-41d7-9225-b4622f59ee93" dataTypeStyle="ARRAY" dbtype="" defclassname="" displayName="增加" forBusinessEntity="N" help="" id="92fe1a76-9083-4b2e-8c58-98b1927e0c17" isAggVOReturn="true" isBusiActivity="false" methodException="nc.vo.pub.BusinessException" name="insert" opItfID="61b7e1bf-627a-45f9-a166-59f0555b22b3" ownerElementID="61b7e1bf-627a-45f9-a166-59f0555b22b3" transKind="REQUIRED" typeDisplayName="级距表" typeName="rangetable" versionType="0" visibility="public">
+                    <paramlist>
+                        <parameter dataType="c1aba202-c319-41d7-9225-b4622f59ee93" dataTypeStyle="ARRAY" dbtype="" description="" displayName="vo" isAggVO="true" name="vo" operationID="92fe1a76-9083-4b2e-8c58-98b1927e0c17" paramTypeForLog="7" paramdefclassname="" sequence="0" typeDisplayName="级距表" typeName="rangetable" versionType="0"/>
+                    </paramlist>
+                </operation>
+                <operation dataType="c1aba202-c319-41d7-9225-b4622f59ee93" dataTypeStyle="ARRAY" dbtype="" defclassname="" displayName="修改" forBusinessEntity="N" help="" id="2b836166-57e8-49bb-ba02-9e2b1c8451c6" isAggVOReturn="true" isBusiActivity="false" methodException="nc.vo.pub.BusinessException" name="update" opItfID="61b7e1bf-627a-45f9-a166-59f0555b22b3" ownerElementID="61b7e1bf-627a-45f9-a166-59f0555b22b3" transKind="REQUIRED" typeDisplayName="级距表" typeName="rangetable" versionType="0" visibility="public">
+                    <paramlist>
+                        <parameter dataType="c1aba202-c319-41d7-9225-b4622f59ee93" dataTypeStyle="ARRAY" dbtype="" description="" displayName="vo" isAggVO="true" name="vo" operationID="2b836166-57e8-49bb-ba02-9e2b1c8451c6" paramTypeForLog="7" paramdefclassname="" sequence="0" typeDisplayName="级距表" typeName="rangetable" versionType="0"/>
+                    </paramlist>
+                </operation>
+                   <operation dataType="c1aba202-c319-41d7-9225-b4622f59ee93" dataTypeStyle="ARRAY" dbtype="" defclassname="" displayName="查询" forBusinessEntity="N" help="" id="2e2cd8f6-fdf2-4104-8785-616d5e0f7c18" isAggVOReturn="true" isBusiActivity="false" methodException="nc.vo.pub.BusinessException" name="queryByQueryScheme" opItfID="61b7e1bf-627a-45f9-a166-59f0555b22b3" ownerElementID="61b7e1bf-627a-45f9-a166-59f0555b22b3" transKind="REQUIRED" typeDisplayName="级距表" typeName="rangetable" versionType="0" visibility="public">
+                    <paramlist>
+                        <parameter dataType="BS000010000100001056" dataTypeStyle="SINGLE" dbtype="varchar" description="" displayName="queryScheme" isAggVO="false" name="queryScheme" operationID="2e2cd8f6-fdf2-4104-8785-616d5e0f7c18" paramTypeForLog="7" paramdefclassname="nc.ui.querytemplate.querytree.IQueryScheme" sequence="0" typeDisplayName="自定义项" typeName="CUSTOM" versionType="0"/>
+                    </paramlist>
+                </operation>
+            </operationlist>
+            <opImpllist>
+                <opItfImpl createTime="2011-11-19 11:27:58" creator="" description="" displayName="实现类" fullClassName="nc.impl.twhr.RangetableMaintainImpl" id="3f50d6d8-2157-4623-807e-42061a357a90" name="Maintain" ownerElementID="61b7e1bf-627a-45f9-a166-59f0555b22b3" tag="" type="" versionType="0"/>
+            </opImpllist>
+        </opinterface>
+    </celllist>
+    <connectlist/>
+    <refdepends/>
+    <refdependLoseIDs/>
+    <cellRemoveLog/>
+    <rulers>
+        <ruler isHorizontal="true" unit="0">
+            <guideList/>
+        </ruler>
+        <ruler isHorizontal="false" unit="0">
+            <guideList/>
+        </ruler>
+    </rulers>
+</component>

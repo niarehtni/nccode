@@ -1,0 +1,1 @@
+UPDATE MD_PROPERTY SET ATTRLENGTH = 10, DATATYPE = 'BS000010000100001039' where classid = (select id from md_class where defaulttablename = 'hi_psndoc_glbdef1') and name in ('glbdef14', 'glbdef15');

@@ -1,0 +1,200 @@
+package nc.pubitf.ta.overtime;
+
+import java.util.Map;
+
+import nc.vo.pub.BusinessException;
+import nc.vo.pub.lang.UFDouble;
+import nc.vo.pub.lang.UFLiteralDate;
+import nc.vo.ta.leave.LeaveRegVO;
+import nc.vo.ta.overtime.OvertimeRegVO;
+import nc.vo.ta.overtime.QueryValueTypeEnum;
+
+public interface ISegDetailService {
+	/**
+	 * 註冊加班分段明細（批量）
+	 * 
+	 * 業務邏輯：根據給定的加班登記單對象集合，逐個註冊加班分段明細節點 增加加班分段明細時，父節點的判斷：小於等於當前節點編碼的最近一個節點，
+	 * 如新節點編碼不存在，則新增節點，並鏈接原父節點後續節點（更新父節點PK為當前父節點PK的節點之父節點PK=當前節點PK）
+	 * 
+	 * @param overtimeRegVOs
+	 *            加班登記單數組
+	 * @throws BusinessException
+	 */
+	public void regOvertimeSegDetail(OvertimeRegVO[] overtimeRegVOs)
+			throws BusinessException;
+
+	/**
+	 * 註冊加班分段核銷記錄（批量）
+	 * 
+	 * 業務邏輯：根據給定的休假登記單對象集合，逐個註冊加班分段核銷記錄，
+	 * 休假登記註冊時，根據SegDetailAggVO在運行時構造轉補休、未作廢、未核銷完成、未結算、核銷剩餘時數>0的快捷訪問單向鏈表（用於快速核銷）
+	 * 休假登記保存時發生核銷動作
+	 * ，只核銷加班轉調休類的單據，核銷時使用快捷訪問單向鏈表按節點序號由小到大進行逐個核銷，並重新計算已核銷時數及金額、核銷剩餘時數及金額
+	 * 、更新是否核銷完成
+	 * 
+	 * 
+	 * @param leaveRegVOs
+	 *            休假登記單數組
+	 * @throws BusinessException
+	 */
+	public void regOvertimeSegDetailConsume(LeaveRegVO[] leaveRegVOs)
+			throws BusinessException;
+
+	/**
+	 * 按起迄時間計算時間段內應稅加班時數及應稅加班薪資（批量）
+	 * 
+	 * 業務邏輯：根據給定的員工及時間範圍，以及考勤規則上的加班一個月/三個月的限制，超限部分做為應稅加班費，限內部分作為免稅加班費返回
+	 * 
+	 * @param pk_psndocs
+	 *            計算員工數組
+	 * @param startDate
+	 *            開始日期
+	 * @param endDate
+	 *            結束日期
+	 * @return Map.Key=員工PK，Map.Value=UFDoube[0]:免稅加班費合計金額，UFDouble[1]:應稅加班費合計金額
+	 * @throws BusinessException
+	 */
+	Map<String, UFDouble[]> calculateTaxableByDate(String[] pk_psndocs,
+			UFLiteralDate startDate, UFLiteralDate endDate)
+			throws BusinessException;
+
+	/**
+	 * 按給定固定時薪及起迄時間結算（批量）
+	 * 
+	 * 業務邏輯：根據給定的員工時薪及時間範圍，以及考勤規則上的加班一個月/三個月的限制，超限部分做為應稅加班費，限內部分作為免稅加班費返回
+	 * 
+	 * @param psnFixSalary
+	 *            員工固定時薪集合
+	 * @param startDate
+	 *            開始日期
+	 * @param endDate
+	 *            結束日期
+	 * @return Map.Key=員工PK，Map.Value=UFDoube[0]:免稅加班費合計金額，UFDouble[1]:應稅加班費合計金額
+	 * @throws BusinessException
+	 */
+	Map<String, UFDouble[]> settleByFixSalary(
+			Map<String, UFDouble> psnFixSalary, UFLiteralDate startDate,
+			UFLiteralDate endDate) throws BusinessException;
+
+	/**
+	 * 按考勤期間計算時間段內免稅加班金額（批量）
+	 * 
+	 * 業務邏輯：根據給定的員工及時間範圍，以及考勤規則上的加班一個月/三個月的限制，限定內部分作為免稅加班費返回
+	 * 
+	 * @param pk_psndocs
+	 *            計算員工數組
+	 * @param cyear
+	 *            考勤年度
+	 * @param cperiod
+	 *            考勤期間
+	 * @return Map.Key=員工PK，Map.Value=免稅加班費合計金額
+	 * @throws BusinessException
+	 */
+	Map<String, UFDouble> calculateTaxFreeAmountByPeriod(String[] pk_psndocs,
+			String cyear, String cperiod) throws BusinessException;
+
+	/**
+	 * 按考勤期間計算時間段內應稅加班金額（批量）
+	 * 
+	 * 業務邏輯：根據給定的員工及時間範圍，以及考勤規則上的加班一個月/三個月的限制，超限部分做為應稅加班費
+	 * 
+	 * @param pk_psndocs
+	 *            計算員工數組
+	 * @param cyear
+	 *            考勤年度
+	 * @param cperiod
+	 *            考勤期間
+	 * @return Map.Key=員工PK，Map.Value=應稅加班費合計金額
+	 * @throws BusinessException
+	 */
+	Map<String, UFDouble> calculateTaxableAmountByPeriod(String[] pk_psndocs,
+			String cyear, String cperiod) throws BusinessException;
+
+	/**
+	 * 按考勤期間計算時間段內免稅加班金額及應稅加班薪資（批量）
+	 * 
+	 * 業務邏輯：根據給定的員工及時間範圍，以及考勤規則上的加班一個月/三個月的限制，超限部分做為應稅加班費，限內部分作為免稅加班費返回
+	 * 
+	 * @param pk_psndocs
+	 *            計算員工數組
+	 * @param startDate
+	 *            考勤年度
+	 * @param endDate
+	 *            考勤期間
+	 * @return Map.Key=員工PK，Map.Value=UFDoube[0]:免稅加班費合計金額，UFDouble[1]:應稅加班費合計金額
+	 * @throws BusinessException
+	 */
+	Map<String, UFDouble[]> calculateOvertimeAmountByPeriod(
+			String[] pk_psndocs, UFLiteralDate startDate, UFLiteralDate endDate)
+			throws BusinessException;
+
+	/**
+	 * 根據日期、員工及時薪(時點薪資)匯總計算日加班金額（批量）
+	 * 
+	 * 業務邏輯：根據給定的日期、員工及日薪對照，取加班登記單（加班轉調休=includeOT2Holiday），匯總(加班分段費率*時薪)
+	 * 
+	 * @param psnDailyPays
+	 *            加班員工時薪集合，Map.Key=員工PK，Map.Value=(Map.Key=加班日期,
+	 *            Map.Value=加班當日時薪)
+	 * @param includeOT2Holiday
+	 *            是否包含加班轉調休的加班登記
+	 * @return Map.Key=員工PK，Map.Value=(Map.Key=加班日期, Map.Value=加班費當日合計)
+	 * @throws BusinessException
+	 */
+	public Map<String, Map<UFLiteralDate, UFDouble>> sumOvertimeFeeByPsnDate(
+			Map<String, Map<UFLiteralDate, UFDouble>> psnDailyPays,
+			boolean includeOT2Holiday) throws BusinessException;
+
+	/**
+	 * 根據起迄日期、員工匯總外加補休天數（批量）
+	 * 
+	 * 業務邏輯：根據給定的起迄日期及人員範圍，查詢該時間段內所有引用了加班分段依據的加班登記單，匯總外加補休天數
+	 * 
+	 * @param startDate
+	 *            開始日期
+	 * @param endDate
+	 *            截止日期
+	 * @param pk_psndocs
+	 *            加班員工PK數組
+	 * @return Map.Key=員工PK，Map.Value=時間段內外加補休天數匯總
+	 * @throws BusinessException
+	 */
+	public Map<String, UFDouble> sumAdditionalHolidayes(
+			UFLiteralDate startDate, UFLiteralDate endDate, String[] pk_psndocs)
+			throws BusinessException;
+
+	/**
+	 * 根據考勤期間、員工匯總外加補休天數（批量）
+	 * 
+	 * 業務邏輯：根據給定的考勤年及期間，取出該期間下所有日期，並同人員PK數組調用方法4，並返回方法4結果
+	 * 
+	 * @param cyear
+	 *            考勤年份
+	 * @param cperiod
+	 *            考勤期間編號
+	 * @param pk_psndocs
+	 *            加班員工PK數組
+	 * @return Map.Key=員工PK，Map.Value=考勤期間內外加補休天數匯總
+	 * @throws BusinessException
+	 */
+	public Map<String, UFDouble> sumAdditionalHolidayes(String cyear,
+			String cperiod, String[] pk_psndocs) throws BusinessException;
+
+	/**
+	 * 根據人員及加班日期取加班時長
+	 * 
+	 * 業務邏輯：根據給定的人員及加班日期取加班時長
+	 * 
+	 * @param pk_psndocs
+	 *            人員PK數組
+	 * @param overtimeDate
+	 *            加班日期
+	 * @return MAP<pk_psndoc,MAP<参数类型,数值> 参数类型：加班時長(overtime)
+	 *         平日加班时长(dailyovertime)休息日加班時長(restovertime)
+	 *         國定假日加班時長(holidayovertime)加班費(overtimesalary)
+	 */
+	Map<String, Map<QueryValueTypeEnum, UFDouble>> getOvertimeHours(
+			String[] pk_psndocs, UFLiteralDate overtimeDate)
+			throws BusinessException;
+
+}

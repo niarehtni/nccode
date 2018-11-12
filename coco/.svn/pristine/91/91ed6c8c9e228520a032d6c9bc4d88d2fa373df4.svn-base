@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding='UTF-8'?>
+<UIMeta flowmode="false" id="reglist_um" jquery="0" preferredHeight="0" preferredWidth="0">
+    <FlowvLayout autoFill="false" id="flowhlayout0763" widgetId="reglist">
+        <FlowvPanel id="panelv00762" widgetId="reglist" height="40" width="300">
+               <FlowhLayout id="flowhlayout09031" widgetId="reglist">
+	        	 	<FlowhPanel id="panelh109012" widgetId="reglist" width="65%">
+	        	 		 <FormComp height="35" id="frmpsninfo" label_position="" left="0" position="relative" top="0" widgetId="reglist" width="100%">
+	             		 </FormComp>
+	        	 	</FlowhPanel>
+	        	 	<FlowhPanel id="panelh109013" widgetId="reglist">
+	        	 	</FlowhPanel>
+        	 	</FlowhLayout>
+        </FlowvPanel>
+        <FlowvPanel id="panelv00763" widgetId="reglist" height="310">
+            <GridComp height="100%" id="grdLeaveRegList" left="0" position="relative" top="0" widgetId="reglist" width="100%">
+            </GridComp>
+        </FlowvPanel>
+        <FlowvPanel id="panelv00764" widgetId="reglist" height="25">
+           <FlowhLayout id="flowhlayout0903" widgetId="reglist">
+        	 	<FlowhPanel id="panelh10901" widgetId="reglist">
+        	 	</FlowhPanel>
+        	 	<FlowhPanel id="panelh10902" widgetId="reglist" width="70">
+                    <Button height="23" id="btnConfirm"  className="blue_button_div" left="0" position="relative" top="0" widgetId="reglist" width="70">
+                    </Button>        	 		
+        	 	</FlowhPanel>
+               <FlowhPanel id="panelh10903" widgetId="reglist" width="10">
+                </FlowhPanel>
+        	 	<FlowhPanel id="panelh10904" widgetId="reglist" width="70">
+                    <Button height="23" id="btnCancel" left="0" position="relative" top="0" widgetId="reglist" width="70">
+                    </Button>
+        	 	</FlowhPanel>
+        	 	<FlowhPanel id="panelh10905" widgetId="reglist" width="10">
+                </FlowhPanel>
+        	 </FlowhLayout>
+        </FlowvPanel>
+    </FlowvLayout>
+</UIMeta>

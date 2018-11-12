@@ -1,0 +1,195 @@
+package nc.vo.hi.psndoc;
+
+import java.lang.reflect.Array;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import nc.hr.utils.PubEnv;
+import nc.vo.annotation.AggVoInfo;
+import nc.vo.pub.CircularlyAccessibleValueObject;
+import nc.vo.pub.SuperVO;
+import nc.vo.trade.pub.HYBillVO;
+import nc.vo.trade.pub.IExAggVO;
+
+import org.apache.commons.lang.ArrayUtils;
+
+@AggVoInfo(parentVO = "nc.vo.hi.psndoc.PsndocVO")
+public class PsndocAggVO extends HYBillVO implements IExAggVO {
+	public static final String DATA_FROM = "data_from";
+	public static final String DATA_FROM_IMPORT = "data_from_import";
+
+	public static boolean isBusinessSet(String infoset, String pk_group) {
+		Map<String, String> mapInfoset = new HashMap();
+		mapInfoset.put("hi_psndoc_ctrt", "6011");
+		mapInfoset.put("hi_psndoc_capa", "6004");
+		mapInfoset.put("hi_psndoc_ass", "6029");
+		mapInfoset.put("hi_psndoc_qulify", "6019");
+		mapInfoset.put("hi_psndoc_train", "6025");
+		if (hashBusinessInfoSet.contains(infoset)) {
+
+			if ((mapInfoset.keySet().contains(infoset))
+					&& (!PubEnv.isModuleStarted(pk_group,
+							(String) mapInfoset.get(infoset)))) {
+				return false;
+			}
+
+			return true;
+		}
+
+		return false;
+	}
+
+	public static final HashSet<String> hashBusinessInfoSet = new HashSet() {
+	};
+
+	public static final HashSet<String> hashPsnJobInfoSet = new HashSet() {
+	};
+
+	public static final ArrayList<Class<? extends SuperVO>> listBusinessInfoSetClass = new ArrayList() {
+	};
+
+	private static final long serialVersionUID = -1954147816664582721L;
+
+	private HashMap<String, SuperVO[]> hashTableVO = new HashMap();
+
+	private PsndocVO psndocVO;
+
+	public void clearTableVO(String strTabCode) {
+		if (strTabCode == null) {
+			hashTableVO.clear();
+		} else {
+			hashTableVO.put(strTabCode, null);
+		}
+	}
+
+	public Object clone() {
+		PsndocAggVO hrAggVO = new PsndocAggVO();
+		if (hashTableVO != null) {
+			hrAggVO.hashTableVO = ((HashMap) hashTableVO.clone());
+		}
+		if (psndocVO != null) {
+			hrAggVO.setParentVO((PsndocVO) psndocVO.clone());
+		}
+		return hrAggVO;
+	}
+
+	private <T extends SuperVO> SuperVO[] dealWithSubVO(Class T, T[] chgVOs,
+			T[] tableVO) {
+		List<T> listDeleted = new ArrayList();
+		for (int j = 0; (tableVO != null) && (j < tableVO.length); j++) {
+			listDeleted.add(tableVO[j]);
+		}
+		for (int j = 0; j < chgVOs.length; j++) {
+			if (chgVOs[j].getStatus() == 3) {
+				listDeleted.add(chgVOs[j]);
+			}
+		}
+
+		return (SuperVO[]) listDeleted.toArray((SuperVO[]) Array.newInstance(T,
+				0));
+	}
+
+	public SuperVO[] getAllChildrenVO() {
+		List<SuperVO> listVO = new ArrayList();
+		for (Iterator iterator = hashTableVO.values().iterator(); iterator
+				.hasNext();) {
+			SuperVO[] superVOs = (SuperVO[]) iterator.next();
+			listVO.addAll(Arrays.asList(superVOs));
+		}
+		return (SuperVO[]) listVO.toArray(new SuperVO[listVO.size()]);
+	}
+
+	public SuperVO[] getChildrenVO() {
+		return null;
+	}
+
+	public SuperVO[] getChildVOsByParentId(String tableCode, String parentid) {
+		return null;
+	}
+
+	public String getDefaultTableCode() {
+		return null;
+	}
+
+	public HashMap getHmEditingVOs() throws Exception {
+		return null;
+	}
+
+	public String getParentId(SuperVO item) {
+		return getParentVO().getPrimaryKey();
+	}
+
+	public PsndocVO getParentVO() {
+		return psndocVO;
+	}
+
+	public String[] getTableCodes() {
+		Set<String> keySet = hashTableVO.keySet();
+		return (String[]) keySet.toArray(new String[keySet.size()]);
+	}
+
+	public String[] getTableNames() {
+		return getTableCodes();
+	}
+
+	public SuperVO[] getTableVO(String strTableCode) {
+		return (SuperVO[]) hashTableVO.get(strTableCode);
+	}
+
+	public void mergeDeletedAggVO(PsndocAggVO changedAggVO) {
+		SuperVO[] allChildrenVO = null;
+		if ((changedAggVO == null)
+				|| ((allChildrenVO = changedAggVO.getAllChildrenVO()) == null)
+				|| (allChildrenVO.length == 0)) {
+			return;
+		}
+		String[] strTabCodes = getTableCodes();
+		String[] strChangedTabCodes = changedAggVO.getTableCodes();
+		for (int i = 0; i < strTabCodes.length; i++) {
+			if (!ArrayUtils.contains(strChangedTabCodes, strTabCodes[i])) {
+				setTableVO(strTabCodes[i], null);
+			}
+		}
+		for (int i = 0; i < strChangedTabCodes.length; i++) {
+			SuperVO[] chgVOs = changedAggVO.getTableVO(strChangedTabCodes[i]);
+			if ((chgVOs != null) && (chgVOs.length != 0)) {
+
+				Class curClass = chgVOs[0].getClass();
+
+				SuperVO[] subVOs = dealWithSubVO(curClass, chgVOs,
+						getTableVO(strChangedTabCodes[i]));
+				if ((subVOs != null) && (subVOs.length > 0)) {
+					setTableVO(strChangedTabCodes[i], subVOs);
+				}
+			}
+		}
+	}
+
+	public void setChildrenVO(CircularlyAccessibleValueObject[] children) {
+		if (children == null) {
+			hashTableVO = new HashMap<String, SuperVO[]>(1);
+		}
+	}
+
+	public void setParentId(SuperVO item, String id) {
+	}
+
+	public void setParentVO(CircularlyAccessibleValueObject parent) {
+		psndocVO = ((PsndocVO) parent);
+	}
+
+	public void setTableVO(String strTableCode,
+			CircularlyAccessibleValueObject[] values) {
+		if ((values == null) || (values.length == 0)) {
+			hashTableVO.remove(strTableCode);
+			return;
+		}
+		hashTableVO.put(strTableCode, (SuperVO[]) values);
+	}
+}

@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE beans PUBLIC "-//SPRING//DTD BEAN//EN" "http://www.springframework.org/dtd/spring-beans.dtd">
+<beans>
+<bean id="ActionExt_mediator" class="nc.ui.uif2.uiextend.ActionExtPreprocessor"
+  init-method="process">
+  <property name="actionExtList">
+   <list>
+	<!-- bean class="nc.ui.uif2.uiextend.ActionExtInfo">
+		<property name="actionContainer" ref="listViewActions" />
+		<property name="uistate" value="NOTEDIT_STATE" />
+		<property name="targetAction" ref="printActionGroup" /> 
+		<property name="position" value="BEFORE_POSITION" />
+		<property name="extType" value="INSERT_EXTTYPE"	/>
+		<property name="action"	ref="GroupInsCaclAction" />
+	</bean>
+	<bean class="nc.ui.uif2.uiextend.ActionExtInfo">
+		<property name="actionContainer" ref="listViewActions" />
+		<property name="uistate" value="NOTEDIT_STATE" />
+		<property name="targetAction" ref="GroupInsCaclAction" /> 
+		<property name="position" value="AFTER_POSITION" />
+		<property name="extType" value="INSERT_EXTTYPE"	/>
+		<property name="action"	ref="RenewRangeAction" />
+	</bean-->
+	<bean class="nc.ui.uif2.uiextend.ActionExtInfo">
+		<property name="actionContainer" ref="listViewActions" />
+		<property name="uistate" value="NOTEDIT_STATE" />
+		<property name="targetAction" ref="printActionGroup" /> 
+		<property name="position" value="BEFORE_POSITION" />
+		<property name="extType" value="INSERT_EXTTYPE"	/>
+		<property name="action"	ref="RenewRangeAction" />
+	</bean>
+	<bean class="nc.ui.uif2.uiextend.ActionExtInfo">
+		<property name="actionContainer" ref="listViewActions" />
+		<property name="uistate" value="NOTEDIT_STATE" />
+		<property name="targetAction" ref="RenewRangeAction" /> 
+		<property name="position" value="AFTER_POSITION" />
+		<property name="extType" value="INSERT_EXTTYPE"	/>
+		<property name="action"	ref="separatorAction" />
+	</bean>
+   </list>  
+  </property>
+</bean>
+<!-- bean id="GroupInsCaclAction" class="nc.ui.hi.psndoc.action.GroupInsCaclAction">
+	<property name="context" ref="context" />
+	<property name="model" ref="manageAppModel" />
+</bean-->
+<bean id="RenewRangeAction" class="nc.ui.hi.psndoc.action.RenewRangeAction">
+	<property name="context" ref="context" />
+	<property name="model" ref="manageAppModel" />
+</bean>
+</beans>

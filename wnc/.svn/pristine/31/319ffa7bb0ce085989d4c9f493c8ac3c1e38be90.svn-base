@@ -1,0 +1,57 @@
+
+
+CREATE TABLE [dbo].[tbm_leavereg_history] (
+[backtime] nchar(19) NULL ,
+[billsource] smallint NOT NULL DEFAULT ((2)) ,
+[creationtime] nchar(19) NOT NULL ,
+[creator] nchar(20) NOT NULL ,
+[dr] smallint NULL DEFAULT ((0)) ,
+[freezedayorhour] decimal(16,4) NULL DEFAULT ((0)) ,
+[islactation] nchar(1) NOT NULL DEFAULT ('N') ,
+[isleaveoff] nchar(1) NOT NULL DEFAULT ('N') ,
+[lactationholidaytype] smallint NULL ,
+[lactationhour] decimal(16,4) NULL ,
+[leavebegindate] nchar(10) NOT NULL ,
+[leavebegintime] nchar(19) NOT NULL ,
+[leaveenddate] nchar(10) NOT NULL ,
+[leaveendtime] nchar(19) NOT NULL ,
+[leavehour] decimal(16,4) NOT NULL DEFAULT ((0)) ,
+[leaveindex] smallint NOT NULL DEFAULT ((1)) ,
+[leavemonth] nchar(2) NULL ,
+[leaveremark] nvarchar(768) NULL ,
+[leaveyear] nchar(4) NULL ,
+[modifiedtime] nchar(19) NULL ,
+[modifier] nvarchar(20) NULL DEFAULT ('~') ,
+[pk_adminorg] nchar(20) NULL ,
+[pk_agentpsn] nvarchar(20) NULL DEFAULT ('~') ,
+[pk_billsourceb] nvarchar(20) NULL DEFAULT ('~') ,
+[pk_billsourceh] nvarchar(20) NULL DEFAULT ('~') ,
+[pk_dept_v] nchar(20) NULL ,
+[pk_group] nchar(20) NOT NULL ,
+[pk_leavereg] nchar(20) NOT NULL ,
+[pk_leavetype] nchar(20) NOT NULL ,
+[pk_leavetypecopy] nchar(20) NOT NULL ,
+[pk_org] nchar(20) NOT NULL ,
+[pk_org_v] nchar(20) NULL ,
+[pk_psndoc] nchar(20) NOT NULL ,
+[pk_psnjob] nchar(20) NOT NULL ,
+[pk_psnorg] nchar(20) NOT NULL ,
+[realdayorhour] decimal(16,4) NULL DEFAULT ((0)) ,
+[relatetel] nvarchar(50) NULL ,
+[restdayorhour] decimal(16,4) NULL DEFAULT ((0)) ,
+[resteddayorhour] decimal(16,4) NULL ,
+[splitid] nchar(20) NULL ,
+[ts] char(19) NULL DEFAULT (CONVERT([char](19),getdate(),(20))) ,
+[usefuldayorhour] decimal(16,4) NULL ,
+[workprocess] nvarchar(768) NULL ,
+[effectivedate] char(10) NULL ,
+[pk_leavereg_history] nchar(20) NOT NULL ,
+[ischarge] nchar(1) NOT NULL DEFAULT ('N') ,
+[charge] decimal(16,4) NULL DEFAULT ((0)) ,
+[actualcharge]decimal(16,4) NULL DEFAULT ((0))
+)
+
+-- ----------------------------
+-- Primary Key structure for table tbm_leavereg
+-- ----------------------------
+ALTER TABLE [dbo].[tbm_leavereg_history] ADD PRIMARY KEY ([pk_leavereg_history]);

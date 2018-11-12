@@ -1,0 +1,10 @@
+DELETE FROM bd_defdoc WHERE pk_defdoclist = (SELECT pk_defdoclist FROM bd_defdoclist WHERE code = 'TWHR000');
+DELETE FROM bd_defdoclist WHERE code = 'TWHR000';
+
+INSERT INTO bd_defdoclist (associatename, bpfcomponentid, code, codectlgrade, coderule, componentid, creationtime, creator, dataoriginflag, docclass, doclevel, doctype, dr, funcode, isgrade, isrelease, mngctlmode, modifiedtime, modifier, name, name2, name3, name4, name5, name6, pk_defdoclist, pk_group, pk_org, ts) VALUES ('bd_defdoc', 'd470b685-5fc2-11e7-a555-c71e1f695584', 'TWHR000', null, null, 'd38fa53d-5fc2-11e7-a555-c71e1f695584', null, 'NC_USER0000000000000', 0, null, 0, null, 0, null, 'N', 'N', 2, null, '~', '台灣本地化對照表', null, null, null, null, null, 'TWHRA210000000DEFSET', '~', 'GLOBLE00000000000000', null);
+
+INSERT INTO bd_defdoc (code, creationtime, creator, dataoriginflag, datatype, dr, enablestate, innercode, memo, mnecode, modifiedtime, modifier, name, name2, name3, name4, name5, name6, pid, pk_defdoc, pk_defdoclist, pk_group, pk_org, shortname, shortname2, shortname3, shortname4, shortname5, shortname6, ts) 
+SELECT infoset_code, null, 'NC_USER0000000000000', 0, 1, 0, 2, null, null, null, null, null, infoset_name, null, null, null, null, null, '~', replace(pk_infoset, '00000', 'TWDEF'), 'TWHRA210000000DEFSET', (select top 1 pk_group from org_group), (select top 1 pk_group from org_group), null, null, null, null, null, null, null
+FROM hr_infoset WHERE infoset_code like 'hi_psndoc_glbdef%' and dr=0;
+
+INSERT INTO bd_defdoc (code, creationtime, creator, dataoriginflag, datatype, dr, enablestate, innercode, memo, mnecode, modifiedtime, modifier, name, name2, name3, name4, name5, name6, pid, pk_defdoc, pk_defdoclist, pk_group, pk_org, shortname, shortname2, shortname3, shortname4, shortname5, shortname6, ts) VALUES ('bd_psndoc.glbdef4', null, 'NC_USER0000000000000', 0, 1, 0, 2, null, null, null, null, null, '免扣補充保費', null, null, null, null, null, '~', '1001ZZ100000000042UN', 'TWHRA210000000DEFSET', (select top 1 pk_group from org_group), (select top 1 pk_group from org_group), null, null, null, null, null, null, '2017-08-03 12:06:55');

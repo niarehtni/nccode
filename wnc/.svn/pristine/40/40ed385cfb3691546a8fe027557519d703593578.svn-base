@@ -1,0 +1,172 @@
+package nc.itf.ta;
+
+import nc.ui.querytemplate.querytree.FromWhereSQL;
+import nc.vo.hi.psndoc.PsnJobVO;
+import nc.vo.hi.psndoc.PsndocVO;
+import nc.vo.hr.tools.pub.GeneralVO;
+import nc.vo.pub.BusinessException;
+import nc.vo.pub.lang.UFLiteralDate;
+import nc.vo.ta.psncalendar.AggPsnCalendar;
+import nc.vo.ta.psncalendar.PsnJobCalendarVO;
+import nc.vo.ta.psncalendar.QueryScopeEnum;
+
+public interface IPsnCalendarQueryMaintain {
+
+	/**
+	 * 根据开始结束日期，人员条件查询工作日历
+	 * @param pk_hrorg,HR组织主键
+	 * @param beginDate,开始日期
+	 * @param endDate,结束日期
+	 * @param condition
+	 * @return
+	 * @throws BusinessException
+	 */
+	PsnJobCalendarVO[] 
+	queryCalendarVOByCondition(String pk_hrorg,FromWhereSQL fromWhereSQL,UFLiteralDate beginDate,UFLiteralDate endDate) throws BusinessException;
+	
+
+	/**
+	 * 根据开始结束日期、人员主键数组查询工作日历
+	 * @param pk_hrorg
+	 * @param pk_psndocs
+	 * @param beginDate
+	 * @param endDate
+	 * @return
+	 * @throws BusinessException
+	 */
+	PsnJobCalendarVO[] queryCalendarVOByPsndocs(String pk_hrorg,String[] pk_psndocs, UFLiteralDate beginDate, UFLiteralDate endDate)
+			throws BusinessException ;
+	
+	/**
+	 * 根据日期范围，人员条件，以及查询范围查询人员工作日历
+	 * @param pk_hrorg
+	 * @param beginDate
+	 * @param endDate
+	 * @param condition
+	 * @param queryScope，查询范围：所有人员，尚未排班人员，排班完毕人员，部分排班人员
+	 * @return
+	 * @throws BusinessException
+	 */
+	PsnJobCalendarVO[]
+	queryCalendarVOByCondition(String pk_hrorg,
+			FromWhereSQL fromWhereSQL,UFLiteralDate beginDate,UFLiteralDate endDate,QueryScopeEnum queryScope) throws BusinessException;
+	
+	
+	/**
+	 * 根据日期范围，人员条件，以及查询范围查询人员工作日历
+	 * 经理自助使用
+	 * @param pk_dept 部门主键
+	 * @param containsSubDepts 是否包含下级部门
+	 * @param beginDate
+	 * @param endDate
+	 * @param condition
+	 * @param queryScope，查询范围：所有人员，尚未排班人员，排班完毕人员，部分排班人员
+	 * @return
+	 * @throws BusinessException
+	 */
+	PsnJobCalendarVO[]
+	queryCalendarVOByConditionAndDept(String pk_dept,boolean containsSubDepts,
+			FromWhereSQL fromWhereSQL,UFLiteralDate beginDate,UFLiteralDate endDate,QueryScopeEnum queryScope) throws BusinessException;
+	
+	/**
+	 * 根据部门、人员主键、日期范围查询人员工作日历
+	 * 经理自助使用
+	 * @param pk_dept
+	 * @param pk_psndoc
+	 * @param beginDate
+	 * @param endDate
+	 * @return
+	 * @throws BusinessException
+	 */
+	PsnJobCalendarVO
+	                    	queryCalendarVOByConditionAndDept(String pk_dept,String pk_psndoc,UFLiteralDate beginDate,UFLiteralDate endDate) throws BusinessException;
+	
+	/**
+	 * 根据日期范围，人员条件，是否覆盖已有工作日历查询人员，用于循环排班和默认排班选中条件后的人员列表确认
+	 * @param pk_org，isHROrg为true，是HR组织，为false，是业务单元
+	 * @param qs
+	 * @param beginDate
+	 * @param endDate
+	 * @param isOverrideExistCalendar，为true，表示需要覆盖已有工作日历，则查出所有符合条件的人员，为false，
+	 * 表示不覆盖已有工作日历，则只查出日期范围内工作日历不完整的人员，完整的人员不查出来
+	 * @param isHROrg,pk_org是HR组织还是业务单元
+	 * @return，符合条件的人员工作记录，只有任职信息，没有考勤信息和工作日历信息
+	 * @throws BusinessException
+	 */
+	PsnJobVO[] queryPsnJobVOsByConditionAndOverrideOrg(String pk_org,
+			FromWhereSQL fromWhereSQL,UFLiteralDate beginDate,UFLiteralDate endDate,boolean isOverrideExistCalendar,boolean isHROrg) throws BusinessException;
+	/**
+	 * 根据人员基本档案主键，考勤日历日查询工作日历
+	 * @param pk_org
+	 * @param pk_psndoc
+	 * @param date
+	 * @return
+	 * @throws BusinessException
+	 */
+	AggPsnCalendar queryByPsnDate(String pk_psndoc,UFLiteralDate date) throws BusinessException;
+	
+	/**
+	 * 获取导出数据
+	 * @param pk_hrorg
+	 * @param fromWhereSQL
+	 * @param beginDate
+	 * @param endDate
+	 * @return
+	 * @throws BusinessException
+	 */
+	GeneralVO[] getExportDatas(String pk_hrorg, FromWhereSQL fromWhereSQL, UFLiteralDate beginDate, UFLiteralDate endDate,QueryScopeEnum queryScope) throws BusinessException;
+	
+	/**
+	 * 获取导出数据
+	 * @param pk_hrorg
+	 * @param fromWhereSQL
+	 * @param beginDate
+	 * @param endDate
+	 * @return
+	 * @throws BusinessException
+	 */
+	GeneralVO[] getExportDatas(String pk_org,PsnJobCalendarVO[] calendarVOs, UFLiteralDate beginDate, UFLiteralDate endDate) throws BusinessException;
+	
+	/**
+	 * 查询指定部门、条件、日期范围内的人员
+	 * 用于经理自助
+	 * @param pk_dept
+	 * @param containsSunDepts
+	 * @param fromWhereSQL
+	 * @param beginDate
+	 * @param endDate
+	 * @param queryScope
+	 * @return
+	 * @throws BusinessException
+	 */
+	PsndocVO[] queryPsndocVOsByConditionAndDept(String pk_dept,boolean containsSubDepts,FromWhereSQL fromWhereSQL,UFLiteralDate beginDate,UFLiteralDate endDate,QueryScopeEnum queryScope)throws BusinessException;
+	
+	/**
+	 * 根据人员主键日期范围查询工作日历
+	 * 用于员工自助
+	 * @param pk_psndoc
+	 * @param beginDate
+	 * @param endDate
+	 * @return
+	 * @throws BusinessException
+	 */
+	PsnJobCalendarVO queryByPsnDates(String pk_psndoc,UFLiteralDate beginDate,UFLiteralDate endDate)throws BusinessException;
+		
+	/**
+	 * 根据日期范围，人员条件，是否覆盖已有工作日历查询人员，用于循环排班和默认排班选中条件后的人员列表确认
+	 * @param pk_org，isHROrg为true，是HR组织，为false，是业务单元
+	 * @param qs
+	 * @param beginDate
+	 * @param endDate
+	 * @param isOverrideExistCalendar，为true，表示需要覆盖已有工作日历，则查出所有符合条件的人员，为false，
+	 * 表示不覆盖已有工作日历，则只查出日期范围内工作日历不完整的人员，完整的人员不查出来
+	 * @param isHROrg,pk_org是HR组织还是业务单元
+	 * @param businessUnitFlag 是否限定业务单元
+	 * @return，符合条件的人员工作记录，只有任职信息，没有考勤信息和工作日历信息
+	 * @throws BusinessException
+	 */
+	PsnJobVO[] queryPsnJobVOsByConditionAndOverrideOrgWithUnit(String pk_org,
+			FromWhereSQL fromWhereSQL, UFLiteralDate beginDate,
+			UFLiteralDate endDate, boolean override, boolean isHROrg,
+			boolean businessUnitFlag)throws BusinessException;
+}

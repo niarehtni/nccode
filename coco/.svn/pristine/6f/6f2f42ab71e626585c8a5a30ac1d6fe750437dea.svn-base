@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding='UTF-8'?>
+<UIMeta flowmode="true" id="main_um" jquery="0" preferredHeight="0" preferredWidth="0">
+    <FlowvLayout id="flowvlayout5126" widgetId="main">
+        <FlowvPanel id="panelv05126" widgetId="main">
+            <CanvasLayout className="rightcanvas" id="menucanvas" widgetId="main">
+                <CanvasPanel id="canvasp1" widgetId="main">
+                    <Menubar height="100%" id="mymenu" left="0" position="relative" top="0" widgetId="main" width="100%">
+                    </Menubar>
+                </CanvasPanel>
+            </CanvasLayout>
+        </FlowvPanel>
+        <FlowvPanel height="30" id="panelv15126" widgetId="main">
+            <FlowhLayout autoFill="false" id="flowhlayout2280" widgetId="main">
+                <FlowhPanel id="panelh02280" widgetId="main" width="35">
+                    <Image height="17" id="msg_image" left="15" position="relative" top="7" widgetId="main" width="17">
+                    </Image>
+                </FlowhPanel>
+                <FlowhPanel id="panelh12280" widgetId="main">
+                    <Label cssStyle="" family="" height="22" id="editlabel" left="5" position="relative" size="12" style="" textAlign="left" top="7" weight="" widgetId="main" width="80%">
+                    </Label>
+                </FlowhPanel>
+            </FlowhLayout>
+        </FlowvPanel>
+        <FlowvPanel  height="460" id="panelv25126" widgetId="main">
+            <TabLayout currentItem="0" id="tag2905" oneTabHide="true" tabType="top" widgetId="main">
+                <TabItems>
+                    <TabItem active="0" i18nName="w_psninfo-000025" id="UITabItem02905" langDir="hi_nodes" showCloseIcon="false" text="个人信息" widgetId="main">
+                        <FormComp height="100%" id="psninfoForm" label_position="" left="0" position="relative" top="0" widgetId="main" width="100%">
+                        </FormComp>
+                    </TabItem>
+                    <TabItem active="1" i18nName="w_psninfo-000026" id="UITabItem12905" langDir="hi_nodes" showCloseIcon="false" text="工作信息" widgetId="main">
+                        <FormComp height="100%" id="psnjobForm" label_position="" left="0" position="relative" top="0" widgetId="main" width="100%">
+                        </FormComp>
+                    </TabItem>
+                    <TabItem active="1" i18nName="w_psninfo-000027" id="UITabItem22905" langDir="hi_nodes" showCloseIcon="false" text="任职记录" widgetId="main">
+                        <GridComp autoExpand="0" height="100%" id="psnjobinfoGrid" left="0" position="relative" top="0" widgetId="main" width="100%">
+                        </GridComp>
+                    </TabItem>
+                    <TabItem active="1" i18nName="w_psninfo-000028" id="UITabItem212905" langDir="hi_nodes" showCloseIcon="false" text="组织关系" widgetId="main">
+                        <FormComp height="100%" id="psnorgForm" label_position="" left="0" position="relative" top="0" widgetId="main" width="100%">
+                        </FormComp>
+                    </TabItem>
+                    <TabItem active="1" i18nName="w_psninfo-000029" id="UITabItem32905" langDir="hi_nodes" showCloseIcon="false" text="兼职记录" widgetId="main">
+                        <GridComp autoExpand="0" height="100%" id="psnjobpartGrid" left="0" position="relative" top="0" widgetId="main" width="100%">
+                        </GridComp>
+                    </TabItem>
+                    <TabItem active="1" i18nName="w_psninfo-000030" id="UITabItem192905" langDir="hi_nodes" showCloseIcon="false" text="试用情况" widgetId="main">
+                        <GridComp autoExpand="0" height="100%" id="trialGrid" left="0" position="relative" top="0" widgetId="main" width="100%">
+                        </GridComp>
+                    </TabItem>
+                    <TabItem active="1" i18nName="w_psninfo-000031" id="UITabItem162905" langDir="hi_nodes" showCloseIcon="false" text="流动情况" widgetId="main">
+                        <GridComp autoExpand="0" height="100%" id="psnchgGrid" left="0" position="relative" top="0" widgetId="main" width="100%">
+                        </GridComp>
+                    </TabItem>
+                    <TabItem active="1" i18nName="w_psninfo-000032" id="UITabItem42905" langDir="hi_nodes" showCloseIcon="false" text="履历记录" widgetId="main">
+                        <GridComp autoExpand="0" height="100%" id="workinfoGrid" left="0" position="relative" top="0" widgetId="main" width="100%">
+                        </GridComp>
+                    </TabItem>
+                    <TabItem active="1" i18nName="w_psninfo-000033" id="UITabItem52905" langDir="hi_nodes" showCloseIcon="false" text="家庭信息" widgetId="main">
+                        <GridComp autoExpand="0" height="100%" id="familyGrid" left="0" position="relative" top="0" widgetId="main" width="100%">
+                        </GridComp>
+                    </TabItem>
+                    <TabItem active="1" i18nName="w_psninfo-000034" id="UITabItem62905" langDir="hi_nodes" showCloseIcon="false" text="学历信息" widgetId="main">
+                        <GridComp autoExpand="0" height="100%" id="eduinfoGrid" left="0" position="relative" top="0" widgetId="main" width="100%">
+                        </GridComp>
+                    </TabItem>
+                    <TabItem active="1" i18nName="w_psninfo-000035" id="UITabItem72905" langDir="hi_nodes" showCloseIcon="false" text="语言能力" widgetId="main">
+                        <GridComp autoExpand="0" height="100%" id="langabilityGrid" left="0" position="relative" top="0" widgetId="main" width="100%">
+                        </GridComp>
+                    </TabItem>
+                    <TabItem active="1" i18nName="w_psninfo-000036" id="UITabItem82905" langDir="hi_nodes" showCloseIcon="false" text="培训记录" widgetId="main">
+                        <GridComp autoExpand="0" height="100%" id="hi_psndoc_trainGrid" left="0" position="relative" top="0" widgetId="main" width="100%">
+                        </GridComp>
+                    </TabItem>
+                    <TabItem active="1" i18nName="w_psninfo-000037" id="UITabItem92905" langDir="hi_nodes" showCloseIcon="false" text="考核记录" widgetId="main">
+                        <GridComp autoExpand="0" height="100%" id="hi_psndoc_assGrid" left="0" position="relative" top="0" widgetId="main" width="100%">
+                        </GridComp>
+                    </TabItem>
+                    <TabItem active="1" i18nName="w_psninfo-000038" id="UITabItem102905" langDir="hi_nodes" showCloseIcon="false" text="奖励情况" widgetId="main">
+                        <GridComp autoExpand="0" height="100%" id="encGrid" left="0" position="relative" top="0" widgetId="main" width="100%">
+                        </GridComp>
+                    </TabItem>
+                    <TabItem active="1" i18nName="w_psninfo-000039" id="UITabItem112905" langDir="hi_nodes" showCloseIcon="false" text="出国境情况" widgetId="main">
+                        <GridComp autoExpand="0" height="100%" id="abroadGrid" left="0" position="relative" top="0" widgetId="main" width="100%">
+                        </GridComp>
+                    </TabItem>
+                    <TabItem active="1" i18nName="w_psninfo-000040" id="UITabItem122905" langDir="hi_nodes" showCloseIcon="false" text="职业资格" widgetId="main">
+                        <GridComp autoExpand="0" height="100%" id="nationdutyGrid" left="0" position="relative" top="0" widgetId="main" width="100%">
+                        </GridComp>
+                    </TabItem>
+                    <TabItem active="1" i18nName="w_psninfo-000041" id="UITabItem132905" langDir="hi_nodes" showCloseIcon="false" text="离退待遇" widgetId="main">
+                        <GridComp autoExpand="0" height="100%" id="retireGrid" left="0" position="relative" top="0" widgetId="main" width="100%">
+                        </GridComp>
+                    </TabItem>
+                    <TabItem active="1" i18nName="w_psninfo-000042" id="UITabItem142905" langDir="hi_nodes" showCloseIcon="false" text="职称信息" widgetId="main">
+                        <GridComp autoExpand="0" height="100%" id="titleGrid" left="0" position="relative" top="0" widgetId="main" width="100%">
+                        </GridComp>
+                    </TabItem>
+                    <TabItem active="1" i18nName="w_psninfo-000043" id="UITabItem152905" langDir="hi_nodes" showCloseIcon="false" text="惩罚信息" widgetId="main">
+                        <GridComp autoExpand="0" height="100%" id="punGrid" left="0" position="relative" top="0" widgetId="main" width="100%">
+                        </GridComp>
+                    </TabItem>
+                    <TabItem active="1" i18nName="w_psninfo-000044" id="UITabItem182905" langDir="hi_nodes" showCloseIcon="false" text="参加党派记录" widgetId="main">
+                        <GridComp autoExpand="0" height="100%" id="partylogGrid" left="0" position="relative" top="0" widgetId="main" width="100%">
+                        </GridComp>
+                    </TabItem>
+                    <TabItem active="1" i18nName="w_psninfo-000045" id="UITabItem202905" langDir="hi_nodes" showCloseIcon="false" text="专业技术项目工作" widgetId="main">
+                        <GridComp autoExpand="0" height="100%" id="speitemGrid" left="0" position="relative" top="0" widgetId="main" width="100%">
+                        </GridComp>
+                    </TabItem>
+                    <TabItem active="1" i18nName="w_psninfo-000046" id="UITabItem222905" langDir="hi_nodes" showCloseIcon="false" text="紧急联系人" widgetId="main">
+                        <GridComp autoExpand="0" height="100%" id="linkmanGrid" left="0" position="relative" top="0" widgetId="main" width="100%">
+                        </GridComp>
+                    </TabItem>
+                    <TabItem active="1" i18nName="w_psninfo-000047" id="UITabItem232905" langDir="hi_nodes" showCloseIcon="false" text="身份证件" widgetId="main">
+                        <GridComp autoExpand="0" height="100%" id="certGrid" left="0" position="relative" top="0" widgetId="main" width="100%">
+                        </GridComp>
+                    </TabItem>
+                    <TabItem active="1" i18nName="w_psninfo-000048" id="UITabItem242905" langDir="hi_nodes" showCloseIcon="false" text="员工能力素质" widgetId="main">
+                        <GridComp autoExpand="0" height="100%" id="capaGrid" left="0" position="relative" top="0" widgetId="main" width="100%">
+                        </GridComp>
+                    </TabItem>
+                    <TabItem active="1" i18nName="w_psninfo-000049" id="UITabItem252905" langDir="hi_nodes" showCloseIcon="false" text="合同信息" widgetId="main">
+                        <GridComp autoExpand="0" height="100%" id="ctrtGrid" left="0" position="relative" top="0" widgetId="main" width="100%">
+                        </GridComp>
+                    </TabItem>
+                    <TabItem active="1" i18nName="w_psninfo-000050" id="UITabItem262905" langDir="hi_nodes" showCloseIcon="false" text="企业内部任职资格" widgetId="main">
+                        <GridComp autoExpand="0" height="100%" id="qulifyGrid" left="0" position="relative" top="0" widgetId="main" width="100%">
+                        </GridComp>
+                    </TabItem>
+                    <TabItem active="1" i18nName="w_psninfo-000051" id="UITabItem93005" langDir="hi_nodes" showCloseIcon="false" text="汇报关系" widgetId="main">
+                        <FlowvLayout id="flowvlayout4281" widgetId="main">
+                            <FlowvPanel height="35" id="panelv04281" widgetId="main">
+                                <TextField height="22" id="selrelation" imgsrc="" left="15" position="relative" top="5" type="text" widgetId="main" width="200">
+                                </TextField>
+                            </FlowvPanel>
+                            <FlowvPanel id="panelv14281" topBorder="#" widgetId="main">
+                                <GridComp autoExpand="0" height="100%" id="RelationGrid" left="0" position="relative" top="0" widgetId="main" width="100%">
+                                </GridComp>
+                            </FlowvPanel>
+                        </FlowvLayout>
+                    </TabItem>
+                </TabItems>
+            </TabLayout>
+        </FlowvPanel>
+    </FlowvLayout>
+</UIMeta>

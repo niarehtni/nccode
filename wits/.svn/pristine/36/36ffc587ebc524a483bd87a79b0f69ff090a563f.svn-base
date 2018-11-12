@@ -1,0 +1,80 @@
+/**
+ * @(#)GenDetailAction.java 1.0 2017年9月19日
+ *
+ * Copyright (c) 2013, Yonyou. All rights reserved.
+ * YONYOU PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
+ */
+package nc.ui.hrwa.allocate.ace.action;
+
+import java.awt.event.ActionEvent;
+import java.util.HashSet;
+import java.util.Set;
+
+import nc.bs.framework.common.NCLocator;
+import nc.hr.utils.ResHelper;
+import nc.itf.hrwa.IAllocateMaintain;
+import nc.ui.hr.uif2.action.HrAction;
+import nc.ui.pub.beans.MessageDialog;
+import nc.vo.wa.allocate.AggAllocateOutVO;
+import nc.vo.wa.pub.WaLoginContext;
+import nc.vo.wa.pub.WaState;
+
+import org.apache.commons.lang.ArrayUtils;
+
+/**
+ * @author niehg
+ * @since 6.3
+ */
+@SuppressWarnings({ "serial", "restriction" })
+public class GenDetailAction extends HrAction {
+
+	public GenDetailAction() {
+		setCode("genDetail");
+		setBtnName(ResHelper.getString("allocate", "0allcate-ui-000001")); // 生成明细档
+	}
+
+	@Override
+	public void doAction(ActionEvent evt) throws Exception {
+		WaLoginContext context = (WaLoginContext) getContext();
+		IAllocateMaintain service = NCLocator.getInstance().lookup(IAllocateMaintain.class);
+		AggAllocateOutVO[] bills = service.queryBillsByCondition(context, null, null);
+		if (!ArrayUtils.isEmpty(bills)) {
+			// // 明细档已生成,不能重复生成!
+			// ExceptionUtils.wrappBusinessException(ResHelper.getString("allocate",
+			// "0allcate-ui-000013"));
+			// return;
+			// 明细档已生成,是否重新生成?
+			if (MessageDialog.ID_YES != MessageDialog.showYesNoDlg(getEntranceUI(), null,
+					ResHelper.getString("allocate", "0allcate-ui-000014"))) {
+				putValue(MESSAGE_AFTER_ACTION, null);
+				return;
+			}
+		}
+		bills = service.genPjShareDetail(context);
+		getModel().initModel(bills);
+	}
+
+	@Override
+	protected boolean isActionEnable() {
+		WaLoginContext waLoginContext = (WaLoginContext) getContext();
+		if (waLoginContext.isContextNotNull()
+				&& (null != waLoginContext.getWaState() && null != getEnableStateSet() && getEnableStateSet().contains(
+						waLoginContext.getWaState()))) {
+			return true;
+		}
+
+		return false;
+	}
+
+	public Set<WaState> getEnableStateSet() {
+		if (waStateSet == null) {
+			waStateSet = new HashSet<WaState>();
+			waStateSet.add(WaState.CLASS_ALL_PAY);
+
+			waStateSet.add(WaState.CLASS_MONTH_END);
+		}
+		return waStateSet;
+	}
+
+	protected Set<WaState> waStateSet = null;
+}

@@ -1,0 +1,35 @@
+package nc.pubimpl.twhr;
+
+import java.util.Collection;
+
+import nc.bs.dao.BaseDAO;
+import nc.pubitf.twhr.IBasedocPubQuery;
+import nc.vo.pub.BusinessException;
+import nc.vo.twhr.basedoc.BaseDocVO;
+
+public class BasedocPubQueryImpl implements IBasedocPubQuery {
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public BaseDocVO[] queryAllBaseDoc(String pk_org) throws BusinessException {
+		BaseDAO dao = new BaseDAO();
+		Collection<BaseDocVO> result = dao.retrieveByClause(BaseDocVO.class,
+				"dr=0 and pk_org='" + pk_org + "' ");
+		if (result == null) {
+			return null;
+		}
+		return result.toArray(new BaseDocVO[0]);
+	}
+
+	@Override
+	public BaseDocVO queryBaseDocByCode(String pk_org, String strCode)
+			throws BusinessException {
+		BaseDAO dao = new BaseDAO();
+		Collection<BaseDocVO> result = dao.retrieveByClause(BaseDocVO.class,
+				" pk_org='" + pk_org + "' and code='" + strCode + "' and dr=0");
+		if (result == null) {
+			return null;
+		}
+		return (BaseDocVO) result.toArray()[0];
+	}
+}

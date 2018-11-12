@@ -1,0 +1,360 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+ 
+	<!-- 环境变量 -->
+	<bean id="context" class="nc.vo.uif2.LoginContext">
+	</bean>
+	<!-- 模型部分配置########################################################### -->
+ 
+	<!-- 应用服务类，负责进行模型操作的处理 -->
+	<bean id="appModelService" class="nc.ui.bd.workcalendar.model.WorkCalendarAppService" />
+	<!-- 模板容器 -->
+	<bean id="templateContainer" class="nc.ui.uif2.editor.TemplateContainer"
+		init-method="load">
+		<property name="context">
+			<ref bean="context" />
+		</property>
+		<property name="nodeKeies">
+			<list>
+				<value>workcalendar</value>
+				<value>adddetail</value>
+			</list>
+		</property>
+	</bean>
+
+
+	<!-- 对象转换器工厂，由此获取操作对象的特征信息 -->
+	<bean id="objectadapterfactory" class="nc.vo.bd.meta.BDObjectAdpaterFactory" />
+
+	<!-- 层次结构构造策略 -->
+	<bean id="treestrategy" class="nc.vo.bd.meta.BDObjectTreeCreateStrategy">
+		<property name="factory" ref="objectadapterfactory"></property>
+		<property name="className" value="nc.vo.bd.workcalendar.WorkCalendarVO" />
+		<property name="rootName">
+			<bean class="nc.ui.uif2.I18nFB">
+				<property name="resDir" value="10140wcb" />
+				<property name="defaultValue" value="工作日历" />
+				<property name="resId" value="110140wcb0003" />
+			</bean>
+		</property>
+	</bean>
+
+	<!-- 应用模型 -->
+	<bean id="appmodel" class="nc.ui.bd.workcalendar.model.WorkCalendarTreeModel">
+		<property name="context">
+			<ref bean="context" />
+		</property>
+		<property name="treeCreateStrategy" ref="treestrategy"></property>
+		<property name="businessObjectAdapterFactory" ref="objectadapterfactory">
+		</property>
+		<property name="service" ref="appModelService"></property>
+	</bean>
+
+	<!-- 应用模型 -->
+
+	<!-- 管理应用模型 -->
+	<bean id="manageAppModel" class="nc.ui.uif2.model.BillManageModel">
+		<property name="businessObjectAdapterFactory" ref="objectadapterfactory" />
+		<property name="context" ref="context" />
+	</bean>
+
+	<bean id="modelDataManager" class="nc.ui.bd.workcalendar.model.WorkCalendarDataManager">
+		<property name="model" ref="appmodel"></property>
+		<property name="service" ref="appModelService"></property>
+		<property name="context" ref="context"></property>
+	</bean>
+
+	<!-- 界面元素 ########################################################### -->
+
+	<!--树控件，如果进行管理，需要实现接口IComponentWithActions存储动作 -->
+	<bean id="treePanel" class="nc.ui.uif2.components.TreePanel"
+		init-method="initUI">
+		<property name="model" ref="appmodel"></property>
+		<property name="treeCellRenderer">
+			<bean class="nc.ui.bd.pub.BDTreeCellRenderer">
+				<property name="context" ref="context"></property>
+			</bean>
+		</property>
+	</bean>
+
+	<!--卡控件 -->
+	<bean id="workCalendarCardEditor" class="nc.ui.bd.workcalendar.view.WorkCalendarEditor"
+		init-method="initUI">
+		<property name="model" ref="appmodel"></property>
+		<property name="nodekey" value="workcalendar" />
+		<property name="templateContainer" ref="templateContainer"></property>
+	</bean>
+
+	<!--对话框界面 -->
+	<bean id="dlgEditor" class="nc.ui.bd.workcalendar.view.WorkCalendAddDetailEditor"
+		init-method="initUI">
+		<property name="model" ref="manageAppModel"></property>
+		<property name="treeModel" ref="appmodel"></property>
+		<property name="nodekey" value="adddetail"></property>
+		<property name="templateContainer">
+			<ref bean="templateContainer" />
+		</property>
+	</bean>
+
+	<bean id="DetailAddMediator"
+		class="nc.ui.bd.workcalendar.view.WorkCalendarAddDeailDlgMediator">
+		<property name="name">
+			<bean class="nc.ui.uif2.I18nFB">
+				<property name="resDir" value="10140wcb" />
+				<property name="defaultValue" value="生成工作日历明细" />
+				<property name="resId" value="110140wcb0006" />
+			</bean>
+		</property>
+		<property name="editor" ref="dlgEditor"></property>
+		<property name="model" ref="manageAppModel"></property>
+		<property name="saveAction" ref="saveDetailAction"></property>
+		<property name="cancelAction" ref="addDetatilCancelAction"></property>
+		<property name="width" value="500"></property>
+		<property name="height" value="260"></property>
+	</bean>
+
+	<!--工作日历控件配置 -->
+	<!--应用服务类，负责进行模型操作的处理 -->
+	<bean id="appCalendarService" class="nc.ui.bd.workcalendar.model.WorkCalendarAppService" />
+
+	<bean id="workCalendarPanel" class="nc.ui.bd.workcalendar.pub.WorkCalendarPanel"
+		init-method="initialize">
+		<property name="model" ref="appmodel" />
+		<property name="workingDayAction" ref="workingDayAction" />
+		<!--  <property name="weekendDayAction" ref="weekendDayAction" />-->
+		<property name="holidayDayAction" ref="holidayDayAction" />
+		<!-- 例假日-->
+		<property name="LiholidayDayAction" ref="LiholidayDayAction" />
+		<!-- 休息日-->
+		<property name="restDayAction" ref="restDayAction" />
+		<property name="workingTimeAction" ref="workingTimeAction" />
+		<property name="cancelSelectAction" ref="cancelSelectAction" />
+	</bean>
+	<bean id="workingDayAction"
+		class="nc.ui.bd.workcalendar.actions.WorkCalendarWorkingDayAction">
+		<property name="model" ref="appmodel" />
+		<property name="exceptionHandler" ref="exceptionHandler"></property>
+	</bean>
+
+	<bean id="holidayDayAction"
+		class="nc.ui.bd.workcalendar.actions.WorkCalendarHolidayDayAction">
+		<property name="model" ref="appmodel" />
+		<property name="exceptionHandler" ref="exceptionHandler"></property>
+	</bean>
+	
+	<!-- 例假日 -->
+	<bean id="LiholidayDayAction"
+		class="nc.ui.bd.workcalendar.actions.WorkCalendarLiHolidayDayAction">
+		<property name="model" ref="appmodel" />
+		<property name="exceptionHandler" ref="exceptionHandler"></property>
+	</bean>
+	
+	<!-- 休息日-->
+	<bean id="restDayAction"
+		class="nc.ui.bd.workcalendar.actions.WorkCalendarRestDayAction">
+		<property name="model" ref="appmodel" />
+		<property name="exceptionHandler" ref="exceptionHandler"></property>
+	</bean>
+	
+<!-- 
+	<bean id="weekendDayAction"
+		class="nc.ui.bd.workcalendar.actions.WorkCalendarWeekendDayAction">
+		<property name="model" ref="appmodel" />
+		<property name="exceptionHandler" ref="exceptionHandler"></property>
+	</bean>
+ -->
+
+	<bean id="workingTimeAction"
+		class="nc.ui.bd.workcalendar.actions.WorkCalendarWorkingTimeAction">
+		<property name="model" ref="appmodel" />
+		<property name="exceptionHandler" ref="exceptionHandler"></property>
+	</bean>
+
+	<bean id="cancelSelectAction"
+		class="nc.ui.bd.workcalendar.actions.WorkCalendarCancelSelectAction">
+		<property name="exceptionHandler" ref="exceptionHandler" />
+	</bean>
+
+	<!--设置 默认工作日历按钮 -->
+	<bean id="defaultCalendarAction" class="nc.ui.bd.workcalendar.actions.WorkCalendarDefaultAction">
+		<property name="model" ref="appmodel" />
+		<property name="editor" ref="workCalendarCardEditor" />
+	</bean>
+
+	<!-- 新增日历明细按钮 -->
+	<bean id="addDetailAction"
+		class="nc.ui.bd.workcalendar.actions.WorkCalendarAddDetailAction">
+		<property name="model" ref="appmodel" />
+		<property name="manageModel" ref="manageAppModel"></property>
+	</bean>
+
+	<bean id="addDetatilCancelAction" class="nc.ui.uif2.actions.CancelAction">
+		<property name="model" ref="manageAppModel"></property>
+		<property name="editor" ref="dlgEditor"></property>
+		<property name="exceptionHandler" ref="exceptionHandler"></property>
+	</bean>
+
+	<!--保存日历明细按钮 -->
+	<bean id="saveDetailAction"
+		class="nc.ui.bd.workcalendar.actions.WorkCalendarDetailSaveAction">
+		<property name="model" ref="manageAppModel" />
+		<property name="treeModel" ref="appmodel"></property>
+		<property name="editor" ref="dlgEditor" />
+		<property name="validationService">
+			<ref bean="saveDetailValidation" />
+		</property>
+		<property name="exceptionHandler" ref="exceptionHandler"></property>
+	</bean>
+	<!--调整工作年度起始日按钮-->
+	 <bean id="yearAdjustAction" class = "nc.ui.bd.workcalendar.actions.WorkCalendarYearAdjustAction">
+	 	<property name="treeModel" ref="appmodel"></property>
+	 </bean>
+
+	<!-- Actions ########################################################### -->
+	<bean id="AddAction" class="nc.ui.bd.workcalendar.actions.WorkCalendarAddAction">
+		<property name="model" ref="appmodel"></property>
+		<property name="exceptionHandler" ref="exceptionHandler"></property>
+	</bean>
+
+	<bean id="EditAction" class="nc.ui.bd.workcalendar.actions.WorkCalendarEidtAction">
+		<property name="model" ref="appmodel"></property>
+		<property name="exceptionHandler" ref="exceptionHandler"></property>
+		<property name="resourceCode" value="workcalendar"></property>
+		<property name="mdOperateCode" value="edit"></property>
+		<property name="editor" ref="workCalendarCardEditor"></property>
+	</bean>
+
+	<bean id="SaveAction" class="nc.ui.bd.workcalendar.actions.WorkCalendarSaveAction">
+		<property name="model" ref="appmodel" />
+		<property name="editor" ref="workCalendarCardEditor" />
+		<property name="validationService">
+			<ref bean="saveValidation" />
+		</property>
+		<property name="exceptionHandler" ref="exceptionHandler"></property>
+	</bean>
+
+	<bean id="SaveAddAction" class="nc.ui.bd.workcalendar.actions.WorkCalendarSaveAddAction">
+		<property name="model" ref="appmodel" />
+		<property name="editor" ref="workCalendarCardEditor" />
+		<property name="addAction">
+			<ref bean="AddAction" />
+		</property>
+		<property name="validationService">
+			<ref bean="saveValidation" />
+		</property>
+		<property name="exceptionHandler" ref="exceptionHandler"></property>
+	</bean>
+
+	<bean id="saveValidation" class="nc.bs.uif2.validation.DefaultValidationService">
+		<property name="validators">
+			<list>
+				<bean class="nc.bs.bd.workcalendar.validator.WorkCalendarNullValidator" />
+				<bean class="nc.bs.bd.workcalendar.validator.WorkCalendarDateValidator" />
+			</list>
+		</property>
+	</bean>
+
+
+	<bean id="saveDetailValidation" class="nc.bs.uif2.validation.DefaultValidationService">
+		<property name="validators">
+			<list>
+				<bean
+					class="nc.bs.bd.workcalendar.validator.WorkCalendarAddDetailNullValidator" />
+				<bean class="nc.bs.bd.workcalendar.validator.WorkCalendarDateValidator" />
+			</list>
+		</property>
+	</bean>
+
+	<bean id="updateDateValidation" class="nc.bs.uif2.validation.DefaultValidationService">
+		<property name="validators">
+			<list>
+				<bean class="nc.bs.bd.workcalendar.validator.WorkCalendarDateValidator" />
+			</list>
+		</property>
+	</bean>
+
+
+	<bean id="DeleteAction" class="nc.ui.bd.workcalendar.actions.WorkCalendarDelAction">
+		<property name="model" ref="appmodel"></property>
+		<property name="exceptionHandler" ref="exceptionHandler"></property>
+		<property name="resourceCode" value="workcalendar"></property>
+		<property name="mdOperateCode" value="delete"></property>
+	</bean>
+
+	<bean id="CancelAction" class="nc.ui.uif2.actions.CancelAction">
+		<property name="model" ref="appmodel"></property>
+		<property name="editor" ref="workCalendarCardEditor"></property>
+		<property name="exceptionHandler" ref="exceptionHandler"></property>
+	</bean>
+
+	<bean id="RefreshAction" class="nc.ui.uif2.actions.RefreshAction">
+		<property name="model" ref="appmodel"></property>
+		<property name="dataManager" ref="modelDataManager"></property>
+		<property name="exceptionHandler" ref="exceptionHandler"></property>
+	</bean>
+	
+	<bean id="filterActionMenu" class ="nc.funcnode.ui.action.MenuAction">
+		<property name="code" value="filter"></property>
+		<property name="name">
+			<bean class="nc.ui.uif2.I18nFB">
+				<property name="resDir" value="common"/>
+				<property name="defaultValue" value="过滤"/>
+				<property name="resId" value ="UCH069"></property>
+			</bean>
+		</property>
+		<property name="actions">
+			<list>
+				<ref bean="filterAction"/>
+			</list>
+		</property>
+	</bean>
+	
+	<bean id="filterAction" class ="nc.ui.uif2.actions.ShowDisableDataAction">
+		<property name="model" ref="appmodel"/>
+		<property name="dataManager" ref="modelDataManager"/>
+	</bean>
+
+	<bean id="enableActionGroup" class="nc.funcnode.ui.action.GroupAction">
+		<property name="code" value="EnableGroup"></property>
+		<property name="actions">
+			<list>
+				<ref bean="enableAction" />
+				<ref bean="disableAction" />
+			</list>
+		</property>
+	</bean>
+
+	<bean id="enableAction" class="nc.ui.bd.workcalendar.actions.WorkCalendarEnableAction">
+		<property name="model" ref="appmodel"></property>
+	</bean>
+
+	<bean id="disableAction" class="nc.ui.bd.workcalendar.actions.WorkCalendarDisableAction">
+		<property name="model" ref="appmodel"></property>
+	</bean>
+
+	<bean id="separatorAction" class="nc.funcnode.ui.action.SeparatorAction" />
+
+	<!-- 异常关闭处理 -->
+	<bean id="ClosingListener" class="nc.ui.uif2.FunNodeClosingHandler">
+		<property name="model">
+			<ref bean="appmodel" />
+		</property>
+		<property name="saveaction">
+			<ref bean="SaveAction" />
+		</property>
+		<property name="cancelaction">
+			<ref bean="CancelAction" />
+		</property>
+	</bean>
+
+	<!-- 异常处理 -->
+	<bean id="exceptionHandler" class="nc.ui.uif2.DefaultExceptionHanler">
+		<property name="context" ref="context"></property>
+		<constructor-arg>
+			<ref bean="workCalendarCardEditor" />
+		</constructor-arg>
+	</bean>
+</beans>

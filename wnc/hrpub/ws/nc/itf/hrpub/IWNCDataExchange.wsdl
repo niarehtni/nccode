@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wsdl:definitions
+xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+xmlns:wsaw="http://www.w3.org/2006/05/addressing/wsdl"
+xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+xmlns:jaxb="http://java.sun.com/xml/ns/jaxb"
+xmlns:jaxws="http://java.sun.com/xml/ns/jaxws"
+jaxb:version="2.0"
+xmlns:ns0="http://hrpub.itf.nc/IWNCDataExchange"
+targetNamespace="http://hrpub.itf.nc/IWNCDataExchange">
+
+<jaxws:bindings>
+	<jaxws:package name="nc.itf.hrpub"/>
+</jaxws:bindings>
+
+<wsdl:types>
+   <xsd:schema xmlns:ns="http://hrpub.itf.nc/IWNCDataExchange"
+			xmlns:nclang="http://ws.uap.nc/lang"
+			attributeFormDefault="unqualified"
+			elementFormDefault="unqualified"
+			targetNamespace="http://hrpub.itf.nc/IWNCDataExchange" jaxb:version="2.0">
+	<xsd:annotation>
+    	<xsd:appinfo>
+   			<jaxb:schemaBindings>
+    			<jaxb:package name="nc.itf.hrpub"/>
+    		</jaxb:schemaBindings>
+   		</xsd:appinfo>
+   	</xsd:annotation>
+	 <xsd:import namespace="http://ws.uap.nc/lang" schemaLocation="/nc/uap/ws/lang.xsd"/>
+	<xsd:element name="doTransfer">
+         <xsd:complexType>
+            <xsd:sequence>
+				<xsd:element name="string"  minOccurs="0" nillable="true" type="xsd:string"/>
+             </xsd:sequence>  
+         </xsd:complexType>
+     </xsd:element>
+	<xsd:element name="doTransferResponse">
+         <xsd:complexType>
+            <xsd:sequence>
+				<xsd:element name="return"  minOccurs="0" nillable="true" type="xsd:string"/>
+             </xsd:sequence>  
+         </xsd:complexType>
+     </xsd:element>
+   </xsd:schema>
+</wsdl:types>
+    <wsdl:message name="doTransferRequest">
+        <wsdl:part name="parameters"  element="ns0:doTransfer"/>
+    </wsdl:message>
+    <wsdl:message name="doTransferResponse">
+        <wsdl:part name="parameters"  element="ns0:doTransferResponse"/>
+    </wsdl:message>
+    <wsdl:message name="Exception">
+        <wsdl:part name="Exception"  xmlns:nclang="http://ws.uap.nc/lang"  element="nclang:Exception"/>
+    </wsdl:message>
+
+    <wsdl:portType name="IWNCDataExchangePortType">
+        <wsdl:operation name="doTransfer">
+            <wsdl:input message="ns0:doTransferRequest" wsaw:Action="urn:doTransfer"/>
+            <wsdl:output message="ns0:doTransferResponse" wsaw:Action="urn:doTransferResponse"/>
+            <wsdl:fault name="Exception" message="ns0:Exception"/>
+        </wsdl:operation>
+    </wsdl:portType>
+    
+    
+    <wsdl:binding name="IWNCDataExchangeSOAP11Binding" type="ns0:IWNCDataExchangePortType">
+        <soap:binding transport="http://schemas.xmlsoap.org/soap/http" style="document"/>
+        <wsdl:operation name="doTransfer">
+            <soap:operation soapAction="urn:doTransfer" style="document"/>
+            <wsdl:input>
+                <soap:body use="literal"/>
+            </wsdl:input>
+            <wsdl:output>
+                <soap:body use="literal"/>
+            </wsdl:output>
+     		<wsdl:fault name="Exception">
+        		<soap:fault name="Exception" use="literal"/>
+      		</wsdl:fault>
+
+        </wsdl:operation>
+    </wsdl:binding>
+    <wsdl:service name="IWNCDataExchange">
+        <wsdl:port name="IWNCDataExchangeSOAP11port_http" binding="ns0:IWNCDataExchangeSOAP11Binding">
+            <soap:address location="http://localhost/uapws/service/IWNCDataExchange"/>
+        </wsdl:port>
+    </wsdl:service>
+</wsdl:definitions>

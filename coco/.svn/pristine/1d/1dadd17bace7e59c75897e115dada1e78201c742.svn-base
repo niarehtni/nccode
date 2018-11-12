@@ -1,0 +1,4 @@
+module.name=hrsms
+module.defConfig=module.xml
+module.webContext=portal
+module.editorVersion=NEW_VERSION

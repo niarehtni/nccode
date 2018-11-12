@@ -1,0 +1,317 @@
+/**
+ *
+ */
+package nc.impl.wa.rpt;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+
+import nc.bs.dao.BaseDAO;
+import nc.bs.dao.DAOException;
+import nc.hr.utils.ResHelper;
+import nc.hr.utils.SQLHelper;
+import nc.itf.hr.managescope.ManagescopeFacade;
+import nc.itf.hr.wa.IWaProviderService;
+import nc.jdbc.framework.SQLParameter;
+import nc.jdbc.framework.processor.BeanListProcessor;
+import nc.jdbc.framework.processor.ColumnProcessor;
+import nc.jdbc.framework.processor.MapListProcessor;
+import nc.pub.encryption.util.SalaryDecryptUtil;
+import nc.pub.encryption.util.SalaryEncryptionUtil;
+import nc.vo.hr.managescope.ManagescopeBusiregionEnum;
+import nc.vo.hr.tools.pub.GeneralVO;
+import nc.vo.hr.tools.pub.GeneralVOProcessor;
+import nc.vo.hrp.budgetitem.BudgetItemVO;
+import nc.vo.org.AdminOrgVO;
+import nc.vo.pub.BusinessException;
+import nc.vo.wa.item.WaItemVO;
+import nc.vo.wa.paydata.DataVO;
+
+import org.apache.commons.lang.StringUtils;
+
+/**
+ * 报表验证使用
+ * 
+ * @author zhangliangb
+ * 
+ * @since V6.0 2010-9-10
+ */
+public class WaProviderServiceImpl implements IWaProviderService {
+
+	public BaseDAO dao = new BaseDAO();
+
+	@Override
+	@SuppressWarnings("unchecked")
+	public List<HashMap<String, Object>> query(String sql)
+			throws BusinessException {
+
+		return (List<HashMap<String, Object>>) getBaseDao().executeQuery(sql,
+				new MapListProcessor());
+
+	}
+
+	@Override
+	@SuppressWarnings("unchecked")
+	public DataVO[] query4VO(String sql) throws BusinessException {
+
+		List<DataVO> list = (List<DataVO>) getBaseDao().executeQuery(sql,
+				new BeanListProcessor(DataVO.class));
+
+		return list.toArray(new DataVO[0]);
+
+	}
+
+	/**
+	 * 本该用wa_dataz，现改用wa_data。获得薪资总额项目
+	 * 
+	 * @param pkOrg
+	 * @param accyear
+	 * @return
+	 * @throws BusinessException
+	 */
+	@Override
+	public GeneralVO[] getAllTmItem(String pkGroup, String pkOrg, String accyear)
+			throws BusinessException {
+		if (pkOrg == null) {
+			return null;
+		}
+		// int type = SysinitAccessor.getInstance().getParaInt(pkGroup,
+		// ParaConstant.BUDGET_TYPE).intValue();
+		StringBuffer sqlBuffer = new StringBuffer();
+		sqlBuffer.append(" select hrp_budget_item.pk_budget_item, ");
+		sqlBuffer.append("       hrp_budget_item.budget_item_code, ");
+		sqlBuffer
+				.append("        "
+						+ SQLHelper
+								.getMultiLangNameColumn("hrp_budget_item.budget_item_name")
+						+ " budget_item_name, ");
+		sqlBuffer.append("       wa_item.itemkey, ");
+		sqlBuffer.append("       wa_item.iproperty, ");
+		sqlBuffer.append("       wa_item.pk_group, ");
+		sqlBuffer.append("       wa_item.pk_org ");
+		sqlBuffer.append("  from " + BudgetItemVO.getTableViewName()
+				+ ",hrp_budget_item_b, wa_item ");
+		sqlBuffer
+				.append(" where hrp_budget_item.pk_budget_item =   hrp_budget_item_b.pk_budget_item ");
+		sqlBuffer
+				.append("   and wa_item.pk_wa_item = hrp_budget_item_b.pk_itemid ");
+		sqlBuffer.append("  and hrp_budget_item.pk_group = ?  ");
+		/*
+		 * if (type == 4) { sqlBuffer.append(
+		 * " and wa_budget_item_def.pk_org = (select pk_org from wa_tm_power where pk_corp_child = ? ) "
+		 * ); } else { sqlBuffer.append(" and wa_budget_item_def.pk_org = ? ");
+		 * }
+		 */
+		sqlBuffer.append("   and hrp_budget_item.budget_item_year = ? ");
+		sqlBuffer.append("   and wa_item.iitemtype = 0 ");
+		sqlBuffer.append("   and hrp_budget_item.budget_type=1 ");
+		SQLParameter parameter = new SQLParameter();
+		parameter.addParam(pkGroup);
+		/*
+		 * if (type == 4) { parameter.addParam(pkOrg); } else if (type == 3) {
+		 * OrgVO orgVo =
+		 * NCLocator.getInstance().lookup(IAOSQueryService.class).queryHROrgByOrgPK
+		 * (pkOrg); parameter.addParam(orgVo.getPk_org()); } else {
+		 * parameter.addParam(getRootOrgPro(pkGroup)); }
+		 */
+		parameter.addParam(accyear);
+
+		GeneralVO[] generalVOs = (GeneralVO[]) getBaseDao().executeQuery(
+				sqlBuffer.toString(), parameter,
+				new GeneralVOProcessor(GeneralVO.class));
+
+		HashMap<String, GeneralVO> reorgnizedHashMap = new HashMap<String, GeneralVO>();
+		if (generalVOs == null) {
+			throw new BusinessException(ResHelper.getString("6013report",
+					"06013report0036")/* @res "薪资总额项目数据不能为空！" */);
+		}
+		for (GeneralVO generalVO : generalVOs) {
+			int property = new Integer(generalVO.getAttributeValue("iproperty")
+					.toString());
+			int pre = 1;
+
+			if (property == 1) {
+				// 增减属性为减项的公共薪资项目
+				pre = -1;
+			}
+			if (reorgnizedHashMap.containsKey(generalVO.getAttributeValue(
+					BudgetItemVO.PK_BUDGET_ITEM).toString())) {
+				GeneralVO orgizedGeneralVO = reorgnizedHashMap.get(generalVO
+						.getAttributeValue(BudgetItemVO.PK_BUDGET_ITEM)
+						.toString());
+				// 求薪资总额项目的表达式
+				orgizedGeneralVO.setAttributeValue("itemkey", orgizedGeneralVO
+						.getAttributeValue("itemkey").toString()
+						+ " + "
+						+ getComputeruleStr(generalVO, pkGroup, pre));
+				orgizedGeneralVO.setAttributeValue("itemkey2", orgizedGeneralVO
+						.getAttributeValue("itemkey2").toString()
+						+ " ,'"
+						+ generalVO.getAttributeValue("itemkey").toString()
+						+ "'");
+			} else {
+				GeneralVO orgizedGeneralVO = new GeneralVO();
+				orgizedGeneralVO.setAttributeValue("pk_budget_item", generalVO
+						.getAttributeValue(BudgetItemVO.PK_BUDGET_ITEM)
+						.toString());
+				orgizedGeneralVO.setAttributeValue("code", generalVO
+						.getAttributeValue(BudgetItemVO.BUDGET_ITEM_CODE)
+						.toString());
+				orgizedGeneralVO.setAttributeValue("name", generalVO
+						.getAttributeValue(BudgetItemVO.BUDGET_ITEM_NAME)
+						.toString());
+
+				orgizedGeneralVO.setAttributeValue("itemkey",
+						getComputeruleStr(generalVO, pkGroup, pre));
+				orgizedGeneralVO.setAttributeValue("itemkey2", "'"
+						+ generalVO.getAttributeValue("itemkey").toString()
+						+ "'");
+				reorgnizedHashMap.put(
+						generalVO
+								.getAttributeValue(BudgetItemVO.PK_BUDGET_ITEM)
+								.toString(), orgizedGeneralVO);
+			}
+		}
+
+		return (reorgnizedHashMap.size() == 0) ? null : reorgnizedHashMap
+				.values().toArray(new GeneralVO[reorgnizedHashMap.size()]);
+	}
+
+	private String getComputeruleStr(GeneralVO generalVO, String groupid,
+			int pre) {
+		String pk_org = generalVO.getAttributeValue(WaItemVO.PK_ORG).toString();
+		String pk_group = null;
+		if (pk_org.equals("GLOBLE00000000000000")) {
+			pk_group = groupid;
+			pk_org = groupid;
+		} else {
+			pk_group = generalVO.getAttributeValue(WaItemVO.PK_GROUP)
+					.toString();
+		}
+
+		StringBuffer resultStr = new StringBuffer();
+		resultStr.append(" ( case ");
+		if (pk_group.equals(pk_org)) {
+			resultStr.append(" when wa_data.pk_group = '" + pk_group
+					+ "' then 0 ");
+		} else {
+			resultStr.append(" when wa_data.pk_org = '" + pk_org + "' then 0 ");
+		}
+		resultStr.append(" + " + pre + " * wa_data."
+				+ generalVO.getAttributeValue("itemkey").toString());
+
+		resultStr.append(" else 0 end )");
+		return resultStr.toString();
+	}
+
+	/**
+	 * 得到根组织PK
+	 * 
+	 * @param strPkGroup
+	 * @return
+	 * @throws DAOException
+	 */
+	private String getRootOrgPro(String strPkGroup) throws DAOException {
+		AdminOrgVO vo = null;
+		// 当前的集团编码
+		// 得到当前集团下的根人力组员组织
+		Collection<AdminOrgVO> cls = getBaseDao().retrieveByClause(
+				AdminOrgVO.class,
+				" pk_group='" + strPkGroup + "' and  isnull("
+						+ AdminOrgVO.PK_FATHERORG + " ,'~')='~' ");
+		Iterator its = cls.iterator();
+		while (its.hasNext()) {
+			vo = (AdminOrgVO) its.next();
+			break;
+		}
+		return vo.getPk_adminorg();
+	}
+
+	@Override
+	public Object getReportVar(String id, int type) throws BusinessException {
+		String sql = "";
+		if (type == 1) {
+			sql = "select  " + SQLHelper.getMultiLangNameColumn("name")
+					+ "   from bd_psndoc  	 where pk_psndoc = ?";
+		}
+		if (type == 2) {
+			sql = "select  " + SQLHelper.getMultiLangNameColumn("name")
+					+ "   from org_dept  	 where innercode = ?";
+		}
+		if (type == 3) {
+			sql = "select  " + SQLHelper.getMultiLangNameColumn("name")
+					+ "   from bd_currtype  	 where pk_currtype = ?";
+		}
+		SQLParameter par = new SQLParameter();
+		par.addParam(id);
+		return dao.executeQuery(sql, par, new ColumnProcessor());
+	}
+
+	@Override
+	public GeneralVO[] getPsnjobsBySql(String pk_org, String whereSql)
+			throws BusinessException {
+		// 获取业务委托sql
+		String msSql = ManagescopeFacade.queryPsnjobPksSQLByHrorgAndBusiregion(
+				pk_org, ManagescopeBusiregionEnum.salary, true);
+		String sql = "select  "
+				+ SQLHelper.getMultiLangNameColumn("bd_psndoc.name")
+				+ " as name,hi_psnjob.pk_psnjob as pk_psnjob  from hi_psnjob 	inner join bd_psndoc  on hi_psnjob.pk_psndoc = bd_psndoc.pk_psndoc ";
+		sql += " inner join hi_psnorg on bd_psndoc.pk_psndoc=hi_psnorg.pk_psndoc and hi_psnorg.indocflag='Y' and hi_psnorg.lastflag='Y' ";
+		sql += " where   hi_psnjob.pk_psnjob in " + msSql;
+		if (!StringUtils.isEmpty(whereSql)) {
+			sql += " and hi_psnjob.pk_psnjob in( select pk_psnjob from hi_psnjob where "
+					+ whereSql + ")";
+		}
+		sql += " and hi_psnjob.pk_org in (select pk_adminorg from org_admin_enable) ";
+		return (GeneralVO[]) dao.executeQuery(sql, new GeneralVOProcessor(
+				GeneralVO.class));
+	}
+
+	@Override
+	public void update4D(String pk_wa_class, String cyearperiods,
+			String condition) throws BusinessException {
+		DataVO[] oldVOs = pub4WA(pk_wa_class, cyearperiods, condition);
+		DataVO[] vos = SalaryDecryptUtil.decrypt4Array(oldVOs);
+		getBaseDao().updateVOArray(vos);
+	}
+
+	@Override
+	public void update4E(String pk_wa_class, String cyearperiods,
+			String condition) throws BusinessException {
+		DataVO[] oldVOs = pub4WA(pk_wa_class, cyearperiods, condition);
+		DataVO[] vos = SalaryEncryptionUtil.encryption4Array(oldVOs);
+		getBaseDao().updateVOArray(vos);
+	}
+
+	private DataVO[] pub4WA(String pk_wa_class, String cyearperiods,
+			String condition) throws BusinessException {
+		StringBuffer sql = new StringBuffer();
+		sql.append("select * from wa_data ");
+		sql.append("where pk_wa_class = ? and cyearperiod in (" + cyearperiods
+				+ ") ");
+		if (condition != null) {
+			sql.append("and " + condition);
+		}
+		SQLParameter parameter = new SQLParameter();
+		parameter.addParam(pk_wa_class);
+		ArrayList<DataVO> voList = (ArrayList<DataVO>) getBaseDao()
+				.executeQuery(sql.toString(), parameter,
+						new BeanListProcessor(DataVO.class));
+		DataVO[] list2Array = new DataVO[voList.size()];
+		for (int i = 0; i < voList.size(); i++) {
+			list2Array[i] = voList.get(i);
+		}
+		return list2Array;
+	}
+
+	public BaseDAO getBaseDao() {
+		if (dao == null) {
+			dao = new BaseDAO();
+		}
+		return dao;
+	}
+
+}

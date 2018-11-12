@@ -1,0 +1,275 @@
+package nc.bs.hrsms.ta.sss.shopleave.common;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+
+import nc.bs.hrsms.ta.sss.common.ShopTaAppContextUtil;
+import nc.bs.hrsms.ta.sss.common.ShopTaListBasePageModel;
+import nc.bs.hrsms.ta.sss.shopleave.ShopLeaveApplyConsts;
+import nc.bs.hrss.pub.ServiceLocator;
+import nc.bs.hrss.pub.exception.HrssException;
+import nc.bs.hrss.pub.tool.CommonUtil;
+import nc.bs.hrss.ta.utils.ComboDataUtil;
+import nc.bs.hrss.ta.utils.TBMPeriodUtil;
+import nc.itf.hrss.ta.timeapply.IQueryOrgOrDeptVid;
+import nc.uap.lfw.core.combodata.ComboData;
+import nc.uap.lfw.core.comp.FormComp;
+import nc.uap.lfw.core.comp.FormElement;
+import nc.uap.lfw.core.ctx.AppLifeCycleContext;
+import nc.uap.lfw.core.data.Dataset;
+import nc.uap.lfw.core.data.Field;
+import nc.uap.lfw.core.data.FieldSet;
+import nc.uap.lfw.core.data.MdDataset;
+import nc.uap.lfw.core.data.Row;
+import nc.uap.lfw.core.data.UnmodifiableMdField;
+import nc.uap.lfw.core.page.LfwView;
+import nc.vo.pub.BusinessException;
+import nc.vo.pub.lang.UFBoolean;
+import nc.vo.pub.lang.UFDouble;
+import nc.vo.ta.leave.LeavebVO;
+import nc.vo.ta.leave.LeavehVO;
+import nc.vo.ta.period.PeriodVO;
+import nc.vo.ta.psndoc.TBMPsndocVO;
+import nc.vo.ta.timerule.TimeRuleVO;
+
+public class ShopTaAfterDataChange {
+
+	/**
+	 * 
+	 */
+	public static void onAfterDataChange(Dataset ds, Row row){
+		TBMPsndocVO tbmPsndocVO = ShopTaAppContextUtil.getTBMPsndocVO();
+		if(tbmPsndocVO == null){
+//			throw new LfwRuntimeException("您还没有设置考勤档案，不能进行新增操作！");
+			CommonUtil.showMessageDialog("当前人员的考勤档案已经结束，只能新增档案结束前的数据！");
+			return;
+		}
+		String pk_psnjob = tbmPsndocVO.getPk_psnjob();
+		String pk_psnorg = tbmPsndocVO.getPk_psnorg();
+		
+		// 人员任职主键
+		row.setValue(ds.nameToIndex("pk_psnjob"), pk_psnjob);
+		// 人员组织关系组件
+		row.setValue(ds.nameToIndex("pk_psnorg"), pk_psnorg);
+		
+		List<String> list = getVersionIds(pk_psnjob);
+		if (list != null && list.size() > 0) {
+			// 人员任职所属业务单元的版本id
+			row.setValue(ds.nameToIndex("pk_org_v"), list.get(0));
+			// 人员任职所属部门的版本pk_dept_v
+			row.setValue(ds.nameToIndex("pk_dept_v"), list.get(1));
+		}
+		
+		// 考勤规则
+		TimeRuleVO timeRuleVO = ShopTaAppContextUtil.getTimeRuleVO();
+		// 往期假结余优先
+		if (timeRuleVO.isPreHolidayFirst()) {
+			// 年度
+			row.setValue(ds.nameToIndex(LeavehVO.LEAVEYEAR), null);
+			// 期间
+			row.setValue(ds.nameToIndex(LeavehVO.LEAVEMONTH), null);
+		} else {
+			PeriodVO latestPeriodVO = ShopTaAppContextUtil.getLatestPeriodVO();
+			if (latestPeriodVO != null) {// 新增时年度和期间默认选择当前考勤期间
+				// 年度
+				row.setValue(ds.nameToIndex(LeavehVO.LEAVEYEAR), latestPeriodVO.getTimeyear());
+				// 期间
+				row.setValue(ds.nameToIndex(LeavehVO.LEAVEMONTH), latestPeriodVO.getTimemonth());
+			}
+		}
+		// 休假总时长
+		row.setValue(ds.nameToIndex(LeavehVO.SUMHOUR), UFDouble.ZERO_DBL);
+		// 已休时长
+		row.setValue(ds.nameToIndex(LeavehVO.RESTEDDAYORHOUR), UFDouble.ZERO_DBL);
+		// 享有时长
+		row.setValue(ds.nameToIndex(LeavehVO.REALDAYORHOUR), UFDouble.ZERO_DBL);
+		// 冻结时长
+		row.setValue(ds.nameToIndex(LeavehVO.FREEZEDAYORHOUR), UFDouble.ZERO_DBL);
+		// 可用时长
+		row.setValue(ds.nameToIndex(LeavehVO.USEFULDAYORHOUR), UFDouble.ZERO_DBL);
+		// 结余时长
+		row.setValue(ds.nameToIndex(LeavehVO.RESTDAYORHOUR), UFDouble.ZERO_DBL);
+		// 单日哺乳时长小时
+		row.setValue(ds.nameToIndex(LeavehVO.LACTATIONHOUR), UFDouble.ZERO_DBL);
+		// 假期结算顺序号
+		row.setValue(ds.nameToIndex(LeavehVO.LEAVEINDEX), Integer.valueOf(1));
+		// 是否哺乳假标识
+		row.setValue(ds.nameToIndex(LeavehVO.ISLACTATION), UFBoolean.FALSE);
+		setPageDisp();
+		// 根据考勤规则设置考勤数据的小时位数
+		LfwView viewMain = AppLifeCycleContext.current().getViewContext().getView();
+		setTimeDatasPrecision(viewMain);
+	}
+	
+	/**
+	 * 获得人员任职所属业务单元/部门的版本id
+	 * 
+	 * @param pk_psnjob
+	 * @return
+	 */
+	private static List<String> getVersionIds(String pk_psnjob) {
+		List<String> list = null;
+		IQueryOrgOrDeptVid service;
+		try {
+			service = ServiceLocator.lookup(IQueryOrgOrDeptVid.class);
+			list = service.getOrgOrDeptVidByPsnjob(pk_psnjob);
+		} catch (HrssException ex) {
+			ex.alert();
+		} catch (BusinessException ex) {
+			new HrssException(ex).deal();
+		}
+		return list;
+	}
+	
+	
+	private static void setPageDisp() {
+		LfwView viewMain = AppLifeCycleContext.current().getViewContext().getView();
+		// 设置年度和期间是否可编辑
+		setYearMonthEnable(viewMain);
+		// 设置年度和期间的ComboData
+		setYearMonthComboData(viewMain);
+	}
+
+	/**
+	 * 设置年度和期间是否可编辑<br/>
+	 * 1.启用往期假结余优先,强制要求按照往期假优先休假原则自动分单,故申请页面年度和期间不可输入.<br/>
+	 * 2.不启用往期假结余优先,不选择年度和期间,按照往期假优先休假原则自动分单功能.<br/>
+	 * 3.不启用往期假结余优先,选择年度和期间,按照当前期假优先休假原则自动分单功能.<br/>
+	 * 不启用往期假结余优先,不强制要求按照往期假优先休假原则自动分单,故申请页面年度和期间可输入.<br/>
+	 * 
+	 * @param latestPeriodVO
+	 */
+	public static void setYearMonthEnable(LfwView viewMain) {
+
+		FormComp formComp = (FormComp) viewMain.getViewComponents().getComponent(ShopLeaveApplyConsts.PAGE_FORM_LEAVEINFO);
+		if (formComp == null) {
+			return;
+		}
+		// 考勤规则
+		TimeRuleVO timeRuleVO = ShopTaAppContextUtil.getTimeRuleVO();
+		FormElement yearElem = formComp.getElementById(LeavehVO.LEAVEYEAR);
+		if (yearElem != null) {
+			// 往期假结余优先
+			if (timeRuleVO.isPreHolidayFirst()) {
+				yearElem.setEnabled(false);
+			} else {
+				yearElem.setEnabled(true);
+			}
+		}
+		FormElement monthElem = formComp.getElementById(LeavehVO.LEAVEMONTH);
+		if (monthElem != null) {
+			// 往期假结余优先
+			if (timeRuleVO.isPreHolidayFirst()) {
+				monthElem.setEnabled(false);
+			} else {
+				monthElem.setEnabled(true);
+			}
+		}
+
+	}
+
+	/**
+	 * 设置年度和期间的ComboData
+	 * 
+	 * @param latestPeriodVO
+	 */
+	public static void setYearMonthComboData(LfwView viewMain) {
+		// 设置年度和期间的下拉数据集
+		ComboData yearData = viewMain.getViewModels().getComboData(ShopLeaveApplyConsts.WIDGET_COMBODATA_YEAR);
+		ComboData monthData = viewMain.getViewModels().getComboData(ShopLeaveApplyConsts.WIDGET_COMBODATA_MONTH);
+		// 人员考勤档案
+		TBMPsndocVO tbmPsndoc = ShopTaAppContextUtil.getTBMPsndocVO();
+		if (tbmPsndoc == null) {// 考勤档案为空的情况,不能进入新增
+			return;
+		}
+		Map<String, String[]> periodMap = TBMPeriodUtil.getPeriodMap(tbmPsndoc.getPk_org());
+		if (periodMap == null || periodMap.size() == 0) {
+			return;
+		}
+		String[] years = periodMap.keySet().toArray(new String[0]);
+		if (years == null || years.length == 0) {
+			return;
+		}
+		if (years.length > 1) {
+			Arrays.sort(years);
+			Collections.reverse(Arrays.asList(years));
+		}
+		ComboDataUtil.addCombItemsAfterClean(yearData, years);
+
+		PeriodVO latestPeriodVO = ShopTaAppContextUtil.getLatestPeriodVO();
+		if (latestPeriodVO == null) {
+			return;
+		}
+		// 选中年度
+		if (!periodMap.keySet().contains(latestPeriodVO.getTimeyear())) {
+			return;
+		}
+		String[] months = periodMap.get(latestPeriodVO.getTimeyear());
+		if (months == null || months.length == 0) {
+			return;
+		}
+		ComboDataUtil.addCombItemsAfterClean(monthData, months);
+	}
+	
+	/**
+	 * 根据考勤规则设置考勤数据的小时位数
+	 * 
+	 */
+	private static void setTimeDatasPrecision(LfwView viewMain) {
+		// 考勤数据
+		String[] timeDatas = getTimeDataFields();
+		if (timeDatas == null || timeDatas.length == 0) {
+			return;
+		}
+		Dataset[] dss = viewMain.getViewModels().getDatasets();
+		if (dss == null || dss.length == 0) {
+			return;
+		}
+		// 考勤位数
+		int pointNum = getPointNum();
+		for (Dataset ds : dss) {
+			if (ds instanceof MdDataset) {
+				for (String filedId : timeDatas) {
+					int index = ds.getFieldSet().nameToIndex(filedId);
+					if (index >= 0) {
+						FieldSet fieldSet = ds.getFieldSet();
+						Field field = fieldSet.getField(filedId);
+						if(field instanceof UnmodifiableMdField) 
+							field = ((UnmodifiableMdField) field).getMDField();
+						fieldSet.updateField(filedId, field);
+						
+						field.setPrecision(String.valueOf(pointNum));
+						
+					}
+				}
+			}
+		}
+	}
+
+	/**
+	 * 获得考勤位数
+	 * 
+	 * @return
+	 */
+	private static int getPointNum() {
+		TimeRuleVO timeRuleVO = ShopTaAppContextUtil.getTimeRuleVO();
+		if (timeRuleVO == null) {
+			// 没有考勤规则的情况，设置默认值
+			return ShopTaListBasePageModel.DEFAULT_PRECISION;
+		}
+		int pointNum = Math.abs(timeRuleVO.getTimedecimal());
+		return pointNum;
+	}
+	
+	/**
+	 * 设置考勤数据的小时位数<br/>
+	 * String[]待设置的考勤数据字段数组<br/>
+	 * 
+	 * @return
+	 */
+	protected static String[] getTimeDataFields() {
+		return new String[] { LeavehVO.SUMHOUR, LeavehVO.REALDAYORHOUR, LeavehVO.RESTEDDAYORHOUR, LeavehVO.RESTDAYORHOUR, LeavehVO.FREEZEDAYORHOUR, LeavehVO.USEFULDAYORHOUR, LeavebVO.LEAVEHOUR,LeavehVO.LACTATIONHOUR };
+	}
+}

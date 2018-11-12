@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="GBK"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+<bean id="menuItem" class="nc.pubapp.pade.funcmodel.vo.MenuItem">
+<property name="dr" value="0"/>
+<property name="funModelFilePath" value="groupinsurance/funcmodel/groupinsurance/funcregis/68J61035.menu"/>
+<property name="funcode" value="68J61035"/>
+<property name="ismenutype" value="false"/>
+<property name="menuitemcode" value="60401035"/>
+<property name="menuitemname" value="团保费率表"/>
+<property name="pk_menuitem" value="0001ZZ10000000007S3F"/>
+<property name="resid" value="D60401035"/>
+<property name="ts" value="2017-08-23 09:36:11"/>
+</bean>
+
+</beans>

@@ -1,0 +1,4 @@
+insert into md_enumvalue(description,dr,enumsequence,hidden,id,industry,name,resid,ts,value,versiontype) values( 'FROMACTIVITY',null,0,'N','b10fc6ed-07fc-4a6e-9054-6e9e4d96d34a','0','培训活动颁发',null,'2018-09-16 13:58:25','1',0)
+/
+insert into md_enumvalue(description,dr,enumsequence,hidden,id,industry,name,resid,ts,value,versiontype) values( 'FROMMANUAL',null,1,'N','b10fc6ed-07fc-4a6e-9054-6e9e4d96d34a','0','人工录入',null,'2018-09-16 13:58:25','2',0)
+/

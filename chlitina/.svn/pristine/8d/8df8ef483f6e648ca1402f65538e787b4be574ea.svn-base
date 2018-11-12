@@ -1,0 +1,2 @@
+insert into md_component(createtime,creator,description,displayname,dr,fromsourcebmf,help,id,industry,isbizmodel,modifier,modifytime,name,namespace,ownmodule,preload,resid,resmodule,ts,version,versiontype) values( '2018-09-16 12:13:36',null,null,'团保保险公司(自定义档案)',null,'Y',null,'e2381943-b966-11e8-a42e-ab44e9fc28de','0','N',null,'2018-09-16 13:39:12','Defdoc-HRBXGS','uap','uapbd',null,null,'10140uddb','2018-09-16 13:39:13','3',0)
+go

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding='gb2312'?>
+<module name="hrta">
+  <public>
+	<component remote="true" singleton="true"  tx="CMT">
+	  <interface>nc.itf.ta.overtime.ISegdetailMaintain</interface>
+	  <implementation>nc.impl.ta.overtime.SegdetailMaintainImpl</implementation>
+	</component>
+	<component remote="true" singleton="true"  tx="CMT">
+	  <interface>nc.pubitf.ta.overtime.ISegDetailService</interface>
+	  <implementation>nc.pubimpl.ta.overtime.SegDetailServiceImpl</implementation>
+	</component>
+  </public> 
+</module> 

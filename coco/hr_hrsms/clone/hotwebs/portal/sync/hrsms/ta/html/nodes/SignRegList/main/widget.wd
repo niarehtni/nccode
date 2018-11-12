@@ -1,0 +1,500 @@
+<?xml version="1.0" encoding='UTF-8'?>
+<Widget caption="窗口" controllerClazz="nc.bs.hrsms.ta.SignReg.ctrl.MainViewController" id="main" refId="main" sourcePackage="ta/src/public/">
+    <PageMetas>
+    </PageMetas>
+    <PlugoutDescs>   
+    </PlugoutDescs>
+    <PluginDescs>
+    	 <PluginDesc id="Search">
+            <PluginDescItem clazztype="java.util.Map" id="key1">
+            </PluginDescItem>
+        </PluginDesc>
+         <PluginDesc id="ReSearch">
+            <PluginDescItem clazztype="java.lang.String" id="closewindow">
+            </PluginDescItem>
+        </PluginDesc>
+        <PluginDesc id="DeptChange">
+            <PluginDescItem clazztype="java.util.Map" id="deptout">
+            </PluginDescItem>
+        </PluginDesc>
+    </PluginDescs>
+    <Events>
+    	<Event async="true" methodName="pluginSearch" onserver="true">
+            <Params>
+                <Param>
+                    <Name>keys</Name>
+                    <Value>
+                    </Value>
+                    <Desc>                        <![CDATA[java.util.Map]]>
+                    </Desc>
+                </Param>
+            </Params>
+            <Action>
+            </Action>
+        </Event> 
+       <Event async="true" methodName="pluginReSearch" onserver="true">
+            <Params>
+                <Param>
+                    <Name>keys</Name>
+                    <Value>
+                    </Value>
+                    <Desc>                        <![CDATA[java.util.Map]]>
+                    </Desc>
+                </Param>
+            </Params>
+            <Action>
+            </Action>
+        </Event>
+        <Event async="true" methodName="pluginBatch_ReSearch" onserver="true">
+            <Params>
+                <Param>
+                    <Name>keys</Name>
+                    <Value>
+                    </Value>
+                    <Desc>                        <![CDATA[java.util.Map]]>
+                    </Desc>
+                </Param>
+            </Params>
+            <Action>
+            </Action>
+        </Event>
+        <Event async="true" methodName="pluginDeptChange" onserver="true">
+            <Params>
+                <Param>
+                    <Name>keys</Name>
+                    <Value></Value>
+                    <Desc>                        <![CDATA[java.util.Map]]>
+                    </Desc>
+                </Param>
+            </Params>
+            <Action>
+            </Action>
+        </Event>
+    </Events>
+    <Models>
+        <Datasets>
+            <RefMdDataset caption="用户" controlwidgetopeStatus="false" enabled="false" id="$refds_uap_user" lazyLoad="true" notNullBody="false" objMeta="uap.user" voMeta="nc.vo.sm.UserVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset caption="签卡原因(自定义档案)" controlwidgetopeStatus="false" enabled="false" id="$refds_uap_Defdoc_HRTA004_0xx" lazyLoad="true" notNullBody="false" objMeta="uap.Defdoc-HRTA004_0xx" voMeta="nc.vo.bd.defdoc.DefdocVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset caption="人员基本信息" controlwidgetopeStatus="false" enabled="false" id="$refds_hrhi_bd_psndoc" lazyLoad="true" notNullBody="false" objMeta="hrhi.bd_psndoc" voMeta="nc.vo.hi.psndoc.PsndocVO">
+                <Fields>
+                	<ModifyField id="pk_group" nullAble="false">
+                    </ModifyField>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset caption="组织_业务单元_行政组织版本信息" controlwidgetopeStatus="false" enabled="false" id="$refds_uap_adminorg_v" lazyLoad="true" notNullBody="false" objMeta="uap.adminorg_v" voMeta="nc.vo.vorg.AdminOrgVersionVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset caption="组织_部门" controlwidgetopeStatus="false" enabled="false" id="$refds_uap_dept" lazyLoad="true" notNullBody="false" objMeta="uap.dept" voMeta="nc.vo.org.DeptVO">
+                <Fields>
+                    <ModifyField id="code" nullAble="false">
+                    </ModifyField>
+                    <ModifyField id="pk_group" nullAble="false">
+                    </ModifyField>
+                    <ModifyField id="pk_org" nullAble="false">
+                    </ModifyField>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset caption="组织_部门版本信息" controlwidgetopeStatus="false" enabled="false" id="$refds_uap_dept_v" lazyLoad="true" notNullBody="false" objMeta="uap.dept_v" voMeta="nc.vo.vorg.DeptVersionVO">
+                <Fields>
+                	<ModifyField id="code" nullAble="false">
+                    </ModifyField>
+                    <ModifyField id="createdate" nullAble="true">
+                    </ModifyField>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset caption="签卡申请单子表" controlwidgetopeStatus="false" enabled="false" id="$refds_hrta_hrtasignb" lazyLoad="true" notNullBody="false" objMeta="hrta.hrtasignb" voMeta="nc.vo.ta.signcard.SignbVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset caption="组织_集团" controlwidgetopeStatus="false" enabled="false" id="$refds_uap_group" lazyLoad="true" notNullBody="false" objMeta="uap.group" voMeta="nc.vo.org.GroupVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset caption="组织关系" controlwidgetopeStatus="false" enabled="false" id="$refds_hrhi_hi_psnorg" lazyLoad="true" notNullBody="false" objMeta="hrhi.hi_psnorg" voMeta="nc.vo.hi.psndoc.PsnOrgVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset caption="签卡申请单主表" controlwidgetopeStatus="false" enabled="false" id="$refds_hrta_hrtasigncardh" lazyLoad="true" notNullBody="false" objMeta="hrta.hrtasigncardh" voMeta="nc.vo.ta.signcard.SignhVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <MdDataset caption="岗位基本信息" controlwidgetopeStatus="false" enabled="false" id="$refds_hrjf_om_post" lazyLoad="true" notNullBody="false" objMeta="hrjf.om_post" voMeta="nc.vo.om.post.PostVO">
+                <Fields>
+                </Fields>
+            </MdDataset>
+            <MdDataset caption="签卡登记" controlwidgetopeStatus="false" enabled="false" id="SignReg_DataSet" lazyLoad="false" notNullBody="false" objMeta="hrta.hrtasignreg" pageSize="15" voMeta="nc.vo.ta.signcard.SignRegVO">
+                <FieldRelations>
+                    <FieldRelation id="pk_group_rel" needProcess="true" refDataset="$refds_uap_group" useCache="true">
+                        <MatchFields>
+                            <Field readField="name" writeField="pk_group_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_group" value="pk_group">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_org_rel" needProcess="true" refDataset="$refds_uap_hrorg" useCache="true">
+                        <MatchFields>
+                            <Field readField="name" writeField="pk_org_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_hrorg" value="pk_org">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="signreason_rel" needProcess="true" refDataset="$refds_uap_Defdoc_HRTA004_0xx" useCache="true">
+                        <MatchFields>
+                            <Field readField="name" writeField="signreason_name">
+                            </Field>                    
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_defdoc" value="signreason">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_psndoc_rel" needProcess="true" refDataset="$refds_hrhi_hi_psnjob" >
+                        <MatchFields>
+                            <Field readField="pk_psndoc" writeField="pk_psnjob_pk_psndoc">
+                            </Field>
+                           
+                            <Field readField="clerkcode" writeField="pk_psnjob_clerkcode">
+                            </Field>
+                            <Field readField="pk_dept" writeField="pk_psnjob_pk_dept">
+                            </Field> 
+                            <Field readField="pk_post" writeField="pk_psnjob_pk_post">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_psnjob" value="pk_psnjob">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_psnjob_rel" needProcess="true" refDataset="$refds_hrhi_hi_psnjob" useCache="true">
+                        <MatchFields>
+                            <Field readField="pk_psndoc" writeField="pk_psnjob_pk_psndoc">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_psnjob" value="pk_psnjob">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_psnjob_pk_psndoc_rel" needProcess="true" refDataset="$refds_hrhi_bd_psndoc" useCache="true">
+                        <MatchFields>
+                             <Field readField="code" writeField="pk_psnjob_pk_psndoc_code">
+                            </Field>
+                            <Field readField="name" writeField="psndoc_name">
+                            </Field>
+                            
+                        </MatchFields>
+                        <WhereField>
+                             <Field key="pk_psndoc" value="pk_psndoc">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_org_v_rel" needProcess="true" refDataset="$refds_uap_adminorg_v" useCache="true">
+                        <MatchFields>
+                            <Field readField="name" writeField="pk_org_v_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_vid" value="pk_org_v">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_dept_v_rel" needProcess="true" refDataset="$refds_uap_dept_v" useCache="true">
+                        <MatchFields>
+                            <Field readField="name" writeField="pk_dept_v_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_vid" value="pk_dept_v">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_psnjob_pk_dept_rel" needProcess="true" refDataset="$refds_uap_dept">
+                        <MatchFields>
+                            <Field iscontains="Y" ismatch="Y" readField="pk_dept" writeField="pk_psnjob_pk_dept">
+                            </Field>
+                            <Field readField="name" writeField="pk_psnjob_pk_dept_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_dept" value="pk_psnjob_pk_dept">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="creator_rel" needProcess="true" refDataset="$refds_uap_user" useCache="true">
+                        <MatchFields>
+                            <Field readField="user_name" writeField="creator_user_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="cuserid" value="creator">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="modifier_rel" needProcess="true" refDataset="$refds_uap_user" useCache="true">
+                        <MatchFields>
+                            <Field readField="user_name" writeField="modifier_user_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="cuserid" value="modifier">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    
+                    <FieldRelation id="pk_psnjob_pk_post_rel" needProcess="true" refDataset="$refds_hrjf_om_post">
+                        <MatchFields>
+                            <Field readField="postname" writeField="pk_psnjob_pk_post_postname">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_post" value="pk_psnjob_pk_post">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                </FieldRelations>
+                <Fields>
+                	<Field dataType="String" i18nName="w_ta-000195" id="pk_psnjob_clerkcode" langDir="node_ta-res" nullAble="true" primaryKey="false" sourceField="pk_psnjob" text="员工号">
+                    </Field>
+                    <Field dataType="String" i18nName="" id="pk_psnjob_pk_psndoc_code" langDir="" nullAble="true" primaryKey="false" sourceField="pk_psnjob_pk_psndoc" text="人员编码">
+                    </Field>
+                    <Field dataType="String" i18nName="w_ta-000197" id="pk_psnjob_pk_dept" langDir="node_ta-res" nullAble="true" primaryKey="false" sourceField="pk_psnjob" text="部门">
+                    </Field>
+                    <Field dataType="String" i18nName="w_ta-000197" id="pk_psnjob_pk_dept_name" langDir="node_ta-res" nullAble="true" primaryKey="false" sourceField="pk_psnjob_pk_dept" text="部门">
+                    </Field>
+                    <Field dataType="String" i18nName="w_ta-001224" id="psndoc_name" langDir="node_ta-res" nullAble="true" primaryKey="false" text="姓名">
+                    </Field>
+                    <Field dataType="String" i18nName="" id="pk_psnjob_pk_post" langDir="" nullAble="true" primaryKey="false" sourceField="pk_psnjob" text="岗位">
+                    </Field>
+                    <Field dataType="String" i18nName="" id="pk_psnjob_pk_post_postname" langDir="" nullAble="true" primaryKey="false" sourceField="pk_psnjob_pk_post" text="岗位">
+                    </Field>
+                </Fields>
+                <Events>
+                	 <Event async="true" jsEventClaszz="nc.uap.lfw.core.event.conf.DatasetListener" methodName="onDataLoad_dsSignReg" name="onDataLoad" onserver="true">
+                        <SubmitRule cardSubmit="false" panelSubmit="false" tabSubmit="false">
+                        </SubmitRule>
+                        <Params>
+                            <Param>
+                                <Name>dataLoadEvent</Name>
+                                <Value>
+                                </Value>
+                                <Desc>                                    <![CDATA[nc.uap.lfw.core.event.DataLoadEvent]]>
+                                </Desc>
+                            </Param>
+                        </Params>
+                        <Action>
+                        </Action>
+                    </Event>
+                    <Event async="true" jsEventClaszz="nc.uap.lfw.core.event.conf.DatasetListener" methodName="onAfterDataChange" name="onAfterDataChange" onserver="true">
+                        <SubmitRule cardSubmit="false" panelSubmit="false" tabSubmit="false">
+                            <Widget cardSubmit="false" id="main" panelSubmit="false" tabSubmit="false">
+                                <Dataset id="SignReg_DataSet" type="ds_all_line">
+                                </Dataset>
+                            </Widget>
+                        </SubmitRule>
+                        <Params>
+                            <Param>
+                                <Name>datasetCellEvent</Name>
+                                <Value>
+                                </Value>
+                                <Desc>                                    <![CDATA[nc.uap.lfw.core.event.DatasetCellEvent]]>
+                                </Desc>
+                            </Param>
+                        </Params>
+                        <Action>
+                        </Action>
+                    </Event>                   
+                </Events>
+            </MdDataset>
+            <RefMdDataset caption="工作记录" controlwidgetopeStatus="false" enabled="false" id="$refds_hrhi_hi_psnjob" lazyLoad="true" notNullBody="false" objMeta="hrhi.hi_psnjob" voMeta="nc.vo.hi.psndoc.PsnJobVO">
+                <Fields>
+                	<ModifyField id="clerkcode" nullAble="false">
+                    </ModifyField>
+                    <ModifyField id="pk_psncl" nullAble="false">
+                    </ModifyField>
+                    <ModifyField id="begindate" nullAble="false">
+                    </ModifyField>
+                    <ModifyField id="pk_group" nullAble="false">
+                    </ModifyField>
+                    <ModifyField id="pk_org" nullAble="false">
+                    </ModifyField>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset caption="组织_业务单元_人力资源组织" controlwidgetopeStatus="false" enabled="false" id="$refds_uap_hrorg" lazyLoad="true" notNullBody="false" objMeta="uap.hrorg" voMeta="nc.vo.org.HROrgVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+        </Datasets>
+        <ComboDatas>
+            <MDComboDataConf caption="签卡刷卡进出标识" fullclassName="f5932e0d-836f-4599-8691-ec2b64233712" id="combo_SignReg_DataSet_signstatus">
+            </MDComboDataConf>
+            <MDComboDataConf caption="时间管理单据来源枚举" fullclassName="eab0b39e-32c7-405f-9317-23b4b0d3471e" id="combo_SignReg_DataSet_billsource">
+            </MDComboDataConf>
+        </ComboDatas>
+        <RefNodes>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" hrOrgs="false" i18nName="" id="refnode_SignReg_DataSet_pk_group_name" langDir="" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" read="false" readDs="masterDs" readFields="pk_group,name" refId="" refcode="集团" refnodeDelegator="" relationRefNodeId="" selLeafOnly="false" text="签卡登记_集团" usePower="false" writeDs="SignReg_DataSet" writeFields="pk_group,pk_group_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" hrOrgs="false" i18nName="" id="refnode_SignReg_DataSet_pk_psndoc_name" langDir="" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" read="false" readDs="masterDs" readFields="pk_psndoc,name" refId="" refcode="HR人员" refnodeDelegator="" relationRefNodeId="" selLeafOnly="false" text="签卡登记_HR人员" usePower="false" writeDs="SignReg_DataSet" writeFields="pk_psndoc,pk_psndoc_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" hrOrgs="false" i18nName="" id="refnode_SignReg_DataSet_modifier_user_name" langDir="" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" read="false" readDs="masterDs" readFields="cuserid,user_name" refId="" refcode="用户" refnodeDelegator="" relationRefNodeId="" selLeafOnly="false" text="签卡登记_用户" usePower="false" writeDs="SignReg_DataSet" writeFields="modifier,modifier_user_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" hrOrgs="false" i18nName="" id="refnode_SignReg_DataSet_pk_psnjob_pk_psndoc_name" langDir="" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" read="false" readDs="masterDs" readFields="pk_psnjob,pk_psndoc.name" refId="" refcode="人员工作记录" refnodeDelegator="" relationRefNodeId="" selLeafOnly="false" text="签卡登记_人员工作记录" usePower="false" writeDs="SignReg_DataSet" writeFields="pk_psnjob,pk_psnjob_pk_psndoc_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" hrOrgs="false" i18nName="" id="refnode_SignReg_DataSet_creator_user_name" langDir="" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" read="false" readDs="masterDs" readFields="cuserid,user_name" refId="" refcode="用户" refnodeDelegator="" relationRefNodeId="" selLeafOnly="false" text="签卡登记_用户" usePower="false" writeDs="SignReg_DataSet" writeFields="creator,creator_user_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" hrOrgs="false" i18nName="" id="refnode_SignReg_DataSet_pk_dept_v_name" langDir="" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" read="false" readDs="masterDs" readFields="pk_vid,name" refId="" refcode="部门版本(所有)" refnodeDelegator="" relationRefNodeId="" selLeafOnly="false" text="签卡登记_部门版本(所有)" usePower="false" writeDs="SignReg_DataSet" writeFields="pk_dept_v,pk_dept_v_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" hrOrgs="false" i18nName="" id="refnode_SignReg_DataSet_pk_org_name" langDir="" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" read="false" readDs="masterDs" readFields="pk_hrorg,name" refId="" refcode="人力资源组织(所有)" refnodeDelegator="" relationRefNodeId="" selLeafOnly="false" text="签卡登记_人力资源组织(所有)" usePower="false" writeDs="SignReg_DataSet" writeFields="pk_org,pk_org_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" hrOrgs="false" i18nName="" id="refnode_SignReg_DataSet_pk_org_v_name" langDir="" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" read="false" readDs="masterDs" readFields="pk_vid,name" refId="" refcode="行政组织版本" refnodeDelegator="" relationRefNodeId="" selLeafOnly="false" text="签卡登记_行政组织版本" usePower="false" writeDs="SignReg_DataSet" writeFields="pk_org_v,pk_org_v_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" hrOrgs="false" i18nName="" id="refnode_SignReg_DataSet_signreason_name" langDir="" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" read="false" readDs="masterDs" readFields="pk_defdoc,name" refId="" refcode="签卡原因(自定义档案)" refnodeDelegator="" relationRefNodeId="" selLeafOnly="false" text="签卡登记_签卡原因(自定义档案)" usePower="false" writeDs="SignReg_DataSet" writeFields="signreason,signreason_name">
+            </NCRefNode>
+        </RefNodes>
+    </Models>
+    <Components>
+        <GridComp autoRowHeight="false" canCopy="true" caption="签卡登记" checkBoxModel="1" dataset="SignReg_DataSet" editable="false" enabled="true" expandTree="false" id="SignReg_List" multiSelect="false" multiSelectShow="true" onPaste="" pagenationTop="false" reference="false" selfDefImageBtnRender="" showColInfo="false" showForm="false" showHeader="true" showImageBtn="false" showNumCol="false" showSumRow="false" showTree="true" sortable="true" visible="true">
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="pk_signreg" fixedHeader="false" i18nName="2singcreg-00011" id="pk_signreg" imageOnly="false" langDir="6017signcardreg" nullAble="false" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="签卡登记单主键" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="pk_psnjob_clerkcode" fixedHeader="false" i18nName="" id="pk_psnjob_clerkcode" imageOnly="false" langDir="node_ta-res" nullAble="true" renderType="LnkCompRender" showCheckBox="true" sortable="true" sumCol="false" text="员工号" textAlign="left" visible="true" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="pk_psnjob_pk_psndoc_code" fixedHeader="false" i18nName="w_ta-001223" id="pk_psnjob_pk_psndoc_code" imageOnly="false" langDir="node_ta-res" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="人员编码" textAlign="left" visible="true" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="psndoc_name" fixedHeader="false" i18nName="w_ta-001224" id="pk_psndoc_name" imageOnly="false" langDir="node_ta-res" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="姓名" textAlign="left" visible="true" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="pk_psnjob_pk_dept_name" fixedHeader="false" i18nName="w_ta-001260" id="pk_psnjob_pk_dept_name" imageOnly="false" langDir="node_ta-res" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="部门" textAlign="left" visible="true" width="120">
+            </Column>
+             <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="pk_psnjob_pk_post_postname" fixedHeader="false" i18nName="" id="pk_psnjob_pk_post_postname" imageOnly="false" langDir="" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="岗位" textAlign="left" visible="true" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="pk_daystat" fixedHeader="false" i18nName="w_ta-000199" id="pk_daystat" imageOnly="false" langDir="node_ta-res" nullAble="false" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="日统计主键" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="pk_group" fixedHeader="false" i18nName="w_ta-000200" id="pk_group" imageOnly="false" langDir="node_ta-res" nullAble="false" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="所属集团" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="pk_group_name" fixedHeader="false" i18nName="w_ta-000200" id="pk_group_name" imageOnly="false" langDir="node_ta-res" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="所属集团" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="pk_org" fixedHeader="false" i18nName="w_ta-000201" id="pk_org" imageOnly="false" langDir="node_ta-res" nullAble="false" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="所属组织" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="pk_org_name" fixedHeader="false" i18nName="w_ta-000202" id="pk_org_name" imageOnly="false" langDir="node_ta-res" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="组织" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="pk_psndoc" fixedHeader="false" i18nName="w_ta-000203" id="pk_psndoc" imageOnly="false" langDir="node_ta-res" nullAble="false" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="人员基本档案主键" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="pk_psnjob" fixedHeader="false" i18nName="w_ta-000198" id="pk_psnjob" imageOnly="false" langDir="node_ta-res" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="工作记录" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="pk_psnjob_pk_psndoc" fixedHeader="false" i18nName="w_ta-000198" id="pk_psnjob_pk_psndoc" imageOnly="false" langDir="node_ta-res" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="工作记录" textAlign="left" visible="false" width="120">
+            </Column>
+             <Column autoExpand="false" dataType="UFDateTime" editable="true" editorType="DateTimeText" field="signtime" fixedHeader="false" i18nName="2singcreg-00004" id="signtime" imageOnly="false" langDir="6017signcardreg" nullAble="true" renderType="DateTimeRender" showCheckBox="true" sortable="true" sumCol="false" text="签卡时间" textAlign="left" visible="true" width="150">
+            </Column>
+             <Column autoExpand="false" dataType="Integer" editable="true" editorType="ComboBox" field="signstatus" fixedHeader="false" i18nName="" id="signstatus" imageOnly="false" langDir="6017signcardreg" nullAble="true" refComboData="combo_SignReg_DataSet_signstatus" renderType="ComboRender" showCheckBox="true" sortable="true" sumCol="false" text="签卡状态" textAlign="right" visible="true" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="signreason" fixedHeader="false" i18nName="2singcreg-00002" id="signreason" imageOnly="false" langDir="6017signcardreg" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="签卡原因" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="pk_group" fixedHeader="false" i18nName="2UC000-000367" id="pk_group" imageOnly="false" langDir="6017signcardreg" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="所属集团" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="Reference" field="pk_group_name" fixedHeader="false" i18nName="2UC000-000367" id="pk_group_name" imageOnly="false" nullAble="true" refNode="refnode_SignReg_DataSet_pk_group_name" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="所属集团" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="pk_org" fixedHeader="false" i18nName="2UC000-000360" id="pk_org" imageOnly="false" langDir="6017signcardreg" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="所属组织" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="Reference" field="pk_org_name" fixedHeader="false" i18nName="2UC000-000360" id="pk_org_name" imageOnly="false" nullAble="true" refNode="refnode_SignReg_DataSet_pk_org_name" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="所属组织" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="Reference" field="signreason_name" fixedHeader="false" i18nName="2singcreg-00002" id="signreason_name" imageOnly="false" nullAble="true" refNode="refnode_SignReg_DataSet_signreason_name" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="签卡原因" textAlign="left" visible="true" width="120">
+            </Column>          
+            <Column autoExpand="false" dataType="String" editable="true" editorType="Reference" field="creator_user_name" fixedHeader="false" i18nName="2UC000-000155" id="creator_user_name" imageOnly="false" nullAble="true" refNode="refnode_SignReg_DataSet_creator_user_name" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="处理人" textAlign="left" visible="true" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="UFDateTime" editable="true" editorType="DateTimeText" field="creationtime" fixedHeader="false" i18nName="" id="creationtime" imageOnly="false" langDir="6017signcardreg" nullAble="true" renderType="DateTimeRender" showCheckBox="true" sortable="true" sumCol="false" text="处理时间" textAlign="left" visible="true" width="150">
+            </Column>
+            <Column autoExpand="false" dataType="Memo" editable="true" editorType="TextArea" field="signremark" fixedHeader="false" i18nName="2singcreg-00007" id="signremark" imageOnly="false" langDir="6017signcardreg" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="签卡说明" textAlign="left" visible="true" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="Integer" editable="true" editorType="ComboBox" field="billsource" fixedHeader="false" i18nName="2singcreg-00005" id="billsource" imageOnly="false" langDir="6017signcardreg" nullAble="true" refComboData="combo_SignReg_DataSet_billsource" renderType="ComboRender" showCheckBox="true" sortable="true" sumCol="false" text="单据来源" textAlign="right" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="pk_billsourceh" fixedHeader="false" i18nName="2singcreg-00008" id="pk_billsourceh" imageOnly="false" langDir="6017signcardreg" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="申请单来源主表主键" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="pk_billsourceb" fixedHeader="false" i18nName="2singcreg-00009" id="pk_billsourceb" imageOnly="false" langDir="6017signcardreg" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="申请单来源子表主键" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="creator" fixedHeader="false" i18nName="2UC000-000155" id="creator" imageOnly="false" langDir="6017signcardreg" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="创建人" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="modifier" fixedHeader="false" i18nName="2UC000-000490" id="modifier" imageOnly="false" langDir="6017signcardreg" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="最后修改人" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="Reference" field="modifier_user_name" fixedHeader="false" i18nName="2UC000-000490" id="modifier_user_name" imageOnly="false" nullAble="true" refNode="refnode_SignReg_DataSet_modifier_user_name" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="最后修改人" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="UFDateTime" editable="true" editorType="DateTimeText" field="modifiedtime" fixedHeader="false" i18nName="2UC000-000491" id="modifiedtime" imageOnly="false" langDir="6017signcardreg" nullAble="true" renderType="DateTimeRender" showCheckBox="true" sortable="true" sumCol="false" text="最后修改时间" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="UFLiteralDate" editable="true" editorType="DateText" field="signdate" fixedHeader="false" i18nName="2singcreg-00000" id="signdate" imageOnly="false" langDir="6017signcardreg" nullAble="true" renderType="DateRender" showCheckBox="true" sortable="true" sumCol="false" text="签卡日期" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="pk_psnorg" fixedHeader="false" i18nName="2UC000-000695" id="pk_psnorg" imageOnly="false" langDir="6017signcardreg" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="组织关系主键" textAlign="left" visible="false" width="120">
+            </Column>
+        </GridComp>
+    </Components>
+    <Menus>
+        <MenuBarComp id="menu_list">
+            <MenuItem i18nName="新增" id="list_add" langDir="6017signcardreg" modifiers="2" showModel="1" stateManager="nc.bs.hrsms.ta.SignReg.common.Init_StateManager" text="新增">
+            	<Events>
+                    <Event async="true" methodName="addNewSignReg" name="onclick" onserver="true">
+                        <SubmitRule>
+                        </SubmitRule>
+                        <Params>
+                            <Param>
+                                <Name>mouseEvent</Name>
+                                <Value>
+                                </Value>
+                                <Desc>                                    <![CDATA[]]>
+                                </Desc>
+                            </Param>
+                        </Params>
+                        <Action>
+                        </Action>
+                    </Event>
+                </Events>
+            </MenuItem>
+            <MenuItem i18nName="批量新增" id="batch_add" langDir="6017signcardreg" modifiers="2" showModel="1" stateManager="nc.bs.hrsms.ta.SignReg.common.Init_StateManager" text="批量新增">
+            	<Events>
+                    <Event async="true" methodName="addBatchSignReg" name="onclick" onserver="true">
+                        <SubmitRule>
+                        </SubmitRule>
+                        <Params>
+                            <Param>
+                                <Name>mouseEvent</Name>
+                                <Value>
+                                </Value>
+                                <Desc>                                    <![CDATA[]]>
+                                </Desc>
+                            </Param>
+                        </Params>
+                        <Action>
+                        </Action>
+                    </Event>
+                </Events>
+            </MenuItem>
+            <MenuItem i18nName="删除" id="list_delete" langDir="6017signcardreg"  modifiers="2" showModel="1" stateManager=" " text="删除">
+            	<Events>
+                    <Event async="true" methodName="deleteSignReg" name="onclick" onserver="true">
+                        <SubmitRule>
+                        </SubmitRule>
+                        <Params>
+                            <Param>
+                                <Name>mouseEvent</Name>
+                                <Value>
+                                </Value>
+                                <Desc>                                    <![CDATA[]]>
+                                </Desc>
+                            </Param>
+                        </Params>
+                        <Action>
+                        </Action>
+                    </Event>
+                </Events>
+            </MenuItem>
+        </MenuBarComp>
+    </Menus>
+</Widget>

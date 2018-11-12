@@ -1,0 +1,349 @@
+package nc.pubitf.twhr.utils;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import nc.bs.framework.common.NCLocator;
+import nc.hr.utils.InSQLCreator;
+import nc.itf.uap.IUAPQueryBS;
+import nc.jdbc.framework.processor.MapListProcessor;
+import nc.md.model.MetaDataException;
+import nc.md.persist.framework.IMDPersistenceQueryService;
+import nc.md.persist.framework.MDPersistenceService;
+import nc.vo.logging.Debug;
+import nc.vo.org.OrgVO;
+import nc.vo.pub.BusinessException;
+import nc.vo.pub.lang.UFBoolean;
+
+/**
+ *
+ * 法人组织工具类,此类前后端均可以用
+ *
+ * @author Ares.Tank
+ * @date 2018-9-18 10:47:47
+ */
+public class LegalOrgUtilsEX {
+	// 组织信息   多线程优化 TODO
+	private static Map<String, OrgDTO> orgMap;
+	//薪资委托关系pk
+	private final static String SALARY_RELATION_KEY  = "SALARY00000000000000";
+
+
+	/**
+	 * 获取这些哥们儿的法人组织
+	 *
+	 * @param psndoc
+	 * @return Map<psndoc,pk_org>
+	 */
+	@SuppressWarnings("unchecked")
+	public static Map<String, String> getLegalOrgByPsndoc(String[] psndocs) {
+		if (null == psndocs || psndocs.length <= 0) {
+			return new HashMap<>();
+		}
+		InSQLCreator isc = new InSQLCreator();
+		String psndocSql;
+		try {
+			psndocSql = isc.getInSQL(psndocs);
+		} catch (BusinessException e1) {
+			Debug.debug(e1.getMessage());
+			return new HashMap<>();
+		}
+		String sqlStr = "select bd_psndoc.pk_psndoc,bd_psndoc.pk_org " + "from bd_psndoc " + "WHERE pk_psndoc in ("
+				+ psndocSql + ") ";
+
+		List<Map<String, String>> pkOrgMapList;
+		try {
+			IUAPQueryBS iUAPQueryBS = (IUAPQueryBS) NCLocator.getInstance().lookup(IUAPQueryBS.class.getName());
+
+			pkOrgMapList = (List<Map<String, String>>) iUAPQueryBS.executeQuery(sqlStr, new MapListProcessor());
+		} catch (BusinessException e) {
+			Debug.debug(e.getMessage());
+			return new HashMap<>();
+		}
+		if (pkOrgMapList != null && pkOrgMapList.size() > 0) {
+			// 所有的要查询的组织
+			Set<String> orgSet = new HashSet<>();
+			// map<psndoc,pk_org>
+			Map<String, String> resultMap = new HashMap<>();
+
+			for (Map<String, String> psnOrgMap : pkOrgMapList) {
+				if (psnOrgMap != null && psnOrgMap.get("pk_psndoc") != null && psnOrgMap.get("pk_org") != null) {
+					resultMap.put(psnOrgMap.get("pk_psndoc"), psnOrgMap.get("pk_org"));
+					orgSet.add(psnOrgMap.get("pk_org"));
+				}
+			}
+			// 查询组织对应的法人组织 map<组织,法人组织>
+			Map<String, String> orgToLegalOrgMap = getLegalOrgByOrgs(orgSet.toArray(new String[0]));
+			if (orgToLegalOrgMap != null && orgToLegalOrgMap.size() > 0) {
+				for (Map.Entry<String, String> entry : resultMap.entrySet()) {
+					// 将法人组织与人员对应
+					resultMap.put(entry.getKey(), orgToLegalOrgMap.get(entry.getValue()));
+				}
+			}
+			return resultMap;
+		}
+		return new HashMap<>();
+
+	}
+
+	/**
+	 * 获取本组织的法人组织,如果本身是法人组织,那么就返回本身, 如果不是,那么查找上级,返回关系最近的法人组织
+	 *
+	 * @param pkOrg
+	 * @return<组织pk,法人组织pk>
+	 */
+
+	public static Map<String, String> getLegalOrgByOrgs(String[] pkOrgs) {
+		Map<String, String> resultMap = new HashMap<>();
+		if (null == pkOrgs || pkOrgs.length <= 0) {
+			return resultMap;
+		}
+
+		// 先去重,不过好像没什么意义
+		Set<String> pkOrgsSet = new HashSet<>(Arrays.asList(pkOrgs));
+		// 初始化组织信息
+		initOrgInfo();
+		// 查找组织的法人组织
+		for (String pkOrg : pkOrgsSet) {
+			resultMap.put(pkOrg, findLegalOrg(pkOrg));
+		}
+
+		return resultMap;
+	}
+
+	/**
+	 * 获取人力资源组织下的所有法人组织
+	 *
+	 * @param pkOrgs 人力资源组织
+	 * @param pkGoup
+	 *            当前登录用户的所属的集团 用于权限的校验
+	 * @return <pk_hrorg>
+	 */
+	@SuppressWarnings("unchecked")
+	public static Set<String> getOrgsByLegal(String pkOrg, String pkGroup) {
+		return getOrgsByLegal(pkOrg);
+	}
+	/**
+	 * 获取人力资源组织下的所有法人组织
+	 *
+	 * @param pkOrgs 人力资源组织
+
+	 * @return <pk_hrorg>
+	 */
+	@SuppressWarnings("unchecked")
+	public static Set<String> getOrgsByLegal(String pkOrg) {
+		Set<String> resultSet = new HashSet<>();
+		if (null == pkOrg) {
+			return resultSet;
+		}
+		// 先查询当前用户所有查看组织的权限
+		List<Map<String, String>> mapList;
+
+
+		// 查询人力资源组织下的所有法人组织信息
+		String sqlStr = "select pk_org from org_orgs " + " where innercode like (select innercode from org_orgs "
+				+ " where org_orgs.pk_org = '" + pkOrg + "') || '%' " + " and dr = 0 and org_orgs.orgtype2 = 'Y' ";
+
+		try {
+			IUAPQueryBS iUAPQueryBS = (IUAPQueryBS) NCLocator.getInstance().lookup(IUAPQueryBS.class.getName());
+			mapList = (List<Map<String, String>>) iUAPQueryBS.executeQuery(sqlStr, new MapListProcessor());
+		} catch (BusinessException e) {
+			Debug.debug(e.getMessage());
+			mapList = new ArrayList<>();
+		}
+		if (null != mapList && mapList.size() > 0) {
+			//
+			orgMap = new HashMap<>();
+
+			for (Map<String, String> map : mapList) {
+				if (null != map.get("pk_org")) {
+					resultSet.add(map.get("pk_org"));
+				}
+			}
+		}
+		return resultSet;
+	}
+	/**
+	 * 查询组织信息
+	 * @param pkOrg
+	 * @return
+	 * @throws MetaDataException
+	 */
+	@SuppressWarnings("unchecked")
+	public static Map<String,OrgVO> getOrgInfo (String[] pkOrg) throws MetaDataException{
+		Map<String,OrgVO> resultMap  = new HashMap<>();
+		IMDPersistenceQueryService service = MDPersistenceService.lookupPersistenceQueryService();
+		List<OrgVO> restList  = (List<OrgVO>)service.queryBillOfVOByPKs(OrgVO.class, pkOrg, false);
+		for(OrgVO ov :restList){
+			resultMap.put(ov.getPk_org(),ov);
+		}
+		return resultMap;
+	}
+	/**
+	 * 初始化组织信息,用于查出法人组织
+	 */
+	@SuppressWarnings("unchecked")
+	private static void initOrgInfo() {
+		String sqlStr = "select org_orgs.pk_org,org_orgs.pk_fatherorg,orgtype2 " + "from org_orgs where dr=0 ";
+		List<Map<String, Object>> mapList;
+		try {
+			IUAPQueryBS iUAPQueryBS = (IUAPQueryBS) NCLocator.getInstance().lookup(IUAPQueryBS.class.getName());
+			mapList = (List<Map<String, Object>>) iUAPQueryBS.executeQuery(sqlStr, new MapListProcessor());
+		} catch (BusinessException e) {
+			Debug.debug(e.getMessage());
+			mapList = new ArrayList<>();
+		}
+		if (null != mapList && mapList.size() > 0) {
+			// 封装一下数据结果,用来查询信息,<pk_org,orgdto>
+			orgMap = new HashMap<>();
+
+			for (Map<String, Object> map : mapList) {
+				if (null != map.get("pk_org")) {
+					OrgDTO temp = new OrgDTO();
+					temp.setPkOrg((String) map.get("pk_org"));
+					temp.setPkFatherOrg((String) map.get("pk_fatherorg"));
+					temp.setLegalOrg(new UFBoolean((String) map.get("orgtype2")).booleanValue());
+
+					orgMap.put(temp.getPkOrg(), temp);
+				}
+			}
+		}
+	}
+
+	/**
+	 * 向上查找此组织的法人组织
+	 *
+	 * @param pkOrg
+	 * @param orgMap
+	 * @return 法人组织pk
+	 */
+	private static String findLegalOrg(String pkOrg) {
+
+		if (null == orgMap || null == orgMap.get(pkOrg)) {
+			return null;
+		}
+		// 当前组织为法人组织则返回
+		if (orgMap.get(pkOrg).isLegalOrg()) {
+			return pkOrg;
+		}
+		// 如果当前组织没有父组织,而且不是法人组织,说明没有所属的法人组织
+		if (null == orgMap.get(pkOrg).getPkFatherOrg()) {
+			return null;
+		}
+		// 否则查找上级组织
+		return findLegalOrg(orgMap.get(pkOrg).getPkFatherOrg());
+	}
+	/**
+	 * 查找薪资委托给此人力资源组织的组织,若出现层级委托现象,将会返回所有的下级的组织
+	 * @param pkOrg
+	 * @return
+	 * @author Ares.Tank
+	 * @date 2018年10月1日 下午7:43:44
+	 * @description
+	 */
+	@SuppressWarnings("unchecked")
+	public static List<String> getRelationOrgWithSalary(String pk_hrorg){
+		Set<String> result = new HashSet<>();
+		//查询所有的组织关系
+		String sqlStr = " select hro.pk_org as sub_org ,hro.pk_hrorg as fa_hrorg from hr_relation_org hro "
+				+ " where hro.business_type='" + SALARY_RELATION_KEY
+				+ "' and dr = 0 ";
+		List<Map<String,String>> dataMapList;
+		try {
+			IUAPQueryBS iUAPQueryBS = (IUAPQueryBS) NCLocator.getInstance().lookup(IUAPQueryBS.class.getName());
+			dataMapList = (List<Map<String,String>>) iUAPQueryBS.executeQuery(sqlStr, new MapListProcessor());
+		} catch (BusinessException e) {
+			Debug.debug(e.getMessage());
+			dataMapList = new ArrayList<>();
+		}
+		//Map<pk_hrOrg,Set<org>> <上级委托组织,Set<被委托的组织>>
+		Map<String,Set<String>> orgMap4Loop = new HashMap<>();
+		if (null != dataMapList && dataMapList.size() > 0) {
+			//Map<pk_hrOrg,set<pk_org>>
+			for(Map<String,String> tempMap : dataMapList){
+				if(null != tempMap && null != tempMap.get("sub_org") && null != tempMap.get("fa_hrorg")){
+					if(!orgMap4Loop.containsKey(tempMap.get("fa_hrorg"))){
+						//不存在就新增set再新增
+						Set<String> tempSet  = new HashSet<>();
+						tempSet.add(tempMap.get("sub_org"));
+						orgMap4Loop.put(tempMap.get("fa_hrorg"), tempSet);
+					}else{
+						//已经存在则直接新增
+						orgMap4Loop.get(tempMap.get("fa_hrorg")).add(tempMap.get("sub_org"));
+					}
+
+				}
+			}
+			//进行递归查询组织的薪资委托关系
+			recursionSearchRelationOrg(orgMap4Loop,result,pk_hrorg);
+		}
+		//加入本身
+		result.add(pk_hrorg);
+		return new ArrayList<>(result);
+	}
+	/**
+	 * 进行递归查询组织的薪资委托关系
+	 * @param orgMap4Loop <pk_hrOrg,Set<org>> <上级委托组织,Set<被委托的组织>>
+	 * @param result <下级的薪资委托组织>
+	 * @param 需要查找的人力资源组织
+	 * @author Ares.Tank
+	 * @date 2018年10月1日 下午9:22:18
+	 * @description
+	 */
+	private static void recursionSearchRelationOrg(Map<String, Set<String>> orgMap4Loop, Set<String> result,
+			String pk_hrorg) {
+		//有下级是才进行查找(人力资源组织才有下级)
+		if(orgMap4Loop.containsKey(pk_hrorg)){
+			for(String pkOrg : orgMap4Loop.get(pk_hrorg)){
+				//不对本身进行递归
+				if(pkOrg.equals(pk_hrorg)){
+					continue;
+				}
+				//本级组织
+				result.add(pkOrg);
+				//看看下级有没有可添加的
+				recursionSearchRelationOrg(orgMap4Loop,result,pkOrg);
+			}
+		}
+	}
+}
+
+// 临时封装一下递归所需的数据结构
+class OrgDTO {
+	// 组织pk
+	private String pkOrg;
+	// 父组织的pk
+	private String pkFatherOrg;
+	// 是否是法人组织
+	private boolean isLegalOrg;
+
+	public String getPkOrg() {
+		return pkOrg;
+	}
+
+	public void setPkOrg(String pkOrg) {
+		this.pkOrg = pkOrg;
+	}
+
+	public String getPkFatherOrg() {
+		return pkFatherOrg;
+	}
+
+	public void setPkFatherOrg(String pkFatherOrg) {
+		this.pkFatherOrg = pkFatherOrg;
+	}
+
+	public boolean isLegalOrg() {
+		return isLegalOrg;
+	}
+
+	public void setLegalOrg(boolean isLegalOrg) {
+		this.isLegalOrg = isLegalOrg;
+	}
+
+}

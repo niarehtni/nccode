@@ -1,0 +1,428 @@
+package nc.impl.wa.datainterface;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import nc.bs.dao.BaseDAO;
+import nc.bs.framework.common.NCLocator;
+import nc.hr.utils.InSQLCreator;
+import nc.hr.utils.ResHelper;
+import nc.impl.wa.datainterface.export.DataFormatter;
+import nc.itf.org.IOrgPubQryService;
+import nc.itf.wa.datainterface.IReportExportService;
+import nc.jdbc.framework.processor.ColumnListProcessor;
+import nc.jdbc.framework.processor.ColumnProcessor;
+import nc.jdbc.framework.processor.MapListProcessor;
+import nc.pubitf.para.SysInitQuery;
+import nc.vo.bd.defdoc.DefdocVO;
+import nc.vo.ml.MultiLangUtil;
+import nc.vo.org.HROrgVO;
+import nc.vo.pub.BusinessException;
+import nc.vo.wa.category.WaClassVO;
+
+import org.apache.commons.lang.StringUtils;
+
+public class ReportExportServiceImpl implements IReportExportService {
+
+	public String[] getIITXTextReport(String[] dataPKs, int iYear,
+			String applyFormat, String applyCount, String applyReason,
+			String vatNumber, String grantType, String comLinkMan,
+			String comLinkTel, String comLinkEmail) throws BusinessException {
+		Map<String, Object> refList = getRefListByVatNumber(vatNumber);
+		InSQLCreator creator = new InSQLCreator();
+		String tempTableName = creator.getInSQL(dataPKs);
+		DataFormatter formatter = new DataFormatter("IITR_FMT_TW_2018");
+		formatter.setiYear(iYear);
+		formatter.getRefsMap().putAll(refList);
+		formatter.getRefsMap().put("APPLYCOUNT", applyCount);
+		formatter.getRefsMap().put("APPLYREASON",
+				applyReason == null ? "" : applyReason);
+		formatter.getRefsMap().put("GRANTTYPE", grantType);
+		formatter.getRefsMap().put("FORMAT", applyFormat);
+		formatter.getRefsMap().put("TEMPTABLENAME", tempTableName);
+		formatter.getRefsMap().put("VATNUMBER", vatNumber);
+		formatter.getRefsMap().put("COMLINKMAN", comLinkMan);
+		formatter.getRefsMap().put("COMTELNO", comLinkTel);
+		formatter.getRefsMap().put("COMEMAIL", comLinkEmail);
+		formatter.setiYear(iYear);
+		String[] rtn = formatter.getData();
+		return rtn;
+	}
+
+	// 根據統編取參數值，參數值記錄組織自定義項目編碼（不同組織可能定義不同）
+	// COUNTYDS 縣市別
+	// DEPTDS 機關別
+	// VATNUMBERDS 申報統一編號
+	// COMNAMEDS 申報單位名稱
+	// COMADDRESSDS 申報單位地址
+	// COMPRINCIPALDS 扣稅義務人名稱
+	// COMTAXNODS 申報單位稅籍編號
+	// COMISHQDS 總分支機構註記
+	// COMINSTOCKDS 上市公司註記
+	// COMISBANKDS 金融機構註記
+	// COMISAGENTDS 事務所代理註記
+	// COMHOUSETAXNODS 房屋稅籍編號
+	private Map<String, Object> getRefListByVatNumber(String vatNumber)
+			throws BusinessException {
+		Map<String, Object> ret = new HashMap<String, Object>();
+		if (!StringUtils.isEmpty(vatNumber)) {
+			BaseDAO baseDao = new BaseDAO();
+			List<DefdocVO> vo = (List<DefdocVO>) baseDao
+					.retrieveByClause(
+							DefdocVO.class,
+							"pk_defdoc = (select bd_defdoc.pid from bd_defdoc inner join bd_defdoclist on bd_defdoc.pk_defdoclist=bd_defdoclist.pk_defdoclist where bd_defdoc.code = '"
+									+ vatNumber
+									+ "' and bd_defdoclist.code='TWHR014')");
+
+			if (vo.get(0).getCode().contains("(FUWEI)")) {
+				// 福委
+				// TWHRLORG13 縣市別(福委)
+				ret.put("COUNTYDS", SysInitQuery.getParaString(
+						"GLOBLE00000000000000", "TWHRLORG13"));
+				// TWHRLORG14 機關別(福委)
+				ret.put("DEPTDS", SysInitQuery.getParaString(
+						"GLOBLE00000000000000", "TWHRLORG14"));
+				// TWHRLORG15 申報統一編號(福委)
+				ret.put("VATNUMBERDS", SysInitQuery.getParaString(
+						"GLOBLE00000000000000", "TWHRLORG15"));
+				// TWHRLORG16 申報單位名稱(福委)
+				ret.put("COMNAMEDS", SysInitQuery.getParaString(
+						"GLOBLE00000000000000", "TWHRLORG16"));
+				// TWHRLORG17 申報單位地址(福委)
+				ret.put("COMADDRESSDS", SysInitQuery.getParaString(
+						"GLOBLE00000000000000", "TWHRLORG17"));
+				// TWHRLORG18 扣稅義務人名稱(福委)
+				ret.put("COMPRINCIPALDS", SysInitQuery.getParaString(
+						"GLOBLE00000000000000", "TWHRLORG18"));
+				// TWHRLORG19 申報單位稅籍編號(福委)
+				ret.put("COMTAXNODS", SysInitQuery.getParaString(
+						"GLOBLE00000000000000", "TWHRLORG19"));
+				// TWHRLORG20 總分支機構註記(福委)
+				ret.put("COMISHQDS", SysInitQuery.getParaString(
+						"GLOBLE00000000000000", "TWHRLORG20"));
+				// TWHRLORG21 上市公司註記(福委)
+				ret.put("COMINSTOCKDS", SysInitQuery.getParaString(
+						"GLOBLE00000000000000", "TWHRLORG21"));
+				// TWHRLORG22 金融機構註記(福委)
+				ret.put("COMISBANKDS", SysInitQuery.getParaString(
+						"GLOBLE00000000000000", "TWHRLORG22"));
+				// TWHRLORG23 事務所代理註記(福委)
+				ret.put("COMISAGENTDS", SysInitQuery.getParaString(
+						"GLOBLE00000000000000", "TWHRLORG23"));
+				// TWHRLORG24 房屋稅籍編號(福委)
+				ret.put("COMHOUSETAXNODS", SysInitQuery.getParaString(
+						"GLOBLE00000000000000", "TWHRLORG24"));
+			} else {
+				// 公司
+				// TWHRLORG01 縣市別
+				ret.put("COUNTYDS", SysInitQuery.getParaString(
+						"GLOBLE00000000000000", "TWHRLORG01"));
+				// TWHRLORG02 機關別
+				ret.put("DEPTDS", SysInitQuery.getParaString(
+						"GLOBLE00000000000000", "TWHRLORG02"));
+				// TWHRLORG03 申報統一編號
+				ret.put("VATNUMBERDS", SysInitQuery.getParaString(
+						"GLOBLE00000000000000", "TWHRLORG03"));
+				// TWHRLORG04 申報單位名稱
+				ret.put("COMNAMEDS", SysInitQuery.getParaString(
+						"GLOBLE00000000000000", "TWHRLORG04"));
+				// TWHRLORG05 申報單位地址
+				ret.put("COMADDRESSDS", SysInitQuery.getParaString(
+						"GLOBLE00000000000000", "TWHRLORG05"));
+				// TWHRLORG06 扣稅義務人名稱
+				ret.put("COMPRINCIPALDS", SysInitQuery.getParaString(
+						"GLOBLE00000000000000", "TWHRLORG06"));
+				// TWHRLORG07 申報單位稅籍編號
+				ret.put("COMTAXNODS", SysInitQuery.getParaString(
+						"GLOBLE00000000000000", "TWHRLORG07"));
+				// TWHRLORG08 總分支機構註記
+				ret.put("COMISHQDS", SysInitQuery.getParaString(
+						"GLOBLE00000000000000", "TWHRLORG08"));
+				// TWHRLORG09 上市公司註記
+				ret.put("COMINSTOCKDS", SysInitQuery.getParaString(
+						"GLOBLE00000000000000", "TWHRLORG09"));
+				// TWHRLORG10 金融機構註記
+				ret.put("COMISBANKDS", SysInitQuery.getParaString(
+						"GLOBLE00000000000000", "TWHRLORG10"));
+				// TWHRLORG11 事務所代理註記
+				ret.put("COMISAGENTDS", SysInitQuery.getParaString(
+						"GLOBLE00000000000000", "TWHRLORG11"));
+				// TWHRLORG12 房屋稅籍編號
+				ret.put("COMHOUSETAXNODS", SysInitQuery.getParaString(
+						"GLOBLE00000000000000", "TWHRLORG12"));
+			}
+		}
+		return ret;
+	}
+
+	@Override
+	public void writeBackFlags(String[] dataPKs) throws BusinessException {
+		InSQLCreator creator = new InSQLCreator();
+		String tempTableName = creator.getInSQL(dataPKs);
+
+		BaseDAO baseDao = new BaseDAO();
+		String strSQL = "update hrwa_sumincometax set isdeclare='Y', dr=0 where pk_sumincometax in ("
+				+ tempTableName + ");";
+		baseDao.executeUpdate(strSQL);
+		strSQL = "update hrwa_incometaxdetail set isdeclare='Y', dr=0 where pk_sumincometax in ("
+				+ tempTableName + ");";
+		baseDao.executeUpdate(strSQL);
+	}
+
+	public String[] getBankReportText(String pk_org, String offerPeriod,
+			String pk_wa_class) throws BusinessException {
+		DataFormatter formatter = new DataFormatter("FUBON_FMT_TW_2017");
+		formatter.setPk_org(pk_org);
+		formatter.setiYear(Integer.valueOf(offerPeriod.substring(0, 4)));
+		formatter.setStartPeriod(offerPeriod);
+		formatter.setClassid(pk_wa_class);
+		return formatter.getData();
+	}
+
+	@Override
+	public String getOrgVATNumber(String pk_org) throws BusinessException {
+		String strSQL = "SELECT def.code FROM org_hrorg org inner join bd_defdoc def on org.glbdef30=def.pk_defdoc WHERE org.pk_hrorg='"
+				+ pk_org + "'";
+
+		BaseDAO dao = new BaseDAO();
+		String vatNo = (String) dao.executeQuery(strSQL, new ColumnProcessor());
+
+		if (vatNo != null) {
+			return vatNo;
+		} else {
+			return "";
+		}
+	}
+
+	@Override
+	public String[] getAllOrgVATNumber() throws BusinessException {
+		String strSQL = "SELECT DISTINCT glbdef30 FROM org_hrorg WHERE glbdef30 IS NOT NULL ORDER BY glbdef30";
+
+		BaseDAO dao = new BaseDAO();
+		List vatNos = (List) dao
+				.executeQuery(strSQL, new ColumnListProcessor());
+
+		if (vatNos != null && vatNos.size() > 0) {
+			List<String> retVals = new ArrayList<String>();
+			for (int i = 0; i < vatNos.size(); i++) {
+				retVals.add((String) vatNos.get(i));
+			}
+			return retVals.toArray(new String[0]);
+		} else {
+			return null;
+		}
+	}
+
+	@Override
+	public String[] getAllOrgByVATNumber(String strVATNumber)
+			throws BusinessException {
+		String strSQL = "SELECT DISTINCT pk_hrorg FROM org_hrorg org inner join bd_defdoc def on org.glbdef30 = def.pk_defdoc WHERE def.code='"
+				+ strVATNumber + "'";
+
+		BaseDAO dao = new BaseDAO();
+		List vatNos = (List) dao
+				.executeQuery(strSQL, new ColumnListProcessor());
+
+		if (vatNos != null && vatNos.size() > 0) {
+			List<String> retVals = new ArrayList<String>();
+			for (int i = 0; i < vatNos.size(); i++) {
+				retVals.add((String) vatNos.get(i));
+			}
+			return retVals.toArray(new String[0]);
+		} else {
+			return null;
+		}
+	}
+
+	@Override
+	public int checkPeriodWaDataExists(String[] wa_classes, String startPeriod,
+			String endPeriod) throws BusinessException {
+		int foundCount = 0;
+		if (wa_classes != null && wa_classes.length > 0) {
+			String clsString = "";
+			for (String wa_class : wa_classes) {
+				if (clsString.equals("")) {
+					clsString = "'" + wa_class + "'";
+				} else {
+					clsString += ", '" + wa_class + "'";
+				}
+			}
+
+			String strSQL = " SELECT DISTINCT ";
+			strSQL += "        data.pk_org , ";
+			strSQL += "        data.pk_wa_class ";
+			strSQL += "FROM    wa_data data ";
+			strSQL += "        INNER JOIN wa_periodstate stat ON data.pk_wa_class = stat.pk_wa_class ";
+			strSQL += "WHERE   data.pk_wa_class IN ( " + clsString + " ) ";
+			strSQL += "        AND stat.isapproved = 'Y' ";
+			strSQL += "        AND ( CASE WHEN ( SELECT    sysref.value ";
+			strSQL += "                          FROM      pub_sysinit sysref ";
+			strSQL += "                          WHERE     sysref.initcode = 'TWHR07' ";
+			strSQL += "                                    AND sysref.pk_org = data.pk_org ";
+			strSQL += "                        ) = '發放日期' ";
+			strSQL += "                   THEN ( (LEFT(stat.cpaydate, 4) + RIGHT(LEFT(stat.cpaydate, ";
+			strSQL += "                                                              7), 2)) ) ";
+			strSQL += "                   ELSE ( (data.cyear + data.cperiod) ) ";
+			strSQL += "              END ) BETWEEN '" + startPeriod + "' ";
+			strSQL += "                    AND     '" + endPeriod + "' ";
+
+			BaseDAO basDAO = new BaseDAO();
+			List<Map> results = (List<Map>) basDAO.executeQuery(strSQL,
+					new MapListProcessor());
+
+			for (Map result : results) {
+				for (int i = 0; i < wa_classes.length; i++) {
+					if (wa_classes[i].equals(result.get("pk_wa_class"))) {
+						foundCount++;
+						wa_classes[i] = "";
+						break;
+					}
+				}
+			}
+
+			clsString = "";
+			// 查詢薪資方案數量與已有薪資方案數量數目不等時為某薪資方案無數據
+			// 構造方案報錯串
+			if (foundCount != 0 && foundCount != wa_classes.length) {
+				for (String wa_class : wa_classes) {
+					if (!StringUtils.isEmpty(wa_class)) {
+						if (clsString.equals("")) {
+							clsString = "'" + wa_class + "'";
+						} else {
+							clsString += ", '" + wa_class + "'";
+						}
+					}
+				}
+
+				strSQL = "SELECT hrorg.pk_hrorg, hrorg.code AS orgcode, cls.pk_wa_class, cls.code AS classcode "
+						+ " FROM wa_waclass cls "
+						+ " INNER JOIN org_hrorg hrorg ON hrorg.pk_hrorg = cls.pk_org "
+						+ " WHERE cls.pk_wa_class IN (" + clsString + " )";
+
+				results = (List<Map>) basDAO.executeQuery(strSQL,
+						new MapListProcessor());
+				List<String> pk_hrorgs = new ArrayList<String>();
+				String strMessage = "";
+				for (Map result : results) {
+					pk_hrorgs.add((String) result.get("pk_hrorg"));
+
+					// 取薪資方案VO
+					WaClassVO classVO = (WaClassVO) basDAO
+							.retrieveByPK(WaClassVO.class,
+									(String) result.get("pk_wa_class"));
+					// 取薪資方案多語名稱
+					String strName = MultiLangUtil.getSuperVONameOfCurrentLang(
+							classVO, "name", classVO.getName());
+					strMessage += (String) result.get("pk_hrorg") + " ["
+							+ (String) result.get("orgcode") + "]: " + strName
+							+ " [" + result.get("classcode") + "]\r\n";
+				}
+
+				// 取人力資源組織VO
+				IOrgPubQryService orgsrv = NCLocator.getInstance().lookup(
+						IOrgPubQryService.class);
+				List<HROrgVO> orgVOs = orgsrv.getVOListByClause(HROrgVO.class,
+						"pk_hrorg", pk_hrorgs, null);
+
+				if (orgVOs != null && orgVOs.size() > 0) {
+					for (HROrgVO orgvo : orgVOs) {
+						// 取人力資源組織多語名稱
+						String strName = MultiLangUtil
+								.getSuperVONameOfCurrentLang(orgvo, "name",
+										orgvo.getName());
+						strMessage = strMessage.replace(orgvo.getPk_hrorg(),
+								strName);
+					}
+
+					throw new BusinessException(strMessage);
+				}
+			}
+		}
+
+		return foundCount;
+	}
+
+	@Override
+	public void checkExportOrg(String[] pk_orgs) throws BusinessException {
+		String orgString = "";
+		for (String pk_org : pk_orgs) {
+			if (orgString.equals("")) {
+				orgString = "'" + pk_org + "'";
+			} else {
+				orgString += ", '" + pk_org + "'";
+			}
+		}
+
+		BaseDAO baseDAO = new BaseDAO();
+		List<Map> results = (List<Map>) baseDAO
+				.executeQuery("SELECT * FROM org_hrorg WHERE pk_hrorg IN ("
+						+ orgString + ")", new MapListProcessor());
+
+		if (results != null) {
+			for (Map result : results) {
+				if (result.get("glbdef27") == null) {
+					throw new BusinessException(ResHelper.getString(
+							"twhr_datainterface", "DataInterface-00076")
+							+ result.get("name")
+							+ "["
+							+ result.get("code")
+							+ "] "
+							+ ResHelper.getString("twhr_datainterface",
+									"DataInterface-00077"));
+				}
+			}
+		} else {
+			throw new BusinessException(ResHelper.getString(
+					"twhr_datainterface", "DataInterface-00077"));
+		}
+	}
+
+	@Override
+	public String[] getIITXTInfo(String vatNumber, String declareType,
+			String grantType, String declareReason) throws BusinessException {
+		BaseDAO dao = new BaseDAO();
+		String[] rtn = new String[4];
+
+		// 根據vatNumber取統編
+		if (!StringUtils.isEmpty(vatNumber)) {
+			DefdocVO vo = (DefdocVO) dao
+					.retrieveByPK(DefdocVO.class, vatNumber);
+			if (vo != null) {
+				rtn[0] = vo.getCode();
+			}
+		}
+		// 根據declareType取申報類型編號
+		if (!StringUtils.isEmpty(declareType)) {
+			DefdocVO vo = (DefdocVO) dao.retrieveByPK(DefdocVO.class,
+					declareType);
+			if (vo != null) {
+				rtn[1] = vo.getCode();
+			}
+		}
+
+		// 根據grantType取申報填發類型編號
+		if (!StringUtils.isEmpty(grantType)) {
+			DefdocVO vo = (DefdocVO) dao
+					.retrieveByPK(DefdocVO.class, grantType);
+			if (vo != null) {
+				rtn[2] = vo.getCode();
+			}
+		}
+
+		// 根據declareReason取重複申報原因編號
+		if (!StringUtils.isEmpty(declareReason)) {
+			DefdocVO vo = (DefdocVO) dao.retrieveByPK(DefdocVO.class,
+					declareReason);
+			if (vo != null) {
+				rtn[3] = vo.getCode();
+			} else {
+				rtn[3] = "";
+			}
+		}
+
+		// [統一編號，申報類型Code，填發類型Code，重複申報原因Code]
+		return rtn;
+	}
+}

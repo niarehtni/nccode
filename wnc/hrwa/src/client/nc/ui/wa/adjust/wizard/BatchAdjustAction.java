@@ -1,0 +1,430 @@
+package nc.ui.wa.adjust.wizard;
+
+import java.awt.Container;
+import java.awt.Dimension;
+import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import nc.bs.framework.common.NCLocator;
+import nc.bs.logging.Logger;
+import nc.bs.uif2.VersionConflictException;
+import nc.hr.utils.ResHelper;
+import nc.itf.hr.wa.IWaGradeService;
+import nc.pub.encryption.util.SalaryDecryptUtil;
+import nc.ui.hr.comp.sort.UFDoubleCompare;
+import nc.ui.pub.beans.MessageDialog;
+import nc.ui.pub.beans.UIDialog;
+import nc.ui.pub.beans.wizard.IWizardDialogListener;
+import nc.ui.pub.beans.wizard.WizardActionException;
+import nc.ui.pub.beans.wizard.WizardDialog;
+import nc.ui.pub.beans.wizard.WizardEvent;
+import nc.ui.pub.beans.wizard.WizardStep;
+import nc.ui.uif2.model.AbstractAppModel;
+import nc.ui.wa.adjust.action.PFCancelAdjustAction;
+import nc.ui.wa.adjust.model.BatchAdjustWizardModel;
+import nc.ui.wa.adjust.view.WaAdjustCardForm;
+import nc.ui.wa.psndocwadoc.view.PsnWadocMainPane;
+import nc.ui.wa.salaryadjmgt.WASalaryadjmgtDelegator;
+import nc.vo.pub.BusinessException;
+import nc.vo.pub.ValidationException;
+import nc.vo.pub.lang.UFBoolean;
+import nc.vo.pub.lang.UFDouble;
+import nc.vo.wa.adjust.AdjustWadocVO;
+import nc.vo.wa.adjust.BatchAdjustVO;
+import nc.vo.wa.adjust.BatchAdjustVO.ADJUST_FROM;
+import nc.vo.wa.adjust.IWaAdjustConstant;
+import nc.vo.wa.adjust.PsnappaproveBVO;
+import nc.vo.wa.grade.WaCriterionVO;
+
+import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang.StringUtils;
+
+/**
+ * 薪资普调
+ * 
+ * @author xuhw
+ * @date: 2010-8-24
+ * @since: eHR V5.7
+ * @走查人:
+ * @走查日期:
+ * @修改人:
+ * @修改日期:
+ */
+public class BatchAdjustAction implements IWizardDialogListener {
+
+	private BatchAdjustWizardModel wizardModel;
+
+	private final Container parent;
+
+	public BatchAdjustAction(Container parent) {
+		this.parent = parent;
+	}
+
+	/**
+	 * 薪资普调
+	 */
+	private void onBatchAdjust() {
+		// 首先是设置向导
+		getWizardModel().getContext().setAttribute(IWaAdjustConstant.PARENT,
+				parent);
+		if (parent instanceof WaAdjustCardForm) {
+			getWizardModel().getContext().setAttribute(
+					IWaAdjustConstant.OPER_NODE_DIV, ADJUST_FROM.FROM_ADJUST);
+		} else {
+			getWizardModel().getContext().setAttribute(
+					IWaAdjustConstant.OPER_NODE_DIV,
+					ADJUST_FROM.FROM_PSNDOCWADOC);
+		}
+		WizardDialog dlg = new WizardDialog(parent, getWizardModel(),
+				getSteps(), null);
+		dlg.setResizable(true);
+		dlg.setSize(new Dimension(810, 520));
+		// 放开下面一句话则变成循环类型
+		// dlg.setRound();
+		// 点击完成、以及循环模式下的完成并继续的事件侦听
+		dlg.setWizardDialogListener(this);
+
+		dlg.showModal();
+		if (dlg.getResult() != UIDialog.ID_OK) {
+			if (parent instanceof WaAdjustCardForm) {
+				try {
+					PFCancelAdjustAction cancelAction = new PFCancelAdjustAction();
+					cancelAction.setModel(wizardModel.getBillModel());
+					cancelAction.doAction(null);
+				} catch (Exception ex) {
+					Logger.error(ex.getMessage(), ex);
+				}
+			}
+
+		}
+		setWizardModel(null);
+	}
+
+	/**
+	 * 设置步骤
+	 */
+	private List<WizardStep> getSteps() {
+		ADJUST_FROM enumDiv = (ADJUST_FROM) getWizardModel().getContext()
+				.getAttribute(IWaAdjustConstant.OPER_NODE_DIV);
+		if (enumDiv == ADJUST_FROM.FROM_PSNDOCWADOC) {
+			return getSteps4Psndocwadoc();
+		} else {
+			return getSteps4AdjustApply();
+		}
+	}
+
+	public String limitBatchAdjust(AdjustWadocVO[] adjustWadocPsnInfoVOs)
+			throws BusinessException {
+		String strErrorMessage = "";
+		if (ArrayUtils.isEmpty(adjustWadocPsnInfoVOs)) {
+			return strErrorMessage;
+		}
+
+		// 减少上行流量 queryCriterionArr
+		AdjustWadocVO[] queryCriterionArr = new AdjustWadocVO[adjustWadocPsnInfoVOs.length];
+		for (int i = 0; i < adjustWadocPsnInfoVOs.length; i++) {
+			queryCriterionArr[i] = new AdjustWadocVO();
+			queryCriterionArr[i].setNegotiation(adjustWadocPsnInfoVOs[i]
+					.getNegotiation());
+			queryCriterionArr[i].setPk_wa_prmlv(adjustWadocPsnInfoVOs[i]
+					.getPk_wa_prmlv());
+			queryCriterionArr[i].setPk_wa_seclv(adjustWadocPsnInfoVOs[i]
+					.getPk_wa_seclv());
+		}
+		HashMap<String, WaCriterionVO> criterionVoMap = ((NCLocator
+				.getInstance().lookup(IWaGradeService.class)))
+				.getCrierionVOMapByPrmSec(queryCriterionArr);
+
+		for (int i = 0; i < adjustWadocPsnInfoVOs.length; i++) {
+			UFDoubleCompare doubleCompare = new UFDoubleCompare();
+			// 申请金额
+			UFDouble money = null;
+			// 申请标准PK
+			String strPKPrmlv = null;
+			String strPKSeclv = null;
+
+			// 是否宽带
+			UFBoolean isRange = null;
+			// 是否谈判
+			Boolean bnNegotiation = null;
+			WaCriterionVO criterionVo = null;
+
+			money = adjustWadocPsnInfoVOs[i].getMoney_adjust();
+			strPKPrmlv = adjustWadocPsnInfoVOs[i].getPk_wa_prmlv();
+			strPKSeclv = adjustWadocPsnInfoVOs[i].getPk_wa_seclv();
+			criterionVo = criterionVoMap.get(strPKPrmlv + strPKSeclv);
+
+			// 2016-12-06 zhousze 薪资加密：这里处理定调资信息维护薪资普调薪资标准校验，数据解密 begin
+			criterionVo
+					.setCriterionvalue(criterionVo.getCriterionvalue() == null ? null
+							: new UFDouble(SalaryDecryptUtil
+									.decrypt(criterionVo.getCriterionvalue()
+											.toDouble())));
+			criterionVo.setMax_value(criterionVo.getMax_value() == null ? null
+					: new UFDouble(SalaryDecryptUtil.decrypt(criterionVo
+							.getMax_value().toDouble())));
+			criterionVo.setMin_value(criterionVo.getMin_value() == null ? null
+					: new UFDouble(SalaryDecryptUtil.decrypt(criterionVo
+							.getMin_value().toDouble())));
+			// end
+
+			isRange = adjustWadocPsnInfoVOs[i].getIs_range();
+			bnNegotiation = adjustWadocPsnInfoVOs[i].getNegotiation()
+					.booleanValue();
+
+			if (doubleCompare.lessThan(money, new UFDouble(0))) {
+				strErrorMessage += ResHelper.getString("60130adjmtc",
+						"060130adjmtc0219")/* @res "  金额不能为负数, 请修改." */;
+				return strErrorMessage;
+			}
+			// 是谈判
+			if (bnNegotiation) {
+				continue;
+			}
+			if (!isRange.booleanValue()) {
+				// 不是宽带
+				if (!doubleCompare.equals(
+						criterionVo.getCriterionvalue().div(new UFDouble(1),
+								money.getPower()), money)) {
+					strErrorMessage += ResHelper.getString("60130adjmtc",
+							"060130adjmtc0220")/* @res "金额与薪资标准不相符, 请修改." */;
+				}
+			} else {
+				if (doubleCompare.lessThan(money, criterionVo.getMin_value()
+						.div(new UFDouble(1), money.getPower()))) {
+					strErrorMessage += (i + 1)
+							+ ResHelper.getString("60130adjmtc",
+									"060130adjmtc0223")/* @res "行:" */
+							+ MessageFormat.format(
+									ResHelper.getString("60130adjmtc",
+											"060130adjmtc0233")/*
+																 * @res
+																 * "宽带薪酬的情况，金额[{0}]不能小于薪资标准的下限[{1}], 系统已自动调整为下限金额.\n"
+																 */,
+									money,
+									criterionVo.getMin_value().div(
+											new UFDouble(1), money.getPower()));
+
+					adjustWadocPsnInfoVOs[i].setMoney_adjust(criterionVo
+							.getMin_value().div(new UFDouble(1),
+									money.getPower()));
+					adjustWadocPsnInfoVOs[i].setChange_money(getABSMoney(
+							adjustWadocPsnInfoVOs[i].getMoney_old(),
+							adjustWadocPsnInfoVOs[i].getMoney_adjust()));
+				} else if (doubleCompare.lessThan(criterionVo.getMax_value()
+						.div(new UFDouble(1), money.getPower()), money)) {
+					strErrorMessage += (i + 1)
+							+ ResHelper.getString("60130adjmtc",
+									"060130adjmtc0223")/* @res "行:" */
+							+ MessageFormat.format(
+									ResHelper.getString("60130adjmtc",
+											"060130adjmtc0234")/*
+																 * @res
+																 * "宽带薪酬的情况，金额[{0}]不能大于薪资标准的上限[{1}], 系统已自动调整为上限金额.\n"
+																 */,
+									money,
+									criterionVo.getMax_value().div(
+											new UFDouble(1), money.getPower()));
+					adjustWadocPsnInfoVOs[i].setMoney_adjust(criterionVo
+							.getMax_value().div(new UFDouble(1),
+									money.getPower()));
+					adjustWadocPsnInfoVOs[i].setChange_money(getABSMoney(
+							adjustWadocPsnInfoVOs[i].getMoney_old(),
+							adjustWadocPsnInfoVOs[i].getMoney_adjust()));
+				}
+			}
+		}
+		return strErrorMessage;
+	}
+
+	private UFDouble getABSMoney(UFDouble ufOldGradeMoney,
+			UFDouble ufAdjustAftGradeMoney) {
+
+		if (ufOldGradeMoney == null) {
+			ufOldGradeMoney = new UFDouble(0);
+		}
+		if (ufAdjustAftGradeMoney == null) {
+			ufAdjustAftGradeMoney = new UFDouble(0);
+		}
+		return ufAdjustAftGradeMoney.sub(ufOldGradeMoney)/* .abs() */;
+	}
+
+	/**
+	 * 设置步骤
+	 */
+	private List<WizardStep> getSteps4Psndocwadoc() {
+		// 第一步
+		WizardStep stepone = new BatchAdjustOneWizardStep(getWizardModel());
+		// 第二步
+		WizardStep steptwo = new BatchAdjustTwoWizardStep(getWizardModel());
+		// 放到List中
+		List<WizardStep> steps = Arrays.asList(new WizardStep[] { stepone,
+				steptwo });
+		return steps;
+	}
+
+	/**
+	 * 设置步骤
+	 */
+	private List<WizardStep> getSteps4AdjustApply() {
+		// 第一步
+		WizardStep stepone = new BatchAdjustQueryWizardStep(getWizardModel());
+		// 第一步
+		WizardStep steptwo = new BatchAdjustOneWizardStep(getWizardModel());
+		// 第二步
+		WizardStep stepthree = new BatchAdjustTwoWizardStep(getWizardModel());
+		// 放到List中
+		List<WizardStep> steps = Arrays.asList(new WizardStep[] { stepone,
+				steptwo, stepthree });
+		return steps;
+	}
+
+	/**
+	 * 设置model信息
+	 */
+	public BatchAdjustWizardModel getWizardModel() {
+		if (wizardModel == null) {
+			wizardModel = new BatchAdjustWizardModel();
+		}
+		AbstractAppModel model = null;
+		if (parent instanceof WaAdjustCardForm) {
+			model = ((WaAdjustCardForm) parent).getModel();
+		} else {
+			model = ((PsnWadocMainPane) parent).getModel();
+		}
+		wizardModel.setLoginContext(model.getContext());
+		wizardModel.setBillModel(model);
+		return wizardModel;
+	}
+
+	public void setWizardModel(BatchAdjustWizardModel wizardModel) {
+		this.wizardModel = wizardModel;
+	}
+
+	// @Override ICommand 接口王鹏展，删了
+	public boolean validate() throws ValidationException {
+		return false;
+	}
+
+	// @Override
+	public void execute() throws BusinessException {
+
+		onBatchAdjust();
+	}
+
+	@Override
+	public void wizardCancel(WizardEvent event) throws WizardActionException {
+	}
+
+	// 非循环模式下的完成操作
+	@Override
+	public void wizardFinish(WizardEvent event) throws WizardActionException {
+
+		// 得到设置的基本信息的对象
+		AdjustWadocVO[] adjustVOs = (AdjustWadocVO[]) getWizardModel()
+				.getContext().getAttribute(IWaAdjustConstant.SELECT_DATAS);
+		BatchAdjustVO batchAdjustVO = (BatchAdjustVO) getWizardModel()
+				.getContext().getAttribute(IWaAdjustConstant.STEP_ONE_DATA);
+		// 下一步的主要工作是对当前取到的对象执行保存操作
+
+		try {
+			// 对薪资普调中宽带薪资标准，金额超限的进行调整并提示
+			String strErrorMessage = limitBatchAdjust(adjustVOs);
+			if (!StringUtils.isBlank(strErrorMessage)) {
+				Logger.debug(strErrorMessage);
+				MessageDialog.showHintDlg(parent, null, strErrorMessage);
+				// throw new BusinessException(strErrorMessage);
+			}
+			getWizardModel().getContext().setAttribute(
+					IWaAdjustConstant.SELECT_DATAS, adjustVOs);
+
+			if (batchAdjustVO.getAdjust_from() == ADJUST_FROM.FROM_PSNDOCWADOC) {
+
+				BatchAdjustTwoWizardStep step = (BatchAdjustTwoWizardStep) getWizardModel()
+						.getSteps().get(1);
+
+				step.getPsnBillScrollPane().getTableModel()
+						.setBodyDataVO(adjustVOs);
+
+				// WASalaryadjmgtDelegator.getPsndocwadocManageService().validateBatchAdjust(adjustVOs,
+				// batchAdjustVO);
+
+				WASalaryadjmgtDelegator.getPsndocwadocManageService()
+						.insertArray4Adjust(adjustVOs, batchAdjustVO);
+				((PsnWadocMainPane) parent).onRefresh();
+			} else {
+
+				BatchAdjustTwoWizardStep step = (BatchAdjustTwoWizardStep) getWizardModel()
+						.getSteps().get(2);
+
+				step.getPsnBillScrollPane().getTableModel()
+						.setBodyDataVO(adjustVOs);
+
+				// WASalaryadjmgtDelegator.getPsndocwadocManageService().validateBatchAdjust(adjustVOs,
+				// batchAdjustVO);
+
+				PsnappaproveBVO[] psnappaproveBVOs = (PsnappaproveBVO[]) getWizardModel()
+						.getContext()
+						.getAttribute(IWaAdjustConstant.QUERY_PSNS);
+				/*
+				 * 过滤一种特殊的情况：
+				 * 
+				 * 定调资申请过来的单据，选择人员时把主职和兼职记录都勾选，但是只过滤出主职数据有数据，那么需要过滤一下
+				 * 
+				 * IWaAdjustConstant.QUERY_PSNS
+				 * 中记录的是条件选择出来的人，而第三步中存储数据的格式又和第一步不一样
+				 * ，因此通过PK_PSNDOC和PARTFLAG组合过滤一下主职和兼职
+				 */
+
+				ArrayList<PsnappaproveBVO> list4psnappaproveBVO = new ArrayList<PsnappaproveBVO>();
+				if (!ArrayUtils.isEmpty(adjustVOs)
+						&& !ArrayUtils.isEmpty(psnappaproveBVOs)) {
+					Map<String, String> map4PsnjobPart = new HashMap<String, String>();
+					String pk_psndoc = null;
+					Integer assgid = null;
+					for (int i = 0; i < adjustVOs.length; i++) {
+						pk_psndoc = adjustVOs[i].getPk_psndoc();
+						assgid = adjustVOs[i].getAssgid() == null ? Integer
+								.valueOf(1) : adjustVOs[i].getAssgid();
+						map4PsnjobPart.put(pk_psndoc + assgid.toString(),
+								pk_psndoc + assgid.toString());
+					}
+					for (int i = 0; i < psnappaproveBVOs.length; i++) {
+						pk_psndoc = psnappaproveBVOs[i].getPk_psndoc();
+						assgid = psnappaproveBVOs[i].getAssgid() == null ? Integer
+								.valueOf(1) : psnappaproveBVOs[i].getAssgid();
+						if (map4PsnjobPart.get(pk_psndoc + assgid.toString()) != null) {
+							list4psnappaproveBVO.add(psnappaproveBVOs[i]);
+						}
+					}
+				}
+				((WaAdjustCardForm) parent).adjustBatchProcesser(adjustVOs,
+						batchAdjustVO,
+						list4psnappaproveBVO.toArray(new PsnappaproveBVO[0]));
+			}
+		} catch (Exception e1) {
+			String strErrorMessage = null;
+			if (e1 instanceof VersionConflictException) {
+				strErrorMessage = ((VersionConflictException) e1)
+						.getBusiObject().toString();
+			} else {
+				strErrorMessage = e1.getMessage();
+			}
+			Logger.error(strErrorMessage, e1);
+			Exception ex = new Exception(e1);
+			WizardActionException e = new WizardActionException(ex);
+			e.addMsg(ResHelper.getString("60130adjapprove",
+					"060130adjapprove0078")/* @res "错误提示:" */, strErrorMessage);
+			throw e;
+		}
+	}
+
+	@Override
+	public void wizardFinishAndContinue(WizardEvent event)
+			throws WizardActionException {
+	}
+}

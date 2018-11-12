@@ -1,0 +1,14 @@
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '0acdab75-4734-4d90-b0fb-a944e4eb8d4e','369dd2ac-dba4-4373-96d2-0146466e2c26','hrss_psnmap@@@active_flag',0,'hrss_psnmap','2018-08-20 13:29:42')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '0bff6f97-36f0-4096-9f2c-f951f37ae5f7','369dd2ac-dba4-4373-96d2-0146466e2c26','hrss_psnmap@@@pk_parent',0,'hrss_psnmap','2018-08-20 13:29:42')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '11f72710-e6d4-48a9-b530-4130b24f2558','369dd2ac-dba4-4373-96d2-0146466e2c26','hrss_psnmap@@@pk_group',0,'hrss_psnmap','2018-08-20 13:29:42')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '221dfc98-c0d1-48ae-b089-847ad3c0744c','369dd2ac-dba4-4373-96d2-0146466e2c26','hrss_psnmap@@PK@@',0,'hrss_psnmap','2018-08-20 13:29:42')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '4457a141-6965-44de-b173-93ca1558827f','369dd2ac-dba4-4373-96d2-0146466e2c26','hrss_psnmap@@@parent_type',0,'hrss_psnmap','2018-08-20 13:29:42')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '96e219a0-607f-4725-81f0-88c464d9c332','369dd2ac-dba4-4373-96d2-0146466e2c26','hrss_psnmap@@@pk_ref',0,'hrss_psnmap','2018-08-20 13:29:42')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'eec7c42b-924e-4ba7-8daa-f17392ec3a6c','369dd2ac-dba4-4373-96d2-0146466e2c26','hrss_psnmap@@@ref_type',0,'hrss_psnmap','2018-08-20 13:29:42')
+go

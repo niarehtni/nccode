@@ -1,0 +1,1 @@
+alter table org_dept add weekform int;

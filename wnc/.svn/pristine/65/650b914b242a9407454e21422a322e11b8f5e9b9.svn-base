@@ -1,0 +1,63 @@
+package nc.ui.hrjf.deptadj.action;
+
+import java.util.Date;
+
+import nc.bs.framework.common.NCLocator;
+import nc.itf.om.IDeptAdjustService;
+import nc.ui.pub.beans.MessageDialog;
+import nc.ui.pubapp.uif2app.actions.DeleteAction;
+import nc.ui.uif2.IShowMsgConstant;
+import nc.vo.om.hrdept.AggHRDeptAdjustVO;
+import nc.vo.om.hrdept.HRDeptAdjustVO;
+import nc.vo.pub.BusinessException;
+import nc.vo.pub.lang.UFBoolean;
+import nc.vo.pub.lang.UFLiteralDate;
+
+public class DeptadjDeleteAction extends DeleteAction {
+
+	@Override
+	protected void checkDataPermission() throws Exception {
+		Object[] objs = getUnDataPermissionData();
+		if ((objs != null) && (objs.length > 0)) {
+			throw new BusinessException(IShowMsgConstant.getDataPermissionInfo());
+		}
+		AggHRDeptAdjustVO aggvo = (AggHRDeptAdjustVO) objs[0];
+		// 调用接口校验
+		String message = null;
+		try {
+			UFBoolean flag = validatevo(aggvo.getParentVO());
+			if (!flag.booleanValue()) {
+				return;
+			}
+		} catch (BusinessException w) {
+			message = w.getMessage();
+		}
+		if (null != message) {
+			MessageDialog.showErrorDlg(getModel().getContext().getEntranceUI(), "報錯信息", message);
+			return;
+		}
+
+		// 只允许删除执行标志未打勾的,并且生效日期在当前日期之后的单据.删除时,
+		// '调配申请'中存在已引用未来新增部门的记录时，删除该新增部门时报错
+		if (aggvo.getParentVO().getIseffective().booleanValue()
+				&& aggvo.getParentVO().getEffectivedate().after(new UFLiteralDate(new Date()))) {
+			throw new BusinessException("只允許刪除執行標誌未打勾的單據");
+		} else if (aggvo.getParentVO().getIseffective().booleanValue()
+				&& aggvo.getParentVO().getEffectivedate().before(new UFLiteralDate(new Date()))) {
+			throw new BusinessException("只允許刪除生效日期在當前日期之後的單據");
+		} else if ((!aggvo.getParentVO().getIseffective().booleanValue() || null == aggvo.getParentVO()
+				.getIseffective()) && aggvo.getParentVO().getEffectivedate().before(new UFLiteralDate(new Date()))) {
+			throw new BusinessException("只允許刪除執行標誌未打勾且生效日期在當前日期之後的單據");
+		}
+	}
+
+	private UFBoolean validatevo(HRDeptAdjustVO deptadjvo) throws BusinessException {
+		IDeptAdjustService managequery = NCLocator.getInstance().lookup(IDeptAdjustService.class);
+		UFBoolean deptflag = managequery.validateDel(deptadjvo);
+		if (!deptflag.booleanValue()) {
+			return UFBoolean.FALSE;
+		}
+		return UFBoolean.TRUE;
+	}
+
+}

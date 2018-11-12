@@ -1,0 +1,480 @@
+package nc.impl.hrwa;
+
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+
+import nc.bs.dao.BaseDAO;
+import nc.bs.dao.DAOException;
+import nc.bs.framework.common.NCLocator;
+import nc.hr.utils.InSQLCreator;
+import nc.itf.hrwa.IWaTbmdaysalaryService;
+import nc.itf.hrwa.IWadaysalaryQueryService;
+import nc.itf.hrwa.IWadaysalaryService;
+import nc.jdbc.framework.processor.MapListProcessor;
+import nc.jdbc.framework.processor.ResultSetProcessor;
+import nc.vo.hr.tools.pub.GeneralVO;
+import nc.vo.hrwa.wadaysalary.DaySalaryEnum;
+import nc.vo.pub.BusinessException;
+import nc.vo.pub.lang.UFBoolean;
+import nc.vo.pub.lang.UFDouble;
+import nc.vo.pub.lang.UFLiteralDate;
+
+import org.apache.commons.lang.StringUtils;
+
+public class WadaysalaryQueryServiceImpl implements IWadaysalaryQueryService {
+    @Override
+    public Map<String, HashMap<UFLiteralDate, UFDouble>> getTotalTbmDaySalaryMap(String[] pk_psndocs,
+	    UFLiteralDate begindate, UFLiteralDate enddate, int daySalaryEnum) throws BusinessException {
+	// 参数校验
+	if (pk_psndocs == null || pk_psndocs.length < 1) {
+	    throw new BusinessException("人員信息主鍵為空");
+	}
+	if (begindate == null) {
+	    throw new BusinessException("開始日期不允許為空");
+	}
+	if (enddate == null || enddate.before(begindate)) {
+	    enddate = begindate;
+	}
+	String inpsndocsql = new InSQLCreator().getInSQL(pk_psndocs, true);
+	// 取数之前，先补全考勤薪资表，并删除错误数据
+	getTbmdaysalaryService().checkTbmDaysalaryAndRecalculate(pk_psndocs, begindate, enddate);
+	StringBuffer qrySql = new StringBuffer();
+	qrySql.append("SELECT\n");
+	qrySql.append("	pk_psndoc,\n");
+	qrySql.append("	salarydate,\n");
+	if (daySalaryEnum == DaySalaryEnum.TBMDAYSALARY || daySalaryEnum == DaySalaryEnum.TAXABLEDAYSALARY
+		|| daySalaryEnum == DaySalaryEnum.TAXFREEDAYSALARY) {
+	    qrySql.append("	SUM (tbmdaysalary) as salary\n");
+	} else {
+	    qrySql.append("	SUM (tbmhoursalary) as salary\n");
+	}
+	qrySql.append("FROM\n");
+	qrySql.append("	wa_tbmdaysalary\n");
+	qrySql.append("WHERE\n");
+	qrySql.append("	pk_psndoc IN (" + inpsndocsql + ")\n");
+	qrySql.append("AND salarydate >= '" + begindate.toStdString() + "'\n");
+	qrySql.append("AND salarydate <= '" + enddate.toStdString() + "'\n");
+	if (daySalaryEnum == DaySalaryEnum.TAXABLEDAYSALARY || daySalaryEnum == DaySalaryEnum.TAXABLEHOURSALARY) {
+	    qrySql.append("AND taxflag = 'Y'\n");
+	} else if (daySalaryEnum == DaySalaryEnum.TAXFREEDAYSALARY || daySalaryEnum == DaySalaryEnum.TAXFREEHOURSALARY) {
+	    qrySql.append("AND taxflag = 'N'\n");
+	}
+	qrySql.append("GROUP BY\n");
+	qrySql.append("	pk_psndoc,\n");
+	qrySql.append("	salarydate\n");
+	qrySql.append("ORDER BY\n");
+	qrySql.append("	pk_psndoc");
+	List<HashMap<String, Object>> listMaps = (ArrayList<HashMap<String, Object>>) getDao().executeQuery(
+		qrySql.toString(), new MapListProcessor());
+	if (listMaps.size() < 1) {
+	    return null;
+	}
+	Map<String, HashMap<UFLiteralDate, UFDouble>> resultMap = new HashMap<String, HashMap<UFLiteralDate, UFDouble>>();
+	for (int i = 0, size = listMaps.size(); i < size; i++) {
+	    HashMap<String, Object> hashMap = listMaps.get(i);
+	    String pk_psndoc = hashMap.get("pk_psndoc").toString();
+	    UFLiteralDate salaryDate = new UFLiteralDate(hashMap.get("salarydate").toString());
+	    UFDouble salary = new UFDouble(hashMap.get("salary").toString());
+	    dealWithResult(pk_psndoc, salaryDate, salary, resultMap);
+	}
+	// int betweendays=UFLiteralDate.getDaysBetween(begindate,enddate) + 1;
+	// for(int i=0;i<betweendays;i++){
+	// UFLiteralDate calculDate=begindate.getDateAfter(i);
+	// String qrySql="SELECT\n" +
+	// "	wadoc.pk_org,\n" +
+	// "	wadoc.pk_psndoc,\n" +
+	// "	wadoc.pk_psnjob,\n" +
+	// "	wadoc.nmoney,\n" +
+	// "	waitem.taxflag,\n" +
+	// "	waitem.isattend\n" +
+	// "FROM\n" +
+	// "	hi_psndoc_wadoc wadoc\n" +
+	// "LEFT JOIN wa_item waitem ON wadoc.pk_wa_item = waitem.pk_wa_item\n"
+	// +
+	// "WHERE\n" +
+	// "	wadoc.pk_psndoc IN ("+inpsndocsql+")\n" +
+	// "AND wadoc.waflag = 'Y'\n"+//发放标志为Y
+	// "AND waitem.isattend = 'Y'\n"+//是否考勤
+	// "AND wadoc.begindate <= '"+calculDate.toStdString()+"'\n" +
+	// "AND (\n" +
+	// "	wadoc.enddate >= '"+calculDate.toStdString()+"'\n" +
+	// "	OR wadoc.enddate IS NULL\n" +
+	// ")";
+	// HashMap<Object,HashMap<Object, List<GeneralVO>>>
+	// psnorgPsndocMap=executeQuery(qrySql);
+	// for (Entry<Object, HashMap<Object, List<GeneralVO>>> e :
+	// psnorgPsndocMap.entrySet()){
+	// String pk_org=e.getKey().toString();
+	// HashMap<Object, List<GeneralVO>> psnVoMap=e.getValue();
+	// //1、考勤日薪
+	// if(daySalaryEnum==DaySalaryEnum.TBMDAYSALARY){
+	// int tbmnumtype=waTbmdaysalaryServie.getSysintValue(pk_org,
+	// DaySalaryEnum.TBMSYSINT);
+	// double tbmsalarynum=waTbmdaysalaryServie.getTbmSalaryNum(pk_org,
+	// calculDate,tbmnumtype);
+	// for (Entry<Object, List<GeneralVO>> e2 : psnVoMap.entrySet()) {
+	// String pk_psndoc=e2.getKey().toString();
+	// List<GeneralVO> glvoList=e2.getValue();
+	// UFDouble rs=UFDouble.ZERO_DBL;
+	// for (int j = 0,size=glvoList.size(); j < size; j++) {
+	// GeneralVO glvo=glvoList.get(i);
+	// UFDouble nmoney=new
+	// UFDouble(glvo.getAttributeValue("nmoney").toString());
+	// UFDouble daysalary=nmoney.div(tbmsalarynum);
+	// rs.add(daysalary);
+	// }
+	// dealWithResult(pk_psndoc, calculDate, rs, resultMap);
+	// }
+	// }
+	// //2、考勤时薪
+	// if(daySalaryEnum==DaySalaryEnum.TBMHOURSALARY){
+	// int tbmnumtype=waTbmdaysalaryServie.getSysintValue(pk_org,
+	// DaySalaryEnum.TBMSYSINT);
+	// double tbmsalarynum=waTbmdaysalaryServie.getTbmSalaryNum(pk_org,
+	// calculDate, tbmnumtype);
+	// for (Entry<Object, List<GeneralVO>> e2 : psnVoMap.entrySet()) {
+	// String pk_psndoc=e2.getKey().toString();
+	// List<GeneralVO> glvoList=e2.getValue();
+	// UFDouble rs=UFDouble.ZERO_DBL;
+	// for (int j = 0,size=glvoList.size(); j < size; j++) {
+	// GeneralVO glvo=glvoList.get(i);
+	// UFDouble nmoney=new
+	// UFDouble(glvo.getAttributeValue("nmoney").toString());
+	// UFDouble daysalary=nmoney.div(tbmsalarynum);
+	// UFDouble hoursalary=daysalary.div(DaySalaryEnum.HOURSALARYNUM);
+	// rs.add(hoursalary);
+	// }
+	// dealWithResult(pk_psndoc, calculDate, rs, resultMap);
+	// }
+	// }
+	// //3、考勤應稅日薪
+	// if(daySalaryEnum==DaySalaryEnum.TAXABLEDAYSALARY){
+	// int tbmnumtype=waTbmdaysalaryServie.getSysintValue(pk_org,
+	// DaySalaryEnum.TBMSYSINT);
+	// double tbmsalarynum=waTbmdaysalaryServie.getTbmSalaryNum(pk_org,
+	// calculDate, tbmnumtype);
+	// for (Entry<Object, List<GeneralVO>> e2 : psnVoMap.entrySet()) {
+	// String pk_psndoc=e2.getKey().toString();
+	// List<GeneralVO> glvoList=e2.getValue();
+	// UFDouble rs=UFDouble.ZERO_DBL;
+	// for (int j = 0,size=glvoList.size(); j < size; j++) {
+	// GeneralVO glvo=glvoList.get(i);
+	// UFBoolean taxflag=glvo.getAttributeValue("taxflag")!=null?new
+	// UFBoolean(glvo.getAttributeValue("taxflag").toString()):UFBoolean.FALSE;
+	// if(taxflag.booleanValue()){
+	// UFDouble nmoney=new
+	// UFDouble(glvo.getAttributeValue("nmoney").toString());
+	// UFDouble daysalary=nmoney.div(tbmsalarynum);
+	// rs.add(daysalary);
+	// }
+	// }
+	// dealWithResult(pk_psndoc, calculDate, rs, resultMap);
+	// }
+	// }
+	// //4、考勤应税时薪
+	// if(daySalaryEnum==DaySalaryEnum.TAXABLEHOURSALARY){
+	// int tbmnumtype=waTbmdaysalaryServie.getSysintValue(pk_org,
+	// DaySalaryEnum.TBMSYSINT);
+	// double tbmsalarynum=waTbmdaysalaryServie.getTbmSalaryNum(pk_org,
+	// calculDate, tbmnumtype);
+	// for (Entry<Object, List<GeneralVO>> e2 : psnVoMap.entrySet()) {
+	// String pk_psndoc=e2.getKey().toString();
+	// List<GeneralVO> glvoList=e2.getValue();
+	// UFDouble rs=UFDouble.ZERO_DBL;
+	// for (int j = 0,size=glvoList.size(); j < size; j++) {
+	// GeneralVO glvo=glvoList.get(i);
+	// UFBoolean taxflag=glvo.getAttributeValue("taxflag")!=null?new
+	// UFBoolean(glvo.getAttributeValue("taxflag").toString()):UFBoolean.FALSE;
+	// if(taxflag.booleanValue()){
+	// UFDouble nmoney=new
+	// UFDouble(glvo.getAttributeValue("nmoney").toString());
+	// UFDouble daysalary=nmoney.div(tbmsalarynum);
+	// UFDouble hoursalary=daysalary.div(DaySalaryEnum.HOURSALARYNUM);
+	// rs.add(hoursalary);
+	// }
+	// dealWithResult(pk_psndoc, calculDate, rs, resultMap);
+	// }
+	// }
+	// }
+	// //5、考勤免稅日薪
+	// if(daySalaryEnum==DaySalaryEnum.TAXFREEDAYSALARY){
+	// int tbmnumtype=waTbmdaysalaryServie.getSysintValue(pk_org,
+	// DaySalaryEnum.TBMSYSINT);
+	// double tbmsalarynum=waTbmdaysalaryServie.getTbmSalaryNum(pk_org,
+	// calculDate, tbmnumtype);
+	// for (Entry<Object, List<GeneralVO>> e2 : psnVoMap.entrySet()) {
+	// String pk_psndoc=e2.getKey().toString();
+	// List<GeneralVO> glvoList=e2.getValue();
+	// UFDouble rs=UFDouble.ZERO_DBL;
+	// for (int j = 0,size=glvoList.size(); j < size; j++) {
+	// GeneralVO glvo=glvoList.get(i);
+	// UFBoolean taxflag=glvo.getAttributeValue("taxflag")!=null?new
+	// UFBoolean(glvo.getAttributeValue("taxflag").toString()):UFBoolean.FALSE;
+	// if(!taxflag.booleanValue()){
+	// UFDouble nmoney=new
+	// UFDouble(glvo.getAttributeValue("nmoney").toString());
+	// UFDouble daysalary=nmoney.div(tbmsalarynum);
+	// rs.add(daysalary);
+	// }
+	// }
+	// dealWithResult(pk_psndoc, calculDate, rs, resultMap);
+	// }
+	// }
+	// //6、考勤免稅时薪
+	// if(daySalaryEnum==DaySalaryEnum.TAXFREEHOURSALARY){
+	// int tbmnumtype=waTbmdaysalaryServie.getSysintValue(pk_org,
+	// DaySalaryEnum.TBMSYSINT);
+	// double tbmsalarynum=waTbmdaysalaryServie.getTbmSalaryNum(pk_org,
+	// calculDate, tbmnumtype);
+	// for (Entry<Object, List<GeneralVO>> e2 : psnVoMap.entrySet()) {
+	// String pk_psndoc=e2.getKey().toString();
+	// List<GeneralVO> glvoList=e2.getValue();
+	// UFDouble rs=UFDouble.ZERO_DBL;
+	// for (int j = 0,size=glvoList.size(); j < size; j++) {
+	// GeneralVO glvo=glvoList.get(i);
+	// UFBoolean taxflag=glvo.getAttributeValue("taxflag")!=null?new
+	// UFBoolean(glvo.getAttributeValue("taxflag").toString()):UFBoolean.FALSE;
+	// if(!taxflag.booleanValue()){
+	// UFDouble nmoney=new
+	// UFDouble(glvo.getAttributeValue("nmoney").toString());
+	// UFDouble daysalary=nmoney.div(tbmsalarynum);
+	// UFDouble hoursalary=daysalary.div(DaySalaryEnum.HOURSALARYNUM);
+	// rs.add(hoursalary);
+	// }
+	// }
+	// dealWithResult(pk_psndoc, calculDate, rs, resultMap);
+	// }
+	// }
+	// }
+	// }
+
+	return resultMap;
+    }
+
+    @Override
+    public Map<String, HashMap<UFLiteralDate, UFDouble>> getTbmHourSalaryMapByWaItem(String[] pk_psndocs,
+	    UFLiteralDate begindate, UFLiteralDate enddate, String pk_wa_item) throws BusinessException {
+	// 参数校验
+	if (pk_psndocs == null || pk_psndocs.length < 1) {
+	    throw new BusinessException("人員信息主鍵為空");
+	}
+	if (begindate == null) {
+	    throw new BusinessException("開始日期不允許為空");
+	}
+	if (enddate == null || enddate.before(begindate)) {
+	    enddate = begindate;
+	}
+	if (StringUtils.isBlank(pk_wa_item)) {
+	    throw new BusinessException("薪資項目不允許為空");
+	}
+	String inpsndocsql = new InSQLCreator().getInSQL(pk_psndocs, true);
+	int betweendays = UFLiteralDate.getDaysBetween(begindate, enddate) + 1;
+	Map<String, HashMap<UFLiteralDate, UFDouble>> resultMap = new HashMap<String, HashMap<UFLiteralDate, UFDouble>>();
+	for (int i = 0; i < betweendays; i++) {
+	    UFLiteralDate calculDate = begindate.getDateAfter(i);
+	    String qrySql = "SELECT\n" + "	wadoc.pk_org,\n" + "	wadoc.pk_psndoc,\n" + "	wadoc.pk_psnjob,\n"
+		    + "	wadoc.nmoney,\n" + "	waitem.taxflag,\n" + "	waitem.isattend\n" + "FROM\n"
+		    + "	hi_psndoc_wadoc wadoc\n" + "LEFT JOIN wa_item waitem ON wadoc.pk_wa_item = waitem.pk_wa_item\n"
+		    + "WHERE\n" + "	wadoc.pk_psndoc IN ("
+		    + inpsndocsql
+		    + ")\n"
+		    + "AND wadoc.waflag = 'Y'\n"// 发放标志为Y
+		    + "AND waitem.isattend = 'Y'\n"// 是否考勤
+		    + "AND wadoc.begindate <= '" + calculDate.toStdString() + "'\n" + "AND (\n" + "	wadoc.enddate >= '"
+		    + calculDate.toStdString() + "'\n" + "	OR wadoc.enddate IS NULL\n" + ")\n"
+		    + "AND wadoc.pk_wa_item = '" + pk_wa_item + "'";
+	    HashMap<Object, HashMap<Object, GeneralVO>> psnorgPsndocMap = executeQuery2(qrySql);
+	    for (Entry<Object, HashMap<Object, GeneralVO>> e : psnorgPsndocMap.entrySet()) {
+		String pk_org = e.getKey().toString();
+		HashMap<Object, GeneralVO> psnVoMap = e.getValue();
+		int tbmnumtype = getTbmdaysalaryService().getSysintValue(pk_org, DaySalaryEnum.TBMSYSINT);
+		double tbmsalarynum = getTbmdaysalaryService().getTbmSalaryNum(pk_org, calculDate, tbmnumtype);
+		for (Entry<Object, GeneralVO> e2 : psnVoMap.entrySet()) {
+		    String pk_psndoc = e2.getKey().toString();
+		    GeneralVO glvo = e2.getValue();
+		    UFDouble rs = UFDouble.ZERO_DBL;
+		    UFBoolean isattend = glvo.getAttributeValue("isattend") != null ? new UFBoolean(glvo
+			    .getAttributeValue("isattend").toString()) : UFBoolean.FALSE;
+		    if (isattend.booleanValue()) {
+			UFDouble nmoney = new UFDouble(glvo.getAttributeValue("nmoney").toString());
+			UFDouble daysalary = nmoney.div(tbmsalarynum);
+			UFDouble hoursalary = daysalary.div(DaySalaryEnum.HOURSALARYNUM);
+			rs = hoursalary;
+		    }
+		    dealWithResult(pk_psndoc, calculDate, rs, resultMap);
+		}
+	    }
+	}
+	return resultMap;
+    }
+
+    private Map<String, HashMap<UFLiteralDate, UFDouble>> dealWithResult(String pk_psndoc, UFLiteralDate calculdate,
+	    UFDouble rs, Map<String, HashMap<UFLiteralDate, UFDouble>> map) {
+	if (map.get(pk_psndoc) == null) {
+	    map.put(pk_psndoc, new HashMap<UFLiteralDate, UFDouble>());
+	}
+	HashMap<UFLiteralDate, UFDouble> dateMap = map.get(pk_psndoc);
+	dateMap.put(calculdate, rs);
+	return map;
+
+    }
+
+    @SuppressWarnings("unchecked")
+    private HashMap<Object, HashMap<Object, List<GeneralVO>>> executeQuery(String qrysql) throws DAOException {
+
+	HashMap<Object, HashMap<Object, List<GeneralVO>>> param1ParamsMap = (HashMap<Object, HashMap<Object, List<GeneralVO>>>) getDao()
+		.executeQuery(qrysql, new ResultSetProcessor() {
+
+		    /**
+			 * 
+			 */
+		    private static final long serialVersionUID = -5090991016266877110L;
+
+		    @Override
+		    public Object handleResultSet(ResultSet rs) throws SQLException {
+			HashMap<Object, HashMap<Object, List<GeneralVO>>> retMap = new HashMap<Object, HashMap<Object, List<GeneralVO>>>();
+
+			while (rs.next()) {
+
+			    HashMap<Object, List<GeneralVO>> param2VoMap = retMap.get(rs.getObject(1));
+
+			    if (param2VoMap == null) {
+
+				param2VoMap = new HashMap<Object, List<GeneralVO>>();
+				param2VoMap.put(rs.getObject(2), new ArrayList<GeneralVO>());
+				param2VoMap.get(rs.getObject(2)).add(processorToGeneralVO(rs));
+				retMap.put(rs.getObject(1), param2VoMap);
+			    } else {
+				if (param2VoMap.get(rs.getObject(2)) == null) {
+				    param2VoMap.put(rs.getObject(2), new ArrayList<GeneralVO>());
+				}
+				param2VoMap.get(rs.getObject(2)).add(processorToGeneralVO(rs));
+			    }
+
+			}
+			return retMap;
+		    }
+		});
+
+	return param1ParamsMap;
+    }
+
+    @SuppressWarnings("unchecked")
+    private HashMap<Object, HashMap<Object, GeneralVO>> executeQuery2(String qrysql) throws DAOException {
+
+	HashMap<Object, HashMap<Object, GeneralVO>> param1ParamsMap = (HashMap<Object, HashMap<Object, GeneralVO>>) getDao()
+		.executeQuery(qrysql, new ResultSetProcessor() {
+
+		    /**
+			 * 
+			 */
+		    private static final long serialVersionUID = 4799216010215184383L;
+
+		    @Override
+		    public Object handleResultSet(ResultSet rs) throws SQLException {
+			HashMap<Object, HashMap<Object, GeneralVO>> retMap = new HashMap<Object, HashMap<Object, GeneralVO>>();
+
+			while (rs.next()) {
+
+			    HashMap<Object, GeneralVO> param2VoMap = retMap.get(rs.getObject(1));
+
+			    if (param2VoMap == null) {
+
+				param2VoMap = new HashMap<Object, GeneralVO>();
+				param2VoMap.put(rs.getObject(2), processorToGeneralVO(rs));
+				retMap.put(rs.getObject(1), param2VoMap);
+			    } else {
+				param2VoMap.put(rs.getObject(2), processorToGeneralVO(rs));
+			    }
+
+			}
+			return retMap;
+		    }
+		});
+
+	return param1ParamsMap;
+    }
+
+    protected GeneralVO processorToGeneralVO(ResultSet rs) throws SQLException {
+
+	ResultSetMetaData meta = rs.getMetaData();
+	int cols = meta.getColumnCount();
+	GeneralVO result = new GeneralVO();
+
+	for (int i = 1; i <= cols; i++) {
+
+	    String strRealName = StringUtils.isNotEmpty(meta.getColumnLabel(i)) ? meta.getColumnLabel(i) : meta
+		    .getColumnName(i);
+	    result.setAttributeValue(strRealName.toLowerCase(), rs.getObject(i));
+	}
+
+	return result;
+    }
+
+    public BaseDAO getDao() {
+	if (null == dao) {
+	    dao = new BaseDAO();
+	}
+	return dao;
+    }
+
+    private BaseDAO dao;
+
+    private IWaTbmdaysalaryService tbmdaysalaryService;
+
+    private IWaTbmdaysalaryService getTbmdaysalaryService() {
+	if (null == tbmdaysalaryService) {
+	    tbmdaysalaryService = NCLocator.getInstance().lookup(IWaTbmdaysalaryService.class);
+	}
+	return tbmdaysalaryService;
+    }
+
+    @Override
+    public Map<String, UFDouble> getTotalDaySalaryMapByWaItem(String[] pk_psndocs, String pk_wa_class, String cyear,
+	    String cperiod, String pk_wa_item) throws BusinessException {
+	// 查询薪资方案对应的薪资期间的开始日期与结束日期
+	String qrySql = "SELECT\n" + "	period.cstartdate,\n" + "	period.cenddate\n" + "FROM\n"
+		+ "	wa_waclass waclass\n"
+		+ "LEFT JOIN wa_period period ON period.pk_periodscheme = waclass.pk_periodscheme\n" + "WHERE\n"
+		+ "	waclass.pk_wa_class = '" + pk_wa_class + "'\n" + "AND period.caccyear = '" + cyear + "'\n"
+		+ "AND period.caccperiod = '" + cperiod + "'";
+	@SuppressWarnings("unchecked")
+	List<HashMap<String, Object>> listMaptemp = (ArrayList<HashMap<String, Object>>) getDao().executeQuery(qrySql,
+		new MapListProcessor());
+	if (listMaptemp.size() < 1) {
+	    return null;
+	}
+	HashMap<String, Object> hashMap = listMaptemp.get(0);
+	String begindate = hashMap.get("cstartdate").toString();
+	String enddate = hashMap.get("cenddate").toString();
+	// 检查取数期间的数据是否正确
+	wadaysalaryService.checkDaySalaryAndCalculSalary(pk_wa_class, pk_psndocs, new UFLiteralDate(begindate),
+		new UFLiteralDate(enddate));
+	// 统计结果
+	String inpsndocsql = new InSQLCreator().getInSQL(pk_psndocs, true);
+	String sql = "SELECT\n" + "	pk_psndoc,\n" + "	SUM (daysalary) AS salary\n" + "FROM\n" + "	wa_daysalary\n"
+		+ "WHERE\n" + "	pk_psndoc IN (" + inpsndocsql + ")\n" + "AND pk_wa_class = '" + pk_wa_class + "'\n"
+		+ "AND pk_wa_item = '" + pk_wa_item + "'\n" + "AND salarydate <= '" + enddate + "'\n"
+		+ "AND salarydate >= '" + begindate + "'\n" + "GROUP BY\n" + "	pk_psndoc";
+	@SuppressWarnings("unchecked")
+	List<HashMap<String, Object>> psnSalaryMapList = (ArrayList<HashMap<String, Object>>) getDao().executeQuery(
+		sql, new MapListProcessor());
+	if (psnSalaryMapList.size() < 1) {
+	    return null;
+	}
+	Map<String, UFDouble> psnSalaryMap = new HashMap<String, UFDouble>();
+	for (Map<String, Object> psnSals : psnSalaryMapList) {
+	    psnSalaryMap.put((String) psnSals.get("pk_psndoc"), new UFDouble(psnSals.get("salary").toString()));
+	}
+
+	return psnSalaryMap;
+    }
+
+    private IWadaysalaryService wadaysalaryService = NCLocator.getInstance().lookup(IWadaysalaryService.class);
+}

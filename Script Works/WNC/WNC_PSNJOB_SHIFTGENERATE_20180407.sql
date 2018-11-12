@@ -1,0 +1,8 @@
+--增加員工異動時觸發事件
+DELETE FROM PUB_EVENTLISTENER WHERE PK_EVENTLISTENER IN ('1001ZZPSNJOBCHG00004', '1001ZZPSNJOBCHG00005', '1001ZZPSNJOBCHG00006');
+INSERT INTO PUB_EVENTLISTENER (DR, ENABLED, IMPLCLASSNAME, INDUSTRYTYPE, LOCALTYPE, NAME, NAME2, NAME3, NAME4, NAME5, NAME6, NOTE, OPERINDEX, OWNER, PK_EVENTLISTENER, PK_EVENTTYPE, TS) VALUES (0, 'Y', 'nc.impl.trn.listener.PsnjobShiftChangeBusinessListener', '~', '~', 'psnjob班组异动后同步班组及排班信息', 'psnjob班組異動後同步班組及排班信息', 'Syn start date of work-age after psnjob changed', null, null, null, null, null, '6009', '1001ZZPSNJOBCHG00004', '1001Z71000000000SS9Q', '2018-04-07 15:51:03');
+INSERT INTO PUB_EVENTLISTENER (DR, ENABLED, IMPLCLASSNAME, INDUSTRYTYPE, LOCALTYPE, NAME, NAME2, NAME3, NAME4, NAME5, NAME6, NOTE, OPERINDEX, OWNER, PK_EVENTLISTENER, PK_EVENTTYPE, TS) VALUES (0, 'Y', 'nc.impl.trn.listener.PsnjobShiftChangeBusinessListener', '~', '~', 'psnjob班组异动后同步班组及排班信息', 'psnjob班組異動後同步班組及排班信息', 'Syn start date of work-age after psnjob changed', null, null, null, null, null, '6009', '1001ZZPSNJOBCHG00005', '1001Z71000000000SS9O', '2018-04-07 15:51:03');
+INSERT INTO PUB_EVENTLISTENER (DR, ENABLED, IMPLCLASSNAME, INDUSTRYTYPE, LOCALTYPE, NAME, NAME2, NAME3, NAME4, NAME5, NAME6, NOTE, OPERINDEX, OWNER, PK_EVENTLISTENER, PK_EVENTTYPE, TS) VALUES (0, 'Y', 'nc.impl.trn.listener.PsnjobShiftChangeBusinessListener', '~', '~', 'psnjob班组异动后同步班组及排班信息', 'psnjob班組異動後同步班組及排班信息', 'Syn start date of work-age after psnjob changed', null, null, null, null, null, '6009', '1001ZZPSNJOBCHG00006', '1001Z71000000000SS9M', '2018-04-07 15:51:03');
+
+update bd_team set ts = to_char(sysdate,'yyyy-mm-dd hh24:mi:ss') where ts is null;
+update bd_team_b set ts = to_char(sysdate,'yyyy-mm-dd hh24:mi:ss') where ts is null;

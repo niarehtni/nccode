@@ -1,0 +1,16 @@
+package nc.ui.wa.formular.func;
+
+import nc.ui.hr.formula.func.HrDigitFunc;
+/**
+ * 
+ * @author ward 
+ * @date 20180511
+ *
+ */
+public class StatisticLeaveChargePays extends HrDigitFunc {
+	 public StatisticLeaveChargePays()
+	    {
+	        numberOfParameters = -1;
+	    }
+
+}

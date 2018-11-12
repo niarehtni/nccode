@@ -1,0 +1,9 @@
+
+delete pub_systemplate_base where ( pk_systemplate in ('0001AA10000000051XFA', '0001AA10000000051XGM') and (dr=0 or dr is null) )
+go
+
+
+insert into pub_systemplate_base(devorg,dr,funnode,layer,moduleid,nodekey,pk_country,pk_industry,pk_systemplate,templateid,tempstyle,ts) values( '00001',0,'60170leaveplan',0,'6017','bt',null,null,'0001AA10000000051XFA','0001AA10000000051XDW',0,'2018-09-05 11:01:31')
+go
+insert into pub_systemplate_base(devorg,dr,funnode,layer,moduleid,nodekey,pk_country,pk_industry,pk_systemplate,templateid,tempstyle,ts) values( '00001',0,'60170leaveplan',0,'6017','qt',null,null,'0001AA10000000051XGM','0001AA10000000051XFB',1,'2018-09-05 11:01:34')
+go

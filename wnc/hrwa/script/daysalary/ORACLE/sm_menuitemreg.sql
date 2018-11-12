@@ -1,0 +1,1 @@
+INSERT INTO sm_menuitemreg (dr, funcode, iconpath, ismenutype, menudes, menuitemcode, menuitemname, nodeorder, pk_menu, pk_menuitem, resid, ts) VALUES ('0', '60103daysalary', NULL, 'N', NULL, '60131004', '日薪計算', NULL, '1004ZZ10000000000FFL', '0001ZZ1000000005Q95N', 'D60131004', '2018-05-03 11:19:23');

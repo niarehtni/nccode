@@ -1,0 +1,4714 @@
+package nc.impl.hi.psndoc;
+
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.Stack;
+
+import nc.bs.businessevent.BusinessEvent;
+import nc.bs.businessevent.EventDispatcher;
+import nc.bs.businessevent.bd.BDCommonEventUtil;
+import nc.bs.dao.BaseDAO;
+import nc.bs.dao.DAOException;
+import nc.bs.framework.common.NCLocator;
+import nc.bs.logging.Logger;
+import nc.bs.sec.esapi.NCESAPI;
+import nc.bs.uap.oid.OidGenerator;
+import nc.bs.uif2.validation.DefaultValidationService;
+import nc.bs.uif2.validation.Validator;
+import nc.hr.frame.persistence.PersistenceDAO;
+import nc.hr.frame.persistence.SimpleDocServiceTemplate;
+import nc.hr.utils.IDValidateUtil;
+import nc.hr.utils.InSQLCreator;
+import nc.hr.utils.MultiLangHelper;
+import nc.hr.utils.PubEnv;
+import nc.hr.utils.ResHelper;
+import nc.hr.utils.SQLHelper;
+import nc.hr.utils.TimerLogger;
+import nc.impl.pubapp.plugin.PluginExecutor;
+import nc.itf.hi.IPersonRecordService;
+import nc.itf.hi.IPsndocQryService;
+import nc.itf.hr.frame.IHrBillCode;
+import nc.itf.hr.frame.IPersistenceHome;
+import nc.itf.hr.frame.IPersistenceRetrieve;
+import nc.itf.hr.frame.IPersistenceUpdate;
+import nc.itf.hr.frame.PersistenceDbException;
+import nc.jdbc.framework.DataSourceCenter;
+import nc.jdbc.framework.SQLParameter;
+import nc.jdbc.framework.processor.ArrayListProcessor;
+import nc.jdbc.framework.processor.BaseProcessor;
+import nc.jdbc.framework.processor.BeanListProcessor;
+import nc.jdbc.framework.processor.ColumnListProcessor;
+import nc.jdbc.framework.processor.ColumnProcessor;
+import nc.jdbc.framework.processor.MapListProcessor;
+import nc.jdbc.framework.processor.ResultSetProcessor;
+import nc.md.data.access.NCObject;
+import nc.md.model.MetaDataException;
+import nc.md.persist.designer.vo.ClassVO;
+import nc.md.persist.framework.MDPersistenceService;
+import nc.plugin.hi.IPsndocIntoDoc;
+import nc.plugin.hi.PsnIntoDocPluginExecDelegate;
+import nc.pub.billcode.itf.IBillcodeManage;
+import nc.pub.billcode.vo.BillCodeContext;
+import nc.pub.tools.HiCacheUtils;
+import nc.pub.tools.HiSQLHelper;
+import nc.pub.tools.VOUtils;
+import nc.ui.hr.pub.FromWhereSQL;
+import nc.vo.bd.psn.PsnjobVO;
+import nc.vo.bd.psnid.PsnIdtypeVO;
+import nc.vo.bd.ref.RefInfoVO;
+import nc.vo.hi.psndoc.CertVO;
+import nc.vo.hi.psndoc.KeyPsnGrpVO;
+import nc.vo.hi.psndoc.PartTimeVO;
+import nc.vo.hi.psndoc.PsnBudgetVO;
+import nc.vo.hi.psndoc.PsnChgVO;
+import nc.vo.hi.psndoc.PsnJobVO;
+import nc.vo.hi.psndoc.PsnOrgVO;
+import nc.vo.hi.psndoc.PsndocAggVO;
+import nc.vo.hi.psndoc.PsndocVO;
+import nc.vo.hi.psndoc.WorkVO;
+import nc.vo.hi.psndoc.enumeration.PsnType;
+import nc.vo.hi.psndoc.enumeration.TrnseventEnum;
+import nc.vo.hi.pub.BillCodeRepeatBusinessException;
+import nc.vo.hi.pub.HiBatchEventValueObject;
+import nc.vo.hi.pub.HiEventValueObject;
+import nc.vo.hr.formulaset.FormuaDateHelper;
+import nc.vo.hr.infoset.InfoItemMapVO;
+import nc.vo.hr.infoset.InfoItemVO;
+import nc.vo.hr.infoset.InfoSetVO;
+import nc.vo.hr.tools.pub.GeneralVO;
+import nc.vo.hr.tools.pub.GeneralVOProcessor;
+import nc.vo.om.hrdept.HRDeptVO;
+import nc.vo.om.orginfo.HROrgVO;
+import nc.vo.org.DeptVO;
+import nc.vo.org.OrgVO;
+import nc.vo.org.PostVO;
+import nc.vo.pub.BusinessException;
+import nc.vo.pub.CircularlyAccessibleValueObject;
+import nc.vo.pub.SuperVO;
+import nc.vo.pub.lang.UFBoolean;
+import nc.vo.pub.lang.UFDateTime;
+import nc.vo.pub.lang.UFDouble;
+import nc.vo.pub.lang.UFLiteralDate;
+import nc.vo.pub.lang.UFTime;
+import nc.vo.sm.UserVO;
+import nc.vo.uif2.LoginContext;
+import nc.vo.util.AuditInfoUtil;
+import nc.vo.util.BDReferenceChecker;
+import nc.vo.util.BDVersionValidationUtil;
+
+import org.apache.commons.beanutils.BeanUtils;
+import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang.ObjectUtils;
+import org.apache.commons.lang.StringUtils;
+
+public class PsndocDAO extends SimpleDocServiceTemplate {
+	private final BaseDAO baseDAOManager = new BaseDAO();
+
+	private final Stack<String> stackOid = new Stack();
+
+	private IPersistenceRetrieve retrieve = null;
+
+	private IPersonRecordService psnrdsService = null;
+
+	public PsndocDAO() {
+		super("PsndocDAO");
+	}
+
+	public PsndocAggVO[] batchUpdatePsndoc(SuperVO superVO,
+			String strFieldCode, String[] strPk_psnjob, String[] strPk_psnorgs,
+			String[] strPk_psndocs, String[] pk_sub) throws BusinessException {
+		EventDispatcher
+				.fireEvent(new BusinessEvent(
+						"218971f0-e5dc-408b-9a32-56529dddd4db", "600707",
+						strPk_psndocs));
+
+		String tableName = superVO.getTableName();
+		InSQLCreator ttu = null;
+		try {
+			ttu = new InSQLCreator();
+			String inSql = ttu.getInSQL(pk_sub);
+
+			String updateSQL = " update " + tableName + " set " + strFieldCode
+					+ " = ? where " + superVO.getPKFieldName() + " in ( "
+					+ inSql + " ) ";
+
+			SQLParameter para = new SQLParameter();
+			Object objAttrValue = superVO.getAttributeValue(strFieldCode);
+			if (objAttrValue == null) {
+				para.addNullParam(0);
+			} else {
+				para.addParam(objAttrValue);
+			}
+			baseDAOManager.executeUpdate(updateSQL, para);
+
+			batchSubSynPsndoc(strPk_psndocs, tableName, strFieldCode, superVO);
+
+			HiCacheUtils.synCache(new String[] {
+					nc.vo.hi.psndoc.PsndocVO.getDefaultTableName(),
+					PsnJobVO.getDefaultTableName(),
+					PsnOrgVO.getDefaultTableName() });
+
+			PsndocAggVO[] psndocAggVOs = queryPsndocVOByPks(true, strPk_psnjob);
+
+			EventDispatcher.fireEvent(new BusinessEvent(
+					"218971f0-e5dc-408b-9a32-56529dddd4db", "600708",
+					strPk_psndocs));
+
+			HiEventValueObject
+					.fireDataPermChangeEvent("7156d223-4531-4337-b192-492ab40098f1");
+			return psndocAggVOs;
+		} finally {
+			if (ttu != null) {
+				ttu.clear();
+			}
+		}
+	}
+
+	public PsndocAggVO[] batchUpdatePsndocMain(SuperVO superVO,
+			String strFieldCode, String[] strPk_psnjob, String[] strPk_psndocs)
+			throws BusinessException {
+		EventDispatcher
+				.fireEvent(new BusinessEvent(
+						"218971f0-e5dc-408b-9a32-56529dddd4db", "600707",
+						strPk_psndocs));
+
+		InSQLCreator ttu = null;
+		try {
+			ttu = new InSQLCreator();
+			String inSql = ttu.getInSQL(strPk_psndocs);
+
+			String updateSQL = " update bd_psndoc set " + strFieldCode
+					+ " = ? where pk_psndoc in ( " + inSql + " ) ";
+			SQLParameter para = new SQLParameter();
+			Object objAttrValue = superVO.getAttributeValue(strFieldCode);
+			if (objAttrValue == null) {
+				para.addNullParam(0);
+			} else {
+				para.addParam(objAttrValue);
+			}
+			baseDAOManager.executeUpdate(updateSQL, para);
+
+			HiCacheUtils.synCache(new String[] {
+					nc.vo.hi.psndoc.PsndocVO.getDefaultTableName(),
+					PsnJobVO.getDefaultTableName(),
+					PsnOrgVO.getDefaultTableName() });
+
+			PsndocAggVO[] psndocAggVOs = queryPsndocVOByPks(true, strPk_psnjob);
+
+			EventDispatcher.fireEvent(new BusinessEvent(
+					"218971f0-e5dc-408b-9a32-56529dddd4db", "600708",
+					strPk_psndocs));
+
+			HiEventValueObject
+					.fireDataPermChangeEvent("7156d223-4531-4337-b192-492ab40098f1");
+			return psndocAggVOs;
+		} finally {
+			if (ttu != null) {
+				ttu.clear();
+			}
+		}
+	}
+
+	private void batchSubSynPsndoc(String[] strPkPsndocs, String subtablename,
+			String fieldCode, SuperVO voClass) throws BusinessException {
+		String[] busiSubset = (String[]) PsndocAggVO.hashBusinessInfoSet
+				.toArray(new String[0]);
+
+		InfoItemVO[] items = (InfoItemVO[]) getRetrieve().retrieveByClause(
+				null,
+				InfoItemVO.class,
+				" pk_infoset in ( select pk_infoset from hr_infoset where table_code = '"
+						+ subtablename + "' and pk_infoset_sort = '"
+						+ "1001Z710000000002XPO" + "' ) and item_code = '"
+						+ fieldCode + "' and pk_main_item <> '~' ");
+
+		if ((items == null) || (items.length == 0)
+				|| (StringUtils.isBlank(items[0].getPk_main_item()))) {
+
+			return;
+		}
+
+		InfoItemVO mainitem = (InfoItemVO) getRetrieve().retrieveByPk(null,
+				InfoItemVO.class, items[0].getPk_main_item());
+		if (mainitem == null) {
+
+			return;
+		}
+
+		String mainField = mainitem.getItem_code();
+		String subField = items[0].getItem_code();
+
+		InSQLCreator isc = null;
+		try {
+			isc = new InSQLCreator();
+			String insql = isc.getInSQL(strPkPsndocs);
+
+			String subWhere = "";
+
+			if (ArrayUtils.contains(busiSubset, subtablename)) {
+				subWhere = " pk_psnorg in ( select pk_psnorg from hi_psnorg where pk_psndoc in ("
+						+ insql + ") ";
+			} else {
+				subWhere = " pk_psndoc in (" + insql + ") ";
+			}
+
+			if (!StringUtils.isBlank(items[0].getSub_formula_sql())) {
+				subWhere = subWhere + " and " + items[0].getSub_formula_sql();
+
+			} else if (PartTimeVO.getDefaultTableName().equals(subtablename)) {
+
+				subWhere = subWhere
+						+ " and assgid > 1 and recordnum = 0 order by assgid desc ";
+			} else if (PsnJobVO.getDefaultTableName().equals(subtablename)) {
+
+				subWhere = subWhere + " and assgid = 1 and recordnum = 0 ";
+			} else if (ArrayUtils.contains(busiSubset, subtablename)) {
+
+				subWhere = subWhere + " and recordnum = 0 ";
+
+			} else {
+				subWhere = subWhere + "  and recordnum = 0 ";
+			}
+
+			GeneralVO[] subValue = (GeneralVO[]) new BaseDAO().executeQuery(
+					" select " + subField + ",pk_psndoc from "
+							+ voClass.getTableName() + " where  " + subWhere,
+					new GeneralVOProcessor(GeneralVO.class));
+
+			if (subValue == null) {
+				return;
+			}
+
+			HashMap<String, Object> hm = new HashMap();
+			for (GeneralVO vo : subValue) {
+				hm.put((String) vo.getAttributeValue("pk_psndoc"),
+						vo.getAttributeValue(subField));
+			}
+
+			PsndocAggVO[] agg = (PsndocAggVO[]) queryByCondition_LazyLoad(
+					PsndocAggVO.class, " pk_psndoc in (" + insql + ") ");
+			ArrayList<nc.vo.hi.psndoc.PsndocVO> al = new ArrayList();
+			for (int i = 0; (agg != null) && (i < agg.length); i++) {
+				agg[i].getParentVO().setAttributeValue(mainField,
+						hm.get(agg[i].getParentVO().getPk_psndoc()));
+				al.add(agg[i].getParentVO());
+			}
+			baseDAOManager.updateVOArray(
+					(SuperVO[]) al.toArray(new nc.vo.hi.psndoc.PsndocVO[0]),
+					new String[] { mainField });
+		} finally {
+			if (isc != null) {
+				isc.clear();
+			}
+		}
+	}
+
+	public void checkPsnCodeUnique(nc.vo.hi.psndoc.PsndocVO psndocVO)
+			throws BusinessException {
+		String strSQL = "code='" + NCESAPI.sqlEncode(psndocVO.getCode()) + "'";
+		if ((1 == psndocVO.getStatus()) || (psndocVO.getPk_psndoc() != null)) {
+			strSQL = strSQL + " and pk_psndoc<>'" + psndocVO.getPk_psndoc()
+					+ "'";
+		}
+		int iCount = getRetrieve().getCountByCondition(
+				nc.vo.hi.psndoc.PsndocVO.getDefaultTableName(), strSQL);
+		if (iCount > 0) {
+			BillCodeRepeatBusinessException ex = new BillCodeRepeatBusinessException(
+					ResHelper.getString("6007psn", "06007psn0228"),
+					"coderepeat");
+
+			BillCodeContext billcodeContext = ((IBillcodeManage) NCLocator
+					.getInstance().lookup(IBillcodeManage.class))
+					.getBillCodeContext("6007psndoc_code",
+							PubEnv.getPk_group(), psndocVO.getPk_org());
+
+			if ((billcodeContext != null) && (billcodeContext.isPrecode())
+					&& (!billcodeContext.isEditable())
+					&& (StringUtils.isNotBlank(psndocVO.getCode()))) {
+
+				String strPsnCode = null;
+				((IBillcodeManage) NCLocator.getInstance().lookup(
+						IBillcodeManage.class)).AbandonBillCode_RequiresNew(
+						"6007psndoc_code", PubEnv.getPk_group(),
+						psndocVO.getPk_org(), psndocVO.getCode());
+
+				strPsnCode = ((IHrBillCode) NCLocator.getInstance().lookup(
+						IHrBillCode.class)).getBillCode("6007psndoc_code",
+						PubEnv.getPk_group(), psndocVO.getPk_org());
+
+				ex.setNbcrcode("6007psndoc_code");
+				ex.setNewCode(strPsnCode);
+			}
+
+			throw ex;
+		}
+	}
+
+	public void checkPsnUnique(nc.vo.hi.psndoc.PsndocVO psndocVO)
+			throws BusinessException {
+		if (0 == psndocVO.getStatus()) {
+			return;
+		}
+		String[] strUniqueFields = (String[]) getPsndocUniqueRule().keySet()
+				.toArray(new String[0]);
+
+		if (!ArrayUtils.contains(strUniqueFields, "idtype")) {
+			strUniqueFields = (String[]) ArrayUtils.add(strUniqueFields,
+					"idtype");
+		}
+
+		if (!ArrayUtils.contains(strUniqueFields, "id")) {
+			strUniqueFields = (String[]) ArrayUtils.add(strUniqueFields, "id");
+		}
+
+		if (!ArrayUtils.contains(strUniqueFields, "name")) {
+			strUniqueFields = (String[]) ArrayUtils.addAll(strUniqueFields,
+					new String[] { "name", "name2", "name3", "name4", "name5",
+							"name6" });
+
+		} else {
+
+			strUniqueFields = (String[]) ArrayUtils
+					.addAll(strUniqueFields, new String[] { "name2", "name3",
+							"name4", "name5", "name6" });
+		}
+
+		if ((strUniqueFields == null) || (strUniqueFields.length == 0)) {
+			return;
+		}
+		nc.vo.hi.psndoc.PsndocVO newPsndoc = new nc.vo.hi.psndoc.PsndocVO();
+		for (String strField : strUniqueFields) {
+			newPsndoc.setAttributeValue(strField,
+					psndocVO.getAttributeValue(strField));
+		}
+		if (psndocVO.getPk_psndoc() != null) {
+			newPsndoc.setPk_psndoc(psndocVO.getPk_psndoc());
+		}
+		PsndocAggVO psndocAggVO = getPsndocVOByUniqueVO(newPsndoc);
+		if ((psndocAggVO != null) && (psndocAggVO.getParentVO() != null)) {
+			nc.vo.hi.psndoc.PsndocVO head = psndocAggVO.getParentVO();
+			Map mapUniqueField = getPsndocUniqueRule();
+			if (!mapUniqueField.containsKey("idtype")) {
+				mapUniqueField.put("idtype",
+						ResHelper.getString("6007psn", "06007psn0229"));
+			}
+
+			if (!mapUniqueField.containsKey("id")) {
+				mapUniqueField.put("id",
+						ResHelper.getString("6007psn", "06007psn0230"));
+			}
+
+			if (!mapUniqueField.containsKey("name")) {
+				mapUniqueField.put("name",
+						ResHelper.getString("common", "UC000-0001403"));
+			}
+
+			String strMsg = "";
+			PsnIdtypeVO psnIdtypeVO = (PsnIdtypeVO) getDao().retrieveByPK(
+					PsnIdtypeVO.class,
+					(String) psndocVO.getAttributeValue("idtype"));
+
+			for (String strField : strUniqueFields) {
+				if (mapUniqueField.get(strField) != null) {
+
+					if ("idtype".equalsIgnoreCase(strField)) {
+						strMsg = strMsg + mapUniqueField.get(strField) + ":"
+								+ VOUtils.getNameByVO(psnIdtypeVO) + ",";
+					} else if ("name".equalsIgnoreCase(strField)) {
+						strMsg = strMsg + mapUniqueField.get(strField) + ":"
+								+ VOUtils.getNameByVO(psndocVO) + ",";
+					} else {
+						String fieldValue = (String) psndocVO
+								.getAttributeValue(strField);
+
+						fieldValue = StringUtils.isBlank(fieldValue) ? ResHelper
+								.getString("6007psn", "06007psn0148")
+								: fieldValue;
+
+						strMsg = strMsg + mapUniqueField.get(strField) + ":"
+								+ fieldValue + ",";
+					}
+				}
+			}
+			if (strMsg.length() > 0) {
+				strMsg = strMsg.substring(0, strMsg.length() - 1);
+			}
+
+			String jobName = VOUtils.getDocName(PostVO.class, head
+					.getPsnJobVO().getPk_post());
+			jobName = StringUtils.isBlank(jobName) ? ResHelper.getString(
+					"6007psn", "06007psn0148") : jobName;
+			String deptName = VOUtils.getDocName(DeptVO.class, head
+					.getPsnJobVO().getPk_dept());
+			deptName = StringUtils.isBlank(deptName) ? ResHelper.getString(
+					"6007psn", "06007psn0148") : deptName;
+
+			String orgName = VOUtils.getDocName(OrgVO.class, head.getPsnJobVO()
+					.getPk_org());
+			orgName = StringUtils.isBlank(orgName) ? ResHelper.getString(
+					"6007psn", "06007psn0148") : orgName;
+			strMsg = ResHelper.getString("6007psn", "06007psn0231",
+					new String[] { strMsg, orgName, deptName, jobName });
+
+			throw new BusinessException(strMsg);
+		}
+	}
+
+	public void delete(Object obj) throws BusinessException {
+		nc.vo.hi.psndoc.PsndocVO psndocVO = (nc.vo.hi.psndoc.PsndocVO) getMainVO(obj);
+		getLocker().lock("delete", new Object[] { psndocVO });
+		BDVersionValidationUtil.validateSuperVO(new SuperVO[] { psndocVO });
+		InfoSetVO[] set = (InfoSetVO[]) ((IPersistenceRetrieve) NCLocator
+				.getInstance().lookup(IPersistenceRetrieve.class))
+				.retrieveByClause(null, InfoSetVO.class,
+						" pk_infoset_sort = '1001Z710000000002XPO' ");
+
+		HashMap<String, String> hm = null;
+		if ((set != null) && (set.length > 0)) {
+			hm = new HashMap();
+			for (int i = 0; i < set.length; i++) {
+				if (hm.get(set[i].getTable_code()) == null) {
+					hm.put(set[i].getTable_code(), set[i].getTable_code());
+				}
+			}
+		}
+
+		String[] excludeTables = null;
+		if (hm != null) {
+			excludeTables = (String[]) hm.keySet().toArray(new String[0]);
+			excludeTables = (String[]) ArrayUtils.add(excludeTables,
+					"hr_relation_psn");
+		}
+
+		if (isDispatchEvent()) {
+
+			HiEventValueObject.fireEvent(psndocVO.getPsnJobVO(), null, psndocVO
+					.getPsnJobVO().getPk_hrorg(),
+					"218971f0-e5dc-408b-9a32-56529dddd4db", ObjectUtils.equals(
+							psndocVO.getPsnOrgVO().getPsntype(),
+							PsnType.EMPLOYEE.value()) ? "600705" : "600711");
+		}
+
+		PsndocAggVO agg = (PsndocAggVO) obj;
+		int count = getRetrieve().getCountByCondition(
+				PsnOrgVO.getDefaultTableName(),
+				" pk_psndoc = '" + agg.getParentVO().getPk_psndoc() + "' ");
+
+		if (count == 1) {
+
+			nc.vo.bd.psn.PsndocVO uapVO = (nc.vo.bd.psn.PsndocVO) getMDQueryService()
+					.queryBillOfVOByPK(nc.vo.bd.psn.PsndocVO.class,
+							agg.getParentVO().getPk_psndoc(), false);
+
+			new BDCommonEventUtil("40d39c26-a2b6-4f16-a018-45664cac1a1f")
+					.dispatchDeleteBeforeEvent(new Object[] { uapVO });
+
+			setBdReferenceChecker(BDReferenceChecker.getInstance(excludeTables));
+			DefaultValidationService validationService = createValidationService(new Validator[] { getBDReferenceChecker(obj) });
+			createCustomValidators(validationService, "delete");
+			validationService.validate(obj);
+
+			PsndocAggVO dbAgg = (PsndocAggVO) queryByPk(PsndocAggVO.class, agg
+					.getParentVO().getPk_psndoc(), false);
+			getMDPersistenceService().deleteBillFromDB(dbAgg);
+
+			new BDCommonEventUtil("40d39c26-a2b6-4f16-a018-45664cac1a1f")
+					.dispatchDeleteAfterEvent(new Object[] { uapVO });
+		} else if (count > 1) {
+			BDReferenceChecker checker = BDReferenceChecker
+					.getInstance(excludeTables);
+			setBdReferenceChecker(checker);
+			DefaultValidationService validationService = createValidationService(new Validator[] { checker });
+			createCustomValidators(validationService, "delete");
+
+			PsndocAggVO aggvo = (PsndocAggVO) queryByPk(PsndocAggVO.class, agg
+					.getParentVO().getPk_psndoc());
+			ArrayList<SuperVO> al = new ArrayList();
+			for (SuperVO vo : aggvo.getAllChildrenVO()) {
+				if ((PsndocAggVO.listBusinessInfoSetClass.contains(vo
+						.getClass()))
+						&& (agg.getParentVO().getPsnOrgVO().getPk_psnorg()
+								.equals(vo.getAttributeValue("pk_psnorg")))) {
+
+					al.add(vo);
+				}
+			}
+
+			if (al.size() > 0) {
+				SuperVO[] vos = (SuperVO[]) al.toArray(new SuperVO[0]);
+				validationService.validate(vos);
+				ArrayList<String> table_name = new ArrayList();
+				for (int i = 0; i < vos.length; i++) {
+					if (!table_name.contains(vos[i].getTableName())) {
+						table_name.add(vos[i].getTableName());
+					}
+				}
+				String[] sqls = new String[table_name.size()];
+				for (int i = 0; i < sqls.length; i++) {
+					sqls[i] = (" delete from " + (String) table_name.get(i)
+							+ " where pk_psnorg = '"
+							+ agg.getParentVO().getPsnOrgVO().getPk_psnorg() + "'");
+				}
+
+				((IPersistenceUpdate) NCLocator.getInstance().lookup(
+						IPersistenceUpdate.class)).executeSQLs(sqls);
+			}
+
+			PsnOrgVO[] orgVO = (PsnOrgVO[]) queryByCondition(PsnOrgVO.class,
+					" pk_psndoc = '" + agg.getParentVO().getPk_psndoc()
+							+ "' order by orgrelaid desc ");
+
+			for (int i = 0; (orgVO != null) && (i < orgVO.length); i++) {
+				if (i == 0) {
+					orgVO[i].setAttributeValue("lastflag", UFBoolean.TRUE);
+				} else {
+					orgVO[i].setAttributeValue("lastflag", UFBoolean.FALSE);
+				}
+			}
+			((IPersistenceUpdate) NCLocator.getInstance().lookup(
+					IPersistenceUpdate.class)).updateVOArray(null, orgVO,
+					new String[] { "lastflag" }, null);
+
+			for (String tabName : PsndocAggVO.hashBusinessInfoSet) {
+				updateDataAfterSubDataChanged(tabName, new String[] { agg
+						.getParentVO().getPk_psndoc() });
+			}
+
+			String pkPsnjob = getPsnrdsService().getEmpPsnjobByPsndoc(
+					agg.getParentVO().getPk_psndoc());
+			PsnJobVO job = (PsnJobVO) queryByPk(PsnJobVO.class, pkPsnjob);
+			if (job != null) {
+				getPsnrdsService().synPkorgOfPsndoc(job.getPk_org(),
+						agg.getParentVO().getPk_psndoc());
+			}
+		} else {
+			throw new BusinessException(ResHelper.getString("6007psn",
+					"06007psn0232"));
+		}
+
+		HiCacheUtils
+				.synCache(new String[] {
+						nc.vo.hi.psndoc.PsndocVO.getDefaultTableName(),
+						PsnJobVO.getDefaultTableName(),
+						PsnOrgVO.getDefaultTableName() });
+		if (isDispatchEvent()) {
+
+			HiEventValueObject.fireEvent(psndocVO.getPsnJobVO(), null, psndocVO
+					.getPsnJobVO().getPk_hrorg(),
+					"218971f0-e5dc-408b-9a32-56529dddd4db", ObjectUtils.equals(
+							psndocVO.getPsnOrgVO().getPsntype(),
+							PsnType.EMPLOYEE.value()) ? "600706" : "600712");
+		}
+	}
+
+	private void fillOrgJobVO(nc.vo.hi.psndoc.PsndocVO psndocVO)
+			throws BusinessException {
+		String strSubCondition = "";
+		if (psndocVO.getPsnOrgVO().getPrimaryKey() == null) {
+			strSubCondition = "{0}=''{1}'' and {2}=''{3}'' and {4}=''{5}'' order by {6}";
+			strSubCondition = MessageFormat.format(strSubCondition,
+					new Object[] { "pk_psndoc", psndocVO.getPrimaryKey(),
+							"lastflag", UFBoolean.TRUE, "endflag",
+							UFBoolean.FALSE, "orgrelaid" });
+
+			PsnOrgVO[] psnOrgVOs = (PsnOrgVO[]) queryByCondition(
+					PsnOrgVO.class, strSubCondition);
+			if ((psnOrgVOs != null) && (psnOrgVOs.length > 0)) {
+				psndocVO.setPsnOrgVO(psnOrgVOs[0]);
+			}
+		} else {
+			psndocVO.setPsnOrgVO((PsnOrgVO) queryByPk(PsnOrgVO.class, psndocVO
+					.getPsnOrgVO().getPrimaryKey()));
+		}
+		if (psndocVO.getPsnJobVO().getPrimaryKey() == null) {
+			strSubCondition = "{0}=''{1}'' and {2}=''{3}'' and {4}=''{5}'' and {6}= ''{7}'' order by {8}";
+			strSubCondition = MessageFormat.format(strSubCondition,
+					new Object[] { "pk_psndoc", psndocVO.getPrimaryKey(),
+							"ismainjob", UFBoolean.TRUE, "lastflag",
+							UFBoolean.TRUE, "pk_psnorg",
+							psndocVO.getPsnOrgVO().getPrimaryKey(), "assgid" });
+
+			PsnJobVO[] psnJobVOs = (PsnJobVO[]) queryByCondition(
+					PsnJobVO.class, strSubCondition);
+			if ((psnJobVOs != null) && (psnJobVOs.length > 0)) {
+				psndocVO.setPsnJobVO(psnJobVOs[0]);
+			}
+		} else {
+			psndocVO.setPsnJobVO((PsnJobVO) queryByPk(PsnJobVO.class, psndocVO
+					.getPsnJobVO().getPrimaryKey()));
+		}
+	}
+
+	private ArrayList<String> getDefaultQueryFields() {
+		return VOUtils.getDefaultQueryFields();
+	}
+
+	private String getJoinedTable(String[] strTableNames) {
+		String strJoinedTable = " from bd_psndoc inner join hi_psnorg on hi_psnorg.pk_psndoc= bd_psndoc.pk_psndoc inner join hi_psnjob on hi_psnjob.pk_psnorg=hi_psnorg.pk_psnorg and hi_psnjob.lastflag='Y' and hi_psnjob.ismainjob = 'Y'  ";
+
+		if ((strTableNames == null) || (strTableNames.length < 1)) {
+			return strJoinedTable;
+		}
+		for (String tablename : strTableNames) {
+			if (",bd_psndoc,hi_psnorg,hi_psnjob".indexOf(tablename) <= 0) {
+
+				if (tablename.equalsIgnoreCase("om_post")) {
+
+					strJoinedTable = strJoinedTable + " left outer join "
+							+ tablename + " on " + tablename
+							+ ".pk_post=hi_psnjob.pk_post";
+				} else if (tablename.equalsIgnoreCase("org_dept")) {
+
+					strJoinedTable = strJoinedTable + " left outer join "
+							+ tablename + " on " + tablename
+							+ ".pk_dept=hi_psnjob.pk_dept";
+
+				} else {
+					strJoinedTable = strJoinedTable + " left outer join "
+							+ tablename + " on " + tablename
+							+ ".pk_psndoc=bd_psndoc.pk_psndoc";
+				}
+			}
+		}
+		return strJoinedTable;
+	}
+
+	private synchronized String getNextOid() {
+		if (stackOid.empty()) {
+			String[] strOids = OidGenerator.getInstance().nextOid("0001", 10);
+			if ((strOids != null) && (strOids.length > 0)) {
+				stackOid.addAll(Arrays.asList(strOids));
+			}
+		}
+		return (String) stackOid.pop();
+	}
+
+	public Map getPsndocUniqueRule() throws DAOException {
+		String sql = "select distinct t3.name,t3.displayname,t3.resid from bd_uniquerule t1,bd_uniquerule_item t2,md_property t3 where t1.pk_rule=t2.pk_rule and t2.mdcolumnid=t3.id and t1.mdclassid='40d39c26-a2b6-4f16-a018-45664cac1a1f' and t1.pk_rule <> '0001Z01000000005IQBL' ";
+
+		GeneralVO[] list = (GeneralVO[]) baseDAOManager.executeQuery(sql,
+				new GeneralVOProcessor(GeneralVO.class));
+		Map result = new HashMap();
+		if ((list == null) || (list.length < 1)) {
+			return result;
+		}
+		for (int i = 0; i < list.length; i++) {
+			result.put(
+					list[i].getAttributeValue("name"),
+					ResHelper.getString("10140psn",
+							(String) list[i].getAttributeValue("resid")));
+		}
+		return result;
+	}
+
+	public PsndocAggVO getPsndocVOByUniqueVO(nc.vo.hi.psndoc.PsndocVO psndocVO)
+			throws BusinessException {
+		String strBaseWhere = "1=1";
+
+		String[] strFields = (String[]) getPsndocUniqueRule().keySet().toArray(
+				new String[0]);
+
+		if (!ArrayUtils.contains(strFields, "idtype")) {
+			strFields = (String[]) ArrayUtils.add(strFields, "idtype");
+		}
+
+		if (!ArrayUtils.contains(strFields, "id")) {
+			strFields = (String[]) ArrayUtils.add(strFields, "id");
+		}
+
+		if (!ArrayUtils.contains(strFields, "name")) {
+			strFields = (String[]) ArrayUtils.addAll(strFields, new String[] {
+					"name", "name2", "name3", "name4", "name5", "name6" });
+
+		} else {
+
+			strFields = (String[]) ArrayUtils.addAll(strFields, new String[] {
+					"name2", "name3", "name4", "name5", "name6" });
+		}
+
+		String nameSql = "";
+		for (String strField : strFields) {
+			if ((!strField.equalsIgnoreCase("pk_psndoc"))
+					&& (psndocVO.getAttributeValue(strField) != null)
+					&& (strField.startsWith("name"))) {
+
+				String strFieldValue = (String) psndocVO
+						.getAttributeValue(strField);
+				if (StringUtils.isBlank(nameSql)) {
+
+					nameSql = nameSql + " bd_psndoc." + strField + " = '"
+							+ NCESAPI.sqlEncode(strFieldValue) + "' ";
+				} else {
+					nameSql = nameSql + " or bd_psndoc." + strField + " = '"
+							+ NCESAPI.sqlEncode(strFieldValue) + "' ";
+				}
+			}
+		}
+
+		strBaseWhere = strBaseWhere + " and ( " + nameSql + " )";
+
+		for (String strField : strFields) {
+			if ((!strField.equalsIgnoreCase("pk_psndoc"))
+					&& (psndocVO.getAttributeValue(strField) != null)
+					&& (!strField.startsWith("name"))) {
+
+				Object objValue = psndocVO.getAttributeValue(strField);
+				if (((objValue instanceof String))
+						|| ((objValue instanceof UFBoolean))
+						|| ((objValue instanceof UFDateTime))
+						|| ((objValue instanceof UFTime))) {
+					if ("id".equals(strField)) {
+
+						String idtype = psndocVO.getIdtype();
+						if (idtype.equals("1001Z01000000000AI36")) {
+							String id = objValue.toString();
+							String id15 = "";
+							String id18 = "";
+							if (id.length() == 15) {
+								id15 = id;
+								IDValidateUtil idVU = new IDValidateUtil(id);
+								id18 = idVU.getUpgradeId();
+							} else if (id.length() == 18) {
+								id15 = id.substring(0, 6) + id.substring(8, 17);
+								id18 = id;
+							} else {
+								id18 = id;
+								id15 = id;
+							}
+
+							strBaseWhere = strBaseWhere
+									+ " and ( hi_psndoc_cert." + strField
+									+ " = '" + NCESAPI.sqlEncode(id18)
+									+ "' or hi_psndoc_cert." + strField
+									+ " = '" + NCESAPI.sqlEncode(id15) + "' ) ";
+
+						} else {
+
+							strBaseWhere = strBaseWhere
+									+ " and  hi_psndoc_cert." + strField
+									+ " = '"
+									+ NCESAPI.sqlEncode(objValue.toString())
+									+ "' ";
+						}
+
+					} else {
+						strBaseWhere = strBaseWhere + " and bd_psndoc."
+								+ strField + " = '"
+								+ NCESAPI.sqlEncode(objValue.toString()) + "' ";
+					}
+				} else if ((objValue instanceof UFLiteralDate)) {
+					strBaseWhere = strBaseWhere + " and bd_psndoc." + strField
+							+ " like '"
+							+ ((UFLiteralDate) objValue).toStdString() + "%' ";
+				} else if (((objValue instanceof UFDouble))
+						|| ((objValue instanceof Integer))) {
+					if ("idtype".equals(strField)) {
+
+						strBaseWhere = strBaseWhere + " and hi_psndoc_cert."
+								+ strField + " = " + objValue.toString() + " ";
+					} else {
+						strBaseWhere = strBaseWhere + " and bd_psndoc."
+								+ strField + " = " + objValue.toString() + " ";
+					}
+				}
+			}
+		}
+
+		if (psndocVO.getPk_psndoc() != null) {
+			strBaseWhere = strBaseWhere + " and bd_psndoc.pk_psndoc<>'"
+					+ psndocVO.getPk_psndoc() + "'";
+		}
+
+		String strOtherWhere = " and hi_psndoc_cert.iseffect = 'Y' and hi_psnorg.lastflag='Y'";
+		ArrayList<String> listField = new ArrayList();
+		String[] strPsndocFieldCodes = new nc.vo.hi.psndoc.PsndocVO()
+				.getAttributeNames();
+		for (int i = 0; i < strPsndocFieldCodes.length; i++) {
+			listField.add("bd_psndoc." + strPsndocFieldCodes[i]
+					+ " as bd_psndoc_" + strPsndocFieldCodes[i]);
+		}
+		String[] strPsnOrgFieldCodes = new PsnOrgVO().getAttributeNames();
+		for (int i = 0; i < strPsnOrgFieldCodes.length; i++) {
+			listField.add("hi_psnorg." + strPsnOrgFieldCodes[i]
+					+ " as hi_psnorg_" + strPsnOrgFieldCodes[i]);
+		}
+		String[] strPsnJobFieldCodes = new PsnJobVO().getAttributeNames();
+		for (int i = 0; i < strPsnJobFieldCodes.length; i++) {
+			listField.add("hi_psnjob." + strPsnJobFieldCodes[i]
+					+ " as hi_psnjob_" + strPsnJobFieldCodes[i]);
+		}
+		nc.vo.hi.psndoc.PsndocVO[] psndocVOs = queryPsndocVOByCondition(null,
+				listField, new String[] { "hi_psndoc_cert" }, strBaseWhere
+						+ strOtherWhere, null);
+
+		if ((psndocVOs == null) || (psndocVOs.length == 0)) {
+			return null;
+		}
+		PsndocAggVO psndocAggVO = new PsndocAggVO();
+		psndocAggVO.setParentVO(psndocVOs[0]);
+		return psndocAggVO;
+	}
+
+	private String getWholeSql(LoginContext context, List<String> listField,
+			String[] strTableNames, String strCondition, String strOrder) {
+		String selectStr = "";
+		int fieldcount = listField.size();
+		for (int i = 0; i < fieldcount; i++) {
+			selectStr = selectStr + "," + (String) listField.get(i);
+		}
+		selectStr = selectStr.substring(1);
+
+		String joinedTableStr = getJoinedTable(strTableNames);
+		String wheresql = "";
+		String orderbysql = "";
+		if ((strCondition != null) && (strCondition.length() > 0)) {
+			wheresql = strCondition.trim();
+			if (!wheresql.toLowerCase().startsWith("where")) {
+				wheresql = "where " + wheresql;
+			}
+		}
+		if ((strOrder != null) && (strOrder.length() > 0)) {
+			orderbysql = strOrder.trim();
+			if (!orderbysql.toLowerCase().startsWith("order by")) {
+				orderbysql = "order by " + orderbysql;
+			}
+		}
+		String sql = "select " + selectStr + joinedTableStr + " " + wheresql
+				+ " " + orderbysql;
+		return sql;
+	}
+
+	public void intoDoc(boolean issyncwork, String strPk_hrorg,
+			String[] strPk_psnjobs) throws BusinessException {
+		if ((strPk_psnjobs == null) || (strPk_psnjobs.length == 0)) {
+			return;
+		}
+		InSQLCreator ttu = new InSQLCreator();
+
+		String inSql = ttu.getInSQL(strPk_psnjobs);
+
+		validateInDocInf(inSql);
+
+		PsnJobVO[] psnjob = (PsnJobVO[]) getRetrieve().retrieveByClause(null,
+				PsnJobVO.class, " pk_psnjob in ( " + inSql + " ) ");
+
+		String[] org = new String[psnjob.length];
+		for (int i = 0; i < org.length; i++) {
+			org[i] = strPk_hrorg;
+		}
+		HiBatchEventValueObject.fireEvent(psnjob, psnjob, org,
+				"218971f0-e5dc-408b-9a32-56529dddd4db", "600701");
+
+		nc.vo.hi.psndoc.PsndocVO[] doc = (nc.vo.hi.psndoc.PsndocVO[]) getRetrieve()
+				.retrieveByClause(
+						null,
+						nc.vo.hi.psndoc.PsndocVO.class,
+						" pk_psndoc in ( select pk_psndoc from hi_psnjob where pk_psnjob in ( "
+								+ inSql + " ) ) ");
+
+		baseDAOManager.updateVOArray(doc);
+
+		dismissUAPPsn(doc, psnjob);
+
+		String strSQL = " update hi_psnorg set indocflag='Y',pk_hrorg = '"
+				+ strPk_hrorg
+				+ "' where pk_psnorg in (select pk_psnorg from hi_psnjob where pk_psnjob in ( "
+				+ inSql + " ) ) ";
+
+		baseDAOManager.executeUpdate(strSQL);
+
+		String jobSql = " update hi_psnjob set pk_hrorg = '" + strPk_hrorg
+				+ "' where pk_psnjob in ( " + inSql + " ) ";
+		baseDAOManager.executeUpdate(jobSql);
+
+		String psnSql = " update bd_psndoc set pk_org = ( select hi_psnjob.pk_org from hi_psnjob inner join hi_psnorg on hi_psnjob.pk_psnorg = hi_psnorg.pk_psnorg where hi_psnjob.pk_psndoc = bd_psndoc.pk_psndoc and hi_psnjob.lastflag = 'Y' and hi_psnjob.ismainjob = 'Y' and hi_psnorg.lastflag = 'Y' ) where pk_psndoc in (select pk_psndoc from hi_psnjob where pk_psnjob in ( "
+				+ inSql + " )) ";
+
+		baseDAOManager.executeUpdate(psnSql);
+
+		String validateSql = " select count(*) from hi_psndoc_psnchg p inner join hi_psnorg o on p.pk_psnorg = o.pk_psnorg and p.lastflag ='Y'  inner join hi_psnjob j on o.pk_psnorg =j.pk_psnorg and j.pk_psnjob in ( "
+				+ inSql
+				+ " ) "
+				+ " where ( isnull(p.enddate,'~')<>'~' and p.enddate>=j.begindate )"
+				+ " or (isnull(p.enddate,'~')='~' and isnull(p.begindate,'~')<>'~' and p.begindate>=j.begindate )  ";
+
+		Object obj = baseDAOManager.executeQuery(validateSql,
+				new ColumnProcessor());
+		if ((obj != null) && (((Integer) obj).intValue() > 0)) {
+			throw new BusinessException(ResHelper.getString("6007psn",
+					"06007psn0271"));
+		}
+
+		if (issyncwork) {
+			ArrayList<WorkVO> workAddList = new ArrayList();
+			ArrayList<WorkVO> workUpdateList = new ArrayList();
+
+			HashMap<String, String> workNameMap = new HashMap();
+
+			String sql1 = " update hi_psndoc_work set recordnum = recordnum+ (select cnt from (select pk_psndoc,count(*) cnt from hi_psnjob where pk_psnorg in (select pk_psnorg from hi_psnjob where pk_psnjob in ("
+					+ inSql
+					+ ")) group by pk_psndoc) temp where hi_psndoc_work.pk_psndoc = temp.pk_psndoc  ),lastflag = 'N' "
+					+ "where pk_psndoc in (select pk_psndoc from hi_psnjob where pk_psnjob in ("
+					+ inSql + ") ) ";
+
+			baseDAOManager.executeUpdate(sql1);
+
+			PsnJobVO[] psnjob2 = (PsnJobVO[]) getRetrieve().retrieveByClause(
+					null,
+					PsnJobVO.class,
+					" pk_psnorg in ( select pk_psnorg from hi_psnjob where pk_psnjob in ( "
+							+ inSql + " ) ) order by begindate ");
+
+			HashMap<String, PsnJobVO> map = new HashMap();
+			for (PsnJobVO job : psnjob2) {
+				map.put(job.getPk_psnjob(), job);
+			}
+
+			WorkVO[] vos = (WorkVO[]) getRetrieve().retrieveByClause(
+					null,
+					WorkVO.class,
+					" pk_psnjob in ("
+							+ ttu.getInSQL((String[]) map.keySet().toArray(
+									new String[0])) + ") ");
+
+			for (int i = 0; (vos != null) && (i < vos.length); i++) {
+				if (vos[i].getEnddate() == null) {
+					PsnJobVO pj = (PsnJobVO) map.get(vos[i].getPk_psnjob());
+					if ((vos[i].getBegindate() != null)
+							&& (vos[i].getBegindate().afterDate(pj
+									.getBegindate().getDateBefore(1)))) {
+						vos[i].setEnddate(vos[i].getBegindate());
+					} else {
+						vos[i].setEnddate(pj.getBegindate() == null ? PubEnv
+								.getServerLiteralDate() : pj.getBegindate()
+								.getDateBefore(1));
+					}
+				}
+				vos[i].setPk_psnjob(null);
+				vos[i].setStatus(1);
+				workUpdateList.add(vos[i]);
+			}
+
+			HashMap<String, String> orgNameMap = getNameMap(psnjob2, 1);
+			HashMap<String, String> deptNameMap = getNameMap(psnjob2, 2);
+			HashMap<String, String> postNameMap = getNameMap(psnjob2, 3);
+			HashMap<String, String> jobNameMap = getNameMap(psnjob2, 4);
+
+			HashMap<String, GeneralVO> mainSyncMap = getWorkSyncMap(
+					strPk_hrorg, PubEnv.getPk_group(), true);
+			HashMap<String, GeneralVO> partSyncMap = getWorkSyncMap(
+					strPk_hrorg, PubEnv.getPk_group(), false);
+			for (PsnJobVO job : psnjob2) {
+
+				HashMap<String, GeneralVO> syncMap = (job.getIsmainjob() != null)
+						&& (job.getIsmainjob().booleanValue()) ? mainSyncMap
+						: partSyncMap;
+
+				WorkVO newWork = new WorkVO();
+				newWork.setPk_group(job.getPk_group());
+				newWork.setPk_org(job.getPk_hrorg());
+				newWork.setPk_psndoc(job.getPk_psndoc());
+				newWork.setPk_psnjob(job.getPk_psnjob());
+				newWork.setRecordnum(Integer.valueOf(0));
+				newWork.setLastflag(UFBoolean.TRUE);
+				newWork.setBegindate(job.getBegindate());
+				newWork.setEnddate(job.getEnddate());
+				newWork.setMemo(job.getMemo());
+
+				String orgName = (String) orgNameMap.get(job.getPk_org());
+				newWork.setWorkcorp(orgName);
+
+				String deptName = (String) deptNameMap.get(job.getPk_dept());
+				newWork.setWorkdept(deptName);
+
+				String postName = (String) postNameMap.get(job.getPk_post());
+				newWork.setWorkpost(postName);
+
+				String jobName = (String) jobNameMap.get(job.getPk_job());
+				newWork.setWorkjob(jobName);
+
+				if (syncMap != null) {
+					String[] jobItems = (String[]) syncMap.keySet().toArray(
+							new String[0]);
+					for (String jobItem : jobItems) {
+
+						String[] jobAttrSet = job.getAttributeNames();
+						String[] workAttrSet = newWork.getAttributeNames();
+						if ((ArrayUtils.contains(jobAttrSet, jobItem))
+								&& (ArrayUtils.contains(workAttrSet,
+										((GeneralVO) syncMap.get(jobItem))
+												.getAttributeValue("workcode")))) {
+
+							Integer jobDataType = (Integer) ((GeneralVO) syncMap
+									.get(jobItem))
+									.getAttributeValue("jobdatatype");
+							Integer workDataType = (Integer) ((GeneralVO) syncMap
+									.get(jobItem))
+									.getAttributeValue("workdatatype");
+
+							if ((5 == jobDataType.intValue())
+									&& (0 == workDataType.intValue())) {
+								String pk_refinfo = (String) ((GeneralVO) syncMap
+										.get(jobItem))
+										.getAttributeValue("jobrefmodule");
+								Object value = job.getAttributeValue(jobItem);
+								String pk_infoset_item = (String) ((GeneralVO) syncMap
+										.get(jobItem))
+										.getAttributeValue("job_pk_infoset_item");
+
+								String name = getRefItemName(pk_refinfo, value,
+										pk_infoset_item);
+								String workItemCode = (String) ((GeneralVO) syncMap
+										.get(jobItem))
+										.getAttributeValue("workcode");
+								newWork.setAttributeValue(workItemCode, name);
+
+							} else {
+								String workItemCode = (String) ((GeneralVO) syncMap
+										.get(jobItem))
+										.getAttributeValue("workcode");
+								newWork.setAttributeValue(workItemCode,
+										job.getAttributeValue(jobItem));
+							}
+						}
+					}
+				}
+
+				workAddList.add(newWork);
+			}
+
+			if (workUpdateList.size() > 0) {
+				baseDAOManager.updateVOArray((SuperVO[]) workUpdateList
+						.toArray(new WorkVO[0]));
+			}
+
+			if (workAddList.size() > 0) {
+				baseDAOManager.insertVOArray((SuperVO[]) workAddList
+						.toArray(new WorkVO[0]));
+			}
+		}
+
+		ArrayList<PsnChgVO> psnchgAddList = new ArrayList();
+		ArrayList<PsnChgVO> psnchgUpdateList = new ArrayList();
+
+		HashMap<String, String> corpMap = new HashMap();
+
+		ArrayList<String> docPKs = new ArrayList();
+
+		HashMap<String, PsnChgVO[]> psnchgMap = getPsnchgMap(psnjob);
+		for (PsnJobVO job : psnjob) {
+			docPKs.add(job.getPk_psndoc());
+
+			String pk_neworg = job.getPk_org();
+			String pk_newcorp = (String) corpMap.get(pk_neworg);
+			if (StringUtils.isBlank(pk_newcorp)) {
+				pk_newcorp = HiSQLHelper.getPkCorpByPkOrg(pk_neworg);
+			}
+
+			corpMap.put(pk_neworg, pk_newcorp);
+
+			PsnChgVO[] psnchgVOs = (PsnChgVO[]) psnchgMap.get(job
+					.getPk_psnorg());
+			boolean isNeedAddChg = true;
+			for (int i = 0; (psnchgVOs != null) && (i < psnchgVOs.length); i++) {
+				boolean isEqualOrg = (psnchgVOs[i].getPk_org()
+						.equals(pk_newcorp))
+						&& (psnchgVOs[i].getEnddate() == null);
+				if ((psnchgVOs[i].getLastflag() != null)
+						&& (psnchgVOs[i].getLastflag().booleanValue())
+						&& (!isEqualOrg)) {
+					psnchgVOs[i]
+							.setEnddate(job.getBegindate().getDateBefore(1));
+				}
+				if ((psnchgVOs[i].getLastflag() != null)
+						&& (psnchgVOs[i].getLastflag().booleanValue())
+						&& (isEqualOrg)) {
+					isNeedAddChg = false;
+				}
+				if (!isEqualOrg) {
+					psnchgVOs[i].setLastflag(UFBoolean.FALSE);
+					psnchgVOs[i].setRecordnum(Integer.valueOf(psnchgVOs[i]
+							.getRecordnum().intValue() + 1));
+				}
+				psnchgUpdateList.add(psnchgVOs[i]);
+			}
+
+			if (isNeedAddChg) {
+
+				PsnChgVO psnchg = new PsnChgVO();
+				psnchg.setRecordnum(Integer.valueOf(0));
+				psnchg.setLastflag(UFBoolean.TRUE);
+				psnchg.setPk_group(job.getPk_hrgroup());
+				psnchg.setPk_org(job.getPk_hrorg());
+				psnchg.setPk_psndoc(job.getPk_psndoc());
+				psnchg.setPk_psnorg(job.getPk_psnorg());
+				psnchg.setAssgid(job.getAssgid());
+				psnchg.setBegindate(job.getBegindate());
+				psnchg.setComecorpname(null);
+				psnchg.setTocorpname(null);
+				psnchg.setPk_corp(pk_newcorp);
+				psnchgAddList.add(psnchg);
+			}
+		}
+
+		if (psnchgUpdateList.size() > 0) {
+			baseDAOManager.updateVOArray((SuperVO[]) psnchgUpdateList
+					.toArray(new PsnChgVO[0]));
+		}
+
+		if (psnchgAddList.size() > 0) {
+			baseDAOManager.insertVOArray((SuperVO[]) psnchgAddList
+					.toArray(new PsnChgVO[0]));
+		}
+
+		updateDataAfterSubDataChanged(WorkVO.getDefaultTableName(),
+				(String[]) docPKs.toArray(new String[0]));
+
+		updateDataAfterSubDataChanged(PsnChgVO.getDefaultTableName(),
+				(String[]) docPKs.toArray(new String[0]));
+
+		psnjob = (PsnJobVO[]) getRetrieve().retrieveByClause(null,
+				PsnJobVO.class, " pk_psnjob in ( " + inSql + " ) ");
+		String[] org2 = new String[psnjob.length];
+		for (int i = 0; i < org2.length; i++) {
+			org2[i] = strPk_hrorg;
+		}
+
+		for (int i = 0; i < doc.length; i++) {
+			nc.vo.bd.psn.PsndocVO psndocVO = new nc.vo.bd.psn.PsndocVO();
+			List<PsnjobVO> psnjobVOList = new ArrayList();
+			try {
+				for (int j = 0; j < psnjob.length; j++) {
+					if (doc[i].getPk_psndoc().equals(psnjob[j].getPk_psndoc())) {
+						PsnjobVO newPsnjobVO = new PsnjobVO();
+						BeanUtils.copyProperties(newPsnjobVO, psnjob[j]);
+						newPsnjobVO.setPsncode(doc[i].getCode());
+						psnjobVOList.add(newPsnjobVO);
+					}
+				}
+
+				BeanUtils.copyProperties(psndocVO, doc[i]);
+				psndocVO.setPsnjobs((PsnjobVO[]) psnjobVOList
+						.toArray(new PsnjobVO[0]));
+				BDCommonEventUtil eventUtil = new BDCommonEventUtil(
+						"40d39c26-a2b6-4f16-a018-45664cac1a1f");
+				eventUtil.dispatchInsertAfterEvent(new Object[] { psndocVO });
+			} catch (Exception e) {
+				Logger.error(e.getMessage(), e);
+			}
+		}
+
+		HiBatchEventValueObject.fireEvent(psnjob, psnjob, org2,
+				"218971f0-e5dc-408b-9a32-56529dddd4db", "600702");
+		HiEventValueObject
+				.fireDataPermChangeEvent("7156d223-4531-4337-b192-492ab40098f1");
+
+		try {
+			PluginExecutor<IPsndocIntoDoc> executor = new PluginExecutor(
+					IPsndocIntoDoc.class);
+
+			PsnIntoDocPluginExecDelegate delegate = new PsnIntoDocPluginExecDelegate(
+					psnjob, psnjob, org2);
+
+			executor.exec(delegate);
+		} catch (Exception ex) {
+			Logger.error(ex.getMessage(), ex);
+		}
+
+		HiCacheUtils
+				.synCache(new String[] {
+						nc.vo.hi.psndoc.PsndocVO.getDefaultTableName(),
+						PsnJobVO.getDefaultTableName(),
+						PsnOrgVO.getDefaultTableName() });
+	}
+
+	private HashMap<String, PsnChgVO[]> getPsnchgMap(PsnJobVO[] vos)
+			throws BusinessException {
+		HashMap<String, PsnChgVO[]> map = new HashMap();
+		StringBuffer sql = new StringBuffer();
+		InSQLCreator isc = new InSQLCreator();
+		String insql = isc.getInSQL(vos, "pk_psnorg");
+		sql.append(" pk_psnorg in (").append(insql)
+				.append(") and lastflag = 'Y'");
+		Collection<PsnChgVO> cvos = getDao().retrieveByClause(PsnChgVO.class,
+				sql.toString());
+		if (ArrayUtils.isEmpty(cvos.toArray())) {
+			return map;
+		}
+
+		for (PsnChgVO vo : cvos) {
+			String pk_psnorg = vo.getPk_psnorg();
+			PsnChgVO[] tvos = (PsnChgVO[]) map.get(pk_psnorg);
+			tvos = (PsnChgVO[]) ArrayUtils.add(tvos, vo);
+			map.put(pk_psnorg, tvos);
+		}
+		return map;
+	}
+
+	private HashMap<String, String> getNameMap(PsnJobVO[] vos, int type)
+			throws BusinessException {
+		HashMap<String, String> map = new HashMap();
+		StringBuffer sql = new StringBuffer();
+		InSQLCreator isc = new InSQLCreator();
+		String insql = null;
+		if (type == 1) {
+			insql = isc.getInSQL(vos, "pk_org");
+			sql.append("select pk_org pk,name");
+			sql.append(MultiLangHelper.getLangIndex());
+			sql.append(" name from org_orgs where pk_org in (");
+			sql.append(insql);
+			sql.append(")");
+		} else if (type == 2) {
+			insql = isc.getInSQL(vos, "pk_dept");
+			sql.append("select pk_dept pk,name");
+			sql.append(MultiLangHelper.getLangIndex());
+			sql.append(" name from org_dept where pk_dept in (");
+			sql.append(insql);
+			sql.append(")");
+		} else if (type == 3) {
+			insql = isc.getInSQL(vos, "pk_post");
+			sql.append("select pk_post pk,postname");
+			sql.append(MultiLangHelper.getLangIndex());
+			sql.append(" name from om_post where pk_post in (");
+			sql.append(insql);
+			sql.append(")");
+		} else if (type == 4) {
+			insql = isc.getInSQL(vos, "pk_job");
+			sql.append("select pk_job pk,jobname");
+			sql.append(MultiLangHelper.getLangIndex());
+			sql.append(" name from om_job where pk_job in (");
+			sql.append(insql);
+			sql.append(")");
+		}
+		map = (HashMap) getDao().executeQuery(sql.toString(),
+				new ResultSetProcessor() {
+					public Object handleResultSet(ResultSet rs)
+							throws SQLException {
+						HashMap<String, String> vmap = new HashMap();
+						while (rs.next()) {
+							String pk = rs.getString("pk");
+							String name = rs.getString("name");
+							vmap.put(pk, name);
+						}
+						return vmap;
+					}
+				});
+		return map;
+	}
+
+	private <T extends SuperVO> String getName(Class<T> cls, String pk,
+			HashMap<String, String> nameMap, int type) throws BusinessException {
+		if (StringUtils.isBlank(pk)) {
+			return null;
+		}
+		if (nameMap.get(type + pk) != null) {
+			return (String) nameMap.get(type + pk);
+		}
+
+		String name = VOUtils.getDocName(cls, pk);
+		nameMap.put(type + pk, name);
+		return name;
+	}
+
+	public boolean isInJob(String strPk_psndoc) throws DAOException {
+		String strSQL = "select psnjob.pk_psnjob from hi_psnjob psnjob inner join hi_psnorg psnorg on psnjob.pk_psnorg = psnorg.pk_psnorg where psnorg.endflag = 'N' and psnorg.psntype = 0 and psnorg.lastflag = 'Y' and psnorg.indocflag = 'Y' and psnjob.endflag = 'N' and psnjob.lastflag = 'Y' and psnjob.ismainjob = 'Y' and psnjob.pk_psndoc='"
+				+ strPk_psndoc + "'";
+
+		List objResult = (List) baseDAOManager.executeQuery(strSQL,
+				new ArrayListProcessor());
+		return (objResult != null) && (objResult.size() > 0);
+	}
+
+	public Map<String, Boolean> isInJob(String[] pk_psndocs)
+			throws BusinessException {
+		InSQLCreator isc = new InSQLCreator();
+		String insql = isc.getInSQL(pk_psndocs);
+
+		String strSQL = "select psnjob.pk_psnjob from hi_psnjob psnjob inner join hi_psnorg psnorg on psnjob.pk_psnorg = psnorg.pk_psnorg where psnorg.endflag = 'N' and psnorg.psntype = 0 and psnorg.lastflag = 'Y' and psnorg.indocflag = 'Y' and psnjob.endflag = 'N' and psnjob.lastflag = 'Y' and psnjob.ismainjob = 'Y' and psnjob.pk_psndoc in ("
+				+ insql + ")";
+
+		Map<String, Boolean> resultMap = (Map) baseDAOManager.executeQuery(
+				strSQL, new InJobMapProcess(pk_psndocs));
+		return resultMap;
+	}
+
+	private class InJobMapProcess extends BaseProcessor {
+		private static final long serialVersionUID = 1L;
+		private String[] pkpsndocs = null;
+
+		public InJobMapProcess(String[] pk_psndocs) {
+			pkpsndocs = pk_psndocs;
+		}
+
+		public Map<String, Boolean> processResultSet(ResultSet rs)
+				throws SQLException {
+			Map<String, Boolean> resultMap = new HashMap();
+			if (rs.next()) {
+				String pk_psnjob = rs.getString("pk_psnjob");
+				if (StringUtils.isNotBlank(pk_psnjob)) {
+					resultMap.put(pk_psnjob, Boolean.valueOf(true));
+				}
+			}
+			for (int i = 0; i < pkpsndocs.length; i++) {
+				if (!resultMap.containsKey(pkpsndocs[i])) {
+
+					resultMap.put(pkpsndocs[i], Boolean.valueOf(false));
+				}
+			}
+			return resultMap;
+		}
+	}
+
+	private <T extends PsnJobVO> nc.vo.hi.psndoc.PsndocVO[] processPsnJobVO2PsndocVO(
+			Collection<T> psnjobVOCol) throws DAOException {
+		if ((null == psnjobVOCol) || (psnjobVOCol.isEmpty())) {
+			return new nc.vo.hi.psndoc.PsndocVO[0];
+		}
+
+		Map<String, List<PsnJobVO>> psnJobVOCache = new HashMap();
+		PsnJobVO[] psnJobVOs = (PsnJobVO[]) psnjobVOCol
+				.toArray(new PsnJobVO[0]);
+		List<String> psndocPKs = new ArrayList();
+		for (int i = 0; i < psnJobVOs.length; i++) {
+			if (!psndocPKs.contains(psnJobVOs[i].getPk_psndoc())) {
+				psndocPKs.add(psnJobVOs[i].getPk_psndoc());
+			}
+			List<PsnJobVO> list = null;
+			if (null == psnJobVOCache.get(psnJobVOs[i].getPk_psndoc())) {
+				list = new ArrayList();
+			} else {
+				list = (List) psnJobVOCache.get(psnJobVOs[i].getPk_psndoc());
+			}
+			list.add(psnJobVOs[i]);
+			psnJobVOCache.put(psnJobVOs[i].getPk_psndoc(), list);
+		}
+		Collection<PsndocAggVO> coll = new ArrayList();
+
+		try {
+			ArrayList<String> alAttr = new ArrayList();
+			for (String attr : new nc.vo.hi.psndoc.PsndocVO()
+					.getAttributeNames()) {
+				if ((!"photo".equals(attr)) && (!"previewphoto".equals(attr))) {
+
+					alAttr.add(attr);
+				}
+			}
+			NCObject[] objs = MDPersistenceService
+					.lookupPersistenceQueryService().queryBillOfNCObjectByPKs(
+							nc.vo.hi.psndoc.PsndocVO.class,
+							(String[]) psndocPKs.toArray(new String[0]),
+							(String[]) alAttr.toArray(new String[0]), true);
+
+			for (NCObject obj : objs) {
+				if (null != obj) {
+					coll.add((PsndocAggVO) obj.getContainmentObject());
+				}
+			}
+		} catch (MetaDataException e) {
+			throw new DAOException(e);
+		}
+
+		if ((null == coll) || (coll.isEmpty())) {
+			return new nc.vo.hi.psndoc.PsndocVO[0];
+		}
+
+		String[] pk_psndocs = new String[coll.size()];
+		PsndocAggVO[] psndocAggVOs = (PsndocAggVO[]) coll
+				.toArray(new PsndocAggVO[0]);
+		for (int i = 0; i < coll.size(); i++) {
+			pk_psndocs[i] = psndocAggVOs[i].getParentVO().getPk_psndoc();
+		}
+
+		String strSubCondition = "{0} in ( {1} ) and {2}=''{3}''";
+		PsnOrgVO[] psnOrgVOs = null;
+		try {
+			strSubCondition = MessageFormat.format(
+					strSubCondition,
+					new Object[] { "pk_psndoc",
+							new InSQLCreator().getInSQL(pk_psndocs),
+							"lastflag", UFBoolean.TRUE });
+
+			psnOrgVOs = (PsnOrgVO[]) queryByCondition(PsnOrgVO.class,
+					strSubCondition);
+		} catch (BusinessException e) {
+			throw new DAOException(e);
+		}
+
+		HashMap<String, PsnOrgVO> lastPsnOrgMap = new HashMap();
+		for (PsnOrgVO psnOrgVO : psnOrgVOs) {
+			if (!lastPsnOrgMap.containsKey(psnOrgVO.getPk_psndoc())) {
+				lastPsnOrgMap.put(psnOrgVO.getPk_psndoc(), psnOrgVO);
+			}
+		}
+		List<nc.vo.hi.psndoc.PsndocVO> resultList = new ArrayList();
+		for (PsndocAggVO psndocAggVO : coll) {
+			PsndocVO psndocVO = psndocAggVO.getParentVO();
+			String psndocPk = psndocVO.getPk_psndoc();
+			List<PsnJobVO> psnJobList = (List) psnJobVOCache.get(psndocPk);
+			if ((null != psnJobList) && (!psnJobList.isEmpty())) {
+
+				if (null != lastPsnOrgMap.get(psndocVO.getPk_psndoc())) {
+					psndocVO.setPsnOrgVO((PsnOrgVO) lastPsnOrgMap.get(psndocVO
+							.getPk_psndoc()));
+				}
+
+				for (PsnJobVO psnJobVO : psnJobList) {
+					nc.vo.hi.psndoc.PsndocVO clonedDocVO = (nc.vo.hi.psndoc.PsndocVO) psndocVO
+							.clone();
+					clonedDocVO.setPsnJobVO(psnJobVO);
+					resultList.add(clonedDocVO);
+				}
+			}
+		}
+		nc.vo.hi.psndoc.PsndocVO psndocVO;
+		return (nc.vo.hi.psndoc.PsndocVO[]) resultList
+				.toArray(new nc.vo.hi.psndoc.PsndocVO[0]);
+	}
+
+	public nc.vo.hi.psndoc.PsndocVO[] queryPsndocVOByCondition(
+			LoginContext context, List<String> listField,
+			String[] strTableNames, String strCondition, String strOrder)
+			throws BusinessException {
+		String sql = getWholeSql(context, listField, strTableNames,
+				strCondition, strOrder);
+
+		List<nc.vo.hi.psndoc.PsndocVO> list = (List) baseDAOManager
+				.executeQuery(sql, new BeanListProcessor(
+						nc.vo.hi.psndoc.PsndocVO.class));
+		return (list == null) || (list.size() == 0) ? null
+				: (nc.vo.hi.psndoc.PsndocVO[]) list
+						.toArray(new nc.vo.hi.psndoc.PsndocVO[0]);
+	}
+
+	public nc.vo.hi.psndoc.PsndocVO[] queryPsndocVOByCondition(
+			LoginContext context, String[] strTableNames, String strCondition,
+			String strOrder) throws BusinessException {
+		ArrayList<String> fields = getDefaultQueryFields();
+		return queryPsndocVOByCondition(context, fields, strTableNames,
+				strCondition, strOrder);
+	}
+
+	public nc.vo.hi.psndoc.PsndocVO[] queryPsndocVOByJobPK(String pk_job,
+			boolean includeInPos, boolean includeOutPos,
+			boolean inCludeMainJob, boolean includePartTimeJob,
+			boolean includeNoneIndoc) throws DAOException {
+		return queryPsndocVOByPsnJobField("pk_job", pk_job, includeInPos,
+				includeOutPos, inCludeMainJob, includePartTimeJob,
+				includeNoneIndoc);
+	}
+
+	public <T extends SuperVO> nc.vo.hi.psndoc.PsndocVO queryPsndocVOByJobPostFamily(
+			T vo) throws BusinessException {
+		return queryPsndocVOByJobPostFamily(vo, null);
+	}
+
+	public <T extends SuperVO> nc.vo.hi.psndoc.PsndocVO queryPsndocVOByJobPostFamily(
+			T vo, String psnjobcond) throws BusinessException {
+		String pkFieldName = vo.getPKFieldName();
+		String sql = "select top 1 pk_psndoc,name,name2,name3,name4,name5,name6,code from bd_psndoc where pk_psndoc in(select pk_psndoc from hi_psnjob where "
+				+ pkFieldName + "=? and endflag='N'";
+
+		if (StringUtils.isNotBlank(psnjobcond)) {
+			sql = sql + " and (" + psnjobcond + ")";
+		}
+		sql = sql + ")";
+		SQLParameter para = new SQLParameter();
+		para.addParam(vo.getPrimaryKey());
+		List<nc.vo.hi.psndoc.PsndocVO> list = (List) baseDAOManager
+				.executeQuery(sql, para, new BeanListProcessor(
+						nc.vo.hi.psndoc.PsndocVO.class));
+		return (list == null) || (list.size() == 0) ? null
+				: (nc.vo.hi.psndoc.PsndocVO) list.get(0);
+	}
+
+	public PsndocAggVO[] queryPsndocVOByPks(boolean blLazyLoad,
+			String... strPks) throws BusinessException {
+		if ((strPks == null) || (strPks.length == 0)) {
+			return null;
+		}
+
+		ArrayList<String> fields = getDefaultQueryFields();
+		String fieldSql = "";
+		for (String fld : fields) {
+			fieldSql = fieldSql + "," + fld;
+		}
+		fieldSql = fieldSql.substring(1);
+
+		ArrayList<nc.vo.hi.psndoc.PsndocVO> psns = null;
+		InSQLCreator ttu = null;
+		try {
+			ttu = new InSQLCreator();
+			String selectSql = " select "
+					+ fieldSql
+					+ " from bd_psndoc inner join hi_psnorg on bd_psndoc.pk_psndoc = hi_psnorg.pk_psndoc "
+					+ " inner join hi_psnjob on hi_psnorg.pk_psnorg = hi_psnjob.pk_psnorg where hi_psnjob.pk_psnjob in ( "
+					+ ttu.getInSQL(strPks) + " ) order by hi_psnjob.showorder";
+
+			psns = (ArrayList) baseDAOManager.executeQuery(selectSql,
+					new BeanListProcessor(nc.vo.hi.psndoc.PsndocVO.class));
+
+		} finally {
+
+			if (ttu != null) {
+
+				ttu.clear();
+			}
+		}
+
+		if ((psns == null) || (psns.size() == 0)) {
+			return null;
+		}
+
+		HashMap<String, nc.vo.hi.psndoc.PsndocVO> hm = new HashMap();
+		for (nc.vo.hi.psndoc.PsndocVO psn : psns) {
+			hm.put(psn.getPsnJobVO().getPk_psnjob(), psn);
+		}
+
+		Object al = new ArrayList();
+		for (String pk : strPks) {
+			if (hm.get(pk) != null) {
+
+				PsndocAggVO agg = new PsndocAggVO();
+				agg.setParentVO((CircularlyAccessibleValueObject) hm.get(pk));
+				((ArrayList) al).add(agg);
+			}
+		}
+		return ((ArrayList) al).size() > 0 ? (PsndocAggVO[]) ((ArrayList) al)
+				.toArray(new PsndocAggVO[0]) : null;
+	}
+
+	public Object[] queryPsndocVOByPks(boolean b, String[] strPks,
+			Object treeObj) throws BusinessException {
+		if ((strPks == null) || (strPks.length == 0)) {
+			return null;
+		}
+
+		ArrayList<String> fields = getDefaultQueryFields();
+		String fieldSql = "";
+		for (String fld : fields) {
+			fieldSql = fieldSql + "," + fld;
+		}
+		fieldSql = fieldSql.substring(1);
+
+		ArrayList<nc.vo.hi.psndoc.PsndocVO> psns = null;
+		InSQLCreator ttu = null;
+		try {
+			ttu = new InSQLCreator();
+			String inSql = ttu.getInSQL(strPks);
+			String selectSql = " select "
+					+ fieldSql
+					+ " from bd_psndoc inner join hi_psnorg on bd_psndoc.pk_psndoc = hi_psnorg.pk_psndoc "
+					+ " inner join hi_psnjob on hi_psnorg.pk_psnorg = hi_psnjob.pk_psnorg where hi_psnjob.pk_psnjob in ( "
+					+ inSql + " )";
+
+			psns = (ArrayList) baseDAOManager.executeQuery(selectSql,
+					new BeanListProcessor(nc.vo.hi.psndoc.PsndocVO.class));
+
+			if ((psns == null) || (psns.size() == 0)) {
+				return null;
+			}
+
+			String sql = " select pk_psnorg , sum(case when endflag ='Y' then 0 else 1 end) as count from hi_psndoc_keypsn where pk_psnorg in ( select pk_psnorg from hi_psnjob where pk_psnjob in ( "
+					+ inSql + " )) ";
+
+			if ((treeObj instanceof KeyPsnGrpVO)) {
+				sql = sql + " and pk_keypsn_grp ='"
+						+ ((KeyPsnGrpVO) treeObj).getPk_keypsn_group() + "' ";
+			}
+
+			sql = sql + " group by pk_psnorg ";
+
+			GeneralVO[] vos = (GeneralVO[]) new BaseDAO().executeQuery(sql,
+					new GeneralVOProcessor(GeneralVO.class));
+			HashMap<String, UFBoolean> map = new HashMap();
+			for (int i = 0; (vos != null) && (i < vos.length); i++) {
+				map.put((String) vos[i].getAttributeValue("pk_psnorg"),
+						(vos[i].getAttributeValue("pk_psnorg") == null)
+								|| (new Integer(vos[i].getAttributeValue(
+										"count").toString()).intValue() <= 0) ? UFBoolean.TRUE
+								: UFBoolean.FALSE);
+			}
+
+			HashMap<String, nc.vo.hi.psndoc.PsndocVO> hm = new HashMap();
+			for (nc.vo.hi.psndoc.PsndocVO psn : psns) {
+				psn.setIshiskeypsn(map.get(psn.getPsnOrgVO().getPk_psnorg()) == null ? UFBoolean.TRUE
+						: (UFBoolean) map.get(psn.getPsnOrgVO().getPk_psnorg()));
+
+				hm.put(psn.getPsnJobVO().getPk_psnjob(), psn);
+			}
+
+			ArrayList<PsndocAggVO> al = new ArrayList();
+			for (String pk : strPks) {
+				if (hm.get(pk) != null) {
+
+					PsndocAggVO agg = new PsndocAggVO();
+					agg.setParentVO((CircularlyAccessibleValueObject) hm
+							.get(pk));
+					al.add(agg);
+				}
+			}
+			return al.size() > 0 ? (PsndocAggVO[]) al
+					.toArray(new PsndocAggVO[0]) : null;
+		} catch (Exception e) {
+			String selectSql;
+			Logger.error(e.getMessage(), e);
+			return null;
+		} finally {
+			if (ttu != null) {
+
+				ttu.clear();
+			}
+		}
+	}
+
+	private PsndocAggVO fillDocOrgVO(PsnJobVO psnJobVO, boolean blLazyLoad)
+			throws BusinessException {
+		PsndocAggVO agg = new PsndocAggVO();
+		nc.vo.hi.psndoc.PsndocVO doc = (nc.vo.hi.psndoc.PsndocVO) queryByPk(
+				nc.vo.hi.psndoc.PsndocVO.class, psnJobVO.getPk_psndoc(),
+				blLazyLoad);
+		doc = ((nc.vo.hi.psndoc.PsndocVO[]) fillDateFormula(new nc.vo.hi.psndoc.PsndocVO[] { doc }))[0];
+		PsnOrgVO org = (PsnOrgVO) queryByPk(PsnOrgVO.class,
+				psnJobVO.getPk_psnorg(), blLazyLoad);
+		org = ((PsnOrgVO[]) fillDateFormula(new PsnOrgVO[] { org }))[0];
+		psnJobVO = ((PsnJobVO[]) fillDateFormula(new PsnJobVO[] { psnJobVO }))[0];
+		doc.setPsnJobVO(psnJobVO);
+		doc.setPsnOrgVO(org);
+		agg.setParentVO(doc);
+		return agg;
+	}
+
+	public <T extends SuperVO> T[] fillDateFormula(T... vos)
+			throws BusinessException {
+		if ((vos == null) || (vos.length == 0)) {
+			return null;
+		}
+		int dbtype = DataSourceCenter.getInstance().getDatabaseType();
+		String cond = " pk_infoset in ( select pk_infoset from hr_infoset where infoset_code ='"
+				+ vos[0].getTableName()
+				+ "' and pk_infoset_sort = '"
+				+ "1001Z710000000002XPO" + "' ) and data_type= " + 100;
+
+		InfoItemVO[] items = (InfoItemVO[]) queryByCondition(InfoItemVO.class,
+				cond);
+
+		String formulaSql = "";
+		for (int i = 0; (items != null) && (i < items.length); i++) {
+			if (!StringUtils.isBlank(items[i].getItem_formula_sql())) {
+
+				String fSql = items[i].getItem_formula_sql();
+
+				fSql = FormuaDateHelper.getFuncParser()
+						.transToSql(fSql, dbtype);
+
+				formulaSql = formulaSql + fSql + " as "
+						+ items[i].getItem_code() + " , ";
+			}
+		}
+		if (StringUtils.isBlank(formulaSql)) {
+			return vos;
+		}
+
+		String querySql = " select "
+				+ formulaSql
+				+ " 1 from bd_psndoc inner join hi_psnorg on bd_psndoc.pk_psndoc = hi_psnorg.pk_psndoc "
+				+ " inner join hi_psnjob on hi_psnorg.pk_psnorg = hi_psnjob.pk_psnorg "
+				+ " left outer join hi_psndoc_psnchg on hi_psnorg.pk_psnorg = hi_psndoc_psnchg.pk_psnorg "
+				+ " where hi_psnorg.lastflag = 'Y' and hi_psnjob.lastflag ='Y' and hi_psnjob.ismainjob = 'Y' "
+				+ " and isnull(hi_psndoc_psnchg.lastflag,'Y') = 'Y' ";
+
+		for (int i = 0; i < vos.length; i++) {
+			String sql = querySql + " and " + vos[0].getTableName()
+					+ ".pk_psndoc = '"
+					+ (String) vos[i].getAttributeValue("pk_psndoc") + "' ";
+
+			ArrayList<HashMap> array = (ArrayList) baseDAOManager.executeQuery(
+					sql, new MapListProcessor());
+			if ((array != null) && (array.size() > 0)) {
+
+				HashMap result = (HashMap) array.get(0);
+				for (int j = 0; (items != null) && (j < items.length); j++) {
+					if (!StringUtils.isBlank(items[j].getItem_formula_sql())) {
+
+						vos[i].setAttributeValue(items[j].getItem_code(),
+								result.get(items[j].getItem_code()));
+					}
+				}
+			}
+		}
+		return vos;
+	}
+
+	public nc.vo.hi.psndoc.PsndocVO[] queryPsndocVOByPostPK(String pk_post,
+			boolean includeInPos, boolean includeOutPos,
+			boolean inCludeMainJob, boolean includePartTimeJob,
+			boolean includeNoneIndoc) throws DAOException {
+		return queryPsndocVOByPsnJobField("pk_post", pk_post, includeInPos,
+				includeOutPos, inCludeMainJob, includePartTimeJob,
+				includeNoneIndoc);
+	}
+
+	public nc.vo.hi.psndoc.PsndocVO[] queryPsndocVOByPostPkAndLevel(
+			String pk_post, boolean inPos, int level) throws DAOException {
+		if (StringUtils.isBlank(pk_post)) {
+			return null;
+		}
+		String postCond = null;
+		String hi_psnjob = "hi_psnjob";
+		String om_post = new PostVO().getTableName();
+		if (level == 0) {
+			postCond = hi_psnjob + "." + "pk_post" + "=?";
+		} else if (level < 0) {
+			postCond = hi_psnjob + "." + "pk_post" + " in (select " + "pk_post"
+					+ " from " + om_post + " where " + "innercode"
+					+ " like ? and " + "pk_post" + "<>? )";
+
+		} else {
+
+			postCond = hi_psnjob + "." + "pk_post" + " in ";
+			StringBuilder inSql = new StringBuilder("select pk_post from "
+					+ om_post + " where " + "suporior" + "=?");
+			Map<Integer, String> levelCondMap = new HashMap();
+			levelCondMap.put(Integer.valueOf(1), inSql.toString());
+			for (int i = 1; i < level; i++) {
+				inSql.insert(
+						0,
+						"select pk_post from " + om_post + " where "
+								+ "suporior" + " in(").append(") ");
+				levelCondMap.put(Integer.valueOf(i + 1), inSql.toString());
+			}
+			for (int i = 0; i < level; i++) {
+				if (i > 0) {
+					postCond = postCond + " or " + hi_psnjob + "." + "pk_post"
+							+ " in ";
+				}
+				postCond = postCond + "("
+						+ (String) levelCondMap.get(Integer.valueOf(i + 1))
+						+ ")";
+			}
+			postCond = "(" + postCond + ")";
+		}
+		String sql = "select * from hi_psnjob inner join hi_psnorg on hi_psnjob.pk_psnorg=hi_psnorg.pk_psnorg where "
+				+ postCond + " and " + "hi_psnorg.indocflag='Y' ";
+
+		String inPosCond = inPos ? " hi_psnorg.endflag='N' and hi_psnjob.endflag='N' "
+				: " hi_psnorg.endflag='Y' or hi_psnjob.endflag='Y' ";
+		sql = sql + " and (" + inPosCond + ") ";
+		SQLParameter para = new SQLParameter();
+		if (level == 0) {
+			para.addParam(pk_post);
+		}
+		if (level < 0) {
+			PostVO postVO = (PostVO) new BaseDAO().retrieveByPK(PostVO.class,
+					pk_post);
+			para.addParam(postVO.getInnercode() + "%");
+			para.addParam(pk_post);
+
+		} else {
+			for (int i = 0; i < level; i++) {
+				para.addParam(pk_post);
+			}
+		}
+		PersistenceDAO dao = new PersistenceDAO();
+		PsnBudgetVO[] vos = null;
+		try {
+			vos = (PsnBudgetVO[]) dao.retrieveBySQL(PsnBudgetVO.class, sql,
+					para);
+		} catch (PersistenceDbException e) {
+			Logger.error(e.getMessage(), e);
+			throw new DAOException(e.getMessage(), e);
+		}
+		return processPsnJobVO2PsndocVO((vos == null) || (vos.length == 0) ? null
+				: Arrays.asList(vos));
+	}
+
+	public <T extends PsnJobVO> nc.vo.hi.psndoc.PsndocVO[] queryPsndocVOByPsnJobField(
+			Class<T> jobvoClz, String fieldName, Object fieldVal,
+			boolean includeInPos, boolean includeOutPos,
+			boolean inCludeMainJob, boolean includePartTimeJob,
+			boolean includeNoneIndoc) throws DAOException {
+		if ((!includeInPos) && (!includeOutPos)) {
+			return null;
+		}
+
+		if ((!inCludeMainJob) && (!includePartTimeJob)) {
+			return null;
+		}
+		String[] fields = new PsnJobVO().getAttributeNames();
+		String sql = "select ";
+		for (String field : fields) {
+			sql = sql + "hi_psnjob." + field + ",";
+		}
+		sql = sql.substring(0, sql.length() - 1);
+		sql = sql + " from hi_psnjob ";
+		StringBuilder sqlwhere = new StringBuilder();
+
+		if (!includeNoneIndoc) {
+			sql = sql
+					+ " inner join hi_psnorg on hi_psnorg.pk_psnorg=hi_psnjob.pk_psnorg ";
+			sqlwhere.append(" hi_psnorg.indocflag = 'Y'");
+		}
+		if ((includeInPos) && (!includeOutPos)) {
+			sqlwhere.append(sqlwhere.length() > 0 ? " and " : "").append(
+					" hi_psnjob.endflag = 'N' ");
+		} else if ((!includeInPos) && (includeOutPos)) {
+			sqlwhere.append(sqlwhere.length() > 0 ? " and " : "").append(
+					" hi_psnjob.endflag = 'Y' ");
+		}
+		if ((inCludeMainJob) && (!includePartTimeJob)) {
+			sqlwhere.append(sqlwhere.length() > 0 ? " and " : "").append(
+					" hi_psnjob.ismainjob = 'Y' ");
+		} else if ((!inCludeMainJob) && (includePartTimeJob)) {
+			sqlwhere.append(sqlwhere.length() > 0 ? " and " : "").append(
+					" hi_psnjob.ismainjob = 'N' ");
+		}
+		sqlwhere.insert(0, sqlwhere.length() > 0 ? " and " : "").insert(0,
+				" hi_psnjob." + fieldName + " = ?");
+
+		SQLParameter param = new SQLParameter();
+		param.addParam(fieldVal);
+		PersistenceDAO dao = new PersistenceDAO();
+		PsnJobVO[] vos = null;
+		try {
+			vos = (PsnJobVO[]) dao.retrieveBySQL(jobvoClz, sql + " where "
+					+ sqlwhere, param);
+		} catch (PersistenceDbException e) {
+			Logger.error(e.getMessage(), e);
+			throw new DAOException(e.getMessage(), e);
+		}
+		return processPsnJobVO2PsndocVO((vos == null) || (vos.length == 0) ? null
+				: Arrays.asList(vos));
+	}
+
+	public nc.vo.hi.psndoc.PsndocVO[] queryPsndocVOByPsnJobField(
+			String fieldName, Object fieldVal, boolean includeInPos,
+			boolean includeOutPos, boolean inCludeMainJob,
+			boolean includePartTimeJob, boolean includeNoneIndoc)
+			throws DAOException {
+		return queryPsndocVOByPsnJobField(PsnJobVO.class, fieldName, fieldVal,
+				includeInPos, includeOutPos, inCludeMainJob,
+				includePartTimeJob, includeNoneIndoc);
+	}
+
+	public <T extends PsnJobVO> nc.vo.hi.psndoc.PsndocVO[] queryPsndocVOByWhetherInPost(
+			Class<T> clz, String fieldName, String fieldValue, boolean inPos)
+			throws DAOException {
+		String sql = "select hi_psnjob.* from hi_psnjob inner join hi_psnorg on hi_psnjob.pk_psnorg=hi_psnorg.pk_psnorg where "
+				+ fieldName + "=? and " + "hi_psnorg.indocflag='Y' ";
+
+		String inPosCond = inPos ? " hi_psnorg.endflag='N' and hi_psnjob.endflag='N' "
+				: " hi_psnorg.endflag='Y' or hi_psnjob.endflag='Y' ";
+		sql = sql + " and (" + inPosCond + ")";
+		SQLParameter para = new SQLParameter();
+		para.addParam(fieldValue);
+		PersistenceDAO dao = new PersistenceDAO();
+		PsnJobVO[] vos = null;
+		try {
+			vos = (PsnJobVO[]) dao.retrieveBySQL(clz, sql, para);
+		} catch (PersistenceDbException e) {
+			Logger.error(e.getMessage(), e);
+			throw new DAOException(e.getMessage(), e);
+		}
+		return processPsnJobVO2PsndocVO((vos == null) || (vos.length == 0) ? null
+				: Arrays.asList(vos));
+	}
+
+	private PsndocAggVO[] queryPsndocVOForPage(String[] strTableNames,
+			String strCondition, String strOrder, int iPageSize,
+			int iPageIndex, boolean blLazyLoad) throws BusinessException {
+		if ((strCondition == null) || (strCondition.trim().length() == 0)) {
+			strCondition = "1=1";
+		}
+		if ((strOrder != null) && (strOrder.trim().length() > 0)) {
+			strCondition = strCondition + " order by " + strOrder;
+		}
+		String sql = "select bd_psndoc.pk_psndoc from bd_psndoc left join hi_psnorg on bd_psndoc.pk_psndoc=hi_psnorg.pk_psndoc left join hi_psnjob on bd_psndoc.pk_psndoc=hi_psnjob.pk_psndoc where "
+				+ strCondition;
+
+		List<nc.vo.hi.psndoc.PsndocVO> list = (List) baseDAOManager
+				.executeQuery(sql, new BeanListProcessor(
+						nc.vo.hi.psndoc.PsndocVO.class));
+		if ((list == null) || (list.size() == 0)) {
+			return null;
+		}
+		int iStartRecordIndex = iPageIndex * iPageSize;
+		int iEndRecordIndex = iStartRecordIndex + iPageSize;
+		if (iStartRecordIndex > list.size() - 1) {
+			iStartRecordIndex = list.size() - iPageSize;
+		}
+		if (iEndRecordIndex > list.size() - 1) {
+			iEndRecordIndex = list.size();
+		}
+		List<String> listPk = new ArrayList();
+		for (int i = iStartRecordIndex; i < iEndRecordIndex; i++) {
+			nc.vo.hi.psndoc.PsndocVO obj = (nc.vo.hi.psndoc.PsndocVO) list
+					.get(i);
+			listPk.add(obj.getPrimaryKey());
+		}
+		Object[] objResults = MDPersistenceService
+				.lookupPersistenceQueryService().queryBillOfVOByPKsWithOrder(
+						PsndocAggVO.class,
+						(String[]) listPk.toArray(new String[0]), blLazyLoad);
+
+		if ((objResults == null) || (objResults.length == 0)) {
+			return null;
+		}
+
+		PsndocAggVO[] psndocAggVOs = new PsndocAggVO[objResults.length];
+		for (int i = 0; i < objResults.length; i++) {
+			psndocAggVOs[i] = ((PsndocAggVO) objResults[i]);
+			fillOrgJobVO(psndocAggVOs[i].getParentVO());
+		}
+		return psndocAggVOs;
+	}
+
+	public List<PsnJobVO> queryPsninfoByCondition(String strWhere)
+			throws BusinessException {
+		String sql = " select hi_psnjob.clerkcode, hi_psnjob.pk_hrorg,hi_psnjob.pk_org, hi_psnjob.pk_psncl, hi_psnjob.pk_dept, hi_psnjob.pk_job, hi_psnjob.pk_post, hi_psnjob.pk_psnjob,hi_psnjob.pk_psndoc from bd_psndoc inner join hi_psnorg on bd_psndoc.pk_psndoc = hi_psnorg.pk_psndoc inner join hi_psnjob on hi_psnorg.pk_psnorg = hi_psnjob.pk_psnorg  where "
+				+ strWhere;
+
+		return (List) baseDAOManager.executeQuery(sql, new BeanListProcessor(
+				PsnJobVO.class));
+	}
+
+	public List<PsnJobVO> queryPsninfoByPks(String[] pks)
+			throws BusinessException {
+		String sql = " select hi_psnjob.clerkcode, hi_psnjob.pk_org, hi_psnjob.pk_psncl, hi_psnjob.pk_dept, hi_psnjob.pk_job, hi_psnjob.pk_post, hi_psnjob.pk_psnjob,hi_psnjob.pk_psndoc from bd_psndoc inner join hi_psnorg on bd_psndoc.pk_psndoc = hi_psnorg.pk_psndoc inner join hi_psnjob on hi_psnorg.pk_psnorg = hi_psnjob.pk_psnorg ";
+
+		String where = " where hi_psnjob.pk_psnjob in (";
+		for (String pk : pks) {
+			where = where + "'" + pk + "',";
+		}
+		where = where.substring(0, where.length() - 1) + ")";
+		return (List) baseDAOManager.executeQuery(sql + where,
+				new BeanListProcessor(PsnJobVO.class));
+	}
+
+	public PsnJobVO[] queryPsnMainJob(String strPkPsnorg, int iAssigId)
+			throws BusinessException {
+		String strSQL = "{0}= ''{1}'' and {2}= {3} and {4}=''{5}''";
+		strSQL = MessageFormat.format(strSQL, new Object[] { "pk_psnorg",
+				strPkPsnorg, "assgid", Integer.valueOf(iAssigId), "ismainjob",
+				UFBoolean.TRUE });
+
+		return (PsnJobVO[]) queryByCondition(PsnJobVO.class, strSQL);
+	}
+
+	public PsnJobVO[] queryPsnPartTimeJobs(String strPkPsnorg, int iAssigId,
+			String strCondition) throws BusinessException {
+		String strSQL = "{0}= ''{1}'' and {2}= {3} and {4}=''{5}''";
+		strSQL = MessageFormat.format(strSQL, new Object[] { "pk_psnorg",
+				strPkPsnorg, "assgid", Integer.valueOf(iAssigId), "ismainjob",
+				UFBoolean.FALSE });
+
+		if ((strCondition != null) && (strCondition.length() > 0)) {
+			strSQL = strSQL + strCondition;
+		}
+		return (PsnJobVO[]) queryByCondition(PsnJobVO.class, strSQL);
+	}
+
+	public SuperVO[] querySubByCondition(Class clazz, String strWhere,
+			String strOrder) throws BusinessException {
+		String strCondition = " ";
+		if ((strWhere != null) && (strWhere.trim().length() > 0)) {
+			strCondition = strCondition + strWhere;
+		}
+		if ((strOrder != null) && (strOrder.trim().length() > 0)) {
+			strCondition = strCondition + " order by " + strOrder;
+		}
+		SuperVO[] vos = (SuperVO[]) queryByCondition(clazz, strCondition);
+		if ((vos == null) || (vos.length == 0)) {
+			return null;
+		}
+		if (((vos[0] instanceof PsnChgVO)) || ((vos[0] instanceof PsnJobVO))) {
+
+			vos = fillDateFormula(vos);
+		}
+		return vos;
+	}
+
+	nc.vo.hi.psndoc.PsndocVO[] retrievePsndocVOByDeptPK(String[] pk_depts,
+			boolean incumbencyOnly, boolean includeNoneIndoc)
+			throws BusinessException {
+		StringBuilder sqlwhere = new StringBuilder();
+		sqlwhere.append(" endflag = 'N' ");
+		if (incumbencyOnly) {
+			sqlwhere.append(" and ismainjob = 'Y' ");
+		}
+
+		InSQLCreator isc = null;
+		try {
+			isc = new InSQLCreator();
+			String inClauses = isc.getInSQL(pk_depts);
+
+			sqlwhere.append(" and pk_dept in (").append(inClauses).append(")");
+
+			sqlwhere.append(" and psntype <> 1 ");
+			Collection<PsnJobVO> c = baseDAOManager.retrieveByClause(
+					PsnJobVO.class, sqlwhere.toString());
+			return processPsnJobVO2PsndocVO(c);
+		} finally {
+			if (isc != null) {
+				isc.clear();
+			}
+		}
+	}
+
+	private nc.vo.hi.psndoc.PsndocVO saveAggVO(PsndocAggVO psndocAggVO)
+			throws BusinessException {
+		nc.vo.hi.psndoc.PsndocVO psndocVO = psndocAggVO.getParentVO();
+		PsnOrgVO psnOrgVO = psndocVO.getPsnOrgVO();
+		PsnJobVO[] psnJobVOs = (PsnJobVO[]) psndocAggVO.getTableVO(PsnJobVO
+				.getDefaultTableName());
+
+		if (psndocVO.getStatus() == 2) {
+
+			return saveNewPsndoc(psndocAggVO, psndocVO, psnOrgVO, psnJobVOs);
+		}
+
+		if (psnOrgVO.getStatus() == 2) {
+
+			String strSQL = "update " + PsnOrgVO.getDefaultTableName()
+					+ " set " + "lastflag" + "='" + UFBoolean.FALSE
+					+ "' where " + "pk_psndoc" + "='"
+					+ psndocAggVO.getParentVO().getPrimaryKey() + "'";
+
+			baseDAOManager.executeUpdate(strSQL);
+			return saveNewPsnOrg(psndocAggVO, psndocVO, psnOrgVO, psnJobVOs);
+		}
+
+		return saveNoNewPsnAndPsnOrg(psndocAggVO, psndocVO, psnOrgVO, psnJobVOs);
+	}
+
+	private nc.vo.hi.psndoc.PsndocVO saveAggVOForImport(PsndocAggVO psndocAggVO)
+			throws BusinessException {
+		nc.vo.hi.psndoc.PsndocVO psndocVO = psndocAggVO.getParentVO();
+		PsnOrgVO psnOrgVO = psndocVO.getPsnOrgVO();
+		PsnJobVO[] psnJobVOs = (PsnJobVO[]) psndocAggVO.getTableVO(PsnJobVO
+				.getDefaultTableName());
+		PsnOrgVO[] psnOrgVOs = (PsnOrgVO[]) psndocAggVO.getTableVO(PsnOrgVO
+				.getDefaultTableName());
+		PartTimeVO[] partTimeVOs = (PartTimeVO[]) psndocAggVO
+				.getTableVO(PartTimeVO.getDefaultTableName());
+
+		if (psndocVO.getStatus() == 2) {
+			return saveNewPsndocForImport(psndocAggVO, psndocVO, psnJobVOs,
+					psnOrgVOs, partTimeVOs);
+		}
+
+		if (psnOrgVO.getStatus() == 2) {
+
+			String strSQL = "update " + PsnOrgVO.getDefaultTableName()
+					+ " set " + "lastflag" + "='" + UFBoolean.FALSE
+					+ "' where " + "pk_psndoc" + "='"
+					+ psndocAggVO.getParentVO().getPrimaryKey() + "'";
+
+			baseDAOManager.executeUpdate(strSQL);
+			return saveNewPsnOrg(psndocAggVO, psndocVO, psnOrgVO, psnJobVOs);
+		}
+
+		return saveNoNewPsnAndPsnOrgForImport(psndocAggVO, psndocVO, psnJobVOs);
+	}
+
+	private nc.vo.hi.psndoc.PsndocVO saveNewPsndoc(PsndocAggVO psndocAggVO,
+			nc.vo.hi.psndoc.PsndocVO psndocVO, PsnOrgVO psnOrgVO,
+			PsnJobVO[] psnJobVOs) throws MetaDataException, BusinessException {
+		String strPk_psndoc = getNextOid();
+		psndocVO.setPrimaryKey(strPk_psndoc);
+
+		psnOrgVO.setStatus(2);
+		psnOrgVO.setPk_psndoc(strPk_psndoc);
+		String strPk_psnorg = getNextOid();
+		psnOrgVO.setPrimaryKey(strPk_psnorg);
+
+		String strPk_psnjob = null;
+		if ((psnJobVOs != null) && (psnJobVOs.length > 0)) {
+			for (int i = 0; i < psnJobVOs.length; i++) {
+				psnJobVOs[i].setStatus(2);
+				psnJobVOs[i].setPk_psnorg(strPk_psnorg);
+				psnJobVOs[i].setPk_psndoc(strPk_psndoc);
+
+				if (psnJobVOs[i].getLastflag().booleanValue()) {
+					strPk_psnjob = getNextOid();
+					psnJobVOs[i].setPrimaryKey(strPk_psnjob);
+				}
+			}
+		}
+		for (SuperVO superVO : psndocAggVO.getAllChildrenVO()) {
+			if ((!(superVO instanceof PsnOrgVO))
+					&& (superVO.getAttributeValue("pk_psnorg") == null)) {
+				superVO.setAttributeValue("pk_psnorg", strPk_psnorg);
+			}
+			if ((!(superVO instanceof PsnJobVO))
+					&& (!(superVO instanceof WorkVO))
+					&& (superVO.getAttributeValue("pk_psnjob") == null)) {
+				superVO.setAttributeValue("pk_psnjob", strPk_psnjob);
+			}
+		}
+		MDPersistenceService.lookupPersistenceService().saveBillWithRealDelete(
+				psndocAggVO);
+		updateDataAfterSubDataChanged(psndocAggVO);
+
+		// 2016-04-29, ssx added for Taiwan NHI requirement
+		// for re-modify after 2015-09-23 patch from YYHQ
+		// 2017-05-16 upgrade to V65, from JD code
+		PsndocNHIDAO.generateNHIInfo(psndocAggVO);
+
+		PsndocAggVO aggVO = queryPsndocVOByPk(strPk_psndoc);
+		return aggVO == null ? null : aggVO.getParentVO();
+	}
+
+	private nc.vo.hi.psndoc.PsndocVO saveNewPsndocForImport(
+			PsndocAggVO psndocAggVO, nc.vo.hi.psndoc.PsndocVO psndocVO,
+			PsnJobVO[] psnJobVOs, PsnOrgVO[] psnOrgVOs, PartTimeVO[] partTimeVOs)
+			throws MetaDataException, BusinessException {
+		String strPk_psndoc = getNextOid();
+		psndocVO.setPrimaryKey(strPk_psndoc);
+
+		for (PsnOrgVO psnOrgVO : psnOrgVOs) {
+			psnOrgVO.setPrimaryKey(getNextOid());
+			psnOrgVO.setPk_psndoc(strPk_psndoc);
+			psnOrgVO.setStatus(2);
+		}
+
+		String strPk_psnjob = null;
+		String strPk_psnorg = null;
+		if ((psnJobVOs != null) && (psnJobVOs.length > 0)) {
+			for (int i = 0; i < psnJobVOs.length; i++) {
+				UFLiteralDate jobBegindate = psnJobVOs[i].getBegindate();
+
+				if (psnJobVOs[i].getTrnsevent().intValue() == 4) {
+					jobBegindate = jobBegindate.getDateBefore(1);
+				}
+
+				for (PsnOrgVO psnOrgVO : psnOrgVOs) {
+					UFLiteralDate orgBegindate = psnOrgVO.getBegindate();
+					UFLiteralDate orgEnddate = psnOrgVO.getEnddate();
+
+					if (psnOrgVOs.length == 1) {
+						psnJobVOs[i].setPk_psnorg(psnOrgVO.getPrimaryKey());
+						break;
+					}
+
+					if (psnJobVOs[i].getPk_org().equals(psnOrgVO.getPk_org())) {
+						if ((orgEnddate != null)
+								&& (!"".equals(orgEnddate.toString()))) {
+
+							if (((jobBegindate.after(orgBegindate)) || (jobBegindate
+									.equals(orgBegindate)))
+									&& ((jobBegindate.before(orgEnddate)) || (jobBegindate
+											.equals(orgEnddate)))) {
+
+								psnJobVOs[i].setPk_psnorg(psnOrgVO
+										.getPrimaryKey());
+								break;
+							}
+						} else if ((jobBegindate.after(orgBegindate))
+								|| (jobBegindate.equals(orgBegindate))) {
+							psnJobVOs[i].setPk_psnorg(psnOrgVO.getPrimaryKey());
+							break;
+						}
+					}
+				}
+
+				psnJobVOs[i].setStatus(2);
+				psnJobVOs[i].setPk_psndoc(strPk_psndoc);
+
+				if (psnJobVOs[i].getLastflag().booleanValue()) {
+					strPk_psnorg = psnJobVOs[i].getPk_psnorg();
+					strPk_psnjob = getNextOid();
+					psnJobVOs[i].setPrimaryKey(strPk_psnjob);
+				}
+			}
+		}
+
+		if ((partTimeVOs != null) && (partTimeVOs.length > 0)) {
+			for (int i = 0; i < partTimeVOs.length; i++) {
+				UFLiteralDate jobBegindate = partTimeVOs[i].getBegindate();
+
+				for (PsnOrgVO psnOrgVO : psnOrgVOs) {
+					UFLiteralDate orgBegindate = psnOrgVO.getBegindate();
+					UFLiteralDate orgEnddate = psnOrgVO.getEnddate();
+
+					if (psnOrgVOs.length == 1) {
+						partTimeVOs[i].setPk_psnorg(psnOrgVO.getPrimaryKey());
+						break;
+					}
+
+					if (partTimeVOs[i].getPk_org().equals(psnOrgVO.getPk_org())) {
+						if ((orgEnddate != null)
+								&& (!"".equals(orgEnddate.toString()))) {
+
+							if (((jobBegindate.after(orgBegindate)) || (jobBegindate
+									.equals(orgBegindate)))
+									&& ((jobBegindate.before(orgEnddate)) || (jobBegindate
+											.equals(orgEnddate)))) {
+
+								partTimeVOs[i].setPk_psnorg(psnOrgVO
+										.getPrimaryKey());
+								break;
+							}
+						} else if ((jobBegindate.after(orgBegindate))
+								|| (jobBegindate.equals(orgBegindate))) {
+							partTimeVOs[i].setPk_psnorg(psnOrgVO
+									.getPrimaryKey());
+							break;
+						}
+					}
+				}
+
+				partTimeVOs[i].setStatus(2);
+				partTimeVOs[i].setPk_psndoc(strPk_psndoc);
+
+				if (partTimeVOs[i].getLastflag().booleanValue()) {
+					strPk_psnorg = partTimeVOs[i].getPk_psnorg();
+					strPk_psnjob = getNextOid();
+					partTimeVOs[i].setPrimaryKey(strPk_psnjob);
+				}
+			}
+		}
+
+		for (SuperVO superVO : psndocAggVO.getAllChildrenVO()) {
+			if ((!(superVO instanceof PsnOrgVO))
+					&& (superVO.getAttributeValue("pk_psnorg") == null)) {
+				superVO.setAttributeValue("pk_psnorg", strPk_psnorg);
+			}
+			if ((!(superVO instanceof PsnJobVO))
+					&& (!(superVO instanceof WorkVO))
+					&& (superVO.getAttributeValue("pk_psnjob") == null)) {
+				superVO.setAttributeValue("pk_psnjob", strPk_psnjob);
+			}
+		}
+		MDPersistenceService.lookupPersistenceService().saveBillWithRealDelete(
+				psndocAggVO);
+		updateDataAfterSubDataChanged(psndocAggVO);
+
+		PsndocAggVO aggVO = queryPsndocVOByPk(strPk_psndoc);
+		return aggVO == null ? null : aggVO.getParentVO();
+	}
+
+	public PsndocAggVO queryPsndocVOByPk(String pk_psndoc)
+			throws BusinessException {
+		return queryPsndocVOByPk(pk_psndoc, true, true);
+	}
+
+	public PsndocAggVO queryPsndocVOByPk(String pk_psndoc,
+			boolean includePhoto, boolean includePreviewPhoto)
+			throws BusinessException {
+		ArrayList<String> str = new ArrayList();
+		String[] attrs = new nc.vo.hi.psndoc.PsndocVO().getAttributeNames();
+		for (String attr : attrs) {
+			if ((!"photo".equals(attr)) || (includePhoto)) {
+
+				if ((!"previewphoto".equals(attr)) || (includePreviewPhoto)) {
+
+					str.add(attr);
+				}
+			}
+		}
+		NCObject doc = MDPersistenceService.lookupPersistenceQueryService()
+				.queryBillOfNCObjectByPK(nc.vo.hi.psndoc.PsndocVO.class,
+						pk_psndoc, (String[]) str.toArray(new String[0]), true);
+
+		if (doc == null) {
+			return null;
+		}
+		PsndocAggVO agg = (PsndocAggVO) doc.getContainmentObject();
+		PsnOrgVO[] psnorg = (PsnOrgVO[]) queryByCondition_LazyLoad(
+				PsnOrgVO.class, " pk_psndoc = '" + pk_psndoc
+						+ "' and lastflag = 'Y' ");
+		if ((psnorg == null) || (psnorg.length == 0)) {
+			return agg;
+		}
+		agg.getParentVO().setPsnOrgVO(psnorg[0]);
+		PsnJobVO[] psnjob = (PsnJobVO[]) queryByCondition_LazyLoad(
+				PsnJobVO.class, " pk_psnorg = '" + psnorg[0].getPk_psnorg()
+						+ "' and lastflag = 'Y' and assgid = 1 ");
+
+		if ((psnjob == null) || (psnjob.length == 0)) {
+			return agg;
+		}
+
+		String pk_dept = psnjob[0].getPk_dept();
+		psnjob[0].setDeptname(VOUtils.getDocName(DeptVO.class, pk_dept));
+		agg.getParentVO().setPsnJobVO(psnjob[0]);
+		return agg;
+	}
+
+	public Map<String, PsndocAggVO> queryPsndocVOByCondition(
+			String[] psndocPks, String[] className) throws BusinessException {
+		NCObject[] docs = MDPersistenceService.lookupPersistenceQueryService()
+				.queryBillOfNCObjectByPKs(nc.vo.hi.psndoc.PsndocVO.class,
+						psndocPks, null, true);
+
+		if (ArrayUtils.isEmpty(docs)) {
+			return null;
+		}
+
+		Map<String, PsndocAggVO> psndocAggVOMap = new HashMap();
+		for (int i = 0; i < psndocPks.length; i++) {
+			for (int j = 0; j < docs.length; j++) {
+				PsndocAggVO agg = (PsndocAggVO) docs[j].getContainmentObject();
+				if (agg != null) {
+
+					if (psndocPks[i].equals(agg.getParentVO().getPk_psndoc())) {
+						psndocAggVOMap.put(psndocPks[i], agg);
+					}
+				}
+			}
+		}
+		InSQLCreator isc = new InSQLCreator();
+		String insql = isc.getInSQL(psndocPks);
+		PsnOrgVO[] psnorgs = (PsnOrgVO[]) queryByCondition_LazyLoad(
+				PsnOrgVO.class, " pk_psndoc in (" + insql
+						+ ") and lastflag = 'Y' ");
+		if (ArrayUtils.isEmpty(docs)) {
+		}
+
+		PsnJobVO[] psnJobs = (PsnJobVO[]) getRetrieve().retrieveByClause(null,
+				PsnJobVO.class, "");
+		if (!ArrayUtils.isEmpty(psnJobs)) {
+			for (int i = 0; i < psndocPks.length; i++) {
+				List<PsnJobVO> psnJobList = new ArrayList();
+				for (int j = 0; j < psnJobs.length; j++) {
+					if (psndocPks[i] == psnJobs[j].getPk_psndoc()) {
+						psnJobList.add(psnJobs[j]);
+					}
+				}
+				psndocAggVOMap.get(psndocPks[i]);
+			}
+		}
+
+		return null;
+	}
+
+	private nc.vo.hi.psndoc.PsndocVO saveNewPsnOrg(PsndocAggVO psndocAggVO,
+			nc.vo.hi.psndoc.PsndocVO psndocVO, PsnOrgVO psnOrgVO,
+			PsnJobVO[] psnJobVOs) throws MetaDataException, BusinessException {
+		String strPk_psndoc = psndocVO.getPk_psndoc();
+		String strPk_psnorg = getNextOid();
+		psnOrgVO.setPrimaryKey(strPk_psnorg);
+		psnOrgVO.setPk_psndoc(strPk_psndoc);
+		String strPk_psnjob = null;
+		if ((psnJobVOs != null) && (psnJobVOs.length > 0)) {
+			for (int i = 0; i < psnJobVOs.length; i++) {
+				psnJobVOs[i].setPk_psnorg(strPk_psnorg);
+
+				if (psnJobVOs[i].getLastflag().booleanValue()) {
+					strPk_psnjob = getNextOid();
+					psnJobVOs[i].setPrimaryKey(strPk_psnjob);
+				}
+			}
+		}
+		for (SuperVO superVO : psndocAggVO.getAllChildrenVO()) {
+			if ((!(superVO instanceof PsnOrgVO))
+					&& (superVO.getAttributeValue("pk_psnorg") == null)) {
+				superVO.setAttributeValue("pk_psnorg", strPk_psnorg);
+			}
+			if ((!(superVO instanceof PsnJobVO))
+					&& (!(superVO instanceof WorkVO))
+					&& (superVO.getAttributeValue("pk_psnjob") == null)) {
+				superVO.setAttributeValue("pk_psnjob", strPk_psnjob);
+			}
+		}
+		MDPersistenceService.lookupPersistenceService().saveBillWithRealDelete(
+				psndocAggVO);
+		updateDataAfterSubDataChanged(psndocAggVO);
+		PsndocAggVO aggVO = queryPsndocVOByPk(strPk_psndoc);
+
+		return aggVO == null ? null : aggVO.getParentVO();
+	}
+
+	private nc.vo.hi.psndoc.PsndocVO saveNoNewPsnAndPsnOrg(
+			PsndocAggVO psndocAggVO, nc.vo.hi.psndoc.PsndocVO psndocVO,
+			PsnOrgVO psnOrgVO, PsnJobVO[] psnJobVOs) throws MetaDataException,
+			BusinessException {
+		String strPk_psndoc = psndocVO.getPk_psndoc();
+		String strPk_psnorg = psnOrgVO.getPk_psnorg();
+
+		String strPk_psnjob = null;
+		if ((psnJobVOs != null) && (psnJobVOs.length > 0)) {
+			for (int i = 0; i < psnJobVOs.length; i++) {
+				psnJobVOs[i].setPk_psnorg(strPk_psnorg);
+				psnJobVOs[i].setPk_psndoc(strPk_psndoc);
+
+				if (psnJobVOs[i].getLastflag().booleanValue()) {
+					strPk_psnjob = psnJobVOs[i].getPrimaryKey() == null ? getNextOid()
+							: psnJobVOs[i].getPrimaryKey();
+					psnJobVOs[i].setPrimaryKey(strPk_psnjob);
+				}
+			}
+		}
+		if (StringUtils.isBlank(strPk_psnjob)) {
+			strPk_psnjob = psndocVO.getPsnJobVO().getPk_psnjob();
+		}
+		for (SuperVO superVO : psndocAggVO.getAllChildrenVO()) {
+			if ((!(superVO instanceof PsnOrgVO))
+					&& (superVO.getAttributeValue("pk_psnorg") == null)) {
+				superVO.setAttributeValue("pk_psnorg", strPk_psnorg);
+			}
+			if ((!(superVO instanceof PsnJobVO))
+					&& (!(superVO instanceof WorkVO))
+					&& (superVO.getAttributeValue("pk_psnjob") == null)) {
+				superVO.setAttributeValue("pk_psnjob", strPk_psnjob);
+			}
+		}
+		MDPersistenceService.lookupPersistenceService().saveBillWithRealDelete(
+				psndocAggVO);
+
+		updateDataAfterSubDataChanged(psndocAggVO);
+		PsndocAggVO aggVO = ((IPsndocQryService) NCLocator.getInstance()
+				.lookup(IPsndocQryService.class))
+				.queryPsndocVOByPsnjobPk(strPk_psnjob);
+		if (aggVO == null) {
+			throw new BusinessException(ResHelper.getString("6007psn",
+					"06007psn0233"));
+		}
+
+		return aggVO == null ? null : aggVO.getParentVO();
+	}
+
+	private nc.vo.hi.psndoc.PsndocVO saveNoNewPsnAndPsnOrgForImport(
+			PsndocAggVO psndocAggVO, nc.vo.hi.psndoc.PsndocVO psndocVO,
+			PsnJobVO[] psnJobVOs) throws MetaDataException, BusinessException {
+		String strPk_psndoc = psndocVO.getPk_psndoc();
+		String strPk_psnorg = psndocAggVO.getParentVO().getPsnOrgVO()
+				.getPk_psnorg();
+		PsnOrgVO[] psnOrgVOs = (PsnOrgVO[]) psndocAggVO.getTableVO(PsnOrgVO
+				.getDefaultTableName());
+
+		String strPk_psnjob = null;
+		if ((psnJobVOs != null) && (psnJobVOs.length > 0)) {
+			for (int i = 0; i < psnJobVOs.length; i++) {
+				UFLiteralDate jobBegindate = psnJobVOs[i].getBegindate();
+
+				if (psnJobVOs[i].getTrnsevent().intValue() == 4) {
+					jobBegindate = jobBegindate.getDateBefore(1);
+				}
+
+				for (PsnOrgVO psnOrgVO : psnOrgVOs) {
+					UFLiteralDate orgBegindate = psnOrgVO.getBegindate();
+					UFLiteralDate orgEnddate = psnOrgVO.getEnddate();
+
+					if (psnOrgVOs.length == 1) {
+						psnJobVOs[i].setPk_psnorg(psnOrgVO.getPrimaryKey());
+						break;
+					}
+
+					if (psnJobVOs[i].getPk_org().equals(psnOrgVO.getPk_org())) {
+						if ((orgEnddate != null)
+								&& (!"".equals(orgEnddate.toString()))) {
+
+							if (((jobBegindate.after(orgBegindate)) || (jobBegindate
+									.equals(orgBegindate)))
+									&& ((jobBegindate.before(orgEnddate)) || (jobBegindate
+											.equals(orgEnddate)))) {
+
+								psnJobVOs[i].setPk_psnorg(psnOrgVO
+										.getPrimaryKey());
+								break;
+							}
+						} else if ((jobBegindate.after(orgBegindate))
+								|| (jobBegindate.equals(orgBegindate))) {
+							psnJobVOs[i].setPk_psnorg(psnOrgVO.getPrimaryKey());
+							break;
+						}
+					}
+				}
+
+				psnJobVOs[i].setPk_psndoc(strPk_psndoc);
+
+				if (psnJobVOs[i].getLastflag().booleanValue()) {
+					strPk_psnorg = psnJobVOs[i].getPk_psnorg();
+					strPk_psnjob = psnJobVOs[i].getPrimaryKey() == null ? getNextOid()
+							: psnJobVOs[i].getPrimaryKey();
+					psnJobVOs[i].setPrimaryKey(strPk_psnjob);
+				}
+			}
+		}
+		if (StringUtils.isBlank(strPk_psnjob)) {
+			strPk_psnjob = psndocVO.getPsnJobVO().getPk_psnjob();
+		}
+		for (SuperVO superVO : psndocAggVO.getAllChildrenVO()) {
+			if ((!(superVO instanceof PsnOrgVO))
+					&& (superVO.getAttributeValue("pk_psnorg") == null)) {
+				superVO.setAttributeValue("pk_psnorg", strPk_psnorg);
+			}
+			if ((!(superVO instanceof PsnJobVO))
+					&& (!(superVO instanceof WorkVO))
+					&& (superVO.getAttributeValue("pk_psnjob") == null)) {
+				superVO.setAttributeValue("pk_psnjob", strPk_psnjob);
+			}
+		}
+		MDPersistenceService.lookupPersistenceService().saveBillWithRealDelete(
+				psndocAggVO);
+
+		updateDataAfterSubDataChanged(psndocAggVO);
+		PsndocAggVO aggVO = ((IPsndocQryService) NCLocator.getInstance()
+				.lookup(IPsndocQryService.class))
+				.queryPsndocVOByPsnjobPk(strPk_psnjob);
+		if (aggVO == null) {
+			throw new BusinessException(ResHelper.getString("6007psn",
+					"06007psn0233"));
+		}
+
+		return aggVO == null ? null : aggVO.getParentVO();
+	}
+
+	public void savePsndocForImport(PsndocAggVO psndocAggVO,
+			TimerLogger timerLogger) throws BusinessException {
+		nc.vo.hi.psndoc.PsndocVO psndocVO = psndocAggVO.getParentVO();
+		timerLogger.addLog("前事件?始");
+
+		fireEventBefore(psndocVO);
+		timerLogger.addLog("前事件?束");
+
+		PsnJobVO oldPsnJobVO = null;
+		timerLogger.addLog("查?工作??子集?始");
+		if ((psndocVO.getStatus() == 1)
+				&& (psndocVO.getPsnJobVO().getStatus() == 1)) {
+			oldPsnJobVO = (PsnJobVO) queryByPk(PsnJobVO.class, psndocVO
+					.getPsnJobVO().getPrimaryKey());
+		}
+		timerLogger.addLog("查?工作??子集?束");
+		timerLogger.addLog("保存?据?始");
+
+		psndocVO = saveAggVOForImport(psndocAggVO);
+		timerLogger.addLog("保存?据?束");
+		timerLogger.addLog("同步?存?始");
+
+		HiCacheUtils
+				.synCache(new String[] {
+						nc.vo.hi.psndoc.PsndocVO.getDefaultTableName(),
+						PsnJobVO.getDefaultTableName(),
+						PsnOrgVO.getDefaultTableName() });
+		timerLogger.addLog("同步?存?束");
+		timerLogger.addLog("后事件?始");
+
+		fireEventAfter(psndocVO, oldPsnJobVO);
+		timerLogger.addLog("后事件?束");
+	}
+
+	private void fireEventAfter(nc.vo.hi.psndoc.PsndocVO psndocVO,
+			PsnJobVO oldPsnJobVO) throws BusinessException {
+		if ((psndocVO.getStatus() == 1)
+				&& (psndocVO.getPsnJobVO().getStatus() == 1)) {
+			oldPsnJobVO = (PsnJobVO) queryByPk(PsnJobVO.class, psndocVO
+					.getPsnJobVO().getPrimaryKey());
+		}
+
+		if ((psndocVO.getPsnOrgVO().getPsntype() != null)
+				&& (psndocVO.getPsnJobVO().getBegindate() != null)) {
+			String strEventType = ObjectUtils.equals(psndocVO.getPsnOrgVO()
+					.getPsntype(), PsnType.EMPLOYEE.value()) ? "600704"
+					: "600710";
+
+			HiEventValueObject.fireEvent(oldPsnJobVO, psndocVO.getPsnJobVO(),
+					psndocVO.getPsnJobVO().getPk_hrorg(),
+					"218971f0-e5dc-408b-9a32-56529dddd4db", strEventType);
+
+			HiEventValueObject
+					.fireDataPermChangeEvent("7156d223-4531-4337-b192-492ab40098f1");
+		}
+	}
+
+	private void setCert(nc.vo.hi.psndoc.PsndocVO psndocVO,
+			PsndocAggVO psndocAggVO) {
+		boolean isNew = psndocVO.getStatus() == 2;
+
+		if (!isNew) {
+			CertVO[] certVOs = (CertVO[]) psndocAggVO.getTableVO(CertVO
+					.getDefaultTableName());
+			if (certVOs != null) {
+				for (CertVO certVO : certVOs) {
+					if ((certVO.getIdtype().equals("1001Z01000000000AI36"))
+							&& (certVO.getIseffect().booleanValue() == true)
+							&& (certVO.getIsstart().booleanValue() == true)) {
+
+						psndocAggVO.getParentVO().setId(certVO.getId());
+						generateGenderAndBirthdayFromID(psndocAggVO
+								.getParentVO());
+					}
+				}
+			}
+		}
+	}
+
+	private void fireEventBefore(nc.vo.hi.psndoc.PsndocVO psndocVO)
+			throws BusinessException {
+		if ((psndocVO.getPsnOrgVO().getPsntype() != null)
+				&& (psndocVO.getPsnJobVO().getBegindate() != null)) {
+			String strEventType = ObjectUtils.equals(psndocVO.getPsnOrgVO()
+					.getPsntype(), PsnType.EMPLOYEE.value()) ? "600703"
+					: "600709";
+
+			HiEventValueObject.fireEvent(psndocVO.getStatus() == 2 ? null
+					: psndocVO.getPsnJobVO(), psndocVO.getPsnJobVO(), psndocVO
+					.getPsnJobVO().getPk_hrorg(),
+					"218971f0-e5dc-408b-9a32-56529dddd4db", strEventType);
+		}
+	}
+
+	public PsndocAggVO savePsndoc(PsndocAggVO psndocAggVO)
+			throws BusinessException {
+		nc.vo.hi.psndoc.PsndocVO psndocVO = psndocAggVO.getParentVO();
+
+		getLocker().lock("update", new Object[] { psndocVO });
+
+		BDVersionValidationUtil.validateSuperVO(new SuperVO[] { psndocVO });
+
+		if ((psndocVO.getPsnOrgVO().getPsntype() != null)
+				&& (psndocVO.getPsnJobVO().getBegindate() != null)) {
+			String strEventType = ObjectUtils.equals(psndocVO.getPsnOrgVO()
+					.getPsntype(), PsnType.EMPLOYEE.value()) ? "600703"
+					: "600709";
+
+			HiEventValueObject.fireEvent(psndocVO.getStatus() == 2 ? null
+					: psndocVO.getPsnJobVO(), psndocVO.getPsnJobVO(), psndocVO
+					.getPsnJobVO().getPk_hrorg(),
+					"218971f0-e5dc-408b-9a32-56529dddd4db", strEventType);
+		}
+
+		PsnJobVO oldPsnJobVO = null;
+		if ((psndocVO.getStatus() == 1)
+				&& (psndocVO.getPsnJobVO().getStatus() == 1)) {
+			oldPsnJobVO = (PsnJobVO) queryByPk(PsnJobVO.class, psndocVO
+					.getPsnJobVO().getPrimaryKey());
+		}
+
+		boolean isNew = psndocVO.getStatus() == 2;
+
+		if (!isNew) {
+			CertVO[] certVOs = (CertVO[]) psndocAggVO.getTableVO(CertVO
+					.getDefaultTableName());
+			if (certVOs != null) {
+				for (CertVO certVO : certVOs) {
+					if ((certVO.getIdtype().equals("1001Z01000000000AI36"))
+							&& (certVO.getIseffect().booleanValue() == true)
+							&& (certVO.getIsstart().booleanValue() == true)) {
+
+						psndocAggVO.getParentVO().setId(certVO.getId());
+						generateGenderAndBirthdayFromID(psndocAggVO
+								.getParentVO());
+					}
+
+				}
+
+			}
+		} else {
+			BillCodeContext billCodeContext = HiCacheUtils.getBillCodeContext(
+					"6007psndoc_code", PubEnv.getPk_group(), psndocVO
+							.getPsnJobVO().getPk_hrorg());
+
+			String[] billCodes = null;
+
+			boolean isLeveled = (billCodeContext != null)
+					&& (!billCodeContext.isPrecode())
+					&& (".".equals(psndocVO.getCode()));
+
+			if (isLeveled) {
+				IHrBillCode service = (IHrBillCode) NCLocator.getInstance()
+						.lookup(IHrBillCode.class);
+				billCodes = service.getLeveledBillCode("6007psndoc_code",
+						PubEnv.getPk_group(), psndocVO.getPsnJobVO()
+								.getPk_hrorg(), psndocVO.getPsnJobVO(), 1);
+
+				psndocVO.setCode(billCodes[0]);
+
+				checkPsnCodeUnique(psndocAggVO.getParentVO());
+			}
+
+			BillCodeContext billCodeContext_clerkcode = HiCacheUtils
+					.getBillCodeContext("6007psndoc_clerkcode", PubEnv
+							.getPk_group(), psndocVO.getPsnJobVO()
+							.getPk_hrorg());
+
+			String[] clerkcodes = null;
+
+			boolean isLeveled_clerkcode = (billCodeContext_clerkcode != null)
+					&& (!billCodeContext_clerkcode.isPrecode())
+					&& (".".equals(psndocVO.getPsnJobVO().getClerkcode()));
+
+			if (isLeveled_clerkcode) {
+				IHrBillCode service = (IHrBillCode) NCLocator.getInstance()
+						.lookup(IHrBillCode.class);
+				clerkcodes = service.getLeveledBillCode("6007psndoc_clerkcode",
+						PubEnv.getPk_group(), psndocVO.getPsnJobVO()
+								.getPk_hrorg(), psndocVO.getPsnJobVO(), 1);
+
+				PsnJobVO[] psnjobvos = (PsnJobVO[]) psndocAggVO
+						.getTableVO(PsnJobVO.getDefaultTableName());
+				if (!ArrayUtils.isEmpty(psnjobvos)) {
+					for (PsnJobVO psnJobVO : psnjobvos) {
+						if (".".equals(psnJobVO.getClerkcode())) {
+							psnJobVO.setClerkcode(clerkcodes[0]);
+						}
+					}
+				}
+
+				SuperVO[] partjobVOs = psndocAggVO.getTableVO(PartTimeVO
+						.getDefaultTableName());
+				if ((partjobVOs != null) && (partjobVOs.length > 0)) {
+					for (int i = 0; i < partjobVOs.length; i++) {
+						((PartTimeVO) partjobVOs[i])
+								.setClerkcode(clerkcodes[0]);
+					}
+				}
+
+				checkClerkCodeUnique(psndocAggVO);
+			}
+		}
+
+		psndocVO = saveAggVO(psndocAggVO);
+
+		HiCacheUtils
+				.synCache(new String[] {
+						nc.vo.hi.psndoc.PsndocVO.getDefaultTableName(),
+						PsnJobVO.getDefaultTableName(),
+						PsnOrgVO.getDefaultTableName() });
+
+		if ((psndocVO.getPsnOrgVO().getPsntype() != null)
+				&& (psndocVO.getPsnJobVO().getBegindate() != null)) {
+			String strEventType = ObjectUtils.equals(psndocVO.getPsnOrgVO()
+					.getPsntype(), PsnType.EMPLOYEE.value()) ? "600704"
+					: "600710";
+
+			HiEventValueObject.fireEvent(oldPsnJobVO, psndocVO.getPsnJobVO(),
+					psndocVO.getPsnJobVO().getPk_hrorg(),
+					"218971f0-e5dc-408b-9a32-56529dddd4db", strEventType);
+
+			HiEventValueObject
+					.fireDataPermChangeEvent("7156d223-4531-4337-b192-492ab40098f1");
+		}
+
+		if (isNew) {
+			IHrBillCode service = (IHrBillCode) NCLocator.getInstance().lookup(
+					IHrBillCode.class);
+			BillCodeContext billCodeContext = HiCacheUtils.getBillCodeContext(
+					"6007psndoc_code", PubEnv.getPk_group(), psndocVO
+							.getPsnJobVO().getPk_hrorg());
+
+			if (billCodeContext != null) {
+
+				service.commitPreBillCode("6007psndoc_code", PubEnv
+						.getPk_group(), psndocVO.getPsnJobVO().getPk_hrorg(),
+						psndocVO.getCode());
+			}
+
+			billCodeContext = HiCacheUtils.getBillCodeContext(
+					"6007psndoc_clerkcode", PubEnv.getPk_group(), psndocVO
+							.getPsnJobVO().getPk_hrorg());
+
+			if (billCodeContext != null) {
+				service.commitPreBillCode("6007psndoc_clerkcode", PubEnv
+						.getPk_group(), psndocVO.getPsnJobVO().getPk_hrorg(),
+						psndocVO.getPsnJobVO().getClerkcode());
+			}
+		}
+
+		PsndocAggVO aggVO = ((IPsndocQryService) NCLocator.getInstance()
+				.lookup(IPsndocQryService.class))
+				.queryPsndocVOByPsnjobPk(psndocVO.getPsnJobVO().getPk_psnjob());
+
+		return aggVO == null ? null : aggVO;
+	}
+
+	private void generateGenderAndBirthdayFromID(
+			nc.vo.hi.psndoc.PsndocVO psndocVO) {
+		if (psndocVO == null) {
+			return;
+		}
+		String id = psndocVO.getId();
+		String idtype = psndocVO.getIdtype();
+		if (idtype == null) {
+			idtype = "1001Z01000000000AI36";
+		}
+		if ((id == null) || (id.length() < 1)
+				|| (!idtype.equals("1001Z01000000000AI36"))) {
+			return;
+		}
+		if (null == psndocVO.getSex()) {
+			psndocVO.setSex(getSex(id));
+		}
+		UFLiteralDate birthday = null;
+		try {
+			birthday = getBirthdate(id) == null ? null : UFLiteralDate
+					.getDate(getBirthdate(id));
+		} catch (Exception e) {
+			birthday = null;
+		}
+
+		if (null == psndocVO.getBirthdate()) {
+			psndocVO.setBirthdate(birthday);
+		}
+	}
+
+	private String getBirthdate(String ID) {
+		if ((ID.length() != 15) && (ID.length() != 18)) {
+
+			return null;
+		}
+		String birth = ID.length() == 15 ? "19" + ID.substring(6, 12) : ID
+				.substring(6, 14);
+		String year = birth.substring(0, 4);
+		String month = birth.substring(4, 6);
+		String date = birth.substring(6);
+		return year + "-" + month + "-" + date;
+	}
+
+	private Integer getSex(String ID) {
+		if ((ID.length() != 15) && (ID.length() != 18)) {
+			return null;
+		}
+		int isex = 2;
+		isex = ID.length() == 15 ? Integer.parseInt(ID.substring(14)) : Integer
+				.parseInt(ID.substring(16, 17));
+		return Integer.valueOf(isex % 2 == 0 ? 2 : 1);
+	}
+
+	public void setAuditInfoAndTs(PsndocAggVO psndocAggVO) {
+		nc.vo.hi.psndoc.PsndocVO psndocVO = null;
+		if ((psndocAggVO == null)
+				|| ((psndocVO = psndocAggVO.getParentVO()) == null)) {
+			return;
+		}
+		setAuditInfo(psndocVO, true);
+		if (psndocVO.getPsnOrgVO() != null) {
+			setAuditInfo(psndocVO.getPsnOrgVO(), true);
+		}
+		if (psndocVO.getPsnJobVO() != null) {
+			setAuditInfo(psndocVO.getPsnJobVO(), true);
+		}
+		SuperVO[] superVOs = psndocAggVO.getAllChildrenVO();
+		if ((superVOs != null) && (superVOs.length > 0)) {
+
+			for (SuperVO superVO : superVOs) {
+				if ((0 != superVO.getStatus()) && (3 != superVO.getStatus())) {
+
+					setAuditInfo(superVO, true);
+				}
+			}
+		}
+	}
+
+	private void setAuditInfo(SuperVO vo, boolean blProcessAuditInfo) {
+		if (!blProcessAuditInfo) {
+			return;
+		}
+
+		switch (vo.getStatus()) {
+		case 2:
+			AuditInfoUtil.addData(vo);
+			if ("#UAP#".equals(vo.getAttributeValue("creator"))) {
+				vo.setAttributeValue("creator", "NC_USER0000000000000");
+			}
+			break;
+		case 1:
+			AuditInfoUtil.updateData(vo);
+			if ("#UAP#".equals(vo.getAttributeValue("modifier"))) {
+				vo.setAttributeValue("modifier", "NC_USER0000000000000");
+			}
+			break;
+		default:
+			Logger.error("VO??不正确");
+		}
+	}
+
+	private void updateDataAfterSubDataChanged(PsndocAggVO psndocAggVO)
+			throws BusinessException {
+		String pk_psndoc = psndocAggVO.getParentVO().getPk_psndoc();
+		for (int i = 0; i < psndocAggVO.getTableCodes().length; i++) {
+			SuperVO[] subVOs = psndocAggVO.getTableVO(psndocAggVO
+					.getTableCodes()[i]);
+			if (subVOs != null) {
+				updateDataAfterSubDataChanged(psndocAggVO.getTableCodes()[i],
+						new String[] { pk_psndoc });
+			}
+		}
+	}
+
+	public void updateDataAfterSubDataChanged(String subtablename,
+			String... pk_psndoc) throws BusinessException {
+		if ((pk_psndoc == null) || (pk_psndoc.length == 0)) {
+			return;
+		}
+
+		String[] busiSubset = (String[]) PsndocAggVO.hashBusinessInfoSet
+				.toArray(new String[0]);
+
+		String condition = " pk_infoset_sort = '1001Z710000000002XPO' ";
+		if (PartTimeVO.getDefaultTableName().equals(subtablename)) {
+			condition = condition + " and infoset_code = '" + subtablename
+					+ "' ";
+		} else {
+			condition = condition + " and table_code = '" + subtablename
+					+ "' and infoset_code <> '"
+					+ PartTimeVO.getDefaultTableName() + "' ";
+		}
+
+		InfoSetVO[] set = (InfoSetVO[]) getRetrieve().retrieveByClause(null,
+				InfoSetVO.class, condition);
+		if ((set == null) || (set.length == 0)) {
+			return;
+		}
+
+		InfoItemVO[] items = (InfoItemVO[]) getRetrieve().retrieveByClause(
+				null,
+				InfoItemVO.class,
+				" pk_infoset = '" + set[0].getPk_infoset()
+						+ "' and isnull(pk_main_item,'~') <> '~' ");
+
+		if ((items == null) || (items.length == 0)) {
+			return;
+		}
+
+		HashMap<String, InfoItemVO> itemMap = new HashMap();
+
+		for (InfoItemVO iivo : items) {
+			if (!StringUtils.isBlank(iivo.getPk_main_item())) {
+
+				itemMap.put(iivo.getPk_main_item(), iivo);
+			}
+		}
+
+		HashMap<InfoItemVO, InfoItemVO> subItemMainItemMap = new HashMap();
+		InSQLCreator isc = new InSQLCreator();
+		String insql = isc.getInSQL(items, "pk_main_item");
+		String cond = "pk_infoset_item in (" + insql + ")";
+		InfoItemVO[] mainvos = null;
+
+		PersistenceDAO pdao = new PersistenceDAO();
+		try {
+			mainvos = (InfoItemVO[]) pdao.retrieveByClause(InfoItemVO.class,
+					cond);
+
+		} catch (PersistenceDbException e1) {
+			throw new BusinessException(e1.getMessage(), e1);
+		}
+		if (!ArrayUtils.isEmpty(mainvos)) {
+			for (InfoItemVO mainvo : mainvos) {
+				InfoItemVO tvo = (InfoItemVO) itemMap.get(mainvo
+						.getPk_infoset_item());
+				if (tvo != null) {
+					subItemMainItemMap.put(tvo, mainvo);
+				}
+			}
+		}
+
+		if (subItemMainItemMap.isEmpty()) {
+			return;
+		}
+
+		Class<? extends SuperVO> cla = null;
+		try {
+			cla = (Class<? extends SuperVO>) Class.forName(set[0]
+					.getVo_class_name());
+		} catch (ClassNotFoundException e) {
+			Logger.error(e.getMessage(), e);
+			return;
+		}
+
+		String tableName = null;
+		try {
+			tableName = ((SuperVO) cla.newInstance()).getTableName();
+		} catch (Exception e) {
+			Logger.error(e.getMessage(), e);
+			return;
+		}
+
+		ArrayList<nc.vo.hi.psndoc.PsndocVO> al = new ArrayList();
+		ArrayList<String> alMainFld = new ArrayList();
+		HashMap<String, nc.vo.hi.psndoc.PsndocVO> psndocMap = new HashMap();
+		String insql2 = new InSQLCreator().getInSQL(pk_psndoc);
+		StringBuffer cond2 = new StringBuffer();
+		cond2.append("pk_psndoc in (").append(insql2).append(")");
+		nc.vo.hi.psndoc.PsndocVO[] psndocvos = null;
+
+		try {
+			psndocvos = (nc.vo.hi.psndoc.PsndocVO[]) pdao.retrieveByClause(
+					nc.vo.hi.psndoc.PsndocVO.class, cond2.toString());
+
+		} catch (PersistenceDbException e) {
+			throw new BusinessException(e.getMessage(), e);
+		}
+		if (!ArrayUtils.isEmpty(psndocvos)) {
+			for (nc.vo.hi.psndoc.PsndocVO psndocvo : psndocvos) {
+				psndocMap.put(psndocvo.getPk_psndoc(), psndocvo);
+			}
+		}
+
+		HashMap<String, Object[]> valueMap = new HashMap();
+		for (InfoItemVO item : subItemMainItemMap.keySet()) {
+			if (!alMainFld.contains(((InfoItemVO) subItemMainItemMap.get(item))
+					.getItem_code())) {
+				alMainFld.add(((InfoItemVO) subItemMainItemMap.get(item))
+						.getItem_code());
+			}
+			String where = "";
+
+			if (ArrayUtils.contains(busiSubset, subtablename)) {
+				where = " pk_psnorg in ( select pk_psnorg from hi_psnorg where pk_psndoc in ("
+						+ insql2 + ")) ";
+			} else {
+				where = " pk_psndoc in (" + insql2 + ") ";
+			}
+
+			if (!StringUtils.isBlank(item.getSub_formula_sql())) {
+				where = where + " and " + item.getSub_formula_sql();
+
+			} else if (PartTimeVO.getDefaultTableName().equals(subtablename)) {
+
+				where = where
+						+ " and assgid > 1 and recordnum = 0 order by assgid desc ";
+			} else if (PsnJobVO.getDefaultTableName().equals(subtablename)) {
+
+				where = where + " and assgid = 1 and recordnum = 0 ";
+			} else if (ArrayUtils.contains(busiSubset, subtablename)) {
+
+				where = where + " and recordnum = 0 ";
+
+			} else {
+				where = where + " and lastflag = 'Y' ";
+			}
+
+			Object subValue = null;
+			List<Object[]> vlist = null;
+			try {
+				vlist = (List) new BaseDAO().executeQuery(" select pk_psndoc,"
+						+ item.getItem_code() + " from " + tableName
+						+ " where  " + where, new ArrayListProcessor());
+
+				for (Object[] objs : vlist) {
+					String pkpsn = objs[0].toString();
+					Object[] tobjs = new Object[2];
+					tobjs[0] = ((InfoItemVO) subItemMainItemMap.get(item))
+							.getItem_code();
+					tobjs[1] = objs[1];
+					valueMap.put(pkpsn, tobjs);
+				}
+
+			} catch (DAOException daoex) {
+				Logger.error(daoex.getMessage(), daoex);
+			}
+
+			for (String docPK : pk_psndoc) {
+				nc.vo.hi.psndoc.PsndocVO doc = (nc.vo.hi.psndoc.PsndocVO) psndocMap
+						.get(docPK);
+				if (doc != null) {
+
+					Object[] value = (Object[]) valueMap.get(docPK);
+
+					if (ArrayUtils.isEmpty(value)) {
+						doc.setAttributeValue(((InfoItemVO) subItemMainItemMap
+								.get(item)).getItem_code(), null);
+						al.add(doc);
+					} else {
+						doc.setAttributeValue((String) value[0], value[1]);
+						al.add(doc);
+					}
+				}
+			}
+		}
+		if (al.size() > 0) {
+			baseDAOManager.updateVOArray(
+					(SuperVO[]) al.toArray(new nc.vo.hi.psndoc.PsndocVO[0]),
+					(String[]) alMainFld.toArray(new String[0]));
+		}
+	}
+
+	private IPersistenceRetrieve getRetrieve() {
+		if (retrieve == null) {
+			retrieve = ((IPersistenceRetrieve) NCLocator.getInstance().lookup(
+					IPersistenceRetrieve.class));
+		}
+		return retrieve;
+	}
+
+	private IPersonRecordService getPsnrdsService() {
+		if (psnrdsService == null) {
+			psnrdsService = ((IPersonRecordService) NCLocator.getInstance()
+					.lookup(IPersonRecordService.class));
+		}
+		return psnrdsService;
+	}
+
+	public PsnJobVO[] queryPsndocVOsByDeptPK(String pkDept,
+			boolean includeSubDept, FromWhereSQL fromWhereSQL)
+			throws BusinessException {
+		String deptSql = "";
+		if (!includeSubDept) {
+			deptSql = " select pk_dept from org_dept where pk_dept = '"
+					+ pkDept + "'";
+		} else {
+			DeptVO dept = (DeptVO) queryByPk(DeptVO.class, pkDept, true);
+			deptSql = " select pk_dept from org_dept where innercode like '"
+					+ dept.getInnercode() + "%' ";
+		}
+
+		Map<String, String> aliasMap = fromWhereSQL.getAliasMap();
+
+		String jobAlias = (aliasMap == null)
+				|| (aliasMap.get(PsnJobVO.getDefaultTableName()) == null) ? PsnJobVO
+				.getDefaultTableName() : (String) aliasMap.get(PsnJobVO
+				.getDefaultTableName());
+
+		String orgAlias = (aliasMap == null)
+				|| (aliasMap.get(PsnOrgVO.getDefaultTableName()) == null) ? PsnOrgVO
+				.getDefaultTableName() : (String) aliasMap.get(PsnOrgVO
+				.getDefaultTableName());
+
+		String sql = "select " + jobAlias
+				+ ".* from bd_psndoc  bd_psndoc inner join hi_psnorg "
+				+ orgAlias + " on bd_psndoc.pk_psndoc = " + orgAlias
+				+ ".pk_psndoc and " + orgAlias + ".lastflag ='Y' and "
+				+ orgAlias + ".endflag = 'N' and " + orgAlias
+				+ ".psntype = 0 and " + orgAlias
+				+ ".indocflag ='Y' inner join hi_psnjob " + jobAlias + " on "
+				+ orgAlias + ".pk_psnorg = " + jobAlias + ".pk_psnorg and "
+				+ jobAlias + ".lastflag ='Y' and " + jobAlias
+				+ ".endflag ='N' ";
+
+		if ((aliasMap != null) && (aliasMap.keySet().size() > 0)) {
+			for (String key : (String[]) aliasMap.keySet().toArray(
+					new String[0])) {
+				if (!ArrayUtils.contains(
+						new String[] {
+								nc.vo.hi.psndoc.PsndocVO.getDefaultTableName(),
+								PsnJobVO.getDefaultTableName(),
+								PsnOrgVO.getDefaultTableName(), "." }, key)) {
+
+					String tabAlias = (String) aliasMap.get(key);
+					if (PsndocAggVO.hashBusinessInfoSet.contains(key)) {
+
+						sql = sql + " inner join " + key + " " + tabAlias
+								+ " on " + tabAlias + ".pk_psnorg = "
+								+ orgAlias + ".pk_psnorg ";
+
+					} else {
+						sql = sql + " left outer join " + key + " " + tabAlias
+								+ " on " + tabAlias
+								+ ".pk_psndoc = bd_psndoc.pk_psndoc ";
+					}
+				}
+			}
+		}
+		sql = sql
+				+ " where "
+				+ jobAlias
+				+ ".pk_dept in ("
+				+ deptSql
+				+ ") "
+				+ (StringUtils.isBlank(fromWhereSQL.getWhere()) ? ""
+						: new StringBuilder().append(" and ")
+								.append(fromWhereSQL.getWhere()).toString());
+
+		if (fromWhereSQL.getOrderBy() != null) {
+			sql = sql + " order by " + fromWhereSQL.getOrderBy();
+		}
+		ArrayList<PsnJobVO> al = (ArrayList) baseDAOManager.executeQuery(sql,
+				new BeanListProcessor(PsnJobVO.class));
+		return al == null ? null : (PsnJobVO[]) al.toArray(new PsnJobVO[0]);
+	}
+
+	public PsnJobVO[] queryPsndocVOsByPsnInfo(String psnCode, String psnName,
+			String eMail, String phoneNo, String deptName, String pkGroup)
+			throws BusinessException {
+		String sql = "select hi_psnjob.* from bd_psndoc inner join hi_psnorg on bd_psndoc.pk_psndoc = hi_psnorg.pk_psndoc and hi_psnorg.lastflag ='Y' and hi_psnorg.endflag = 'N' and hi_psnorg.psntype = 0 and hi_psnorg.indocflag ='Y' inner join hi_psnjob on hi_psnorg.pk_psnorg = hi_psnjob.pk_psnorg and hi_psnjob.lastflag ='Y' and hi_psnjob.endflag ='N' left outer join org_dept on hi_psnjob.pk_dept = org_dept.pk_dept where 1=1 and hi_psnjob.pk_group = '"
+				+ pkGroup + "' ";
+
+		if (!StringUtils.isBlank(psnCode)) {
+			sql = sql + " and bd_psndoc.code  like '%" + psnCode.trim() + "%' ";
+		}
+
+		if (!StringUtils.isBlank(eMail)) {
+			sql = sql + " and bd_psndoc.email  like '%" + eMail.trim() + "%' ";
+		}
+
+		if (!StringUtils.isBlank(phoneNo)) {
+			sql = sql + " and bd_psndoc.officephone  like '%" + phoneNo.trim()
+					+ "%' ";
+		}
+
+		if (!StringUtils.isBlank(psnName)) {
+			sql = sql + " and (bd_psndoc.name  like '%" + psnName.trim()
+					+ "%' or bd_psndoc.name2  like '%" + psnName.trim()
+					+ "%' or bd_psndoc.name3  like '%" + psnName.trim()
+					+ "%' or bd_psndoc.name4  like '%" + psnName.trim()
+					+ "%' or bd_psndoc.name5  like '%" + psnName.trim()
+					+ "%' or bd_psndoc.name6 like '%" + psnName.trim() + "%')";
+		}
+
+		if (!StringUtils.isBlank(deptName)) {
+			sql = sql + " and ( org_dept.name  like '%" + deptName.trim()
+					+ "%' or org_dept.name2  like '%" + deptName.trim()
+					+ "%' or org_dept.name3  like '%" + deptName.trim()
+					+ "%' or org_dept.name4  like '%" + deptName.trim()
+					+ "%' or org_dept.name5  like '%" + deptName.trim()
+					+ "%' or org_dept.name6  like '%" + deptName.trim()
+					+ "%' )";
+		}
+
+		ArrayList<PsnJobVO> al = (ArrayList) baseDAOManager.executeQuery(sql,
+				new BeanListProcessor(PsnJobVO.class));
+		return al == null ? null : (PsnJobVO[]) al.toArray(new PsnJobVO[0]);
+	}
+
+	public void checkClerkCodeUnique(PsndocAggVO psndocAggVO)
+			throws BusinessException {
+		SuperVO[] mainjobVOs = psndocAggVO.getTableVO(PsnJobVO
+				.getDefaultTableName());
+		SuperVO[] partjobVOs = psndocAggVO.getTableVO(PartTimeVO
+				.getDefaultTableName());
+		Object[] allVO = ArrayUtils.addAll(mainjobVOs, partjobVOs);
+		for (int i = 0; (allVO != null) && (i < allVO.length); i++) {
+			if (allVO[i] != null) {
+
+				PsnJobVO jobVO = (PsnJobVO) allVO[i];
+				String clerkCode = jobVO.getClerkcode();
+				String pk_org = jobVO.getPk_org();
+				String pk_psndoc = psndocAggVO.getParentVO().getPk_psndoc();
+
+				String condition = " clerkcode = '"
+						+ NCESAPI.sqlEncode(clerkCode) + "' and pk_org = '"
+						+ pk_org + "' and pk_psndoc <>'" + pk_psndoc + "' ";
+
+				int count = getRetrieve().getCountByCondition(
+						PsnJobVO.getDefaultTableName(), condition);
+
+				if (count > 0) {
+					BillCodeRepeatBusinessException ex = new BillCodeRepeatBusinessException(
+							ResHelper.getString(
+									"6007psn",
+									"06007psn0234",
+									new String[] {
+											clerkCode,
+											VOUtils.getDocName(OrgVO.class,
+													pk_org) }),
+							"clerkcoderepeat");
+
+					BillCodeContext billcodeContext = ((IBillcodeManage) NCLocator
+							.getInstance().lookup(IBillcodeManage.class))
+							.getBillCodeContext("6007psndoc_clerkcode",
+									PubEnv.getPk_group(), jobVO.getPk_org());
+
+					if ((null != billcodeContext)
+							&& (billcodeContext.isPrecode())
+							&& (!billcodeContext.isEditable())
+							&& (StringUtils.isNotBlank(clerkCode))) {
+
+						String strClerkCode = null;
+						((IBillcodeManage) NCLocator.getInstance().lookup(
+								IBillcodeManage.class))
+								.AbandonBillCode_RequiresNew(
+										"6007psndoc_clerkcode",
+										PubEnv.getPk_group(),
+										jobVO.getPk_org(), clerkCode);
+
+						strClerkCode = ((IHrBillCode) NCLocator.getInstance()
+								.lookup(IHrBillCode.class)).getBillCode(
+								"6007psndoc_clerkcode", PubEnv.getPk_group(),
+								jobVO.getPk_org());
+
+						ex.setNbcrcode("6007psndoc_clerkcode");
+						ex.setNewCode(strClerkCode);
+					}
+
+					throw ex;
+				}
+			}
+		}
+	}
+
+	public <T> T update4SubSet(T vo, boolean blChangeAuditInfo,
+			boolean blNeedReturnValue) throws BusinessException {
+		SuperVO mainVO = getMainVO(vo);
+
+		getLocker().lock("update", new Object[] { mainVO });
+
+		mainVO.setStatus(1);
+		setAuditInfoAndTs(mainVO, blChangeAuditInfo);
+
+		getMDPersistenceService().saveBillWithRealDelete(vo);
+
+		return (T) (blNeedReturnValue ? queryByPk(vo.getClass(),
+				mainVO.getPrimaryKey(), true) : null);
+	}
+
+	public <T> T insert4SubSet(T vo, boolean blNeedReturnValue)
+			throws BusinessException {
+		SuperVO mainVO = getMainVO(vo);
+
+		mainVO.setStatus(2);
+		setAuditInfoAndTs(mainVO, true);
+		String pk = getMDPersistenceService().saveBill(vo);
+
+		return (T) (blNeedReturnValue ? queryByPk(vo.getClass(), pk, true)
+				: null);
+	}
+
+	public void checkPsnUserUniqueRules(nc.vo.hi.psndoc.PsndocVO psndocVO)
+			throws BusinessException {
+		String[] rulePks = getPsnUniqueRulePks(true);
+
+		if (rulePks != null) {
+			String strMsgs = "";
+			Map<String, HashMap<String, String>> ruleMap = getPsnUserUniqueRule(rulePks);
+			for (String pk_rule : rulePks) {
+
+				boolean isBank = false;
+				String[] strUniqueFields = null;
+				HashMap<String, String> map = (HashMap) ruleMap.get(pk_rule);
+				strUniqueFields = (String[]) map.keySet()
+						.toArray(new String[0]);
+
+				for (String strUniqueField : strUniqueFields) {
+					if (psndocVO.getAttributeValue(strUniqueField) == null) {
+						isBank = true;
+					}
+				}
+				if (!isBank) {
+					String strMsg = checkPsnUserUniqueRule(psndocVO, map);
+
+					if (!StringUtils.isEmpty(strMsg)) {
+						strMsgs = strMsgs + strMsg + "\n";
+					}
+				}
+			}
+			if (!StringUtils.isEmpty(strMsgs)) {
+				throw new BusinessException(strMsgs);
+			}
+		}
+	}
+
+	public String[] getPsnUniqueRulePks(boolean isContainDefault)
+			throws BusinessException {
+		String sql = "select pk_rule from bd_uniquerule where mdclassid ='40d39c26-a2b6-4f16-a018-45664cac1a1f' and pk_rule <> '0001Z01000000005IQBL' ";
+
+		if (!isContainDefault) {
+			sql = sql + " and isdefault = 'N'";
+		}
+		GeneralVO[] rulePks = (GeneralVO[]) baseDAOManager.executeQuery(sql,
+				new GeneralVOProcessor(GeneralVO.class));
+
+		if (null == rulePks) {
+			return null;
+		}
+		String[] result = new String[rulePks.length];
+
+		for (int i = 0; i < result.length; i++) {
+			result[i] = ((String) rulePks[i].getAttributeValue("pk_rule"));
+		}
+		return result;
+	}
+
+	private String checkPsnUserUniqueRule(nc.vo.hi.psndoc.PsndocVO psndocVO,
+			HashMap<String, String> rule) throws BusinessException {
+		String[] strUniqueFields = (String[]) rule.keySet().toArray(
+				new String[0]);
+
+		if (ArrayUtils.contains(strUniqueFields, "name")) {
+			strUniqueFields = (String[]) ArrayUtils
+					.addAll(strUniqueFields, new String[] { "name2", "name3",
+							"name4", "name5", "name6" });
+		}
+
+		if ((ArrayUtils.contains(strUniqueFields, "id"))
+				&& (!ArrayUtils.contains(strUniqueFields, "idtype"))) {
+			strUniqueFields = (String[]) ArrayUtils.add(strUniqueFields,
+					"idtype");
+		}
+
+		nc.vo.hi.psndoc.PsndocVO newPsndoc = new nc.vo.hi.psndoc.PsndocVO();
+		for (String strField : strUniqueFields) {
+			newPsndoc.setAttributeValue(strField,
+					psndocVO.getAttributeValue(strField));
+		}
+
+		if (psndocVO.getPk_psndoc() != null) {
+			newPsndoc.setPk_psndoc(psndocVO.getPk_psndoc());
+		}
+
+		PsndocAggVO psndocAggVO = getPsndocVOByUniqueVO(newPsndoc,
+				strUniqueFields, true);
+
+		if ((psndocAggVO != null) && (psndocAggVO.getParentVO() != null)) {
+			nc.vo.hi.psndoc.PsndocVO head = psndocAggVO.getParentVO();
+			Map mapUniqueField = rule;
+
+			String strMsg = "";
+			PsnIdtypeVO psnIdtypeVO = (PsnIdtypeVO) getDao().retrieveByPK(
+					PsnIdtypeVO.class,
+					(String) psndocVO.getAttributeValue("idtype"));
+
+			for (String strField : strUniqueFields) {
+				if (mapUniqueField.get(strField) != null) {
+
+					if ("idtype".equalsIgnoreCase(strField)) {
+						strMsg = strMsg + mapUniqueField.get(strField) + ":"
+								+ VOUtils.getNameByVO(psnIdtypeVO) + ",";
+					} else if ("name".equalsIgnoreCase(strField)) {
+						strMsg = strMsg + mapUniqueField.get(strField) + ":"
+								+ VOUtils.getNameByVO(psndocVO) + ",";
+					} else {
+						String fieldValue = (String) psndocVO
+								.getAttributeValue(strField);
+
+						fieldValue = StringUtils.isBlank(fieldValue) ? ResHelper
+								.getString("6007psn", "06007psn0148")
+								: fieldValue;
+
+						strMsg = strMsg + mapUniqueField.get(strField) + ":"
+								+ fieldValue + ",";
+					}
+				}
+			}
+			if (strMsg.length() > 0) {
+				strMsg = strMsg.substring(0, strMsg.length() - 1);
+			}
+
+			String jobName = VOUtils.getDocName(PostVO.class, head
+					.getPsnJobVO().getPk_post());
+			jobName = StringUtils.isBlank(jobName) ? ResHelper.getString(
+					"6007psn", "06007psn0148") : jobName;
+			String deptName = VOUtils.getDocName(DeptVO.class, head
+					.getPsnJobVO().getPk_dept());
+			deptName = StringUtils.isBlank(deptName) ? ResHelper.getString(
+					"6007psn", "06007psn0148") : deptName;
+
+			String orgName = VOUtils.getDocName(OrgVO.class, head.getPsnJobVO()
+					.getPk_org());
+			orgName = StringUtils.isBlank(orgName) ? ResHelper.getString(
+					"6007psn", "06007psn0148") : orgName;
+			strMsg = ResHelper.getString("6007psn", "06007psn0231",
+					new String[] { strMsg, orgName, deptName, jobName });
+
+			return strMsg;
+		}
+
+		return null;
+	}
+
+	public Map<String, HashMap<String, String>> getPsnUserUniqueRule(
+			String[] pk_rules) throws DAOException {
+		InSQLCreator isc = new InSQLCreator();
+		String insql = null;
+		try {
+			insql = isc.getInSQL(pk_rules);
+
+		} catch (BusinessException e) {
+			throw new DAOException(e.getMessage(), e);
+		}
+		String sql = "select t3.name,t3.displayname,t3.resid,pk_rule from bd_uniquerule_item t2,md_property t3 where  t2.mdcolumnid=t3.id and pk_rule in ("
+				+ insql + ")";
+
+		GeneralVO[] list = (GeneralVO[]) baseDAOManager.executeQuery(sql,
+				new GeneralVOProcessor(GeneralVO.class));
+		Map<String, HashMap<String, String>> result = new HashMap();
+		if ((list == null) || (list.length < 1)) {
+			return result;
+		}
+		for (GeneralVO vo : list) {
+			String pk_rule = (String) vo.getAttributeValue("pk_rule");
+			HashMap<String, String> map = (HashMap) result.get(pk_rule);
+			if (map == null) {
+				map = new HashMap();
+			}
+			map.put((String) vo.getAttributeValue("name"),
+					ResHelper.getString("10140psn",
+							(String) vo.getAttributeValue("resid")));
+			result.put(pk_rule, map);
+		}
+
+		return result;
+	}
+
+	public PsndocAggVO getPsndocVOByUniqueVO(nc.vo.hi.psndoc.PsndocVO psndocVO,
+			String[] strFields, boolean isInSelf) throws BusinessException {
+		String strBaseWhere = "1=1";
+
+		String nameSql = "";
+		for (String strField : strFields) {
+			if ((!strField.equalsIgnoreCase("pk_psndoc"))
+					&& (psndocVO.getAttributeValue(strField) != null)
+					&& (strField.startsWith("name"))) {
+
+				String strFieldValue = (String) psndocVO
+						.getAttributeValue(strField);
+				if (StringUtils.isBlank(nameSql)) {
+					nameSql = nameSql + " bd_psndoc." + strField + " = '"
+							+ NCESAPI.sqlEncode(strFieldValue) + "' ";
+				} else {
+					nameSql = nameSql + " or bd_psndoc." + strField + " = '"
+							+ NCESAPI.sqlEncode(strFieldValue) + "' ";
+				}
+			}
+		}
+		if (!StringUtils.isEmpty(nameSql)) {
+			strBaseWhere = strBaseWhere + " and ( " + nameSql + " )";
+		}
+
+		for (String strField : strFields) {
+			if ((!strField.equalsIgnoreCase("pk_psndoc"))
+					&& (!strField.startsWith("name"))) {
+
+				if (psndocVO.getAttributeValue(strField) == null) {
+
+					return null;
+				}
+
+				Object objValue = psndocVO.getAttributeValue(strField);
+				if (((objValue instanceof String))
+						|| ((objValue instanceof UFBoolean))
+						|| ((objValue instanceof UFDateTime))
+						|| ((objValue instanceof UFTime))) {
+					if ("id".equals(strField)) {
+
+						String idtype = psndocVO.getIdtype();
+						if (idtype.equals("1001Z01000000000AI36")) {
+							String id = objValue.toString();
+							String id15 = "";
+							String id18 = "";
+							if (id.length() == 15) {
+								id15 = id;
+								IDValidateUtil idVU = new IDValidateUtil(id);
+								id18 = idVU.getUpgradeId();
+								strBaseWhere = strBaseWhere
+										+ " and ( hi_psndoc_cert." + strField
+										+ " = '" + NCESAPI.sqlEncode(id18)
+										+ "' ) ";
+							} else if (id.length() == 18) {
+								id15 = id.substring(0, 6) + id.substring(8, 17);
+								id18 = id;
+								strBaseWhere = strBaseWhere
+										+ " and ( hi_psndoc_cert." + strField
+										+ " = '" + NCESAPI.sqlEncode(id18)
+										+ "' ) ";
+							} else {
+								id18 = id;
+								id15 = id;
+								strBaseWhere = strBaseWhere
+										+ " and ( hi_psndoc_cert." + strField
+										+ " = '" + NCESAPI.sqlEncode(id18)
+										+ "' or hi_psndoc_cert." + strField
+										+ " = '" + NCESAPI.sqlEncode(id15)
+										+ "' ) ";
+							}
+
+							strBaseWhere = strBaseWhere
+									+ " and ( hi_psndoc_cert." + strField
+									+ " = '" + NCESAPI.sqlEncode(id18)
+									+ "' or hi_psndoc_cert." + strField
+									+ " = '" + NCESAPI.sqlEncode(id15) + "' ) ";
+
+						} else {
+
+							strBaseWhere = strBaseWhere
+									+ " and  hi_psndoc_cert." + strField
+									+ " = '"
+									+ NCESAPI.sqlEncode(objValue.toString())
+									+ "' ";
+						}
+
+					} else {
+						strBaseWhere = strBaseWhere + " and bd_psndoc."
+								+ strField + " = '"
+								+ NCESAPI.sqlEncode(objValue.toString()) + "' ";
+					}
+				} else if ((objValue instanceof UFLiteralDate)) {
+					strBaseWhere = strBaseWhere + " and bd_psndoc." + strField
+							+ " like '"
+							+ ((UFLiteralDate) objValue).toStdString() + "%' ";
+				} else if (((objValue instanceof UFDouble))
+						|| ((objValue instanceof Integer))) {
+					if ("idtype".equals(strField)) {
+
+						strBaseWhere = strBaseWhere + " and hi_psndoc_cert."
+								+ strField + " = " + objValue.toString() + " ";
+
+					} else {
+						strBaseWhere = strBaseWhere + " and bd_psndoc."
+								+ strField + " = " + objValue.toString() + " ";
+					}
+				}
+			}
+		}
+
+		if ((isInSelf) && (psndocVO.getPk_psndoc() != null)) {
+			strBaseWhere = strBaseWhere + " and bd_psndoc.pk_psndoc<>'"
+					+ psndocVO.getPk_psndoc() + "'";
+		}
+
+		String strOtherWhere = " and hi_psndoc_cert.iseffect = 'Y' and hi_psnorg.lastflag='Y'";
+		ArrayList<String> listField = new ArrayList();
+		String[] strPsndocFieldCodes = new nc.vo.hi.psndoc.PsndocVO()
+				.getAttributeNames();
+		for (int i = 0; i < strPsndocFieldCodes.length; i++) {
+			listField.add("bd_psndoc." + strPsndocFieldCodes[i]
+					+ " as bd_psndoc_" + strPsndocFieldCodes[i]);
+		}
+		String[] strPsnOrgFieldCodes = new PsnOrgVO().getAttributeNames();
+		for (int i = 0; i < strPsnOrgFieldCodes.length; i++) {
+			listField.add("hi_psnorg." + strPsnOrgFieldCodes[i]
+					+ " as hi_psnorg_" + strPsnOrgFieldCodes[i]);
+		}
+		String[] strPsnJobFieldCodes = new PsnJobVO().getAttributeNames();
+		for (int i = 0; i < strPsnJobFieldCodes.length; i++) {
+			listField.add("hi_psnjob." + strPsnJobFieldCodes[i]
+					+ " as hi_psnjob_" + strPsnJobFieldCodes[i]);
+		}
+
+		for (String strField : strFields) {
+			if ((!strField.startsWith("name")) && (!strField.equals("id"))
+					&& (!strField.equals("birthdate"))) {
+				if (psndocVO.getAttributeValue(strField) != null) {
+					strBaseWhere = strBaseWhere + "and bd_psndoc." + strField
+							+ " = '" + psndocVO.getAttributeValue(strField)
+							+ "' ";
+				}
+			}
+		}
+
+		nc.vo.hi.psndoc.PsndocVO[] psndocVOs = queryPsndocVOByCondition(null,
+				listField, new String[] { "hi_psndoc_cert", "bd_psndoc" },
+				strBaseWhere + strOtherWhere, null);
+
+		if ((psndocVOs == null) || (psndocVOs.length == 0)) {
+			return null;
+		}
+		PsndocAggVO psndocAggVO = new PsndocAggVO();
+		psndocAggVO.setParentVO(psndocVOs[0]);
+		return psndocAggVO;
+	}
+
+	public String[] queryNotNullSubset(PsndocAggVO psndocAggVO,
+			HashMap<String, String> showTab) throws BusinessException {
+		String pk_psncl = psndocAggVO.getParentVO().getPsnJobVO().getPk_psncl();
+		String pk_hrorg = psndocAggVO.getParentVO().getPsnOrgVO().getPk_hrorg();
+		String[] showCodes = (String[]) showTab.keySet().toArray(new String[0]);
+
+		for (int i = 0; i < showCodes.length; i++) {
+			showCodes[i] = new String("hrhi." + showCodes[i]);
+		}
+
+		InSQLCreator inSqlCreator = new InSQLCreator();
+		ArrayList<String> erroInfo = new ArrayList();
+
+		try {
+			String sql = "select metadata from  hr_psnclinfoset,hr_psnclrule where hr_psnclinfoset.pk_psnclrule = hr_psnclrule.pk_psnclrule  and hr_psnclrule.pk_org = '"
+					+ pk_hrorg
+					+ "' "
+					+ "and hr_psnclinfoset.metadata in ( "
+					+ inSqlCreator.getInSQL(showCodes)
+					+ " ) and mustentryflag = 'Y' "
+					+ "and ( hr_psnclrule.PK_PSNCLRULE in ( select SOURCEPK from hr_psnclrule where PK_PSNCL = '"
+					+ pk_psncl
+					+ "' and INHERITFLAG = 'Y' ) "
+					+ "or hr_psnclrule.PK_PSNCL = '" + pk_psncl + "' )";
+
+			ArrayList<String> metadataList = (ArrayList) ((IPersistenceHome) NCLocator
+					.getInstance().lookup(IPersistenceHome.class))
+					.executeQuery(sql, new ColumnListProcessor());
+
+			if ((metadataList == null) || (metadataList.isEmpty())) {
+				return null;
+			}
+			String[] notNulSubSets = (String[]) metadataList
+					.toArray(new String[0]);
+			for (int i = 0; i < notNulSubSets.length; i++) {
+
+				notNulSubSets[i] = new String(notNulSubSets[i].substring(5,
+						notNulSubSets[i].length()));
+			}
+
+			for (String notNulSubSet : notNulSubSets) {
+
+				if ((!notNulSubSet.equals("hi_psnorg"))
+						&& (!notNulSubSet.equals("hi_psnjob"))) {
+
+					if (psndocAggVO.getTableVO(notNulSubSet) == null) {
+						erroInfo.add(showTab.get(notNulSubSet));
+					}
+				}
+			}
+		} finally {
+			if (inSqlCreator != null) {
+				inSqlCreator.clear();
+			}
+		}
+		if (erroInfo.isEmpty()) {
+			return null;
+		}
+		return (String[]) erroInfo.toArray(new String[0]);
+	}
+
+	public void validateInDocInf(String inSql) throws BusinessException {
+		List<String> listTableName = new ArrayList();
+
+		String dieSql = " select code,"
+				+ SQLHelper.getMultiLangNameColumn("name")
+				+ " as name from bd_psndoc where pk_psndoc in (select pk_psndoc from hi_psnjob where pk_psnjob in ("
+				+ inSql
+				+ ")) and isnull(die_date,'~') <> '~' and isnull( die_remark,'~') <> '~' ";
+
+		GeneralVO[] dieVOs = (GeneralVO[]) baseDAOManager.executeQuery(dieSql,
+				new GeneralVOProcessor(GeneralVO.class));
+		if ((dieVOs != null) && (dieVOs.length > 0)) {
+			String name = "";
+			for (int i = 0; i < dieVOs.length; i++) {
+				name = name + ",[" + dieVOs[i].getAttributeValue("code") + ","
+						+ dieVOs[i].getAttributeValue("name") + "]";
+			}
+			if (!StringUtils.isBlank(name)) {
+				throw new BusinessException(ResHelper.getString("6007psn",
+						"06007psn0347") + '\n' + name.substring(1));
+			}
+		}
+
+		String ctrtSql = " select bd_psndoc.code, "
+				+ SQLHelper.getMultiLangNameColumn("bd_psndoc.name")
+				+ " from hi_psnjob inner join bd_psndoc on  hi_psnjob.pk_psndoc  = bd_psndoc.pk_psndoc "
+				+ " inner join hi_psnorg org1 on  org1.pk_psnorg  = hi_psnjob.pk_psnorg "
+				+ " inner join hi_psndoc_ctrt c1 on  c1.pk_psnorg  = hi_psnjob.pk_psnorg"
+				+ " inner join hi_psndoc_ctrt c2 on  c2.pk_psndoc  = hi_psnjob.pk_psndoc"
+				+ " where org1.indocflag = 'N' and c1.lastflag = 'Y'and c1.conttype in (1,2,3) "
+				+ " and  c2.lastflag = 'Y' and c2.conttype in (1,2,3) and c1.pk_psnorg <> c2.pk_psnorg and hi_psnjob.pk_psnjob in ("
+				+ inSql + ")";
+
+		GeneralVO[] ctrtVOs = (GeneralVO[]) baseDAOManager.executeQuery(
+				ctrtSql, new GeneralVOProcessor(GeneralVO.class));
+		if ((ctrtVOs != null) && (ctrtVOs.length > 0)) {
+			String name = "";
+			for (int i = 0; i < ctrtVOs.length; i++) {
+				name = name + ",[" + ctrtVOs[i].getAttributeValue("code") + ","
+						+ ctrtVOs[i].getAttributeValue("name") + "]";
+			}
+			if (!StringUtils.isBlank(name)) {
+				throw new BusinessException(ResHelper.getString("6007psn",
+						"06007psn0512") + '\n' + name.substring(1));
+			}
+		}
+	}
+
+	public String[] validateSubNotNull(PsndocAggVO psndocAggVO,
+			HashMap<String, String> showTab) throws BusinessException {
+		String pk_psncl = psndocAggVO.getParentVO().getPsnJobVO().getPk_psncl();
+		String pk_hrorg = psndocAggVO.getParentVO().getPsnOrgVO().getPk_hrorg();
+		String[] showCodes = (String[]) showTab.keySet().toArray(new String[0]);
+
+		for (int i = 0; i < showCodes.length; i++) {
+			showCodes[i] = new String("hrhi." + showCodes[i]);
+		}
+
+		InSQLCreator inSqlCreator = new InSQLCreator();
+		ArrayList<String> erroInfo = new ArrayList();
+
+		try {
+			String sql = " SELECT HR_PSNCLINFOSET.metadata  FROM HR_PSNCLINFOSET inner join hr_psnclrule on  \thr_psnclinfoset.pk_psnclrule = hr_psnclrule.pk_psnclrule  WHERE hr_psnclrule.pk_org = '"
+					+ pk_hrorg
+					+ "' AND "
+					+ " hr_psnclinfoset.metadata IN ( "
+					+ inSqlCreator.getInSQL(showCodes)
+					+ " ) AND "
+					+ " mustentryflag = 'Y' AND "
+					+ "( hr_psnclrule.PK_PSNCLRULE IN (SELECT SOURCEPK "
+					+ " FROM hr_psnclrule "
+					+ " WHERE PK_PSNCL = '1001A110000000000K8G' AND INHERITFLAG = 'Y' ) "
+					+ " OR " + " hr_psnclrule.PK_PSNCL = '" + pk_psncl + "' ) ";
+
+			ArrayList<String> metadataList = (ArrayList) ((IPersistenceHome) NCLocator
+					.getInstance().lookup(IPersistenceHome.class))
+					.executeQuery(sql, new ColumnListProcessor());
+
+			if ((metadataList == null) || (metadataList.isEmpty())) {
+				return null;
+			}
+
+			String[] notNulSubSets = (String[]) metadataList
+					.toArray(new String[0]);
+			for (int i = 0; i < notNulSubSets.length; i++) {
+
+				notNulSubSets[i] = new String(notNulSubSets[i].substring(5,
+						notNulSubSets[i].length()));
+			}
+
+			for (String notNulSubSet : notNulSubSets) {
+
+				if ((!notNulSubSet.equals("hi_psnorg"))
+						&& (!notNulSubSet.equals("hi_psnjob"))
+						&& (!notNulSubSet.equals("hi_psndoc_parttime"))) {
+
+					if (psndocAggVO.getTableVO(notNulSubSet) == null) {
+
+						sql = "select * from " + notNulSubSet
+								+ " where pk_psndoc = '"
+								+ psndocAggVO.getParentVO().getPk_psndoc()
+								+ "'";
+						GeneralVO[] subVOs = (GeneralVO[]) baseDAOManager
+								.executeQuery(sql, new GeneralVOProcessor(
+										GeneralVO.class));
+						if (subVOs == null) {
+							erroInfo.add(showTab.get(notNulSubSet));
+						}
+
+					} else {
+						SuperVO[] subVOs = psndocAggVO.getTableVO(notNulSubSet);
+
+						boolean isAlldeleted = true;
+
+						for (SuperVO subVO : subVOs) {
+							if (subVO.getStatus() != 3)
+								isAlldeleted = false;
+						}
+						if (isAlldeleted)
+							erroInfo.add(showTab.get(notNulSubSet));
+					}
+				}
+			}
+		} finally {
+			if (inSqlCreator != null) {
+				inSqlCreator.clear();
+			}
+		}
+		if (erroInfo.isEmpty()) {
+			return null;
+		}
+		return (String[]) erroInfo.toArray(new String[0]);
+	}
+
+	public HashMap<String, GeneralVO> getWorkSyncMap(String pk_org,
+			String pk_group, boolean isMainJob) throws BusinessException {
+		String PK_JOBINFOSET = "1002Z710000000001FP5";
+
+		String PK_PARTTIMEINFOSET = "1001Z71000000000GJAH";
+
+		String pk_workInfoset = "1002Z710000000006ZTO";
+
+		String pk_global = "GLOBLE00000000000000";
+
+		String pk_srcInfoset = isMainJob ? "1002Z710000000001FP5"
+				: "1001Z71000000000GJAH";
+
+		String sql = " pk_infoset_map in (select pk_infoset_map from hr_infoset_map where pk_sourceinfoset = '"
+				+ pk_srcInfoset
+				+ "' and pk_targetinfoset = '"
+				+ pk_workInfoset
+				+ "' and pk_org = '" + pk_org + "') ";
+
+		InfoItemMapVO[] infoitemmaps = (InfoItemMapVO[]) ((IPersistenceRetrieve) NCLocator
+				.getInstance().lookup(IPersistenceRetrieve.class))
+				.retrieveByClause(null, InfoItemMapVO.class, sql);
+
+		if (null == infoitemmaps) {
+
+			sql = " pk_infoset_map in (select pk_infoset_map from hr_infoset_map where pk_sourceinfoset = '"
+					+ pk_srcInfoset
+					+ "' and pk_targetinfoset = '"
+					+ pk_workInfoset + "' and pk_org = '" + pk_group + "') ";
+
+			infoitemmaps = (InfoItemMapVO[]) ((IPersistenceRetrieve) NCLocator
+					.getInstance().lookup(IPersistenceRetrieve.class))
+					.retrieveByClause(null, InfoItemMapVO.class, sql);
+		}
+
+		if (null == infoitemmaps) {
+
+			sql = " pk_infoset_map in (select pk_infoset_map from hr_infoset_map where pk_sourceinfoset = '"
+					+ pk_srcInfoset
+					+ "' and pk_targetinfoset = '"
+					+ pk_workInfoset + "' and pk_org = '" + pk_global + "') ";
+
+			infoitemmaps = (InfoItemMapVO[]) ((IPersistenceRetrieve) NCLocator
+					.getInstance().lookup(IPersistenceRetrieve.class))
+					.retrieveByClause(null, InfoItemMapVO.class, sql);
+		}
+
+		if (null == infoitemmaps) {
+			return null;
+		}
+
+		String sql2 = " pk_infoset = '" + pk_srcInfoset + "' or pk_infoset = '"
+				+ pk_workInfoset + "' ";
+		InfoItemVO[] list = (InfoItemVO[]) ((IPersistenceRetrieve) NCLocator
+				.getInstance().lookup(IPersistenceRetrieve.class))
+				.retrieveByClause(null, InfoItemVO.class, sql2);
+
+		HashMap<String, InfoItemVO> infoitem = new HashMap();
+		for (InfoItemVO vo : list) {
+			infoitem.put(vo.getPk_infoset_item(), vo);
+		}
+
+		HashMap<String, GeneralVO> result = new HashMap();
+
+		for (InfoItemMapVO infoitemmap : infoitemmaps) {
+
+			InfoItemVO jobItemVO = (InfoItemVO) infoitem.get(infoitemmap
+					.getPk_sourceinfoitem());
+			InfoItemVO workItemVO = (InfoItemVO) infoitem.get(infoitemmap
+					.getPk_targetinfoitem());
+
+			GeneralVO temp = new GeneralVO();
+
+			temp.setAttributeNames(new String[] { "jobcode", "workcode",
+					"jobdatatype", "workdatatype", "jobrefmodule",
+					"job_pk_infoset_item" });
+			temp.setAttributeValue("jobcode", jobItemVO.getItem_code());
+			temp.setAttributeValue("workcode", workItemVO.getItem_code());
+			temp.setAttributeValue("jobdatatype", jobItemVO.getData_type());
+			temp.setAttributeValue("workdatatype", workItemVO.getData_type());
+			temp.setAttributeValue("jobrefmodule",
+					jobItemVO.getRef_model_name());
+			temp.setAttributeValue("job_pk_infoset_item",
+					jobItemVO.getPk_infoset_item());
+
+			result.put(jobItemVO.getItem_code(), temp);
+		}
+
+		return result;
+	}
+
+	public String getRefItemName(String pk_refinfo, Object value,
+			String pk_infoset_item) throws BusinessException {
+		if (value == null) {
+			return null;
+		}
+		InfoItemVO infoItemVO = (InfoItemVO) baseDAOManager.retrieveByPK(
+				InfoItemVO.class, pk_infoset_item);
+		InfoSetVO infoSetVO = (InfoSetVO) baseDAOManager.retrieveByPK(
+				InfoSetVO.class, infoItemVO.getPk_infoset());
+
+		RefInfoVO refInfoVO = (RefInfoVO) baseDAOManager.retrieveByPK(
+				RefInfoVO.class, pk_refinfo);
+		String strErrMsg = ResHelper.getString(
+				"6001infset",
+				"06001infset0073",
+				new String[] { infoSetVO.getInfoset_name(),
+						infoSetVO.getInfoset_code(), infoItemVO.getItem_name(),
+						infoItemVO.getItem_code(),
+						infoItemVO.getRef_model_name() });
+
+		if (refInfoVO == null) {
+			throw new BusinessException(strErrMsg);
+		}
+
+		String strSQL = "md_class.name='"
+				+ refInfoVO.getMetadataTypeName()
+				+ "' and md_class.componentid in(select id from md_component where ownmodule='"
+				+ refInfoVO.getModuleName() + "')";
+
+		Collection<ClassVO> collRefClassVO = null;
+		collRefClassVO = baseDAOManager.retrieveByClause(ClassVO.class, strSQL);
+
+		if ((collRefClassVO == null) || (collRefClassVO.isEmpty())) {
+			strSQL = "md_class.name='" + refInfoVO.getMetadataTypeName() + "'";
+
+			collRefClassVO = baseDAOManager.retrieveByClause(ClassVO.class,
+					strSQL);
+
+			if ((collRefClassVO == null) || (collRefClassVO.isEmpty())) {
+				throw new BusinessException(strErrMsg);
+			}
+		}
+
+		ClassVO refClassVO = (ClassVO) collRefClassVO.iterator().next();
+
+		String clsName = refClassVO.getFullClassName();
+
+		Object vo;
+		try {
+			vo = Class.forName(clsName).newInstance();
+
+		} catch (Exception e) {
+			throw new BusinessException(e.getMessage(), e);
+		}
+
+		String name = null;
+		if ((vo instanceof SuperVO)) {
+
+			vo = ((IPersistenceRetrieve) NCLocator.getInstance().lookup(
+					IPersistenceRetrieve.class)).retrieveByPk(null,
+					vo.getClass(), value.toString());
+			name = vo == null ? "" : MultiLangHelper.getName((SuperVO) vo);
+
+		} else {
+			name = value == null ? "" : value.toString();
+		}
+
+		return name;
+	}
+
+	public void dismissUAPPsn(nc.vo.hi.psndoc.PsndocVO[] psndocVOs,
+			PsnJobVO[] psnjobVOs) throws BusinessException {
+		Map<String, Integer> enablestateMap = new HashMap();
+		for (nc.vo.hi.psndoc.PsndocVO psndocVO : psndocVOs) {
+			int enablestate = psndocVO.getEnablestate().intValue();
+			String pk_psndoc = psndocVO.getPk_psndoc();
+			enablestateMap.put(pk_psndoc, Integer.valueOf(enablestate));
+		}
+
+		for (PsnJobVO psnjobVO : psnjobVOs) {
+			String pk_psndoc = psnjobVO.getPk_psndoc();
+			String pk_psnjob = psnjobVO.getPk_psnjob();
+			String pk_psnorg = psnjobVO.getPk_psnorg();
+
+			int enablestate = ((Integer) enablestateMap.get(pk_psndoc))
+					.intValue();
+			if (enablestate == 3) {
+
+				PsnOrgVO[] orgVOs = (PsnOrgVO[]) getRetrieve()
+						.retrieveByClause(
+								null,
+								PsnOrgVO.class,
+								"pk_psndoc = '" + pk_psndoc
+										+ "' and pk_psnorg != '" + pk_psnorg
+										+ "'");
+
+				if ((orgVOs != null) && (orgVOs.length != 0)) {
+
+					PsnJobVO[] jobVOs = (PsnJobVO[]) getRetrieve()
+							.retrieveByClause(
+									null,
+									PsnJobVO.class,
+									"pk_psndoc = '" + pk_psndoc
+											+ "' and pk_psnjob != '"
+											+ pk_psnjob
+											+ "' and ismainjob = 'Y'");
+
+					int count = ((IPersistenceRetrieve) NCLocator.getInstance()
+							.lookup(IPersistenceRetrieve.class))
+							.getCountByCondition("org_admin_enable",
+									"pk_adminorg = '" + jobVOs[0].getPk_org()
+											+ "'");
+
+					boolean isHREnabled = (count == 0 ? Boolean.FALSE
+							: Boolean.TRUE).booleanValue();
+
+					if (!isHREnabled) {
+
+						PsnOrgVO lastOrgVO = (PsnOrgVO) queryByPk(
+								PsnOrgVO.class, pk_psnorg);
+
+						UFLiteralDate enddate = lastOrgVO.getBegindate()
+								.getDateBefore(1);
+
+						orgVOs[0].setEnddate(enddate);
+						orgVOs[0].setEndflag(UFBoolean.TRUE);
+						update4SubSet(orgVOs[0], false, true);
+
+						PsnJobVO dimissVO = (PsnJobVO) jobVOs[0].clone();
+						dimissVO.setBegindate(lastOrgVO.getBegindate());
+						dimissVO.setPk_psnjob(null);
+						dimissVO.setTrnsevent(Integer
+								.valueOf(TrnseventEnum.DISMISSION
+										.getEnumValue().getValue()));
+						dimissVO.setStatus(2);
+						insert(dimissVO);
+
+						jobVOs[0].setEnddate(enddate);
+						jobVOs[0].setEndflag(UFBoolean.TRUE);
+						jobVOs[0].setLastflag(UFBoolean.FALSE);
+						jobVOs[0].setRecordnum(Integer.valueOf(1));
+						update4SubSet(jobVOs[0], false, true);
+
+						PsnJobVO[] parttimeVOs = (PsnJobVO[]) queryByCondition(
+								PsnJobVO.class,
+								"pk_psnorg = '"
+										+ orgVOs[0].getPk_psnorg()
+										+ "' and endflag = 'N' and ismainjob = 'N'");
+
+						if ((parttimeVOs != null) && (parttimeVOs.length > 0)) {
+							for (PsnJobVO parttimeVO : parttimeVOs) {
+								parttimeVO.setEnddate(enddate);
+								parttimeVO.setEndflag(UFBoolean.TRUE);
+							}
+							((IPersistenceUpdate) NCLocator.getInstance()
+									.lookup(IPersistenceUpdate.class))
+									.updateVOArray(
+											null,
+											parttimeVOs,
+											new String[] { "enddate", "endflag" },
+											null);
+						}
+
+						PsnChgVO lastVO = (PsnChgVO) ((IPersonRecordService) NCLocator
+								.getInstance().lookup(
+										IPersonRecordService.class)).getLastVO(
+								PsnChgVO.class, orgVOs[0].getPk_psnorg(), null);
+
+						if ((lastVO != null) && (lastVO.getEnddate() == null)) {
+							lastVO.setEnddate(enddate);
+							update(lastVO, false);
+						}
+					}
+				}
+			}
+		}
+	}
+
+	public String queryPsnPkByUserID(String userId) throws BusinessException {
+		String pk_psndoc = null;
+		UserVO userVO = ((nc.itf.uap.rbac.IUserManageQuery) NCLocator
+				.getInstance().lookup(nc.itf.uap.rbac.IUserManageQuery.class))
+				.findUserByIDs(new String[] { userId })[0];
+		if ((userVO != null)
+				&& (StringUtils.isNotEmpty(userVO.getPk_base_doc()))) {
+			pk_psndoc = userVO.getPk_base_doc();
+		}
+		return pk_psndoc;
+	}
+
+	public String queryOrgPkBypsndoc(String pk_psndoc) throws BusinessException {
+		String pk_psnorg = null;
+		String sql = "select pk_psnorg from hi_psnorg where pk_psndoc = '"
+				+ pk_psndoc + "' and lastflag = 'Y' and endflag = 'N' ";
+		Object obj = baseDAOManager.executeQuery(sql, new ColumnProcessor());
+		if ((obj != null) && (!"".equals(obj))) {
+			pk_psnorg = obj.toString();
+		}
+		return pk_psnorg;
+	}
+
+	public String queryWorkageBypsndoc(String pk_psndoc)
+			throws BusinessException {
+		String workage = "";
+		String sql = "select workage from bd_psndoc where pk_psndoc = '"
+				+ pk_psndoc + "' ";
+		Object obj = baseDAOManager.executeQuery(sql, new ColumnProcessor());
+		if ((obj != null) && (!"".equals(obj))) {
+			workage = obj.toString();
+		}
+		return workage;
+	}
+
+	public String queryOrgageBypsnorg(String pk_psnorg)
+			throws BusinessException {
+		String orgage = "";
+		String sql = "select orgage from hi_psndoc_psnchg where lastflag = 'Y' and RECORDNUM = 0 and pk_psnorg = '"
+				+ pk_psnorg + "' ";
+		Object obj = baseDAOManager.executeQuery(sql, new ColumnProcessor());
+		if ((obj != null) && (!"".equals(obj))) {
+			orgage = obj.toString();
+		}
+		return orgage;
+	}
+
+	public Map<String, String> getPsnJobInfo(String pk_psnjob)
+			throws BusinessException {
+		Map<String, String> resultMap = new HashMap();
+		String sql = "select org_orgs.name orgname,org_dept.name deptname,om_job.jobname jobname,om_post.postname postname,om_joblevel.name jobgradename,om_jobrank.jobrankname jobrankname,bd_psncl.name psnclname from bd_psndoc inner join hi_psnjob on bd_psndoc.pk_psndoc = hi_psnjob.pk_psndoc left outer join org_orgs on  hi_psnjob.pk_org = org_orgs.pk_org left outer join org_dept on hi_psnjob.pk_dept = org_dept.pk_dept left outer join om_job on hi_psnjob.pk_job = om_job.pk_job left outer join om_post on hi_psnjob.pk_post = om_post.pk_post left outer join om_joblevel on hi_psnjob.pk_jobgrade = om_joblevel.pk_joblevel left outer join om_jobrank on hi_psnjob.pk_jobrank = om_jobrank.pk_jobrank left outer join bd_psncl on hi_psnjob.pk_psncl = bd_psncl.pk_psncl where hi_psnjob.pk_psnjob = '"
+				+ pk_psnjob + "'";
+
+		resultMap = (Map) baseDAOManager.executeQuery(sql,
+				new PsnInfoMapProcessor());
+		return resultMap;
+	}
+
+	private class PsnInfoMapProcessor extends BaseProcessor {
+		private static final long serialVersionUID = 1L;
+
+		private PsnInfoMapProcessor() {
+		}
+
+		public Map<String, String> processResultSet(ResultSet rs)
+				throws SQLException {
+			Map<String, String> resultMap = new HashMap();
+			if (rs.next()) {
+				String orgname = rs.getString("orgname");
+				String deptname = rs.getString("deptname");
+				String jobname = rs.getString("jobname");
+				String postname = rs.getString("postname");
+				String jobgradename = rs.getString("jobgradename");
+				String jobrankname = rs.getString("jobrankname");
+				String psnclname = rs.getString("psnclname");
+				resultMap.put("orgname", orgname);
+				resultMap.put("deptname", deptname);
+				resultMap.put("jobname", jobname);
+				resultMap.put("postname", postname);
+				resultMap.put("jobgradename", jobgradename);
+				resultMap.put("jobrankname", jobrankname);
+				resultMap.put("psnclname", psnclname);
+			}
+			return resultMap;
+		}
+	}
+
+	public HROrgVO queryPrincipalByOrgPk(String pk) throws BusinessException {
+		HROrgVO orgVO = (HROrgVO) ((IPersistenceRetrieve) NCLocator
+				.getInstance().lookup(IPersistenceRetrieve.class))
+				.retrieveByPk(HROrgVO.class, pk, new String[] { "principal",
+						"isbusinessunit" });
+
+		return orgVO;
+	}
+
+	public ArrayList<Map<String, Object>> queryPsnInfoByPsnPk(String psnPk)
+			throws BusinessException {
+		String querySql = "select doc.photo photo,doc.sex sex,doc.name name,adminorg.name orgname,dept.name deptname,dept.pk_dept pk_dept,post.postname postname,omjob.jobname jobname from bd_psndoc doc inner join hi_psnorg org on doc.pk_psndoc = org.pk_psndoc  inner join hi_psnjob job  on org.pk_psnorg = job.pk_psnorg  inner join org_adminorg adminorg  on job.pk_org = adminorg.pk_adminorg   inner join org_dept dept  on job.pk_dept = dept.pk_dept  left outer join om_post post   on job.pk_post = post.pk_post    left outer join om_job omjob    on job.pk_job = omjob.pk_job  where org.lastflag = 'Y' and job.lastflag = 'Y' and doc.pk_psndoc = '"
+				+ psnPk + "' and job.ismainjob = 'Y'";
+
+		ArrayList<Map<String, Object>> processor = (ArrayList) baseDAOManager
+				.executeQuery(querySql, new MapListProcessor());
+
+		return processor;
+	}
+
+	public Integer queryCountByDeptPk(String deptPk) throws BusinessException {
+		String querySql = "select count(*) subcount from ( select distinct psnjob.pk_psndoc from hi_psnorg psnorg inner join hi_psnjob psnjob on psnorg.pk_psnorg = psnjob.pk_psnorg where psnorg.lastflag = 'Y' and psnorg.indocflag = 'Y' and psnjob.lastflag = 'Y' and psnjob.endflag = 'N' and psnorg.psntype = 0 and psnjob.pk_dept = '"
+				+ deptPk + "')subcount";
+
+		ArrayList<HashMap<String, Integer>> processor = (ArrayList) baseDAOManager
+				.executeQuery(querySql, new MapListProcessor());
+
+		Integer subcount = (Integer) ((HashMap) processor.get(0))
+				.get("subcount");
+
+		return subcount;
+	}
+
+	public ArrayList<Map<String, Object>> querySubDeptInfoByDeptPk(String deptPk)
+			throws BusinessException {
+		ArrayList<Map<String, Object>> resultList = new ArrayList();
+
+		String condition = "innercode like ( select innercode || '%' from org_dept where pk_dept = '"
+				+ deptPk + "') and hrcanceled = 'N' ";
+		Collection<HRDeptVO> hrdeptVOs = baseDAOManager.retrieveByClause(
+				HRDeptVO.class, condition);
+		if (hrdeptVOs.isEmpty()) {
+			return resultList;
+		}
+
+		String querySql = "select job.pk_dept,job.pk_psndoc from hi_psnorg psnorg  inner join hi_psnjob job on psnorg.pk_psnorg = job.pk_psnorg   where job.pk_dept in (select pk_dept from org_dept where innercode like ( select innercode || '%' from org_dept where pk_dept = '"
+				+ deptPk
+				+ "') )"
+				+ " and job.ENDFLAG = 'N' and job.lastflag = 'Y' and job.psntype = 0  and psnorg.lastflag = 'Y' and psnorg.indocflag = 'Y' and psnorg.endflag = 'N' ";
+
+		GeneralVO[] psnjobVOs = (GeneralVO[]) baseDAOManager.executeQuery(
+				querySql, new GeneralVOProcessor(GeneralVO.class));
+
+		for (Iterator<HRDeptVO> ite = hrdeptVOs.iterator(); ite.hasNext();) {
+			List<String> subDeptList = new ArrayList();
+			HRDeptVO hrdeptVO = (HRDeptVO) ite.next();
+			if (deptPk.equals(hrdeptVO.getPk_fatherorg())) {
+
+				getDeptCountAndName(hrdeptVO.getPk_dept(), hrdeptVOs,
+						subDeptList);
+				Map<String, Object> resultMap = new HashMap();
+				resultMap.put("subpkdept", hrdeptVO.getPk_dept());
+				resultMap.put("subdeptname", hrdeptVO.getName());
+				if (ArrayUtils.isEmpty(psnjobVOs)) {
+					resultMap.put("subcount", String.valueOf(0));
+				} else {
+					resultMap.put("subcount",
+							getPsnCount(psnjobVOs, subDeptList));
+					resultMap.put("subDeptList", subDeptList);
+				}
+				resultList.add(resultMap);
+			}
+		}
+		return resultList;
+	}
+
+	public ArrayList<Map<String, Object>> queryDeptInfoByOrgPk(String orgPk)
+			throws BusinessException {
+		ArrayList<Map<String, Object>> resultList = new ArrayList();
+
+		String condition = " pk_org = '" + orgPk + "' and hrcanceled = 'N' ";
+		Collection<HRDeptVO> hrdeptVOs = baseDAOManager.retrieveByClause(
+				HRDeptVO.class, condition);
+		if (hrdeptVOs.isEmpty()) {
+			return resultList;
+		}
+
+		String querySql = "select job.pk_dept,job.pk_psndoc from hi_psnorg psnorg  inner join hi_psnjob job on psnorg.pk_psnorg = job.pk_psnorg   where job.pk_org = '"
+				+ orgPk
+				+ "' "
+				+ " and job.ENDFLAG = 'N' and job.psntype = 0 and job.lastflag = 'Y' and psnorg.lastflag = 'Y' and psnorg.indocflag = 'Y' and psnorg.endflag = 'N' ";
+
+		GeneralVO[] psnjobVOs = (GeneralVO[]) baseDAOManager.executeQuery(
+				querySql, new GeneralVOProcessor(GeneralVO.class));
+
+		for (Iterator<HRDeptVO> ite = hrdeptVOs.iterator(); ite.hasNext();) {
+			List<String> subDeptList = new ArrayList();
+			HRDeptVO hrdeptVO = (HRDeptVO) ite.next();
+			if (!StringUtils.isNotBlank(hrdeptVO.getPk_fatherorg())) {
+
+				getDeptCountAndName(hrdeptVO.getPk_dept(), hrdeptVOs,
+						subDeptList);
+				Map<String, Object> resultMap = new HashMap();
+				resultMap.put("subpkdept", hrdeptVO.getPk_dept());
+				resultMap.put("subdeptname", hrdeptVO.getName());
+				if (ArrayUtils.isEmpty(psnjobVOs)) {
+					resultMap.put("subcount", String.valueOf(0));
+				} else {
+					resultMap.put("subcount",
+							getPsnCount(psnjobVOs, subDeptList));
+					resultMap.put("subDeptList", subDeptList);
+				}
+				resultList.add(resultMap);
+			}
+		}
+		return resultList;
+	}
+
+	public ArrayList<Map<String, Object>> queryDeptInfoByPks(
+			ArrayList<String> pkList) throws BusinessException {
+		ArrayList<Map<String, Object>> resultList = new ArrayList();
+		String[] pks = (String[]) pkList.toArray(new String[0]);
+
+		for (int i = 0; i < pks.length; i++) {
+			String deptPk = pks[i];
+			Map<String, Object> resultMap = new HashMap();
+
+			String namesql = "select name from org_dept where pk_dept = '"
+					+ deptPk + "' ";
+			Object name = baseDAOManager.executeQuery(namesql,
+					new ColumnProcessor());
+			if ((name != null) && (!"".equals(name))) {
+
+				String querySql = "select job.pk_dept from hi_psnorg psnorg  inner join hi_psnjob job on psnorg.pk_psnorg = job.pk_psnorg   where job.pk_dept in (select pk_dept from org_dept where innercode like ( select innercode || '%' from org_dept where pk_dept = '"
+						+ deptPk
+						+ "'))"
+						+ " and job.lastflag = 'Y' and job.ismainjob = 'Y' and psnorg.lastflag = 'Y' and psnorg.indocflag = 'Y' and psnorg.endflag = 'N' ";
+
+				GeneralVO[] psnjobVOs = (GeneralVO[]) baseDAOManager
+						.executeQuery(querySql, new GeneralVOProcessor(
+								GeneralVO.class));
+				if (ArrayUtils.isEmpty(psnjobVOs)) {
+					resultMap.put("subcount", String.valueOf(0));
+				} else {
+					resultMap.put("subcount", String.valueOf(psnjobVOs.length));
+				}
+				resultMap.put("subpkdept", deptPk);
+				resultMap.put("subdeptname", String.valueOf(name));
+				resultList.add(resultMap);
+			}
+		}
+		return resultList;
+	}
+
+	public ArrayList<Map<String, Object>> queryOrgsInfoByPkS(
+			ArrayList<String> pkList) throws BusinessException {
+		String[] pks = (String[]) pkList.toArray(new String[0]);
+		InSQLCreator isc = new InSQLCreator();
+		String inSql = isc.getInSQL(pks);
+
+		String querySql = "select adminorg.pk_adminorg subpkdept, adminorg.name subdeptname, t.subcount subcount from org_adminorg adminorg left outer join  (select job.pk_org,count(job.pk_psnjob) subcount from hi_psnorg psnorg inner join  hi_psnjob job on psnorg.pk_psnorg = job.pk_psnorg where job.pk_org in (  select pk_adminorg from org_adminorg where pk_adminorg in ("
+				+ inSql
+				+ ")) and psnorg.lastflag = 'Y' and psnorg.indocflag = 'Y' and job.lastflag = 'Y'  and job.ismainjob = 'Y'  and job.endflag = 'N'  and psnorg.psntype = 0 group by job.pk_org) t "
+				+ " on adminorg.pk_adminorg = t.pk_org where adminorg.pk_adminorg in ("
+				+ inSql + ") order by subdeptname";
+
+		ArrayList<Map<String, Object>> processor = (ArrayList) baseDAOManager
+				.executeQuery(querySql, new MapListProcessor());
+
+		return processor;
+	}
+
+	public ArrayList<String> queryDeptPksByOrgPks(ArrayList<String> pkList)
+			throws BusinessException {
+		String[] pks = (String[]) pkList.toArray(new String[0]);
+		InSQLCreator isc = new InSQLCreator();
+		String inSql = isc.getInSQL(pks);
+		String querySql = " SELECT    distinct job.pk_dept pk_dept                               FROM                                                                     hi_psnorg psnorg                                                         INNER JOIN hi_psnjob job                                             ON psnorg.pk_psnorg = job.pk_psnorg                                  left join org_adminorg org on job.pk_org = org.PK_ADMINORG   WHERE                                                                    psnorg.lastflag = 'Y' AND                                            psnorg.indocflag = 'Y' AND                                           job.lastflag = 'Y' AND                                               job.ismainjob = 'Y' AND                                              job.endflag = 'N' AND                                               psnorg.psntype = 0 and                                                org.pk_adminorg IN ( '"
+				+ inSql + "' )                          ";
+
+		ArrayList<Map<String, String>> processor = (ArrayList) baseDAOManager
+				.executeQuery(querySql, new MapListProcessor());
+
+		ArrayList<String> ret = new ArrayList();
+		for (Map<String, String> m : processor) {
+			ret.add(m.get("pk_dept"));
+		}
+		return ret;
+	}
+
+	public ArrayList<String> getOrgPksByPsnPk(String psnPk)
+			throws BusinessException {
+		ArrayList<String> orgPkList = new ArrayList();
+		String condition = " pk_org in (select pk_adminorg from org_adminorg) and principal = '"
+				+ psnPk + "' ";
+		HROrgVO[] orgVOs = (HROrgVO[]) ((IPersistenceRetrieve) NCLocator
+				.getInstance().lookup(IPersistenceRetrieve.class))
+				.retrieveByClause(null, HROrgVO.class, condition);
+
+		if (ArrayUtils.isEmpty(orgVOs)) {
+			return orgPkList;
+		}
+		for (HROrgVO hrOrgVO : orgVOs) {
+			String pk_org = hrOrgVO.getPk_org();
+			orgPkList.add(pk_org);
+		}
+		return orgPkList;
+	}
+
+	public ArrayList<String> getDeptPksByPsnPk(String psnPk)
+			throws BusinessException {
+		ArrayList<String> deptPkList = new ArrayList();
+		String condition = " principal = '" + psnPk + "'";
+		HRDeptVO[] deptVOs = (HRDeptVO[]) ((IPersistenceRetrieve) NCLocator
+				.getInstance().lookup(IPersistenceRetrieve.class))
+				.retrieveByClause(null, HRDeptVO.class, condition);
+
+		if (ArrayUtils.isEmpty(deptVOs)) {
+			return deptPkList;
+		}
+		for (HRDeptVO hrDeptVO : deptVOs) {
+			String deptPk = hrDeptVO.getPk_dept();
+			deptPkList.add(deptPk);
+		}
+		return deptPkList;
+	}
+
+	public String queryDeptNameByDeptPk(String deptPk) throws BusinessException {
+		String querySql = "select name name from org_dept where pk_dept = '"
+				+ deptPk + "'";
+
+		ArrayList<Map<String, String>> processor = (ArrayList) baseDAOManager
+				.executeQuery(querySql, new MapListProcessor());
+
+		return (String) ((Map) processor.get(0)).get("name");
+	}
+
+	public ArrayList<HashMap<String, String>> queryPsnInfoByDeptPk(
+			String[] deptPks) throws BusinessException {
+		if (ArrayUtils.isEmpty(deptPks)) {
+			return null;
+		}
+
+		String insql = zJoinToInSql(deptPks);
+		String querySql = "select doc.pk_psndoc, doc.name psnname, post.postname postname,omjob.jobname jobname  from  bd_psndoc doc inner join hi_psnorg psnorg on doc.pk_psndoc  = psnorg.pk_psndoc inner join hi_psnjob psnjob on psnorg.pk_psnorg = psnjob.pk_psnorg left outer join om_post post on psnjob.pk_post=post.pk_post left outer join om_job omjob on psnjob.pk_job = omjob.pk_job where psnorg.indocflag ='Y' and psnorg.lastflag = 'Y' and psnjob.endflag = 'N' and psnjob.lastflag = 'Y' and psnjob.ismainjob = 'Y' and psnjob.pk_dept in ("
+				+ insql + ")";
+
+		ArrayList<HashMap<String, String>> processor = (ArrayList) baseDAOManager
+				.executeQuery(querySql, new MapListProcessor());
+
+		return processor;
+	}
+
+	public ArrayList<HashMap<String, String>> queryPsnInfoByDeptPk(String deptPk)
+			throws BusinessException {
+		String querySql = "select doc.pk_psndoc, ismainjob,  doc.name psnname, post.postname postname,omjob.jobname jobname  from  bd_psndoc doc inner join hi_psnorg psnorg on doc.pk_psndoc  = psnorg.pk_psndoc inner join hi_psnjob psnjob on psnorg.pk_psnorg = psnjob.pk_psnorg left outer join om_post post on psnjob.pk_post=post.pk_post left outer join om_job omjob on psnjob.pk_job = omjob.pk_job where psnorg.indocflag ='Y' and psnorg.lastflag = 'Y' and psnjob.endflag = 'N' and psnjob.lastflag = 'Y' and psnjob.psntype = 0 and psnjob.pk_dept = '"
+				+ deptPk + "'";
+
+		ArrayList<HashMap<String, String>> processor = (ArrayList) baseDAOManager
+				.executeQuery(querySql, new MapListProcessor());
+
+		ArrayList<HashMap<String, String>> arraylist = new ArrayList();
+		Map<String, String> mapKey = new HashMap();
+
+		for (HashMap<String, String> map : processor) {
+			String key = (String) map.get("pk_psndoc");
+			if ((!mapKey.containsKey(key))
+					|| ((mapKey.containsKey(key)) && (mapKey.get(key) == "Y"))) {
+				mapKey.put(map.get("pk_psndoc"), map.get("ismainjob"));
+				map.remove("ismainjob");
+				arraylist.add(map);
+			}
+		}
+		return arraylist;
+	}
+
+	public ArrayList<Map<String, String>> queryJobRankByPsnPks(
+			String[] psndocPks) throws BusinessException {
+		String inSql = zJoinToInSql(psndocPks);
+
+		String querySql = "select om_jobrank.jobrankname name,psnorg.pk_psndoc pk_psndoc from hi_psnorg psnorg inner join  hi_psnjob psnjob on psnorg.pk_psnorg = psnjob.pk_psnorg inner join om_jobrank on psnjob.pk_jobrank = om_jobrank.pk_jobrank where psnorg.lastflag = 'Y' and ismainjob= 'Y' and psnorg.pk_psndoc in ("
+				+ inSql + ")";
+
+		ArrayList<Map<String, String>> processor = (ArrayList) baseDAOManager
+				.executeQuery(querySql, new MapListProcessor());
+
+		return processor;
+	}
+
+	public ArrayList<Map<String, String>> queryWorkAge(String[] psndocPks)
+			throws BusinessException {
+		String inSql = zJoinToInSql(psndocPks);
+		String querySql = "select pk_psndoc,workage from bd_psndoc where pk_psndoc in ("
+				+ inSql + ")";
+		ArrayList<Map<String, String>> processor = (ArrayList) baseDAOManager
+				.executeQuery(querySql, new MapListProcessor());
+
+		return processor;
+	}
+
+	public ArrayList<Map<String, String>> queryEduInfoByPks(String[] pks)
+			throws BusinessException {
+		String inSql = zJoinToInSql(pks);
+
+		String querySql = "select def.name name, psn.pk_psndoc from  hi_psndoc_edu psn  inner join bd_defdoc  def on psn.education = def.pk_defdoc  where psn.pk_psndoc in ("
+				+ inSql + ") and psn.lasteducation = 'Y' ";
+
+		ArrayList<Map<String, String>> processor = (ArrayList) baseDAOManager
+				.executeQuery(querySql, new MapListProcessor());
+
+		return processor;
+	}
+
+	public ArrayList<Map<String, String>> queryAge(String[] psndocPks)
+			throws BusinessException {
+		String inSql = zJoinToInSql(psndocPks);
+		String querySql = "select age,pk_psndoc from bd_psndoc where pk_psndoc in ("
+				+ inSql + ")";
+		ArrayList<Map<String, String>> processor = (ArrayList) baseDAOManager
+				.executeQuery(querySql, new MapListProcessor());
+
+		return processor;
+	}
+
+	public ArrayList<String> queryDegree() throws BusinessException {
+		String degreeDoclistPk = "1001Z71000000000GP4V";
+		String querySql = "select code, name name from bd_defdoc where pk_defdoclist = '"
+				+ degreeDoclistPk + "' order by code";
+
+		ArrayList<Map<String, String>> processor = (ArrayList) baseDAOManager
+				.executeQuery(querySql, new MapListProcessor());
+
+		ArrayList<String> degreeList = new ArrayList();
+		for (Map<String, String> map : processor) {
+			String degree = (String) map.get("name");
+			degreeList.add(degree);
+		}
+		return degreeList;
+	}
+
+	public ArrayList<String> queryJobRank(String groupPk)
+			throws BusinessException {
+		String querySql = "SELECT jobrankname name FROM om_jobrank where pk_group = '"
+				+ groupPk + "'";
+
+		ArrayList<Map<String, String>> processor = (ArrayList) baseDAOManager
+				.executeQuery(querySql, new MapListProcessor());
+
+		ArrayList<String> jobRankList = new ArrayList();
+		for (Map<String, String> map : processor) {
+			String name = (String) map.get("name");
+			jobRankList.add(name);
+		}
+		return jobRankList;
+	}
+
+	private List<String> getDeptCountAndName(String pk_dept,
+			Collection<HRDeptVO> hrdeptVOs, List<String> deptList) {
+		if (deptList.isEmpty()) {
+			deptList.add(pk_dept);
+		}
+		for (Iterator<HRDeptVO> ite = hrdeptVOs.iterator(); ite.hasNext();) {
+			HRDeptVO hrDeptVO = (HRDeptVO) ite.next();
+			if (!StringUtils.isBlank(hrDeptVO.getPk_fatherorg())) {
+
+				if (hrDeptVO.getPk_fatherorg().equals(pk_dept)) {
+					deptList.add(hrDeptVO.getPk_dept());
+					getDeptCountAndName(hrDeptVO.getPk_dept(), hrdeptVOs,
+							deptList);
+				}
+			}
+		}
+		return deptList;
+	}
+
+	private String getPsnCount(GeneralVO[] psnjobVOs, List<String> subDeptList) {
+		Integer count = Integer.valueOf(0);
+		Set<String> set = new HashSet();
+		Integer localInteger1;
+		for (int i = 0; i < psnjobVOs.length; i++) {
+			GeneralVO psnjobVO = psnjobVOs[i];
+			if (subDeptList.contains(psnjobVO.getAttributeValue("pk_dept"))) {
+				if (!set.contains(psnjobVO.getAttributeValue("pk_psndoc"))) {
+					set.add((String) psnjobVO.getAttributeValue("pk_psndoc"));
+					localInteger1 = count;
+					Integer localInteger2 = count = Integer.valueOf(count
+							.intValue() + 1);
+				}
+			}
+		}
+		return String.valueOf(count);
+	}
+
+	private String getAge(Date birthDay) {
+		Calendar cal = Calendar.getInstance();
+		int yearNow = cal.get(1);
+		int monthNow = cal.get(2);
+		int dayOfMonthNow = cal.get(5);
+		cal.setTime(birthDay);
+		int yearBirth = cal.get(1);
+		int monthBirth = cal.get(2);
+		int dayOfMonthBirth = cal.get(5);
+		int age = yearNow - yearBirth;
+		if (monthNow <= monthBirth) {
+			if (monthNow == monthBirth) {
+
+				if (dayOfMonthNow < dayOfMonthBirth) {
+					age--;
+
+				}
+
+			} else {
+
+				age--;
+			}
+		}
+
+		return String.valueOf(age);
+	}
+
+	public static String zJoinToInSql(String[] strValues) {
+		int iCount = -1;
+		if ((strValues == null) || (strValues.length == 0)) {
+			return null;
+		}
+
+		List<String> arrListInSQL = new ArrayList();
+		List<String> arrListExistValue = new ArrayList();
+
+		StringBuilder strbdrInSQL = new StringBuilder();
+
+		int i = 0;
+		for (int iIndex = 0; i < strValues.length; i++) {
+			if ((!StringUtils.isBlank(strValues[i]))
+					&& (!arrListExistValue.contains(strValues[i].trim()))) {
+
+				iIndex++;
+				strbdrInSQL.append(",'")
+						.append(StringUtils.replace(strValues[i], "'", "''"))
+						.append("'");
+
+				strbdrInSQL.append(",'").append(transfer(strValues[i]))
+						.append("'");
+
+				if ((iCount == -1) && (i == strValues.length - 1)) {
+					arrListInSQL.add(strbdrInSQL.substring(1));
+
+				} else if ((iIndex == iCount) || (i == strValues.length - 1)) {
+					if (strbdrInSQL.toString().trim().length() > 0) {
+						arrListInSQL.add(strbdrInSQL.substring(1));
+					}
+
+					iCount = 0;
+					strbdrInSQL = new StringBuilder();
+				}
+			}
+		}
+		if ((strbdrInSQL.length() > 0)
+				&& (!arrListInSQL.contains(strbdrInSQL.toString()))) {
+			arrListInSQL.add(strbdrInSQL.substring(1));
+		}
+
+		return arrListInSQL.isEmpty() ? null : (String) arrListInSQL.get(0);
+	}
+
+	public static String transfer(String strValue) {
+		return StringUtils.replace(strValue, "'", "''");
+	}
+}

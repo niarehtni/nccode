@@ -1,0 +1,33 @@
+CREATE TABLESPACE NNC_DATA01 DATAFILE 'F:\DBFiles\nnc_data01.dbf' SIZE 30G AUTOEXTEND ON NEXT 50M MAXSIZE UNLIMITED EXTENT MANAGEMENT LOCAL UNIFORM SIZE 256K ;       
+ALTER TABLESPACE NNC_DATA01 ADD DATAFILE 'F:\DBFiles\nnc_data02.dbf' SIZE 30G;   
+ALTER TABLESPACE NNC_DATA01 ADD DATAFILE 'F:\DBFiles\nnc_data03.dbf' SIZE 30G;   
+ALTER TABLESPACE NNC_DATA01 ADD DATAFILE 'F:\DBFiles\nnc_data04.dbf' SIZE 30G;   
+ALTER TABLESPACE NNC_DATA01 ADD DATAFILE 'F:\DBFiles\nnc_data05.dbf' SIZE 30G;   
+CREATE TABLESPACE NNC_INDEX01 DATAFILE 'F:\DBFiles\nnc_index01.dbf' SIZE 30G AUTOEXTEND ON NEXT 50M MAXSIZE UNLIMITED EXTENT MANAGEMENT LOCAL UNIFORM SIZE 128K ;   
+CREATE TABLESPACE ARCHTBS DATAFILE 'F:\DBFiles\nnc_archtbs01.dbf' SIZE 30G AUTOEXTEND ON NEXT 50M MAXSIZE UNLIMITED EXTENT MANAGEMENT LOCAL UNIFORM SIZE 256K ;       
+--alter session set "_ORACLE_SCRIPT"=true; --ORACLE 12C
+CREATE USER NCDATA IDENTIFIED BY 53531689 DEFAULT TABLESPACE NNC_DATA01 TEMPORARY TABLESPACE temp;
+ALTER USER NCDATA QUOTA UNLIMITED ON NNC_DATA01;
+ALTER USER NCDATA QUOTA UNLIMITED ON ARCHTBS;
+  
+GRANT connect,dba to NCDATA; 
+GRANT create session TO NCDATA;
+GRANT create table TO NCDATA;
+GRANT create view TO NCDATA;
+GRANT create any trigger TO NCDATA;
+GRANT create any procedure TO NCDATA;
+GRANT create sequence TO NCDATA;
+GRANT create synonym TO NCDATA;
+
+--ORA-00823: Specified value of sga_target greater than sga_max_size
+create pfile from spfile;
+--Modify C:\app\oracle\product\12.1.0\dbhome_1\database\INITorcl.ORA
+create spfile from pfile;
+startup;
+
+--impdp
+impdp system/manager DIRECTORY=DATA_DUMP_DIR DUMPFILE=full.dmp FULL=y;
+
+--kill linked user, with SYSTEM logged in
+select username,sid,serial# from v$session where username='xxxxxxxx';
+alter system kill session'37,41363';

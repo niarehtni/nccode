@@ -1,0 +1,2 @@
+insert into pub_queryscheme(cuserid,dr,funcode,isautorun,iscomplete,isdefault,isdeleted,ismodified,isprepared,isquickqs,modulename,name,name2,name3,name4,name5,name6,parentid,pk_org,pk_queryscheme,pk_template,qsobject,sequenc,ts) values( '1001A1100000000007NG',0,'60090dimissionrds','N','N','N','N','N','N','N',null,'离职员工',null,null,null,null,null,null,'0001A1100000000005F5','1001A11000000000JIVE','1001Z71000000000AWR9',null,null,'2018-07-05 15:24:24')
+go

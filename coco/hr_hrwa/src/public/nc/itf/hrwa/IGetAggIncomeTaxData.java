@@ -1,0 +1,98 @@
+package nc.itf.hrwa;
+
+import java.util.List;
+import java.util.Map;
+
+import nc.vo.hrwa.incometax.AggIncomeTaxVO;
+import nc.vo.hrwa.sumincometax.AggSumIncomeTaxVO;
+import nc.vo.pub.BusinessException;
+
+/**
+ * 
+ * @author ward.wong
+ * @date 20180126
+ * @功能描述 申报明细档数据构造接口
+ * 
+ */
+public interface IGetAggIncomeTaxData {
+	/**
+	 * @功能描述 根据条件生成申报明细档
+	 * @param isForeignMonth
+	 *            是否外籍员工逐月申报
+	 * @param unifiednumber
+	 *            统一编号
+	 * @param declaretype
+	 *            申报凭单格式
+	 * @param waclass
+	 *            薪资方案
+	 * @param year
+	 *            薪资年度
+	 * @param beginMonth
+	 *            起始时间
+	 * @param endMonth
+	 *            截止时间
+	 * @return
+	 * @throws BusinessException
+	 */
+	public List<AggIncomeTaxVO> getAggIncomeTaxData(boolean isForeignMonth, String unifiednumber,
+			String[] declaretypes, String[] waclass, String year, String beginMonth, String endMonth)
+			throws BusinessException;
+
+	/**
+	 * 根据人员主键判断证别号
+	 * 
+	 * @param pk_psndoc
+	 * @return
+	 * @throws BusinessException
+	 */
+	public String getIdtypeno(String pk_psndoc, String cyearperiod) throws BusinessException;
+
+	/**
+	 * 根据申报明细档主键，删除汇总信息
+	 */
+	public void deleteSumIncomeTax(String[] pk_incometax) throws BusinessException;
+
+	/**
+	 * 注记申报明细档
+	 */
+	public void markIncomeTaxVO(String[] pk_incometax) throws BusinessException;
+
+	/**
+	 * 取消注记申报明细档
+	 */
+	public void unMarkIncomeTaxVO(String[] pk_incometax) throws BusinessException;
+
+	/**
+	 * 申报明细档取消汇总
+	 */
+	public void cancleGather(String[] pk_incometax) throws BusinessException;
+
+	/**
+	 * 根据申报明细档查询申报汇总
+	 */
+	public AggSumIncomeTaxVO getAggSumIncomeTaxByIncome(String pk_incometax) throws BusinessException;
+
+	/**
+	 * 根据申报汇总单据主键查询aggvo
+	 */
+	public AggSumIncomeTaxVO getAggSumIncomeTaxByPK(String pk) throws BusinessException;
+
+	/**
+	 * 获取人员姓名
+	 */
+	public Map<String, String> getPsnNameByPks(String[] pks) throws BusinessException;
+
+	/**
+	 * 获取薪资方案名称
+	 */
+	public Map<String, String> getWaClassName(String[] pks) throws BusinessException;
+
+	/**
+	 * 根据HR组织取其下所有法人
+	 * 
+	 * @param pk_hrorg
+	 * @return
+	 * @throws BusinessException
+	 */
+	public List<String> getLegalOrgByHROrg(String pk_hrorg) throws BusinessException;
+}

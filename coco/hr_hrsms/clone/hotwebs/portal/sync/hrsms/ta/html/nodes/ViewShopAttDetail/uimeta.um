@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding='UTF-8'?>
+<UIMeta chart="0" flowmode="true" id="ViewShopAttDetail_um" jquery="0" jsEditor="0" jsExcel="0">
+    <FlowhLayout id="flowhlayout5023">
+        <FlowhPanel id="panelh15023">
+            <Widget id="main">
+            </Widget>
+        </FlowhPanel>
+    </FlowhLayout>
+</UIMeta>

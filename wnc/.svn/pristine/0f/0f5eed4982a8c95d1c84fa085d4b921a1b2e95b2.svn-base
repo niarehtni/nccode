@@ -1,0 +1,62 @@
+package nc.impl.wa.paydata;
+
+import java.io.File;
+import java.util.Iterator;
+import java.util.List;
+
+import nc.fi.arap.pubutil.RuntimeEnv;
+
+import org.dom4j.Attribute;
+import org.dom4j.Document;
+import org.dom4j.DocumentException;
+import org.dom4j.Element;
+import org.dom4j.io.SAXReader;
+
+public class XMLUtils {
+
+	public static String getXmlInfo(String tableName) {
+		SAXReader reader = new SAXReader();
+		String name = "";
+		try {
+			String path = RuntimeEnv.getNCHome() + "/XmlMatch/XmlMatch.xml";
+			Document document = reader.read(new File(path));
+			Element xmle = document.getRootElement();
+			Iterator it = xmle.elementIterator();
+			while (it.hasNext()) {
+				Element xml = (Element) it.next();
+				List<Attribute> list = xml.attributes();
+				String code = xml.attribute("NAME").getValue();
+				if (code.equals(tableName)) {
+					name = xml.attribute("CODE").getValue();
+				}
+			}
+		} catch (DocumentException e) {
+			e.printStackTrace();
+		}
+		return name;
+	}
+
+	public static String getClassInfo(String tableName) {
+		SAXReader reader = new SAXReader();
+		String name = "";
+		try {
+
+			String path = RuntimeEnv.getNCHome() + "/XmlMatch/XmlMatch.xml";
+			Document document = reader.read(new File(path));
+			Element xmle = document.getRootElement();
+			Iterator it = xmle.elementIterator();
+			while (it.hasNext()) {
+				Element xml = (Element) it.next();
+				List<Attribute> list = xml.attributes();
+				String code = xml.attribute("NAME").getValue();
+				if (code.equals(tableName)) {
+					name = xml.attribute("VO").getValue();
+				}
+			}
+		} catch (DocumentException e) {
+			e.printStackTrace();
+		}
+		return name;
+	}
+
+}

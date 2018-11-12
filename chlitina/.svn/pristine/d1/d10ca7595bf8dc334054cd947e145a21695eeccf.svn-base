@@ -1,0 +1,422 @@
+/*     */ package nc.ui.pubapp.uif2app.view;
+/*     */ 
+/*     */ import java.awt.Dimension;
+/*     */ import java.awt.FlowLayout;
+/*     */ import java.beans.PropertyChangeEvent;
+/*     */ import java.beans.PropertyChangeListener;
+		  import java.util.ArrayList;
+		  import java.util.List;
+		  import java.util.Map;
+
+		  import nc.bs.framework.common.NCLocator;
+/*     */ import nc.funcnode.ui.AbstractFunclet;
+/*     */ import nc.funcnode.ui.FuncletContext;
+		  import nc.itf.uap.IUAPQueryBS;
+		  import nc.jdbc.framework.processor.ArrayListProcessor;
+		  import nc.jdbc.framework.processor.ArrayProcessor;
+		  import nc.jdbc.framework.processor.MapListProcessor;
+/*     */ import nc.ui.bd.ref.AbstractRefModel;
+/*     */ import nc.ui.bd.ref.RefValueObject;
+/*     */ import nc.ui.org.ref.OrgVOsDefaultRefModel;
+/*     */ import nc.ui.pub.beans.MessageDialog;
+/*     */ import nc.ui.pub.beans.UILabel;
+/*     */ import nc.ui.pub.beans.UIPanel;
+/*     */ import nc.ui.pub.beans.UIRefPane;
+/*     */ import nc.ui.pub.beans.UITextField;
+/*     */ import nc.ui.pub.beans.ValueChangedEvent;
+/*     */ import nc.ui.pub.beans.ValueChangedListener;
+/*     */ import nc.ui.pubapp.uif2app.PubExceptionHanler;
+/*     */ import nc.ui.pubapp.uif2app.event.EventCurrentThread;
+/*     */ import nc.ui.pubapp.uif2app.event.OrgChangedEvent;
+/*     */ import nc.ui.uif2.IExceptionHandler;
+/*     */ import nc.ui.uif2.UIState;
+/*     */ import nc.ui.uif2.components.IDisplayable;
+/*     */ import nc.ui.uif2.model.AbstractUIAppModel;
+/*     */ import nc.vo.bd.pub.NODE_TYPE;
+/*     */ import nc.vo.ml.AbstractNCLangRes;
+/*     */ import nc.vo.ml.NCLangRes4VoTransl;
+/*     */ import nc.vo.org.orgmodel.OrgTypeVO;
+/*     */ import nc.vo.org.util.OrgRefPubUtil;
+/*     */ import nc.vo.org.util.OrgTypeManager;
+		  import nc.vo.pub.BusinessException;
+/*     */ import nc.vo.pubapp.pattern.exception.ExceptionUtils;
+/*     */ import nc.vo.sm.funcreg.FuncRegisterVO;
+/*     */ import nc.vo.uap.rbac.FuncSubInfo;
+/*     */ import nc.vo.uif2.LoginContext;
+
+		  import org.apache.commons.lang.StringUtils;
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ public class BaseOrgPanel_Org
+/*     */   extends BaseOrgPanel
+/*     */ {
+/*     */   private static final long serialVersionUID = 2710147950980778179L;
+/*     */   UIRefPane refPane;
+/*     */   private transient IExceptionHandler exceptionHandler;
+/*     */   private UILabel label;
+/*     */   private String labelName;
+/*     */   private AbstractUIAppModel model;
+/*     */   private boolean onlyLeafCanSelected;
+/*     */   public static final int DEFAULTORG_NULL = 0;
+/*     */   public static final int DEFAULTORG_SELF = 1;
+/*     */   public static final int DEFAULTORG_INDIVIDUATION = 2;
+/*     */   
+/*     */   public BaseOrgPanel_Org() {}
+/*     */   
+/*  64 */   private int defaultOrgType = 2;
+/*     */   
+/*     */   public int getDefaultOrgType() {
+/*  67 */     return this.defaultOrgType;
+/*     */   }
+/*     */   
+/*     */   public void setDefaultOrgType(int type) {
+/*  71 */     this.defaultOrgType = type;
+/*     */   }
+/*     */   
+/*     */   public String getLabelName() {
+/*  75 */     if (this.labelName == null) {
+/*  76 */       this.labelName = getShowName();
+/*     */     }
+/*  78 */     return this.labelName;
+/*     */   }
+/*     */   
+/*     */   public AbstractUIAppModel getModel() {
+/*  82 */     return this.model;
+/*     */   }
+/*     */   
+/*     */ 
+/*     */ 
+/*     */   public void initUI()
+/*     */   {
+/*  89 */     setLayout(new FlowLayout(0));
+/*  90 */     add(getLabel());
+/*  91 */     add(getRefPane());
+/*     */     
+/*  93 */     setAlt_O();
+/*     */   }
+/*     */   
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */   public boolean isComponentDisplayable()
+/*     */   {
+/* 103 */     return getModel().getContext().getNodeType() == NODE_TYPE.ORG_NODE;
+/*     */   }
+/*     */   
+/*     */   public boolean isEnabled()
+/*     */   {
+/* 108 */     return getRefPane().isEnabled();
+/*     */   }
+/*     */   
+/*     */ 
+/*     */ 
+/*     */   public boolean isOnlyLeafCanSelected()
+/*     */   {
+/* 115 */     return this.onlyLeafCanSelected;
+/*     */   }
+/*     */   
+/*     */   public void requestFocus()
+/*     */   {
+/* 120 */     getRefPane().requestFocus();
+/*     */   }
+/*     */   
+/*     */   public void setEnabled(boolean enabled)
+/*     */   {
+/* 125 */     getRefPane().setEnabled(enabled);
+/*     */   }
+/*     */   
+/*     */   public void setLabelName(String labelName) {
+/* 129 */     this.labelName = labelName;
+/* 130 */     if (this.label != null) {
+/* 131 */       this.label.setText(labelName);
+/*     */       
+/* 133 */       setAlt_O();
+/*     */     }
+/*     */   }
+/*     */   
+/*     */   public void setModel(AbstractUIAppModel model) {
+/* 138 */     this.model = model;
+/*     */   }
+/*     */   
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */   public void setOnlyLeafCanSelected(boolean onlyLeafCanSelected)
+/*     */   {
+/* 146 */     this.onlyLeafCanSelected = onlyLeafCanSelected;
+/*     */   }
+/*     */   
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */   public void setPkOrg(String newPkOrg)
+/*     */   {
+/* 157 */     String oldPk = getRefPane().getRefPK();
+/*     */     
+/*     */ 
+/*     */ 
+/* 161 */     if (newPkOrg == null) {
+/* 162 */       if (oldPk != null) {
+/* 163 */         getRefPane().setPK(newPkOrg);
+/*     */       }
+/*     */     }
+/* 166 */     else if (!newPkOrg.equals(oldPk)) {
+/* 167 */       getRefPane().setPK(newPkOrg);
+/*     */     }
+/* 169 */     String newNewPkOrg = getRefPane().getRefPK();
+/* 170 */     getModel().getContext().setPk_org(newNewPkOrg);
+/*     */     
+/*     */ 
+/*     */ 
+/* 174 */     if (isChanged(oldPk, newNewPkOrg))
+/*     */     {
+/*     */ 
+/*     */ 
+/* 178 */       fireChangedEvent(oldPk, newNewPkOrg);
+/*     */     }
+/*     */   }
+/*     */   
+/*     */   public void setRefPane(UIRefPane newRefPane) {
+/* 183 */     this.refPane = newRefPane;
+/* 184 */     initRefPane();
+/*     */   }
+/*     */   
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */   @Deprecated
+/*     */   public void setType(String type) {}
+/*     */   
+/*     */ 
+/*     */ 
+/*     */   public void stopEditing()
+/*     */   {
+/* 197 */     this.refPane.stopEditing();
+/*     */   }
+/*     */   
+/*     */ 
+/*     */ 
+/*     */   protected UILabel getLabel()
+/*     */   {
+/* 204 */     if (this.label == null) {
+/* 205 */       this.label = new UILabel();
+/* 206 */       this.label.setText(getLabelName());
+/*     */     }
+/* 208 */     return this.label;
+/*     */   }
+/*     */   
+/*     */   public String[] getNeedShowOrgPks() {
+/* 212 */     LoginContext context = getModel().getContext();
+/* 213 */     //String[] orgPKs = context.getFuncInfo().getFuncPermissionPkorgs();
+
+			  List<String> arraylist = null;
+			try {
+				  arraylist = new ArrayList<String>();
+				  IUAPQueryBS iUAPQueryBS = (IUAPQueryBS)NCLocator.getInstance().lookup(IUAPQueryBS.class.getName());   
+		   				//所有法人pk
+						List<Map<String,String>> custlist = (List<Map<String,String>>)iUAPQueryBS. executeQuery("select pk_corp from org_corp",new MapListProcessor());
+						for(Map<String,String> map : custlist){
+							arraylist.add(map.get("pk_corp"));
+						}
+
+				} catch (BusinessException e) {
+					e.printStackTrace();
+				}
+				String[] orgPKs = new String[arraylist.size()];
+				arraylist.toArray(orgPKs);
+/* 215 */     	return orgPKs == null ? new String[0] : orgPKs;
+	
+/*     */   }
+/*     */   
+/*     */   protected UIRefPane getRefPane() {
+/* 219 */     if (this.refPane == null) {
+/* 220 */       this.refPane = new UIRefPane();
+/* 221 */       this.refPane.setRefNodeName(getNodeName());
+/* 222 */       initRefPane();
+/*     */     }
+/* 224 */     return this.refPane;
+/*     */   }
+/*     */   
+/*     */   void exceptionProcess(Exception ex)
+/*     */   {
+/*     */     
+/* 230 */     if (EventCurrentThread.isEmpty()) {
+/* 231 */       getExceptionHandler().handlerExeption(ex);
+/*     */     }
+/*     */     else {
+/* 234 */       ExceptionUtils.wrappException(ex);
+/*     */     }
+/*     */   }
+/*     */   
+/*     */   void fireChangedEvent(String oldPkOrg, String newPkOrg)
+/*     */   {
+/* 240 */     getModel().getContext().setPk_org(newPkOrg);
+/* 241 */     OrgChangedEvent orgChangedEvent = new OrgChangedEvent(oldPkOrg, newPkOrg);
+/* 242 */     getModel().fireEvent(orgChangedEvent);
+/*     */   }
+/*     */   
+/*     */   boolean isChanged(String oldPkOrg, String newPkOrg)
+/*     */   {
+/* 247 */     return !StringUtils.equals(oldPkOrg, newPkOrg);
+/*     */   }
+/*     */   
+/*     */   private IExceptionHandler getExceptionHandler() {
+/* 251 */     if (this.exceptionHandler == null) {
+/* 252 */       this.exceptionHandler = new PubExceptionHanler(this.model.getContext(), false);
+/*     */     }
+/* 254 */     return this.exceptionHandler;
+/*     */   }
+/*     */   
+/*     */   private String getNodeName() {
+/* 258 */     String pk_orgtype = getOrgTypePk();
+/* 259 */    // String name = OrgTypeManager.getInstance().getMainOrgTypeDefaultRefNodeNameByID(pk_orgtype);
+				String name = "法人组织";
+				
+/* 260 */     if ((null == name) && (!"GROUPORGTYPE00000000".equals(pk_orgtype)))
+/*     */     {
+/* 262 */       ExceptionUtils.wrappBusinessException(NCLangRes4VoTransl.getNCLangRes().getStrByID("pubapp_0", "0pubapp-0163"));
+/*     */     }
+/* 264 */     return name;
+/*     */   }
+/*     */   
+/*     */   private String getShowName() {
+/* 268 */     String pk_orgtype = getOrgTypePk();
+/*     */     
+/* 270 */     //String showName = OrgRefPubUtil.getMainOrgTypeDefaultRefShowNameByID(pk_orgtype);
+				String showName = "法人组织";
+/* 271 */     if ((null == showName) && (!"GROUPORGTYPE00000000".equals(pk_orgtype)))
+/*     */     {
+/* 273 */       ExceptionUtils.wrappBusinessException(NCLangRes4VoTransl.getNCLangRes().getStrByID("pubapp_0", "0pubapp-0163"));
+/*     */     }
+/* 275 */     return showName;
+/*     */   }
+/*     */   
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */   private String getOrgTypePk()
+/*     */   {
+/* 283 */     AbstractFunclet abstractFunclet = (AbstractFunclet)this.model.getContext().getEntranceUI();
+/*     */     
+/* 285 */     String orgTypeCode = abstractFunclet.getFuncletContext().getFuncRegisterVO().getOrgtypecode();
+/*     */     
+/*     */ 
+/* 288 */     OrgTypeVO orgTypeVO = OrgTypeManager.getInstance().getOrgTypeByID(orgTypeCode);
+/*     */     
+/* 290 */     return orgTypeVO.getPk_orgtype();
+/*     */   }
+/*     */   
+/*     */   private void initRefPane() {
+/* 294 */     this.refPane.setPreferredSize(new Dimension(200, 20));
+/* 295 */     if (this.refPane.getRefModel() == null)
+/*     */     {
+/*     */ 
+/* 298 */       LoginContext context = getModel().getContext();
+/* 299 */       String[] pkorgs = context.getFuncInfo().getFuncPermissionPkorgs();
+/* 300 */       this.refPane.setRefModel(new OrgVOsDefaultRefModel(pkorgs));
+/*     */     }
+/*     */     else {
+/* 303 */       this.refPane.getRefModel().setFilterPks(getNeedShowOrgPks(), 0);
+/*     */       
+/* 305 */       String filterWhere = " enablestate =2 ";
+/* 306 */       this.refPane.getRefModel().setWherePart(filterWhere);
+/* 307 */       this.refPane.getRefModel().setSealedDataShow(false);
+/*     */     }
+/*     */     
+/* 310 */     this.refPane.setButtonFireEvent(true);
+/* 311 */     this.refPane.setNotLeafSelectedEnabled(!this.onlyLeafCanSelected);
+/*     */     
+/*     */ 
+/* 314 */     final UITextField uiTf = this.refPane.getUITextField();
+/* 315 */     uiTf.setShowMustInputHint(uiTf.isEnabled());
+/* 316 */     uiTf.addPropertyChangeListener(new PropertyChangeListener()
+/*     */     {
+/*     */       public void propertyChange(PropertyChangeEvent evt)
+/*     */       {
+/* 320 */         if ("enabled".equals(evt.getPropertyName())) {
+/* 321 */           Boolean isenable = (Boolean)evt.getNewValue();
+/* 322 */           uiTf.setShowMustInputHint(isenable.booleanValue());
+/*     */         }
+/*     */         
+/*     */       }
+/* 326 */     });
+/* 327 */     this.refPane.addValueChangedListener(new ValueChangedListener()
+/*     */     {
+/*     */       public void valueChanged(ValueChangedEvent event)
+/*     */       {
+/*     */         try {
+/* 332 */           EventCurrentThread.start();
+/*     */           
+/* 334 */           String[] newPks = null;
+/* 335 */           if ((event.getNewValue() instanceof RefValueObject)) {
+/* 336 */             newPks = ((RefValueObject)event.getNewValue()).getPks();
+/*     */ 
+/*     */           }
+/* 339 */           else if ((event.getNewValue() instanceof String[])) {
+/* 340 */             newPks = (String[])event.getNewValue();
+/*     */           }
+/*     */           else {
+/* 343 */             newPks = new String[] { (String)event.getNewValue() };
+/*     */           }
+/*     */           
+/*     */ 
+/*     */ 
+/* 348 */           String newPk = null;
+/* 349 */           if ((newPks != null) && (newPks.length > 0)) {
+/* 350 */             newPk = newPks[0];
+/*     */           }
+/*     */           
+/* 353 */           String oldPk = BaseOrgPanel_Org.this.getModel().getContext().getPk_org();
+/* 354 */           if (BaseOrgPanel_Org.this.isChanged(oldPk, newPk)) {
+/* 355 */             if (BaseOrgPanel_Org.this.getModel().getUiState() == UIState.NOT_EDIT) {
+/* 356 */               BaseOrgPanel_Org.this.fireChangedEvent(oldPk, newPk);
+/*     */ 
+/*     */             }
+/* 359 */             else if (StringUtils.isEmpty(oldPk)) {
+/* 360 */               BaseOrgPanel_Org.this.fireChangedEvent(oldPk, newPk);
+/*     */             } else {
+/* 362 */               int dialogReturn = MessageDialog.showYesNoDlg(BaseOrgPanel_Org.this.refPane, NCLangRes4VoTransl.getNCLangRes().getStrByID("pubapp_0", "0pubapp-0164"), NCLangRes4VoTransl.getNCLangRes().getStrByID("pubapp_0", "0pubapp-0165"), 8);
+/*     */               
+/*     */ 
+/* 365 */               if (4 == dialogReturn) {
+/* 366 */                 BaseOrgPanel_Org.this.fireChangedEvent(oldPk, newPk);
+/*     */               } else {
+/* 368 */                 BaseOrgPanel_Org.this.getRefPane().setPK(oldPk);
+/* 369 */                 BaseOrgPanel_Org.this.getModel().getContext().setPk_org(oldPk);
+/*     */               }
+/*     */             }
+/*     */           }
+/*     */           
+/*     */ 
+/*     */ 
+/* 376 */           EventCurrentThread.end();
+/*     */         }
+/*     */         catch (Exception ex) {
+/* 379 */           BaseOrgPanel_Org.this.exceptionProcess(ex);
+/*     */         }
+/*     */       }
+/*     */     });
+/*     */   }
+/*     */   
+/*     */   private void setAlt_O() {
+/* 386 */     getLabel().setLabelFor(getRefPane().getUITextField());
+/* 387 */     getLabel().setDisplayedMnemonic('O');
+/* 388 */     if ((getLabel().getText() != null) && (getLabel().getText().indexOf("O") == -1)) {
+/* 389 */       getLabel().setText(getLabel().getText() + "(O)");
+/*     */     }
+/*     */   }
+/*     */ }
+

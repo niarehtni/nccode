@@ -1,0 +1,487 @@
+<?xml version="1.0" encoding='UTF-8'?>
+<Widget controllerClazz="nc.bs.hrsms.ta.shift.ctrl.StoreShiftCardViewCtrl" dialog="false" id="main" refId="main" sourcePackage="src/public/">
+    <Attributes>
+        <Attribute>
+            <Key>$QueryTemplate</Key>
+            <Value>
+            </Value>
+        </Attribute>
+    </Attributes>
+    <PageMetas>
+    </PageMetas>
+	<PlugoutDescs>
+        <PlugoutDesc id="closewindow">
+            <PlugoutDescItem clazztype="java.lang.String" name="c_1">
+            </PlugoutDescItem>
+        </PlugoutDesc>
+    </PlugoutDescs>
+    <PluginDescs>
+    </PluginDescs>
+    <Events>
+    	
+       <Event async="true" jsEventClaszz="nc.uap.lfw.core.event.conf.DialogListener" methodName="onBeforeShow" name="beforeShow" onserver="true">
+			<SubmitRule cardSubmit="false" panelSubmit="false" tabSubmit="false">
+				
+			</SubmitRule>
+			<Params>
+				<Param>
+					<Name>dialogEvent</Name>
+					<Value>
+					</Value>
+					<Desc> <![CDATA[nc.uap.lfw.core.event.DialogEvent]]> </Desc>
+				</Param>
+			</Params>
+			<Action>
+			</Action>
+		</Event>
+    </Events>
+    <Models>
+        <Datasets>
+        	<DatasetRelations>
+                <DatasetRelation detailDataset="ds_rt" detailForeignKey="pk_shift" id="hrss_rt_hrss_shoreshift" masterDataset="ta_shoreshift" masterKeyField="pk_shift">
+                </DatasetRelation>
+            </DatasetRelations>
+            <MdDataset caption="班次定义" controlwidgetopeStatus="false" enabled="false" id="ta_shoreshift" lazyLoad="false" notNullBody="false" objMeta="hrta.bdshift" voMeta="nc.vo.bd.shift.ShiftVO">
+                 <FieldRelations>
+                    <FieldRelation id="pk_group_rel" needProcess="true" refDataset="$refds_uap_group" useCache="true">
+                        <MatchFields>
+                            <Field readField="name" writeField="pk_group_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_group" value="pk_group">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_dept_rel" needProcess="true" refDataset="$refds_uap_dept" useCache="true">
+                        <MatchFields>
+                            <Field readField="name" writeField="pk_dept_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_dept" value="pk_dept">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    
+                    <FieldRelation id="creator_rel" needProcess="true" refDataset="$refds_uap_user" useCache="true">
+                        <MatchFields>
+                            <Field readField="user_name" writeField="creator_user_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="cuserid" value="creator">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="modifier_rel" needProcess="true" refDataset="$refds_uap_user" useCache="true">
+                        <MatchFields>
+                            <Field readField="user_name" writeField="modifier_user_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="cuserid" value="modifier">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                </FieldRelations>
+                <Fields>
+                	
+                </Fields>
+                <Events>
+                <Event async="true" jsEventClaszz="nc.uap.lfw.core.event.conf.DatasetListener" methodName="onAfterDataChange" 
+						name="onAfterDataChange" onserver="true">
+						<SubmitRule cardSubmit="false" panelSubmit="false" tabSubmit="false">
+							<Widget cardSubmit="false" id="main" panelSubmit="false" tabSubmit="false">
+								<Dataset id="ta_shoreshift" type="ds_current_line">
+								</Dataset>
+								<Dataset id="ds_rt" type="ds_all_line">
+								</Dataset>
+							</Widget>
+						</SubmitRule>
+						<Params>
+							<Param>
+								<Name>datasetCellEvent</Name>
+								<Value>
+								</Value>
+								<Desc> <![CDATA[nc.uap.lfw.core.event.DatasetCellEvent]]> </Desc>
+							</Param>
+						</Params>
+						<Action>
+						</Action>
+					</Event>
+                  <Event async="true" jsEventClaszz="nc.uap.lfw.core.event.conf.DatasetListener"  methodName="onDataLoad" name="onDataLoad" onserver="true">
+                        <SubmitRule>
+                        </SubmitRule>
+                        <Params>
+                            <Param>
+                                <Name>dataLoadEvent</Name>
+                                <Value>
+                                </Value>
+                                <Desc>                                    <![CDATA[]]>
+                                </Desc>
+                            </Param>
+                        </Params>
+                        <Action>
+                        </Action>
+                    </Event>
+                    <Event async="true" jsEventClaszz="nc.uap.lfw.core.event.conf.DatasetListener"  methodName="onAfterRowSelect" name="onAfterRowSelect" onserver="true">
+                        <SubmitRule>
+                        </SubmitRule>
+                        <Params>
+                            <Param>
+                                <Name>datasetEvent</Name>
+                                <Value>
+                                </Value>
+                                <Desc>                                    <![CDATA[nc.uap.lfw.core.event.DatasetEvent]]>
+                                </Desc>
+                            </Param>
+                        </Params>
+                        <Action>
+                        </Action>
+                    </Event>
+                </Events>
+            </MdDataset>
+            <MdDataset caption="工休时间" controlwidgetopeStatus="true" enabled="false" id="ds_rt" lazyLoad="true" notNullBody="false" objMeta="hrta.bdrt" pageSize="" voMeta="nc.vo.bd.shift.RTVO">
+               <FieldRelations>
+                    <FieldRelation id="pk_group_rel" needProcess="true" refDataset="$refds_uap_group" useCache="true">
+                        <MatchFields>
+                            <Field readField="name" writeField="pk_group_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_group" value="pk_group">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    
+                    <FieldRelation id="pk_org_rel" needProcess="true" refDataset="$refds_uap_org">
+						<MatchFields>
+							<Field readField="name" writeField="pk_org_name">
+							</Field>
+						</MatchFields>
+						<WhereField>
+							<Field key="pk_org" value="pk_org">
+							</Field>
+						</WhereField>
+					</FieldRelation>
+					
+                    <FieldRelation id="creator_rel" needProcess="true" refDataset="$refds_uap_user" useCache="true">
+                        <MatchFields>
+                            <Field readField="user_name" writeField="creator_user_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="cuserid" value="creator">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="modifier_rel" needProcess="true" refDataset="$refds_uap_user" useCache="true">
+                        <MatchFields>
+                            <Field readField="user_name" writeField="modifier_user_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="cuserid" value="modifier">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                </FieldRelations>
+                <Fields>
+                	
+                </Fields>
+                <Events>
+                	<Event async="true" jsEventClaszz="nc.uap.lfw.core.event.conf.DatasetListener" methodName="onAfterDataChange" 
+						name="onAfterDataChange" onserver="true">
+						<SubmitRule cardSubmit="false" panelSubmit="false" tabSubmit="false">
+							<Widget cardSubmit="false" id="main" panelSubmit="false" tabSubmit="false">
+								<Dataset id="ta_shoreshift" type="ds_current_line">
+								</Dataset>
+								<Dataset id="ds_rt" type="ds_all_line">
+								</Dataset>
+							</Widget>
+						</SubmitRule>
+						<Params>
+							<Param>
+								<Name>datasetCellEvent</Name>
+								<Value>
+								</Value>
+								<Desc> <![CDATA[nc.uap.lfw.core.event.DatasetCellEvent]]> </Desc>
+							</Param>
+						</Params>
+						<Action>
+						</Action>
+					</Event>
+                </Events>
+            </MdDataset>
+            <RefMdDataset caption="用户" controlwidgetopeStatus="false" enabled="false" id="$refds_uap_user" lazyLoad="true" notNullBody="false" objMeta="uap.user" voMeta="nc.vo.sm.UserVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset caption="组织_部门" controlwidgetopeStatus="false" enabled="false" id="$refds_uap_dept" lazyLoad="true" notNullBody="false" objMeta="uap.dept" voMeta="nc.vo.dept.DeptVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+             <RefMdDataset caption="组织_集团" controlwidgetopeStatus="false" enabled="false" id="$refds_uap_group" lazyLoad="true" notNullBody="false" objMeta="uap.group" voMeta="nc.vo.org.GroupVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+           <RefMdDataset caption="组织" controlwidgetopeStatus="false" enabled="false" id="$refds_uap_org" lazyLoad="true" notNullBody="false" objMeta="uap.org" voMeta="nc.vo.org.OrgVO">
+				<Fields>
+				</Fields>
+			</RefMdDataset>
+			<RefMdDataset caption="组织_业务单元_人力资源组织" controlwidgetopeStatus="false" enabled="false" id="$refds_uap_hrorg" lazyLoad="true" notNullBody="false" objMeta="uap.hrorg" voMeta="nc.vo.org.HROrgVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            
+        </Datasets>
+        <ComboDatas>
+        	<MDComboDataConf caption="工休时间_开始日期" fullclassName="85f950ce-a2bc-4ccc-8072-2a3d7c93bf7d" id="combo_ds_rt_beginday">
+            </MDComboDataConf>
+            <MDComboDataConf caption="工休时间_结束日期" fullclassName="85f950ce-a2bc-4ccc-8072-2a3d7c93bf7d" id="combo_ds_rt_endday">
+            </MDComboDataConf>
+            <MDComboDataConf caption="班次定义_启用状态" fullclassName="6b533ffa-3e43-4147-8670-ba0f5471fd40" id="combo_ta_shoreshift_enablestate">
+            </MDComboDataConf>
+            <MDComboDataConf caption="班次定义_刷卡开始时间" fullclassName="85f950ce-a2bc-4ccc-8072-2a3d7c93bf7d" id="combo_ta_shoreshift_timebeginday">
+            </MDComboDataConf>
+            <MDComboDataConf caption="班次定义_刷卡结束时间" fullclassName="85f950ce-a2bc-4ccc-8072-2a3d7c93bf7d" id="combo_ta_shoreshift_timeendday">
+            </MDComboDataConf>
+             <MDComboDataConf caption="班次定义_上班时间" fullclassName="85f950ce-a2bc-4ccc-8072-2a3d7c93bf7d" id="combo_ta_shoreshift_beginday">
+            </MDComboDataConf>
+            <MDComboDataConf caption="班次定义_下班时间" fullclassName="85f950ce-a2bc-4ccc-8072-2a3d7c93bf7d" id="combo_ta_shoreshift_endday">
+            </MDComboDataConf>
+            <MDComboDataConf caption="班次定义_单次刷卡类型" fullclassName="15415763-f27e-496c-a547-8a319b2837cb" id="combo_ta_shoreshift_cardtype">
+            </MDComboDataConf>
+             <MDComboDataConf caption="班次定义_夜班开始时间" fullclassName="85f950ce-a2bc-4ccc-8072-2a3d7c93bf7d" id="combo_ta_shoreshift_nightbeginday">
+            </MDComboDataConf>
+            <MDComboDataConf caption="班次定义_夜班结束时间" fullclassName="85f950ce-a2bc-4ccc-8072-2a3d7c93bf7d" id="combo_ta_shoreshift_nightendday">
+            </MDComboDataConf>
+            
+            <DynamicComboData caption="计算矿工类型" className="nc.bs.hrsms.ta.shift.lsnr.CalTypeComboLoader" id="combo_ta_shoreshift_isautokg">
+            </DynamicComboData>
+            <MDComboDataConf caption="班次定义_最晚上班时间" fullclassName="85f950ce-a2bc-4ccc-8072-2a3d7c93bf7d" id="combo_ta_shoreshift_latestbeginday">
+            </MDComboDataConf>
+            <MDComboDataConf caption="班次定义_最早下班时间" fullclassName="85f950ce-a2bc-4ccc-8072-2a3d7c93bf7d" id="combo_ta_shoreshift_earliestendday">
+            </MDComboDataConf>
+            
+		</ComboDatas> 
+        <RefNodes>
+          
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" hrOrgs="false" i18nName="" id="refnode_ds_rt_pk_group_name" langDir="" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" read="false" readDs="masterDs" readFields="pk_group,name" refId="" refcode="集团(所有)" refnodeDelegator="" relationRefNodeId="" selLeafOnly="false" text="" usePower="false" writeDs="ds_rt" writeFields="pk_group,pk_group_name">
+            </NCRefNode>
+           <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" hrOrgs="false" i18nName="" id="refnode_ds_rt_pk_org_name" langDir="" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" read="false" readDs="masterDs" readFields="pk_hrorg,name" refId="" refcode="人力资源组织(所有)" refnodeDelegator="" relationRefNodeId="" selLeafOnly="false" text="" usePower="false" writeDs="ds_rt" writeFields="pk_org,pk_org_name">
+            </NCRefNode>
+            
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" hrOrgs="false" i18nName="" id="refnode_ta_shoreshift_creator_user_name" langDir="" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" read="false" readDs="masterDs" readFields="cuserid,user_name" refId="" refcode="用户" refnodeDelegator="" relationRefNodeId="" selLeafOnly="false" text="" usePower="false" writeDs="ta_shoreshift" writeFields="creator,creator_user_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" hrOrgs="false" i18nName="" id="refnode_ta_shoreshift_modifier_user_name" langDir="" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" read="false" readDs="masterDs" readFields="cuserid,user_name" refId="" refcode="用户" refnodeDelegator="" relationRefNodeId="" selLeafOnly="false" text="" usePower="false" writeDs="ta_shoreshift" writeFields="modifier,modifier_user_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" hrOrgs="false" i18nName="" id="refnode_ta_shoreshift_pk_group_name" langDir="" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" read="false" readDs="masterDs" readFields="pk_group,name" refId="" refcode="集团" refnodeDelegator="" relationRefNodeId="" selLeafOnly="false" text="" usePower="false" writeDs="ta_shoreshift" writeFields="pk_group,pk_group_name">
+            </NCRefNode>
+             <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" hrOrgs="false" i18nName="" id="refnode_ta_shoreshift_pk_org_name" langDir="" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" read="false" readDs="masterDs" readFields="pk_hrorg,name" refId="" refcode="人力资源组织(所有)" refnodeDelegator="" relationRefNodeId="" selLeafOnly="false" text="" usePower="false" writeDs="ta_shoreshift" writeFields="pk_org,pk_org_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" hrOrgs="false" i18nName="" id="refnode_ta_shoreshift_pk_dept_name" langDir="" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" read="false" readDs="masterDs" readFields="pk_dept,name" refId="" refcode="部门" refnodeDelegator="" relationRefNodeId="" selLeafOnly="false" text="" usePower="false" writeDs="ta_shoreshift" writeFields="pk_dept,pk_dept_name">
+            </NCRefNode>
+           <!-- refnode_ta_shoreshift_pk_dept_name-->
+        </RefNodes>
+    </Models>
+    <Components>
+        <FormComp caption="基本信息" columnCount="3" dataset="ta_shoreshift" eleWidth="200" ellipsis="false" enabled="true" id="base_form" labelMinWidth="0" renderType="1" rowHeight="22" visible="true">
+            
+            <Element allowExtendValue="false" attachNext="false" canUpload="false" colSpan="1" editMin="true" editSec="true" editable="true" editorType="StringText" enabled="true" field="pk_shift" height="" i18nName="" id="pk_shift" imageOnly="false" langDir="" needNullOption="false" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" showLabel="true" text="主键" toolbarType="Custom" visible="false" width="">
+            </Element>
+            <Element allowExtendValue="false" attachNext="false" canUpload="false" colSpan="1" editMin="true" editSec="true" editable="true" editorType="StringText" enabled="true" field="code" height="" i18nName="" id="code" imageOnly="false" langDir="" needNullOption="false" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" showLabel="true" text="班次编码" toolbarType="Custom" visible="true" width="">
+            </Element>
+            <Element allowExtendValue="false" attachNext="false" canUpload="false" colSpan="1" editMin="true" editSec="true" editable="true" editorType="StringText" enabled="true" field="name" height="" i18nName="" id="name" imageOnly="false" langDir="" needNullOption="false" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" showLabel="true" text="名称" toolbarType="Custom" visible="true" width="">
+            </Element>
+             <Element allowExtendValue="false" attachNext="false" canUpload="false" colSpan="1" editMin="true" editSec="true" editable="true" editorType="ComboBox" enabled="false" field="enablestate" height="" i18nName="" id="enablestate" imageOnly="false" langDir="" needNullOption="false" nextLine="false" nullAble="true" refComboData="combo_ta_shoreshift_enablestate" rowSpan="1" selectOnly="true" showLabel="true" text="启用状态" toolbarType="Custom" visible="true" width="">
+            </Element>
+            
+            <Element allowExtendValue="false" attachNext="false" canUpload="false" colSpan="1" editMin="true" editSec="true" editable="true" editorType="StringText" enabled="true" field="pk_group" height="" i18nName="" id="pk_group" imageOnly="false" langDir="" needNullOption="false" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" showLabel="true" text="所属集团" toolbarType="Custom" visible="false" width="">
+            </Element>
+            <Element allowExtendValue="false" attachNext="false" canUpload="false" colSpan="1" editMin="true" editSec="true" editable="true" editorType="Reference" enabled="true" field="pk_group_name" height="" i18nName="" id="pk_group_name" imageOnly="false" needNullOption="false" nextLine="false" nullAble="true" refNode="refnode_ta_shoreshift_pk_group_name" rowSpan="1" selectOnly="true" showLabel="true" text="所属集团" toolbarType="Custom" visible="false" width="">
+            </Element>
+            <Element allowExtendValue="false" attachNext="false" canUpload="false" colSpan="1" editMin="true" editSec="true" editable="true" editorType="StringText" enabled="true" field="pk_org" height="" i18nName="" id="pk_org" imageOnly="false" langDir="" needNullOption="false" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" showLabel="true" text="所属组织" toolbarType="Custom" visible="false" width="">
+            </Element>
+            <Element allowExtendValue="false" attachNext="false" canUpload="false" colSpan="1" editMin="true" editSec="true" editable="true" editorType="Reference" enabled="true" field="pk_org_name" height="" i18nName="" id="pk_org_name" imageOnly="false" needNullOption="false" nextLine="false" nullAble="true" refNode="refnode_ta_shoreshift_pk_org_name" rowSpan="1" selectOnly="true" showLabel="true" text="所属组织" toolbarType="Custom" visible="false" width="">
+            </Element>
+             <Element allowExtendValue="false" attachNext="false" canUpload="false" colSpan="1" editMin="true" editSec="true" editable="true" editorType="DateTimeText" enabled="true" field="creationtime" height="" i18nName="" id="creationtime" imageOnly="false" langDir="" needNullOption="false" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" showLabel="true" text="创建时间" toolbarType="Custom" visible="false" width="">
+            </Element>
+            <Element allowExtendValue="false" attachNext="false" canUpload="false" colSpan="1" editMin="true" editSec="true" editable="true" editorType="StringText" enabled="true" field="creator" height="" i18nName="" id="creator" imageOnly="false" langDir="" needNullOption="false" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" showLabel="true" text="创建人" toolbarType="Custom" visible="false" width="">
+            </Element>
+            <Element allowExtendValue="false" attachNext="false" canUpload="false" colSpan="1" editMin="true" editSec="true" editable="true" editorType="Reference" enabled="true" field="creator_user_name" height="" i18nName="" id="creator_user_name" imageOnly="false" needNullOption="false" nextLine="false" nullAble="true" refNode="refnode_ta_shoreshift_creator_user_name" rowSpan="1" selectOnly="true" showLabel="true" text="创建人" toolbarType="Custom" visible="false" width="">
+            </Element>
+            <Element allowExtendValue="false" attachNext="false" canUpload="false" colSpan="1" editMin="true" editSec="true" editable="true" editorType="DateTimeText" enabled="true" field="modifiedtime" height="" i18nName="" id="modifiedtime" imageOnly="false" langDir="" needNullOption="false" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" showLabel="true" text="修改时间" toolbarType="Custom" visible="false" width="">
+            </Element>
+            <Element allowExtendValue="false" attachNext="false" canUpload="false" colSpan="1" editMin="true" editSec="true" editable="true" editorType="StringText" enabled="true" field="modifier" height="" i18nName="" id="modifier" imageOnly="false" langDir="" needNullOption="false" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" showLabel="true" text="修改人" toolbarType="Custom" visible="false" width="">
+            </Element>
+            <Element allowExtendValue="false" attachNext="false" canUpload="false" colSpan="1" editMin="true" editSec="true" editable="true" editorType="Reference" enabled="true" field="modifier_user_name" height="" i18nName="" id="modifier_user_name" imageOnly="false" needNullOption="false" nextLine="false" nullAble="true" refNode="refnode_ta_shoreshift_modifier_user_name" rowSpan="1" selectOnly="true" showLabel="true" text="修改人" toolbarType="Custom" visible="false" width="">
+            </Element>
+            
+            <Element allowExtendValue="false" attachNext="false" canUpload="false" colSpan="1" editMin="true" editSec="true" editable="true" editorType="StringText" enabled="true" field="pk_dept" height="" i18nName="" id="pk_dept" imageOnly="false" langDir="" needNullOption="false" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" showLabel="true" text="部门" toolbarType="Custom" visible="false" width="">
+            </Element>
+            <Element allowExtendValue="false" attachNext="false" canUpload="false" colSpan="1" editMin="true" editSec="true" editable="true" editorType="Reference" enabled="true" field="pk_dept_name" height="" i18nName="" id="pk_dept_name" imageOnly="false" needNullOption="false" nextLine="false" nullAble="true" refNode="refnode_ta_shoreshift_pk_dept_name" rowSpan="1" selectOnly="true" showLabel="true" text="部门" toolbarType="Custom" visible="false" width="">
+            </Element>
+        </FormComp>
+        <FormComp caption="作息时间规则" columnCount="4" dataset="ta_shoreshift" eleWidth="130"  ellipsis="false" enabled="true" id="zxsj_form" labelMinWidth="0" renderType="1" rowHeight="22" visible="true">
+            <Element allowExtendValue="false" attachNext="false" canUpload="false" colSpan="1" editMin="true" editSec="true" editable="true" editorType="ComboBox" enabled="true" field="timebeginday" height="" i18nName="" id="timebeginday" imageOnly="false" langDir="" needNullOption="false" nextLine="false" nullAble="true" refComboData="combo_ta_shoreshift_timebeginday" rowSpan="1" selectOnly="true" showLabel="true" text="刷卡开始时间" toolbarType="Custom" visible="true" width="">
+            </Element>
+            <Element allowExtendValue="false" attachNext="false" canUpload="false" colSpan="1" editMin="true" editSec="true" editable="true" editorType="StringText" enabled="true" field="timebegintime" height="" i18nName="" id="timebegintime" imageOnly="false" langDir="" needNullOption="false" nextLine="false" nullAble="false" rowSpan="1" selectOnly="true" showLabel="true" text="" toolbarType="Custom" visible="true" width="">
+            </Element>
+            <Element allowExtendValue="false" attachNext="false" canUpload="false" colSpan="1" editMin="true" editSec="true" editable="true" editorType="ComboBox" enabled="true" field="timeendday" height="" i18nName="" id="timeendday" imageOnly="false" langDir="" needNullOption="false" nextLine="false" nullAble="true" refComboData="combo_ta_shoreshift_timeendday" rowSpan="1" selectOnly="true" showLabel="true" text="刷卡结束时间" toolbarType="Custom" visible="true" width="">
+            </Element>
+            <Element allowExtendValue="false" attachNext="false" canUpload="false" colSpan="1" editMin="true" editSec="true" editable="true" editorType="StringText" enabled="true" field="timeendtime" height="" i18nName="" id="timeendtime" imageOnly="false" langDir="" needNullOption="false" nextLine="false" nullAble="false" rowSpan="1" selectOnly="true" showLabel="true" text="" toolbarType="Custom" visible="true" width="">
+            </Element>
+            <Element attachNext="false" colSpan="2" editable="true" editorType="CheckBox" enabled="true" field="isotflexible" height="" i18nName="" id="isotflexible" imageOnly="false" langDir="" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" text="上下班是否弹性" toolbarType="Custom" visible="true" width="">
+			</Element>
+			<Element allowExtendValue="false" attachNext="false" canUpload="false" colSpan="2" editMin="true" editSec="true" editable="true" editorType="DecimalText" enabled="false" field="gzsj" height="" i18nName="" id="gzsj" imageOnly="false" langDir="" needNullOption="false" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" showLabel="true" text="工作时长(小时)" toolbarType="Custom" visible="true" width="120">
+            </Element>
+            
+            <Element allowExtendValue="false" attachNext="false" canUpload="false" colSpan="1" editMin="true" editSec="true" editable="true" editorType="IntegerText" enabled="false" field="worklen" height="" i18nName="" id="worklen" imageOnly="false" langDir="" needNullOption="false" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" showLabel="true" text="上下班时长(分钟)" toolbarType="Custom" visible="false" width="120">
+            </Element>
+            
+            <Element allowExtendValue="false" attachNext="false" canUpload="false" colSpan="1" editMin="true" editSec="true" editable="true" editorType="ComboBox" enabled="true" field="beginday" height="" i18nName="" id="beginday" imageOnly="false" langDir="" needNullOption="false" nextLine="false" nullAble="true" refComboData="combo_ta_shoreshift_beginday" rowSpan="1" selectOnly="true" showLabel="true" text="上班时间" toolbarType="Custom" visible="true" width="">
+            </Element>
+            <Element allowExtendValue="false" attachNext="false" canUpload="false" colSpan="1" editMin="true" editSec="true" editable="true" editorType="StringText" enabled="true" field="begintime" height="" i18nName="" id="begintime" imageOnly="false" langDir="" needNullOption="false" nextLine="false" nullAble="false" rowSpan="1" selectOnly="true" showLabel="true" text="" toolbarType="Custom" visible="true" width="">
+            </Element>
+            <Element allowExtendValue="false" attachNext="false" canUpload="false" colSpan="1" editMin="true" editSec="true" editable="true" editorType="ComboBox" enabled="true" field="latestbeginday" height="" i18nName="" id="latestbeginday" imageOnly="false" langDir="" needNullOption="false" nextLine="false" nullAble="true" refComboData="combo_ta_shoreshift_latestbeginday" rowSpan="1" selectOnly="true" showLabel="true" text="最晚上班时间" toolbarType="Custom" visible="false" width="">
+            </Element>
+            <Element allowExtendValue="false" attachNext="false" canUpload="false" colSpan="1" editMin="true" editSec="true" editable="true" editorType="StringText" enabled="true" field="latestbegintime" height="" i18nName="" id="latestbegintime" imageOnly="false" langDir="" needNullOption="false" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" showLabel="true" text="" toolbarType="Custom" visible="false" width="">
+            </Element>
+            <Element allowExtendValue="false" attachNext="false" canUpload="false" colSpan="1" editMin="true" editSec="true" editable="true" editorType="ComboBox" enabled="true" field="earliestendday" height="" i18nName="" id="earliestendday" imageOnly="false" langDir="" needNullOption="false" nextLine="false" nullAble="true" refComboData="combo_ta_shoreshift_earliestendday" rowSpan="1" selectOnly="true" showLabel="true" text="最早下班时间" toolbarType="Custom" visible="false" width="">
+            </Element>
+            <Element allowExtendValue="false" attachNext="false" canUpload="false" colSpan="1" editMin="true" editSec="true" editable="true" editorType="StringText" enabled="true" field="earliestendtime" height="" i18nName="" id="earliestendtime" imageOnly="false" langDir="" needNullOption="false" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" showLabel="true" text="" toolbarType="Custom" visible="false" width="">
+            </Element>
+            <Element allowExtendValue="false" attachNext="false" canUpload="false" colSpan="1" editMin="true" editSec="true" editable="true" editorType="ComboBox" enabled="true" field="endday" height="" i18nName="" id="endday" imageOnly="false" langDir="" needNullOption="false" nextLine="false" nullAble="true" refComboData="combo_ta_shoreshift_endday" rowSpan="1" selectOnly="true" showLabel="true" text="下班时间" toolbarType="Custom" visible="true" width="">
+            </Element>
+            <Element allowExtendValue="false" attachNext="false" canUpload="false" colSpan="1" editMin="true" editSec="true" editable="true" editorType="StringText" enabled="true" field="endtime" height="" i18nName="" id="endtime" imageOnly="false" langDir="" needNullOption="false" nextLine="false" nullAble="false" rowSpan="1" selectOnly="true" showLabel="true" text="" toolbarType="Custom" visible="true" width="">
+            </Element>
+            
+         <!--   <Element allowExtendValue="false" attachNext="false" canUpload="false" colSpan="1" editMin="true" editSec="true" editable="true" editorType="ComboBox" enabled="true" field="beginday" height="" i18nName="" id="beginday" imageOnly="false" langDir="" needNullOption="false" nextLine="false" nullAble="true" refComboData="combo_ta_shoreshift_beginday" rowSpan="1" selectOnly="true" showLabel="true" text="最早上班时间" toolbarType="Custom" visible="false" width="">
+            </Element>
+            <Element allowExtendValue="false" attachNext="false" canUpload="false" colSpan="1" editMin="true" editSec="true" editable="true" editorType="StringText" enabled="true" field="begintime" height="" i18nName="" id="begintime" imageOnly="false" langDir="" needNullOption="false" nextLine="false" nullAble="false" rowSpan="1" selectOnly="true" showLabel="true" text="" toolbarType="Custom" visible="false" width="">
+            </Element>-->
+            
+            
+            <!--<Element allowExtendValue="false" attachNext="false" canUpload="false" colSpan="1" editMin="true" editSec="true" editable="true" editorType="ComboBox" enabled="true" field="endday" height="" i18nName="" id="endday" imageOnly="false" langDir="" needNullOption="false" nextLine="false" nullAble="true" refComboData="combo_ta_shoreshift_endday" rowSpan="1" selectOnly="true" showLabel="true" text="最晚下班时间" toolbarType="Custom" visible="false" width="">
+            </Element>
+            <Element allowExtendValue="false" attachNext="false" canUpload="false" colSpan="1" editMin="true" editSec="true" editable="true" editorType="StringText" enabled="true" field="endtime" height="" i18nName="" id="endtime" imageOnly="false" langDir="" needNullOption="false" nextLine="false" nullAble="false" rowSpan="1" selectOnly="true" showLabel="true" text="" toolbarType="Custom" visible="false" width="">
+            </Element>-->
+            
+            <Element attachNext="false" colSpan="1" editable="true" editorType="CheckBox" enabled="true" field="issinglecard" height="" i18nName="" id="issinglecard" imageOnly="false" langDir="" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" text="支持单次刷卡" toolbarType="Custom" visible="true" width="">
+			</Element>
+            <Element allowExtendValue="false" attachNext="false" canUpload="false" colSpan="1" editMin="true" editSec="true" editable="true" editorType="ComboBox" enabled="false" field="cardtype" height="" i18nName="" id="cardtype" imageOnly="false" langDir="" needNullOption="false" nextLine="false" nullAble="true" refComboData="combo_ta_shoreshift_cardtype" rowSpan="1" selectOnly="true" showLabel="true" text="" toolbarType="Custom" visible="true" width="120">
+            </Element>
+            <Element attachNext="false" colSpan="2" editable="true" editorType="CheckBox" enabled="true" field="isrttimeflexible" height="" i18nName="" id="isrttimeflexible" imageOnly="false" langDir="" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" text="工休时间弹性" toolbarType="Custom" visible="true" width="">
+			</Element>
+			<Element attachNext="false" colSpan="4" editable="true" editorType="CheckBox" enabled="true" field="includenightshift" height="" i18nName="" id="includenightshift" imageOnly="false" langDir="" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" text="夜班" toolbarType="Custom" visible="true" width="">
+			</Element>
+			
+			 <Element allowExtendValue="false" attachNext="false" canUpload="false" colSpan="1" editMin="true" editSec="true" editable="true" editorType="ComboBox" enabled="false" field="nightbeginday" height="" i18nName="" id="nightbeginday" imageOnly="false" langDir="" needNullOption="false" nextLine="false" nullAble="true" refComboData="combo_ta_shoreshift_nightbeginday" rowSpan="1" selectOnly="true" showLabel="true" text="夜班开始时间" toolbarType="Custom" visible="true" width="">
+            </Element>
+            <Element allowExtendValue="false" attachNext="false" canUpload="false" colSpan="1" editMin="true" editSec="true" editable="true" editorType="StringText" enabled="false" field="nightbegintime" height="" i18nName="" id="nightbegintime" imageOnly="false" langDir="" needNullOption="false" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" showLabel="true" text="" toolbarType="Custom" visible="true" width="">
+            </Element>
+            <Element allowExtendValue="false" attachNext="false" canUpload="false" colSpan="1" editMin="true" editSec="true" editable="true" editorType="ComboBox" enabled="false" field="nightendday" height="" i18nName="" id="nightendday" imageOnly="false" langDir="" needNullOption="false" nextLine="false" nullAble="true" refComboData="combo_ta_shoreshift_nightendday" rowSpan="1" selectOnly="true" showLabel="true" text="夜班结束时间" toolbarType="Custom" visible="true" width="">
+            </Element>
+            <Element allowExtendValue="false" attachNext="false" canUpload="false" colSpan="1" editMin="true" editSec="true" editable="true" editorType="StringText" enabled="false" field="nightendtime" height="" i18nName="" id="nightendtime" imageOnly="false" langDir="" needNullOption="false" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" showLabel="true" text="" toolbarType="Custom" visible="true" width="">
+            </Element>
+        </FormComp>
+        <GridComp autoRowHeight="false" canCopy="true" caption="工休时间" checkBoxModel="1" dataset="ds_rt" editable="true" enabled="true" expandTree="false" id="rt_grid" multiSelect="false" multiSelectShow="false" onPaste="" pagenationTop="false" reference="false" selfDefImageBtnRender="" showColInfo="false" showForm="false" showHeader="true" showImageBtn="false" showNumCol="false" showSumRow="false" showTree="true" sortable="true" visible="true">
+            
+            <Column autoExpand="false" dataType="Integer" editable="true" editorType="IntegerText" field="timeid" fixedHeader="false" i18nName="" id="timeid" imageOnly="false" langDir="" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="序号" textAlign="left" visible="true" width="20">
+            </Column>
+            <Column autoExpand="false" dataType="Integer" editable="true" editorType="ComboBox" field="beginday" fixedHeader="false" i18nName="" id="beginday" imageOnly="false" langDir="" nullAble="true" refComboData="combo_ds_rt_beginday" renderType="ComboRender" showCheckBox="true" sortable="true" sumCol="false" text="开始日期" textAlign="right" visible="true" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="begintime" fixedHeader="false" i18nName="" id="begintime" imageOnly="false" langDir="" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="开始时间" textAlign="left" visible="true" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="Integer" editable="true" editorType="ComboBox" field="endday" fixedHeader="false" i18nName="" id="endday" imageOnly="false" langDir="" nullAble="true" refComboData="combo_ds_rt_endday" renderType="ComboRender" showCheckBox="true" sortable="true" sumCol="false" text="结束日期" textAlign="right" visible="true" width="120">
+            </Column>
+            <!--<Column autoExpand="false" dataType="Integer" editable="true" editorType="ComboBox" field="endday" fixedHeader="false" i18nName="" id="endday" imageOnly="false" langDir="" nullAble="true" refComboData="combo_ds_rt_endday" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="结束日期" textAlign="right" visible="true" width="120">
+            </Column>-->
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="endtime" fixedHeader="false" i18nName="" id="endtime" imageOnly="false" langDir="" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="结束时间" textAlign="left" visible="true" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="UFBoolean" editable="true" editorType="CheckBox" field="checkflag" fixedHeader="false" i18nName="" id="checkflag" imageOnly="false" nullAble="true" renderType="BooleanRender" showCheckBox="false" sortable="true" sumCol="false" text="是否需要刷卡" textAlign="center" visible="true" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="UFDouble" editable="true" editorType="DecimalText" field="resttime" fixedHeader="false" i18nName="" id="resttime" imageOnly="false" langDir="" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="休息时长" textAlign="left" visible="true" width="120">
+            </Column>
+            
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="pk_group" fixedHeader="false" i18nName="" id="pk_group" imageOnly="false" nullAble="false" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="集团主键" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="Reference" field="pk_group_name" fixedHeader="false" i18nName="" id="pk_group_name" imageOnly="false" nullAble="true" refNode="refnode_ds_rt_pk_group_name" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="集团主键" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="pk_org" fixedHeader="false" i18nName="" id="pk_org" imageOnly="false" nullAble="false" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="组织主键" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="Reference" field="pk_org_name" fixedHeader="false" i18nName="" id="pk_org_name" imageOnly="false" nullAble="true" refNode="refnode_ds_rt_pk_org_name" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="组织主键" textAlign="left" visible="false" width="120">
+            </Column>
+            
+        </GridComp>
+         <FormComp caption="迟到早退规则" columnCount="2" dataset="ta_shoreshift" eleWidth="260" ellipsis="false" enabled="true" id="lateleave_form" labelMinWidth="0" renderType="1" rowHeight="22" visible="true">
+         	<Element attachNext="false" colSpan="1" dataType="UFDouble" editable="true" editorType="DecimalText" enabled="true" field="allowlate" height="" i18nName="" id="allowlate" imageOnly="false" langDir="" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" text="允许迟到时限(分钟)" toolbarType="Custom" visible="true" width="120">
+            </Element>
+            <Element attachNext="false" colSpan="1" dataType="UFDouble" editable="true" editorType="DecimalText" enabled="true" field="largelate" height="" i18nName="" id="largelate" imageOnly="false" langDir="" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" text="最长迟到时限(分钟)" toolbarType="Custom" visible="true" width="120">
+            </Element>
+            <Element attachNext="false" colSpan="1" dataType="UFDouble" editable="true" editorType="DecimalText" enabled="true" field="allowearly" height="" i18nName="" id="allowearly" imageOnly="false" langDir="" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" text="允许早退时限(分钟)" toolbarType="Custom" visible="true" width="120">
+            </Element>
+            <Element attachNext="false" colSpan="1" dataType="UFDouble" editable="true" editorType="DecimalText" enabled="true" field="largeearly" height="" i18nName="" id="largeearly" imageOnly="false" langDir="" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" text="最长早退时限(分钟)" toolbarType="Custom" visible="true" width="120">
+            </Element>
+            <Element allowExtendValue="false" attachNext="false" colSpan="1" dataType="String" editable="true" editorType="RadioGroup" enabled="true" field="isautokg" height="" i18nName="" id="isautokg" imageOnly="false" langDir="" nextLine="true" nullAble="true" refComboData="combo_ta_shoreshift_isautokg" rowSpan="1" selectOnly="true" text="当迟到或早退时长超过允许最长时限时" toolbarType="Custom" visible="true" width="">
+            </Element>
+            <Element attachNext="false" colSpan="1" dataType="UFDouble" editable="true" editorType="DecimalText" enabled="false" field="kghours" height="" i18nName="" id="kghours" imageOnly="false" langDir="" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" text="矿工时长(小时)" toolbarType="Custom" visible="true" width="120">
+            </Element>
+            <Element attachNext="false" colSpan="2" editable="true" editorType="CheckBox" enabled="true" field="isallowout" height="" i18nName="" id="isallowout" imageOnly="false" langDir="" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" text="中途是否允许外出" toolbarType="Custom" visible="true" width="">
+			</Element>
+         </FormComp>
+         <FormComp caption="加班规则" columnCount="2" dataset="ta_shoreshift" eleWidth="185" ellipsis="false" enabled="true" id="overtime_form" labelMinWidth="0" renderType="1" rowHeight="22" visible="true">
+         	<Element attachNext="false" colSpan="2" editable="true" editorType="CheckBox" enabled="true" field="useovertmrule" height="" i18nName="" id="useovertmrule" imageOnly="false" langDir="" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" text="下班延时处理规则" toolbarType="Custom" visible="true" width="">
+			</Element>
+			<Element attachNext="false" colSpan="1" dataType="UFDouble" editable="true" editorType="DecimalText" enabled="false" field="overtmbeyond" height="" i18nName="" id="overtmbeyond" imageOnly="false" langDir="" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" text="延时多久计为加班(分钟)" toolbarType="Custom" visible="true" width="">
+            </Element>
+            <Element attachNext="false" colSpan="1" dataType="UFDouble" editable="true" editorType="DecimalText" enabled="false" field="overtmbegin" height="" i18nName="" id="overtmbegin" imageOnly="false" langDir="" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" text="延时多久加班计时开始(分钟)" toolbarType="Custom" visible="true" width="">
+            </Element>
+            
+            <Element attachNext="false" colSpan="2" editable="true" editorType="CheckBox" enabled="true" field="useontmrule" height="" i18nName="" id="useontmrule" imageOnly="false" langDir="" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" text="提前上班处理规则" toolbarType="Custom" visible="true" width="">
+			</Element>
+			<Element attachNext="false" colSpan="1" dataType="UFDouble" editable="true" editorType="DecimalText" enabled="false" field="ontmbeyond" height="" i18nName="" id="ontmbeyond" imageOnly="false" langDir="" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" text="提前多长计为加班(分钟)" toolbarType="Custom" visible="true" width="">
+            </Element>
+            <Element attachNext="false" colSpan="1" dataType="UFDouble" editable="true" editorType="DecimalText" enabled="false" field="ontmend" height="" i18nName="" id="ontmend" imageOnly="false" langDir="" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" text="提前多久加班计时截止(分钟)" toolbarType="Custom" visible="true" width="">
+            </Element>
+         </FormComp>
+    </Components>
+    <Menus>
+        <MenuBarComp id="menubar">
+            <MenuItem id="save" modifiers="2" showModel="1" text="保存">
+                <Events>
+                    <Event async="true" methodName="onSave" name="onclick" onserver="true">
+                        <SubmitRule cardSubmit="false" panelSubmit="false" tabSubmit="false">
+							<Widget cardSubmit="false" id="main" panelSubmit="false" tabSubmit="false">
+								<Dataset id="ta_shoreshift" type="ds_current_line">
+								</Dataset>
+								<Dataset id="ds_rt" type="ds_all_line">
+								</Dataset>
+							</Widget>
+						</SubmitRule>
+						<Params>
+							<Param>
+								<Name>mouseEvent</Name>
+								<Value>
+								</Value>
+								<Desc> <![CDATA[]]> </Desc>
+							</Param>
+						</Params>
+						<Action>
+						</Action>
+                    </Event>
+                </Events>
+            </MenuItem>
+            <MenuItem id="cancel" modifiers="2" showModel="1" text="取消">
+                <Events>
+                    <Event async="true" methodName="onCancel" name="onclick" onserver="true">
+                        <Action>
+                        </Action>
+                    </Event>
+                </Events>
+            </MenuItem>
+        </MenuBarComp>
+    </Menus>
+</Widget>

@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<formula-array>
+<!--formula>
+  <customType>0</customType>
+  <functionName>trimzero</functionName>
+  <functionClass>nc.vo.pub.formulaset.function.TrimZero</functionClass>
+</formula-->
+<formula>
+  <customType>9</customType>
+  <functionName>directsum</functionName>
+  <functionClass>nc.ui.hr.formula.func.HrDigitThreeParaFunc</functionClass>
+</formula>
+<formula>
+  <customType>9</customType>
+  <functionName>directcount</functionName>
+  <functionClass>nc.ui.hr.formula.func.HrDigitTwoParaFunc</functionClass>
+</formula>
+<formula>
+  <customType>9</customType>
+  <functionName>previousdayvalue</functionName>
+  <functionClass>nc.ui.hr.formula.func.HrDigitTwoParaFunc</functionClass>
+</formula>
+
+<formula>
+  <customType>9</customType>
+  <functionName>curwkday</functionName>
+  <functionClass>nc.ui.hr.formula.func.HrDigitFunc</functionClass>
+</formula>
+
+<formula>
+  <customType>9</customType>
+  <functionName>weekday</functionName>
+  <functionClass>nc.ui.hr.formula.func.HrDigitOneParaFunc</functionClass>
+</formula>
+
+<formula>
+  <customType>9</customType>
+  <functionName>curhlday</functionName>
+  <functionClass>nc.ui.hr.formula.func.HrDigitFunc</functionClass>
+</formula>
+
+<formula>
+  <customType>9</customType>
+  <functionName>holiday</functionName>
+  <functionClass>nc.ui.hr.formula.func.HrDigitOneParaFunc</functionClass>
+</formula>
+
+<formula>
+  <customType>9</customType>
+  <functionName>gxdays</functionName>
+  <functionClass>nc.ui.hr.formula.func.HrDigitTwoParaFunc</functionClass>
+</formula>
+<formula>
+  <customType>9</customType>
+  <functionName>leavedays</functionName>
+  <functionClass>nc.ui.hr.formula.func.HrDigitTwoParaFunc</functionClass>
+</formula>
+
+<!--部分工时年假比例 yejk 2018-09-18 -->
+<formula>
+  <customType>9</customType>
+  <functionName>partWHLeavePercent</functionName>
+  <functionClass>nc.ui.hr.formula.func.PartWHLeavePercentParaFunc</functionClass>
+</formula>
+
+</formula-array>

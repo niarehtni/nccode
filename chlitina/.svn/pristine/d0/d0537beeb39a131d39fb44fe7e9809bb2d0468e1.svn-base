@@ -1,0 +1,54 @@
+package nc.itf.hr.hi;
+
+import nc.md.model.IEnumValue;
+import nc.md.model.impl.MDEnum;
+
+/**
+ * MOD 张恒
+ * 劳健保团保字段枚举
+ * 2018/9/25
+ * */
+public class LabourHealthRegimentInsuranceEnum extends MDEnum {
+	
+	public LabourHealthRegimentInsuranceEnum(IEnumValue enumvalue) {
+		super(enumvalue);
+	}
+	
+	//开始日期
+	public static final LabourHealthRegimentInsuranceEnum BEGINDATE = MDEnum.valueOf(LabourHealthRegimentInsuranceEnum.class, "begindate");
+	//结束日期
+	public static final LabourHealthRegimentInsuranceEnum ENDDATE = MDEnum.valueOf(LabourHealthRegimentInsuranceEnum.class, "enddate");
+	//是否勾选劳保
+	public static final LabourHealthRegimentInsuranceEnum ISLABOURINSURANCE = MDEnum.valueOf(LabourHealthRegimentInsuranceEnum.class, "islabourinsurance");
+	//是否勾选健保
+	public static final LabourHealthRegimentInsuranceEnum ISHEALTHINSURANCE = MDEnum.valueOf(LabourHealthRegimentInsuranceEnum.class, "ishealthinsurance");
+	//是否勾选劳退
+	public static final LabourHealthRegimentInsuranceEnum ISLABOURRETREAT = MDEnum.valueOf(LabourHealthRegimentInsuranceEnum.class, "islabourtreat");
+	//劳保投保身份
+	public static final LabourHealthRegimentInsuranceEnum LABOURINSURANCESTATUS = MDEnum.valueOf(LabourHealthRegimentInsuranceEnum.class, "labourinsurancestatus");
+	//健保投保身份
+	public static final LabourHealthRegimentInsuranceEnum HEALTHINSURANCESTATUS = MDEnum.valueOf(LabourHealthRegimentInsuranceEnum.class, "healthinsurancestatus");
+	//劳退提缴身份
+	public static final LabourHealthRegimentInsuranceEnum LABOURRETREATSTATUS = MDEnum.valueOf(LabourHealthRegimentInsuranceEnum.class, "labourretreatstatus");
+	//劳保特殊身份别
+	public static final LabourHealthRegimentInsuranceEnum LABOURINSURANCESPECIALSTATUS = MDEnum.valueOf(LabourHealthRegimentInsuranceEnum.class, "labourinsurancespecialstatus");
+	//劳保级距
+	public static final LabourHealthRegimentInsuranceEnum LABOURINSURANCEGRADEDISTANCE = MDEnum.valueOf(LabourHealthRegimentInsuranceEnum.class, "labourinsurancegradedistance");
+	//健保级距
+	public static final LabourHealthRegimentInsuranceEnum HEALTHINSURANCEGRADEDISTANCE = MDEnum.valueOf(LabourHealthRegimentInsuranceEnum.class, "healthinsurancegradedistance");
+	//劳退级距
+	public static final LabourHealthRegimentInsuranceEnum LABOURRETREATGRADEDISTANCE = MDEnum.valueOf(LabourHealthRegimentInsuranceEnum.class, "labourretreatgradedistance");
+	//自提比例
+	public static final LabourHealthRegimentInsuranceEnum SELFLIFTINGRATIO = MDEnum.valueOf(LabourHealthRegimentInsuranceEnum.class, "selfliftingratio");
+	//劳保补助身份
+	public static final LabourHealthRegimentInsuranceEnum LABOURALLOWANCESTATUS = MDEnum.valueOf(LabourHealthRegimentInsuranceEnum.class, "labourallowancestatus"); 
+	//健保补助身份
+	public static final LabourHealthRegimentInsuranceEnum HEALTHALLOWANCESTATUS = MDEnum.valueOf(LabourHealthRegimentInsuranceEnum.class, "healthallowancestatus");
+	//投保形态（异动类型）
+	public static final LabourHealthRegimentInsuranceEnum INSURANCEFORM = MDEnum.valueOf(LabourHealthRegimentInsuranceEnum.class, "insuranceform");
+	//险种
+	public static final LabourHealthRegimentInsuranceEnum INSURANCETYPE = MDEnum.valueOf(LabourHealthRegimentInsuranceEnum.class, "insurancetype");
+	//团保基数
+	public static final LabourHealthRegimentInsuranceEnum REGIMENTINSURANCEBASENUMBER = MDEnum.valueOf(LabourHealthRegimentInsuranceEnum.class, "regimentinsurancebasenumber");
+	
+}

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<linked-hash-map>
+
+ <entry>
+    <string>TAXRATE</string>
+    <function>
+      <defaultName>6013commonbasic;06013commonbasic0065</defaultName>
+      <displayName>taxRate</displayName>
+      <hintMsgRes>6013commonbasic;06013commonbasic0124</hintMsgRes>
+      <inputSigRes>6013commonbasic;06013commonbasic0065</inputSigRes>
+      <pattern>taxRate\(\s*\d\s*,.*,.*,.*\)</pattern>
+      <arguments>taxRate({0},{1},{2},{3})</arguments>
+       <returntype>0</returntype>
+      <parapanel>nc.ui.wa.formular.TaxRateFunctionEditor</parapanel>
+      <group>WA</group>
+      <process>nc.impl.wa.func.TaxRateData</process>
+      <productCode>UPP6013func</productCode>
+    </function>
+  </entry>
+  
+</linked-hash-map>

@@ -1,0 +1,18 @@
+insert into pub_billtemplet_t(basetab,dr,metadataclass,metadatapath,mixindex,pk_billtemplet,pk_billtemplet_t,pk_layout,pos,position,resid,tabcode,tabindex,tabname,ts,vdef1,vdef2,vdef3) values( null,0,'trn.stapply',null,null,'1001Z71000000000YCVT','1001ZZ1000000000MQOS',null,0,0,'16009tran0026','billinfo',0,'离职申请单','2018-09-16 13:59:32',null,null,null)
+/
+insert into pub_billtemplet_t(basetab,dr,metadataclass,metadatapath,mixindex,pk_billtemplet,pk_billtemplet_t,pk_layout,pos,position,resid,tabcode,tabindex,tabname,ts,vdef1,vdef2,vdef3) values( 'billinfo',0,'trn.stapply',null,0,'1001Z71000000000YCVT','1001ZZ1000000000MQOT',null,0,0,'16009tran0030','neworgs',4,'离职后管理组织','2018-09-16 13:59:32',null,null,null)
+/
+insert into pub_billtemplet_t(basetab,dr,metadataclass,metadatapath,mixindex,pk_billtemplet,pk_billtemplet_t,pk_layout,pos,position,resid,tabcode,tabindex,tabname,ts,vdef1,vdef2,vdef3) values( 'billinfo',0,'trn.stapply',null,null,'1001Z71000000000YCVT','1001ZZ1000000000MQOU',null,0,0,'16009tran0027','psninfo',1,'人员信息','2018-09-16 13:59:32',null,null,null)
+/
+insert into pub_billtemplet_t(basetab,dr,metadataclass,metadatapath,mixindex,pk_billtemplet,pk_billtemplet_t,pk_layout,pos,position,resid,tabcode,tabindex,tabname,ts,vdef1,vdef2,vdef3) values( 'billinfo',0,'trn.stapply',null,null,'1001Z71000000000YCVT','1001ZZ1000000000MQOV',null,0,0,'16009tran0029','newinfo',3,'离职后信息','2018-09-16 13:59:32',null,null,null)
+/
+insert into pub_billtemplet_t(basetab,dr,metadataclass,metadatapath,mixindex,pk_billtemplet,pk_billtemplet_t,pk_layout,pos,position,resid,tabcode,tabindex,tabname,ts,vdef1,vdef2,vdef3) values( 'tailinfo',0,'trn.stapply',null,2,'1001Z71000000000YCVT','1001ZZ1000000000MQOW',null,2,2,'UC001-0000095','auditinfo',1,'审计信息','2018-09-16 13:59:32',null,null,null)
+/
+insert into pub_billtemplet_t(basetab,dr,metadataclass,metadatapath,mixindex,pk_billtemplet,pk_billtemplet_t,pk_layout,pos,position,resid,tabcode,tabindex,tabname,ts,vdef1,vdef2,vdef3) values( 'billinfo',0,'trn.stapply',null,1,'1001Z71000000000YCVT','1001ZZ1000000000MQOX',null,0,0,'16009tran0028','oldinfo',2,'离职前信息','2018-09-16 13:59:32',null,null,null)
+/
+insert into pub_billtemplet_t(basetab,dr,metadataclass,metadatapath,mixindex,pk_billtemplet,pk_billtemplet_t,pk_layout,pos,position,resid,tabcode,tabindex,tabname,ts,vdef1,vdef2,vdef3) values( 'billinfo',0,'trn.stapply',null,null,'1001Z71000000000YCVT','1001ZZ1000000000MQOY',null,0,0,'X6009tran0056','contorgs',5,'合同管理组织','2018-09-16 13:59:32',null,null,null)
+/
+insert into pub_billtemplet_t(basetab,dr,metadataclass,metadatapath,mixindex,pk_billtemplet,pk_billtemplet_t,pk_layout,pos,position,resid,tabcode,tabindex,tabname,ts,vdef1,vdef2,vdef3) values( null,0,'trn.stapply',null,1,'1001Z71000000000YCVT','1001ZZ1000000000MQOZ',null,2,2,'16009tran0040','tailinfo',0,'表尾信息','2018-09-16 13:59:32',null,null,null)
+/
+insert into pub_billtemplet_t(basetab,dr,metadataclass,metadatapath,mixindex,pk_billtemplet,pk_billtemplet_t,pk_layout,pos,position,resid,tabcode,tabindex,tabname,ts,vdef1,vdef2,vdef3) values( 'billinfo',0,'trn.stapply',null,1,'1001Z71000000000YCVT','1001ZZ1000000000MQP0',null,0,0,'16009tran0031','execinfo',6,'执行信息','2018-09-16 13:59:32',null,null,null)
+/

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding='gb2312'?>
+<module name="hrpub">
+  <public>
+	<component remote="true" singleton="true"  tx="CMT">
+	  <interface>nc.itf.hrpub.IMDMappingMaintain</interface>
+	  <implementation>nc.impl.hrpub.MDMappingMaintainImpl</implementation>
+	</component>
+
+	<component remote="true" singleton="true"  tx="NONE">
+	  <interface>nc.itf.hrpub.IMDExchangeService</interface>
+	  <implementation>nc.impl.hrpub.MDExchangeServiceImpl</implementation>
+	</component>
+	
+	<component remote="true" singleton="true"  tx="NONE">
+	  <interface>nc.itf.hrpub.IMDExchangeLogService</interface>
+	  <implementation>nc.impl.hrpub.MDExchangeLogServiceImpl</implementation>
+	</component>
+	
+	<component remote="true" singleton="true"  tx="NONE"> 
+	  <interface>nc.itf.hrpub.IMDExchangePersistService</interface>
+	  <implementation>nc.impl.hrpub.MDExchangePersistServiceImpl</implementation>
+	</component>
+  </public> 
+</module> 

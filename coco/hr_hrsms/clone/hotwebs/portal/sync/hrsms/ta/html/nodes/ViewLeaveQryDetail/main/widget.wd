@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding='UTF-8'?>
+<Widget controllerClazz="nc.bs.hrsms.ta.sss.leaveinfo.ctrl.ViewLeaveDetailViewMain" dialog="false" i18nName="a_pub-000200" langDir="node_pub-res" caption="休假详细" id="main" refId="main" sourcePackage="src/public/">
+    <PlugoutDescs>
+    </PlugoutDescs>
+    <PluginDescs>
+    </PluginDescs>
+    <Models>
+        <Datasets>
+            <Dataset controlwidgetopeStatus="false" enabled="false" id="dsLeaveDetail" lazyLoad="false" notNullBody="false">
+                <Fields>
+                    <Field i18nName="w_ta-000183" langDir="node_ta-res" dataType="String" field="leaveremark" id="leaveremark" nullAble="true" primaryKey="false" text="休假说明">
+                    </Field>
+                    <Field i18nName="w_ta-000184" langDir="node_ta-res" dataType="UFDateTime" field="leavebegintime" id="leavebegintime" nullAble="true" primaryKey="false" text="休假开始">
+                    </Field>
+                    <Field i18nName="w_ta-000185" langDir="node_ta-res" dataType="UFDateTime" field="leaveendtime" id="leaveendtime" nullAble="true" primaryKey="false" text="休假结束">
+                    </Field>
+                </Fields>
+                <Events>
+                    <Event async="true" jsEventClaszz="nc.uap.lfw.core.event.conf.DatasetListener" methodName="onDataLoad_dsLeaveDetail" name="onDataLoad" onserver="true">
+                        <SubmitRule cardSubmit="false" panelSubmit="false" tabSubmit="false">
+                        </SubmitRule>
+                        <Params>
+                            <Param>
+                                <Name>dataLoadEvent</Name>
+                                <Value>
+                                </Value>
+                                <Desc>                                    <![CDATA[nc.uap.lfw.core.event.DataLoadEvent]]>
+                                </Desc>
+                            </Param>
+                        </Params>
+                        <Action>
+                        </Action>
+                    </Event>
+                </Events>
+            </Dataset>
+        </Datasets>
+    </Models>
+    <Components>
+        <GridComp dataset="dsLeaveDetail" editable="true" enabled="true" id="tblLeaveDetail" multiSelect="false" pagenationTop="false" reference="false" showColInfo="false" showHeader="true" showImageBtn="false" showNumCol="false" showSumRow="false" sortable="true" visible="true">
+            <Column i18nName="w_ta-000183" langDir="node_ta-res" autoExpand="false" dataType="String" editable="true" editorType="StringText" field="leaveremark" fixedHeader="false" id="leaveremark" imageOnly="false" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="休假说明" textAlign="left" visible="true" width="300">
+            </Column>
+            <Column i18nName="w_ta-000186" langDir="node_ta-res" autoExpand="false" dataType="UFDateTime" editable="true" editorType="DateTimeText" field="leavebegintime" fixedHeader="false" id="leavebegintime" imageOnly="false" nullAble="true" renderType="DateTimeRender" showCheckBox="true" sortable="true" sumCol="false" text="休假开始时间" textAlign="left" visible="true" width="150">
+            </Column>
+            <Column i18nName="w_ta-000187" langDir="node_ta-res" autoExpand="true" dataType="UFDateTime" editable="true" editorType="DateTimeText" field="leaveendtime" fixedHeader="false" id="leaveendtime" imageOnly="false" nullAble="true" renderType="DateTimeRender" showCheckBox="true" sortable="true" sumCol="false" text="休假结束时间" textAlign="left" visible="true" width="150">
+            </Column>
+        </GridComp>
+    </Components>
+    <Menus>
+    </Menus>
+</Widget>

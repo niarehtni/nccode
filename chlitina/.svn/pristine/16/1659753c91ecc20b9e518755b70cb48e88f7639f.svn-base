@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="gbk"?>
+<module name="twhr">
+	<public>
+		    <!-- 接口 -->
+		    <component priority="0" singleton="true" remote="true" tx="CMT" supportAlias="true">
+	      <interface>nc.itf.twhr.IGroupinsuranceMaintain</interface>
+	      <implementation>nc.impl.twhr.GroupinsuranceMaintainImpl</implementation>
+	    </component>
+	    
+	</public>
+</module>

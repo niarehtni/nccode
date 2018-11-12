@@ -1,0 +1,344 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE beans PUBLIC "-//SPRING//DTD BEAN//EN" "http://www.springframework.org/dtd/spring-beans.dtd">
+
+<beans>
+                  
+	<bean id="context" class="nc.vo.wa.pub.WaLoginContext" />
+	 
+		            
+	<!-- 模型部分配置*********************************************************** -->
+
+	<!-- 应用服务类，负责进行模型操作的处理 -->  
+	<bean id="dataIOModelService" class="nc.ui.wa.datainterface.model.DataIOModelService" />
+                                          
+	<!-- 批量操作应用模型 -->
+	<bean id="dataIOAppModel" class="nc.ui.wa.datainterface.model.DataIOAppModel">
+		<property name="service" ref="dataIOModelService"></property>
+		<property name="businessObjectAdapterFactory" ref="boadatorfactory"></property>
+		<property name="context" ref="context"></property>
+	</bean>
+
+	<!-- 数据模型管理器，主要负责各种方式的模型初始化 -->
+	<bean id="modelDataManager" class="nc.ui.wa.datainterface.model.DataIOModelDataManager">
+		<property name="model" ref="dataIOAppModel"></property>		
+		<property name="service" ref="dataIOModelService"></property>
+	</bean>
+ 
+	<!-- 对象转换器工厂，由此获取操作对象的特征信息 -->
+	<bean id="boadatorfactory" class="nc.vo.bd.meta.BDObjectAdpaterFactory" />
+
+	
+<!--
+	
+	
+	 <bean id="IOItemsPanel" class="nc.ui.wa.datainterface.view.IOItemsPanel" init-method="initUI">
+		<property name="model" ref="dataIOAppModel"></property>
+		<property name="nodekey" value="dataio"/>
+		<property name="lineKey" value="dline"/>
+		</bean>
+		
+	    
+	--><!-- 初始化监听器 --><!--
+	<bean id="InitDataListener" class="nc.ui.wa.datainterface.model.DataIOInitDataListener"> 
+		<property name="batchModelDataManager" ref="modelDataManager"></property> 
+	</bean>
+	  
+	
+	--><!-- 模板容器，负责对模板的统一装载 -->
+	<bean id="templateContainer" class="nc.ui.uif2.editor.TemplateContainer" init-method="load">
+		<property name="context" ref="context" />
+		<property name="nodeKeies">
+			<list>
+				<value>dataio</value>
+			</list>
+		</property>
+	</bean>
+ 
+	
+	<!-- 界面元素 ***********************************************************--> 
+	<bean id="orgPanel" class="nc.ui.wa.datainterface.view.WaDataIOHeadPanel" init-method="initUI">  
+	    <property name="context" ref="context" />
+		<property name="model" ref="dataIOAppModel" />
+		<property name="dataManager" ref="modelDataManager" /> 
+		<property name="pk_orgtype" value="HRORGTYPE00000000000" />           
+	</bean>
+	
+	<bean id="ioHeadPanel" class="nc.ui.wa.datainterface.view.DefaultDataIOHeadPanel" init-method="initUI">  
+		<property name="model" ref="dataIOAppModel" />
+		<property name="dataManager" ref="modelDataManager" /> 
+	</bean>
+	
+	<bean id="ioMainPanel" class="nc.ui.wa.datainterface.view.DataIOPanel"  init-method="initUI">
+		<property name="appModel" ref="dataIOAppModel"></property>		   
+		<property name="headPanel" ref="ioHeadPanel" /> 
+	</bean>
+	
+		<!-- 列表控件 -->   
+	<bean id="batchBillTable" class="nc.ui.wa.datainterface.view.DataIOListView" init-method="initUI">
+		<property name="model" ref="dataIOAppModel"></property>
+		<property name="multiSelectionEnable"> <value>false</value></property>
+		<property name="pos"><value>head</value></property>
+		<property name="nodekey" value="dataio"></property>
+	</bean>
+
+
+
+	 
+	 <bean id="mainPanel" class="nc.ui.uif2.TangramContainer" init-method="initUI"> 
+	 	<property name="model" ref="dataIOAppModel"></property>
+	    <property name="name" value  = "mainPanel"/>
+		<property name="tangramLayoutRoot">
+			<bean class="nc.ui.uif2.tangramlayout.node.VSNode">
+				<property name="up">
+					<bean class="nc.ui.uif2.tangramlayout.node.CNode">
+						<property name="component">
+							<ref bean="orgPanel" />
+						</property>
+					</bean>
+				</property>
+				<property name="down">
+					<bean class="nc.ui.uif2.tangramlayout.node.CNode ">
+						<property name="component">
+							<ref bean="batchBillTable" />
+						</property>
+					</bean>
+				</property>
+	
+				<property name="dividerLocation">
+					<value>30</value>
+				</property>
+			</bean>
+		</property>
+
+	</bean> 
+	
+	 <bean id="ioPanel" class="nc.ui.uif2.TangramContainer" init-method="initUI"> 
+	 	<property name="model" ref="dataIOAppModel"></property>
+	    <property name="name" value  = "ioPanel"/>
+		<property name="tangramLayoutRoot">
+			<bean class="nc.ui.uif2.tangramlayout.node.VSNode">
+				<property name="up">
+					<bean class="nc.ui.uif2.tangramlayout.node.CNode">
+						<property name="component">
+							<ref bean="ioHeadPanel" />
+						</property>
+					</bean>
+				</property>
+				<property name="down">
+					<bean class="nc.ui.uif2.tangramlayout.node.CNode ">
+						<property name="component">
+							<ref bean="ioMainPanel" />
+						</property>
+					</bean>
+				</property>
+	
+				<property name="dividerLocation">
+					<value>30</value>
+				</property>
+			</bean>
+		</property>
+
+	</bean> 
+	 <bean id="bankPanel" class="nc.ui.uif2.TangramContainer" init-method="initUI"> 
+	 	<property name="model" ref="dataIOAppModel"></property>
+	    <property name="name" value  = "bankPanel"/>
+		<property name="tangramLayoutRoot">
+			<bean class="nc.ui.uif2.tangramlayout.node.VSNode">
+				<property name="up">
+					<bean class="nc.ui.uif2.tangramlayout.node.CNode">
+						<property name="component">
+							<ref bean="fipEndHeadPanel" />
+						</property>
+					</bean>
+				</property>
+				<property name="down">
+					<bean class="nc.ui.uif2.tangramlayout.node.CNode ">
+						<property name="component">
+							<ref bean="bankEnterprisePanel" />
+						</property>
+					</bean>
+				</property>
+	
+				<property name="dividerLocation">
+					<value>30</value>
+				</property>
+			</bean>
+		</property>
+
+	</bean> 
+	<bean id="bankEnterprisePanel" class="nc.ui.wa.datainterface.view.BankEnterprisePanel"  init-method="initUI">
+		<property name="appModel" ref="dataIOAppModel"></property>		   
+		<property name="headPanel" ref="fipEndHeadPanel" /> 
+	</bean>
+		<bean id="fipEndHeadPanel" class="nc.ui.wa.datainterface.view.FipEndHeadPanel" init-method="initUI">  
+		<property name="model" ref="dataIOAppModel" />
+		<property name="dataManager" ref="modelDataManager" /> 
+	</bean>
+	<!-- ClosingListener *********************************************************** -->
+
+	<!--<bean id="ClosingListener" class="nc.ui.uif2.FunNodeClosingHandler"> 
+		<property name="model" ref="dataIOAppModel" />
+	</bean>
+ 
+	
+	--><!-- 批量操作前台校验 --> 
+	<!-- <bean id="validationService" class="nc.ui.wa.datainterface.validator.DatainterfaceValidationService">   
+	  <property name="editor" ref="batchBillTable"></property>
+	</bean> -->
+	
+	<!-- Actions ***********************************************************-->
+	<bean id="nullAction" class="nc.funcnode.ui.action.SeparatorAction" />
+  
+      <bean id="addAction" class="nc.ui.wa.datainterface.action.AddDatainterfaceAction">
+        <property name="model" ref="dataIOAppModel"></property> 
+      </bean> 
+      
+    <bean id="editAction" class="nc.ui.wa.datainterface.action.EditDatainterfaceAction">
+        <property name="model" ref="dataIOAppModel"></property> 
+        <property name="dataManager" ref="modelDataManager"></property>
+      </bean> 
+
+    
+      <bean id="delAction" class="nc.ui.wa.datainterface.action.DelDatainterfaceAction">
+        <property name="model" ref="dataIOAppModel"></property> 
+      </bean>     
+
+	
+	
+    <bean id="saveAction" class="nc.ui.wa.datainterface.action.SaveDatainterfaceAction">
+        <property name="model" ref="dataIOAppModel"></property>        
+    </bean> 
+
+    <bean id="copyAction" class="nc.ui.wa.datainterface.action.FormatCopyAction">
+        <property name="model" ref="dataIOAppModel"></property>
+        <property name="dataManager" ref="modelDataManager"></property>         
+    </bean>
+	
+	<bean id="exportAction" class="nc.ui.wa.datainterface.action.DataIOExportAction">
+        <property name="model" ref="dataIOAppModel"></property>
+        <property name="container" ref="container"></property>
+        <property name="ioMainPanel" ref="ioMainPanel"></property> 
+      </bean> 
+
+     <bean id="importAction" class="nc.ui.wa.datainterface.action.DataIOImportAction">
+        <property name="model" ref="dataIOAppModel"></property> 
+        <property name="container" ref="container"></property>
+        <property name="ioMainPanel" ref="ioMainPanel"></property>
+     </bean> 
+     
+     <bean id="dataIntoDBAction" class="nc.ui.wa.datainterface.action.DataIntoDBAction">
+     	<property name="model" ref="dataIOAppModel" />
+     	<property name="ioHeadPanel" ref="ioHeadPanel" />
+     	<property name="ioMainPanel" ref="ioMainPanel"></property>
+     </bean> 
+     
+     <bean id="inDataAction" class="nc.ui.wa.datainterface.action.InDataAction">
+     	<property name="model" ref="dataIOAppModel" />
+     	<property name="ioHeadPanel" ref="ioHeadPanel" />
+     	<property name="ioMainPanel" ref="ioMainPanel"></property>
+     </bean> 
+     
+     <bean id="queryAction" class="nc.ui.wa.datainterface.action.QueryAction">
+     	<property name="model" ref="dataIOAppModel" />
+     	<property name="queryDelegator" ref="queryDelegator" />
+     	<property name="dataIoPanel" ref="ioMainPanel" />
+     	
+     </bean> 
+
+     <bean id="outDataAction" class="nc.ui.wa.datainterface.action.OutDataAction">
+     	<property name="model" ref="dataIOAppModel" />
+     	<property name="ioHeadPanel" ref="ioHeadPanel" />
+     	<property name="ioMainPanel" ref="ioMainPanel"></property>
+     </bean> 
+          
+      <bean id="returnAction" class="nc.ui.wa.datainterface.action.DataIOReturnAction">
+        <property name="model" ref="dataIOAppModel"></property> 
+        <property name="container" ref="container"></property>
+        <property name="ioHeadPanel" ref="ioHeadPanel" />
+     </bean> 
+           
+    <bean id="refreshAction" class="nc.ui.wa.datainterface.action.RefreshDatainterfaceAction">
+        <property name="model" ref="dataIOAppModel"></property> 
+        <property name="dataManager" ref="modelDataManager"></property> 
+     </bean> 
+    
+	
+    <bean id="cancelAction" class="nc.ui.wa.datainterface.action.CancelDatainterfaceAction">
+        <property name="model" ref="dataIOAppModel"></property>          
+      </bean> 
+    
+      <bean id="incomeTaxExportAction" class="nc.ui.wa.datainterface.action.IncomeTaxReturnExportAction">
+        <property name="model" ref="dataIOAppModel"></property>  
+     </bean> 
+
+
+	<!-- 劳健退三合一加保	-->
+ 	<bean id="addInsuranceExportAction" class="nc.ui.wa.datainterface.action.AddInsuranceExportAction">
+        <property name="model" ref="dataIOAppModel"></property>  
+     </bean> 
+<!-- 劳健退三合一加保	-->
+ 	<bean id="quitInsuranceExportAction" class="nc.ui.wa.datainterface.action.QuitInsuranceExportAction">
+        <property name="model" ref="dataIOAppModel"></property>  
+     </bean> 
+<!-- 劳健退三合一薪调	-->
+ 	<bean id="salaryInsuranceExportAction" class="nc.ui.wa.datainterface.action.SalaryInsuranceExportAction">
+        <property name="model" ref="dataIOAppModel"></property>  
+     </bean> 
+     
+      <bean id="bankExportAction" class="nc.ui.wa.datainterface.action.ExportBankInfoAction">
+        <property name="model" ref="dataIOAppModel"></property>  
+     </bean>
+     
+	<bean id="queryDelegator" class="nc.ui.wa.pub.WaQueryDelegator">
+		<property name="nodeKey" value="dataio" />
+		<property name="model" ref="dataIOAppModel"/>
+		<property name="context" ref="context" /> 
+	</bean>
+	
+	<bean id="printActionMenu" class="nc.funcnode.ui.action.GroupAction">
+		<property name="code" value="print"></property>
+		<property name="name">
+			<bean class="nc.ui.uif2.I18nFB">
+				<property name="resDir" value="xmlcode" />
+				<property name="defaultValue" value="打印" />
+				<property name="resId" value="X60130002" />
+			</bean>
+		</property>
+		<property name="actions">
+			<list>
+				<ref bean="printAction" />
+				<ref bean="previewAction" />
+			     <ref bean="cardOutPut" />
+			</list>
+		</property>
+	</bean>	 
+	
+	<bean id="previewAction" class="nc.ui.wa.datainterface.action.DataIODirectPrintPreviewAction">
+	  <property name="model" ref="dataIOAppModel"></property> 
+	  <property name="tabbedPane" ref="ioMainPanel" />	 
+	</bean>
+	<bean id="printAction" class="nc.ui.wa.datainterface.action.DataIODirectPrintAction">	
+	  <property name="model" ref="dataIOAppModel"></property> 
+	  <property name="tabbedPane" ref="ioMainPanel" />
+	</bean>
+	<bean id="cardOutPut" class="nc.ui.wa.datainterface.action.DataIODirectExportAction">
+	  <property name="model" ref="dataIOAppModel"></property> 
+	  <property name="tabbedPane" ref="ioMainPanel" />
+	</bean>
+	<bean id="datasource" class="nc.ui.hrcp.cindex.model.HRListMetaDataDataSource">
+		<property name="model" ref="dataIOAppModel" />
+	</bean>
+	<bean id="templetPrintPreviewAction" class="nc.ui.wa.pub.action.WaTemplatePreviewAction">
+		<property name="model" ref="dataIOAppModel" />
+		<property name="nodeKey" value="dataio" />
+		<property name="datasource" ref="datasource" />
+	</bean>
+
+	<bean id="templetPrintAction" class="nc.ui.wa.pub.action.WaTemplatePrintAction">
+		<property name="model" ref="dataIOAppModel" />
+		<property name="nodeKey" value="dataio" />
+		<property name="datasource" ref="datasource" />
+	</bean>
+</beans>
+

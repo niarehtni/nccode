@@ -1,0 +1,2 @@
+insert into md_component(createtime,creator,description,displayname,dr,fromsourcebmf,help,id,industry,isbizmodel,modifier,modifytime,name,namespace,ownmodule,preload,resid,resmodule,ts,version,versiontype) values( '2017-08-12 11:08:05',null,null,'groupinsurance',0,'Y','smart','fc2ef484-fb5f-4e84-8161-f2f9f3523f5f','0','N','YONYOU NC','2018-09-17 12:29:06','groupinsurance','twhr','twhr',null,null,'groupinsurance','2018-09-17 13:23:17','12',0)
+go

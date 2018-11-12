@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding='UTF-8'?>
+<UIMeta flowmode="true" id="list_um" jquery="0">
+    <FlowvLayout autoFill="0" id="flowvlayout6428" widgetId="mian">
+        <FlowvPanel id="panelv06428" widgetId="mian">
+            <CanvasLayout className="rightcanvas" id="canvaslayout2912" widgetId="list">
+                <CanvasPanel id="canvaspanel2912" widgetId="mian">
+            		<Menubar id="menu_list" widgetId="mian">
+            		</Menubar>
+                </CanvasPanel>
+            </CanvasLayout>
+        </FlowvPanel>
+        <FlowvPanel id="panelv16428" widgetId="mian">
+            <GridComp id="ta_lateearlyGrid" widgetId="mian">
+            </GridComp>
+        </FlowvPanel>
+        <FlowvPanel id="panelv16429" widgetId="main">
+           <HtmlContent height="100%" id="manualcolorBrief" left="0" position="relative" top="0" widgetId="main" width="100%">
+			</HtmlContent>
+        </FlowvPanel>
+    </FlowvLayout>
+</UIMeta>

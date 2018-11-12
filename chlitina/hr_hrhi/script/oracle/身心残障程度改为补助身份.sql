@@ -1,0 +1,1 @@
+UPDATE hr_infoset_item set item_name='补助身分' , item_name2='補助身分' where pk_infoset_item='1001ZZ10000000001PRG'

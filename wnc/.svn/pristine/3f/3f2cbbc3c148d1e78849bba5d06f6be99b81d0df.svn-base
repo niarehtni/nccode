@@ -1,0 +1,397 @@
+﻿package nc.vo.ta.overtime;
+
+import nc.vo.pub.IVOMeta;
+import nc.vo.pub.SuperVO;
+import nc.vo.pub.lang.UFDateTime;
+import nc.vo.pub.lang.UFDouble;
+import nc.vo.pub.lang.UFLiteralDate;
+import nc.vo.pubapp.pattern.model.meta.entity.vo.VOMetaFactory;
+
+/**
+ * <b> 此处简要描述此类功能 </b>
+ * <p>
+ * 此处添加累的描述信息
+ * </p>
+ * 创建日期:2018/4/23
+ * 
+ * @author
+ * @version NCPrj ??
+ */
+
+public class SegDetailConsumeVO extends SuperVO {
+
+	/**
+	 * 加班分段核销记录主键
+	 */
+	public String pk_segdetailconsume;
+	/**
+	 * 集团
+	 */
+	public String pk_group;
+	/**
+	 * 组织
+	 */
+	public String pk_org;
+	/**
+	 * 组织版本
+	 */
+	public String pk_org_v;
+	/**
+	 * 创建人
+	 */
+	public String creator;
+	/**
+	 * 创建时间
+	 */
+	public UFDateTime creationtime;
+	/**
+	 * 修改人
+	 */
+	public String modifier;
+	/**
+	 * 修改时间
+	 */
+	public UFDateTime modifiedtime;
+	/**
+	 * 行号
+	 */
+	public String rowno;
+	/**
+	 * 登记日期
+	 */
+	public UFLiteralDate bizdate;
+	/**
+	 * 休假源单
+	 */
+	public String pk_leavereg;
+	/**
+	 * 业务类型
+	 */
+	public Integer biztype;
+	/**
+	 * 核销时长
+	 */
+	public UFDouble consumedhours;
+	/**
+	 * 反核销时长
+	 */
+	public UFDouble reversedhours;
+	/**
+	 * 上层单据主键
+	 */
+	public String pk_segdetail;
+	/**
+	 * 时间戳
+	 */
+	public UFDateTime ts;
+
+	/**
+	 * 属性 pk_segdetailconsume的Getter方法.属性名：加班分段核销记录主键 创建日期:2018/4/23
+	 * 
+	 * @return java.lang.String
+	 */
+	public String getPk_segdetailconsume() {
+		return this.pk_segdetailconsume;
+	}
+
+	/**
+	 * 属性pk_segdetailconsume的Setter方法.属性名：加班分段核销记录主键 创建日期:2018/4/23
+	 * 
+	 * @param newPk_segdetailconsume
+	 *            java.lang.String
+	 */
+	public void setPk_segdetailconsume(String pk_segdetailconsume) {
+		this.pk_segdetailconsume = pk_segdetailconsume;
+	}
+
+	/**
+	 * 属性 pk_group的Getter方法.属性名：集团 创建日期:2018/4/23
+	 * 
+	 * @return nc.vo.org.GroupVO
+	 */
+	public String getPk_group() {
+		return this.pk_group;
+	}
+
+	/**
+	 * 属性pk_group的Setter方法.属性名：集团 创建日期:2018/4/23
+	 * 
+	 * @param newPk_group
+	 *            nc.vo.org.GroupVO
+	 */
+	public void setPk_group(String pk_group) {
+		this.pk_group = pk_group;
+	}
+
+	/**
+	 * 属性 pk_org的Getter方法.属性名：组织 创建日期:2018/4/23
+	 * 
+	 * @return nc.vo.org.OrgVO
+	 */
+	public String getPk_org() {
+		return this.pk_org;
+	}
+
+	/**
+	 * 属性pk_org的Setter方法.属性名：组织 创建日期:2018/4/23
+	 * 
+	 * @param newPk_org
+	 *            nc.vo.org.OrgVO
+	 */
+	public void setPk_org(String pk_org) {
+		this.pk_org = pk_org;
+	}
+
+	/**
+	 * 属性 pk_org_v的Getter方法.属性名：组织版本 创建日期:2018/4/23
+	 * 
+	 * @return nc.vo.vorg.OrgVersionVO
+	 */
+	public String getPk_org_v() {
+		return this.pk_org_v;
+	}
+
+	/**
+	 * 属性pk_org_v的Setter方法.属性名：组织版本 创建日期:2018/4/23
+	 * 
+	 * @param newPk_org_v
+	 *            nc.vo.vorg.OrgVersionVO
+	 */
+	public void setPk_org_v(String pk_org_v) {
+		this.pk_org_v = pk_org_v;
+	}
+
+	/**
+	 * 属性 creator的Getter方法.属性名：创建人 创建日期:2018/4/23
+	 * 
+	 * @return nc.vo.sm.UserVO
+	 */
+	public String getCreator() {
+		return this.creator;
+	}
+
+	/**
+	 * 属性creator的Setter方法.属性名：创建人 创建日期:2018/4/23
+	 * 
+	 * @param newCreator
+	 *            nc.vo.sm.UserVO
+	 */
+	public void setCreator(String creator) {
+		this.creator = creator;
+	}
+
+	/**
+	 * 属性 creationtime的Getter方法.属性名：创建时间 创建日期:2018/4/23
+	 * 
+	 * @return nc.vo.pub.lang.UFDateTime
+	 */
+	public UFDateTime getCreationtime() {
+		return this.creationtime;
+	}
+
+	/**
+	 * 属性creationtime的Setter方法.属性名：创建时间 创建日期:2018/4/23
+	 * 
+	 * @param newCreationtime
+	 *            nc.vo.pub.lang.UFDateTime
+	 */
+	public void setCreationtime(UFDateTime creationtime) {
+		this.creationtime = creationtime;
+	}
+
+	/**
+	 * 属性 modifier的Getter方法.属性名：修改人 创建日期:2018/4/23
+	 * 
+	 * @return nc.vo.sm.UserVO
+	 */
+	public String getModifier() {
+		return this.modifier;
+	}
+
+	/**
+	 * 属性modifier的Setter方法.属性名：修改人 创建日期:2018/4/23
+	 * 
+	 * @param newModifier
+	 *            nc.vo.sm.UserVO
+	 */
+	public void setModifier(String modifier) {
+		this.modifier = modifier;
+	}
+
+	/**
+	 * 属性 modifiedtime的Getter方法.属性名：修改时间 创建日期:2018/4/23
+	 * 
+	 * @return nc.vo.pub.lang.UFDateTime
+	 */
+	public UFDateTime getModifiedtime() {
+		return this.modifiedtime;
+	}
+
+	/**
+	 * 属性modifiedtime的Setter方法.属性名：修改时间 创建日期:2018/4/23
+	 * 
+	 * @param newModifiedtime
+	 *            nc.vo.pub.lang.UFDateTime
+	 */
+	public void setModifiedtime(UFDateTime modifiedtime) {
+		this.modifiedtime = modifiedtime;
+	}
+
+	/**
+	 * 属性 rowno的Getter方法.属性名：行号 创建日期:2018/4/23
+	 * 
+	 * @return java.lang.String
+	 */
+	public String getRowno() {
+		return this.rowno;
+	}
+
+	/**
+	 * 属性rowno的Setter方法.属性名：行号 创建日期:2018/4/23
+	 * 
+	 * @param newRowno
+	 *            java.lang.String
+	 */
+	public void setRowno(String rowno) {
+		this.rowno = rowno;
+	}
+
+	/**
+	 * 属性 bizdate的Getter方法.属性名：登记日期 创建日期:2018/4/23
+	 * 
+	 * @return nc.vo.pub.lang.UFLiteralDate
+	 */
+	public UFLiteralDate getBizdate() {
+		return this.bizdate;
+	}
+
+	/**
+	 * 属性bizdate的Setter方法.属性名：登记日期 创建日期:2018/4/23
+	 * 
+	 * @param newBizdate
+	 *            nc.vo.pub.lang.UFLiteralDate
+	 */
+	public void setBizdate(UFLiteralDate bizdate) {
+		this.bizdate = bizdate;
+	}
+
+	/**
+	 * 属性 pk_leavereg的Getter方法.属性名：休假源单 创建日期:2018/4/23
+	 * 
+	 * @return nc.vo.ta.leave.LeaveRegVO
+	 */
+	public String getPk_leavereg() {
+		return this.pk_leavereg;
+	}
+
+	/**
+	 * 属性pk_leavereg的Setter方法.属性名：休假源单 创建日期:2018/4/23
+	 * 
+	 * @param newPk_leavereg
+	 *            nc.vo.ta.leave.LeaveRegVO
+	 */
+	public void setPk_leavereg(String pk_leavereg) {
+		this.pk_leavereg = pk_leavereg;
+	}
+
+	/**
+	 * 属性 biztype的Getter方法.属性名：业务类型 创建日期:2018/4/23
+	 * 
+	 * @return nc.vo.ta.overtime.HolidayTypeEnum
+	 */
+	public Integer getBiztype() {
+		return this.biztype;
+	}
+
+	/**
+	 * 属性biztype的Setter方法.属性名：业务类型 创建日期:2018/4/23
+	 * 
+	 * @param newBiztype
+	 *            nc.vo.ta.overtime.HolidayTypeEnum
+	 */
+	public void setBiztype(Integer biztype) {
+		this.biztype = biztype;
+	}
+
+	/**
+	 * 属性 consumedhours的Getter方法.属性名：核销时长 创建日期:2018/4/23
+	 * 
+	 * @return nc.vo.pub.lang.UFDouble
+	 */
+	public UFDouble getConsumedhours() {
+		return this.consumedhours;
+	}
+
+	/**
+	 * 属性consumedhours的Setter方法.属性名：核销时长 创建日期:2018/4/23
+	 * 
+	 * @param newConsumedhours
+	 *            nc.vo.pub.lang.UFDouble
+	 */
+	public void setConsumedhours(UFDouble consumedhours) {
+		this.consumedhours = consumedhours;
+	}
+
+	/**
+	 * 属性 reversedhours的Getter方法.属性名：反核销时长 创建日期:2018/4/23
+	 * 
+	 * @return nc.vo.pub.lang.UFDouble
+	 */
+	public UFDouble getReversedhours() {
+		return this.reversedhours;
+	}
+
+	/**
+	 * 属性reversedhours的Setter方法.属性名：反核销时长 创建日期:2018/4/23
+	 * 
+	 * @param newReversedhours
+	 *            nc.vo.pub.lang.UFDouble
+	 */
+	public void setReversedhours(UFDouble reversedhours) {
+		this.reversedhours = reversedhours;
+	}
+
+	/**
+	 * 属性 生成上层主键的Getter方法.属性名：上层主键 创建日期:2018/4/23
+	 * 
+	 * @return String
+	 */
+	public String getPk_segdetail() {
+		return this.pk_segdetail;
+	}
+
+	/**
+	 * 属性生成上层主键的Setter方法.属性名：上层主键 创建日期:2018/4/23
+	 * 
+	 * @param newPk_segdetail
+	 *            String
+	 */
+	public void setPk_segdetail(String pk_segdetail) {
+		this.pk_segdetail = pk_segdetail;
+	}
+
+	/**
+	 * 属性 生成时间戳的Getter方法.属性名：时间戳 创建日期:2018/4/23
+	 * 
+	 * @return nc.vo.pub.lang.UFDateTime
+	 */
+	public UFDateTime getTs() {
+		return this.ts;
+	}
+
+	/**
+	 * 属性生成时间戳的Setter方法.属性名：时间戳 创建日期:2018/4/23
+	 * 
+	 * @param newts
+	 *            nc.vo.pub.lang.UFDateTime
+	 */
+	public void setTs(UFDateTime ts) {
+		this.ts = ts;
+	}
+
+	@Override
+	public IVOMeta getMetaData() {
+		return VOMetaFactory.getInstance().getVOMeta(
+				"overtime.segdetailconsume");
+	}
+}

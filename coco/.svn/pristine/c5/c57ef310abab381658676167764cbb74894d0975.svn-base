@@ -1,0 +1,125 @@
+package nc.itf.ta;
+
+import java.util.List;
+
+import nc.ui.querytemplate.querytree.FromWhereSQL;
+import nc.vo.hr.tools.pub.GeneralVO;
+import nc.vo.pub.BusinessException;
+import nc.vo.pub.lang.UFLiteralDate;
+import nc.vo.ta.psncalendar.PsnJobCalendarVO;
+
+public interface IPsnCalendarManageMaintain {
+
+	/**
+	 * 保存工作日历，用于工作日历的首届面保存
+	 * ,PsnJobCalendarVO[]中只存储变化了的人员
+	 * PsnJobCalendarVO的map中只存储变化了的日历
+	 */
+	PsnJobCalendarVO[]   
+	save(String pk_hrorg,PsnJobCalendarVO[] vos) throws BusinessException;
+
+	/**
+	 * 保存工作日历，用于工作日历的首届面保存
+	 * ,PsnJobCalendarVO[]中只存储变化了的人员
+	 * PsnJobCalendarVO的map中只存储变化了的日历
+	 */
+	PsnJobCalendarVO[]   
+	save4Mgr(String pk_dept,PsnJobCalendarVO[] vos) throws BusinessException;
+	/**
+	 * 保存工作日历，用于按日历排班
+	 * @param pk_org
+	 * PsnJobCalendarVO的map中只存储变化了的日历
+	 */
+	PsnJobCalendarVO
+	save(String pk_hrorg,PsnJobCalendarVO vo) throws BusinessException;
+	
+	/**
+	 * 循环排班
+	 * @param pk_org，业务单元主键
+	 * @param beginDate，开始日期
+	 * @param endDate，结束日期
+	 * @param condition，循环排班人员条件
+	 * @param calendarPks，班次主键数组
+	 * @param isHolidayCancel，遇假日排班是否取消，true取消，false照旧
+	 * @return
+	 */
+	PsnJobCalendarVO[]
+	circularArrange(String pk_group,String pk_hrorg,String pk_org,
+			String[] pk_psndocs,UFLiteralDate beginDate,UFLiteralDate endDate,String[] calendarPks,boolean isHolidayCancel,boolean overrideExistCalendar,boolean withRturn) throws BusinessException;
+	
+	/**
+	 * 使用默认工作日历。此操作只能是遇假日排班取消，因此无isHolidayCancel参数
+	 * 如果没有设置默认班次，则看throwExcpWhenNoDefaultShift参数：为true抛异常，否则直接返回
+	 * @param pk_hrorg
+	 * @param pk_psndocs
+	 * @param beginDate
+	 * @param endDate
+	 * @param overrideExistCalendar
+	 * @param throwExcpWhenNoDefaultShift
+	 * @return
+	 * @throws BusinessException
+	 */
+	PsnJobCalendarVO[]
+	                        useDefault(String pk_hrorg,
+	                    			String[] pk_psndocs,UFLiteralDate beginDate,UFLiteralDate endDate,boolean overrideExistCalendar,boolean throwExcpWhenNoDefaultShift) throws BusinessException;
+	
+	/**
+	 * 使用默认工作日历。此操作只能是遇假日排班取消，因此无isHolidayCancel参数
+	 * 如果没有设置默认班次，则抛出异常
+	 * @param pk_hrorg
+	 * @param pk_psndocs
+	 * @param beginDate
+	 * @param endDate
+	 * @param overrideExistCalendar
+	 * @return
+	 * @throws BusinessException
+	 */
+	PsnJobCalendarVO[]
+	                    	useDefault(String pk_hrorg,
+	                    			String[] pk_psndocs,UFLiteralDate beginDate,UFLiteralDate endDate,boolean overrideExistCalendar) throws BusinessException;
+	
+	/**
+	 * 批量调班
+	 * @param pk_org
+	 * @param fromWhereSQL
+	 * @param beginDate
+	 * @param endDate
+	 * @param condition
+	 * @param oldShift，原班次。如果为空，则将符合条件的所有班次都调整为新班次；否则只是将符合条件的且原班次为oldShift的调整为新班次
+	 * @param newShift，新班次
+	 * @param withOldShift,是否考虑原班次。为true，表示原班次为oldShift的才调整，为false，表示不管原班次是什么，都调整
+	 */
+	void batchChangeShift(String pk_org,FromWhereSQL fromWhereSQL,UFLiteralDate beginDate,UFLiteralDate endDate,boolean withOldShift,String oldShift,String newShift) throws BusinessException;
+	
+	//修改后带向导的批量调班
+	void batchChangeShiftNew(String pk_org,String[] psndocs,UFLiteralDate beginDate,UFLiteralDate endDate,boolean withOldShift,String oldShift,String newShift) throws BusinessException;
+	
+	/**
+	 * 批量调班,经理自助使用
+	 * @param pk_dept
+	 * @param pk_psndocs
+	 * @param beginDate
+	 * @param endDate
+	 * @param oldShift，原班次。如果为空，则将符合条件的所有班次都调整为新班次；否则只是将符合条件的且原班次为oldShift的调整为新班次
+	 * @param newShift，新班次
+	 * @param withOldShift,是否考虑原班次。为true，表示原班次为oldShift的才调整，为false，表示不管原班次是什么，都调整
+	 */
+	void batchChangeShift4Mgr(String pk_dept,String[] pk_psndocs,UFLiteralDate beginDate,UFLiteralDate endDate,boolean withOldShift,String oldShift,String newShift) throws BusinessException;
+
+	/**
+	 * 导入工作日历
+	 * @param pk_org
+	 * @param vos，	导入文件的内容
+	 * @param fields，导入文件的表头设置
+	 * @return	错误信息数组:
+	 * 				0- 同一人有多条记录
+	 * 				1- 班次名称错误
+	 * 				2- 找不到对应的人员编码
+	 * 				3- 文件中排班冲突
+	 * 				4- 与已有排班冲突
+	 * @throws BusinessException 错误提示信息
+	 */
+	List<String>[] importDatas(String pk_org, GeneralVO[] vos,boolean isClearNull) throws BusinessException;
+
+	PsnJobCalendarVO[] save2(String pk_org, PsnJobCalendarVO[] saveData) throws BusinessException;
+}

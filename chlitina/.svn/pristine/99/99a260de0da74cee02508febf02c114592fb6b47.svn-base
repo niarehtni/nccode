@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="GB2312"?>
+<module name="nc.itf.hr.ta.HRtaEJB">
+	<public>
+		<component priority="0" singleton="true" remote="true" tx="CMT"  supportAlias="false">
+			<interface>nc.pubitf.ta.overtime.ICreateMonthCacuTable</interface>
+			<implementation>nc.pubimpl.ta.overtime.CreateMonthCacuTableImpl
+			</implementation>
+		</component>
+	</public>
+</module>

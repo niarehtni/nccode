@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding='UTF-8'?>
+<UIMeta flowmode="true" id="main_um" jquery="0">
+    <FlowvLayout autoFill="0" id="flowvlayout7501" widgetId="main">
+      <FlowvPanel id="panelv_operate" widgetId="main">
+         <CanvasLayout className="rightcanvas" id="menucanvas" widgetId="main">
+           <CanvasPanel id="canvasp1" widgetId="main">
+       	  	 <Menubar height="100%" id="menu_operate" left="0" position="relative" top="0" widgetId="main" width="100%">
+             </Menubar>
+           </CanvasPanel>
+         </CanvasLayout>
+        </FlowvPanel>
+        
+       <FlowvPanel id="panelv21888" widgetId="main">
+            <PanelLayout i18nName="w_ta-000586" langDir="node_ta-res" id="panellayout6666" title="销假登记信息" widgetId="main" className="small_panel_div">
+                <PanelPanel id="panelpanel6666" topPadding="20" widgetId="main">
+                    <FormComp height="100%" id="headTab_card_leaveinf_form" label_position="" left="0" position="relative" top="0" widgetId="main" width="100%">
+                    </FormComp>
+                </PanelPanel>
+            </PanelLayout>
+        </FlowvPanel>
+        
+    </FlowvLayout>
+</UIMeta>

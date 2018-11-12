@@ -1,0 +1,104 @@
+package nc.ui.twhr.nhicalc.action;
+
+import java.awt.event.ActionEvent;
+
+import nc.bs.framework.common.NCLocator;
+import nc.itf.twhr.INhicalcMaintain;
+import nc.uap.rbac.core.dataperm.DataPermissionFacade;
+import nc.ui.ml.NCLangRes;
+import nc.ui.pubapp.uif2app.view.ShowUpableBillForm;
+import nc.ui.twhr.nhicalc.ace.view.NhiOrgHeadPanel;
+import nc.ui.twhr.nhicalc.model.NhicalcAppModel;
+import nc.ui.uif2.IShowMsgConstant;
+import nc.ui.uif2.NCAction;
+import nc.ui.uif2.ShowStatusBarMsgUtil;
+import nc.ui.uif2.UIState;
+import nc.vo.jcom.lang.StringUtil;
+import nc.vo.ncaam.pub.NcaamDateTimeUtil;
+import nc.vo.pub.BusinessException;
+import nc.vo.pubapp.pattern.exception.ExceptionUtils;
+import nc.vo.uif2.LoginContext;
+
+import org.apache.commons.lang.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+
+public class EditAction extends nc.ui.uif2.actions.EditAction {
+	/**
+	 * serial version id
+	 */
+	private static final long serialVersionUID = -1199547268191528188L;
+
+	private ShowUpableBillForm editor = null;
+
+	@Autowired
+	private NhicalcAppModel model = null;
+
+	@Autowired
+	private NhiOrgHeadPanel orgpanel = null;
+
+	public NhicalcAppModel getModel() {
+		return model;
+	}
+
+	public void setModel(NhicalcAppModel model) {
+		this.model = model;
+		model.addAppEventListener(this);
+	}
+
+	public ShowUpableBillForm getEditor() {
+		return editor;
+	}
+
+	public void setEditor(ShowUpableBillForm editor) {
+		this.editor = editor;
+	}
+
+	public void showHintMessage(String msg) {
+		ShowStatusBarMsgUtil.showStatusBarMsg(msg, this.model.getContext());
+	}
+
+	public void doAction(ActionEvent e) throws Exception {
+		if (checkDataPermission())
+			this.model.setUiState(UIState.EDIT);
+		else
+			ShowStatusBarMsgUtil.showErrorMsg(NCLangRes.getInstance()
+					.getStrByID("uif2", "ExceptionHandlerWithDLG-000000"),
+					IShowMsgConstant.getDataPermissionInfo(), getModel()
+							.getContext());
+	}
+
+	public boolean isEnabled() {
+		INhicalcMaintain nhiSrv = NCLocator.getInstance().lookup(
+				INhicalcMaintain.class);
+		boolean isaudit = false;
+		try {
+			if (!StringUtils.isEmpty(getOrgpanel().getRefPane().getRefPK())
+					&& !StringUtils.isEmpty(this.getOrgpanel()
+							.getPeriodRefModel().getRefNameValue())) {
+				isaudit = nhiSrv.isAudit(getOrgpanel().getRefPane().getRefPK(),
+						this.getOrgpanel().getPeriodRefModel()
+								.getRefNameValue().split("-")[0], this
+								.getOrgpanel().getPeriodRefModel()
+								.getRefNameValue().split("-")[1]);
+			}
+		} catch (BusinessException e) {
+			ExceptionUtils.wrappBusinessException(e.getMessage());
+		}
+
+		return (!isaudit) && this.getModel().getUiState() == UIState.NOT_EDIT;
+	}
+
+	@Override
+	protected boolean isActionEnable() {
+		return isEnabled();
+	}
+
+	public NhiOrgHeadPanel getOrgpanel() {
+		return orgpanel;
+	}
+
+	public void setOrgpanel(NhiOrgHeadPanel orgpanel) {
+		this.orgpanel = orgpanel;
+	}
+
+}

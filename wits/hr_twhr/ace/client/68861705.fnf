@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="gbk"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+	<bean id="general" class="nc.pubapp.pade.code.funnode.FunNodePara">
+        <property name="moduleName" value="twhr" />
+	    <property name="bpfPath" value="test.bpf"/>
+	    <property name="funcode" value="68861705"/>
+	    <property name="clientPackName" value="nc.ui.twhr.nhicalc"/>
+			    <property name="metaData" value="nhicalculate\METADATA\nhicalc.bmf"/>
+	    <property name="xmlPath" value="nhicalculate\src\client\nc\ui\twhr\nhicalc\ace\view\Nhicalc_config.xml"/>
+	    <property name="metaDataType" value="singleType" />
+		<property name="funcregispath" value="nhicalculate/funcmodel/nhicalc/funcregis/68861705.func" />
+		<property name="quetempath" value="${quetempath}" />
+		<property name="printtempath" value="${printtempath}" />
+		<property name="systembasepath" value="nhicalculate/systemplatebase/nhicalc/68861705/68861705.stb" />
+		<property name="extendSuffix" value=""/>
+		<property name="uif2ModelFilePath" value="nhicalculate\ace\uif2model\68861705.umf"/>
+		<property name="busiCompName" value="nhicalculate"/>
+		<property name="metaDataId" value="fd6a567a-fc42-4014-9526-c32eb0d0d444"/>
+	</bean>
+
+	<bean id="templet" class="nc.pubapp.pade.code.funnode.Templet">
+		<property name="tempStyle" value="1" />
+		<property name="nodeKey" value="" />
+		<property name="templetPath" value="nhicalculate/templet/nhicalc/billtemplet/68861705.btf" />
+	</bean>
+	
+	<bean id="FilePackNameBean" class="nc.pubapp.pade.code.engine.FilePackNamePara">
+		<property name="filePackNameList">
+			 <list>
+				  <value>nc.ui.twhr.nhicalc.action.NhicalcAddLineAction.java</value>
+				  <value>nc.ui.twhr.nhicalc.handler.BodyAfterEditHandler.java</value>
+				  <value>nc.ui.twhr.nhicalc.handler.BodyBeforeEditHandler.java</value>
+			 </list>
+		</property>
+	</bean>
+
+</beans>

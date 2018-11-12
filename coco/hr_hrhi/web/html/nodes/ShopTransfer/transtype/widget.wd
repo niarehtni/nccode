@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding='UTF-8'?>
+<Widget caption="店员调动类型界面" controllerClazz="nc.bs.hrsms.hi.employ.ShopTransfer.TranstypeViewController" i18nName="a_pub-000064" id="transtype" langDir="node_pub-res" refId="transtype" sourcePackage="hi/src/public/">
+    <Attributes>
+    </Attributes>
+    <PageMetas>
+    </PageMetas>
+    <PlugoutDescs>
+        <PlugoutDesc id="outOpenMain">
+        </PlugoutDesc>
+    </PlugoutDescs>
+    <PluginDescs>
+    </PluginDescs>
+    <Models>
+        <Datasets>
+        </Datasets>
+        <ComboDatas>
+            <DynamicComboData caption="调配业务类型" className="nc.bs.hrsms.hi.employ.ShopTransfer.lsnr.TrnstypeComboLoader" id="combo_transtype">
+            </DynamicComboData>
+            <DynamicComboData caption="调配方式" className="nc.bs.hrsms.hi.employ.ShopTransfer.lsnr.StapplyModeComboLoader" id="combo_stapply_mode">
+            </DynamicComboData>
+        </ComboDatas>
+    </Models>
+    <Components>
+        <ButtonComp enabled="true" i18nName="w_hi-000662" id="button_confirm" langDir="node_hi-res" text="确定" visible="true">
+            <Events>
+                <Event async="true" methodName="onConfirm" name="onclick" onserver="true">
+                    <SubmitRule>
+                    </SubmitRule>
+                    <Params>
+                        <Param>
+                            <Name>mouseEvent</Name>
+                            <Value></Value>
+                            <Desc>                                <![CDATA[nc.uap.lfw.core.event.MouseEvent]]>
+                            </Desc>
+                        </Param>
+                    </Params>
+                    <Action>
+                    </Action>
+                </Event>
+            </Events>
+        </ButtonComp>
+        <ComBoBoxComp allowExtendValue="false" editorType="ComboBox" enabled="false" focus="false" i18nName="w_hi-000659" id="stapply_mode" langDir="node_hi-res" multiSelect="false" needNullOption="false" refComboData="combo_stapply_mode" selectOnly="true" text="调配方式" textAlign="left" textWidth="50" visible="false">
+        </ComBoBoxComp>
+        <ComBoBoxComp allowExtendValue="false" editorType="ComboBox" enabled="true" focus="false" id="transtype_id" langDir="node_hi-res" multiSelect="false" needNullOption="false" refComboData="combo_transtype" selectOnly="true" text="调配类型" textAlign="left" textWidth="50" visible="true">
+        </ComBoBoxComp>
+    </Components>
+    <Menus>
+    </Menus>
+</Widget>

@@ -1,0 +1,159 @@
+package nc.impl.hrwa;
+
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import nc.bs.dao.BaseDAO;
+import nc.bs.dao.DAOException;
+import nc.hr.utils.InSQLCreator;
+import nc.itf.hrwa.IWadaysalaryQueryService;
+import nc.jdbc.framework.processor.ColumnProcessor;
+import nc.jdbc.framework.processor.MapListProcessor;
+import nc.jdbc.framework.processor.ResultSetProcessor;
+import nc.vo.pub.BusinessException;
+import nc.vo.pub.lang.UFDouble;
+import nc.vo.pub.lang.UFLiteralDate;
+import nc.vo.wa.paydata.AggDaySalaryVO;
+import nc.vo.wa.paydata.DaySalaryVO;
+import nc.vo.wa.paydata.LeaveRegDetailVO;
+
+public class WadaysalaryQueryServiceImpl implements IWadaysalaryQueryService {
+
+	public Map<Object, HashMap<Object, Object>> getDaySalaryMap(String[] pk_psnjobs, UFLiteralDate begindate,
+			UFLiteralDate enddate) throws BusinessException {
+		String insql = new InSQLCreator().getInSQL(pk_psnjobs, true);
+		String qrySql = "SELECT\n" + "	pk_psnjob,\n" + "	salarydate,\n" + "	daysalary\n" + "FROM\n" + "	wa_daysalary\n"
+				+ "WHERE\n" + "	salarydate <= '" + begindate + "'\n" + "AND salarydate >= '" + begindate + "'\n"
+				+ "AND pk_psnjob IN (" + insql + ")";
+		return executeQuery(qrySql);
+	}
+
+	@SuppressWarnings({ "unchecked", "serial" })
+	private HashMap<Object, HashMap<Object, Object>> executeQuery(String qrysql) throws DAOException {
+
+		HashMap<Object, HashMap<Object, Object>> param1ParamsMap = (HashMap<Object, HashMap<Object, Object>>) getDao()
+				.executeQuery(qrysql, new ResultSetProcessor() {
+
+					@Override
+					public Object handleResultSet(ResultSet rs) throws SQLException {
+						HashMap<Object, HashMap<Object, Object>> retMap = new HashMap<Object, HashMap<Object, Object>>();
+
+						while (rs.next()) {
+
+							HashMap<Object, Object> param2VoMap = retMap.get(rs.getObject(1));
+
+							if (param2VoMap == null) {
+
+								param2VoMap = new HashMap<Object, Object>();
+
+								param2VoMap.put(rs.getObject(2), rs.getObject(3));
+								retMap.put(rs.getObject(1), param2VoMap);
+							} else {
+
+								param2VoMap.put(rs.getObject(2), rs.getObject(3));
+							}
+
+						}
+
+						return retMap;
+					}
+				});
+
+		return param1ParamsMap;
+	}
+
+	@Override
+	public UFDouble getDaySalary(String pk_psnjob, UFLiteralDate calculDate) throws BusinessException {
+		String qrySql = "SELECT\n" + "	daysalary\n" + "FROM\n" + "	wa_daysalary\n" + "WHERE\n" + "	salarydate = '"
+				+ calculDate + "'\n" + "AND pk_psnjob = '" + pk_psnjob + "'";
+		Object salary = getDao().executeQuery(qrySql, new ColumnProcessor());
+		return salary == null ? UFDouble.ZERO_DBL : new UFDouble(salary.toString());
+	}
+
+	/**
+	 * 供前台查询使用的方法，只包含parentVO
+	 */
+	@Override
+	public AggDaySalaryVO[] queryByCondition(String condition) throws BusinessException {
+		Collection<DaySalaryVO> result = getDao().retrieveByClause(DaySalaryVO.class, condition);
+		DaySalaryVO[] daySalaryVOs = result.toArray(new DaySalaryVO[0]);
+		AggDaySalaryVO[] aggDaySalaryVOs = new AggDaySalaryVO[daySalaryVOs.length];
+		for (int i = 0; i < aggDaySalaryVOs.length; i++) {
+			AggDaySalaryVO aggDaySalaryVO = new AggDaySalaryVO();
+			aggDaySalaryVO.setParentVO(daySalaryVOs[i]);
+			aggDaySalaryVOs[i] = aggDaySalaryVO;
+		}
+		if (daySalaryVOs.length > 0) {
+			Collection<LeaveRegDetailVO> collection = getDao().retrieveByClause(LeaveRegDetailVO.class,
+					"pk_daysalary='" + daySalaryVOs[0].getPk_daysalary() + "'");
+			aggDaySalaryVOs[0].setChildrenVO(collection.toArray(new LeaveRegDetailVO[0]));
+		}
+		return aggDaySalaryVOs;
+	}
+
+	@Override
+	public Map<String, Map<UFLiteralDate, Map<String, UFDouble>>> queryDaySalaryByPsndoc(String[] pk_psndocs,
+			UFLiteralDate begindate, UFLiteralDate enddate) throws BusinessException {
+		HashMap<String, Map<UFLiteralDate, Map<String, UFDouble>>> salaryMap = new HashMap<String, Map<UFLiteralDate, Map<String, UFDouble>>>();
+		int betweens = UFLiteralDate.getDaysBetween(begindate, enddate);
+		String insql = new InSQLCreator().getInSQL(pk_psndocs, true);
+		for (int i = 0; i <= betweens; i++) {
+			UFLiteralDate calculDate = begindate.getDateAfter(i);
+			String qrySql = "SELECT\n" + "	wadoc.pk_psndoc AS pk_psndoc,\n" + "	SUM (wadoc.nmoney) AS fullsalary\n"
+					+ "FROM\n" + "	hi_psndoc_wadoc wadoc\n"
+					+ "LEFT JOIN hi_psnjob psnjob ON wadoc.pk_psnjob = psnjob.pk_psnjob\n" + "WHERE\n"
+					+ "	wadoc.pk_psndoc IN ("
+					+ insql
+					+ ")\n"
+					+ "AND wadoc.begindate <= '"
+					+ calculDate
+					+ "'\n"
+					+ "AND (\n"
+					+ "	wadoc.enddate >= '"
+					+ calculDate
+					+ "'\n"
+					+ "	OR psnjob.enddate IS NULL\n"
+					+ ")\n"
+					+ "AND psnjob.begindate <= '"
+					+ calculDate
+					+ "'\n"
+					+ "AND (\n"
+					+ "	psnjob.enddate >= '"
+					+ calculDate + "'\n" + "	OR psnjob.enddate IS NULL\n" + ")\n" + "GROUP BY\n" + "	wadoc.pk_psndoc";
+			List<HashMap<String, Object>> listMaps = (ArrayList<HashMap<String, Object>>) getDao().executeQuery(qrySql,
+					new MapListProcessor());
+			for (int j = 0; j < listMaps.size(); j++) {
+				HashMap<String, Object> hashMap = listMaps.get(i);
+				String pk_psndoc = hashMap.get("pk_psndoc").toString();
+				UFDouble fullsalary = new UFDouble(hashMap.get("fullsalary").toString());
+				UFDouble daysalary = fullsalary.div(30.0);
+				UFDouble hoursalary = fullsalary.div(240.0);
+				Map<String, UFDouble> daysalaryMap = new HashMap<String, UFDouble>();
+				daysalaryMap.put("daysalary", daysalary);
+				daysalaryMap.put("hoursalary", hoursalary);
+				Map<UFLiteralDate, Map<String, UFDouble>> dateSalaryMap = new HashMap<UFLiteralDate, Map<String, UFDouble>>();
+				dateSalaryMap.put(calculDate, daysalaryMap);
+				if (null == salaryMap.get(pk_psndoc)) {
+					salaryMap.put(pk_psndoc, dateSalaryMap);
+				} else {
+					salaryMap.get(pk_psndoc).put(calculDate, daysalaryMap);
+				}
+			}
+		}
+		return salaryMap;
+	}
+
+	public BaseDAO getDao() {
+		if (null == dao) {
+			dao = new BaseDAO();
+		}
+		return dao;
+	}
+
+	private BaseDAO dao;
+}

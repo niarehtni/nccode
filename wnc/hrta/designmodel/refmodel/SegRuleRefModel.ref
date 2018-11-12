@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="GBK"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+<bean id="refBean" class="com.yonyou.ria.ref.refmodel.cg.RefModelCGVO">
+<property name="author" value="Your Author Name"/>
+<property name="date" value="Your Create Data"/>
+<property name="dbEntity" value="segrule"/>
+<property name="dbModule" value="hrta"/>
+<property name="lsFieldCode">
+<list>
+<value>code</value>
+<value>name</value>
+<value>datetype</value>
+<value>additionaldays</value>
+<value>isdefault</value>
+</list>
+</property>
+<property name="lsFieldName">
+<list>
+<value>编码</value>
+<value>名称</value>
+<value>日历天类型</value>
+<value>外加补休基准天数</value>
+<value>是否默认</value>
+</list>
+</property>
+<property name="lsHiddenFieldCode">
+<list>
+<value>pk_segrule</value>
+<value>pk_segrule</value>
+<value>pk_group</value>
+<value>pk_org</value>
+<value>pk_org_v</value>
+<value>creator</value>
+<value>creationtime</value>
+<value>modifier</value>
+<value>modifiedtime</value>
+<value>unittype</value>
+<value>roundtype</value>
+<value>additionalmode</value>
+<value>isenabled</value>
+<value>memo</value>
+<value>makedate</value>
+</list>
+</property>
+<property name="lsHiddenFieldName">
+<list>
+<value>加班分段依据主键</value>
+<value>加班分段规则</value>
+<value>集团</value>
+<value>组织</value>
+<value>组织版本</value>
+<value>创建人</value>
+<value>创建时间</value>
+<value>修改人</value>
+<value>修改时间</value>
+<value>分段时数类型</value>
+<value>进位规则</value>
+<value>外加补休计算方式</value>
+<value>是否生效</value>
+<value>备注</value>
+<value>接口单据日期</value>
+</list>
+</property>
+<property name="mdEntityId" value="e609056c-ba06-4ee1-9fbf-23640c7cb5df"/>
+<property name="mdVersion" value="37"/>
+<property name="packageAndClassName"><bean class="com.yonyou.ria.codegen.pub.ClassBasicInfo">
+<property name="className" value="SegruleRefModel"/>
+<property name="packageName" value="nc.ui.ta.overtime.refmodel"/>
+</bean>
+</property>
+
+<property name="pkFieldCode" value="pk_segrule"/>
+<property name="project" value="Your Project"/>
+<property name="refCodeField" value="code"/>
+<property name="refName" value="加班分段依据"/>
+<property name="refNameField" value="name"/>
+<property name="tableName" value="hrta_segrule"/>
+<property name="version" value="1.0"/>
+<property name="wherePart" value="1=1 and isenabled='Y'"/>
+</bean>
+
+</beans>

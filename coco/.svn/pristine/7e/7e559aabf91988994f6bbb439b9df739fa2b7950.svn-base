@@ -1,0 +1,920 @@
+<?xml version="1.0" encoding='UTF-8'?>
+<Widget controllerClazz="nc.bs.hrsms.ta.sss.ShopAttendance.ctrl.ShopAttendanceForMngViewMain" dialog="false" i18nName="a_pub-000197" langDir="node_pub-res" caption="员工出勤情况按人员按日期查看界面" id="main" refId="main" sourcePackage="src/public/">
+    <Attributes>
+        <Attribute>
+            <Key>$QueryTemplate</Key>
+            <Value>
+            </Value>
+        </Attribute>
+    </Attributes>
+    <PageMetas>
+    </PageMetas>
+    <PlugoutDescs>
+    </PlugoutDescs>
+    <PluginDescs>
+        <PluginDesc id="Search">
+            <PluginDescItem clazztype="java.lang.String" id="qryout">
+            </PluginDescItem>
+        </PluginDesc>
+        <PluginDesc id="ReSearch">
+            <PluginDescItem clazztype="java.lang.String" id="closewindow">
+            </PluginDescItem>
+        </PluginDesc>
+        <PluginDesc id="Catagory">
+            <PluginDescItem clazztype="java.lang.String" id="po_catagory_changed">
+            </PluginDescItem>
+        </PluginDesc>
+        <PluginDesc id="DeptChange">
+            <PluginDescItem clazztype="java.util.Map" id="deptout">
+            </PluginDescItem>
+        </PluginDesc>
+    </PluginDescs>
+    <Events>
+        <Event async="true" methodName="pluginSearch" onserver="true">
+            <SubmitRule cardSubmit="false" panelSubmit="false" tabSubmit="false">
+                <Widget cardSubmit="false" id="main" panelSubmit="false" tabSubmit="true">
+                </Widget>
+            </SubmitRule>
+            <Params>
+                <Param>
+                    <Name>keys</Name>
+                    <Value>
+                    </Value>
+                    <Desc>                        <![CDATA[java.util.Map]]>
+                    </Desc>
+                </Param>
+            </Params>
+            <Action>
+            </Action>
+        </Event>
+        <Event async="true" methodName="pluginReSearch" onserver="true">
+            <SubmitRule cardSubmit="false" panelSubmit="false" tabSubmit="false">
+                <Widget cardSubmit="false" id="main" panelSubmit="false" tabSubmit="true">
+                </Widget>
+            </SubmitRule>
+            <Params>
+                <Param>
+                    <Name>keys</Name>
+                    <Value>
+                    </Value>
+                    <Desc>                        <![CDATA[java.util.Map]]>
+                    </Desc>
+                </Param>
+            </Params>
+            <Action>
+            </Action>
+        </Event>
+        <Event async="true" methodName="pluginDeptChange" onserver="true">
+            <Params>
+                <Param>
+                    <Name>keys</Name>
+                    <Value>
+                    </Value>
+                    <Desc>                        <![CDATA[java.util.Map]]>
+                    </Desc>
+                </Param>
+            </Params>
+            <Action>
+            </Action>
+        </Event>
+    </Events>
+    <Models>
+        <Datasets>
+            <RefMdDataset caption="人员基本信息" controlwidgetopeStatus="false" enabled="false" id="$refds_hrhi_bd_psndoc" lazyLoad="true" notNullBody="false" objMeta="hrhi.bd_psndoc" voMeta="nc.vo.hi.psndoc.PsndocVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset caption="组织_部门版本信息" controlwidgetopeStatus="false" enabled="false" id="$refds_uap_dept_v" lazyLoad="true" notNullBody="false" objMeta="uap.dept_v" voMeta="nc.vo.vorg.DeptVersionVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset caption="组织_集团" controlwidgetopeStatus="false" enabled="false" id="$refds_uap_group" lazyLoad="true" notNullBody="false" objMeta="uap.group" voMeta="nc.vo.org.GroupVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset caption="人力资源组织" controlwidgetopeStatus="false" enabled="false" id="$refds_hrjf_hrhrorg" lazyLoad="true" notNullBody="false" objMeta="hrjf.hrhrorg" voMeta="nc.vo.om.orginfo.HRHROrgVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset caption="考勤地点(自定义档案)" controlwidgetopeStatus="false" enabled="false" id="$refds_uap_Defdoc_HRTA001" lazyLoad="true" notNullBody="false" objMeta="uap.Defdoc-HRTA001_0xx" voMeta="nc.vo.bd.defdoc.DefdocVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset caption="班次" controlwidgetopeStatus="false" enabled="false" id="$refds_hrta_bdshift" lazyLoad="true" notNullBody="false" objMeta="hrta.bdshift" voMeta="nc.vo.bd.shift.ShiftVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset caption="组织_业务单元_人力资源组织" controlwidgetopeStatus="false" enabled="false" id="$refds_uap_hrorg" lazyLoad="true" notNullBody="false" objMeta="uap.hrorg" voMeta="nc.vo.org.HROrgVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset caption="用户" controlwidgetopeStatus="false" enabled="false" id="$refds_uap_user" lazyLoad="true" notNullBody="false" objMeta="uap.user" voMeta="nc.vo.sm.UserVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset caption="考勤机" controlwidgetopeStatus="false" enabled="false" id="$refds_hrta_tbmmachine" lazyLoad="true" notNullBody="false" objMeta="hrta.tbmmachine" voMeta="nc.vo.ta.machineset.MachineVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset caption="组织_部门" controlwidgetopeStatus="false" enabled="false" id="$refds_uap_dept" lazyLoad="true" notNullBody="false" objMeta="uap.dept" voMeta="nc.vo.org.DeptVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset caption="职务" controlwidgetopeStatus="false" enabled="false" id="$refds_hrjf_om_job" lazyLoad="true" notNullBody="false" objMeta="hrjf.om_job" voMeta="nc.vo.om.job.JobVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <MdDataset caption="手工考勤数据" controlwidgetopeStatus="false" enabled="false" id="dsManualData" lazyLoad="true" notNullBody="false" objMeta="hrta.lateearly" pageSize="20" voMeta="nc.vo.ta.lateearly.LateEarlyVO">
+                <FieldRelations>
+                    <FieldRelation id="pk_group_rel" needProcess="true" refDataset="$refds_uap_group">
+                        <MatchFields>
+                            <Field readField="name" writeField="pk_group_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_group" value="pk_group">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_org_rel" needProcess="true" refDataset="$refds_uap_hrorg">
+                        <MatchFields>
+                            <Field readField="name" writeField="pk_org_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_hrorg" value="pk_org">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_psndoc_rel" needProcess="true" refDataset="$refds_hrhi_hi_psnjob">
+                        <MatchFields>
+                            <Field readField="pk_psndoc" writeField="pk_psnjob_pk_psndoc">
+                            </Field>
+                            <Field readField="clerkcode" writeField="pk_psnjob_clerkcode">
+                            </Field>
+                            <Field readField="pk_dept" writeField="pk_psnjob_pk_dept">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_psnjob" value="pk_psnjob">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_psnjob_pk_psndoc_rel" needProcess="true" refDataset="$refds_hrhi_bd_psndoc">
+                        <MatchFields>
+                            <Field readField="code" writeField="pk_psnjob_pk_psndoc_code">
+                            </Field>
+                            <Field readField="name" writeField="pk_psndoc_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_psndoc" value="pk_psnjob_pk_psndoc">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_shift_rel" needProcess="true" refDataset="$refds_hrta_bdshift">
+                        <MatchFields>
+                            <Field readField="name" writeField="pk_shift_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_shift" value="pk_shift">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="creator_rel" needProcess="true" refDataset="$refds_uap_user">
+                        <MatchFields>
+                            <Field readField="user_name" writeField="creator_user_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="cuserid" value="creator">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="modifier_rel" needProcess="true" refDataset="$refds_uap_user">
+                        <MatchFields>
+                            <Field readField="user_name" writeField="modifier_user_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="cuserid" value="modifier">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_org_v_rel" needProcess="true" refDataset="$refds_uap_hrorg_v">
+                        <MatchFields>
+                            <Field readField="name" writeField="pk_org_v_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_vid" value="pk_org_v">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_dept_v_rel" needProcess="true" refDataset="$refds_uap_dept_v">
+                        <MatchFields>
+                            <Field readField="name" writeField="pk_dept_v_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_vid" value="pk_dept_v">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_psnjob_pk_dept_rel" needProcess="true" refDataset="$refds_uap_dept">
+                        <MatchFields>
+                            <Field iscontains="Y" ismatch="Y" readField="pk_dept" writeField="pk_psnjob_pk_dept">
+                            </Field>
+                            <Field readField="name" writeField="pk_psnjob_pk_dept_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_dept" value="pk_psnjob_pk_dept">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                </FieldRelations>
+                <Fields>
+                    <ModifyField i18nName="w_ta-000064" id="calendar" text="日期">
+                    </ModifyField>
+                    <ModifyField id="absenthour" precision="2">
+                    </ModifyField>
+                    <ModifyField id="latelength" precision="2">
+                    </ModifyField>
+                    <ModifyField id="earlylength" precision="2">
+                    </ModifyField>
+                    <ModifyField id="nightabsenthour" precision="2">
+                    </ModifyField>
+                    <ModifyField id="worklengthinholiday" precision="2">
+                    </ModifyField>
+                    <Field dataType="String" i18nName="w_ta-001238" id="pk_psnjob_clerkcode" langDir="node_ta-res" nullAble="true" primaryKey="false" sourceField="pk_psnjob_pk_psndoc" text="员工号">
+                    </Field>
+                    <Field dataType="String" i18nName="w_ta-001239" id="pk_psnjob_pk_psndoc_code" langDir="node_ta-res" nullAble="true" primaryKey="false" sourceField="pk_psnjob_pk_psndoc" text="人员编码">
+                    </Field>
+                    <Field dataType="String" i18nName="w_ta-001240" id="pk_psnjob_pk_dept" langDir="node_ta-res" nullAble="true" primaryKey="false" sourceField="pk_psnjob" text="部门">
+                    </Field>
+                    <Field dataType="String" i18nName="w_ta-001240" id="pk_psnjob_pk_dept_name" langDir="node_ta-res" nullAble="true" primaryKey="false" sourceField="pk_psnjob_pk_dept" text="部门">
+                    </Field>
+                </Fields>
+                <Events>
+                    <Event async="true" jsEventClaszz="nc.uap.lfw.core.event.conf.DatasetListener" methodName="onDataLoad_dsManualData" name="onDataLoad" onserver="true">
+                        <SubmitRule cardSubmit="false" panelSubmit="false" tabSubmit="false">
+                            <Widget cardSubmit="false" id="main" panelSubmit="false" tabSubmit="false">
+                                <Dataset id="dsManualData" type="ds_all_line">
+                                </Dataset>
+                                <Dataset id="dsMachineData" type="ds_all_line">
+                                </Dataset>
+                            </Widget>
+                        </SubmitRule>
+                        <Params>
+                            <Param>
+                                <Name>dataLoadEvent</Name>
+                                <Value>
+                                </Value>
+                                <Desc>                                    <![CDATA[nc.uap.lfw.core.event.DataLoadEvent]]>
+                                </Desc>
+                            </Param>
+                        </Params>
+                        <Action>
+                        </Action>
+                    </Event>
+                    <Event async="true" jsEventClaszz="nc.uap.lfw.core.event.conf.DatasetListener" methodName="dataChanged" name="onAfterDataChange" onserver="true">
+                        <SubmitRule cardSubmit="false" panelSubmit="false" tabSubmit="false">
+                            <Widget cardSubmit="false" id="main" panelSubmit="false" tabSubmit="false">
+                                <Dataset id="dsManualData" type="ds_all_line">
+                                </Dataset>
+                                <Dataset id="dsMachineData" type="ds_all_line">
+                                </Dataset>
+                            </Widget>
+                        </SubmitRule>
+                        <Params>
+                            <Param>
+                                <Name>datasetCellEvent</Name>
+                                <Value>
+                                </Value>
+                                <Desc>                                    <![CDATA[nc.uap.lfw.core.event.DatasetCellEvent]]>
+                                </Desc>
+                            </Param>
+                        </Params>
+                        <Action>
+                        </Action>
+                    </Event>
+                </Events>
+            </MdDataset>
+            <RefMdDataset caption="岗位基本信息" controlwidgetopeStatus="false" enabled="false" id="$refds_hrjf_om_post" lazyLoad="true" notNullBody="false" objMeta="hrjf.om_post" voMeta="nc.vo.om.post.PostVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset caption="组织_业务单元_人力资源组织版本信息" controlwidgetopeStatus="false" enabled="false" id="$refds_uap_hrorg_v" lazyLoad="true" notNullBody="false" objMeta="uap.hrorg_v" voMeta="nc.vo.vorg.HROrgVersionVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <MdDataset caption="机器考勤数据" controlwidgetopeStatus="false" enabled="false" id="dsMachineData" lazyLoad="false" notNullBody="false" objMeta="hrta.timedata" pageSize="20" voMeta="nc.vo.ta.dataprocess.TimeDataVO">
+                <FieldRelations>
+                    <FieldRelation id="pk_group_rel" needProcess="true" refDataset="$refds_uap_group">
+                        <MatchFields>
+                            <Field readField="name" writeField="pk_group_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_group" value="pk_group">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_org_rel" needProcess="true" refDataset="$refds_hrjf_hrhrorg">
+                        <MatchFields>
+                            <Field readField="name" writeField="pk_org_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_hrorg" value="pk_org">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_psndoc_rel" needProcess="true" refDataset="$refds_hrhi_hi_psnjob">
+                        <MatchFields>
+                            <Field readField="pk_psndoc" writeField="pk_psnjob_pk_psndoc">
+                            </Field>
+                            <Field readField="clerkcode" writeField="pk_psnjob_clerkcode">
+                            </Field>
+                            <Field readField="pk_dept" writeField="pk_psnjob_pk_dept">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_psnjob" value="pk_psnjob">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_psnjob_pk_psndoc_rel" needProcess="true" refDataset="$refds_hrhi_bd_psndoc">
+                        <MatchFields>
+                            <Field readField="code" writeField="pk_psnjob_pk_psndoc_code">
+                            </Field>
+                            <Field readField="name" writeField="pk_psndoc_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_psndoc" value="pk_psnjob_pk_psndoc">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_org_v_rel" needProcess="true" refDataset="$refds_uap_hrorg_v">
+                        <MatchFields>
+                            <Field readField="name" writeField="pk_org_v_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_vid" value="pk_org_v">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_dept_v_rel" needProcess="true" refDataset="$refds_uap_dept_v">
+                        <MatchFields>
+                            <Field readField="name" writeField="pk_dept_v_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_vid" value="pk_dept_v">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_shift_rel" needProcess="true" refDataset="$refds_hrta_bdshift">
+                        <MatchFields>
+                            <Field readField="name" writeField="pk_shift_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_shift" value="pk_shift">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_onebeginmachine_rel" needProcess="true" refDataset="$refds_hrta_tbmmachine">
+                        <MatchFields>
+                            <Field readField="machinename" writeField="pk_onebeginmachine_machinename">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_machineset" value="pk_onebeginmachine">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_oneendmachine_rel" needProcess="true" refDataset="$refds_hrta_tbmmachine">
+                        <MatchFields>
+                            <Field readField="machinename" writeField="pk_oneendmachine_machinename">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_machineset" value="pk_oneendmachine">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_twobeginmachine_rel" needProcess="true" refDataset="$refds_hrta_tbmmachine">
+                        <MatchFields>
+                            <Field readField="machinename" writeField="pk_twobeginmachine_machinename">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_machineset" value="pk_twobeginmachine">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_twoendmachine_rel" needProcess="true" refDataset="$refds_hrta_tbmmachine">
+                        <MatchFields>
+                            <Field readField="machinename" writeField="pk_twoendmachine_machinename">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_machineset" value="pk_twoendmachine">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_threebeginmachine_rel" needProcess="true" refDataset="$refds_hrta_tbmmachine">
+                        <MatchFields>
+                            <Field readField="machinename" writeField="pk_threebeginmachine_machinename">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_machineset" value="pk_threebeginmachine">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_threeendmachine_rel" needProcess="true" refDataset="$refds_hrta_tbmmachine">
+                        <MatchFields>
+                            <Field readField="machinename" writeField="pk_threeendmachine_machinename">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_machineset" value="pk_threeendmachine">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_fourbeginmachine_rel" needProcess="true" refDataset="$refds_hrta_tbmmachine">
+                        <MatchFields>
+                            <Field readField="machinename" writeField="pk_fourbeginmachine_machinename">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_machineset" value="pk_fourbeginmachine">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_fourendmachine_rel" needProcess="true" refDataset="$refds_hrta_tbmmachine">
+                        <MatchFields>
+                            <Field readField="machinename" writeField="pk_fourendmachine_machinename">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_machineset" value="pk_fourendmachine">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="creator_rel" needProcess="true" refDataset="$refds_uap_user">
+                        <MatchFields>
+                            <Field readField="user_name" writeField="creator_user_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="cuserid" value="creator">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="modifier_rel" needProcess="true" refDataset="$refds_uap_user">
+                        <MatchFields>
+                            <Field readField="user_name" writeField="modifier_user_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="cuserid" value="modifier">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_psnjob_pk_dept_rel" needProcess="true" refDataset="$refds_uap_dept">
+                        <MatchFields>
+                            <Field readField="name" writeField="pk_psnjob_pk_dept_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_dept" value="pk_psnjob_pk_dept">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                </FieldRelations>
+                <Fields>
+                    <ModifyField i18nName="w_ta-000064" id="calendar" text="日期">
+                    </ModifyField>
+                    <ModifyField id="onelatelen" precision="2">
+                    </ModifyField>
+                    <ModifyField id="oneearlylen" precision="2">
+                    </ModifyField>
+                    <ModifyField id="oneabsentlen" precision="2">
+                    </ModifyField>
+                    <ModifyField id="oneworklen" precision="2">
+                    </ModifyField>
+                    <ModifyField id="onenightlen" precision="2">
+                    </ModifyField>
+                    <ModifyField id="oneworklen_hol" precision="2">
+                    </ModifyField>
+                    <ModifyField id="twolatelen" precision="2">
+                    </ModifyField>
+                    <ModifyField id="twoearlylen" precision="2">
+                    </ModifyField>
+                    <ModifyField id="twoabsentlen" precision="2">
+                    </ModifyField>
+                    <ModifyField id="twoworklen" precision="2">
+                    </ModifyField>
+                    <ModifyField id="twonightlen" precision="2">
+                    </ModifyField>
+                    <ModifyField id="twoworklen_hol" precision="2">
+                    </ModifyField>
+                    <ModifyField id="threeearlylen" precision="2">
+                    </ModifyField>
+                    <ModifyField id="threelatelen" precision="2">
+                    </ModifyField>
+                    <ModifyField id="threeabsentlen" precision="2">
+                    </ModifyField>
+                    <ModifyField id="threeworklen" precision="2">
+                    </ModifyField>
+                    <ModifyField id="threenightlen" precision="2">
+                    </ModifyField>
+                    <ModifyField id="threeworklen_hol" precision="2">
+                    </ModifyField>
+                    <ModifyField id="fourearlylen" precision="2">
+                    </ModifyField>
+                    <ModifyField id="fourlatelen" precision="2">
+                    </ModifyField>
+                    <ModifyField id="fourabsentlen" precision="2">
+                    </ModifyField>
+                    <ModifyField id="fourworklen" precision="2">
+                    </ModifyField>
+                    <ModifyField id="fournightlen" precision="2">
+                    </ModifyField>
+                    <ModifyField id="fourworklen_hol" precision="2">
+                    </ModifyField>
+                    <ModifyField id="midwayouttime" precision="2">
+                    </ModifyField>
+                    <ModifyField id="oneuselactationholidaylen" precision="2">
+                    </ModifyField>
+                    <ModifyField id="twouselactationholidaylen" precision="2">
+                    </ModifyField>
+                    <ModifyField id="threeuselactationholidaylen" precision="2">
+                    </ModifyField>
+                    <ModifyField id="fouruselactationholidaylen" precision="2">
+                    </ModifyField>
+                    <ModifyField id="worklength" precision="2">
+                    </ModifyField>
+                    <ModifyField id="nightlength" precision="2">
+                    </ModifyField>
+                    <ModifyField id="worklength_hol" precision="2">
+                    </ModifyField>
+                    <ModifyField id="worklength_previous" precision="2">
+                    </ModifyField>
+                    <ModifyField id="nightlength_previous" precision="2">
+                    </ModifyField>
+                    <ModifyField id="worklength_previous_hol" precision="2">
+                    </ModifyField>
+                    <ModifyField id="worklength_cur" precision="2">
+                    </ModifyField>
+                    <ModifyField id="worklength_cur_hol" precision="2">
+                    </ModifyField>
+                    <ModifyField id="nightlength_cur" precision="2">
+                    </ModifyField>
+                    <ModifyField id="worklength_next" precision="2">
+                    </ModifyField>
+                    <ModifyField id="worklength_next_hol" precision="2">
+                    </ModifyField>
+                    <ModifyField id="nightlength_next" precision="2">
+                    </ModifyField>
+                    <Field dataType="String" i18nName="w_ta-001238" id="pk_psnjob_clerkcode" langDir="node_ta-res" nullAble="true" primaryKey="false" sourceField="pk_psnjob" text="员工号">
+                    </Field>
+                    <Field dataType="String" i18nName="w_ta-001239" id="pk_psnjob_pk_psndoc_code" langDir="node_ta-res" nullAble="true" primaryKey="false" sourceField="pk_psnjob_pk_psndoc" text="人员编码">
+                    </Field>
+                    <Field dataType="String" i18nName="w_ta-001240" id="pk_psnjob_pk_dept" langDir="node_ta-res" nullAble="true" primaryKey="false" sourceField="pk_psnjob" text="部门">
+                    </Field>
+                    <Field dataType="String" i18nName="w_ta-001240" id="pk_psnjob_pk_dept_name" langDir="node_ta-res" nullAble="true" primaryKey="false" sourceField="pk_psnjob_pk_dept" text="部门">
+                    </Field>
+                </Fields>
+                <Events>
+                    <Event async="true" jsEventClaszz="nc.uap.lfw.core.event.conf.DatasetListener" methodName="onDataLoad_dsMachineData" name="onDataLoad" onserver="true">
+                        <SubmitRule cardSubmit="false" panelSubmit="false" tabSubmit="false">
+                            <Widget cardSubmit="false" id="main" panelSubmit="false" tabSubmit="false">
+                                <Dataset id="dsManualData" type="ds_all_line">
+                                </Dataset>
+                                <Dataset id="dsMachineData" type="ds_all_line">
+                                </Dataset>
+                            </Widget>
+                        </SubmitRule>
+                        <Params>
+                            <Param>
+                                <Name>dataLoadEvent</Name>
+                                <Value>
+                                </Value>
+                                <Desc>                                    <![CDATA[nc.uap.lfw.core.event.DataLoadEvent]]>
+                                </Desc>
+                            </Param>
+                        </Params>
+                        <Action>
+                        </Action>
+                    </Event>
+                </Events>
+            </MdDataset>
+            <RefMdDataset caption="工作记录" controlwidgetopeStatus="false" enabled="false" id="$refds_hrhi_hi_psnjob" lazyLoad="true" notNullBody="false" objMeta="hrhi.hi_psnjob" voMeta="nc.vo.hi.psndoc.PsnJobVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+        </Datasets>
+        <ComboDatas>
+            <MDComboDataConf caption="手工考勤数据" fullclassName="94b4dd06-5f77-45dd-bca1-7f291b46aeac" id="combo_dsManualData_fourbeginstatus">
+            </MDComboDataConf>
+            <MDComboDataConf caption="手工考勤数据" fullclassName="94b4dd06-5f77-45dd-bca1-7f291b46aeac" id="combo_dsManualData_twobeginstatus">
+            </MDComboDataConf>
+            <MDComboDataConf caption="手工考勤数据" fullclassName="94b4dd06-5f77-45dd-bca1-7f291b46aeac" id="combo_dsManualData_onebeginstatus">
+            </MDComboDataConf>
+            <MDComboDataConf caption="手工考勤数据" fullclassName="03f28a55-adf2-411d-ac0c-2f422687ebf7" id="combo_dsManualData_fourendstatus">
+            </MDComboDataConf>
+            <MDComboDataConf caption="手工考勤数据" fullclassName="94b4dd06-5f77-45dd-bca1-7f291b46aeac" id="combo_dsManualData_threebeginstatus">
+            </MDComboDataConf>
+            <MDComboDataConf caption="手工考勤数据" fullclassName="03f28a55-adf2-411d-ac0c-2f422687ebf7" id="combo_dsManualData_threeendstatus">
+            </MDComboDataConf>
+            <MDComboDataConf caption="手工考勤数据" fullclassName="03f28a55-adf2-411d-ac0c-2f422687ebf7" id="combo_dsManualData_oneendstatus">
+            </MDComboDataConf>
+            <MDComboDataConf caption="手工考勤数据" fullclassName="03f28a55-adf2-411d-ac0c-2f422687ebf7" id="combo_dsManualData_twoendstatus">
+            </MDComboDataConf>
+        </ComboDatas>
+        <RefNodes>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" i18nName="w_ta-001164" id="refnode_dsManualData_pk_shift_name" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" readDs="masterDs" readFields="pk_shift,name" refId="" refcode="班次(业务单元包含门店)" refnodeDelegator="" selLeafOnly="false" text="手工考勤数据_班次(业务单元包含门店)" usePower="false" writeDs="dsManualData" writeFields="pk_shift,pk_shift_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" i18nName="w_ta-001185" id="refnode_dsMachineData_pk_psndoc_name" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" readDs="masterDs" readFields="pk_psndoc,name" refId="" refcode="HR人员" refnodeDelegator="" selLeafOnly="false" text="机器考勤数据_HR人员" usePower="false" writeDs="dsMachineData" writeFields="pk_psndoc,pk_psndoc_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" i18nName="w_ta-001187" id="refnode_dsMachineData_pk_shift_name" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" readDs="masterDs" readFields="pk_shift,name" refId="" refcode="班次(业务单元包含门店)" refnodeDelegator="" selLeafOnly="false" text="机器考勤数据_班次(业务单元包含门店)" usePower="false" writeDs="dsMachineData" writeFields="pk_shift,pk_shift_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" i18nName="w_ta-001188" id="refnode_dsMachineData_pk_org_v_name" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" readDs="masterDs" readFields="pk_vid,name" refId="" refcode="人力资源组织版本" refnodeDelegator="" selLeafOnly="false" text="机器考勤数据_人力资源组织版本" usePower="false" writeDs="dsMachineData" writeFields="pk_org_v,pk_org_v_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" i18nName="w_ta-001190" id="refnode_dsManualData_creator_user_name" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" readDs="masterDs" readFields="cuserid,user_name" refId="" refcode="用户" refnodeDelegator="" selLeafOnly="false" text="手工考勤数据_用户" usePower="false" writeDs="dsManualData" writeFields="creator,creator_user_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" i18nName="w_ta-001191" id="refnode_dsManualData_pk_psndoc_name" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" readDs="masterDs" readFields="pk_psndoc,name" refId="" refcode="HR人员" refnodeDelegator="" selLeafOnly="false" text="手工考勤数据_HR人员" usePower="false" writeDs="dsManualData" writeFields="pk_psndoc,pk_psndoc_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" i18nName="w_ta-001193" id="refnode_dsManualData_pk_psnjob_pk_psndoc_name" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" readDs="masterDs" readFields="pk_psnjob,name" refId="" refcode="人员工作记录" refnodeDelegator="" selLeafOnly="false" text="手工考勤数据_人员工作记录" usePower="false" writeDs="dsManualData" writeFields="pk_psnjob,pk_psnjob_pk_psndoc_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" i18nName="w_ta-001194" id="refnode_dsManualData_pk_org_name" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" readDs="masterDs" readFields="pk_hrorg,name" refId="" refcode="人力资源组织" refnodeDelegator="" selLeafOnly="false" text="手工考勤数据_人力资源组织" usePower="false" writeDs="dsManualData" writeFields="pk_org,pk_org_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" i18nName="w_ta-001195" id="refnode_dsManualData_pk_org_v_name" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" readDs="masterDs" readFields="pk_vid,name" refId="" refcode="人力资源组织版本" refnodeDelegator="" selLeafOnly="false" text="手工考勤数据_人力资源组织版本" usePower="false" writeDs="dsManualData" writeFields="pk_org_v,pk_org_v_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" i18nName="w_ta-001196" id="refnode_dsManualData_pk_dept_v_name" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" readDs="masterDs" readFields="pk_vid,name" refId="" refcode="部门版本" refnodeDelegator="" selLeafOnly="false" text="手工考勤数据_部门版本" usePower="false" writeDs="dsManualData" writeFields="pk_dept_v,pk_dept_v_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" i18nName="w_ta-001199" id="refnode_dsMachineData_pk_threebeginplace_name" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" readDs="masterDs" readFields="pk_defdoc,name" refId="" refcode="考勤地点(自定义档案)" refnodeDelegator="" selLeafOnly="false" text="机器考勤数据_考勤地点(自定义档案)" usePower="false" writeDs="dsMachineData" writeFields="pk_threebeginplace,pk_threebeginplace_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" i18nName="w_ta-001200" id="refnode_dsMachineData_pk_group_name" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" readDs="masterDs" readFields="pk_group,name" refId="" refcode="集团" refnodeDelegator="" selLeafOnly="false" text="机器考勤数据_集团" usePower="false" writeDs="dsMachineData" writeFields="pk_group,pk_group_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" i18nName="w_ta-001199" id="refnode_dsMachineData_pk_fourendplace_name" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" readDs="masterDs" readFields="pk_defdoc,name" refId="" refcode="考勤地点(自定义档案)" refnodeDelegator="" selLeafOnly="false" text="机器考勤数据_考勤地点(自定义档案)" usePower="false" writeDs="dsMachineData" writeFields="pk_fourendplace,pk_fourendplace_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" i18nName="w_ta-001202" id="refnode_dsMachineData_pk_dept_v_name" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" readDs="masterDs" readFields="pk_vid,name" refId="" refcode="部门版本" refnodeDelegator="" selLeafOnly="false" text="机器考勤数据_部门版本" usePower="false" writeDs="dsMachineData" writeFields="pk_dept_v,pk_dept_v_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" i18nName="w_ta-001203" id="refnode_dsMachineData_creator_user_name" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" readDs="masterDs" readFields="cuserid,user_name" refId="" refcode="用户" refnodeDelegator="" selLeafOnly="false" text="机器考勤数据_用户" usePower="false" writeDs="dsMachineData" writeFields="creator,creator_user_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" i18nName="w_ta-001199" id="refnode_dsMachineData_pk_onebeginplace_name" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" readDs="masterDs" readFields="pk_defdoc,name" refId="" refcode="考勤地点(自定义档案)" refnodeDelegator="" selLeafOnly="false" text="机器考勤数据_考勤地点(自定义档案)" usePower="false" writeDs="dsMachineData" writeFields="pk_onebeginplace,pk_onebeginplace_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" i18nName="w_ta-001205" id="refnode_dsMachineData_pk_psnjob_pk_psndoc_name" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" readDs="masterDs" readFields="pk_psnjob,name" refId="" refcode="人员工作记录" refnodeDelegator="" selLeafOnly="false" text="机器考勤数据_人员工作记录" usePower="false" writeDs="dsMachineData" writeFields="pk_psnjob,pk_psnjob_pk_psndoc_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" i18nName="w_ta-001199" id="refnode_dsMachineData_pk_twobeginplace_name" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" readDs="masterDs" readFields="pk_defdoc,name" refId="" refcode="考勤地点(自定义档案)" refnodeDelegator="" selLeafOnly="false" text="机器考勤数据_考勤地点(自定义档案)" usePower="false" writeDs="dsMachineData" writeFields="pk_twobeginplace,pk_twobeginplace_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" i18nName="w_ta-001199" id="refnode_dsMachineData_pk_oneendplace_name" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" readDs="masterDs" readFields="pk_defdoc,name" refId="" refcode="考勤地点(自定义档案)" refnodeDelegator="" selLeafOnly="false" text="机器考勤数据_考勤地点(自定义档案)" usePower="false" writeDs="dsMachineData" writeFields="pk_oneendplace,pk_oneendplace_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" i18nName="w_ta-001199" id="refnode_dsMachineData_pk_twoendplace_name" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" readDs="masterDs" readFields="pk_defdoc,name" refId="" refcode="考勤地点(自定义档案)" refnodeDelegator="" selLeafOnly="false" text="机器考勤数据_考勤地点(自定义档案)" usePower="false" writeDs="dsMachineData" writeFields="pk_twoendplace,pk_twoendplace_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" i18nName="w_ta-001190" id="refnode_dsManualData_modifier_user_name" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" readDs="masterDs" readFields="cuserid,user_name" refId="" refcode="用户" refnodeDelegator="" selLeafOnly="false" text="手工考勤数据_用户" usePower="false" writeDs="dsManualData" writeFields="modifier,modifier_user_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" i18nName="w_ta-001203" id="refnode_dsMachineData_modifier_user_name" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" readDs="masterDs" readFields="cuserid,user_name" refId="" refcode="用户" refnodeDelegator="" selLeafOnly="false" text="机器考勤数据_用户" usePower="false" writeDs="dsMachineData" writeFields="modifier,modifier_user_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" i18nName="w_ta-001199" id="refnode_dsMachineData_pk_threeendplace_name" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" readDs="masterDs" readFields="pk_defdoc,name" refId="" refcode="考勤地点(自定义档案)" refnodeDelegator="" selLeafOnly="false" text="机器考勤数据_考勤地点(自定义档案)" usePower="false" writeDs="dsMachineData" writeFields="pk_threeendplace,pk_threeendplace_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" i18nName="w_ta-001214" id="refnode_dsManualData_pk_group_name" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" readDs="masterDs" readFields="pk_group,name" refId="" refcode="集团" refnodeDelegator="" selLeafOnly="false" text="手工考勤数据_集团" usePower="false" writeDs="dsManualData" writeFields="pk_group,pk_group_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" i18nName="w_ta-001199" id="refnode_dsMachineData_pk_fourbeginplace_name" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" readDs="masterDs" readFields="pk_defdoc,name" refId="" refcode="考勤地点(自定义档案)" refnodeDelegator="" selLeafOnly="false" text="机器考勤数据_考勤地点(自定义档案)" usePower="false" writeDs="dsMachineData" writeFields="pk_fourbeginplace,pk_fourbeginplace_name">
+            </NCRefNode>
+        </RefNodes>
+    </Models>
+    <Components>
+        <WebPartComp contentFetcher="nc.bs.hrsms.ta.sss.ShopAttendance.lsnr.ShopAttManualContentFetcher" id="manualcolorBrief">
+        </WebPartComp>
+        <LabelComp color="#3399ff" enabled="true" id="lblShowNameOrDate" visible="true">
+        </LabelComp>
+        <WebPartComp contentFetcher="nc.bs.hrsms.ta.leaveinfo.lsnr.TextNavgitionContentFetcher" id="htmlcontent6007">
+        </WebPartComp>
+        <GridComp autoRowHeight="false" canCopy="false" caption="手工考勤数据" dataset="dsManualData" editable="false" enabled="true" expandTree="false" id="tblManualData" multiSelect="false" onPaste="" pagenationTop="false" reference="false" selfDefImageBtnRender="" showColInfo="false" showHeader="true" showImageBtn="false" showNumCol="false" showSumRow="false" sortable="true" visible="true">
+            <Column autoExpand="false" dataType="String" editable="false" editorType="StringText" field="pk_psnjob_clerkcode" fixedHeader="false" i18nName="w_ta-001238" id="pk_psnjob_clerkcode" imageOnly="false" langDir="node_ta-res" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="员工号" textAlign="left" visible="true" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="false" editorType="StringText" field="pk_psnjob_pk_psndoc_code" fixedHeader="false" i18nName="w_ta-001239" id="pk_psnjob_pk_psndoc_code" imageOnly="false" langDir="node_ta-res" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="人员编码" textAlign="left" visible="true" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="false" editorType="Reference" field="pk_psndoc_name" fixedHeader="false" i18nName="w_ta-001245" id="pk_psndoc_name" imageOnly="false" langDir="node_ta-res" nullAble="true" refNode="refnode_dsManualData_pk_psndoc_name" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="姓名" textAlign="left" visible="true" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="false" editorType="StringText" field="pk_psnjob_pk_dept_name" fixedHeader="false" i18nName="w_ta-001240" id="pk_psnjob_pk_dept_name" imageOnly="false" langDir="node_ta-res" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="部门" textAlign="left" visible="true" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="UFLiteralDate" editable="false" editorType="DateText" field="calendar" fixedHeader="false" i18nName="w_ta-000064" id="calendar" imageOnly="false" langDir="node_ta-res" nullAble="true" renderType="DateRender" showCheckBox="true" sortable="true" sumCol="false" text="日期" textAlign="left" visible="true" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="false" editorType="Reference" field="pk_shift_name" fixedHeader="false" i18nName="w_ta-001231" id="pk_shift_name" imageOnly="false" langDir="node_ta-res" nullAble="true" refNode="refnode_dsManualData_pk_shift_name" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="班次" textAlign="left" visible="true" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="UFDouble" editable="true" editorType="DecimalText" field="latelength" fixedHeader="false" i18nName="w_ta-001247" id="latelength" imageOnly="false" langDir="node_ta-res" nullAble="true" renderType="TimeDataDecimalRender" showCheckBox="true" sortable="true" sumCol="false" text="迟到时长(分钟)" textAlign="right" visible="true" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="UFDouble" editable="true" editorType="DecimalText" field="earlylength" fixedHeader="false" i18nName="w_ta-001248" id="earlylength" imageOnly="false" langDir="node_ta-res" nullAble="true" renderType="TimeDataDecimalRender" showCheckBox="true" sortable="true" sumCol="false" text="早退时长(分钟)" textAlign="right" visible="true" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="UFDouble" editable="true" editorType="DecimalText" field="absenthour" fixedHeader="false" i18nName="w_ta-001249" id="absenthour" imageOnly="false" langDir="node_ta-res" nullAble="true" renderType="TimeDataDecimalRender" showCheckBox="true" sortable="true" sumCol="false" text="旷工总工时" textAlign="right" visible="true" width="120">
+            </Column>
+            <Column autoExpand="true" dataType="UFDouble" editable="true" editorType="DecimalText" field="nightabsenthour" fixedHeader="false" i18nName="w_ta-001250" id="nightabsenthour" imageOnly="false" langDir="node_ta-res" nullAble="true" renderType="TimeDataDecimalRender" showCheckBox="true" sortable="true" sumCol="false" text="夜班旷工总工时" textAlign="right" visible="true" width="120">
+            </Column>
+            <ColumnGroup i18nName="w_ta-001217" langDir="node_ta-res" id="one" text="时段1" visible="true">
+                <Column autoExpand="false" colmngroup="one" dataType="Integer" editable="true" editorType="ComboBox" field="onebeginstatus" fixedHeader="false" i18nName="w_ta-001251" id="onebeginstatus" imageOnly="false" langDir="node_ta-res" nullAble="true" refComboData="combo_dsManualData_onebeginstatus" renderType="ManualDataRender" sortable="true" sumCol="false" text="上班" textAlign="right" visible="true" width="120">
+                </Column>
+               <!-- <Column autoExpand="false" colmngroup="one" dataType="Integer" editable="true" editorType="ComboBox" field="oneendstatus" fixedHeader="false" i18nName="w_ta-001252" id="oneendstatus" imageOnly="false" langDir="node_ta-res" nullAble="true" refComboData="combo_dsManualData_oneendstatus" renderType="ManualDataRender" sortable="true" sumCol="false" text="下班" textAlign="right" visible="false" width="120">
+                </Column>-->
+            </ColumnGroup>
+            <ColumnGroup i18nName="w_ta-001218" langDir="node_ta-res" id="two" text="时段2" visible="true">
+                <!--<Column autoExpand="false" colmngroup="two" dataType="Integer" editable="true" editorType="ComboBox" field="twobeginstatus" fixedHeader="false" i18nName="w_ta-001251" id="twobeginstatus" imageOnly="false" langDir="node_ta-res" nullAble="true" refComboData="combo_dsManualData_twobeginstatus" renderType="ManualDataRender" sortable="true" sumCol="false" text="上班" textAlign="right" visible="false" width="120">
+                </Column>-->
+                <Column autoExpand="false" colmngroup="two" dataType="Integer" editable="true" editorType="ComboBox" field="twoendstatus" fixedHeader="false" i18nName="w_ta-001252" id="twoendstatus" imageOnly="false" langDir="node_ta-res" nullAble="true" refComboData="combo_dsManualData_twoendstatus" renderType="ManualDataRender" sortable="true" sumCol="false" text="下班" textAlign="right" visible="true" width="120">
+                </Column>
+            </ColumnGroup>
+            <ColumnGroup i18nName="w_ta-001219" langDir="node_ta-res" id="three" text="时段3" visible="false">
+                <Column autoExpand="false" colmngroup="three" dataType="Integer" editable="true" editorType="ComboBox" field="threebeginstatus" fixedHeader="false" i18nName="w_ta-001251" id="threebeginstatus" imageOnly="false" langDir="node_ta-res" nullAble="true" refComboData="combo_dsManualData_threebeginstatus" renderType="ManualDataRender" sortable="true" sumCol="false" text="上班" textAlign="right" visible="false" width="120">
+                </Column>
+                <Column autoExpand="false" colmngroup="three" dataType="Integer" editable="true" editorType="ComboBox" field="threeendstatus" fixedHeader="false" i18nName="w_ta-001252" id="threeendstatus" imageOnly="false" langDir="node_ta-res" nullAble="true" refComboData="combo_dsManualData_threeendstatus" renderType="ManualDataRender" sortable="true" sumCol="false" text="下班" textAlign="right" visible="false" width="120">
+                </Column>
+            </ColumnGroup>
+            <ColumnGroup i18nName="w_ta-001220" langDir="node_ta-res" id="four" text="时段4" visible="false">
+                <Column autoExpand="false" colmngroup="four" dataType="Integer" editable="true" editorType="ComboBox" field="fourbeginstatus" fixedHeader="false" i18nName="w_ta-001251" id="fourbeginstatus" imageOnly="false" langDir="node_ta-res" nullAble="true" refComboData="combo_dsManualData_fourbeginstatus" renderType="ManualDataRender" sortable="true" sumCol="false" text="上班" textAlign="right" visible="false" width="120">
+                </Column>
+                <Column autoExpand="false" colmngroup="four" dataType="Integer" editable="true" editorType="ComboBox" field="fourendstatus" fixedHeader="false" i18nName="w_ta-001252" id="fourendstatus" imageOnly="false" langDir="node_ta-res" nullAble="true" refComboData="combo_dsManualData_fourendstatus" renderType="ManualDataRender" sortable="true" sumCol="false" text="下班" textAlign="right" visible="false" width="120">
+                </Column>
+            </ColumnGroup>
+        </GridComp>
+        <GridComp autoRowHeight="false" canCopy="false" caption="机器考勤数据" dataset="dsMachineData" editable="false" enabled="true" expandTree="false" id="tblMachineData" multiSelect="false" onPaste="" pagenationTop="false" reference="false" selfDefImageBtnRender="" showColInfo="false" showHeader="true" showImageBtn="false" showNumCol="false" showSumRow="false" sortable="true" visible="true">
+            <Column autoExpand="false" dataType="String" editable="true" editorType="SelfDef" fixedHeader="false" i18nName="w_ta-001282" id="showDetail" imageOnly="false" langDir="node_ta-res" nullAble="true" renderType="DetailRender" showCheckBox="true" sortable="true" sumCol="false" text="签/刷卡详细" textAlign="center" visible="true" width="90">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="pk_psnjob_clerkcode" fixedHeader="false" i18nName="w_ta-001238" id="pk_psnjob_clerkcode" imageOnly="false" langDir="node_ta-res" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="员工号" textAlign="left" visible="true" width="100">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="pk_psnjob_pk_psndoc_code" fixedHeader="false" i18nName="w_ta-001239" id="pk_psnjob_pk_psndoc_code" imageOnly="false" langDir="node_ta-res" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="人员编码" textAlign="left" visible="true" width="100">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="Reference" field="pk_psndoc_name" fixedHeader="false" i18nName="w_ta-001245" id="pk_psndoc_name" imageOnly="false" langDir="node_ta-res" nullAble="true" refNode="refnode_dsMachineData_pk_psndoc_name" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="姓名" textAlign="left" visible="true" width="100">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="pk_psnjob_pk_dept_name" fixedHeader="false" i18nName="w_ta-001240" id="pk_psnjob_pk_dept_name" imageOnly="false" langDir="node_ta-res" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="部门" textAlign="left" visible="true" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="UFLiteralDate" editable="true" editorType="DateText" field="calendar" fixedHeader="false" i18nName="w_ta-000064" id="calendar" imageOnly="false" langDir="node_ta-res" nullAble="true" renderType="DateRender" showCheckBox="true" sortable="true" sumCol="false" text="日期" textAlign="left" visible="true" width="100">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="Reference" field="pk_shift_name" fixedHeader="false" i18nName="w_ta-001231" id="pk_shift_name" imageOnly="false" langDir="node_ta-res" nullAble="true" refNode="refnode_dsMachineData_pk_shift_name" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="班次" textAlign="left" visible="true" width="100">
+            </Column>
+            <ColumnGroup i18nName="w_ta-001217" langDir="node_ta-res" id="one" text="时段1" visible="false">
+                <Column autoExpand="false" colmngroup="one" dataType="UFDateTime" editable="true" editorType="DateTimeText" field="onebegintime" fixedHeader="false" i18nName="w_ta-001251" id="onebegintime" imageOnly="false" langDir="node_ta-res" nullAble="true" renderType="TimeDataRender" sortable="true" sumCol="false" text="上班" textAlign="left" visible="false" width="150">
+                </Column>
+                <Column autoExpand="false" colmngroup="one" dataType="UFDateTime" editable="true" editorType="DateTimeText" field="oneendtime" fixedHeader="false" i18nName="w_ta-001252" id="oneendtime" imageOnly="false" langDir="node_ta-res" nullAble="true" renderType="TimeDataRender" sortable="true" sumCol="false" text="下班" textAlign="left" visible="false" width="150">
+                </Column>
+            </ColumnGroup>
+            <ColumnGroup i18nName="w_ta-001218" langDir="node_ta-res" id="two" text="时段2" visible="false">
+                <Column autoExpand="false" colmngroup="two" dataType="UFDateTime" editable="true" editorType="DateTimeText" field="twobegintime" fixedHeader="false" i18nName="w_ta-001251" id="twobegintime" imageOnly="false" langDir="node_ta-res" nullAble="true" renderType="TimeDataRender" sortable="true" sumCol="false" text="上班" textAlign="left" visible="false" width="150">
+                </Column>
+                <Column autoExpand="false" colmngroup="two" dataType="UFDateTime" editable="true" editorType="DateTimeText" field="twoendtime" fixedHeader="false" i18nName="w_ta-001252" id="twoendtime" imageOnly="false" langDir="node_ta-res" nullAble="true" renderType="TimeDataRender" sortable="true" sumCol="false" text="下班" textAlign="left" visible="false" width="150">
+                </Column>
+            </ColumnGroup>
+            <ColumnGroup i18nName="w_ta-001219" langDir="node_ta-res" id="three" text="时段3" visible="false">
+                <Column autoExpand="false" colmngroup="three" dataType="UFDateTime" editable="true" editorType="DateTimeText" field="threebegintime" fixedHeader="false" i18nName="w_ta-001251" id="threebegintime" imageOnly="false" langDir="node_ta-res" nullAble="true" renderType="TimeDataRender" sortable="true" sumCol="false" text="上班" textAlign="left" visible="false" width="150">
+                </Column>
+                <Column autoExpand="false" colmngroup="three" dataType="UFDateTime" editable="true" editorType="DateTimeText" field="threeendtime" fixedHeader="false" i18nName="w_ta-001252" id="threeendtime" imageOnly="false" langDir="node_ta-res" nullAble="true" renderType="TimeDataRender" sortable="true" sumCol="false" text="下班" textAlign="left" visible="false" width="150">
+                </Column>
+            </ColumnGroup>
+            <ColumnGroup i18nName="w_ta-001220" langDir="node_ta-res" id="four" text="时段4" visible="false">
+                <Column autoExpand="false" colmngroup="four" dataType="UFDateTime" editable="true" editorType="DateTimeText" field="fourbegintime" fixedHeader="false" i18nName="w_ta-001251" id="fourbegintime" imageOnly="false" langDir="node_ta-res" nullAble="true" renderType="TimeDataRender" sortable="true" sumCol="false" text="上班" textAlign="left" visible="false" width="150">
+                </Column>
+                <Column autoExpand="false" colmngroup="four" dataType="UFDateTime" editable="true" editorType="DateTimeText" field="fourendtime" fixedHeader="false" i18nName="w_ta-001252" id="fourendtime" imageOnly="false" langDir="node_ta-res" nullAble="true" renderType="TimeDataRender" sortable="true" sumCol="false" text="下班" textAlign="left" visible="false" width="150">
+                </Column>
+            </ColumnGroup>
+            <ColumnGroup i18nName="w_ta-001225" langDir="node_ta-res" id="out" text="中途外出" visible="false">
+                <Column autoExpand="false" colmngroup="out" dataType="UFDouble" editable="true" editorType="DecimalText" field="midwayouttime" fixedHeader="false" i18nName="w_ta-001254" id="midwayouttime" imageOnly="false" langDir="node_ta-res" nullAble="true" renderType="TimeDataDecimalRender" sortable="true" sumCol="false" text="时长(分钟)" textAlign="left" visible="false" width="80">
+                </Column>
+                <Column autoExpand="false" colmngroup="out" dataType="Integer" editable="true" editorType="IntegerText" field="midwayoutcount" fixedHeader="false" i18nName="w_ta-001255" id="midwayoutcount" imageOnly="false" langDir="node_ta-res" nullAble="true" renderType="TimeDataRender" sortable="true" sumCol="false" text="次数" textAlign="center" visible="false" width="80">
+                </Column>
+            </ColumnGroup>
+            <Column autoExpand="false" dataType="Integer" editable="true" editorType="IntegerText" field="placeabnormal" fixedHeader="false" i18nName="w_ta-001256" id="placeabnormal" imageOnly="false" langDir="node_ta-res" nullAble="true" renderType="PlaceAbnormalRender" showCheckBox="true" sortable="true" sumCol="false" text="刷卡地异常" textAlign="left" visible="true" width="100">
+            </Column>
+            <Column autoExpand="true" dataType="String" editable="true" editorType="StringText" field="tbmstatus" fixedHeader="false" i18nName="w_ta-001257" id="tbmstatus" imageOnly="false" langDir="node_ta-res" nullAble="true" renderType="TimeDataRender" showCheckBox="true" sortable="true" sumCol="false" text="出勤状态" textAlign="left" visible="true" width="250">
+            </Column>
+        </GridComp>
+        <WebPartComp contentFetcher="nc.bs.hrsms.ta.sss.ShopAttendance.lsnr.MachineContentFetcher" id="machinecolorBrief">
+        </WebPartComp>
+    </Components>
+    <Menus>
+        <MenuBarComp id="menuTimeDataMain">
+            <MenuItem i18nName="w_ta-001258" id="onTimeDataSave" langDir="node_ta-res" modifiers="2" stateManager="nc.bs.hrsms.ta.sss.ShopAttendance.shopattendance.ShopAttSaveManager" text="保存">
+                <Events>
+                    <Event async="true" jsEventClaszz="nc.uap.lfw.core.event.conf.MouseListener" methodName="onTimeDataSaveclick" name="onclick" onserver="true">
+                        <SubmitRule cardSubmit="false" panelSubmit="false" tabSubmit="false">
+                            <Widget cardSubmit="false" id="main" panelSubmit="false" tabSubmit="false">
+                                <Dataset id="dsLateEarly" type="ds_all_line">
+                                </Dataset>
+                                <Dataset id="dsManualData" type="ds_all_line">
+                                </Dataset>
+                                <Grid id="tblManualData" type="grid_all_row">
+                                </Grid>
+                                <Grid id="gridLateEarly" type="grid_all_row">
+                                </Grid>
+                            </Widget>
+                        </SubmitRule>
+                        <Params>
+                            <Param>
+                                <Name>mouseEvent</Name>
+                                <Value>
+                                </Value>
+                                <Desc>                                    <![CDATA[nc.uap.lfw.core.event.MouseEvent]]>
+                                </Desc>
+                            </Param>
+                        </Params>
+                        <Action>
+                        </Action>
+                    </Event>
+                </Events>
+            </MenuItem>
+            <MenuItem id="m_" modifiers="3" sep="true" text="m_">
+            </MenuItem>
+            <MenuItem i18nName="w_ta-001259" id="menu_cancel" langDir="node_ta-res" modifiers="2" stateManager="nc.bs.hrsms.ta.sss.ShopAttendance.shopattendance.ShopAttCancelManager" text="取消">
+                <Events>
+                    <Event async="true" jsEventClaszz="nc.uap.lfw.core.event.conf.MouseListener" methodName="onCancel" name="onclick" onserver="true">
+                        <SubmitRule cardSubmit="false" panelSubmit="false" tabSubmit="false">
+                            <Widget cardSubmit="false" id="main" panelSubmit="false" tabSubmit="false">
+                                <Dataset id="dsLateEarly" type="ds_all_line">
+                                </Dataset>
+                                <Grid id="gridLateEarly" type="grid_all_row">
+                                </Grid>
+                            </Widget>
+                        </SubmitRule>
+                        <Params>
+                            <Param>
+                                <Name>mouseEvent</Name>
+                                <Value>
+                                </Value>
+                                <Desc>                                    <![CDATA[nc.uap.lfw.core.event.MouseEvent]]>
+                                </Desc>
+                            </Param>
+                        </Params>
+                        <Action>
+                        </Action>
+                    </Event>
+                </Events>
+            </MenuItem>
+            <MenuItem id="m_" modifiers="2" sep="true" text="m_">
+            </MenuItem>
+            <MenuItem i18nName="w_ta-001268" id="menu_goback" langDir="node_ta-res" modifiers="2" text="返回">
+                <Events>
+                    <Event async="true" jsEventClaszz="nc.uap.lfw.core.event.conf.MouseListener" methodName="goback" name="onclick" onserver="true">
+                        <SubmitRule cardSubmit="false" panelSubmit="false" tabSubmit="false">
+                            <Widget cardSubmit="false" id="main" panelSubmit="false" tabSubmit="false">
+                                <Dataset id="dsLateEarly" type="ds_all_line">
+                                </Dataset>
+                                <Grid id="gridLateEarly" type="grid_all_row">
+                                </Grid>
+                            </Widget>
+                        </SubmitRule>
+                        <Params>
+                            <Param>
+                                <Name>mouseEvent</Name>
+                                <Value>
+                                </Value>
+                                <Desc>                                    <![CDATA[nc.uap.lfw.core.event.MouseEvent]]>
+                                </Desc>
+                            </Param>
+                        </Params>
+                        <Action>
+                        </Action>
+                    </Event>
+                </Events>
+            </MenuItem>
+            <MenuItem id="m_" modifiers="2" sep="true" text="m_">
+            </MenuItem>
+            <MenuItem i18nName="批量修改" id="Batchedit" langDir="node_ta-res" modifiers="2" stateManager="nc.bs.hrsms.ta.sss.ShopAttendance.shopattendance.ShopAttSaveManager" text="批量修改">
+                <Events>
+                    <Event async="true" jsEventClaszz="nc.uap.lfw.core.event.conf.MouseListener" methodName="Batchedit" name="onclick" onserver="true">
+                        <SubmitRule cardSubmit="false" panelSubmit="false" tabSubmit="false">
+                            <Widget cardSubmit="false" id="main" panelSubmit="false" tabSubmit="false">
+                                <Dataset id="dsLateEarly" type="ds_all_line">
+                                </Dataset>
+                                <Dataset id="dsManualData" type="ds_all_line">
+                                </Dataset>
+                                <Grid id="tblManualData" type="grid_all_row">
+                                </Grid>
+                                <Grid id="gridLateEarly" type="grid_all_row">
+                                </Grid>
+                            </Widget>
+                        </SubmitRule>
+                        <Params>
+                            <Param>
+                                <Name>mouseEvent</Name>
+                                <Value>
+                                </Value>
+                                <Desc>                                    <![CDATA[nc.uap.lfw.core.event.MouseEvent]]>
+                                </Desc>
+                            </Param>
+                        </Params>
+                        <Action>
+                        </Action>
+                    </Event>
+                </Events>
+            </MenuItem>
+        </MenuBarComp>
+    </Menus>
+</Widget>

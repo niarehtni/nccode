@@ -1,0 +1,292 @@
+package nc.vo.ta.teamcalendar;
+
+import nc.vo.pub.SuperVO;
+import nc.vo.pub.lang.UFBoolean;
+import nc.vo.pub.lang.UFDateTime;
+import nc.vo.pub.lang.UFDouble;
+import nc.vo.pub.lang.UFLiteralDate;
+
+public class TeamCalendarVO extends SuperVO {
+	private String pk_teamcalendar;
+	private String pk_group;
+	private String pk_org;
+	private String pk_team;
+	private UFLiteralDate calendar;
+	private String original_shift_b4exg;
+	private String original_shift_b4cut;
+	private String pk_shift;
+	private UFDouble gzsj;
+	private UFBoolean if_rest;
+	private UFBoolean cancelflag;
+	private UFBoolean iswtrecreate;
+	private UFBoolean isflexiblefinal;
+	private UFBoolean ismanuctrl = UFBoolean.FALSE;
+	private String cwkid;
+	private String vnote;
+	private String pk_org_v;
+	private String creator;
+	private java.lang.Integer day_daytype;
+	private UFDateTime creationtime;
+	private String modifier;
+	private UFDateTime modifiedtime;
+	private Integer dr = Integer.valueOf(0);
+
+	private UFDateTime ts;
+
+	public static final String PK_TEAMCALENDAR = "pk_teamcalendar";
+
+	public static final String PK_GROUP = "pk_group";
+
+	public static final String PK_ORG = "pk_org";
+
+	public static final String PK_TEAM = "pk_team";
+	public static final String CALENDAR = "calendar";
+	public static final String ORIGINAL_SHIFT_B4EXG = "original_shift_b4exg";
+	public static final String ORIGINAL_SHIFT_B4CUT = "original_shift_b4cut";
+	public static final String PK_SHIFT = "pk_shift";
+	public static final String GZSJ = "gzsj";
+	public static final String IF_REST = "if_rest";
+	public static final String CANCELFLAG = "cancelflag";
+	public static final String ISWTRECREATE = "iswtrecreate";
+	public static final String ISFLEXIBLEFINAL = "isflexiblefinal";
+	public static final String ISMANUCTRL = "ismanuctrl";
+	public static final String CWKID = "cwkid";
+	public static final String VNOTE = "vnote";
+	public static final String PK_ORG_V = "pk_org_v";
+	public static final String CREATOR = "creator";
+	public static final String CREATIONTIME = "creationtime";
+	public static final String MODIFIER = "modifier";
+	public static final String MODIFIEDTIME = "modifiedtime";
+	public static final String DAY_DAYTYPE = "day_daytype";
+
+	/**
+	 * 属性day_daytype的Getter方法.属性名：日期类型
+	 * 创建日期:
+	 * @return java.lang.Integer
+	 */
+	public java.lang.Integer getDay_daytype () {
+		return day_daytype;
+	}   
+	/**
+	 * 属性day_daytype的Setter方法.属性名：日期类型
+	 * 创建日期:
+	 * @param newDay_daytype java.lang.Integer
+	 */
+	public void setDay_daytype (java.lang.Integer newDay_daytype ) {
+	 	this.day_daytype = newDay_daytype;
+	} 	
+	
+	
+	public String getPk_teamcalendar() {
+		return pk_teamcalendar;
+	}
+
+	public void setPk_teamcalendar(String newPk_teamcalendar) {
+		pk_teamcalendar = newPk_teamcalendar;
+	}
+
+	public String getPk_group() {
+		return pk_group;
+	}
+
+	public void setPk_group(String newPk_group) {
+		pk_group = newPk_group;
+	}
+
+	public String getPk_org() {
+		return pk_org;
+	}
+
+	public void setPk_org(String newPk_org) {
+		pk_org = newPk_org;
+	}
+
+	public String getPk_team() {
+		return pk_team;
+	}
+
+	public void setPk_team(String newPk_team) {
+		pk_team = newPk_team;
+	}
+
+	public UFLiteralDate getCalendar() {
+		return calendar;
+	}
+
+	public void setCalendar(UFLiteralDate newCalendar) {
+		calendar = newCalendar;
+	}
+
+	public String getOriginal_shift_b4exg() {
+		return original_shift_b4exg;
+	}
+
+	public void setOriginal_shift_b4exg(String newOriginal_shift_b4exg) {
+		original_shift_b4exg = newOriginal_shift_b4exg;
+	}
+
+	public String getOriginal_shift_b4cut() {
+		return original_shift_b4cut;
+	}
+
+	public void setOriginal_shift_b4cut(String newOriginal_shift_b4cut) {
+		original_shift_b4cut = newOriginal_shift_b4cut;
+	}
+
+	public String getPk_shift() {
+		return pk_shift;
+	}
+
+	public void setPk_shift(String newPk_shift) {
+		pk_shift = newPk_shift;
+	}
+
+	public UFDouble getGzsj() {
+		return gzsj;
+	}
+
+	public void setGzsj(UFDouble newGzsj) {
+		gzsj = newGzsj;
+	}
+
+	public UFBoolean getIf_rest() {
+		return if_rest;
+	}
+
+	public void setIf_rest(UFBoolean newIf_rest) {
+		if_rest = newIf_rest;
+	}
+
+	public UFBoolean getCancelflag() {
+		return cancelflag;
+	}
+
+	public void setCancelflag(UFBoolean newCancelflag) {
+		cancelflag = newCancelflag;
+	}
+
+	public UFBoolean getIswtrecreate() {
+		return iswtrecreate;
+	}
+
+	public void setIswtrecreate(UFBoolean newIswtrecreate) {
+		iswtrecreate = newIswtrecreate;
+	}
+
+	public UFBoolean getIsflexiblefinal() {
+		return isflexiblefinal;
+	}
+
+	public void setIsflexiblefinal(UFBoolean newIsflexiblefinal) {
+		isflexiblefinal = newIsflexiblefinal;
+	}
+
+	public UFBoolean getIsmanuctrl() {
+		return ismanuctrl;
+	}
+
+	public void setIsmanuctrl(UFBoolean ishrctrl) {
+		ismanuctrl = ishrctrl;
+	}
+
+	public String getCwkid() {
+		return cwkid;
+	}
+
+	public void setCwkid(String cwkid) {
+		this.cwkid = cwkid;
+	}
+
+	public String getVnote() {
+		return vnote;
+	}
+
+	public void setVnote(String vnote) {
+		this.vnote = vnote;
+	}
+
+	public String getPk_org_v() {
+		return pk_org_v;
+	}
+
+	public void setPk_org_v(String pk_org_v) {
+		this.pk_org_v = pk_org_v;
+	}
+
+	public String getCreator() {
+		return creator;
+	}
+
+	public void setCreator(String newCreator) {
+		creator = newCreator;
+	}
+
+	public UFDateTime getCreationtime() {
+		return creationtime;
+	}
+
+	public void setCreationtime(UFDateTime newCreationtime) {
+		creationtime = newCreationtime;
+	}
+
+	public String getModifier() {
+		return modifier;
+	}
+
+	public void setModifier(String newModifier) {
+		modifier = newModifier;
+	}
+
+	public UFDateTime getModifiedtime() {
+		return modifiedtime;
+	}
+
+	public void setModifiedtime(UFDateTime newModifiedtime) {
+		modifiedtime = newModifiedtime;
+	}
+
+	public Integer getDr() {
+		return dr;
+	}
+
+	public void setDr(Integer newDr) {
+		dr = newDr;
+	}
+
+	public UFDateTime getTs() {
+		return ts;
+	}
+
+	public void setTs(UFDateTime newTs) {
+		ts = newTs;
+	}
+
+	public String getParentPKFieldName() {
+		return null;
+	}
+
+	public String getPKFieldName() {
+		return "pk_teamcalendar";
+	}
+
+	public String getTableName() {
+		return "bd_teamcalendar";
+	}
+
+	public static String getDefaultTableName() {
+		return "bd_teamcalendar";
+	}
+
+	public boolean isHolidayCancel() {
+		return (getCancelflag() != null) && (getCancelflag().booleanValue());
+	}
+
+	public boolean isWTRcreate() {
+		return (getIswtrecreate() != null)
+				&& (getIswtrecreate().booleanValue());
+	}
+
+	public boolean isManuCtrl() {
+		return (getIsmanuctrl() != null) && (getIsmanuctrl().booleanValue());
+	}
+}

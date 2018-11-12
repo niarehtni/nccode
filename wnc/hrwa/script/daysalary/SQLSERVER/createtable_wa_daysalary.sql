@@ -1,0 +1,55 @@
+create table wa_daysalary (
+pk_daysalary char(20) NOT NULL,
+fullsalary decimal(28,8) NULL,
+daysalary decimal(28,8) NULL,
+hoursalary decimal(28,8) NULL,
+overtime decimal(28,8) NULL,
+dailyovertime decimal(28,8) NULL,
+restovertime decimal(28,8) NULL,
+holidayovertime decimal(28,8) NULL,
+overtimesalary decimal(28,8) NULL,
+leavecharge decimal(28,8) NULL,
+pk_psndoc varchar(20) default '~' NULL,
+pk_psnjob varchar(20) default '~' NULL,
+pk_psnorg char(20) NULL,
+pk_dept varchar(20) default '~' NULL,
+pk_dept_v varchar(20) default '~' NULL,
+pk_hrorg varchar(20) default '~' NULL,
+cyear varchar(10) NULL,
+cperiod varchar(10) NULL,
+salarydate char(10) NULL,
+billmaker varchar(20) default '~' NULL,
+maketime char(19) NULL,
+pk_group varchar(20) default '~' NULL,
+pk_org varchar(20) default '~' NULL,
+pk_org_v varchar(20) default '~' NULL,
+CONSTRAINT PK_WA_DAYSALARY PRIMARY KEY (pk_daysalary),
+ts char(19) NULL,
+dr smallint default 0 
+)
+
+
+create table wa_leaveregdetail (
+pk_leaveregdetail char(20) NOT NULL,
+pk_leavereg_history varchar(20) NULL,
+effectivedate char(10) NULL,
+daysalary decimal(28,8) NULL,
+salarydate char(10) NULL,
+begindate char(19) NULL,
+enddate char(19) NULL,
+leavehour decimal(28,8) NULL,
+leavecharge decimal(28,8) NULL,
+rate int NULL,
+pk_leavetype varchar(20) default '~' NULL,
+pk_leavetypecopy varchar(20) default '~' NULL,
+isleaveoff char(1) NULL,
+pk_psndoc varchar(20) default '~' NULL,
+pk_psnjob varchar(20) default '~' NULL,
+pk_hrorg varchar(20) default '~' NULL,
+pk_daysalary char(20) NOT NULL,
+CONSTRAINT PK_LEAVEREGDETAIL PRIMARY KEY (pk_leaveregdetail),
+ts char(19) NULL,
+dr smallint default 0 
+)
+
+

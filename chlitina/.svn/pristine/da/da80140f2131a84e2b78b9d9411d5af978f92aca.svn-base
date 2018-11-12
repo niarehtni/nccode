@@ -1,0 +1,2 @@
+insert into md_table(createtime,creator,databaseid,description,displayname,dr,fromsourcebmf,help,id,industry,isactive,isextendtable,modifier,modifytime,name,parenttable,resid,resmodule,ts,versiontype) values( '2009-12-28 14:07:07',null,null,null,'转正申请',null,'Y','BDMODE,URC','hi_regapply','0',null,null,'developer','2016-01-20 09:11:27','hi_regapply',null,'26009reg-000017','6009reg','2018-08-23 09:46:26',0)
+go

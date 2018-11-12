@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="gbk"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+<bean id="billType" class="nc.pubapp.pade.platform.vo.Billtype"><property name="billtype2List">
+<list></list>
+</property>
+<property name="billtypename" value="SGRL"/>
+<property name="canextendtransaction" value="true"/>
+<property name="component" value="segrule"/>
+<property name="fwdList">
+<list></list>
+</property>
+<property name="isPublished" value="false"/>
+<property name="isapprovebill" value="true"/>
+<property name="istransaction" value="false"/>
+<property name="nodecode" value="60170segrule"/>
+<property name="pk_billtypecode" value="SGRL"/>
+<property name="pk_billtypeid" value="0001ZZ10000000015QJP"/>
+<property name="pk_group" value="~"/>
+<property name="pk_org" value="GLOBLE00000000000000"/>
+<property name="systemcode" value="hrta"/>
+<property name="ts" value="2018-04-22 18:09:35"/>
+</bean>
+
+</beans>

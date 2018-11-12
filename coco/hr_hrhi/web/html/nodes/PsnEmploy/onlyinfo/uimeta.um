@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding='UTF-8'?>
+<UIMeta flowmode="false" id="main_um" jquery="0">
+    <FlowvLayout id="flowvlayout0903" widgetId="onlyinfo" >
+        <FlowvPanel id="panelv00903" widgetId="onlyinfo" height="100">
+	        <FormComp id="form_onlyinfo" widgetId="onlyinfo">
+            </FormComp>
+        </FlowvPanel>
+        <FlowvPanel id="panelv00903" widgetId="onlyinfo" height="200">
+	        <FormComp id="form_onlyinfo2" widgetId="onlyinfo">
+            </FormComp>
+        </FlowvPanel>
+         
+        <FlowvPanel id="panelv10903" widgetId="onlyinfo" height="33">
+        	 <FlowhLayout id="flowhlayout0903" widgetId="onlyinfo">
+        	 	<FlowhPanel id="panelh10901" widgetId="onlyinfo">
+        	 	</FlowhPanel>
+        	 	<FlowhPanel id="panelh10902" widgetId="onlyinfo" width="70">
+                    <Button height="23" id="btnOK"  className="blue_button_div" left="0" position="relative" top="0" widgetId="onlyinfo" width="70">
+                    </Button>        	 		
+        	 	</FlowhPanel>
+               <FlowhPanel id="panelh10903" widgetId="onlyinfo" width="10">
+                </FlowhPanel>
+        	 	<FlowhPanel id="panelh10904" widgetId="onlyinfo" width="70">
+                    <Button height="23" id="btnCancel" left="0" position="relative" top="0" widgetId="onlyinfo" width="70">
+                    </Button>
+        	 	</FlowhPanel>
+        	 </FlowhLayout>
+        </FlowvPanel>
+    </FlowvLayout>
+</UIMeta>

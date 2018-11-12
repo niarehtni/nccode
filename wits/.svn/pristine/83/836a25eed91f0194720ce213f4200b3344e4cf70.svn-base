@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding='gb2312'?>
+<module name="hrwa">
+  <public>
+	<component remote="true" singleton="true"  tx="CMT">
+	  <interface>nc.itf.hrwa.IIncometaxMaintain</interface>
+	  <implementation>nc.impl.hrwa.IncometaxMaintainImpl</implementation>
+	</component>
+	<component priority="0" singleton="true" remote="true" tx="CMT" supportAlias="true">
+	  <interface>nc.itf.hrwa.IGetAggIncomeTaxData</interface>
+	  <implementation>nc.impl.hrwa.GetAggIncomeTaxDataImpl</implementation>
+	</component> 
+  </public> 
+</module> 

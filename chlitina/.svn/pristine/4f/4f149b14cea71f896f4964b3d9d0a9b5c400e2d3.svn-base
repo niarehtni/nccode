@@ -1,0 +1,2 @@
+insert into pub_query_templet(description,devorg,dr,fixcondition,fixquerytree,id,layer,metaclass,model_code,model_name,node_code,parentid,pk_corp,pk_org,resid,ts) values( null,null,null,null,null,'1001Z71000000000NSMX',0,'218971f0-e5dc-408b-9a32-56529dddd4db','6007poi','相关人员信息','6007psn',null,'@@@@',null,'16007psn0053','2018-08-23 09:52:11')
+go

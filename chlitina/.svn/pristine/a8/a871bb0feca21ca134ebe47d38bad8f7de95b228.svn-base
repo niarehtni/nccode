@@ -1,0 +1,76 @@
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '0c3cd31b-ef7e-4d1e-a16b-3a7e135b842e','317f74f8-7bc5-4496-a51b-0648ffbfd48b','wa_item@@@creationtime',0,'wa_item','2018-08-14 16:03:21')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '1262d240-17e7-412a-81af-3d14cef731aa','317f74f8-7bc5-4496-a51b-0648ffbfd48b','wa_item@@@taxflag',0,'wa_item','2018-08-14 16:03:21')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '12baac01-aaa7-4a49-b2b3-70307bebfd71','317f74f8-7bc5-4496-a51b-0648ffbfd48b','wa_item@@@iflddecimal',0,'wa_item','2018-08-14 16:03:21')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '145f91df-e072-4170-91e0-06496bc498a8','317f74f8-7bc5-4496-a51b-0648ffbfd48b','wa_item@@@modifier',0,'wa_item','2018-08-14 16:03:21')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '17182626-efbc-450f-8d39-a5d4ecf7203a','317f74f8-7bc5-4496-a51b-0648ffbfd48b','wa_item@@@psnceilflag',0,'wa_item','2018-08-14 16:03:21')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '1aaa1237-8c6b-4342-b6ad-dc89b820a491','317f74f8-7bc5-4496-a51b-0648ffbfd48b','wa_item@@@vformulastr',0,'wa_item','2018-08-14 16:03:21')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '212f775c-a9ba-4b76-bcb9-f413c1beb40e','317f74f8-7bc5-4496-a51b-0648ffbfd48b','wa_item@@@pk_group',0,'wa_item','2018-08-14 16:03:21')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '239085a2-f90d-4c5a-b745-f755962475f6','317f74f8-7bc5-4496-a51b-0648ffbfd48b','wa_item@@@nsumfloor',0,'wa_item','2018-08-14 16:03:21')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '25f8764d-42a6-4d66-8ebc-818ac8af1974','317f74f8-7bc5-4496-a51b-0648ffbfd48b','wa_item@@@code',0,'wa_item','2018-08-14 16:03:21')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '27d6c0e9-6d5a-49db-b01b-b20e6d26f36a','317f74f8-7bc5-4496-a51b-0648ffbfd48b','wa_item@@@iproperty',0,'wa_item','2018-08-14 16:03:21')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '37f366c8-5558-4cdf-bfbe-3ab1f8fa3e5b','317f74f8-7bc5-4496-a51b-0648ffbfd48b','wa_item@@@vformula',0,'wa_item','2018-08-14 16:03:21')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '3bdc7bb0-e226-4454-b513-a964db6d635e','317f74f8-7bc5-4496-a51b-0648ffbfd48b','wa_item@@@name',0,'wa_item','2018-08-14 16:03:21')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '4587f2cb-c139-46b1-b4a6-0220454b9296','317f74f8-7bc5-4496-a51b-0648ffbfd48b','wa_item@@@avgcalcsalflag',0,'wa_item','2018-08-14 16:03:21')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '506cc062-ce01-4083-a00b-549fd194e3e2','317f74f8-7bc5-4496-a51b-0648ffbfd48b','wa_item@@@iitemtype',0,'wa_item','2018-08-14 16:03:21')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '5360c909-c4f4-421c-a7a0-4d9ed61d9ca4','317f74f8-7bc5-4496-a51b-0648ffbfd48b','wa_item@@@itemkey',0,'wa_item','2018-08-14 16:03:21')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '5b81c830-80b2-45fb-bb4f-1a60185974b4','317f74f8-7bc5-4496-a51b-0648ffbfd48b','wa_item@@@psnfloorflag',0,'wa_item','2018-08-14 16:03:21')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '68e5bab0-7ce2-4ed5-bb23-d2488b2dd8a4','317f74f8-7bc5-4496-a51b-0648ffbfd48b','wa_item@@@mid',0,'wa_item','2018-08-14 16:03:21')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '6c4146a3-181f-4768-a851-10968ce6b107','317f74f8-7bc5-4496-a51b-0648ffbfd48b','twhr_waitem_30@@@ishealthinsexsum_30',0,'twhr_waitem_30','2018-08-14 16:03:21')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '71f4b21c-c219-43dc-89c9-ac2d0f454d4a','317f74f8-7bc5-4496-a51b-0648ffbfd48b','wa_item@@@ifromflag',0,'wa_item','2018-08-14 16:03:21')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '76ecc778-c151-4514-9f09-e0c7a536943e','317f74f8-7bc5-4496-a51b-0648ffbfd48b','wa_item@@@npsnfloor',0,'wa_item','2018-08-14 16:03:21')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '77e327e8-2ca1-4bba-be6d-28124621eed8','317f74f8-7bc5-4496-a51b-0648ffbfd48b','wa_item@@@sumceilflag',0,'wa_item','2018-08-14 16:03:21')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '7b6d244a-d68f-4436-89fa-b2fafcfa3714','317f74f8-7bc5-4496-a51b-0648ffbfd48b','wa_item@@@intotalitem',0,'wa_item','2018-08-14 16:03:21')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '803ad1f0-ac88-4798-b52e-78f665412d7b','317f74f8-7bc5-4496-a51b-0648ffbfd48b','wa_item@@@npsnceil',0,'wa_item','2018-08-14 16:03:21')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '8a5020b6-2c0e-4317-b7cf-7076069357c8','317f74f8-7bc5-4496-a51b-0648ffbfd48b','wa_item@@@creator',0,'wa_item','2018-08-14 16:03:21')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '8b9fd8ed-4849-4971-8df5-712196048118','317f74f8-7bc5-4496-a51b-0648ffbfd48b','wa_item@@@isinhi',0,'wa_item','2018-08-14 16:03:21')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '962248c4-d384-4735-8ff9-f00a1a027336','317f74f8-7bc5-4496-a51b-0648ffbfd48b','wa_item@@@clearflag',0,'wa_item','2018-08-14 16:03:21')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '9ccb8ba1-61d8-4f59-b4aa-e4ba71cdcf4a','317f74f8-7bc5-4496-a51b-0648ffbfd48b','wa_item@@@idisplayseq',0,'wa_item','2018-08-14 16:03:21')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '9ef98a3a-0a64-485e-8404-0849d1ab3f8e','317f74f8-7bc5-4496-a51b-0648ffbfd48b','wa_item@@@totalitem',0,'wa_item','2018-08-14 16:03:21')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'acba8dc4-fa16-4226-b501-2e69fe8986eb','317f74f8-7bc5-4496-a51b-0648ffbfd48b','wa_item@@@ifldwidth',0,'wa_item','2018-08-14 16:03:21')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'bc1d2095-00a8-4e63-84c6-818337f8c58c','317f74f8-7bc5-4496-a51b-0648ffbfd48b','twhr_waitem_30@@@isnhiitem_30',0,'twhr_waitem_30','2018-08-14 16:03:21')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'c249aba1-ccea-4aab-aa68-52f73bf54ac8','317f74f8-7bc5-4496-a51b-0648ffbfd48b','wa_item@@@category_id',0,'wa_item','2018-08-14 16:03:21')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'c9a273df-9fed-4781-83c5-128759a71bda','317f74f8-7bc5-4496-a51b-0648ffbfd48b','wa_item@@@pk_org',0,'wa_item','2018-08-14 16:03:21')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'cc4b361b-1891-48dc-9047-025c1a71f573','317f74f8-7bc5-4496-a51b-0648ffbfd48b','wa_item@@@modifiedtime',0,'wa_item','2018-08-14 16:03:21')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'cccad586-845c-4d86-8bb7-d56d7aa4edc4','317f74f8-7bc5-4496-a51b-0648ffbfd48b','wa_item@@@defaultflag',0,'wa_item','2018-08-14 16:03:21')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'eadff107-6ea4-469b-bc41-043a889263e5','317f74f8-7bc5-4496-a51b-0648ffbfd48b','wa_item@@@nsumceil',0,'wa_item','2018-08-14 16:03:21')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'f00f9bbb-f57d-4070-85ad-551b7b39b709','317f74f8-7bc5-4496-a51b-0648ffbfd48b','wa_item@@PK@@',0,'wa_item','2018-08-14 16:03:21')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'f60814d1-2c54-4631-b000-d32e1871c24a','317f74f8-7bc5-4496-a51b-0648ffbfd48b','wa_item@@@iprivil',0,'wa_item','2018-08-14 16:03:21')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'fbb060d6-9c3d-4b50-bce6-88d0a607462f','317f74f8-7bc5-4496-a51b-0648ffbfd48b','wa_item@@@sumfloorflag',0,'wa_item','2018-08-14 16:03:21')
+go

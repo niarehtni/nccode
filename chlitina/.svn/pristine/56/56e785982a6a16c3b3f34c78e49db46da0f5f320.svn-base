@@ -1,0 +1,40 @@
+package nc.impl.ta.overtime;
+
+import nc.impl.pub.OTLeaveBalancePubServiceImpl;
+import nc.itf.ta.overtime.IOTLeaveBalanceMaintain;
+import nc.ui.querytemplate.querytree.IQueryScheme;
+import nc.vo.pub.BusinessException;
+import nc.vo.ta.overtime.AggOTLeaveBalanceVO;
+
+public class OTLeaveBalanceMaintainImpl extends OTLeaveBalancePubServiceImpl implements IOTLeaveBalanceMaintain {
+
+    @Override
+    public void delete(AggOTLeaveBalanceVO[] vos) throws BusinessException {
+	super.pubdeleteBills(vos);
+    }
+
+    @Override
+    public AggOTLeaveBalanceVO[] insert(AggOTLeaveBalanceVO[] vos) throws BusinessException {
+	return super.pubinsertBills(vos);
+    }
+
+    @Override
+    public AggOTLeaveBalanceVO[] update(AggOTLeaveBalanceVO[] vos) throws BusinessException {
+	return super.pubupdateBills(vos);
+    }
+
+    @Override
+    public AggOTLeaveBalanceVO[] query(IQueryScheme queryScheme, String pk_leavetypecopy, String beginDate,
+	    String endDate) throws BusinessException {
+	return super.pubquerybills(queryScheme, pk_leavetypecopy, beginDate, endDate);
+    }
+
+    @Override
+    public AggOTLeaveBalanceVO[] query(String pk_org, String[] pk_psndoc, String[] pk_depts, String pk_leavetypecopy,
+	    String maxDate, String beginDate, String endDate) throws BusinessException {
+	AggOTLeaveBalanceVO[] ret = super.queryOTLeaveAggvos(pk_org, pk_psndoc, pk_depts, pk_leavetypecopy, maxDate,
+		beginDate, endDate);
+	return ret;
+    }
+
+}

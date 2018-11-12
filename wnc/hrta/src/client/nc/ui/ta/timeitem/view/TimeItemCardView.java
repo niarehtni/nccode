@@ -1,0 +1,354 @@
+package nc.ui.ta.timeitem.view;
+
+import org.apache.commons.lang.StringUtils;
+import java.awt.BorderLayout;
+
+import nc.bs.logging.Logger;
+import nc.ui.pub.beans.UIPanel;
+import nc.ui.pub.beans.UIScrollPane;
+import nc.ui.ta.timeitem.model.TimeItemAppModel;
+import nc.ui.uif2.AppEvent;
+import nc.ui.uif2.AppEventListener;
+import nc.ui.uif2.UIState;
+import nc.ui.uif2.editor.IEditor;
+import nc.ui.uif2.model.AppEventConst;
+import nc.vo.bd.pub.IPubEnumConst;
+import nc.vo.pub.BusinessException;
+import nc.vo.pub.lang.MultiLangText;
+import nc.vo.pub.lang.UFBoolean;
+import nc.vo.pub.lang.UFDateTime;
+import nc.vo.pub.lang.UFDouble;
+import nc.vo.ta.basedoc.RefDefVOWrapper;
+import nc.vo.ta.timeitem.TimeItemCopyVO;
+import nc.vo.ta.timeitem.TimeItemVO;
+import nc.vo.uif2.LoginContext;
+
+import org.apache.commons.lang.StringUtils;
+
+/**
+ * 考勤类别cardView 基本方法的定义、公共属性在cardPanel的设置与获取
+ * 
+ * @author yucheng
+ * 
+ */
+@SuppressWarnings("serial")
+public class TimeItemCardView extends UIPanel implements AppEventListener,
+		IEditor {
+
+	private TimeItemAppModel model;
+	private TimeItemCardPanel cardPanel;
+
+	public void initUI() {
+		initialize();
+	}
+
+	public void initialize() {
+		try {
+			UIScrollPane topPane = new UIScrollPane();
+			topPane.setViewportView(getCardPanel());
+			getCardPanel().setModel(getModel());
+			setLayout(new BorderLayout());
+			add(topPane, BorderLayout.CENTER);
+			setSize(400, 500);
+		} catch (Exception e) {
+			Logger.error(e.getMessage());
+		}
+	}
+
+	@Override
+	public void handleEvent(AppEvent event) {
+		if ((AppEventConst.MODEL_INITIALIZED == event.getType())) {
+			getCardPanel().setEnabled(false);
+			synchronizeDataFromModel();
+		}
+		// 点击新增等按钮时调用
+		else if (AppEventConst.UISTATE_CHANGED == event.getType()) {
+			if (model.getUiState() == UIState.EDIT) {
+				// onEdit();
+				onUIStateChange(model.getContext());
+			} else if (model.getUiState() == UIState.ADD) {
+				onAdd();
+				onUIStateChange(model.getContext());
+			} else {
+				getCardPanel().setEnabled(false);
+				synchronizeDataFromModel();
+			}
+
+		}
+		// 树列表选中事件
+		else if (AppEventConst.SELECTION_CHANGED == event.getType()) {
+			synchronizeDataFromModel();
+		}
+	}
+
+	/**
+	 * 新增操作
+	 */
+	public void onAdd() {
+		getCardPanel().setEnabled(true);
+		setDefaultValue();
+		// 新增时焦点默认在编码处
+		getCardPanel().getTimeitemcode().requestFocus();
+	}
+
+	/**
+	 * 编辑操作
+	 */
+	public void onEdit(boolean isRefed) {
+		getCardPanel().setEnabled(true);
+		checkBeforeEdit(model.getSelectedData());
+		// 如果此类别被单据或基础数据引用
+		if (!isRefed)
+			return;
+		processCompEnableStatusWhenUsed();
+	}
+
+	/**
+	 * 当数据已经被引用的时候，有些控件是不让修改的，例如按天还是按小时
+	 */
+	protected void processCompEnableStatusWhenUsed() {
+		getCardPanel().getTimeitemunit().setEnabled(false);
+	}
+
+	/**
+	 * 检查是否引用
+	 * 
+	 * @param obj
+	 */
+	public void checkBeforeEdit(Object obj) {
+		if (!(obj instanceof TimeItemCopyVO))
+			return;
+
+		TimeItemCopyVO vo = (TimeItemCopyVO) obj;
+		// 根据组织判断是否引用 或 为系统预置
+		if ((!vo.getPk_deforg().equals(vo.getPk_org())) || vo.getIspredef().booleanValue())
+			getCardPanel().setDefDisEnabled();
+	}
+
+	/**
+	 * 引用操作，在各子类中实现
+	 * 
+	 * @param objs
+	 * @return
+	 * @throws BusinessException
+	 */
+	public TimeItemCopyVO[] onRef(RefDefVOWrapper<TimeItemVO> objs) throws BusinessException {
+		return null;
+	}
+
+	/**
+	 * 根据context查询引用信息，在各子类中实现
+	 * 
+	 * @return
+	 * @throws BusinessException
+	 */
+	public RefDefVOWrapper<TimeItemVO> queryRefDefVOs() throws BusinessException {
+		return null;
+	}
+
+	/**
+	 * 当前组织的所有引用拷贝与上级同步操作，在各子类中实现(暂时未使用，预留)
+	 * 
+	 * @throws BusinessException
+	 */
+	public void onSynchronize() throws BusinessException {
+
+	}
+
+	// MOD (台湾新法令) ssx added on 2018-06-25
+	public void onUIStateChange(LoginContext context) {
+
+	} // end
+
+	protected void synchronizeDataFromModel() {
+		Object selectedData = model.getSelectedData();
+		setValue(selectedData);
+	}
+
+	/**
+	 * 新增时设置默认值，在各子类中实现
+	 */
+	public void setDefaultValue(){}
+	
+
+	/**
+	 * 取公共属性默认值 将指定类型的copyVO作参数
+	 * 
+	 * @param vo
+	 * @return
+	 */
+	public TimeItemCopyVO getPubDefaultValue(TimeItemCopyVO vo) {
+		vo.setOvertimetorest(new UFDouble(100));
+		vo.setEnablestate(IPubEnumConst.ENABLESTATE_ENABLE);
+		vo.setTimeitemunit(TimeItemCopyVO.TIMEITEMUNIT_DAY);
+		vo.setLeavesetperiod(TimeItemCopyVO.LEAVESETPERIOD_YEAR);
+		vo.setLeavesettlement(TimeItemCopyVO.LEAVESETTLEMENT_DROP);
+		vo.setLeavescale(TimeItemCopyVO.LEAVESCALE_YEAR);
+		vo.setRoundmode(TimeItemCopyVO.ROUNDMODE_MID);
+		vo.setTimeunit(new UFDouble(0));
+		vo.setGxcomtype(TimeItemCopyVO.GXCOMTYPE_NOTLEAVE);
+		vo.setCalculatetype(TimeItemCopyVO.CALCULATETYPE_TOHALF);
+		vo.setIsLeavelimit(UFBoolean.FALSE);
+		vo.setIsRestrictlimit(UFBoolean.FALSE);
+		vo.setIsLeaveplan(UFBoolean.FALSE);
+		vo.setIsleaveapptimelimit(UFBoolean.FALSE);
+		vo.setIsinterwt(UFBoolean.FALSE);
+		vo.setLeaveapptimelimit(0);
+		vo.setLeaveextendcount(0);
+		vo.setConvertrule(TimeItemCopyVO.CONVERTRULE_DAY);
+		vo.setPk_defgroup(getModel().getContext().getPk_group());
+		vo.setPk_deforg(getModel().getContext().getPk_org());
+		vo.setDefenablestate(IPubEnumConst.ENABLESTATE_ENABLE);
+		vo.setIslactation(UFBoolean.FALSE);
+		vo.setIspredef(UFBoolean.FALSE);
+		vo.setIsleave(UFBoolean.FALSE);
+		vo.setIsspecialrest(UFBoolean.FALSE);
+
+		// ssx added on 20180501
+		// for Taiwan New Law Requirements
+		// 是否允许员工自行决定转休
+		vo.setIsstuffdecidecomp(UFBoolean.FALSE);
+		// 单日加班上限?小时
+		vo.setDaylimit(UFDouble.ZERO_DBL);
+		// 是否纳入月加班上限统计
+		vo.setIsincludewithlimit(UFBoolean.FALSE);
+		// 首段加班最低时数
+		vo.setEffectivehours(UFDouble.ZERO_DBL);
+		// 加班超过?小时,扣除?小时
+		vo.setDeductlowhours(UFDouble.ZERO_DBL);
+		vo.setDeductminutes(UFDouble.ZERO_DBL);
+		// 加班分段依據
+		vo.setPk_segrule(null);
+		//
+
+		return vo;
+	}
+
+	/**
+	 * 取在界面上设置的值
+	 */
+	@Override
+	public Object getValue() {
+		return null;
+	}
+
+	/**
+	 * 取公共属性在界面上设置的值 将指定类型的copyVO作参数
+	 * 
+	 * @param vo
+	 * @return
+	 */
+	public TimeItemCopyVO getPubValue(TimeItemCopyVO vo) {
+		TimeItemCardPanel cardPanel = getCardPanel();
+		vo.setTimeitemcode(cardPanel.getTimeitemcode().getText());
+		MultiLangText text = cardPanel.getTimeitemname().getMultiLangText();
+		if (text != null) {
+			vo.setTimeitemname(text.getText());
+			vo.setTimeitemname2(text.getText2());
+			vo.setTimeitemname3(text.getText3());
+			vo.setTimeitemname4(text.getText4());
+			vo.setTimeitemname5(text.getText5());
+			vo.setTimeitemname6(text.getText6());
+		}
+		vo.setEnablestate((Integer) cardPanel.getEnablestate().getSelectdItemValue());
+		vo.setTimeitemnote(cardPanel.getTimeitemnote().getText());
+		vo.setTimeitemunit((Integer) cardPanel.getTimeitemunit().getSelectdItemValue());
+		vo.setRoundmode((Integer) cardPanel.getRoundmode().getSelectdItemValue());
+
+		vo.setPk_timeitemcopy(cardPanel.getPk_timeitemcopy());
+		vo.setPk_timeitem(cardPanel.getPk_timeitem());
+		vo.setPk_group(getModel().getContext().getPk_group());
+		vo.setPk_org(getModel().getContext().getPk_org());
+		vo.setPk_defgroup(cardPanel.getPk_defgroup());
+		vo.setPk_deforg(cardPanel.getPk_deforg());
+		vo.setDefenablestate(cardPanel.getDefenablestate());
+		vo.setIspredef(cardPanel.getIspredef());
+		vo.setIslactation(cardPanel.getIslactation());
+		vo.setCreator(cardPanel.getCreator().getRefPK());
+		vo.setModifier(cardPanel.getModifier().getRefPK());
+		if (!StringUtils.isBlank(cardPanel.getCreationtime().getText())) {
+			vo.setCreationtime(new UFDateTime(cardPanel.getCreationtime().getText()));
+		}
+		if (!StringUtils.isBlank(cardPanel.getModifiedtime().getText())) {
+			vo.setModifiedtime(new UFDateTime(cardPanel.getModifiedtime().getText()));
+		}
+		vo.setIssynchronized(UFBoolean.TRUE);
+		vo.setIsLeavelimit(UFBoolean.FALSE);
+		vo.setIsRestrictlimit(UFBoolean.FALSE);
+		vo.setIsLeaveplan(UFBoolean.FALSE);
+		vo.setIsspecialrest(UFBoolean.FALSE);
+		vo.setIsinterwt(UFBoolean.FALSE);
+		vo.setIsleaveapptimelimit(UFBoolean.FALSE);
+		vo.setIsleave(UFBoolean.FALSE);
+		vo.setGxcomtype(0);
+		vo.setTimeunit(UFDouble.ZERO_DBL);
+		vo.setLeaveextendcount(0);
+
+		vo.setTs(cardPanel.getTs());
+		vo.setDefTS(cardPanel.getDefTS());
+
+		return vo;
+	}
+
+	/**
+	 * 设置一些公共属性在cardPanel中的显示值
+	 */
+	@Override
+	public void setValue(Object object) {
+		if (!(object instanceof TimeItemCopyVO)) {
+			setDefaultValue();
+			return;
+		}
+		TimeItemCardPanel cardPanel = getCardPanel();
+		cardPanel.clearData();
+
+		TimeItemCopyVO vo = (TimeItemCopyVO) object;
+
+		cardPanel.setPk_timeitem(vo.getPk_timeitem());
+		cardPanel.setPk_timeitemcopy(vo.getPk_timeitemcopy());
+		cardPanel.getTimeitemcode().setText(vo.getTimeitemcode());
+		MultiLangText text = new MultiLangText();
+		text.setText(vo.getTimeitemname());
+		text.setText2(vo.getTimeitemname2());
+		text.setText3(vo.getTimeitemname3());
+		text.setText4(vo.getTimeitemname4());
+		text.setText5(vo.getTimeitemname5());
+		text.setText6(vo.getTimeitemname6());
+		cardPanel.getTimeitemname().setMultiLangText(text);
+		cardPanel.getEnablestate().setSelectedItem(vo.getEnablestate());
+		cardPanel.getTimeitemnote().setText(vo.getTimeitemnote());
+		cardPanel.getTimeitemunit().setSelectedItem(vo.getTimeitemunit());
+		cardPanel.getRoundmode().setSelectedItem(vo.getRoundmode());
+
+		cardPanel.setPk_defgroup(vo.getPk_defgroup());
+		cardPanel.setPk_deforg(vo.getPk_deforg());
+		cardPanel.setDefenablestate(vo.getDefenablestate());
+		cardPanel.setIspredef(vo.getIspredef());
+		cardPanel.setIslactation(vo.getIslactation());
+		cardPanel.getCreator().setPK(vo.getCreator());
+		cardPanel.getModifier().setPK(vo.getModifier());
+		cardPanel.setTs(vo.getTs());
+		cardPanel.setDefTS(vo.getDefTS());
+		if (vo.getCreationtime() != null)
+			cardPanel.getCreationtime().setText(vo.getCreationtime().toString());
+		if (vo.getModifiedtime() != null)
+			cardPanel.getModifiedtime().setText(vo.getModifiedtime().toString());
+	}
+
+	public TimeItemAppModel getModel() {
+		return model;
+	}
+
+	public void setModel(TimeItemAppModel model) {
+		this.model = model;
+		model.addAppEventListener(this);
+	}
+
+	public TimeItemCardPanel getCardPanel() {
+		return cardPanel;
+	}
+
+	public void setCardPanel(TimeItemCardPanel cardPanel) {
+		this.cardPanel = cardPanel;
+	}
+}

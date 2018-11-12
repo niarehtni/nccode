@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="GBK"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+<bean id="funcregister" class="nc.pubapp.pade.funcmodel.vo.FuncRegister">
+<property name="bmf_path" value="hrta\METADATA\segdetail.bmf"/>
+<property name="busiActiveList">
+<list>
+</list>
+</property>
+<property name="cfunid" value="0001ZZ10000000015X9D"/>
+<property name="class_name" value="nc.ui.pubapp.uif2app.ToftPanelAdaptorEx"/>
+<property name="dr" value="0"/>
+<property name="fun_name" value="加班分段明细"/>
+<property name="fun_property" value="0"/>
+<property name="funcRegisterButtonList">
+<list>
+</list>
+</property>
+<property name="funcRegisterParamList">
+<list>
+<bean class="nc.pubapp.pade.funcmodel.vo.FuncRegisterParam">
+<property name="dr" value="0"/>
+<property name="paramname" value="BeanConfigFilePath"/>
+<property name="paramvalue" value="nc/ui/hrta/segdetail/ace/view/Segdetail_config.xml"/>
+<property name="parentid" value="0001ZZ10000000015X9D"/>
+<property name="pk_param" value="0001ZZ10000000015X9E"/>
+<property name="ts" value="2018-05-25 19:37:57"/>
+</bean>
+</list>
+</property>
+<property name="funcode" value="60170segdetail"/>
+<property name="funnode_path" value="hrta\designmodel\ace\client\60170segdetail.fnf"/>
+<property name="funtype" value="0"/>
+<property name="isbuttonpower" value="false"/>
+<property name="isenable" value="true"/>
+<property name="isfunctype" value="false"/>
+<property name="menuModelFilePath" value="hrta/designmodel/funcmodel/segdetail/menuitemregis/6017100420.menu"/>
+<property name="metaDataID" value="59c59639-7fd1-44ad-aacd-8e4bf9fef6e3"/>
+<property name="moduleName" value="hrta"/>
+<property name="orgtypecode" value="HRORGTYPE00000000000"/>
+<property name="own_module" value="6017"/>
+<property name="pageList">
+<list>
+</list>
+</property>
+<property name="parent_id" value="1002Z71000000001VJHH"/>
+<property name="pk_group" value="~"/>
+<property name="ts" value="2018-05-25 19:37:57"/>
+<property name="uif2model_path" value="hrta\designmodel\ace\uif2model\60170segdetail.umf"/>
+</bean>
+
+</beans>

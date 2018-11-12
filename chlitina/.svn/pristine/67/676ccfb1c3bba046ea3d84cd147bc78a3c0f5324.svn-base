@@ -1,0 +1,1078 @@
+package nc.pubimpl.ta.overtime;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+
+import nc.bs.dao.BaseDAO;
+import nc.bs.framework.common.NCLocator;
+import nc.impl.ta.overtime.SegdetailMaintainImpl;
+import nc.itf.hrwa.IWadaysalaryQueryService;
+import nc.itf.om.IDeptQueryService;
+import nc.itf.om.IOrgInfoQueryService;
+import nc.itf.ta.IPeriodQueryService;
+import nc.pubitf.para.SysInitQuery;
+import nc.pubitf.ta.overtime.ISegDetailService;
+import nc.vo.bd.shift.ShiftVO;
+import nc.vo.hi.psndoc.PsnJobVO;
+import nc.vo.hi.psndoc.PsndocVO;
+import nc.vo.hrwa.wadaysalary.DaySalaryEnum;
+import nc.vo.ml.MultiLangUtil;
+import nc.vo.om.hrdept.AggHRDeptVO;
+import nc.vo.om.orginfo.AggHROrgVO;
+import nc.vo.om.orginfo.HROrgVO;
+import nc.vo.pub.BusinessException;
+import nc.vo.pub.VOStatus;
+import nc.vo.pub.lang.UFBoolean;
+import nc.vo.pub.lang.UFDate;
+import nc.vo.pub.lang.UFDateTime;
+import nc.vo.pub.lang.UFDouble;
+import nc.vo.pub.lang.UFLiteralDate;
+import nc.vo.ta.leave.LeaveRegVO;
+import nc.vo.ta.overtime.AggSegDetailVO;
+import nc.vo.ta.overtime.AggSegRuleVO;
+import nc.vo.ta.overtime.CalendarDateTypeEnum;
+import nc.vo.ta.overtime.OvertimeLimitScopeEnum;
+import nc.vo.ta.overtime.OvertimeRegVO;
+import nc.vo.ta.overtime.QueryValueTypeEnum;
+import nc.vo.ta.overtime.SegDetailConsumeVO;
+import nc.vo.ta.overtime.SegDetailVO;
+import nc.vo.ta.overtime.SegRuleTermVO;
+import nc.vo.ta.overtime.SegRuleVO;
+import nc.vo.ta.overtime.TaxFlagEnum;
+import nc.vo.ta.period.PeriodVO;
+import nc.vo.ta.psncalendar.PsnCalendarVO;
+import nc.vo.ta.timeitem.LeaveTypeCopyVO;
+import nc.vo.ta.timeitem.LeaveTypeVO;
+import nc.vo.ta.timeitem.OverTimeTypeCopyVO;
+import nc.vo.ta.timerule.TimeRuleVO;
+
+import org.apache.commons.lang.StringUtils;
+
+public class SegDetailServiceImpl implements ISegDetailService {
+    private Map<String, OTSChainNode> allNode = null;
+    private BaseDAO baseDao = null;
+    private IPeriodQueryService periodService = null;
+
+    @Override
+    public void regOvertimeSegDetail(OvertimeRegVO[] overtimeRegVOs) throws BusinessException {
+	if (overtimeRegVOs != null && overtimeRegVOs.length > 0) {
+	    this.getAllNode().clear();
+	    for (OvertimeRegVO vo : overtimeRegVOs) {
+		UFBoolean isEnabled = new UFBoolean(SysInitQuery.getParaString(vo.getPk_org(), "TBMOTSEG"));
+		if (isEnabled == null || !isEnabled.booleanValue()) {
+		    return;
+		}
+
+		String pk_psndoc = vo.getPk_psndoc();
+
+		// 取加班類別
+		OverTimeTypeCopyVO otType = (OverTimeTypeCopyVO) this.getBaseDao().retrieveByPK(
+			OverTimeTypeCopyVO.class, vo.getPk_overtimetypecopy());
+
+		if (otType.getPk_segrule() != null) {
+		    // 根據加班類別取分段依據
+		    AggSegRuleVO ruleAggVO = getSegRuleAggVO(otType.getPk_segrule());
+
+		    // 取當前加班分段明細節點
+		    OTSChainNode curOTSegNode = getOvertimeSegChainNodeByOTReg(vo, ruleAggVO);
+
+		    // 取當前人員全節點（物理鏈表）
+		    if (!this.getAllNode().containsKey(pk_psndoc)) {
+			OTSChainNode psnNode = OTSChainUtils.buildChainNodes(pk_psndoc, null, null, false, false,
+				false, false, false);
+			this.getAllNode().put(pk_psndoc, psnNode);
+		    }
+
+		    // 校驗加班日是否已存在不同的加班分段依據
+		    OTSChainNode checkNode = this.getAllNode().get(pk_psndoc);
+		    while (checkNode != null) {
+			if (checkNode.getNodeData().getRegdate().isSameDate(curOTSegNode.getNodeData().getRegdate())) {
+			    // 已存在節點與當前加班日為同一天
+			    if (!otType.getPk_segrule().equals(checkNode.getNodeData().getPk_segrule())) {
+				throw new BusinessException("系統中已存在使用不同類型的加班分段規則的加班登記單。 ");
+			    }
+			}
+			checkNode = checkNode.getNextNode();
+		    }
+
+		    OTSChainNode combinedNodes = OTSChainUtils.combineNodes(this.getAllNode().get(pk_psndoc),
+			    curOTSegNode);
+		    this.getAllNode().put(pk_psndoc, combinedNodes);
+		    OTSChainUtils.saveAll(this.getAllNode().get(pk_psndoc));
+		}
+	    }
+	}
+    }
+
+    @Override
+    public void updateOvertimeSegDetail(OvertimeRegVO[] overtimeRegVOs) throws BusinessException {
+	if (overtimeRegVOs != null && overtimeRegVOs.length > 0) {
+	    deleteOvertimeSegDetail(overtimeRegVOs);
+	    regOvertimeSegDetail(overtimeRegVOs);
+	}
+
+    }
+
+    @Override
+    public void deleteOvertimeSegDetail(OvertimeRegVO[] overtimeRegVOs) throws BusinessException {
+	if (overtimeRegVOs != null && overtimeRegVOs.length > 0) {
+	    List<AggSegDetailVO> aggvos = new ArrayList<AggSegDetailVO>();
+
+	    for (OvertimeRegVO vo : overtimeRegVOs) {
+		OTSChainNode curNode = OTSChainUtils.buildChainNodes(vo.getPk_psndoc(), null, vo.getPk_overtimereg(),
+			false, false, false, false, false);
+		boolean canDel = true;
+		while (curNode != null) {
+		    if (curNode.getNodeData().getConsumedhours().doubleValue() > 0
+			    || containsChild(curNode.getNodeData().getPk_segdetail())) {
+			canDel = false;
+			break;
+		    }
+
+		    AggSegDetailVO aggvo = new AggSegDetailVO();
+		    aggvo.setParent(curNode.getNodeData());
+		    aggvos.add(aggvo);
+
+		    curNode = curNode.getNextNode();
+		}
+
+		if (!canDel) {
+		    throw new BusinessException("加班登記單對應的分段明細已被消耗");
+		}
+
+	    }
+
+	    if (aggvos.size() > 0) {
+		new SegdetailMaintainImpl().delete(aggvos.toArray(new AggSegDetailVO[0]));
+	    }
+	}
+    }
+
+    private boolean containsChild(String pk_segdetail) throws BusinessException {
+	Collection children = this.getBaseDao().retrieveByClause(SegDetailConsumeVO.class,
+		"pk_segdetail='" + pk_segdetail + "'");
+	return (children != null && children.size() > 0);
+    }
+
+    private OTSChainNode getOvertimeSegChainNodeByOTReg(OvertimeRegVO vo, AggSegRuleVO ruleAggVO)
+	    throws BusinessException {
+	SegRuleVO rule = ruleAggVO.getParentVO();
+	SegRuleTermVO[] terms = (SegRuleTermVO[]) ruleAggVO.getChildrenVO();
+
+	UFDouble othours = vo.getOvertimehour();
+	UFDouble totalSegHours = UFDouble.ZERO_DBL; // 纍計生成分段時長
+	OTSChainNode parentNode = null;
+	UFLiteralDate realDate = getShiftRegDate(vo);
+
+	for (SegRuleTermVO term : terms) {
+	    if (othours.equals(UFDouble.ZERO_DBL)) {
+		break;
+	    }
+	    UFDouble start = term.getStartpoint();
+	    UFDouble end = term.getEndpoint() == null ? new UFDouble(24) : term.getEndpoint();
+	    UFDouble taxfreerate = term.getTaxfreeotrate();
+	    UFDouble taxablerate = term.getTaxableotrate();
+	    UFDouble seghours = end.sub(start); // 分段時長
+	    UFDouble curSegTotalHours = UFDouble.ZERO_DBL; // 當前分段總時長
+	    UFDouble curSegTaxfreeHours = UFDouble.ZERO_DBL; // 當前分段免稅時長
+	    UFDouble curSegTaxableHours = UFDouble.ZERO_DBL; // 當前分段應稅時長
+	    if (othours.doubleValue() >= seghours.doubleValue()) {
+		// 加班時長大於分段長度，本次註冊時長取分段時長
+		curSegTotalHours = seghours;
+	    } else {
+		// 加班時長小於分段長度，本次註冊時長取加班時長
+		curSegTotalHours = othours;
+	    }
+
+	    othours = othours.sub(curSegTotalHours);
+
+	    if (term.getIslimitscope() == null || !term.getIslimitscope().booleanValue()) {
+		// 不計入加班上限統計，直接記為免稅時數
+		curSegTaxfreeHours = curSegTotalHours;
+		curSegTaxableHours = UFDouble.ZERO_DBL;
+	    } else {
+		// 先檢查分段依據上，該分段的應免稅設置
+		if (term.getTaxflag().equals(TaxFlagEnum.TAXABLE.toIntValue())) {
+		    curSegTaxfreeHours = UFDouble.ZERO_DBL;
+		    curSegTaxableHours = curSegTotalHours;
+		} else {
+		    // 計入加班上限統計，檢查當日截止當日前一日的應稅加班時數
+		    Map<String, UFDouble[]> psnSeghours = this.calculateTaxableByDate(vo.getPk_org(),
+			    new String[] { vo.getPk_psndoc() }, realDate, realDate, curSegTotalHours);
+		    curSegTaxfreeHours = psnSeghours.get(vo.getPk_psndoc())[0];
+		    curSegTaxableHours = psnSeghours.get(vo.getPk_psndoc())[1];
+		}
+	    }
+
+	    OTSChainNode curNode = new OTSChainNode();
+	    SegDetailVO segvo = createNewSegDetail(vo, realDate, rule, term, seghours, taxfreerate, taxablerate,
+		    curSegTaxfreeHours, curSegTaxableHours);
+
+	    curNode.setNodeData(segvo);
+
+	    if (parentNode == null) {
+		curNode.setNextNode(null);
+		curNode.setPriorNode(null);
+		parentNode = curNode;
+	    } else {
+		OTSChainUtils.appendNode(parentNode, curNode);
+		parentNode = curNode;
+	    }
+
+	    totalSegHours = totalSegHours.add(curSegTotalHours);// 生成分段時長纍加
+	}
+	return OTSChainUtils.getFirstNode(parentNode);
+    }
+
+    private SegDetailVO createNewSegDetail(OvertimeRegVO vo, UFLiteralDate realRegDate, SegRuleVO rule,
+	    SegRuleTermVO term, UFDouble seghours, UFDouble taxfreerate, UFDouble taxablerate, UFDouble hourstaxfree,
+	    UFDouble hourstaxable) throws BusinessException {
+	SegDetailVO segvo = new SegDetailVO();
+	segvo.setPk_group(vo.getPk_group());
+	segvo.setPk_org(vo.getPk_org());
+	segvo.setPk_org_v(vo.getPk_org_v());
+	segvo.setPk_overtimereg(vo.getPk_overtimereg());
+	segvo.setPk_psndoc(vo.getPk_psndoc());
+	segvo.setPk_segrule(rule.getPk_segrule());
+	segvo.setPk_segruleterm(term.getPk_segruleterm());
+	segvo.setConsumedhours(UFDouble.ZERO_DBL);
+	UFDouble hourpay = getPsnHourPay(vo.getPk_psndoc(), vo.getOvertimebegindate(), DaySalaryEnum.TBMHOURSALARY);
+	segvo.setHourlypay(hourpay == null ? UFDouble.ZERO_DBL : hourpay);
+	segvo.setHourstaxfree(hourstaxfree);
+	segvo.setHourstaxable(hourstaxable);
+	segvo.setHours(segvo.getHourstaxfree().add(segvo.getHourstaxable()));
+	segvo.setIscanceled(UFBoolean.FALSE);
+	segvo.setIscompensation(vo.getIstorest());
+	segvo.setHourstorest(vo.getToresthour());
+	segvo.setIsconsumed(UFBoolean.FALSE);
+	segvo.setIssettled(UFBoolean.FALSE);
+	segvo.setMaketime(new UFDate());
+	PsndocVO psnVo = (PsndocVO) this.getBaseDao().retrieveByPK(PsndocVO.class, vo.getPk_psndoc());
+	segvo.setNodecode(psnVo.getCode() + OTSChainUtils.SPLT + realRegDate.toString() + OTSChainUtils.SPLT
+		+ rule.getCode() + OTSChainUtils.SPLT + String.valueOf(String.format("%02d", term.getSegno())));
+	segvo.setNodename(MultiLangUtil.getSuperVONameOfCurrentLang(psnVo, PsndocVO.NAME, psnVo.getName())
+		+ OTSChainUtils.SPLT + realRegDate.toString().replace("-", "") + OTSChainUtils.SPLT
+		+ MultiLangUtil.getSuperVONameOfCurrentLang(rule, SegRuleVO.NAME, rule.getName()) + OTSChainUtils.SPLT
+		+ String.valueOf(term.getSegno()));
+	segvo.setTaxfreerate(taxfreerate);
+	segvo.setTaxablerate(taxablerate);
+	segvo.setRegdate(realRegDate);
+	segvo.setRemainhours(segvo.getHours());
+	segvo.setRemainamounttaxfree(getOTAmount(segvo.getTaxfreerate(), segvo.getHourlypay(), segvo.getTaxfreerate(),
+		null, -1));
+	segvo.setRemainamounttaxable(getOTAmount(segvo.getTaxablerate(), segvo.getHourlypay(), segvo.getTaxablerate(),
+		null, -1));
+	segvo.setRemainamount(segvo.getRemainamounttaxfree().add(segvo.getRemainamounttaxable())); // 剩餘金額=剩餘金額（免稅）+剩餘金額（應稅）
+	segvo.setRulehours(seghours);
+	return segvo;
+    }
+
+    /**
+     * 根據加班核定開始日期查詢加班實際歸屬班次的所屬日期
+     * 
+     * @param vo
+     *            加班登記單
+     * @return
+     * @throws BusinessException
+     */
+    @SuppressWarnings("unchecked")
+    private UFLiteralDate getShiftRegDate(OvertimeRegVO vo) throws BusinessException {
+	UFLiteralDate rtnDate = vo.getBegindate();
+	Collection<PsnCalendarVO> psncals = this.getBaseDao().retrieveByClause(
+		PsnCalendarVO.class,
+		"pk_psndoc='" + vo.getPk_psndoc() + "' and calendar between '"
+			+ vo.getOvertimebegindate().getDateBefore(3) + "' and '"
+			+ vo.getOvertimebegindate().getDateAfter(3) + "'");
+	if (psncals != null && psncals.size() > 0) {
+	    for (PsnCalendarVO psncal : psncals) {
+		if (psncal.getPk_shift() != null) {
+		    ShiftVO shiftvo = (ShiftVO) this.getBaseDao().retrieveByPK(ShiftVO.class, psncal.getPk_shift());
+		    if (shiftvo != null) {
+			UFDateTime startDT = null;
+			if (shiftvo.getTimebeginday() == 0) {
+			    startDT = new UFDateTime(psncal.getCalendar().toString() + " " + shiftvo.getBegintime());
+			} else {
+			    startDT = new UFDateTime(psncal.getCalendar().getDateAfter(1).toString() + " "
+				    + shiftvo.getBegintime());
+			}
+
+			UFDateTime endDT = null;
+			if (shiftvo.getTimeendday() == 0) {
+			    endDT = new UFDateTime(psncal.getCalendar().toString() + " " + shiftvo.getEndtime());
+			} else {
+			    endDT = new UFDateTime(psncal.getCalendar().getDateAfter(1).toString() + " "
+				    + shiftvo.getEndtime());
+			}
+
+			if (vo.getOvertimebegintime().before(endDT) && vo.getOvertimebegintime().after(startDT)) {
+			    rtnDate = psncal.getCalendar();
+			}
+		    }
+		}
+	    }
+	}
+	return rtnDate;
+    }
+
+    private UFDouble getOTAmount(UFDouble otRate, UFDouble hourlypay, UFDouble hours, SegDetailVO detailVO,
+	    int daySalType) throws BusinessException {
+	otRate = otRate == null ? UFDouble.ZERO_DBL : otRate;
+	hourlypay = hourlypay == null ? UFDouble.ZERO_DBL : hourlypay;
+	hours = hours == null ? UFDouble.ZERO_DBL : hours;
+	if (detailVO != null) {
+	    hourlypay = getPsnHourPay(detailVO.getPk_psndoc(), detailVO.getRegdate(), daySalType);
+	    detailVO.setHourlypay(hourlypay);
+	}
+	UFDouble amount = hourlypay.multiply(otRate).multiply(hours);
+	return amount;
+    }
+
+    private UFDouble getPsnHourPay(String pk_psndoc, UFLiteralDate overtimebegindate, int daySalType)
+	    throws BusinessException {
+	IWadaysalaryQueryService dayPaySvc = NCLocator.getInstance().lookup(IWadaysalaryQueryService.class);
+
+	Map<String, HashMap<UFLiteralDate, UFDouble>> dayPayMap = dayPaySvc.getTotalTbmDaySalaryMap(
+		new String[] { pk_psndoc }, overtimebegindate, overtimebegindate, daySalType);
+	if (dayPayMap == null || dayPayMap.size() == 0 || dayPayMap.get(pk_psndoc) == null
+		|| dayPayMap.get(pk_psndoc).get(overtimebegindate) == null) {
+	    // throw new BusinessException("人員時薪取值錯誤：人員時薪為空");
+	    return UFDouble.ZERO_DBL; // 未取到日薪的，暫時返回0
+	}
+	return dayPayMap.get(pk_psndoc).get(overtimebegindate);
+    }
+
+    @SuppressWarnings("unchecked")
+    private AggSegRuleVO getSegRuleAggVO(String pk_segrule) throws BusinessException {
+	SegRuleVO ruleVO = (SegRuleVO) this.getBaseDao().retrieveByPK(SegRuleVO.class, pk_segrule);
+
+	if (ruleVO == null) {
+	    throw new BusinessException("數據錯誤：加班分段規則已被刪除");
+	}
+
+	Collection<SegRuleTermVO> segTerms = this.getBaseDao().retrieveByClause(SegRuleTermVO.class,
+		"pk_segrule='" + pk_segrule + "' and dr=0", "segno");
+	if (segTerms == null || segTerms.size() == 0) {
+	    throw new BusinessException("數據錯誤：加班分段規則明細已被刪除");
+	}
+
+	AggSegRuleVO aggVo = new AggSegRuleVO();
+	aggVo.setParent(ruleVO);
+	aggVo.setChildrenVO(segTerms.toArray(new SegRuleTermVO[0]));
+
+	return aggVo;
+    }
+
+    @Override
+    public void regOvertimeSegDetailConsume(LeaveRegVO[] leaveRegVOs) throws BusinessException {
+	if (leaveRegVOs != null && leaveRegVOs.length > 0) {
+	    for (LeaveRegVO vo : leaveRegVOs) {
+		UFBoolean isEnabled = SysInitQuery.getParaBoolean(vo.getPk_org(), "TBMOTSEG");
+		if (isEnabled == null || !isEnabled.booleanValue()) {
+		    return;
+		}
+
+		// 取業務參數定義的加班分段休假類別（加班轉補休）
+		LeaveTypeCopyVO[] lvTypeVOs = getLeaveTypeVOs(vo.getPk_org());
+
+		boolean typeContains = false;
+		for (LeaveTypeCopyVO lvTypeVO : lvTypeVOs) {
+		    if (lvTypeVO.getPk_timeitemcopy().equals(vo.getPk_leavetypecopy())) {
+			typeContains = true;
+			break;
+		    }
+		}
+
+		if (typeContains) {
+		    // 取已註冊未消耗的加班分段明細
+		    // 取當前人員過濾節點（邏輯鏈表：轉補休，未作廢，未核消完畢，未結算）
+		    OTSChainNode psnNode = OTSChainUtils.buildChainNodes(vo.getPk_psndoc(), null, null, true, false,
+			    true, true, true);
+		    SegDetailVO[] segDetailBeConsumed = OTSChainUtils.getAllNodeData(psnNode);
+
+		    if (segDetailBeConsumed == null || segDetailBeConsumed.length == 0) {
+			throw new BusinessException("消耗加班分段明細失敗：未找到可用的加班分段明細。");
+		    }
+
+		    consumeSegDetailHours(segDetailBeConsumed, vo);
+		}
+	    }
+	}
+    }
+
+    @Override
+    public void updateOvertimeSegDetailConsume(LeaveRegVO[] leaveRegVOs) throws BusinessException {
+	if (leaveRegVOs != null && leaveRegVOs.length > 0) {
+	    deleteOvertimeSegDetailConsume(leaveRegVOs);
+	    regOvertimeSegDetailConsume(leaveRegVOs);
+	}
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public void deleteOvertimeSegDetailConsume(LeaveRegVO[] leaveRegVOs) throws BusinessException {
+	if (leaveRegVOs != null && leaveRegVOs.length > 0) {
+	    for (LeaveRegVO vo : leaveRegVOs) {
+		Collection<SegDetailConsumeVO> consumeVOs = this.getBaseDao().retrieveByClause(
+			SegDetailConsumeVO.class, "pk_leavereg='" + vo.getPk_leavereg() + "'");
+		for (SegDetailConsumeVO consumeVO : consumeVOs) {
+		    SegDetailVO detailVO = (SegDetailVO) this.getBaseDao().retrieveByPK(SegDetailVO.class,
+			    consumeVO.getPk_segdetail());
+		    Map<String, UFDouble[]> taxhourssplit = calculateTaxableByDate(vo.getPk_org(),
+			    new String[] { vo.getPk_psndoc() }, detailVO.getRegdate(), detailVO.getRegdate()
+				    .getDateBefore(1), vo.getLeavehour());
+		    UFDouble[] values = taxhourssplit.get(vo.getPk_psndoc());
+		    detailVO.setRemainhourstaxfree(detailVO.getRemainhourstaxfree().add(values[0]));
+		    detailVO.setRemainhourstaxable(detailVO.getRemainhourstaxable().add(values[1]));
+		    detailVO.setRemainhours(detailVO.getRemainhourstaxfree().add(detailVO.getRemainhourstaxable()));
+
+		    detailVO.setRemainamounttaxfree(getOTAmount(detailVO.getTaxfreerate(), detailVO.getHourlypay(),
+			    detailVO.getRemainhourstaxfree(), detailVO, DaySalaryEnum.TAXFREEHOURSALARY));
+		    detailVO.setRemainamounttaxable(getOTAmount(detailVO.getTaxablerate(), detailVO.getHourlypay(),
+			    detailVO.getRemainhourstaxable(), detailVO, DaySalaryEnum.TAXABLEHOURSALARY));
+		    detailVO.setRemainamount(detailVO.getRemainamounttaxfree().add(detailVO.getRemainamounttaxable()));
+
+		    detailVO.setConsumedhourstaxfree(detailVO.getConsumedhourstaxfree().sub(values[0]));
+		    detailVO.setConsumedhourstaxable(detailVO.getConsumedhourstaxable().sub(values[1]));
+		    detailVO.setConsumedhours(detailVO.getConsumedhourstaxfree()
+			    .add(detailVO.getConsumedhourstaxable()));
+
+		    this.getBaseDao().updateVO(detailVO);
+		    this.getBaseDao().deleteVO(consumeVO);
+		}
+	    }
+	}
+    }
+
+    private void consumeSegDetailHours(SegDetailVO[] segDetailVOs, LeaveRegVO vo) throws BusinessException {
+	List<AggSegDetailVO> aggvos = new ArrayList<AggSegDetailVO>();
+	UFDouble unConsumedLeaveHours = vo.getLeavehour();
+	for (SegDetailVO segDetail : segDetailVOs) {
+	    // 先進先出匹配
+	    if (!unConsumedLeaveHours.equals(UFDouble.ZERO_DBL)) {
+		// 本筆核銷時數
+		UFDouble curConsumedHours = UFDouble.ZERO_DBL;
+		if (segDetail.getRemainhours().doubleValue() >= vo.getLeavehour().doubleValue()) {
+		    // 剩餘小時數大於等於本次核銷時數=本次核銷全部在本條明細完成
+		    curConsumedHours = unConsumedLeaveHours;
+		} else {
+		    // 剩餘小時數小於本次核銷時數=本次核銷在本條明細完成部分
+		    curConsumedHours = segDetail.getRemainhours();
+		    // 餘下部分繼續向後核銷
+		    unConsumedLeaveHours = vo.getLeavehour().sub(segDetail.getRemainhours());
+		}
+
+		consumeSegDetailHours(curConsumedHours, segDetail); // 處理本筆核銷
+		SegDetailConsumeVO consumeVO = getNewConsumeVO(vo, segDetail); // 生成核銷明細
+		AggSegDetailVO aggvo = new AggSegDetailVO();
+		segDetail.setStatus(VOStatus.UPDATED);
+		aggvo.setParent(segDetail);
+		consumeVO.setStatus(VOStatus.NEW);
+		aggvo.setChildren(SegDetailConsumeVO.class, new SegDetailConsumeVO[] { consumeVO });
+		aggvos.add(aggvo);
+		unConsumedLeaveHours = unConsumedLeaveHours.sub(curConsumedHours);
+	    }
+	}
+
+	if (aggvos.size() > 0) {
+	    new SegdetailMaintainImpl().update(aggvos.toArray(new AggSegDetailVO[0]));
+	}
+    }
+
+    private SegDetailConsumeVO getNewConsumeVO(LeaveRegVO vo, SegDetailVO segDetail) {
+	SegDetailConsumeVO consumeVO = new SegDetailConsumeVO();
+	consumeVO.setPk_group(segDetail.getPk_group());
+	consumeVO.setPk_org(segDetail.getPk_org());
+	consumeVO.setPk_org_v(segDetail.getPk_org_v());
+	consumeVO.setPk_segdetail(segDetail.getPk_segdetail());
+	consumeVO.setPk_leavereg(vo.getPk_leavereg());
+	consumeVO.setBizdate(vo.getLeavebegindate());
+	consumeVO.setBiztype(vo.getBillType());
+	return consumeVO;
+    }
+
+    // 先消耗免稅部分，再消耗應稅部分
+    private void consumeSegDetailHours(UFDouble unConsumedHours, SegDetailVO segDetail) throws BusinessException {
+	SegRuleTermVO term = (SegRuleTermVO) this.getBaseDao().retrieveByPK(SegRuleTermVO.class,
+		segDetail.getPk_segruleterm());
+
+	// 免稅部分
+	if (segDetail.getRemainamounttaxfree().doubleValue() > 0) {
+	    if (unConsumedHours.doubleValue() <= segDetail.getRemainamounttaxfree().doubleValue()) {
+		// 只消耗免稅部分
+		segDetail.setRemainhourstaxfree(segDetail.getRemainhourstaxfree().sub(unConsumedHours));
+		segDetail.setConsumedhourstaxfree(segDetail.getConsumedhourstaxfree().add(unConsumedHours));
+		segDetail.setRemainhours(segDetail.getRemainhours().sub(unConsumedHours));
+		segDetail.setConsumedhours(segDetail.getConsumedhours().add(unConsumedHours));
+	    } else {
+		// 消耗免稅全部後，剩餘消耗應稅部分
+		UFDouble tmpHours = unConsumedHours.sub(segDetail.getRemainamounttaxfree());
+		segDetail.setRemainhourstaxfree(segDetail.getRemainhourstaxfree().sub(tmpHours));
+		segDetail.setConsumedhourstaxfree(segDetail.getConsumedhourstaxfree().add(tmpHours));
+		segDetail.setRemainhours(segDetail.getRemainhours().sub(tmpHours));
+		segDetail.setConsumedhours(segDetail.getConsumedhours().add(tmpHours));
+
+		tmpHours = unConsumedHours.sub(tmpHours);
+		segDetail.setRemainhourstaxable(segDetail.getRemainhourstaxable().sub(tmpHours));
+		segDetail.setConsumedhourstaxable(segDetail.getConsumedhourstaxable().add(tmpHours));
+		segDetail.setRemainhours(segDetail.getRemainhours().sub(tmpHours));
+		segDetail.setConsumedhours(segDetail.getConsumedhours().add(tmpHours));
+	    }
+	} else {
+	    // 只消耗應稅部分
+	    segDetail.setRemainhourstaxable(segDetail.getRemainhourstaxable().sub(unConsumedHours));
+	    segDetail.setConsumedhourstaxable(segDetail.getConsumedhourstaxable().add(unConsumedHours));
+	    segDetail.setRemainhours(segDetail.getRemainhours().sub(unConsumedHours));
+	    segDetail.setConsumedhours(segDetail.getConsumedhours().add(unConsumedHours));
+	}
+
+	// 計算加班費
+	segDetail.setRemainamounttaxfree(getOTAmount(term.getTaxfreeotrate(), segDetail.getHourlypay(),
+		segDetail.getRemainhourstaxfree(), segDetail, DaySalaryEnum.TAXFREEHOURSALARY));
+	segDetail.setRemainamounttaxable(getOTAmount(term.getTaxableotrate(), segDetail.getHourlypay(),
+		segDetail.getRemainhourstaxable(), segDetail, DaySalaryEnum.TAXABLEHOURSALARY));
+	segDetail.setRemainamount(segDetail.getRemainamounttaxfree().add(segDetail.getRemainamounttaxable()));
+
+	unConsumedHours = UFDouble.ZERO_DBL;
+	if (segDetail.getRemainhours().doubleValue() == 0) {
+	    // 設置已消耗完畢
+	    segDetail.setIsconsumed(UFBoolean.TRUE);
+	}
+    }
+
+    Map<String, LeaveTypeCopyVO[]> leaveTypeVOMap = null;
+
+    @SuppressWarnings("unchecked")
+    private LeaveTypeCopyVO[] getLeaveTypeVOs(String pk_org) throws BusinessException {
+	if (leaveTypeVOMap == null) {
+	    leaveTypeVOMap = new HashMap<String, LeaveTypeCopyVO[]>();
+	}
+
+	if (!leaveTypeVOMap.containsKey(pk_org)) {
+	    String leaveTypeRefCode = SysInitQuery.getParaString(pk_org, "TBMOTTYPE");
+
+	    if (StringUtils.isEmpty(leaveTypeRefCode)) {
+		throw new BusinessException("參數取值失敗：請在業務參數設置-組織中設定本組織 [加班分段休假類別编码] 參數。");
+	    }
+
+	    String[] leaveTypeCodes = leaveTypeRefCode.split(",");
+	    String typeCond = "";
+	    for (String code : leaveTypeCodes) {
+		if (StringUtils.isEmpty(typeCond.trim())) {
+		    typeCond = "'" + code + "'";
+		} else {
+		    typeCond += " , '" + code + "'";
+		}
+	    }
+	    Collection<LeaveTypeVO> leaveTypeVOs = this.getBaseDao().retrieveByClause(LeaveTypeVO.class,
+		    "timeitemcode in (" + typeCond + ")");
+
+	    if (leaveTypeVOs == null || leaveTypeVOs.size() == 0) {
+		throw new BusinessException("未定義組織參數中指定的編碼為 [" + typeCond.replace("'", "") + "] 休假類別。");
+	    } else {
+		String inPks = "";
+		for (LeaveTypeVO vo : leaveTypeVOs) {
+		    if (StringUtils.isEmpty(inPks)) {
+			inPks = "'" + vo.getPk_timeitem() + "'";
+		    } else {
+			inPks += ", '" + vo.getPk_timeitem() + "'";
+		    }
+		}
+		Collection<LeaveTypeCopyVO> leaveTypeVos = this.getBaseDao().retrieveByClause(LeaveTypeCopyVO.class,
+			"pk_org='" + pk_org + "' and pk_timeitem in (" + inPks + ")");
+
+		leaveTypeVOMap.put(pk_org, leaveTypeVos.toArray(new LeaveTypeCopyVO[0]));
+	    }
+	}
+
+	return leaveTypeVOMap.get(pk_org);
+    }
+
+    @SuppressWarnings("unchecked")
+    private TimeRuleVO getTimeRule(String pk_org) throws BusinessException {
+	// 取該員工考勤規則
+	Collection<TimeRuleVO> timerule = this.getBaseDao().retrieveByClause(TimeRuleVO.class,
+		"pk_org='" + pk_org + "' and dr=0");
+	if (timerule == null) {
+	    throw new BusinessException("取考勤規則錯誤：指定組織下未定義考勤規則");
+	}
+
+	return timerule.toArray(new TimeRuleVO[0])[0];
+    }
+
+    Map<String, Integer> sysManageScope = new HashMap<String, Integer>();
+    Map<String, PsndocVO> psndocMap = new HashMap<String, PsndocVO>();
+
+    @Override
+    public Map<String, UFDouble[]> calculateTaxableByDate(String pk_org, String[] pk_psndocs, UFLiteralDate startDate,
+	    UFLiteralDate endDate, UFDouble curNodeHours) throws BusinessException {
+	Map<String, UFDouble[]> ret = new HashMap<String, UFDouble[]>();
+	if (pk_psndocs != null && pk_psndocs.length > 0) {
+	    for (String pk_psndoc : pk_psndocs) {
+		UFDouble[] retValues = new UFDouble[2];
+		retValues[0] = UFDouble.ZERO_DBL;
+		retValues[1] = UFDouble.ZERO_DBL;
+		UFDouble totalTaxFreeAmount = UFDouble.ZERO_DBL;
+		UFDouble totalTaxableAmount = UFDouble.ZERO_DBL;
+		UFDouble totalHours = UFDouble.ZERO_DBL;
+
+		OTSChainNode curNode = OTSChainUtils.buildChainNodes(pk_psndoc, null, null, true, true, true, true,
+			true);
+		// 考勤規則
+		TimeRuleVO timerule = getTimeRule(pk_org);
+
+		// 取該員工結算週期
+		OvertimeLimitScopeEnum curStatScope = getPsnStatScope(pk_org, pk_psndoc);
+
+		// 一個週期內加班不能超過的時數
+		UFDouble taxFreeLimitHours = timerule.getCtrlothours();
+		// 一或三個週期內加班不能超過的總時數
+		UFDouble totalTaxFreeLimitHours = taxFreeLimitHours;
+
+		PeriodVO[] threePeriods = null;
+		PeriodVO periodCurrent = getPeriodService().queryByDate(pk_org, startDate);
+		if (periodCurrent == null) {
+		    throw new BusinessException("取當前期間錯誤");
+		}
+
+		if (curStatScope.equals(OvertimeLimitScopeEnum.THREEMONTH)) {
+		    taxFreeLimitHours = timerule.getCtrlothours3();
+		    totalTaxFreeLimitHours = timerule.getCtrlothours3();
+		    threePeriods = getThreePeriodVOs(pk_org, startDate, pk_psndoc, periodCurrent);
+		} else {
+		    threePeriods = new PeriodVO[1];
+		    threePeriods[0] = periodCurrent;
+		}
+
+		UFLiteralDate sumStartDate = threePeriods[0].getBegindate();
+		UFLiteralDate sumEndDate = threePeriods.length == 3 ? threePeriods[2].getEnddate() : threePeriods[0]
+			.getEnddate();
+
+		if (endDate != null) {
+		    sumEndDate = sumEndDate.after(endDate) ? endDate : sumEndDate;
+		}
+
+		// 是否免稅
+		boolean isTaxFree = true;
+		if (curNode != null) {
+		    while (curNode != null) {
+			// 當前節點時數不為空，當前節點明細為空的，即為最後一次進入
+			if (curNode.getNodeData() == null && curNodeHours != null) {
+			    if (!isTaxFree) {
+				// 已進入應稅範圍
+				totalTaxFreeAmount = UFDouble.ZERO_DBL;
+				totalTaxableAmount = curNodeHours;
+			    } else {
+				if (totalHours.add(curNodeHours).doubleValue() <= totalTaxFreeLimitHours.doubleValue()) {
+				    // 加總後仍在免稅時數範圍內
+				    totalTaxFreeAmount = curNodeHours;
+				    totalTaxableAmount = UFDouble.ZERO_DBL;
+				} else {
+				    // 正好超過免稅時數
+				    totalTaxableAmount = totalHours.add(curNodeHours).sub(totalTaxFreeLimitHours);
+				    totalTaxFreeAmount = curNodeHours.sub(totalTaxableAmount);
+				}
+			    }
+			    break;
+			}
+
+			if (curNode.getNodeData().getPk_org().equals(pk_org)) {
+			    // 在日期範圍內
+			    if (curNode.getNodeData().getRegdate().isSameDate(sumStartDate)
+				    || curNode.getNodeData().getRegdate().after(sumStartDate)
+				    && (curNode.getNodeData().getRegdate().isSameDate(sumEndDate) || curNode
+					    .getNodeData().getRegdate().before(sumEndDate))) {
+				UFDouble curHours = getHoursInScope(curNode.getNodeData());
+
+				// 纍加加班時數
+				totalHours = totalHours.add(curHours);
+				if (isTaxFree) {
+				    if (totalHours.doubleValue() <= totalTaxFreeLimitHours.doubleValue()) {
+					// 在免稅時數範圍內的，纍計到免稅加班費
+					totalTaxFreeAmount = totalTaxFreeAmount.add(getOTAmount(curNode.getNodeData()
+						.getTaxfreerate(), curNode.getNodeData().getHourlypay(), curNode
+						.getNodeData().getHourstaxfree(), curNode.getNodeData(),
+						DaySalaryEnum.TAXFREEHOURSALARY));
+				    } else {
+					// 正好超過免稅時數
+					// 超過時數差 * 時薪 * 應稅加班費率 = 第一筆應稅加班費
+					totalTaxableAmount = getOTAmount(curNode.getNodeData().getTaxablerate(),
+						curNode.getNodeData().getHourlypay(),
+						totalHours.sub(totalTaxFreeLimitHours), curNode.getNodeData(),
+						DaySalaryEnum.TAXABLEHOURSALARY);
+					// 本筆未消耗加班費 - 第一筆應稅加班費 = 最後一筆免稅加班費
+					totalTaxFreeAmount = totalTaxFreeAmount.add(getOTAmount(curNode.getNodeData()
+						.getTaxfreerate(), curNode.getNodeData().getHourlypay(), curHours
+						.sub(totalHours.sub(totalTaxFreeLimitHours)), curNode.getNodeData(),
+						DaySalaryEnum.TAXFREEHOURSALARY));
+					isTaxFree = false;
+				    }
+				} else {
+				    // 超過免稅時數範圍的，纍計到應稅加班費
+				    totalTaxableAmount = totalTaxableAmount.add(getOTAmount(curNode.getNodeData()
+					    .getTaxablerate(), curNode.getNodeData().getHourlypay(), curNode
+					    .getNodeData().getHourlypay(), curNode.getNodeData(),
+					    DaySalaryEnum.TAXABLEHOURSALARY));
+				}
+			    }
+			    curNode = curNode.getNextNode();
+
+			    if (curNodeHours != null && curNode == null) {
+				curNode = new OTSChainNode();
+			    }
+			}
+		    }
+		    retValues[0] = totalTaxFreeAmount;
+		    retValues[1] = totalTaxableAmount;
+		}
+		ret.put(pk_psndoc, retValues);
+	    }
+	}
+	return ret;
+    }
+
+    private PeriodVO[] getThreePeriodVOs(String pk_org, UFLiteralDate startDate, String pk_psndoc,
+	    PeriodVO periodCurrent) throws BusinessException {
+	PeriodVO[] threePeriods;
+	PsndocVO psndoc = psndocMap.get(pk_psndoc);
+	// 起算期間
+	PeriodVO periodStart = (PeriodVO) this.getBaseDao().retrieveByPK(PeriodVO.class,
+		(String) psndoc.getAttributeValue("otchkstartperiod"));
+
+	int startMonth = Integer.valueOf(periodStart.getTimemonth());
+	int currentMonth = startDate.getMonth();
+
+	threePeriods = new PeriodVO[3];
+	if (startMonth % 3 == currentMonth % 3) {
+	    // 0:0 1:1 2:2 後補2個
+	    // 當前期間為起始期間，後補兩個期間
+	    threePeriods[0] = periodCurrent;
+	    threePeriods[1] = this.getPeriodService().queryNextPeriod(pk_org, threePeriods[0].getBegindate());
+	    threePeriods[2] = this.getPeriodService().queryNextPeriod(pk_org, threePeriods[1].getBegindate());
+	} else if (((currentMonth % 3) - (startMonth % 3) == 1) || (currentMonth % 3 + 3) - (startMonth % 3) == 1) {
+	    // 0:1 1:2 2:0 前後各1
+	    // 當前期間為中間期間，前後各補一個期間
+	    threePeriods[1] = periodCurrent;
+	    threePeriods[0] = this.getPeriodService().queryPreviousPeriod(pk_org, threePeriods[1].getBegindate());
+	    threePeriods[2] = this.getPeriodService().queryNextPeriod(pk_org, threePeriods[1].getBegindate());
+	} else {
+	    // 0:2 1:0 2:1 前補2個
+	    // 當前期間為最後一個期間，前補兩個期間
+	    threePeriods[2] = periodCurrent;
+	    threePeriods[1] = this.getPeriodService().queryPreviousPeriod(pk_org, threePeriods[2].getBegindate());
+	    threePeriods[0] = this.getPeriodService().queryPreviousPeriod(pk_org, threePeriods[1].getBegindate());
+	}
+	return threePeriods;
+    }
+
+    Map<String, SegRuleTermVO> mapSegTerm = new HashMap<String, SegRuleTermVO>();
+
+    private UFDouble getHoursInScope(SegDetailVO segdetail) throws BusinessException {
+	SegRuleTermVO term = null;
+	if (!mapSegTerm.containsKey(segdetail.getPk_segruleterm())) {
+	    term = (SegRuleTermVO) this.getBaseDao().retrieveByPK(SegRuleTermVO.class, segdetail.getPk_segruleterm());
+	} else {
+	    term = mapSegTerm.get(segdetail.getPk_segruleterm());
+	}
+
+	UFDouble rtn = UFDouble.ZERO_DBL;
+	if (term.getIslimitscope() != null && term.getIslimitscope().booleanValue()) {
+	    // 計入加班上限統計
+	    rtn = segdetail.getHours();
+	}
+	return rtn;
+    }
+
+    @SuppressWarnings("unchecked")
+    private OvertimeLimitScopeEnum getPsnStatScope(String pk_org, String pk_psndoc) throws BusinessException {
+	int manageScope = -1;
+	// 系統參數：加班上限週期管理級別（公司，部門，人員）
+	// 公司=0,部門=1,人員=2
+	if (!sysManageScope.containsKey(pk_org)) {
+	    manageScope = SysInitQuery.getParaInt(pk_org, "TBMOTLMTBY");
+	    sysManageScope.put(pk_org, manageScope);
+	}
+
+	manageScope = sysManageScope.get(pk_org);
+	int chkScope = -1;
+	if (manageScope == 0) {
+	    // 取公司設置
+	    IOrgInfoQueryService orgService = NCLocator.getInstance().lookup(IOrgInfoQueryService.class);
+	    AggHROrgVO hrorg = orgService.queryByPk(pk_org);
+	    if (hrorg != null) {
+		HROrgVO orgVO = (HROrgVO) hrorg.getParentVO();
+		chkScope = (int) orgVO.getAttributeValue("otchkscope");
+	    }
+	} else if (manageScope == 1) {
+	    // 取部門設置
+	    Collection<PsnJobVO> psnjobs = this.getBaseDao().retrieveByClause(PsnJobVO.class,
+		    "pk_psndoc='" + pk_psndoc + "' and endflag='N' and lastflag='Y' and dr=0");
+	    PsnJobVO[] psnJobVOs = psnjobs.toArray(new PsnJobVO[0]);
+	    IDeptQueryService deptService = NCLocator.getInstance().lookup(IDeptQueryService.class);
+	    AggHRDeptVO deptVO = deptService.queryByPk(psnJobVOs[0].getPk_dept());
+	    chkScope = (int) deptVO.getParentVO().getAttributeValue("otchkscope");
+	} else if (manageScope == 2) {
+	    // 取員工設置
+	    if (!psndocMap.containsKey(pk_psndoc)) {
+		PsndocVO psndoc = (PsndocVO) this.getBaseDao().retrieveByPK(PsndocVO.class, pk_psndoc);
+		psndocMap.put(pk_psndoc, psndoc);
+	    }
+	    chkScope = (int) psndocMap.get(pk_psndoc).getAttributeValue("otchkscope");
+	}
+
+	if (chkScope == 1) {
+	    return OvertimeLimitScopeEnum.ONEMONTH;
+	} else if (chkScope == 2) {
+	    return OvertimeLimitScopeEnum.THREEMONTH;
+	}
+
+	throw new BusinessException("無法找到員工的加班上限統計範圍");
+    }
+
+    @Override
+    public Map<String, UFDouble[]> settleByFixSalary(Map<String, UFDouble> psnFixSalary, UFLiteralDate startDate,
+	    UFLiteralDate endDate) throws BusinessException {
+	// TODO 自動產生的方法 Stub
+	return null;
+    }
+
+    @Override
+    public Map<String, UFDouble> calculateTaxFreeAmountByPeriod(String pk_org, String[] pk_psndocs, String cyear,
+	    String cperiod) throws BusinessException {
+	PeriodVO period = getPeriodService().queryByYearMonth(pk_org, cyear, cperiod);
+
+	Map<String, UFDouble[]> taxAmounts = calculateTaxableByDate(pk_org, pk_psndocs, period.getBegindate(),
+		period.getEnddate(), null);
+
+	Map<String, UFDouble> ret = new HashMap<String, UFDouble>();
+	if (taxAmounts != null && taxAmounts.size() > 0) {
+	    for (Entry<String, UFDouble[]> amount : taxAmounts.entrySet()) {
+		ret.put(amount.getKey(), amount.getValue()[0]);
+	    }
+	}
+	return ret;
+    }
+
+    @Override
+    public Map<String, UFDouble> calculateTaxableAmountByPeriod(String pk_org, String[] pk_psndocs, String cyear,
+	    String cperiod) throws BusinessException {
+	PeriodVO period = getPeriodService().queryByYearMonth(pk_org, cyear, cperiod);
+
+	Map<String, UFDouble[]> taxAmounts = calculateTaxableByDate(pk_org, pk_psndocs, period.getBegindate(),
+		period.getEnddate(), null);
+
+	Map<String, UFDouble> ret = new HashMap<String, UFDouble>();
+	if (taxAmounts != null && taxAmounts.size() > 0) {
+	    for (Entry<String, UFDouble[]> amount : taxAmounts.entrySet()) {
+		ret.put(amount.getKey(), amount.getValue()[1]);
+	    }
+	}
+	return ret;
+    }
+
+    @Override
+    public Map<String, UFDouble> getHoursToRestByScope(UFLiteralDate startDate, UFLiteralDate endDate,
+	    String[] pk_psndocs) throws BusinessException {
+	return getSegDetailSummary(pk_psndocs, startDate, endDate, SegDetailVO.HOURSTOREST);
+    }
+
+    @Override
+    public Map<String, UFDouble> getHoursToRestByPeriod(String pk_org, String cyear, String cperiod, String[] pk_psndocs)
+	    throws BusinessException {
+	Map<String, UFDouble> ret = new HashMap<String, UFDouble>();
+	if (pk_psndocs != null && pk_psndocs.length > 0) {
+	    PeriodVO period = getPeriodService().queryByYearMonth(pk_org, cyear, cperiod);
+
+	    if (period != null) {
+		ret = getHoursToRestByScope(period.getBegindate(), period.getEnddate(), pk_psndocs);
+	    }
+	}
+	return ret;
+    }
+
+    @Override
+    public Map<String, Map<QueryValueTypeEnum, UFDouble>> getOvertimeHours(String pk_org, String[] pk_psndocs,
+	    UFLiteralDate overtimeDate) throws BusinessException {
+	Map<String, Map<QueryValueTypeEnum, UFDouble>> ret = new HashMap<String, Map<QueryValueTypeEnum, UFDouble>>();
+
+	if (pk_psndocs != null) {
+	    for (String pk_psndoc : pk_psndocs) {
+		OTSChainNode curNode = OTSChainUtils.buildChainNodes(pk_psndoc, overtimeDate, null, false, true, true,
+			false, true);
+
+		UFDouble normalHours = UFDouble.ZERO_DBL;
+		UFDouble offdayHours = UFDouble.ZERO_DBL;
+		UFDouble holidayHours = UFDouble.ZERO_DBL;
+		UFDouble nationalHours = UFDouble.ZERO_DBL;
+		UFDouble totalFee = UFDouble.ZERO_DBL;
+
+		while (curNode != null) {
+		    if (curNode.getNodeData().getPk_org().equals(pk_org)) {
+			SegRuleVO rule = (SegRuleVO) this.getBaseDao().retrieveByPK(SegRuleVO.class,
+				curNode.getNodeData().getPk_segrule());
+			if (CalendarDateTypeEnum.HOLIDAY.toIntValue() == rule.getDatetype()) {
+			    // 例假日
+			    holidayHours = holidayHours.add(curNode.getNodeData().getRemainhours());
+			} else if (CalendarDateTypeEnum.OFFDAY.toIntValue() == rule.getDatetype()) {
+			    // 休息日
+			    offdayHours = offdayHours.add(curNode.getNodeData().getRemainhours());
+			} else if (CalendarDateTypeEnum.NORMAL.toIntValue() == rule.getDatetype()) {
+			    // 平日
+			    normalHours = normalHours.add(curNode.getNodeData().getRemainhours());
+			} else if (CalendarDateTypeEnum.NATIONALDAY.toIntValue() == rule.getDatetype()) {
+			    // 國定假日
+			    nationalHours = nationalHours.add(curNode.getNodeData().getRemainhours());
+			}
+			totalFee = totalFee.add(curNode.getNodeData().getRemainamount());
+		    }
+		    curNode = curNode.getNextNode();
+		}
+
+		Map<QueryValueTypeEnum, UFDouble> hoursMap = new HashMap<QueryValueTypeEnum, UFDouble>();
+		hoursMap.put(QueryValueTypeEnum.HOLIDAY, holidayHours);
+		hoursMap.put(QueryValueTypeEnum.OFFDAY, offdayHours);
+		hoursMap.put(QueryValueTypeEnum.NATIONALDAY, nationalHours);
+		hoursMap.put(QueryValueTypeEnum.NORMAL, normalHours);
+		hoursMap.put(QueryValueTypeEnum.ALL, holidayHours.add(offdayHours).add(nationalHours).add(normalHours));
+		hoursMap.put(QueryValueTypeEnum.TOTALFEE, totalFee);
+		ret.put(pk_psndoc, hoursMap);
+	    }
+	}
+	return ret;
+    }
+
+    public BaseDAO getBaseDao() {
+	if (baseDao == null) {
+	    baseDao = new BaseDAO();
+	}
+	return baseDao;
+    }
+
+    public IPeriodQueryService getPeriodService() {
+	if (periodService == null) {
+	    periodService = (IPeriodQueryService) NCLocator.getInstance().lookup(IPeriodQueryService.class);
+	}
+	return periodService;
+    }
+
+    public Map<String, OTSChainNode> getAllNode() {
+	if (allNode == null) {
+	    allNode = new HashMap<String, OTSChainNode>();
+	}
+	return allNode;
+    }
+
+    @Override
+    public Map<String, UFDouble> getOvertimeHoursByType(String pk_org, String[] pk_psndocs, UFLiteralDate overtimeDate,
+	    String pk_overtimetype) throws BusinessException {
+	return getOvertimeHours(pk_org, pk_psndocs, overtimeDate, pk_overtimetype, false);
+    }
+
+    @Override
+    public Map<String, UFDouble> getOvertimeToRestHoursByType(String pk_org, String[] pk_psndocs,
+	    UFLiteralDate overtimeDate, String pk_overtimetype) throws BusinessException {
+	return getOvertimeHours(pk_org, pk_psndocs, overtimeDate, pk_overtimetype, true);
+    }
+
+    private Map<String, UFDouble> getOvertimeHours(String pk_org, String[] pk_psndocs, UFLiteralDate overtimeDate,
+	    String pk_overtimetype, boolean isToRest) throws BusinessException {
+	Map<String, UFDouble> ret = new HashMap<String, UFDouble>();
+	if (pk_psndocs != null && pk_psndocs.length > 0) {
+	    for (String pk_psndoc : pk_psndocs) {
+		OTSChainNode curNode = OTSChainUtils.buildChainNodes(pk_psndoc, overtimeDate, null, isToRest, false,
+			true, true, true);
+		UFDouble otHours = UFDouble.ZERO_DBL;
+		Map<String, String> pkTypes = new HashMap<String, String>();
+		if (curNode != null) {
+		    while (curNode != null) {
+			// 當前節點時數不為空，當前節點明細為空的，即為最後一次進入
+			if (curNode.getNodeData() != null) {
+			    if (!pkTypes.containsKey(curNode.getNodeData().getPk_overtimereg())) {
+				OvertimeRegVO otvo = (OvertimeRegVO) this.getBaseDao().retrieveByPK(
+					OvertimeRegVO.class, curNode.getNodeData().getPk_overtimereg());
+				if (otvo != null) {
+				    pkTypes.put(otvo.getPk_overtimereg(), otvo.getPk_overtimetype());
+				}
+			    }
+
+			    if (pkTypes.containsKey(curNode.getNodeData().getPk_overtimereg())) {
+				if (pk_overtimetype.equals(pkTypes.get(curNode.getNodeData().getPk_overtimereg()))) {
+				    otHours = otHours.add(curNode.getNodeData().getRemainhours());
+				}
+			    }
+			}
+			curNode = curNode.getNextNode();
+		    }
+		}
+		ret.put(pk_psndoc, otHours);
+	    }
+	}
+	return ret;
+    }
+
+    @Override
+    public Map<String, UFDouble> getOvertimeTaxfreeAmount(String[] pk_psndocs, UFLiteralDate startDate,
+	    UFLiteralDate endDate) throws BusinessException {
+	return getSegDetailSummary(pk_psndocs, startDate, endDate, SegDetailVO.REMAINAMOUNTTAXFREE);
+    }
+
+    @Override
+    public Map<String, UFDouble> getOvertimeTaxableAmount(String[] pk_psndocs, UFLiteralDate startDate,
+	    UFLiteralDate endDate) throws BusinessException {
+	return getSegDetailSummary(pk_psndocs, startDate, endDate, SegDetailVO.REMAINAMOUNTTAXABLE);
+    }
+
+    private Map<String, UFDouble> getSegDetailSummary(String[] pk_psndocs, UFLiteralDate startDate,
+	    UFLiteralDate endDate, String digitPropName) throws BusinessException {
+	Map<String, UFDouble> ret = new HashMap<String, UFDouble>();
+	if (pk_psndocs != null && pk_psndocs.length > 0) {
+	    for (String pk_psndoc : pk_psndocs) {
+		UFLiteralDate overtimeDate = startDate;
+		OTSChainNode curNode = OTSChainUtils.buildChainNodes(pk_psndoc, overtimeDate, null, false, false, true,
+			true, true);
+		if (curNode != null) {
+		    while (curNode != null) {
+			// 當前節點時數不為空，當前節點明細為空的，即為最後一次進入
+			if (curNode.getNodeData() != null) {
+			    if ((curNode.getNodeData().getRegdate().isSameDate(overtimeDate) || curNode.getNodeData()
+				    .getRegdate().after(overtimeDate))
+				    && curNode.getNodeData().getRegdate().isSameDate(endDate)
+				    || curNode.getNodeData().getRegdate().before(endDate)) {
+				if (!ret.containsKey(pk_psndoc)) {
+				    ret.put(pk_psndoc, UFDouble.ZERO_DBL);
+				}
+
+				// 重新取考勤時薪
+				UFDouble hourpay = getPsnHourPay(pk_psndoc, curNode.getNodeData().getRegdate(),
+					DaySalaryEnum.TBMHOURSALARY);
+				// 與已記錄考勤時薪不同時重新計算剩余加班費金額
+				if (!hourpay.equals(curNode.getNodeData().getHourlypay())) {
+				    curNode.getNodeData().setRemainamounttaxfree(
+					    this.getOTAmount(curNode.getNodeData().getTaxfreerate(), hourpay, curNode
+						    .getNodeData().getRemainhourstaxfree(), null, -1));
+				    curNode.getNodeData().setRemainamounttaxable(
+					    this.getOTAmount(curNode.getNodeData().getTaxablerate(), hourpay, curNode
+						    .getNodeData().getRemainhourstaxable(), null, -1));
+				    curNode.getNodeData().setRemainamount(
+					    curNode.getNodeData().getRemainamounttaxfree()
+						    .add(curNode.getNodeData().getRemainamounttaxable()));
+				    OTSChainUtils.save(curNode);
+				}
+
+				ret.get(pk_psndoc)
+					.add(curNode.getNodeData().getAttributeValue(digitPropName) == null ? UFDouble.ZERO_DBL
+						: (UFDouble) curNode.getNodeData().getAttributeValue(digitPropName));
+			    }
+			}
+			curNode = curNode.getNextNode();
+		    }
+		}
+	    }
+	}
+	return ret;
+    }
+
+}

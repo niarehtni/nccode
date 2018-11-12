@@ -1,0 +1,251 @@
+package nc.ui.wa.paydata.action;
+
+import java.awt.Event;
+import java.awt.event.ActionEvent;
+import java.awt.event.KeyEvent;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+import javax.swing.SwingUtilities;
+
+import nc.bs.framework.common.NCLocator;
+import nc.hr.utils.ResHelper;
+import nc.itf.twhr.ICalculateTWNHI;
+import nc.itf.uap.IUAPQueryBS;
+import nc.jdbc.framework.processor.ColumnListProcessor;
+import nc.pubitf.twhr.utils.LegalOrgUtilsEX;
+import nc.ui.pub.beans.MessageDialog;
+import nc.ui.wa.paydata.view.DateLarborDelDlg;
+import nc.vo.logging.Debug;
+import nc.vo.pub.BusinessException;
+import nc.vo.pub.lang.UFDate;
+import nc.vo.wa.pub.WaState;
+
+/**
+ * 二代健保计算
+ *
+ * @author: Ares.Tank
+ * @date: 2018-9-19 17:31:59
+ * @since: eHR V6.5
+ */
+public class HealthCaculateAction extends PayDataBaseAction {
+	private static final long serialVersionUID = 1L;
+
+	public HealthCaculateAction() {
+		putValue("Code", "HealthCaculateAction");
+		setBtnName(ResHelper.getString("60130paydata","60130paydata-001"));
+
+		putValue("ShortDescription",
+				ResHelper.getString("60130paydata","60130paydata-001")
+						+ "(Ctrl+F)");
+		putValue("AcceleratorKey", javax.swing.KeyStroke.getKeyStroke(KeyEvent.VK_F, Event.CTRL_MASK));
+	}
+
+	@Override
+	public void doActionForExtend(ActionEvent e) throws Exception {
+		//PeriodStateVO periodStateVO = (PeriodStateVO) getEditor().getValue();
+
+		// 退保日期确认
+		DateLarborDelDlg dlg = new DateLarborDelDlg(getEntranceUI(), "預計發放日期", "發放日期");
+
+		dlg.initUI();
+
+		if(dlg.showModal()== 0){
+			putValue("message_after_action",
+					ResHelper.getString("60130paydata", "60130paydata-005"));
+			return;
+		}
+
+		UFDate payDate = dlg.getdEffectiveDate();
+		//String payComment = periodStateVO.getVpaycomment();
+
+		// ssx added on 2015-12-07
+		// for SysInit code = TW07
+		/*String payDateTWSetting = SysInitQuery.getParaString(this.getContext()
+				.getPk_org(), "TWHR07");*/
+		if (payDate == null) { // payDateTWSetting.equals("發放日期") remarked by
+								// ssx on 2017/7/4, for 二代健保強制限制發放日期不能為空
+			MessageDialog.showErrorDlg(SwingUtilities
+					.getWindowAncestor(getWaContext().getEntranceUI()),
+					ResHelper.getString("60130paydata", "60130paydata-007"), ResHelper.getString(
+									"60130paydata", "60130paydata-006")); // 薪資發放日期不允許為空。
+			return;
+		}
+
+		/*String keyName = ResHelper.getString("60130paydata",
+				"060130paydata0343");
+		String[] files = getPaydataManager().getAlterFiles(keyName);
+		showAlertInfo(files);
+
+		getPeriodVO().setCpaydate(payDate);
+		getPeriodVO().setVpaycomment(payComment);
+
+		getPaydataManager().onPay();
+*/
+		// ssx added for extend NHI on 2017/7/4
+
+
+
+
+		ICalculateTWNHI nhiSrv = NCLocator.getInstance().lookup(
+				ICalculateTWNHI.class);
+		nhiSrv.updateExtendNHIInfo(getWaContext().getPk_group(), getWaContext()
+				.getPk_org(), getWaContext().getPk_wa_class(), getWaContext()
+				.getWaLoginVO().getPk_periodscheme(), getWaContext()
+				.getWaLoginVO().getPeriodVO().getPk_wa_period(), payDate);
+		//
+		putValue("message_after_action",
+				ResHelper.getString("60130paydata", "60130paydata-004"));
+	}
+	/**
+	 * 薪資發放完成才能計算二代健保--補充保費需要
+	 */
+
+	@Override
+	public Set<WaState> getEnableStateSet() {
+		if (waStateSet == null) {
+			waStateSet = new HashSet<WaState>();
+			waStateSet.add(WaState.CLASS_ALL_PAY);
+		}
+		return waStateSet;
+	}
+
+	@Override
+	protected boolean isActionEnable() {
+		boolean enable = super.isActionEnable();
+		if (enable) {
+			//检查计算回写的表中有无数据
+			try {
+				enable = !getIsHealthCaculate();
+
+			} catch (BusinessException e) {
+				Debug.debug(e.getStackTrace());
+
+				e.printStackTrace();
+			}
+
+
+		}
+		return enable;
+	}
+
+	/**
+	 *
+	 * @author Ares.Tank
+	 * @throws BusinessException
+	 * @date 2018年9月27日 上午12:52:21
+	 * @return pk_declaration 是否已经存在计算数据
+	 * @description
+	 */
+	public boolean getIsHealthCaculate() throws BusinessException {
+		//计算人力资源下的所有法人组织
+		Set<String> legalOrgs
+			= LegalOrgUtilsEX.getOrgsByLegal(getContext().getPk_org(), getContext().getPk_group());
+		int sum = 0;
+		for(String pk_org : legalOrgs){
+			//查询这个法人组织在子表中有无数据
+
+			String sqlStr = "select count(*) as sumb from  declaration_business main "
+					+ " where main.vbdef1 = '"+pk_org+"'"
+					+ " and main.vbdef2 = '"+getWaContext().getPk_wa_class()+"'"
+					+ " and main.vbdef3 = '"+getWaContext().getWaLoginVO().getPeriodVO().getPk_wa_period()
+					+ "' and dr = 0";
+			List<Object> resultList;
+			try {
+				IUAPQueryBS iUAPQueryBS = (IUAPQueryBS) NCLocator.getInstance().lookup(IUAPQueryBS.class.getName());
+				resultList = (List) iUAPQueryBS.executeQuery(sqlStr, new ColumnListProcessor());
+			} catch (BusinessException e) {
+				Debug.debug(e.getMessage());
+				resultList = new ArrayList<>();
+			}
+			for(Object obj : resultList){
+				if(null!=obj){
+					int result =  (int)obj;
+					if(result>=0){
+						sum += result;
+					}
+				}
+			}
+
+			sqlStr = "select count(*) as sumb from  declaration_company main "
+					+ " where main.vbdef1 = '"+pk_org+"'"
+					+ " and main.vbdef2 = '"+getWaContext().getPk_wa_class()+"'"
+					+ " and main.vbdef3 = '"+getWaContext().getWaLoginVO().getPeriodVO().getPk_wa_period()
+					+ "' and dr = 0";
+
+			try {
+				IUAPQueryBS iUAPQueryBS = (IUAPQueryBS) NCLocator.getInstance().lookup(IUAPQueryBS.class.getName());
+				resultList = (List) iUAPQueryBS.executeQuery(sqlStr, new ColumnListProcessor());
+			} catch (BusinessException e) {
+				Debug.debug(e.getMessage());
+				resultList = new ArrayList<>();
+			}
+			for(Object obj : resultList){
+				if(null!=obj){
+					int result =  (int)obj;
+					if(result>=0){
+						sum += result;
+					}
+				}
+			}
+			sqlStr = "select count(*) as sumb from  declaration_nonparttime main "
+					+ " where main.vbdef1 = '"+pk_org+"'"
+					+ " and main.vbdef2 = '"+getWaContext().getPk_wa_class()+"'"
+					+ " and main.vbdef3 = '"+getWaContext().getWaLoginVO().getPeriodVO().getPk_wa_period()
+					+ "' and dr = 0";
+
+			try {
+				IUAPQueryBS iUAPQueryBS = (IUAPQueryBS) NCLocator.getInstance().lookup(IUAPQueryBS.class.getName());
+				resultList = (List) iUAPQueryBS.executeQuery(sqlStr, new ColumnListProcessor());
+			} catch (BusinessException e) {
+				Debug.debug(e.getMessage());
+				resultList = new ArrayList<>();
+			}
+			for(Object obj : resultList){
+				if(null!=obj){
+					int result =  (int)obj;
+					if(result>=0){
+						sum += result;
+					}
+				}
+			}
+			sqlStr = "select count(*) as sumb from  declaration_parttime main "
+					+ " where main.vbdef1 = '"+pk_org+"'"
+					+ " and main.vbdef2 = '"+getWaContext().getPk_wa_class()+"'"
+					+ " and main.vbdef3 = '"+getWaContext().getWaLoginVO().getPeriodVO().getPk_wa_period()
+					+ "' and dr = 0";
+
+			try {
+				IUAPQueryBS iUAPQueryBS = (IUAPQueryBS) NCLocator.getInstance().lookup(IUAPQueryBS.class.getName());
+				resultList = (List) iUAPQueryBS.executeQuery(sqlStr, new ColumnListProcessor());
+			} catch (BusinessException e) {
+				Debug.debug(e.getMessage());
+				resultList = new ArrayList<>();
+			}
+			for(Object obj : resultList){
+				if(null!=obj){
+					int result =  (int)obj;
+					if(result>=0){
+						sum += result;
+					}
+				}
+			}
+
+		}
+		if(sum > 0){
+			return true;
+		}else{
+			return false;
+		}
+
+	}
+
+	@Override
+	public void doAction(ActionEvent e) throws Exception {
+		super.doAction(e);
+
+	}
+
+}

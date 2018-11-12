@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding='UTF-8'?>
+<UIMeta flowmode="true" id="main_um" preferredHeight="0" preferredWidth="0">
+    <FlowvLayout autoFill="0" id="flowvlayout5214" widgetId="main">
+        <FlowvPanel id="panelv05214" widgetId="main">
+           <CanvasLayout className="rightcanvas" id="menucanvas" widgetId="main">
+                <CanvasPanel id="canvasp1" widgetId="main">
+		            <Menubar id="menu_list" widgetId="main"> 
+		            </Menubar>
+                </CanvasPanel>
+            </CanvasLayout>
+        </FlowvPanel>
+        <FlowvPanel id="panelv15214" widgetId="main" height= "560px">
+            <GridComp id="GridDeptPsn" widgetId="main">
+            </GridComp>
+        </FlowvPanel>
+    </FlowvLayout>
+</UIMeta>

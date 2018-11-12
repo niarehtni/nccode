@@ -1,0 +1,460 @@
+package nc.impl.ta.overtime.validator;
+
+import java.math.BigDecimal;
+import java.util.Calendar;
+
+import nc.bs.dao.BaseDAO;
+import nc.bs.framework.common.NCLocator;
+import nc.bs.logging.Logger;
+import nc.bs.uif2.validation.ValidationFailure;
+import nc.bs.uif2.validation.Validator;
+import nc.itf.hr.wa.IGlobalCountryQueryService;
+import nc.itf.ta.ITimeItemQueryService;
+import nc.jdbc.framework.processor.ColumnProcessor;
+import nc.pubitf.para.SysInitQuery;
+import nc.vo.bd.countryzone.CountryZoneVO;
+import nc.vo.jcom.lang.StringUtil;
+import nc.vo.org.OrgQueryUtil;
+import nc.vo.org.OrgVO;
+import nc.vo.pub.BusinessException;
+import nc.vo.pub.lang.UFDateTime;
+import nc.vo.pub.lang.UFDouble;
+import nc.vo.pub.lang.UFLiteralDate;
+import nc.vo.ta.overtime.AggOvertimeVO;
+import nc.vo.ta.overtime.OvertimebVO;
+import nc.vo.ta.timeitem.OverTimeTypeCopyVO;
+
+import org.apache.commons.lang.StringUtils;
+
+import com.sun.jersey.api.client.ClientResponse.Status;
+
+public class WITSOvertimeApplyValidator implements Validator {
+
+	/**
+	 * serial no
+	 */
+	private static final long serialVersionUID = 9002149143574848416L;
+
+	@Override
+	public ValidationFailure validate(Object obj) {
+		if ((obj == null) || ((!(obj instanceof AggOvertimeVO)) && (!(obj instanceof AggOvertimeVO[]))))
+			return null;
+		AggOvertimeVO[] aggVOs = null;
+		if ((obj instanceof AggOvertimeVO)) {
+			aggVOs = new AggOvertimeVO[] { (AggOvertimeVO) obj };
+		} else
+			aggVOs = (AggOvertimeVO[]) obj;
+		try {
+			checkOvertimeAggVOs(aggVOs);
+		} catch (BusinessException e) {
+			Logger.error(e.getMessage(), e);
+			return new ValidationFailure(e.getMessage());
+		}
+		return null;
+	}
+
+	public void checkOvertimeAggVOs(AggOvertimeVO[] aggVOs) throws BusinessException {
+		// 上线前临时检查：只能补单，不能申请未来的加班
+		checkBeforeOnLine(aggVOs);
+
+		String pk_org = aggVOs[0].getHeadVO().getPk_org();
+		if (isTWOrg(pk_org)) {
+			// 周六或周日原則上只能申請一天加班
+			// 休息日加班請以4小時為單位
+			checkWeekendOvertime(aggVOs);
+			// 加班時數為8小時者，加班起訖時間需為9小時(含1小時休息時間)
+			// 加班時數為12小時者，加班起訖時間需為14小時(含2小時休息時間)
+			checkValidPeriod(aggVOs);
+			// 加班连同工作时长不能超过12小时
+			checkWorkOver(aggVOs);
+			// 国假加班最小时间为8小时
+			checkNationalHoliday(aggVOs);
+			
+			
+		}
+		//加班类别必须一致
+		checkOvertimeType(aggVOs);
+		// 按组织分配加班类型同步数据（只处理为空的异常资料）
+		fillOvertimeTypeCopy(aggVOs);
+	}
+
+	private void fillOvertimeTypeCopy(AggOvertimeVO[] aggVOs) throws BusinessException {
+		// 异常原因：Portal画面强行给定pk_overttimetype，但是没办法按组织取到pk_overtimetypecopy
+		if (aggVOs != null && aggVOs.length > 0) {
+			for (AggOvertimeVO vo : aggVOs) {
+				if (StringUtils.isEmpty(vo.getHeadVO().getPk_overtimetypecopy())) {
+					ITimeItemQueryService ovtQry = NCLocator.getInstance().lookup(ITimeItemQueryService.class);
+					OverTimeTypeCopyVO[] ovtVO = ovtQry.queryOvertimeCopyTypesByOrg(vo.getHeadVO().getPk_org(),
+							OverTimeTypeCopyVO.PK_TIMEITEM + "=" + "'" + vo.getHeadVO().getPk_overtimetype() + "'");
+					vo.getHeadVO().setPk_overtimetypecopy(ovtVO[0].getPk_timeitemcopy());
+				}
+			}
+		}
+	}
+
+	private boolean isTWOrg(String pk_org) throws BusinessException {
+		OrgVO[] orgVOs = OrgQueryUtil.queryOrgVOByPks(new String[] { pk_org });
+		IGlobalCountryQueryService czQry = NCLocator.getInstance().lookup(IGlobalCountryQueryService.class);
+		CountryZoneVO czVO = czQry.getCountryZoneByPK(orgVOs[0].getCountryzone());
+		return czVO.getCode().equals("TW");
+	}
+
+	private void checkBeforeOnLine(AggOvertimeVO[] aggVOs) throws BusinessException {
+		if (aggVOs != null && aggVOs.length > 0) {
+			String pk_org = aggVOs[0].getHeadVO().getPk_org();
+			boolean isTmpUseEnabled = SysInitQuery.getParaBoolean(pk_org, "TWHR99").booleanValue();
+			if (isTmpUseEnabled) {
+				for (AggOvertimeVO vo : aggVOs) {
+					for (OvertimebVO body : vo.getBodyVOs()) {
+						if(body.getStatus()==3)
+						{
+							continue;
+						}
+						//MOD James 添加不允许申请当天的加班
+						if (body.getOvertimebegindate().after(new UFLiteralDate()) || body.getOvertimebegindate().equals(new UFLiteralDate())) {
+							throw new BusinessException(nc.vo.ml.NCLangRes4VoTransl.getNCLangRes().getStrByID(
+									"6017wits_0", "06017wits-0008")
+							/*
+							 * @res 只能补填已发生的加班申请
+							 */);
+						}
+					}
+				}
+			}
+		}
+	}
+
+	private void checkNationalHoliday(AggOvertimeVO[] aggVOs) throws BusinessException {
+		if (aggVOs != null && aggVOs.length > 0) {
+			for (AggOvertimeVO vo : aggVOs) {
+				String pk_psndoc = vo.getHeadVO().getPk_psndoc();
+				for (OvertimebVO body : vo.getBodyVOs()) {
+					if(body.getStatus()==3)
+					{
+						continue;
+					}
+					String calendar = body.getOvertimebegindate().toString() + " 12:00:00";
+					String strSQL = "select pk_holiday from bd_holiday holiday "
+							+ " inner join ( "
+							+ " select dd.pk_defdoc from bd_defdoc dd "
+							+ " inner join bd_defdoclist dl on dd.pk_defdoclist = dl.pk_defdoclist "
+							+ " where dl.code = 'BDHS01_0xx' and dd.code = (case when 'TW'=(select zn.code from bd_psndoc psn "
+							+ " inner join org_orgs org on psn.pk_org = org.pk_org "
+							+ " inner join bd_countryzone zn on org.countryzone = zn.pk_country where psn.pk_psndoc='"
+							+ pk_psndoc
+							+ "') then 'TAIWANHOLIDAY' else 'CHINAHOLIDAY' end)) HOL on holiday.pk_holidaysort = pk_defdoc "
+							+ " and holiday.dr=0 and holiday.enablestate=2 and holiday.starttime <= '" + calendar
+							+ "' and holiday.endtime >= '" + calendar + "' ";
+
+					if (!StringUtils.isEmpty((String) this.getBaseDAO().executeQuery(strSQL, new ColumnProcessor()))) {
+						UFDouble curTotalHours = UFDouble.ZERO_DBL;
+						for (OvertimebVO checkBody : vo.getBodyVOs()) {
+							if (checkBody.getOvertimebegindate().isSameDate(body.getOvertimebegindate())) {
+								curTotalHours = curTotalHours.add(checkBody.getActhour());
+							}
+						}
+
+						if (curTotalHours.toBigDecimal().compareTo(new BigDecimal(8)) < 0) {
+							throw new BusinessException(nc.vo.ml.NCLangRes4VoTransl.getNCLangRes().getStrByID(
+									"6017wits_0", "06017wits-0009")
+							/*
+							 * @res 国定假日加班最小单位时间为8小时
+							 */);
+						}
+					}
+				}
+			}
+		}
+
+	}
+
+	private void checkWorkOver(AggOvertimeVO[] aggVOs) throws BusinessException {
+		if (aggVOs != null && aggVOs.length > 0) {
+			for (AggOvertimeVO vo : aggVOs) {
+				String pk_psndoc = vo.getHeadVO().getPk_psndoc();
+				for (OvertimebVO body : vo.getBodyVOs()) {
+					if(body.getStatus()==3)
+					{
+						continue;
+					}
+					// 1. 加班连同工作时长不能超过12小时
+					String calendar = body.getOvertimebegindate().toString();
+					// 1.1 按加班起始时间取员工当日排班时长
+					String strSQL = "select gzsj from tbm_psncalendar where calendar = '" + calendar
+							+ "' and pk_psndoc='" + pk_psndoc + "' and dr=0";
+					Object rtn = getBaseDAO().executeQuery(strSQL, new ColumnProcessor());
+					UFDouble calendarHours = (rtn == null ? UFDouble.ZERO_DBL : new UFDouble((BigDecimal) rtn));
+					// 1.2 按加班起始时间取员工当日加班登记时长
+					strSQL = "select sum(acthour) acthour from tbm_overtimereg where overtimebegindate = '" + calendar
+							+ "' and pk_psndoc='" + pk_psndoc + "' and dr=0";
+					rtn = getBaseDAO().executeQuery(strSQL, new ColumnProcessor());
+					UFDouble overRegHours = (rtn == null ? UFDouble.ZERO_DBL : new UFDouble((BigDecimal) rtn));
+
+					// 1.3 取本张单据同一日加班申请时长
+					UFDouble curTotalHours = UFDouble.ZERO_DBL;
+					for (OvertimebVO checkBody : vo.getBodyVOs()) {
+						if (checkBody.getOvertimebegindate().isSameDate(body.getOvertimebegindate())) {
+							curTotalHours = curTotalHours.add(checkBody.getActhour());
+						}
+					}
+
+					if (calendarHours.add(overRegHours).add(curTotalHours).toBigDecimal().compareTo(new BigDecimal(12)) > 0) {
+						String strMessage = "";
+						if (calendarHours.doubleValue() > 0) {
+							strMessage = nc.vo.ml.NCLangRes4VoTransl.getNCLangRes().getStrByID("6017wits_0",
+									"06017wits-0000", null,
+									new String[] { String.valueOf(calendarHours.doubleValue()) })
+							/*
+							 * @res 当日排班 [ { 0 } 小时 ]
+							 */;
+						}
+
+						if (overRegHours.doubleValue() > 0) {
+							if (StringUtils.isEmpty(strMessage)) {
+								strMessage = nc.vo.ml.NCLangRes4VoTransl.getNCLangRes().getStrByID("6017wits_0",
+										"06017wits-0001", null,
+										new String[] { String.valueOf(overRegHours.doubleValue()) })
+								/*
+								 * @ res 加班登记 [ { 0 } 小时 ]
+								 */;
+							} else {
+								strMessage += ","
+										+ nc.vo.ml.NCLangRes4VoTransl.getNCLangRes().getStrByID("6017wits_0",
+												"06017wits-0001", null,
+												new String[] { String.valueOf(overRegHours.doubleValue()) })
+								/*
+								 * @ res 加班登记 [ { 0 } 小时 ]
+								 */;
+							}
+						}
+
+						if (curTotalHours.doubleValue() > 0) {
+							if (StringUtils.isEmpty(strMessage)) {
+								strMessage = nc.vo.ml.NCLangRes4VoTransl.getNCLangRes().getStrByID("6017wits_0",
+										"06017wits-0002", null,
+										new String[] { String.valueOf(curTotalHours.doubleValue()) })
+								/*
+								 * @ res 本单加班申请 [ { 0 } 小时 ]
+								 */;
+							} else {
+								strMessage += ","
+										+ nc.vo.ml.NCLangRes4VoTransl.getNCLangRes().getStrByID("6017wits_0",
+												"06017wits-0002", null,
+												new String[] { String.valueOf(curTotalHours.doubleValue()) })
+								/*
+								 * @res 本单加班申请 [ {0}小时 ]
+								 */;
+							}
+						}
+						throw new BusinessException(nc.vo.ml.NCLangRes4VoTransl.getNCLangRes().getStrByID("6017wits_0",
+								"06017wits-0003", null, new String[] { calendar })
+								/*
+								 * @res [{0}]工作时长不能超过12小时
+								 */
+								+ ": " + strMessage);
+					}
+				}
+			}
+		}
+	}
+
+	private void checkWeekendOvertime(AggOvertimeVO[] aggVOs) throws BusinessException {
+		Calendar ca = Calendar.getInstance();
+		if (aggVOs != null && aggVOs.length > 0) {
+			for (AggOvertimeVO vo : aggVOs) {
+				for (OvertimebVO body : vo.getBodyVOs()) {
+					if(body.getStatus()==3)
+					{
+						continue;
+					}
+					UFLiteralDate applyDate = body.getOvertimebegindate();
+					if (isWeekend(applyDate)) {
+						ca.setTime(applyDate.toDate());
+						UFLiteralDate otherWeekendDay = null;
+						// 周六或周日原則上只能申請一天加班
+						if (ca.get(Calendar.DAY_OF_WEEK) == Calendar.SATURDAY) {
+							// 申请日是周六
+							otherWeekendDay = applyDate.getDateAfter(1);
+							for (OvertimebVO body1 : vo.getBodyVOs()) {
+								if(body1.getStatus()==3)
+								{
+									continue;
+								}
+								if(body1.getOvertimebegindate().isSameDate(otherWeekendDay)){
+									throw new BusinessException(nc.vo.ml.NCLangRes4VoTransl.getNCLangRes().getStrByID(
+											"6017wits_0", "06017wits-0004", null,
+											new String[] { applyDate.toString(), otherWeekendDay.toString() })
+									/*
+									 * @res [{0}] 已申请加班 ，该周只能申请一天周末加班 ， 您所申请[{1}] 的加班无效
+									 */);
+								}
+							}
+						} else if (ca.get(Calendar.DAY_OF_WEEK) == Calendar.SUNDAY) {
+							// 申请日是周日
+							otherWeekendDay = applyDate.getDateBefore(1);
+							for (OvertimebVO body1 : vo.getBodyVOs()) {
+								if(body1.getStatus()==3)
+								{
+									continue;
+								}
+								if(body1.getOvertimebegindate().isSameDate(otherWeekendDay)){
+									throw new BusinessException(nc.vo.ml.NCLangRes4VoTransl.getNCLangRes().getStrByID(
+											"6017wits_0", "06017wits-0004", null,
+											new String[] { applyDate.toString(), otherWeekendDay.toString() })
+									/*
+									 * @res [{0}] 已申请加班 ，该周只能申请一天周末加班 ， 您所申请[{1}] 的加班无效
+									 */);
+								}
+							}
+						}
+
+						// 检查另一个周末日是否申请加班
+						String strSQL = "select count(tbm_overtimeh.pk_overtimeh) from tbm_overtimeb "
+								+ "inner join tbm_overtimeh on tbm_overtimeh.pk_overtimeh=tbm_overtimeb.pk_overtimeh "
+								+ "where tbm_overtimeb.overtimebegindate='" + otherWeekendDay.toString()
+								+ "' and tbm_overtimeh.pk_psndoc='" + vo.getHeadVO().getPk_psndoc()
+								+ "' and tbm_overtimeh.dr=0 and tbm_overtimeb.dr=0 ";
+						if(!StringUtil.isEmpty(vo.getHeadVO().getPk_overtimeh())){
+							strSQL = strSQL+" and tbm_overtimeh.pk_overtimeh <>'"+vo.getHeadVO().getPk_overtimeh()+"'";
+						}
+						Integer hasOverApply = (Integer) this.getBaseDAO().executeQuery(strSQL, new ColumnProcessor());
+
+						if (hasOverApply > 0) {
+							throw new BusinessException(nc.vo.ml.NCLangRes4VoTransl.getNCLangRes().getStrByID(
+									"6017wits_0", "06017wits-0004", null,
+									new String[] { applyDate.toString(), otherWeekendDay.toString() })
+							/*
+							 * @res [{0}] 已申请加班 ，该周只能申请一天周末加班 ， 您所申请[{1}] 的加班无效
+							 */);
+						}
+
+						// 休息日加班請以4小時為單位
+						if (body.getActhour().toDouble() % 4 != 0) {
+							throw new BusinessException(nc.vo.ml.NCLangRes4VoTransl.getNCLangRes().getStrByID(
+									"6017wits_0", "06017wits-0005", null, new String[] { applyDate.toString() })
+							/*
+							 * @res [{0}] 为休息日加班 ，加班应以4小时为单位 。
+							 */);
+						}
+					}
+				}
+			}
+		}
+	}
+	
+	private void checkOvertimeType(AggOvertimeVO[] aggVOs) throws BusinessException {
+		if (aggVOs != null && aggVOs.length > 0) {
+			for (AggOvertimeVO vo : aggVOs) {
+				String pk_psndoc = vo.getHeadVO().getPk_psndoc();
+				for (OvertimebVO body : vo.getBodyVOs()) {
+					if(body.getStatus()==3)
+					{
+						continue;
+					}
+					if(!vo.getHeadVO().getPk_overtimetype().equals(GetOvertimeType(body.getOvertimebegintime(),body.getPk_psndoc(),body.getPk_org()))){
+						throw new BusinessException(nc.vo.ml.NCLangRes4VoTransl.getNCLangRes().getStrByID(
+								"6017wits_0", "06017wits-0010")						
+						/*
+						 * @res 平日加班，國定假日加班，休息日加班。請填同一張加班申請單
+						 */);
+					}
+						
+				}
+			}
+		}
+
+	}
+	public String GetOvertimeType(UFDateTime beiginTime, String pkPsndoc, String pkOrg ) throws BusinessException
+	{
+		StringBuilder sql = new StringBuilder();			 
+		 
+	 	sql.append(" select case when tbm_psncalendar.if_rest='Y' and tbm_psncalholiday.pk_psncalhol is not null then  (select tbm_timeitem.pk_timeitem from tbm_timeitem");
+		sql.append(" inner join tbm_timeitemcopy on tbm_timeitem.pk_timeitem=tbm_timeitemcopy.pk_timeitem");
+		sql.append(" where  tbm_timeitem.itemtype=1 and tbm_timeitemcopy.pk_org=tbm_psncalendar.pk_org");
+		sql.append(" and tbm_timeitemcopy.enablestate=2 ");
+		sql.append(" and tbm_timeitem.pk_timeitem in('1001A1100000000009PE','1002Z710000000021ZLX')) ");
+		
+		sql.append(" when exists (select pk_holiday from org_orgs ");
+		sql.append(" inner join bd_workcalendar on org_orgs.workcalendar=bd_workcalendar.pk_workcalendar ");
+		sql.append(" inner join bd_holiday on bd_workcalendar.pk_holidayrule=bd_holiday.pk_holidaysort ");
+		sql.append(" where org_orgs.pk_org=tbm_psncalendar.pk_org ");
+		sql.append(" and bd_holiday.starttime<='"+beiginTime.toString()+"' and endtime>='"+beiginTime.toString()+"' ");
+		sql.append(" ) then '1002Z710000000021ZLX' ");
+		sql.append("when tbm_psncalendar.if_rest='Y' and tbm_psncalholiday.pk_psncalhol is null then (select tbm_timeitem.pk_timeitem from tbm_timeitem");
+		sql.append(" inner join tbm_timeitemcopy on tbm_timeitem.pk_timeitem=tbm_timeitemcopy.pk_timeitem");
+		sql.append(" where  tbm_timeitem.itemtype=1 and tbm_timeitemcopy.pk_org=tbm_psncalendar.pk_org");
+		sql.append(" and tbm_timeitemcopy.enablestate=2 ");
+		sql.append(" and tbm_timeitem.pk_timeitem in('1001A1100000000009PG','1002Z710000000021ZLV'))");
+		
+		sql.append(" else  (select tbm_timeitem.pk_timeitem from tbm_timeitem");
+		sql.append(" inner join tbm_timeitemcopy on tbm_timeitem.pk_timeitem=tbm_timeitemcopy.pk_timeitem");
+		sql.append(" where  tbm_timeitem.itemtype=1 and tbm_timeitemcopy.pk_org=tbm_psncalendar.pk_org");
+		sql.append(" and tbm_timeitemcopy.enablestate=2 ");
+		sql.append(" and tbm_timeitem.pk_timeitem in('1001A1100000000009PC','1002Z710000000021ZLT')) end as pk_timeitem from tbm_psncalendar"); 
+		sql.append(" left join tbm_psncalholiday on tbm_psncalendar.pk_psncalendar=tbm_psncalholiday.pk_psncalendar");
+		sql.append("  where  pk_psndoc='"+pkPsndoc+"'");
+		sql.append(" and tbm_psncalendar.pk_org='"+pkOrg+"'");
+		sql.append(" and tbm_psncalendar.calendar='"+beiginTime.toString().subSequence(0, 10)+"'");
+		
+		String overtimeType = (String) new BaseDAO().executeQuery(sql.toString(), new ColumnProcessor());
+		
+		return overtimeType;
+		
+	}
+	private boolean isWeekend(UFLiteralDate date) {
+		Calendar ca = Calendar.getInstance();
+		ca.setTime(date.toDate());
+		if (ca.get(Calendar.DAY_OF_WEEK) == Calendar.SUNDAY || ca.get(Calendar.DAY_OF_WEEK) == Calendar.SATURDAY) {
+			return true;
+		}
+
+		return false;
+	}
+
+	private void checkValidPeriod(AggOvertimeVO[] aggVOs) throws BusinessException {
+		if (aggVOs != null && aggVOs.length > 0) {
+			for (AggOvertimeVO vo : aggVOs) {
+				for (OvertimebVO body : vo.getBodyVOs()) {
+					if(body.getStatus()==3)
+					{
+						continue;
+					}
+					// 加班時數為8小時者，加班起訖時間需為9小時(含1小時休息時間)
+					if (body.getActhour().toBigDecimal().compareTo(new BigDecimal(8)) == 0) {
+						if (UFDateTime.getMinutesBetween(body.getOvertimebegintime(), body.getOvertimeendtime()) != (8 * 60 + 60)) {
+							throw new BusinessException(nc.vo.ml.NCLangRes4VoTransl.getNCLangRes().getStrByID(
+									"6017wits_0", "06017wits-0006", null,
+									new String[] { body.getOvertimebegindate().toString() })
+							/*
+							 * @res [{0}] 加班时数为8小时 ， 加班起止时间需为9小时 （ 含60分钟休息时间）
+							 */);
+						}
+					}
+					// 加班時數為12小時者，加班起訖時間需為14小時(含2小時休息時間)
+					if (body.getActhour().toBigDecimal().compareTo(new BigDecimal(12)) == 0) {
+						if (UFDateTime.getMinutesBetween(body.getOvertimebegintime(), body.getOvertimeendtime()) != (12 * 60 + 90)) {
+							throw new BusinessException(nc.vo.ml.NCLangRes4VoTransl.getNCLangRes().getStrByID(
+									"6017wits_0", "06017wits-0007", null,
+									new String[] { body.getOvertimebegindate().toString() })
+							/*
+							 * @res [{0}] 加班时数为12小时 ， 加班起止时间需为13.5小时 （
+							 * 含90分钟休息时间）
+							 */);
+						}
+					}
+				}
+			}
+		}
+	}
+
+	private BaseDAO basedao = null;
+
+	private BaseDAO getBaseDAO() {
+		if (basedao == null) {
+			basedao = new BaseDAO();
+		}
+
+		return basedao;
+	}
+
+}

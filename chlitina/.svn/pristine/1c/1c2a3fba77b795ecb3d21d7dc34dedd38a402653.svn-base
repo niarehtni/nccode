@@ -1,0 +1,104 @@
+
+delete md_association where ( componentid in ('99a14456-dc04-4954-9199-1c7fc9213f7b') and (dr=0 or dr is null) )
+go
+
+delete md_property where ( classid in ('16057299-f38f-4e2f-8b1f-49203f09998d', '369dd2ac-dba4-4373-96d2-0146466e2c26', '83f89f31-7481-4383-bf42-5c8a53b7679c') and (dr=0 or dr is null) )
+go
+
+delete md_column where ( tableid in ('hrss_psnmap') and (dr=0 or dr is null) )
+go
+
+delete md_table where ( id in ('hrss_psnmap') and (dr=0 or dr is null) )
+go
+
+delete md_ormap where ( classid in ('16057299-f38f-4e2f-8b1f-49203f09998d', '369dd2ac-dba4-4373-96d2-0146466e2c26', '83f89f31-7481-4383-bf42-5c8a53b7679c') and (dr=0 or dr is null) )
+go
+
+delete md_enumvalue where ( id in ('16057299-f38f-4e2f-8b1f-49203f09998d', '369dd2ac-dba4-4373-96d2-0146466e2c26', '83f89f31-7481-4383-bf42-5c8a53b7679c') and (dr=0 or dr is null) )
+go
+
+delete md_class where ( componentid in ('99a14456-dc04-4954-9199-1c7fc9213f7b') and (dr=0 or dr is null) )
+go
+
+delete md_component where ( id='99a14456-dc04-4954-9199-1c7fc9213f7b' and (versiontype='0') and (dr=0 or dr is null) )
+go
+
+
+insert into md_component(createtime,creator,description,displayname,dr,fromsourcebmf,help,id,industry,isbizmodel,modifier,modifytime,name,namespace,ownmodule,preload,resid,resmodule,ts,version,versiontype) values( '2012-11-23 16:50:25',null,null,'人力地图',0,'Y',null,'99a14456-dc04-4954-9199-1c7fc9213f7b','0','N','YONYOU NC','2018-08-20 13:28:22','psnmap','hrss','hrss',null,'md_psnmap','hrss','2018-08-20 13:29:42','32',0)
+go
+
+
+insert into md_class(accessorclassname,bizitfimpclassname,classtype,componentid,createtime,creator,defaulttablename,description,displayname,dr,fixedlength,fullclassname,help,id,industry,isactive,isauthen,iscreatesql,isextendbean,isprimary,keyattribute,modifier,modifytime,modinfoclassname,name,parentclassid,precise,refmodelname,resid,returntype,stereotype,ts,userdefclassname,versiontype) values( null,null,203,'99a14456-dc04-4954-9199-1c7fc9213f7b','2012-11-23 16:50:49',null,'PsnmapRefTypeEnum',null,'参照对象类型',0,null,'nc.vo.hrss.pub.psnmap.PsnmapRefTypeEnum',null,'16057299-f38f-4e2f-8b1f-49203f09998d','0',null,null,null,null,'N',null,'YONYOU NC','2018-08-20 13:28:12',null,'PsnmapRefTypeEnum',null,null,null,'md_psnmap_reftype','BS000010000100001004',null,'2018-08-20 13:29:42',null,0)
+go
+insert into md_class(accessorclassname,bizitfimpclassname,classtype,componentid,createtime,creator,defaulttablename,description,displayname,dr,fixedlength,fullclassname,help,id,industry,isactive,isauthen,iscreatesql,isextendbean,isprimary,keyattribute,modifier,modifytime,modinfoclassname,name,parentclassid,precise,refmodelname,resid,returntype,stereotype,ts,userdefclassname,versiontype) values( 'nc.md.model.access.javamap.POJOStyle',null,201,'99a14456-dc04-4954-9199-1c7fc9213f7b','2012-11-26 09:25:05',null,'hrss_psnmap',null,'人力地图',0,null,'nc.vo.hrss.pub.psnmap.PsnMapVO',null,'369dd2ac-dba4-4373-96d2-0146466e2c26','0',null,'Y','Y',null,'Y','221dfc98-c0d1-48ae-b089-847ad3c0744c','YONYOU NC','2018-08-20 13:29:32',null,'psnmap',null,null,null,'md_psnmap',null,null,'2018-08-20 13:29:42',null,0)
+go
+insert into md_class(accessorclassname,bizitfimpclassname,classtype,componentid,createtime,creator,defaulttablename,description,displayname,dr,fixedlength,fullclassname,help,id,industry,isactive,isauthen,iscreatesql,isextendbean,isprimary,keyattribute,modifier,modifytime,modinfoclassname,name,parentclassid,precise,refmodelname,resid,returntype,stereotype,ts,userdefclassname,versiontype) values( null,null,203,'99a14456-dc04-4954-9199-1c7fc9213f7b','2018-08-20 13:28:21','YONYOU NC','ismonsalary',null,'是否月薪',0,null,'nc.vo.hrss.psnmap.ismonsalaryenum',null,'83f89f31-7481-4383-bf42-5c8a53b7679c','0',null,null,null,null,'N',null,'YONYOU NC','2018-08-20 13:29:30',null,'ismonsalary',null,null,null,null,'BS000010000100001004',null,'2018-08-20 13:29:42',null,0)
+go
+
+
+insert into md_enumvalue(description,dr,enumsequence,hidden,id,industry,name,resid,ts,value,versiontype) values( 'TYPE_PSN',0,0,'N','16057299-f38f-4e2f-8b1f-49203f09998d','0','人员','md_psnmap_type_psn','2018-08-20 13:29:42','0',0)
+go
+insert into md_enumvalue(description,dr,enumsequence,hidden,id,industry,name,resid,ts,value,versiontype) values( 'TYPE_DEPT',0,1,'N','16057299-f38f-4e2f-8b1f-49203f09998d','0','部门','md_psnmap_type_dept','2018-08-20 13:29:42','1',0)
+go
+insert into md_enumvalue(description,dr,enumsequence,hidden,id,industry,name,resid,ts,value,versiontype) values( 'TYPE_ORG',0,2,'N','16057299-f38f-4e2f-8b1f-49203f09998d','0','组织','md_psnmap_type_org','2018-08-20 13:29:42','2',0)
+go
+insert into md_enumvalue(description,dr,enumsequence,hidden,id,industry,name,resid,ts,value,versiontype) values( null,0,0,'N','83f89f31-7481-4383-bf42-5c8a53b7679c','0','月薪',null,'2018-08-20 13:29:42','1',0)
+go
+insert into md_enumvalue(description,dr,enumsequence,hidden,id,industry,name,resid,ts,value,versiontype) values( null,0,1,'N','83f89f31-7481-4383-bf42-5c8a53b7679c','0','非月薪',null,'2018-08-20 13:29:42','2',0)
+go
+
+
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '0acdab75-4734-4d90-b0fb-a944e4eb8d4e','369dd2ac-dba4-4373-96d2-0146466e2c26','hrss_psnmap@@@active_flag',0,'hrss_psnmap','2018-08-20 13:29:42')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '0bff6f97-36f0-4096-9f2c-f951f37ae5f7','369dd2ac-dba4-4373-96d2-0146466e2c26','hrss_psnmap@@@pk_parent',0,'hrss_psnmap','2018-08-20 13:29:42')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '11f72710-e6d4-48a9-b530-4130b24f2558','369dd2ac-dba4-4373-96d2-0146466e2c26','hrss_psnmap@@@pk_group',0,'hrss_psnmap','2018-08-20 13:29:42')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '221dfc98-c0d1-48ae-b089-847ad3c0744c','369dd2ac-dba4-4373-96d2-0146466e2c26','hrss_psnmap@@PK@@',0,'hrss_psnmap','2018-08-20 13:29:42')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '4457a141-6965-44de-b173-93ca1558827f','369dd2ac-dba4-4373-96d2-0146466e2c26','hrss_psnmap@@@parent_type',0,'hrss_psnmap','2018-08-20 13:29:42')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '96e219a0-607f-4725-81f0-88c464d9c332','369dd2ac-dba4-4373-96d2-0146466e2c26','hrss_psnmap@@@pk_ref',0,'hrss_psnmap','2018-08-20 13:29:42')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'eec7c42b-924e-4ba7-8daa-f17392ec3a6c','369dd2ac-dba4-4373-96d2-0146466e2c26','hrss_psnmap@@@ref_type',0,'hrss_psnmap','2018-08-20 13:29:42')
+go
+
+
+insert into md_table(createtime,creator,databaseid,description,displayname,dr,fromsourcebmf,help,id,industry,isactive,isextendtable,modifier,modifytime,name,parenttable,resid,resmodule,ts,versiontype) values( '2012-11-26 09:25:05',null,null,null,'人力地图',0,'Y',null,'hrss_psnmap','0',null,null,'YONYOU NC','2018-08-20 13:29:32','hrss_psnmap',null,'md_psnmap','hrss','2018-08-20 13:29:42',0)
+go
+
+
+insert into md_column(columnlength,columnsequence,columntype,createtime,creator,defaultvalue,description,displayname,dr,forlocale,groupid,help,id,identitied,incrementseed,incrementstep,isactive,modifier,modifytime,name,nullable,pkey,precise,resid,sqldatetype,tableid,ts,versiontype) values( 1,6,0,null,null,null,null,'是否启用',0,'N',null,null,'hrss_psnmap@@@active_flag',null,null,null,'Y',null,null,'active_flag','N','N',0,'md_psnmap-active_flag','char','hrss_psnmap','2018-08-20 13:29:42',0)
+go
+insert into md_column(columnlength,columnsequence,columntype,createtime,creator,defaultvalue,description,displayname,dr,forlocale,groupid,help,id,identitied,incrementseed,incrementstep,isactive,modifier,modifytime,name,nullable,pkey,precise,resid,sqldatetype,tableid,ts,versiontype) values( 0,2,0,null,null,null,null,'父节点类型',0,'N',null,null,'hrss_psnmap@@@parent_type',null,null,null,'Y',null,null,'parent_type','Y','N',0,'md_psnmap-parent_type','int','hrss_psnmap','2018-08-20 13:29:42',0)
+go
+insert into md_column(columnlength,columnsequence,columntype,createtime,creator,defaultvalue,description,displayname,dr,forlocale,groupid,help,id,identitied,incrementseed,incrementstep,isactive,modifier,modifytime,name,nullable,pkey,precise,resid,sqldatetype,tableid,ts,versiontype) values( 20,5,0,null,null,null,null,'所属集团',0,'N',null,null,'hrss_psnmap@@@pk_group',null,null,null,'Y',null,null,'pk_group','N','N',0,'md_psnmap-pk_group','varchar','hrss_psnmap','2018-08-20 13:29:42',0)
+go
+insert into md_column(columnlength,columnsequence,columntype,createtime,creator,defaultvalue,description,displayname,dr,forlocale,groupid,help,id,identitied,incrementseed,incrementstep,isactive,modifier,modifytime,name,nullable,pkey,precise,resid,sqldatetype,tableid,ts,versiontype) values( 20,1,0,null,null,null,null,'父节点主键',0,'N',null,null,'hrss_psnmap@@@pk_parent',null,null,null,'Y',null,null,'pk_parent','Y','N',0,'md_psnmap-pk_parent','char','hrss_psnmap','2018-08-20 13:29:42',0)
+go
+insert into md_column(columnlength,columnsequence,columntype,createtime,creator,defaultvalue,description,displayname,dr,forlocale,groupid,help,id,identitied,incrementseed,incrementstep,isactive,modifier,modifytime,name,nullable,pkey,precise,resid,sqldatetype,tableid,ts,versiontype) values( 20,3,0,null,null,null,null,'节点参照对象',0,'N',null,null,'hrss_psnmap@@@pk_ref',null,null,null,'Y',null,null,'pk_ref','N','N',0,'md_psnmap-pk_ref','char','hrss_psnmap','2018-08-20 13:29:42',0)
+go
+insert into md_column(columnlength,columnsequence,columntype,createtime,creator,defaultvalue,description,displayname,dr,forlocale,groupid,help,id,identitied,incrementseed,incrementstep,isactive,modifier,modifytime,name,nullable,pkey,precise,resid,sqldatetype,tableid,ts,versiontype) values( 0,4,0,null,null,null,null,'节点参照类型',0,'N',null,null,'hrss_psnmap@@@ref_type',null,null,null,'Y',null,null,'ref_type','N','N',0,'md_psnmap-ref_type','int','hrss_psnmap','2018-08-20 13:29:42',0)
+go
+insert into md_column(columnlength,columnsequence,columntype,createtime,creator,defaultvalue,description,displayname,dr,forlocale,groupid,help,id,identitied,incrementseed,incrementstep,isactive,modifier,modifytime,name,nullable,pkey,precise,resid,sqldatetype,tableid,ts,versiontype) values( 20,0,0,null,null,null,null,'人力地图主键',0,'N',null,null,'hrss_psnmap@@PK@@',null,null,null,'Y',null,null,'pk_psnmap','N','Y',0,'md_psnmap-pk_psnmap','char','hrss_psnmap','2018-08-20 13:29:42',0)
+go
+
+
+insert into md_property(accessorclassname,accesspower,accesspowergroup,attrlength,attrmaxvalue,attrminvalue,attrsequence,calculation,classid,createindustry,createtime,creator,customattr,datatype,datatypestyle,defaultvalue,description,displayname,dr,dynamicattr,dynamictable,fixedlength,help,hided,id,industry,isactive,isauthen,modifier,modifytime,name,notserialize,nullable,precise,readonly,refmodelname,resid,ts,versiontype,visibility) values( null,'N',null,1,null,null,6,'N','369dd2ac-dba4-4373-96d2-0146466e2c26',null,null,null,'N','BS000010000100001032',300,null,null,'是否启用',0,'N',null,'N',null,'N','0acdab75-4734-4d90-b0fb-a944e4eb8d4e','0','Y','Y',null,null,'active_flag','N','N',0,'N',null,'md_psnmap-active_flag','2018-08-20 13:29:42',0,0)
+go
+insert into md_property(accessorclassname,accesspower,accesspowergroup,attrlength,attrmaxvalue,attrminvalue,attrsequence,calculation,classid,createindustry,createtime,creator,customattr,datatype,datatypestyle,defaultvalue,description,displayname,dr,dynamicattr,dynamictable,fixedlength,help,hided,id,industry,isactive,isauthen,modifier,modifytime,name,notserialize,nullable,precise,readonly,refmodelname,resid,ts,versiontype,visibility) values( null,'N',null,20,null,null,1,'N','369dd2ac-dba4-4373-96d2-0146466e2c26',null,null,null,'N','BS000010000100001051',300,null,null,'父节点主键',0,'N',null,'N',null,'N','0bff6f97-36f0-4096-9f2c-f951f37ae5f7','0','Y','Y',null,null,'pk_parent','N','Y',0,'N',null,'md_psnmap-pk_parent','2018-08-20 13:29:42',0,0)
+go
+insert into md_property(accessorclassname,accesspower,accesspowergroup,attrlength,attrmaxvalue,attrminvalue,attrsequence,calculation,classid,createindustry,createtime,creator,customattr,datatype,datatypestyle,defaultvalue,description,displayname,dr,dynamicattr,dynamictable,fixedlength,help,hided,id,industry,isactive,isauthen,modifier,modifytime,name,notserialize,nullable,precise,readonly,refmodelname,resid,ts,versiontype,visibility) values( null,'N',null,20,null,null,5,'N','369dd2ac-dba4-4373-96d2-0146466e2c26',null,null,null,'N','3b6dd171-2900-47f3-bfbe-41e4483a2a65',305,null,null,'所属集团',0,'N',null,'N',null,'N','11f72710-e6d4-48a9-b530-4130b24f2558','0','Y','Y',null,null,'pk_group','N','N',0,'N',null,'md_psnmap-pk_group','2018-08-20 13:29:42',0,0)
+go
+insert into md_property(accessorclassname,accesspower,accesspowergroup,attrlength,attrmaxvalue,attrminvalue,attrsequence,calculation,classid,createindustry,createtime,creator,customattr,datatype,datatypestyle,defaultvalue,description,displayname,dr,dynamicattr,dynamictable,fixedlength,help,hided,id,industry,isactive,isauthen,modifier,modifytime,name,notserialize,nullable,precise,readonly,refmodelname,resid,ts,versiontype,visibility) values( null,'N',null,20,null,null,0,'N','369dd2ac-dba4-4373-96d2-0146466e2c26',null,null,null,'N','BS000010000100001051',300,null,null,'人力地图主键',0,'N',null,'N',null,'N','221dfc98-c0d1-48ae-b089-847ad3c0744c','0','Y','Y',null,null,'pk_psnmap','N','N',0,'N',null,'md_psnmap-pk_psnmap','2018-08-20 13:29:42',0,0)
+go
+insert into md_property(accessorclassname,accesspower,accesspowergroup,attrlength,attrmaxvalue,attrminvalue,attrsequence,calculation,classid,createindustry,createtime,creator,customattr,datatype,datatypestyle,defaultvalue,description,displayname,dr,dynamicattr,dynamictable,fixedlength,help,hided,id,industry,isactive,isauthen,modifier,modifytime,name,notserialize,nullable,precise,readonly,refmodelname,resid,ts,versiontype,visibility) values( null,'N',null,0,null,null,2,'N','369dd2ac-dba4-4373-96d2-0146466e2c26',null,null,null,'N','16057299-f38f-4e2f-8b1f-49203f09998d',300,null,null,'父节点类型',0,'N',null,'N',null,'N','4457a141-6965-44de-b173-93ca1558827f','0','Y','Y',null,null,'parent_type','N','Y',0,'N',null,'md_psnmap-parent_type','2018-08-20 13:29:42',0,0)
+go
+insert into md_property(accessorclassname,accesspower,accesspowergroup,attrlength,attrmaxvalue,attrminvalue,attrsequence,calculation,classid,createindustry,createtime,creator,customattr,datatype,datatypestyle,defaultvalue,description,displayname,dr,dynamicattr,dynamictable,fixedlength,help,hided,id,industry,isactive,isauthen,modifier,modifytime,name,notserialize,nullable,precise,readonly,refmodelname,resid,ts,versiontype,visibility) values( null,'N',null,20,null,null,3,'N','369dd2ac-dba4-4373-96d2-0146466e2c26',null,null,null,'N','BS000010000100001051',300,null,null,'节点参照对象',0,'N',null,'N',null,'N','96e219a0-607f-4725-81f0-88c464d9c332','0','Y','Y',null,null,'pk_ref','N','N',0,'N',null,'md_psnmap-pk_ref','2018-08-20 13:29:42',0,0)
+go
+insert into md_property(accessorclassname,accesspower,accesspowergroup,attrlength,attrmaxvalue,attrminvalue,attrsequence,calculation,classid,createindustry,createtime,creator,customattr,datatype,datatypestyle,defaultvalue,description,displayname,dr,dynamicattr,dynamictable,fixedlength,help,hided,id,industry,isactive,isauthen,modifier,modifytime,name,notserialize,nullable,precise,readonly,refmodelname,resid,ts,versiontype,visibility) values( null,'N',null,0,null,null,4,'N','369dd2ac-dba4-4373-96d2-0146466e2c26',null,null,null,'N','16057299-f38f-4e2f-8b1f-49203f09998d',300,null,null,'节点参照类型',0,'N',null,'N',null,'N','eec7c42b-924e-4ba7-8daa-f17392ec3a6c','0','Y','Y',null,null,'ref_type','N','N',0,'N',null,'md_psnmap-ref_type','2018-08-20 13:29:42',0,0)
+go
+
+
+insert into md_association(cascadedelete,cascadeupdate,componentid,createtime,creator,dr,endcardinality,endelementid,id,industry,isactive,modifier,modifytime,name,startbeanid,startcardinality,startelementid,ts,type,versiontype) values( null,null,'99a14456-dc04-4954-9199-1c7fc9213f7b',null,null,0,'1','3b6dd171-2900-47f3-bfbe-41e4483a2a65','ce2aa517-3588-46aa-afd8-b3e93de227ec','0','Y',null,null,'psnmap_pk_group','369dd2ac-dba4-4373-96d2-0146466e2c26','1','11f72710-e6d4-48a9-b530-4130b24f2558','2018-08-20 13:29:42',3,0)
+go

@@ -1,0 +1,74 @@
+/**
+ * @(#)BatchEditBmfileAction.java 1.0 2018Äê1ÔÂ16ÈÕ
+ *
+ * Copyright (c) 2013, Yonyou. All rights reserved.
+ * YONYOU PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
+ */
+package nc.ui.bm.bmfile.action;
+
+import java.awt.Dimension;
+import java.awt.event.ActionEvent;
+import java.util.ArrayList;
+import java.util.List;
+
+import nc.hr.utils.ResHelper;
+import nc.itf.bm.pub.BMDelegator;
+import nc.ui.bm.bmfile.view.dialog.SearchPsnWizardStep;
+import nc.ui.bm.bmfile.view.dialog.SelectBmWizardStep;
+import nc.ui.bm.bmfile.view.dialog.SetEditInfoWizardStep;
+import nc.ui.pub.beans.wizard.WizardActionException;
+import nc.ui.pub.beans.wizard.WizardDialog;
+import nc.ui.pub.beans.wizard.WizardEvent;
+import nc.ui.pub.beans.wizard.WizardStep;
+import nc.vo.bm.data.BmDataVO;
+import nc.vo.pub.BusinessException;
+
+/**
+ * @author niehg
+ * @since 6.3
+ */
+@SuppressWarnings({ "restriction", "serial" })
+public class BatchEditBmfileAction extends BmfileWizardAction {
+
+	public BatchEditBmfileAction() {
+		setCode("BatchEdit");
+		setBtnName(ResHelper.getString("60150bmfile", "060150bmfile0075"));
+	}
+
+	@Override
+	public void doAction(ActionEvent e) throws Exception {
+		WizardDialog wizardDialog = new WizardDialog(getModel().getContext().getEntranceUI(), getWizardModel(),
+				getSteps(), null);
+
+		wizardDialog.setWizardDialogListener(this);
+		wizardDialog.setResizable(true);
+		wizardDialog.setSize(new Dimension(800, 560));
+		if (1 != wizardDialog.showModal()) {
+			setCancelMsg();
+			return;
+		}
+	}
+
+	@Override
+	protected List<WizardStep> getSteps() {
+		List<WizardStep> list = new ArrayList<WizardStep>();
+		list.add(new SearchPsnWizardStep(getBtnName(), getModel()));
+		list.add(new SelectBmWizardStep(getBmLoginContext()));
+		list.add(new SetEditInfoWizardStep(getBmLoginContext()));
+		return list;
+	}
+
+	@Override
+	public void wizardFinish(WizardEvent event) throws WizardActionException {
+		super.wizardFinish(event);
+	}
+
+	@Override
+	public void doProcess(BmDataVO[] bmDataVOs) throws BusinessException {
+		BMDelegator.getBmfileQueryService().batchEditBmData(bmDataVOs, getBmLoginContext());
+	}
+
+	public void checkDataPermission(BmDataVO[] psnVOs) throws BusinessException {
+
+	}
+}

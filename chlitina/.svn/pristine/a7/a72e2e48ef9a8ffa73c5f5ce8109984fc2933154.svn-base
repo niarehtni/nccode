@@ -1,0 +1,4 @@
+insert into md_table(createtime,creator,databaseid,description,displayname,dr,fromsourcebmf,help,id,industry,isactive,isextendtable,modifier,modifytime,name,parenttable,resid,resmodule,ts,versiontype) values( null,null,null,null,'twhr_waitem_30_扩展表',0,null,null,'twhr_waitem_30','',null,'Y',null,null,'twhr_waitem_30',null,null,'waitem','2018-08-14 16:03:21',0)
+go
+insert into md_table(createtime,creator,databaseid,description,displayname,dr,fromsourcebmf,help,id,industry,isactive,isextendtable,modifier,modifytime,name,parenttable,resid,resmodule,ts,versiontype) values( '2009-08-26 16:52:43','zhoucx',null,null,'公共薪资项目',0,'Y','URC,DOC','wa_item','0',null,null,'YONYOU NC','2018-08-14 16:03:10','wa_item',null,'2waitem-000017','waitem','2018-08-14 16:03:21',0)
+go

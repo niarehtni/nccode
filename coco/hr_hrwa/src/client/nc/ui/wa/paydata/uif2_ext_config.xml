@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE beans PUBLIC "-//SPRING//DTD BEAN//EN" "http://www.springframework.org/dtd/spring-beans.dtd">
+<beans>
+<bean id="ActionExt_mediator" class="nc.ui.uif2.uiextend.ActionExtPreprocessor"
+  init-method="process">
+  <property name="actionExtList">
+   <list>
+	<bean class="nc.ui.uif2.uiextend.ActionExtInfo">
+		<property name="actionContainer" ref="listViewActions" />
+		<property name="uistate" value="NOTEDIT_STATE" />
+		<property name="targetAction" ref="CaculateAction" /> 
+		<property name="position" value="BEFORE_POSITION" />
+		<property name="extType" value="INSERT_EXTTYPE"	/>
+		<property name="action"	ref="GroupInsCaclAction" />
+	</bean>
+   </list>  
+  </property>
+</bean>
+<bean id="GroupInsCaclAction" class="nc.ui.wa.paydata.action.GroupInsCaclAction">
+	<property name="model" ref="ManageAppModel" />
+	<property name="dataManager" ref="modelDataManager"></property>
+</bean>
+</beans>

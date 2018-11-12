@@ -1,0 +1,119 @@
+/*     */ package nc.ui.pubapp.uif2app.view;
+/*     */ 
+/*     */ import nc.ui.pub.beans.MessageDialog;
+		  import nc.ui.pub.beans.UIRefPane;
+/*     */ import nc.ui.pubapp.uif2app.event.AppUiStateChangeEvent;
+/*     */ import nc.ui.pubapp.uif2app.event.IAppEventHandler;
+/*     */ import nc.ui.pubapp.uif2app.event.OrgChangedEvent;
+/*     */ import nc.ui.pubapp.uif2app.model.IAppModelEx;
+/*     */ import nc.ui.uif2.AppEvent;
+/*     */ import nc.ui.uif2.AppEventListener;
+/*     */ import nc.ui.uif2.UIState;
+/*     */ import nc.ui.uif2.model.AbstractUIAppModel;
+/*     */ import nc.ui.uif2.model.IAppModelDataManager;
+/*     */ import nc.vo.pubapp.pattern.exception.ExceptionUtils;
+/*     */ import nc.vo.uif2.LoginContext;
+
+
+/*     */ 
+/*     */ 
+/*     */ public class OrgPanel_Org
+/*     */   extends BaseOrgPanel_Org
+/*     */ {
+/*     */   private static final long serialVersionUID = 5232628868540352269L;
+/*     */   private IAppModelDataManager dataManager;
+/*     */   
+/*     */   public OrgPanel_Org() {}
+/*     */   
+/*     */   public IAppModelDataManager getDataManager()
+/*     */   {
+/*  29 */     return this.dataManager;
+
+/*     */   }
+/*     */   
+/*     */   public void initUI()
+/*     */   {
+/*  34 */     super.initUI();
+/*  35 */     initDefaultOrg();
+/*     */   }
+/*     */   
+/*     */   public void setDataManager(IAppModelDataManager dataManager) {
+/*  39 */     this.dataManager = dataManager;
+/*     */   }
+/*     */   
+/*     */   public void setModel(AbstractUIAppModel model)
+/*     */   {
+/*  44 */     super.setModel(model);
+/*     */     
+/*     */ 
+/*  47 */     model.addAppEventListener(new AppEventListener()
+/*     */     {
+/*     */       public void handleEvent(AppEvent event) {
+/*  50 */         if ("UiState_Changed" == event.getType()) {
+/*  51 */           if ((event instanceof AppUiStateChangeEvent)) {
+/*  52 */             OrgPanel_Org.this.handleUIStateChangedEvent((AppUiStateChangeEvent)event);
+/*     */           }
+/*     */           else
+/*     */           {
+/*  56 */             ExceptionUtils.wrappBusinessException("event 不是 AppUiStateChangeEvent 类型");
+/*     */           }
+/*     */           
+/*     */         }
+/*     */         
+/*     */       }
+/*  62 */     });
+/*  63 */     model.addAppEventListener(OrgChangedEvent.class, new IAppEventHandler(){
+
+	
+	public void handleAppEvent(OrgChangedEvent e) {
+		/*  66 */        OrgPanel_Org.this.handleOrgChangedEvent(e);
+		/*     */       }
+
+	@Override
+	public void handleAppEvent(AppEvent e) {
+		OrgPanel_Org.this.handleOrgChangedEvent((OrgChangedEvent) e);
+		
+	}
+
+
+});
+/*     */     
+/*     */   }
+/*     */   
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */   protected void handleOrgChangedEvent(OrgChangedEvent e)
+/*     */   {
+/*  76 */     String pk_org = getRefPane().getRefPK();
+/*  77 */     getModel().getContext().setPk_org(pk_org);
+/*  78 */     if (pk_org != null) {
+/*  79 */       getDataManager().initModel();
+/*     */     }
+/*     */   }
+/*     */   
+/*     */ 
+/*     */ 
+/*     */   protected void handleUIStateChangedEvent(AppUiStateChangeEvent event)
+/*     */   {
+/*  87 */     if ((getModel().getUiState() == UIState.ADD) || (getModel().getUiState() == UIState.EDIT) || (getModel().getUiState() == UIState.DISABLE))
+/*     */     {
+/*  89 */       getRefPane().setEnabled(false);
+/*     */     }
+/*     */     else {
+/*  92 */       getRefPane().setEnabled(true);
+/*     */     }
+/*     */   }
+/*     */   
+/*     */ 
+/*     */ 
+/*     */   protected void initDefaultOrg()
+/*     */   {
+/* 100 */     if (getModel().getContext().getPk_org() != null)
+/*     */     {
+/*     */ 
+/* 103 */       setPkOrg(getModel().getContext().getPk_org());
+/*     */     }
+/*     */   }
+/*     */ }
+

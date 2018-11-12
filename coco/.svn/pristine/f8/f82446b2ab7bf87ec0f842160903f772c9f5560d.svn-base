@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+		<list>
+			<function>
+				<defaultName>6017item;06017item0086</defaultName>
+				<displayName>gxdays()</displayName>
+				<hintMsgRes>6017item;06017item0087</hintMsgRes>
+				<inputSigRes>6017item;06017item0086</inputSigRes>
+				<pattern>gxdays\(.,.\)</pattern>
+				<arguments>gxdays({0},{1})</arguments>
+				<group>DATEFUNC</group>
+				<process>nc.impl.ta.formula.parser.func.LeaveDayFuncParser</process>
+				<productCode>UPP6013func</productCode>
+			</function>
+			<function>
+				<defaultName>6017item;06017item0088</defaultName>
+				<displayName>leavedays()</displayName>
+				<hintMsgRes>6017item;06017item0089</hintMsgRes>
+				<inputSigRes>6017item;06017item0088</inputSigRes>
+				<pattern>leavedays\(.,.\)</pattern>
+				<arguments>leavedays({0},{1})</arguments>
+				<group>DATEFUNC</group>
+				<process>nc.impl.ta.formula.parser.func.LeaveDayFuncParser</process>
+				<productCode>UPP6013func</productCode>
+			</function>
+			
+			<function>
+				<defaultName>6017item;06017item0090</defaultName>
+				<displayName>partWHLeavePercent()</displayName>
+				<hintMsgRes>6017item;06017item0090</hintMsgRes>
+				<inputSigRes>6017item;06017item0090</inputSigRes>
+				<pattern>partWHLeavePercent\(\)</pattern>
+				<arguments>partWHLeavePercent()</arguments>
+				<group>DATEFUNC</group>
+				<process>nc.impl.ta.formula.parser.func.PartWHLeavePercentFuncParser</process>
+				<productCode>UPP6013func</productCode>
+			</function>
+		</list>
+
+		

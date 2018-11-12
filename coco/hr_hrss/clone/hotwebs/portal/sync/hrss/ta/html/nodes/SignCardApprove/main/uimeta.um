@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding='UTF-8'?>
+<UIMeta flowmode="true" id="main_um" jquery="0">
+    <FlowvLayout autoFill="0" id="flowvlayout7501" widgetId="main">
+        <FlowvPanel id="panelv_mainmenubar" widgetId="main">
+           <CanvasLayout className="rightcanvas" id="menucanvas" widgetId="main">
+                <CanvasPanel id="canvasp1" widgetId="main">
+		            <Menubar id="mainMenubar" widgetId="main"> 
+		            </Menubar>
+                </CanvasPanel>
+            </CanvasLayout>
+        </FlowvPanel>
+        <FlowvPanel id="flowvPanelTask" widgetId="main" topPadding="10">
+        </FlowvPanel>
+	    <FlowvPanel id="panelv00531" widgetId="main" leftPadding="20" rightPadding="20">
+	        <PanelLayout i18nName="w_ta-000852" langDir="node_ta-res" id="panellayout1247" title="单据信息" widgetId="main" className="small_panel_div">
+	            <PanelPanel bottomPadding="10" id="panelpanel1247" topPadding="20" widgetId="main">
+	                <FormComp height="100%" id="headTab_card_signmain_form" label_position="" left="0" position="relative" top="0" widgetId="main" width="100%">
+	                </FormComp>
+	            </PanelPanel>
+	        </PanelLayout>
+	    </FlowvPanel>
+	    <FlowvPanel id="panelv10531" widgetId="main" leftPadding="20" rightPadding="20">
+	        <PanelLayout i18nName="w_ta-000472" langDir="node_ta-res" id="panellayout6902" title="员工信息" widgetId="main" className="small_panel_div" expand="true">
+	            <PanelPanel bottomPadding="10" id="panelpanel6902" topPadding="20" widgetId="main">
+	                <FormComp height="100%" id="headTab_card_psninfo_form" label_position="" left="0" position="relative" top="0" widgetId="main" width="100%">
+	                </FormComp>
+	            </PanelPanel>
+	        </PanelLayout>
+	    </FlowvPanel>
+	    <FlowvPanel id="panelv30531" widgetId="main" leftPadding="20" rightPadding="20">
+	        <PanelLayout i18nName="w_ta-001275" langDir="node_ta-res" id="panellayout6903" title="单据明细" widgetId="main" className="small_panel_div">
+	            <PanelPanel bottomPadding="10" id="panelpanel6902" topPadding="20" widgetId="main">
+			        <GridComp height="100%" id="bodyTab_card_signb_sub_grid" left="0" position="relative" top="0" widgetId="main" width="100%">
+			        </GridComp>
+	            </PanelPanel>
+	        </PanelLayout>
+	    </FlowvPanel>
+	    <FlowvPanel id="panelv40531" widgetId="main" leftPadding="20" rightPadding="20">
+	        <PanelLayout i18nName="w_ta-000857" langDir="node_ta-res" id="panellayout2220" title="审计信息" widgetId="main" className="small_panel_div" expand="false">
+	            <PanelPanel bottomPadding="10" id="panelpanel2220" topPadding="20" widgetId="main">
+	                <FormComp height="100%" id="tailTab_card_audition_form" label_position="" left="0" position="relative" top="0" widgetId="main" width="100%">
+	                </FormComp>
+	            </PanelPanel>
+	        </PanelLayout>
+	    </FlowvPanel>
+	</FlowvLayout>
+</UIMeta>

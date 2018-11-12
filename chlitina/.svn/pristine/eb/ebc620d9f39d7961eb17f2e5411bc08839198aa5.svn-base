@@ -1,0 +1,104 @@
+package nc.ui.wa.util;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import uap.iweb.log.Logger;
+import nc.bs.framework.common.NCLocator;
+import nc.itf.uap.IUAPQueryBS;
+import nc.jdbc.framework.processor.MapListProcessor;
+import nc.vo.pub.BusinessException;
+
+/**
+ * 用于获取台湾本地化参数
+ * @author ward
+ *
+ *
+ */
+public class LocalizationSysinitUtil {
+	private static Map<String ,String> twhrlorg=null;
+	private static Map<String ,String> twhrlpsn=null;
+	private static IUAPQueryBS queryBS = null;
+	
+	public static IUAPQueryBS getUAPQueryBS() {
+		if (queryBS == null) {
+			queryBS = NCLocator.getInstance().lookup(IUAPQueryBS.class);
+		}
+		return queryBS;
+	}
+	
+	public static String getTwhrlOrg(String key){
+		if(null==twhrlorg){
+			twhrlorg=getMap("TWHRLORG", twhrlorg);
+		}
+		return twhrlorg.get(key);
+	}
+	
+	public static String getTwhrlPsn(String key){
+		if(null==twhrlpsn){
+			twhrlpsn=getMap("TWHRLPSN", twhrlpsn);
+		}
+		return twhrlpsn.get(key);
+	}
+	
+	public static String getTwhrzzxx(String key){
+		if(null==twhrlpsn){
+			twhrlpsn=getMap("TWHRZZXX", twhrlpsn);
+		}
+		return twhrlpsn.get(key);
+	}
+	public static String getTwhrlWa(String key){
+		if(null==twhrlpsn){
+			twhrlpsn=getMap("TWHRLWA", twhrlpsn);
+		}
+		return twhrlpsn.get(key);
+	}
+	
+	public static Map<String,String> getMap(String code,Map<String,String> map){
+		String qrySql="SELECT code, doctype, numbervalue,textvalue, refvalue , waitemvalue, logicvalue "
+				+ "FROM twhr_basedoc WHERE code LIKE '"+code+"%' AND pk_org = 'GLOBLE00000000000000'";
+
+		try {
+			List<HashMap<String, Object>> listMaps=(ArrayList<HashMap<String, Object>>)getUAPQueryBS().executeQuery(qrySql.toString(),new MapListProcessor());
+			if(listMaps!=null&&listMaps.size()>0){
+				map=new HashMap<String,String>();
+				for (int i = 0; i < listMaps.size(); i++) {
+					HashMap<String, Object> hashMap=listMaps.get(i);
+					if((int)hashMap.get("doctype") == 1 || (int)hashMap.get("doctype") == 2){
+						String initcode2=hashMap.get("code")!=null?hashMap.get("code").toString():"";
+						String value=hashMap.get("numbervalue")!=null?hashMap.get("numbervalue").toString():"";
+						map.put(initcode2, value);
+					}else if((int)hashMap.get("doctype") == 4){
+						//文本
+						String initcode2=hashMap.get("code")!=null?hashMap.get("code").toString():"";
+						String value=hashMap.get("textvalue")!=null?hashMap.get("textvalue").toString():"";
+						map.put(initcode2, value);
+					}else if((int)hashMap.get("doctype") == 5){
+						//参照
+						String initcode2=hashMap.get("code")!=null?hashMap.get("code").toString():"";
+						String value=hashMap.get("refvalue")!=null?hashMap.get("refvalue").toString():"";
+						map.put(initcode2, value);
+					}else if((int)hashMap.get("doctype") == 6){
+						//逻辑
+						String initcode2=hashMap.get("code")!=null?hashMap.get("code").toString():"";
+						String value=hashMap.get("logicvalue")!=null?hashMap.get("logicvalue").toString():"";
+						map.put(initcode2, value);
+					}else{
+						//薪资发放项目
+						String initcode2=hashMap.get("code")!=null?hashMap.get("code").toString():"";
+						String value=hashMap.get("waitemvalue")!=null?hashMap.get("waitemvalue").toString():"";
+						map.put(initcode2, value);
+					}
+					
+				}
+			}
+		} catch (BusinessException e) {
+			nc.bs.logging.Logger.error(e);
+		}
+		return map;
+	}
+	
+	
+}

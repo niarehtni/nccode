@@ -1,0 +1,382 @@
+package nc.pubimpl.wa.paydata.nhiservice;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+import nc.bs.dao.BaseDAO;
+import nc.bs.dao.DAOException;
+import nc.hr.frame.persistence.SimpleDocServiceTemplate;
+import nc.impl.wa.paydata.nhicalculate.TaiwanNHICalculator;
+import nc.itf.twhr.ICalculateTWNHI;
+import nc.jdbc.framework.processor.ColumnListProcessor;
+import nc.jdbc.framework.processor.ColumnProcessor;
+import nc.jdbc.framework.processor.MapListProcessor;
+import nc.jdbc.framework.processor.MapProcessor;
+import nc.pub.encryption.util.SalaryDecryptUtil;
+import nc.pub.encryption.util.SalaryEncryptionUtil;
+import nc.pubitf.para.SysInitQuery;
+import nc.vo.hi.psndoc.PsndocDefVO;
+import nc.vo.pub.BusinessException;
+import nc.vo.pub.lang.UFBoolean;
+import nc.vo.pub.lang.UFDate;
+import nc.vo.pub.lang.UFDouble;
+import nc.vo.twhr.nhicalc.PsndocDefTableUtil;
+import nc.vo.twhr.nhicalc.PsndocDefUtil;
+import nc.vo.wa.period.PeriodVO;
+
+import org.apache.commons.lang.StringUtils;
+
+public class CalculateTWNHIImpl implements ICalculateTWNHI {
+
+	private BaseDAO dao = new BaseDAO();
+
+	@Override
+	public void calculate(String pk_org, String acc_year, String acc_month) throws Exception {
+		TaiwanNHICalculator calcBaseObj = new TaiwanNHICalculator(pk_org, acc_year, acc_month);
+
+		calcBaseObj.Calculate();
+	}
+
+	@Override
+	public List<Map> getNHIClassMap() throws BusinessException {
+		String strSQL = "SELECT  pk_infoset , infoset_code, vo_class_name ";
+		strSQL += " FROM    hr_infoset ";
+		strSQL += " WHERE infoset_code IN ( select code from bd_defdoc where pk_defdoclist = (select pk_defdoclist from bd_defdoclist where code = 'TWHR000') )";
+		return (List<Map>) dao.executeQuery(strSQL, new MapListProcessor());
+	}
+
+	@Override
+	public void updateExtendNHIInfo(String pk_group, String pk_org, String pk_wa_class, String pk_periodscheme,
+			String pk_wa_period, UFDate payDate) throws BusinessException {
+		// 取劳健保启用参数
+		// 当参数为否时，跳出该方法
+		// ssx added for 2nd health ins on 2017-07-22
+		if (!SysInitQuery.getParaBoolean(pk_org, "TWHR01").booleanValue()) {
+			return;
+		}
+
+		// 取二代健保子集設置
+		String infosetCode = PsndocDefTableUtil.getPsnHealthInsExTablename(pk_group, pk_org);
+
+		if (StringUtils.isEmpty(infosetCode)) {
+			throw new BusinessException("無法找到二代健保子集設置，請檢查自定義項(TWHR000)的設定內容。");
+		}
+		// 取人員列表
+		String[] pk_psndocs = getWaDataPsndocs(pk_org, pk_wa_class, pk_periodscheme, pk_wa_period);
+
+		PeriodVO pvo = (PeriodVO) dao.retrieveByPK(PeriodVO.class, pk_wa_period);
+
+		List<String> inserted_psndocs = new ArrayList<String>();
+		SimpleDocServiceTemplate service = new SimpleDocServiceTemplate("TWHRGLBDEF");
+		List<PsndocDefVO> psnLaborInfoVOs = new ArrayList<PsndocDefVO>();
+		for (String pk_psndoc : pk_psndocs) {
+			UFDouble curAmount = getCurrentPeriodAmount(pk_group, pk_org, pk_wa_class, pk_wa_period, pk_psndoc);
+
+			if (needUpdateExNHI(pk_group, pk_org, pk_wa_period, pk_psndoc, curAmount)) {
+				UFDouble curInsAmount = getCurrentPeriodInsAmount(pk_group, pk_org, pk_wa_class, pk_wa_period,
+						pk_psndoc);
+				UFDouble lastPeriodAnnualSum = getLastPeriodAnnualSum(pk_group, pk_org, pk_wa_class, payDate,
+						infosetCode, pk_psndoc);
+				double decrypt = SalaryDecryptUtil.decrypt(lastPeriodAnnualSum.doubleValue());
+				UFDouble annaAmount = curAmount.add(new UFDouble(decrypt));
+				PsndocDefVO newVO = PsndocDefUtil.getPsnNHIExtendVO();
+				newVO.setPk_psndoc(pk_psndoc);
+				newVO.setDr(0);
+				newVO.setCreator("NC_USER0000000000000");
+				if (pvo != null) {
+					newVO.setBegindate(pvo.getCstartdate());
+					newVO.setEnddate(pvo.getCenddate());
+				}
+				// glbdef1,薪資期間
+				newVO.setAttributeValue("glbdef1", pk_wa_period);
+				// glbdef2,薪資方案
+				newVO.setAttributeValue("glbdef2", pk_wa_class);
+				// glbdef3,當期金額
+				double encryption = SalaryEncryptionUtil.encryption(curAmount.doubleValue());// 但强
+																								// 数据加密
+																								// 2018-2-24
+																								// 15:35:01
+				newVO.setAttributeValue("glbdef3", encryption);
+				// glbdef4,發放日期
+				newVO.setAttributeValue("glbdef4", payDate);
+				// glbdef5,當年獎金纍計
+				double encryption2 = SalaryEncryptionUtil.encryption(annaAmount.doubleValue());// 但强
+																								// 数据加密
+																								// 2018-2-24
+																								// 15:35:01
+				newVO.setAttributeValue("glbdef5", encryption2);
+				// glbdef6,本次補充保費
+				double encryption3 = SalaryEncryptionUtil.encryption(curInsAmount.doubleValue());// 但强
+																									// 数据加密
+																									// 2018-2-24
+																									// 15:35:01
+				newVO.setAttributeValue("glbdef6", encryption3);
+				// recordnum
+				newVO.setAttributeValue("recordnum", -1);
+				inserted_psndocs.add(pk_psndoc);
+				psnLaborInfoVOs.add(newVO);
+			}
+		}
+
+		if (psnLaborInfoVOs != null && psnLaborInfoVOs.size() > 0) {
+			for (PsndocDefVO vo : psnLaborInfoVOs) {
+				service.insert(vo);
+			}
+		}
+
+		for (String pk_psndoc : inserted_psndocs) {
+			String strSQL = "update " + infosetCode + " set recordnum=recordnum+1 where pk_psndoc='" + pk_psndoc + "'";
+			dao.executeUpdate(strSQL);
+		}
+
+		updateLastFlag(infosetCode, inserted_psndocs.toArray(new String[0]));
+	}
+
+	private boolean needUpdateExNHI(String pk_group, String pk_org, String pk_wa_period, String pk_psndoc,
+			UFDouble curAmount) throws BusinessException {
+		boolean needs = true;
+		String strSQL = "";
+		// 1. 勾選「免扣補充保費」
+		String fieldname = PsndocDefTableUtil.getPsnNoPayExtendNHIFieldname(pk_group, pk_org);
+		strSQL = "select " + fieldname + " from bd_psndoc where pk_psndoc='" + pk_psndoc + "'";
+		String value = (String) dao.executeQuery(strSQL, new ColumnProcessor());
+		if (!StringUtils.isEmpty(value) && (new UFBoolean(value)).booleanValue()) {
+			needs = false;
+		}
+
+		// 2. 發放之薪資年月沒有健保投保級距（指薪資計算的薪資期間）
+		strSQL = "select isnull(def.glbdef16, 0) healgrade from " + PsndocDefTableUtil.getPsnHealthTablename() + " def"
+				+ " inner join bd_psndoc psn on def.pk_psndoc = psn.pk_psndoc" + " where def.pk_psndoc = '" + pk_psndoc
+				+ "' and (def.glbdef3 is null or def.glbdef3=psn.id)"
+				+ " and begindate<=(select cenddate from wa_period where pk_wa_period='" + pk_wa_period + "')"
+				+ " and isnull(enddate, '9999-12-31')>=(select cstartdate from wa_period where pk_wa_period='"
+				+ pk_wa_period + "')" + " and def.glbdef14='Y' and def.dr=0";
+		Object rtn = dao.executeQuery(strSQL, new ColumnProcessor());
+		if (rtn == null || StringUtils.isEmpty(rtn.toString()) || rtn.toString().equals("0E-8")
+				|| (Double.valueOf(rtn.toString())) == 0) {
+			needs = false;
+		}
+
+		// 3. 二代健保累計項目為0或是所發放的薪資項無二代健保項目
+		if (curAmount.equals(UFDouble.ZERO_DBL)) {
+			needs = false;
+		}
+
+		return needs;
+	}
+
+	private UFDouble getLastPeriodAnnualSum(String pk_group, String pk_org, String pk_wa_class, UFDate payDate,
+			String infosetCode, String pk_psndoc) throws BusinessException {
+		UFDouble rtn = UFDouble.ZERO_DBL;
+
+		String strSQL = "select glbdef5, pk_psndoc from " + infosetCode
+				+ " src where recordnum=(select MIN(recordnum) from " + infosetCode
+				+ " where pk_psndoc = src.pk_psndoc and left(isnull(glbdef4,'0000'), 4)='"
+				+ String.valueOf(payDate.getYear()) // 二代健保強制按發放日期所在年做年度纍計
+				+ "' and " + infosetCode + ".dr=0)";
+		List<Map> lastPeriodSumPSN = (List<Map>) dao.executeQuery(strSQL, new MapListProcessor());
+
+		if (lastPeriodSumPSN != null && lastPeriodSumPSN.size() > 0) {
+			for (Map curAmount : lastPeriodSumPSN) {
+				if (curAmount.containsKey("pk_psndoc")) {
+					if (curAmount.get("pk_psndoc").equals(pk_psndoc)) {
+						rtn = new UFDouble(Double.parseDouble(curAmount.get("glbdef5").toString()));
+					}
+				}
+			}
+		}
+
+		return rtn;
+	}
+
+	private UFDouble getCurrentPeriodInsAmount(String pk_group, String pk_org, String pk_wa_class, String pk_wa_period,
+			String pk_psndoc) throws BusinessException {
+		UFDouble rtn = UFDouble.ZERO_DBL;
+		List<Map> curInsAmountPSN = new ArrayList<Map>();
+
+		String strSQL = "select itemkey from wa_classitem where pk_org='" + pk_org + "' and pk_wa_class='"
+				+ pk_wa_class + "' and cyear=((select cyear from wa_period where pk_wa_period='" + pk_wa_period
+				+ "')) and cperiod=((select cperiod from wa_period where pk_wa_period='" + pk_wa_period
+				+ "')) and pk_wa_item = (select waitemvalue from twhr_basedoc where pk_org='" + pk_org
+				+ "' and code = 'TWEX0000' and dr=0) ";
+
+		String itemkey = (String) dao.executeQuery(strSQL, new ColumnProcessor());
+
+		if (!StringUtils.isEmpty(itemkey)) {
+			strSQL = "select " + itemkey + " curinsamount, pk_psndoc from wa_data where pk_org='" + pk_org
+					+ "' and pk_wa_class='" + pk_wa_class
+					+ "' and cyear=((select cyear from wa_period where pk_wa_period='" + pk_wa_period
+					+ "')) and cperiod=((select cperiod from wa_period where pk_wa_period='" + pk_wa_period + "')) ";
+			curInsAmountPSN = (List<Map>) dao.executeQuery(strSQL, new MapListProcessor());
+		}
+
+		if (curInsAmountPSN != null && curInsAmountPSN.size() > 0) {
+			for (Map curAmount : curInsAmountPSN) {
+				if (curAmount.containsKey("pk_psndoc")) {
+					if (curAmount.get("pk_psndoc").equals(pk_psndoc)) {
+						rtn = new UFDouble(Double.parseDouble(curAmount.get("curinsamount").toString()));
+					}
+				}
+			}
+		}
+
+		double decrypt = SalaryDecryptUtil.decrypt(rtn.doubleValue());
+
+		return new UFDouble(decrypt);
+	}
+
+	private UFDouble getCurrentPeriodAmount(String pk_group, String pk_org, String pk_wa_class, String pk_wa_period,
+			String pk_psndoc) throws BusinessException {
+		UFDouble rtn = UFDouble.ZERO_DBL;
+		List<Map> curAmountPSN = new ArrayList<Map>();
+		String strSQL = "select itemkey from wa_classitem cls inner join twhr_waitem_30 tw on cls.pk_wa_item = tw.pk_wa_item where cls.pk_org='"
+				+ pk_org
+				+ "' and pk_wa_class='"
+				+ pk_wa_class
+				+ "' and cyear=((select cyear from wa_period where pk_wa_period='"
+				+ pk_wa_period
+				+ "')) and cperiod=((select cperiod from wa_period where pk_wa_period='"
+				+ pk_wa_period
+				+ "')) and  tw.ishealthinsexsum_30 = 'Y' ";
+
+		List itemKeys = (List) dao.executeQuery(strSQL, new ColumnListProcessor());
+		if (itemKeys != null && itemKeys.size() > 0) {
+			strSQL = "";
+			for (Object itemkey : itemKeys) {
+				if (!StringUtils.isEmpty(strSQL)) {
+					strSQL = strSQL + "+";
+				}
+				strSQL = strSQL + "isnull(" + (String) itemkey + ",0)";
+			}
+			strSQL = "select (" + strSQL + ") curamount, pk_psndoc from wa_data where pk_org='" + pk_org
+					+ "' and pk_wa_class='" + pk_wa_class
+					+ "' and cyear=((select cyear from wa_period where pk_wa_period='" + pk_wa_period
+					+ "')) and cperiod=((select cperiod from wa_period where pk_wa_period='" + pk_wa_period + "')) ";
+			curAmountPSN = (List<Map>) dao.executeQuery(strSQL, new MapListProcessor());
+		}
+
+		if (curAmountPSN != null && curAmountPSN.size() > 0) {
+			for (Map curAmount : curAmountPSN) {
+				if (curAmount.containsKey("pk_psndoc")) {
+					if (curAmount.get("pk_psndoc").equals(pk_psndoc)) {
+						rtn = new UFDouble(Double.parseDouble(curAmount.get("curamount").toString()));
+					}
+				}
+			}
+		}
+
+		double decrypt = SalaryDecryptUtil.decrypt(rtn.doubleValue());
+
+		return new UFDouble(decrypt);
+	}
+
+	/**
+	 * 取指定組織、薪資方案、薪資期間的人員列表
+	 * 
+	 * @param pk_org
+	 *            組織
+	 * @param pk_wa_class
+	 *            薪資方案
+	 * @param yearperiod
+	 *            薪資期間
+	 * @return
+	 * @throws BusinessException
+	 */
+	private String[] getWaDataPsndocs(String pk_org, String pk_wa_class, String pk_periodscheme, String pk_wa_period)
+			throws BusinessException {
+		String strSQL = "select cyear, cperiod from wa_period where pk_periodscheme = '" + pk_periodscheme
+				+ "' and pk_wa_period='" + pk_wa_period + "'";
+		Map periodRs = (Map) dao.executeQuery(strSQL, new MapProcessor());
+		List<String> psndocs = null;
+
+		if (periodRs != null && periodRs.size() > 0) {
+			strSQL = "select distinct pk_psndoc from wa_data where pk_org='" + pk_org + "' and pk_wa_class='"
+					+ pk_wa_class + "' and cyear='" + periodRs.get("cyear") + "' and cperiod='"
+					+ periodRs.get("cperiod") + "'";
+
+			psndocs = (List<String>) dao.executeQuery(strSQL, new ColumnListProcessor());
+		}
+
+		if (psndocs == null || psndocs.size() == 0) {
+			return null;
+		} else {
+			return psndocs.toArray(new String[0]);
+		}
+	}
+
+	@Override
+	public void deleteExtendNHIInfo(String pk_group, String pk_org, String pk_wa_class, String pk_periodscheme,
+			String pk_wa_period, UFDate payDate) throws BusinessException {
+		// 取劳健保启用参数
+		// 当参数为否时，跳出该方法
+		// ssx added for 2nd health ins on 2017-07-22
+		if (!SysInitQuery.getParaBoolean(pk_org, "TWHR01").booleanValue()) {
+			return;
+		}
+
+		// 取二代健保子集設置
+		String infosetCode = PsndocDefTableUtil.getPsnHealthInsExTablename(pk_group, pk_org);
+
+		if (StringUtils.isEmpty(infosetCode)) {
+			throw new BusinessException("無法找到二代健保子集設置，請檢查自定義項(TWHR000)的設定內容。");
+		}
+
+		// 取人員列表
+		String[] pk_psndocs = getWaDataPsndocs(pk_org, pk_wa_class, pk_periodscheme, pk_wa_period);
+
+		// 检查是否有更新的资料，如有则不允许取消发放
+		checkNewRecord(pk_wa_class, pk_wa_period, infosetCode, pk_psndocs);
+
+		String strSQL = "";
+		for (String pk_psndoc : pk_psndocs) {
+			strSQL = "delete from " + infosetCode + " where glbdef1='" + pk_wa_period + "' and glbdef2='" + pk_wa_class
+			// + "' and glbdef4='" + payDate.toString();
+			// 同一期间，同一方案，只能出现一条，所以不需要按发放日期清理
+					+ "' and pk_psndoc='" + pk_psndoc + "'";
+			dao.executeUpdate(strSQL);
+		}
+
+		for (String pk_psndoc : pk_psndocs) {
+			strSQL = "update " + infosetCode + " set recordnum=recordnum-1 where pk_psndoc='" + pk_psndoc + "'";
+			dao.executeUpdate(strSQL);
+		}
+
+		updateLastFlag(infosetCode, pk_psndocs);
+	}
+
+	private void checkNewRecord(String pk_wa_class, String pk_wa_period, String infosetCode, String[] pk_psndocs)
+			throws DAOException, BusinessException {
+		String strSQL = "";
+		// 检查是否有更新的资料，如有则不允许取消发放
+		for (String pk_psndoc : pk_psndocs) {
+			strSQL = "select * from " + infosetCode + " where pk_psndoc='" + pk_psndoc + "' and glbdef1='"
+					+ pk_wa_period + "' and glbdef2='" + pk_wa_class + "' and lastflag='N'";
+			Map rst = (Map) dao.executeQuery(strSQL, new MapProcessor());
+
+			if (rst != null && rst.size() > 0) {
+				throw new BusinessException("此方案並非二代健保資料最新一筆，無法進行撤銷。");
+			}
+		}
+	}
+
+	private void updateLastFlag(String infosetCode, String[] pk_psndocs) throws BusinessException {
+		String strSQL = "";
+		for (String pk_psndoc : pk_psndocs) {
+			strSQL = "update "
+					+ infosetCode
+					+ " set recordnum = (select rowno from (select pk_psndoc_sub, (select count(*) from "
+					+ infosetCode
+					+ " where pk_psndoc=def.pk_psndoc group by pk_psndoc)-(row_number() over (partition BY def.pk_psndoc ORDER BY def.begindate, def.enddate)) rowno from "
+					+ infosetCode + " def where def.pk_psndoc='" + pk_psndoc + "') TMP where pk_psndoc_sub="
+					+ infosetCode + ".pk_psndoc_sub) where pk_psndoc = '" + pk_psndoc + "'";
+			dao.executeUpdate(strSQL);
+
+			strSQL = "update " + infosetCode + " set lastflag = case when recordnum = (select MIN(recordnum) from "
+					+ infosetCode + " def where " + infosetCode
+					+ ".pk_psndoc = def.pk_psndoc) then 'Y' else 'N' end where pk_psndoc = '" + pk_psndoc + "'";
+			dao.executeUpdate(strSQL);
+		}
+
+	}
+}

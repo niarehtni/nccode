@@ -1,0 +1,6 @@
+insert into md_enumvalue(description,dr,enumsequence,hidden,id,industry,name,resid,ts,value,versiontype) values( null,null,0,'N','155570dd-891e-4854-bd75-246e5808790d','0','组织内调配','26009tran-000010','2018-09-16 13:58:41','1',0)
+go
+insert into md_enumvalue(description,dr,enumsequence,hidden,id,industry,name,resid,ts,value,versiontype) values( null,null,1,'N','155570dd-891e-4854-bd75-246e5808790d','0','调出','26009tran-000022','2018-09-16 13:58:41','2',0)
+go
+insert into md_enumvalue(description,dr,enumsequence,hidden,id,industry,name,resid,ts,value,versiontype) values( null,null,2,'N','155570dd-891e-4854-bd75-246e5808790d','0','调入','26009tran-000009','2018-09-16 13:58:41','3',0)
+go

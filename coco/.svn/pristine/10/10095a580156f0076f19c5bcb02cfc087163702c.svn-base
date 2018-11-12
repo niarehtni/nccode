@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding='UTF-8'?>
+<Widget controllerClazz="nc.bs.hrsms.ta.sss.monthreport.ctrl.MonthReportDetailView" dialog="false" i18nName="a_pub-000180" langDir="node_pub-res" caption="废弃" id="MonthReportDetail" refId="MonthReportDetail" sourcePackage="src/public/">
+    <Attributes>
+        <Attribute>
+            <Key>$POOLWIDGE</Key>
+            <Value>$POOLWIDGE</Value>
+        </Attribute>
+    </Attributes>
+    <PageMetas>
+    </PageMetas>
+    <PlugoutDescs>
+    </PlugoutDescs>
+    <PluginDescs>
+    </PluginDescs>
+    <Events>
+     
+    </Events>
+    <Models>
+        <Datasets>
+            <MdDataset caption="月报出勤数据表" controlwidgetopeStatus="false" enabled="false" id="dsMthDetail" lazyLoad="false" notNullBody="false" objMeta="hrta.tbmmonthwork" voMeta="nc.vo.ta.monthstat.MonthWorkVO">
+                <FieldRelations>
+                    <FieldRelation id="pk_shift_rel" needProcess="true" refDataset="$refds_hrta_bdshift">
+                        <MatchFields>
+                            <Field readField="name" writeField="pk_shift_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_shift" value="pk_shift">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                </FieldRelations>
+                <Fields>
+                    <ModifyField id="workdays" precision="2">
+                    </ModifyField>
+                    <ModifyField id="actualworkdays" precision="2">
+                    </ModifyField>
+                    <ModifyField id="workhours" precision="2">
+                    </ModifyField>
+                    <ModifyField id="actualworkhours" precision="2">
+                    </ModifyField>
+                </Fields>
+                <Events>
+                    <Event async="true" jsEventClaszz="nc.uap.lfw.core.event.conf.DatasetListener" methodName="onMonthDetailDataLoad" name="onDataLoad" onserver="true">
+                        <SubmitRule cardSubmit="false" panelSubmit="false" tabSubmit="false">
+                        </SubmitRule>
+                        <Params>
+                            <Param>
+                                <Name>dataLoadEvent</Name>
+                                <Value>
+                                </Value>
+                                <Desc>                                    <![CDATA[nc.uap.lfw.core.event.DataLoadEvent]]>
+                                </Desc>
+                            </Param>
+                        </Params>
+                        <Action>
+                        </Action>
+                    </Event>
+                </Events>
+            </MdDataset>
+            <RefMdDataset caption="班次" controlwidgetopeStatus="false" enabled="false" id="$refds_hrta_bdshift" lazyLoad="true" notNullBody="false" objMeta="hrta.bdshift" voMeta="nc.vo.bd.shift.ShiftVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+        </Datasets>
+        <ComboDatas>
+            <MDComboDataConf caption="月报子表" fullclassName="ec58d9de-327b-4c46-aa02-cee0aad248a8" id="combo_dsMthDetail_type">
+            </MDComboDataConf>
+        </ComboDatas>
+        <RefNodes>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" i18nName="" id="refnode_dsMthDetail_pk_shift_name" langDir="" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" readDs="masterDs" readFields="pk_shift,name" refId="" refcode="班次(业务单元含本门店)" refnodeDelegator="" selLeafOnly="false" text="月报出勤数据表_班次(业务单元含本门店)" usePower="false" writeDs="dsMthDetail" writeFields="pk_shift,pk_shift_name">
+            </NCRefNode>
+        </RefNodes>
+    </Models>
+    <Components>
+        <FormComp caption="月报出勤数据表" columnCount="1" dataset="dsMthDetail" eleWidth="180" ellipsis="false" enabled="true" id="frmMthDetail" labelMinWidth="0" renderType="1" rowHeight="22" visible="true">
+            <Element attachNext="false" colSpan="1" editable="true" editorType="StringText" enabled="true" field="pk_monthwork" height="" i18nName="2monthstat-0015" id="pk_monthwork" imageOnly="false" nextLine="false" nullAble="false" rowSpan="1" selectOnly="true" text="出勤数据表主键" toolbarType="Custom" visible="false" width="">
+            </Element>
+            <Element attachNext="false" colSpan="1" editable="true" editorType="StringText" enabled="true" field="pk_monthstat" height="" i18nName="2monthstat-0005" id="pk_monthstat" imageOnly="false" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" text="月统计主表主键" toolbarType="Custom" visible="false" width="">
+            </Element>
+            <Element attachNext="false" colSpan="1" editable="true" editorType="StringText" enabled="true" field="pk_group" height="" i18nName="2UC000-000367" id="pk_group" imageOnly="false" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" text="所属集团" toolbarType="Custom" visible="false" width="">
+            </Element>
+            <Element attachNext="false" colSpan="1" editable="true" editorType="StringText" enabled="true" field="pk_org" height="" i18nName="2UC000-000360" id="pk_org" imageOnly="false" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" text="所属组织" toolbarType="Custom" visible="false" width="">
+            </Element>
+            <Element attachNext="false" colSpan="1" editable="true" editorType="StringText" enabled="true" field="pk_shift" height="" i18nName="2monthstat-0001" id="pk_shift" imageOnly="false" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" text="班次主键" toolbarType="Custom" visible="false" width="">
+            </Element>
+            <Element attachNext="false" colSpan="1" editable="true" editorType="Reference" enabled="true" field="pk_shift_name" height="" i18nName="w_ta-000007" id="pk_shift_name" imageOnly="false" langDir="node_ta-res" nextLine="false" nullAble="true" refNode="refnode_dsMthDetail_pk_shift_name" rowSpan="1" selectOnly="true" text="班次" toolbarType="Custom" visible="true" width="">
+            </Element>
+            <Element attachNext="false" colSpan="1" editable="true" editorType="DecimalText" enabled="true" field="workdays" height="" i18nName="w_ta-001269" id="workdays" imageOnly="false" langDir="node_ta-res" nextLine="false" nullAble="true" precision="2" rowSpan="1" selectOnly="true" text="应出勤班数" toolbarType="Custom" visible="true" width="">
+            </Element>
+            <Element attachNext="false" colSpan="1" editable="true" editorType="DecimalText" enabled="true" field="actualworkdays" height="" i18nName="w_ta-001270" id="actualworkdays" imageOnly="false" langDir="node_ta-res" nextLine="false" nullAble="true" precision="2" rowSpan="1" selectOnly="true" text="出勤班数" toolbarType="Custom" visible="true" width="">
+            </Element>
+            <Element attachNext="false" colSpan="1" editable="true" editorType="DecimalText" enabled="true" field="workhours" height="" i18nName="w_ta-001271" id="workhours" imageOnly="false" langDir="node_ta-res" nextLine="false" nullAble="true" precision="2" rowSpan="1" selectOnly="true" text="应出勤工时" toolbarType="Custom" visible="true" width="">
+            </Element>
+            <Element attachNext="false" colSpan="1" editable="true" editorType="DecimalText" enabled="true" field="actualworkhours" height="" i18nName="w_ta-001272" id="actualworkhours" imageOnly="false" langDir="node_ta-res" nextLine="false" nullAble="true" precision="2" rowSpan="1" selectOnly="true" text="出勤工时" toolbarType="Custom" visible="true" width="">
+            </Element>
+            <Element attachNext="false" colSpan="1" editable="true" editorType="IntegerText" enabled="true" field="status" height="" id="status" imageOnly="false" nextLine="false" nullAble="true" precision="0" rowSpan="1" selectOnly="true" text="vostatus" toolbarType="Custom" visible="false" width="">
+            </Element>
+        </FormComp>
+        <GridComp autoRowHeight="false" canCopy="false" caption="月报出勤数据表" dataset="dsMthDetail" editable="true" enabled="true" expandTree="false" id="gridMthDetail" multiSelect="false" onPaste="" pagenationTop="false" reference="false" selfDefImageBtnRender="" showColInfo="false" showHeader="true" showImageBtn="false" showNumCol="false" showSumRow="false" sortable="true" visible="true">
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="pk_monthwork" fixedHeader="false" id="pk_monthwork" imageOnly="false" nullAble="false" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="出勤数据表主键" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="pk_monthstat" fixedHeader="false" id="pk_monthstat" imageOnly="false" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="月统计主表主键" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="pk_group" fixedHeader="false" id="pk_group" imageOnly="false" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="所属集团" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="pk_org" fixedHeader="false" id="pk_org" imageOnly="false" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="所属组织" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="pk_shift" fixedHeader="false" id="pk_shift" imageOnly="false" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="班次主键" textAlign="left" visible="false" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="Reference" field="pk_shift_name" fixedHeader="false" i18nName="w_ta-000007" id="pk_shift_name" imageOnly="false" langDir="node_ta-res" nullAble="true" refNode="refnode_dsMthDetail_pk_shift_name" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="班次" textAlign="left" visible="true" width="140">
+            </Column>
+            <Column autoExpand="false" dataType="UFDouble" editable="true" editorType="DecimalText" field="workdays" fixedHeader="false" i18nName="w_ta-001269" id="workdays" imageOnly="false" langDir="node_ta-res" nullAble="true" renderType="DecimalRender" showCheckBox="true" sortable="true" sumCol="false" text="应出勤天数" textAlign="left" visible="true" width="80">
+            </Column>
+            <Column autoExpand="false" dataType="UFDouble" editable="true" editorType="DecimalText" field="actualworkdays" fixedHeader="false" i18nName="w_ta-001270" id="actualworkdays" imageOnly="false" langDir="node_ta-res" nullAble="true" renderType="DecimalRender" showCheckBox="true" sortable="true" sumCol="false" text="出勤天数" textAlign="left" visible="true" width="80">
+            </Column>
+            <Column autoExpand="false" dataType="UFDouble" editable="true" editorType="DecimalText" field="workhours" fixedHeader="false" i18nName="w_ta-001271" id="workhours" imageOnly="false" langDir="node_ta-res" nullAble="true" renderType="DecimalRender" showCheckBox="true" sortable="true" sumCol="false" text="应出勤工时" textAlign="left" visible="true" width="80">
+            </Column>
+            <Column autoExpand="false" dataType="UFDouble" editable="true" editorType="DecimalText" field="actualworkhours" fixedHeader="false" i18nName="w_ta-001272" id="actualworkhours" imageOnly="false" langDir="node_ta-res" nullAble="true" renderType="DecimalRender" showCheckBox="true" sortable="true" sumCol="false" text="出勤工时" textAlign="left" visible="true" width="80">
+            </Column>
+            <Column autoExpand="false" dataType="Integer" editable="true" editorType="IntegerText" field="status" fixedHeader="false" id="status" imageOnly="false" nullAble="true" renderType="IntegerRender" showCheckBox="true" sortable="true" sumCol="false" text="vostatus" textAlign="right" visible="false" width="120">
+            </Column>
+        </GridComp>
+    </Components>
+    <Menus>
+    </Menus>
+</Widget>

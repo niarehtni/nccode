@@ -1,0 +1,22 @@
+
+delete md_busiop where ( componentid in ('2b6869e5-a049-11e8-839d-79b29e477abc') and (dr=0 or dr is null) )
+go
+
+delete md_component where ( id='2b6869e5-a049-11e8-839d-79b29e477abc' and (versiontype='0') and (dr=0 or dr is null) )
+go
+
+
+insert into md_component(createtime,creator,description,displayname,dr,fromsourcebmf,help,id,industry,isbizmodel,modifier,modifytime,name,namespace,ownmodule,preload,resid,resmodule,ts,version,versiontype) values( '2018-08-15 15:34:02',null,null,'平均月数(自定义档案)业务操作',null,'Y',null,'2b6869e5-a049-11e8-839d-79b29e477abc','0','Y',null,'2018-08-15 15:34:02','bo_Defdoc-avgmoncount','uap','uapbd',null,null,'bo_Defdoc-avgmoncount','2018-08-15 15:34:02','3',0)
+go
+
+
+insert into md_busiop(authorizable,componentid,createtime,creator,description,displayname,dr,help,id,industry,isbusiactivity,logtype,modifier,modifytime,name,needlog,ownertype,parentid,resid,ts,versiontype) values( 'Y','2b6869e5-a049-11e8-839d-79b29e477abc','2018-08-15 15:34:02',null,null,'新增',null,null,'2b6890f6-a049-11e8-839d-79b29e477abc','0','N','ADD',null,'2018-08-15 15:34:02','add','Y','1001ZZ1000000000KGVY',null,'2UC000-001114','2018-08-15 15:34:02',0)
+go
+insert into md_busiop(authorizable,componentid,createtime,creator,description,displayname,dr,help,id,industry,isbusiactivity,logtype,modifier,modifytime,name,needlog,ownertype,parentid,resid,ts,versiontype) values( 'Y','2b6869e5-a049-11e8-839d-79b29e477abc','2018-08-15 15:34:02',null,null,'删除',null,null,'2b6890f7-a049-11e8-839d-79b29e477abc','0','N','DELETE',null,'2018-08-15 15:34:02','delete','Y','1001ZZ1000000000KGVY',null,'2UC000-001104','2018-08-15 15:34:02',0)
+go
+insert into md_busiop(authorizable,componentid,createtime,creator,description,displayname,dr,help,id,industry,isbusiactivity,logtype,modifier,modifytime,name,needlog,ownertype,parentid,resid,ts,versiontype) values( 'Y','2b6869e5-a049-11e8-839d-79b29e477abc','2018-08-15 15:34:02',null,null,'停用',null,null,'2b6890f8-a049-11e8-839d-79b29e477abc','0','N','MODIFY',null,'2018-08-15 15:34:02','disable','Y','1001ZZ1000000000KGVY',null,'2UC000-001106','2018-08-15 15:34:02',0)
+go
+insert into md_busiop(authorizable,componentid,createtime,creator,description,displayname,dr,help,id,industry,isbusiactivity,logtype,modifier,modifytime,name,needlog,ownertype,parentid,resid,ts,versiontype) values( 'Y','2b6869e5-a049-11e8-839d-79b29e477abc','2018-08-15 15:34:02',null,null,'修改',null,null,'2b6890f9-a049-11e8-839d-79b29e477abc','0','N','MODIFY',null,'2018-08-15 15:34:02','edit','Y','1001ZZ1000000000KGVY',null,'2UC000-001103','2018-08-15 15:34:02',0)
+go
+insert into md_busiop(authorizable,componentid,createtime,creator,description,displayname,dr,help,id,industry,isbusiactivity,logtype,modifier,modifytime,name,needlog,ownertype,parentid,resid,ts,versiontype) values( 'Y','2b6869e5-a049-11e8-839d-79b29e477abc','2018-08-15 15:34:02',null,null,'启用',null,null,'2b6890fa-a049-11e8-839d-79b29e477abc','0','N','MODIFY',null,'2018-08-15 15:34:02','enable','Y','1001ZZ1000000000KGVY',null,'2UC000-001105','2018-08-15 15:34:02',0)
+go

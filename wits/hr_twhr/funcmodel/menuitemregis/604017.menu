@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="GBK"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+<bean id="menuItem" class="nc.pubapp.pade.funcmodel.vo.MenuItem">
+<property name="dr" value="0"/>
+<property name="funcode" value=""/>
+<property name="ismenutype" value="true"/>
+<property name="menudes" value=""/>
+<property name="menuitemcode" value="604017"/>
+<property name="menuitemname" value="薪资计算"/>
+<property name="pk_menu" value="1004ZZ10000000000FFL"/>
+<property name="pk_menuitem" value="0001ZZ10000000006Y00"/>
+<property name="resid" value="D604017"/>
+<property name="ts" value="2014-12-30 09:00:18"/>
+</bean>
+
+</beans>

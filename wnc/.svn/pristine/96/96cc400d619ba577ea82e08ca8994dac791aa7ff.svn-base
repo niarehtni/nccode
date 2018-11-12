@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="gbk"?>
+<module name="twhr">
+	<public>
+		    <!-- 接口 -->
+		<component priority="0" singleton="true" remote="true" tx="CMT" supportAlias="true">
+	      <interface>nc.itf.twhr.INhicalcMaintain</interface>
+	      <implementation>nc.impl.twhr.NhicalcMaintainImpl</implementation>
+	    </component>
+		<component priority="0" singleton="true" remote="true" tx="CMT" supportAlias="true">
+	      <interface>nc.itf.twhr.INhiCalcGenerateSrv</interface>
+	      <implementation>nc.impl.twhr.NhiCalcGenerateSrvImpl</implementation>
+	    </component>
+		<component priority="0" singleton="true" remote="true" tx="CMT" supportAlias="true">
+	      <interface>nc.itf.twhr.ICalculateTWNHI</interface>
+	      <implementation>nc.pubimpl.wa.paydata.nhiservice.CalculateTWNHIImpl</implementation>
+	    </component>
+	</public>
+</module>
+ 

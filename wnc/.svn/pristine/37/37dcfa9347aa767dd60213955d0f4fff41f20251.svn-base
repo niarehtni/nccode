@@ -1,0 +1,162 @@
+package nc.bs.hrwa.pub.plugin;
+
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Set;
+
+import nc.bs.dao.BaseDAO;
+import nc.bs.dao.DAOException;
+import nc.bs.framework.common.NCLocator;
+import nc.bs.logging.Logger;
+import nc.bs.pub.pa.PreAlertObject;
+import nc.bs.pub.pa.PreAlertReturnType;
+import nc.bs.pub.taskcenter.BgWorkingContext;
+import nc.bs.pub.taskcenter.IBackgroundWorkPlugin;
+import nc.itf.hrwa.IWadaysalaryService;
+import nc.jdbc.framework.processor.ColumnProcessor;
+import nc.vo.pub.BusinessException;
+import nc.vo.pub.lang.UFBoolean;
+import nc.vo.pub.lang.UFLiteralDate;
+import nc.vo.wa.paydata.AggDaySalaryVO;
+import nc.vo.wa.paydata.DaysalaryRecordVO;
+
+public class CalculDaySalaryPlugin implements IBackgroundWorkPlugin{
+	
+	private BaseDAO dao;
+
+	public BaseDAO getDao() {
+		if (dao == null) {
+			dao = new BaseDAO();
+		}
+		return dao;
+	}
+
+	public static final String KEY_CHECKRANGE = "checkrange";
+	public static final String KEY_BEGINDATE = "begindate";
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public PreAlertObject executeTask(BgWorkingContext bgwc)
+			throws BusinessException {
+		// 檢查範圍
+		int checkrange = 0;
+		// 開始日期
+		UFLiteralDate begindate = new UFLiteralDate("2018-01-01");//默認2018-01-01
+		// 人力資源組織
+		String [] pk_hrorgs = bgwc.getPk_orgs();
+
+		LinkedHashMap<String, Object> keyMap = bgwc.getKeyMap();
+		Set<String> keys = keyMap.keySet();
+
+		for (Iterator<String> iter = keys.iterator(); iter.hasNext();) {
+			String key = iter.next();
+			if (key.equalsIgnoreCase(KEY_CHECKRANGE)) {
+				if (key != null && !key.toString().equals("")) {
+					Object obj = keyMap.get(key);
+					if (obj != null) {
+						checkrange = new Integer(obj.toString());
+					}
+				}
+			} else if (key.equalsIgnoreCase(KEY_BEGINDATE)) {
+				if (key != null && !key.toString().equals("")) {
+					Object obj = keyMap.get(key);
+					if (obj != null) {
+						begindate =new UFLiteralDate(obj.toString());
+					}
+				}
+
+			}
+		}
+		 Logger.error("******進入：日薪計算 nc.bs.hrwa.pub.plugin.CalculDaySalaryPlugin*************************");
+		//後台設置檢查範圍最大不超過30天
+		if(checkrange>30){
+			checkrange=30;
+		}
+		IWadaysalaryService waService=NCLocator.getInstance().lookup(IWadaysalaryService.class);
+		UFLiteralDate calculDate=new UFLiteralDate();
+		List<DaysalaryRecordVO> listRecord=new ArrayList<DaysalaryRecordVO>();
+		for (int i = 0; i <=checkrange; i++) {
+			calculDate=calculDate.getDateBefore(i);
+			if(calculDate.before(begindate)){//如果計算日期在開始日期之前，則跳過
+				continue;
+			}
+			for (int j = 0; j < pk_hrorgs.length; j++) {
+				String pk_hrorg = pk_hrorgs[j];
+				if(isCalcul(calculDate, pk_hrorg)){
+					continue;
+				}
+				try {
+					Logger.debug("* pk_hrorg=" + pk_hrorg);
+					Logger.debug("* calculDate=" + calculDate);
+					AggDaySalaryVO[] daySalaryVOs=waService.calculSalaryByHrorg(pk_hrorg, calculDate.toString());
+					listRecord.add(insertDaysalaryRecord(pk_hrorg, calculDate, daySalaryVOs!=null?daySalaryVOs.length:0, UFBoolean.TRUE, ""));
+					Logger.debug("* daysalarycount=" + (daySalaryVOs!=null?daySalaryVOs.length:0));
+				} catch (Exception e) {
+					e.printStackTrace();
+					Logger.error(e.getMessage(), e);
+					listRecord.add(insertDaysalaryRecord(pk_hrorg, calculDate, 0, UFBoolean.FALSE, e.getMessage()));
+				}
+			}
+		}
+		getDao().insertVOArray(listRecord.toArray(new DaysalaryRecordVO[0]));
+		Logger.error("******結束：日薪計算 nc.bs.hrwa.pub.plugin.CalculDaySalaryPlugin*************************");
+		String reMsg = "日薪計算執行成功！";
+		PreAlertObject retObj = new PreAlertObject();
+		retObj.setReturnType(PreAlertReturnType.RETURNMESSAGE);
+		retObj.setReturnObj(reMsg);
+		return retObj;
+	}
+	/**
+	 * 字符串处理函数,将[0000,0000,000]格式字符串函数转换为字符串数组
+	 * 
+	 * @param string
+	 * @return
+	 */
+	private String[] rStringArray(String string) {
+		String s[] = string.split(",");
+		for (String string2 : s) {
+			string2.trim();
+		}
+		return s;
+	}
+	/**
+	 * 判斷當前計算日期是否已經計算
+	 * @param calculdate
+	 * @param pk_hrorg
+	 * @return
+	 */
+	private boolean isCalcul(UFLiteralDate calculdate,String pk_hrorg){
+		String qrySql="SELECT\n" +
+				"	COUNT (*)\n" +
+				"FROM\n" +
+				"	daysalaryrecord\n" +
+				"WHERE\n" +
+				"	pk_hrorg = '"+pk_hrorg+"'\n" +
+				"AND salarydate = '"+calculdate+"'\n" +
+				"AND issuccess = 'Y'";
+		try {
+			int count=(int) getDao().executeQuery(qrySql, new ColumnProcessor());
+			if(count>0){
+				return true;
+			}
+		} catch (DAOException e) {
+			Logger.error(e.getMessage(), e);
+		}
+		return false;
+	}
+	private DaysalaryRecordVO insertDaysalaryRecord(String pk_hrorg,UFLiteralDate salarydate,int daysalarycount,UFBoolean issuccess,String failreason){
+		DaysalaryRecordVO recordVO=new DaysalaryRecordVO();
+		recordVO.setBackgroundWorkPlugin("nc.bs.hrwa.pub.plugin.CalculDaySalaryPlugin");
+		recordVO.setPk_hrorg(pk_hrorg);
+		recordVO.setSalarydate(salarydate);
+		recordVO.setDaysalarycount(daysalarycount);
+		recordVO.setIssuccess(issuccess);
+		if(failreason!=null&&failreason.length()>100){
+			failreason.substring(0,100);
+		}
+		recordVO.setFailreason(failreason);
+		return recordVO;
+	}
+}

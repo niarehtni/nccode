@@ -1,0 +1,268 @@
+package nc.ui.wa.formular;
+
+import java.awt.Component;
+import java.util.ArrayList;
+import java.util.List;
+
+import nc.bs.logging.Logger;
+import nc.ui.hr.formula.HRFormulaItem;
+import nc.ui.hr.formula.itf.IFunctionFactory;
+import nc.vo.hr.func.FunctionVO;
+import nc.vo.pub.formulaedit.FormulaItem;
+import nc.vo.uif2.LoginContext;
+import nc.vo.wa.formula.HrWaXmlReader;
+import nc.vo.wa.formula.WaFormulaXmlHelper;
+
+public class WaFunctionFactory implements IFunctionFactory {
+	LoginContext context = null;
+
+	public LoginContext getContext() {
+		return context;
+	}
+
+	public void setContext(LoginContext context) {
+		this.context = context;
+	}
+
+	public List<FormulaItem> getAllFunctions() {
+		List<FormulaItem> items = new ArrayList();
+
+		FunctionVO fvo = WaFormulaXmlHelper.getFunctionVO("WAGEYEAR");
+		HRFormulaItem wageYear = new HRFormulaItem(fvo.getDisplayName(),
+				fvo.getDefaultName(), fvo.getInputSig(), fvo.getHintMsg(),
+				fvo.getReturntype());
+
+		items.add(wageYear);
+
+		fvo = WaFormulaXmlHelper.getFunctionVO("WAGEMONTH");
+		HRFormulaItem wageMonth = new HRFormulaItem(fvo.getDisplayName(),
+				fvo.getDefaultName(), fvo.getInputSig(), fvo.getHintMsg(),
+				fvo.getReturntype());
+
+		items.add(wageMonth);
+
+		fvo = WaFormulaXmlHelper.getFunctionVO("WAPERIODSTARTDATE");
+		HRFormulaItem waPeriodStartDate = new HRFormulaItem(
+				fvo.getDisplayName(), fvo.getDefaultName(), fvo.getInputSig(),
+				fvo.getHintMsg(), fvo.getReturntype());
+
+		items.add(waPeriodStartDate);
+
+		fvo = WaFormulaXmlHelper.getFunctionVO("WAPERIODENDDATE");
+		HRFormulaItem waPeriodEndDate = new HRFormulaItem(fvo.getDisplayName(),
+				fvo.getDefaultName(), fvo.getInputSig(), fvo.getHintMsg(),
+				fvo.getReturntype());
+
+		items.add(waPeriodEndDate);
+
+		fvo = WaFormulaXmlHelper.getFunctionVO("PREPERIODSTARTDATE");
+		HRFormulaItem prePeriodStartDate = new HRFormulaItem(
+				fvo.getDisplayName(), fvo.getDefaultName(), fvo.getInputSig(),
+				fvo.getHintMsg(), fvo.getReturntype());
+
+		items.add(prePeriodStartDate);
+
+		fvo = WaFormulaXmlHelper.getFunctionVO("PREPERIODENDDATE");
+		HRFormulaItem prePeriodEndDate = new HRFormulaItem(
+				fvo.getDisplayName(), fvo.getDefaultName(), fvo.getInputSig(),
+				fvo.getHintMsg(), fvo.getReturntype());
+
+		items.add(prePeriodEndDate);
+
+		fvo = WaFormulaXmlHelper.getFunctionVO("PREADJUSTDATE");
+		HRFormulaItem preAdjustDate = new HRFormulaItem(fvo.getDisplayName(),
+				fvo.getDefaultName(), fvo.getInputSig(), fvo.getHintMsg(),
+				fvo.getReturntype());
+
+		String classname = fvo.getParapanel();
+
+		Component editor = null;
+		try {
+			editor = (Component) Class.forName(classname).newInstance();
+		} catch (InstantiationException e) {
+			Logger.error(e.getMessage(), e);
+		} catch (IllegalAccessException e) {
+			Logger.error(e.getMessage(), e);
+		} catch (ClassNotFoundException e) {
+			Logger.error(e.getMessage(), e);
+		}
+
+		preAdjustDate.setEditor(editor);
+		items.add(preAdjustDate);
+
+		fvo = WaFormulaXmlHelper.getFunctionVO("REGISTERDATE");
+		HRFormulaItem registerDate = new HRFormulaItem(fvo.getDisplayName(),
+				fvo.getDefaultName(), fvo.getInputSig(), fvo.getHintMsg(),
+				fvo.getReturntype());
+
+		items.add(registerDate);
+
+		fvo = WaFormulaXmlHelper.getFunctionVO("DISMISSIONDATE");
+		HRFormulaItem dismissionDate = new HRFormulaItem(fvo.getDisplayName(),
+				fvo.getDefaultName(), fvo.getInputSig(), fvo.getHintMsg(),
+				fvo.getReturntype());
+
+		items.add(dismissionDate);
+
+		fvo = WaFormulaXmlHelper.getFunctionVO("WAPERIODDAYS");
+		HRFormulaItem waPeriodDays = new HRFormulaItem(fvo.getDisplayName(),
+				fvo.getDefaultName(), fvo.getInputSig(), fvo.getHintMsg(),
+				fvo.getReturntype());
+
+		items.add(waPeriodDays);
+
+		fvo = WaFormulaXmlHelper.getFunctionVO("WAPERIODWORKDAYS");
+		HRFormulaItem waPeriodWorkDays = new HRFormulaItem(
+				fvo.getDisplayName(), fvo.getDefaultName(), fvo.getInputSig(),
+				fvo.getHintMsg(), fvo.getReturntype());
+
+		items.add(waPeriodWorkDays);
+
+		try {
+			fvo = WaFormulaXmlHelper.getFunctionVO("WAGEDAYS");
+			HRFormulaItem wagesDays = new HRFormulaItem(fvo.getDisplayName(),
+					fvo.getDefaultName(), fvo.getInputSig(), fvo.getHintMsg(),
+					fvo.getReturntype());
+
+			editor = null;
+			try {
+				editor = (Component) Class.forName(fvo.getParapanel())
+						.newInstance();
+			} catch (InstantiationException e) {
+				Logger.error(e.getMessage(), e);
+			} catch (IllegalAccessException e) {
+				Logger.error(e.getMessage(), e);
+			} catch (ClassNotFoundException e) {
+				Logger.error(e.getMessage(), e);
+			}
+
+			wagesDays.setEditor(editor);
+			items.add(wagesDays);
+
+			fvo = WaFormulaXmlHelper.getFunctionVO("FIRSTMONWORKDAYS");
+
+			HRFormulaItem firstMonWorkDays = new HRFormulaItem(
+					fvo.getDisplayName(), fvo.getDefaultName(),
+					fvo.getInputSig(), fvo.getHintMsg(), fvo.getReturntype());
+
+			items.add(firstMonWorkDays);
+
+			fvo = WaFormulaXmlHelper.getFunctionVO("LASTMONWORKDAYS");
+
+			HRFormulaItem lastMonWorkDays = new HRFormulaItem(
+					fvo.getDisplayName(), fvo.getDefaultName(),
+					fvo.getInputSig(), fvo.getHintMsg(), fvo.getReturntype());
+
+			items.add(lastMonWorkDays);
+
+		} catch (Exception e) {
+			Logger.error(e.getMessage(), e);
+		}
+
+		// 增加臺灣勞健保資訊公式
+		// ssx added on 2015-05-22
+		// 2017-05-16 upgrade to V65, from JD code
+		fvo = WaFormulaXmlHelper.getFunctionVO("NHIISLABOR");
+		HRFormulaItem nhiIsLabor = new HRFormulaItem(fvo.getDisplayName(),
+				fvo.getDefaultName(), fvo.getInputSig(), fvo.getHintMsg(),
+				fvo.getReturntype());
+		items.add(nhiIsLabor);
+
+		fvo = WaFormulaXmlHelper.getFunctionVO("NHIISRETIRE");
+		HRFormulaItem nhiIsRetire = new HRFormulaItem(fvo.getDisplayName(),
+				fvo.getDefaultName(), fvo.getInputSig(), fvo.getHintMsg(),
+				fvo.getReturntype());
+		items.add(nhiIsRetire);
+
+		fvo = WaFormulaXmlHelper.getFunctionVO("NHIISHEALTH");
+		HRFormulaItem nhiIsHealth = new HRFormulaItem(fvo.getDisplayName(),
+				fvo.getDefaultName(), fvo.getInputSig(), fvo.getHintMsg(),
+				fvo.getReturntype());
+		items.add(nhiIsHealth);
+
+		fvo = HrWaXmlReader.getInstance().getTaxrateDefaultFunctionVO();
+		if (fvo != null) {
+			HRFormulaItem taxRate = new HRFormulaItem(fvo.getDisplayName(),
+					fvo.getDefaultName(), fvo.getInputSig(), fvo.getHintMsg(),
+					fvo.getReturntype());
+
+			editor = null;
+			try {
+				editor = (Component) Class.forName(fvo.getParapanel())
+						.newInstance();
+			} catch (InstantiationException e) {
+				Logger.error(e.getMessage(), e);
+			} catch (IllegalAccessException e) {
+				Logger.error(e.getMessage(), e);
+			} catch (ClassNotFoundException e) {
+				Logger.error(e.getMessage(), e);
+			}
+			taxRate.setEditor(editor);
+			items.add(taxRate);
+		}
+		
+		// #21266 增加考勤類薪資函數
+		//按日合计加班费 OVERTIMEFEE yejk 18-09-07 
+		fvo = WaFormulaXmlHelper.getFunctionVO("OVERTIMEFEE");
+		HRFormulaItem overTimeFeeItem = new HRFormulaItem(fvo.getDisplayName(),
+				fvo.getDefaultName(), fvo.getInputSig(), fvo.getHintMsg(),
+				fvo.getReturntype());
+		
+		editor = null;
+		try {
+			editor = (Component) Class.forName(fvo.getParapanel())
+					.newInstance();
+		} catch (InstantiationException e) {
+			Logger.error(e.getMessage(), e);
+		} catch (IllegalAccessException e) {
+			Logger.error(e.getMessage(), e);
+		} catch (ClassNotFoundException e) {
+			Logger.error(e.getMessage(), e);
+		}
+
+		overTimeFeeItem.setEditor(editor);
+		items.add(overTimeFeeItem);
+		// 按日合计考勤扣款项 LEAVEFEE yejk 18-09-11
+		fvo = WaFormulaXmlHelper.getFunctionVO("LEAVEFEE");
+		HRFormulaItem leaveFeeItem = new HRFormulaItem(fvo.getDisplayName(),
+				fvo.getDefaultName(), fvo.getInputSig(), fvo.getHintMsg(),
+				fvo.getReturntype());
+
+		editor = null;
+		try {
+			editor = (Component) Class.forName(fvo.getParapanel())
+					.newInstance();
+		} catch (InstantiationException e) {
+			Logger.error(e.getMessage(), e);
+		} catch (IllegalAccessException e) {
+			Logger.error(e.getMessage(), e);
+		} catch (ClassNotFoundException e) {
+			Logger.error(e.getMessage(), e);
+		}
+
+		leaveFeeItem.setEditor(editor);
+		items.add(leaveFeeItem);
+		
+		// 添加日薪函数 add by ward 2018年9月18日14:48:41 begin
+		fvo = WaFormulaXmlHelper.getFunctionVO("DAYSALARY");
+		if (null != fvo) {
+			HRFormulaItem daySalary = new HRFormulaItem(fvo.getDisplayName(), fvo.getDefaultName(), fvo.getInputSig(),
+					fvo.getHintMsg(), fvo.getReturntype());
+			editor = null;
+			try {
+				editor = (Component) Class.forName(fvo.getParapanel()).newInstance();
+			} catch (InstantiationException e) {
+				Logger.error(e.getMessage(), e);
+			} catch (IllegalAccessException e) {
+				Logger.error(e.getMessage(), e);
+			} catch (ClassNotFoundException e) {
+				Logger.error(e.getMessage(), e);
+			}
+			daySalary.setEditor(editor);
+			items.add(daySalary);
+		}
+		// 添加日薪函數 add by ward 2018年9月18日14:48:45 end
+		
+		return items;
+	}
+}

@@ -1,0 +1,869 @@
+package nc.impl.twhr;
+
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.List;
+import java.util.Map;
+
+import nc.bs.dao.BaseDAO;
+import nc.bs.dao.DAOException;
+import nc.bs.ml.NCLangResOnserver;
+import nc.hr.frame.persistence.SimpleDocServiceTemplate;
+import nc.hr.utils.InSQLCreator;
+import nc.impl.pub.ace.AceNhicalcPubServiceImpl;
+import nc.itf.hi.PsndocDefUtil;
+import nc.itf.twhr.INhicalcMaintain;
+import nc.jdbc.framework.processor.ColumnListProcessor;
+import nc.jdbc.framework.processor.ColumnProcessor;
+import nc.jdbc.framework.processor.MapListProcessor;
+import nc.ui.querytemplate.querytree.IQueryScheme;
+import nc.vo.bd.meta.BatchOperateVO;
+import nc.vo.bd.psn.PsndocVO;
+import nc.vo.hi.psndoc.PsnHeaDetail;
+import nc.vo.hi.psndoc.PsndocDefVO;
+import nc.vo.pub.BusinessException;
+import nc.vo.pub.ISuperVO;
+import nc.vo.pub.lang.UFBoolean;
+import nc.vo.pub.lang.UFDate;
+import nc.vo.pub.lang.UFDouble;
+import nc.vo.pub.lang.UFLiteralDate;
+import nc.vo.twhr.nhicalc.AggNhiCalcVO;
+import nc.vo.twhr.nhicalc.EpyfamilyVO;
+import nc.vo.twhr.nhicalc.NhiCalcVO;
+import nc.vo.twhr.nhicalc.PsndocDefTableUtil;
+import nc.vo.uif2.LoginContext;
+
+import org.apache.commons.lang.StringUtils;
+
+public class NhicalcMaintainImpl extends AceNhicalcPubServiceImpl implements INhicalcMaintain {
+
+    private BaseDAO baseDao;
+
+    private String pk_org;
+    private String calcYear;
+    private String calcMonth;
+    private List<NhiCalcVO> nhiDataList;
+    private List<EpyfamilyVO> epyList;
+    private List<PsndocVO> psndocList;
+
+    private SimpleDocServiceTemplate serviceTemplate;
+    public static final String DOC_NAME = "fd6a567a-fc42-4014-9526-c32eb0d0d444";// 元数据md_class的id
+
+    public SimpleDocServiceTemplate getServiceTemplate() {
+	if (serviceTemplate == null) {
+	    serviceTemplate = new SimpleDocServiceTemplate(DOC_NAME);
+	}
+	return serviceTemplate;
+
+    }
+
+    @Override
+    public void delete(AggNhiCalcVO[] vos) throws BusinessException {
+	super.pubdeleteBills(vos);
+    }
+
+    @Override
+    public AggNhiCalcVO[] insert(AggNhiCalcVO[] vos) throws BusinessException {
+	return super.pubinsertBills(vos);
+    }
+
+    @Override
+    public AggNhiCalcVO[] update(AggNhiCalcVO[] vos) throws BusinessException {
+	return super.pubupdateBills(vos);
+    }
+
+    @Override
+    public AggNhiCalcVO[] query(IQueryScheme queryScheme) throws BusinessException {
+	return super.pubquerybills(queryScheme);
+    }
+
+    @Override
+    public boolean isAudit(String pk_org, String cyear, String cperiod) throws BusinessException {
+	String strSQL = "SELECT COUNT(*) FROM twhr_nhicalc WHERE pk_org='" + pk_org + "' AND cyear='" + cyear
+		+ "' AND cperiod='" + cperiod + "' AND dr=0 AND isaudit='Y'";
+	int count = (Integer) this.getBaseDao().executeQuery(strSQL, new ColumnProcessor());
+	return count > 0;
+    }
+
+    @Override
+    public void audit(String pk_org, String cyear, String cperiod) throws BusinessException {
+	if (isAudit(pk_org, cyear, cperiod)) {
+	    throw new BusinessException(NCLangResOnserver.getInstance().getStrByID("68861705",
+		    "NhicalcMaintainImpl-0001")/*
+					        * 选定期间已经审核。
+					        */);
+	}
+
+	this.setPk_org(pk_org);
+	this.setCalcYear(cyear);
+	this.setCalcMonth(cperiod);
+
+	// 加載勞健保計算結果
+	loadNhiCalcResults();
+
+	// 更新員工檔案勞健保自定義表
+	updatePsnDefs();
+
+	refreshRecordnum(UFBoolean.FALSE);
+
+	String strSQL = "UPDATE twhr_nhicalc SET isaudit='Y' WHERE pk_org='" + pk_org + "' AND cyear='" + cyear
+		+ "' AND cperiod='" + cperiod + "' AND dr=0";
+	this.getBaseDao().executeUpdate(strSQL);
+    }
+
+    @SuppressWarnings("unchecked")
+    private void loadNhiCalcResults() throws BusinessException {
+	String strSQL = " (pk_org = '" + this.getPk_org() + "') AND (cyear = '" + this.getCalcYear()
+		+ "') AND (cperiod = '" + this.getCalcMonth() + "') AND (dr = 0) AND isaudit='N'";
+	List<NhiCalcVO> nhiCalcVOList = (List<NhiCalcVO>) this.getBaseDao().retrieveByClause(NhiCalcVO.class, strSQL);
+	List<String> pks = new ArrayList<String>();
+	List<String> psnpks = new ArrayList<String>();
+	for (int i = 0; i < nhiCalcVOList.size(); i++) {
+	    NhiCalcVO nhiCalcVO = nhiCalcVOList.get(i);
+	    pks.add(nhiCalcVO.getPk_nhicalc());
+	    psnpks.add(nhiCalcVO.getPk_psndoc());
+	}
+	InSQLCreator insql = new InSQLCreator();
+	String inSQL = insql.getInSQL(pks.toArray(new String[0]));
+	String psnInsql = insql.getInSQL(psnpks.toArray(new String[0]));
+	String psnWhere = " pk_psndoc in(" + psnInsql + ")";
+	String where = " pk_nhicalc in(" + inSQL + ")";
+	this.setPsndocList((List<PsndocVO>) this.getBaseDao().retrieveByClause(PsndocVO.class, psnWhere));
+	List<EpyfamilyVO> epyfamilyVOList = (List<EpyfamilyVO>) this.getBaseDao().retrieveByClause(EpyfamilyVO.class,
+		where);
+	this.setNhiDataList(nhiCalcVOList);
+	// 子表信息
+	this.setEpyList(epyfamilyVOList);
+    }
+
+    private void updatePsnDefs() throws BusinessException {
+	// 更新員工檔案：勞健保計算明細表
+	SaveNHIDetail();
+	// 更新員工檔案：勞健保計算彙總表
+	SaveNHITotal();
+	// MOD TW_21104_勞健保計算修改 winstor 2018-09-18 start
+	// 更新员工档案：健保投保明細子集
+	saveNHEDetail();
+	// TW_21104_勞健保計算修改 winstor 2018-09-18 end
+    }
+
+    // 保存明細表
+    private void SaveNHIDetail() throws BusinessException {
+	SimpleDocServiceTemplate service = new SimpleDocServiceTemplate("TWHRGLBDEF");
+	List<PsndocDefVO> nhiTotalVOs = getNHIDetailSaveVOs();
+	if (nhiTotalVOs != null && nhiTotalVOs.size() > 0) {
+	    for (PsndocDefVO vo : nhiTotalVOs) {
+		service.insert(vo);
+	    }
+	}
+    }
+
+    /**
+     * @return
+     * @throws BusinessException
+     */
+    private List<PsndocDefVO> getNHIDetailSaveVOs() throws BusinessException {
+	List<PsndocDefVO> psnLaborInfoVOs = new ArrayList<PsndocDefVO>();
+	if (this.getNhiDataList() != null && this.getNhiDataList().size() > 0) {
+	    for (NhiCalcVO vo : this.getNhiDataList()) {
+		PsndocDefVO newVO = PsndocDefUtil.getPsnNHIDetailVO();
+		newVO.setBegindate(UFLiteralDate.getDate(vo.getBegindate().toString()));
+		newVO.setEnddate(UFLiteralDate.getDate(vo.getEnddate().toString()));
+		newVO.setPk_psndoc(vo.getPk_psndoc());
+		newVO.setDr(0);
+
+		// glbdef1,身心殘障程度
+		newVO.setAttributeValue("glbdef1", vo.getDisablegrade());
+		// glbdef2,勞保身份注記
+		newVO.setAttributeValue("glbdef2", vo.getLabortype());
+		// glbdef3,勞保級距
+		newVO.setAttributeValue("glbdef3", vo.getLaborrange());
+		// glbdef4,普通事故保險費率
+		newVO.setAttributeValue("glbdef4", vo.getComrate());
+		// glbdef5,普通事故保險費承擔比例(個人)
+		newVO.setAttributeValue("glbdef5", vo.getComstuffrate());
+		// glbdef6,普通事故保險費承擔金額(個人)
+		newVO.setAttributeValue("glbdef6", vo.getComstuff());
+		// glbdef7,普通事故保險費承擔比例(僱主)
+		newVO.setAttributeValue("glbdef7", vo.getComhirerrate());
+		// glbdef8,普通事故保險費承擔金額(僱主)
+		newVO.setAttributeValue("glbdef8", vo.getComhirer());
+		// glbdef9,職業災害保險費率
+		newVO.setAttributeValue("glbdef9", vo.getDisrate());
+		// glbdef10,職業災害保險費承擔比例(個人)
+		newVO.setAttributeValue("glbdef10", vo.getDisstuffrate());
+		// glbdef11,職業災害保險費承擔金額(個人)
+		newVO.setAttributeValue("glbdef11", vo.getDisstuff());
+		// glbdef12,職業災害保險費承擔比例(僱主)
+		newVO.setAttributeValue("glbdef12", vo.getDishirerrate());
+		// glbdef13,職業災害保險費承擔金額(僱主)
+		newVO.setAttributeValue("glbdef13", vo.getDishirer());
+		// glbdef14,就業保險費率
+		newVO.setAttributeValue("glbdef14", vo.getEmprate());
+		// glbdef15,就業保險費承擔比例(個人)
+		newVO.setAttributeValue("glbdef15", vo.getEmpstuffrate());
+		// glbdef16,就業保險費承擔金額(個人)
+		newVO.setAttributeValue("glbdef16", vo.getEmpstuff());
+		// glbdef17,就業保險費承擔比例(僱主)
+		newVO.setAttributeValue("glbdef17", vo.getEmphirerrate());
+		// glbdef18,就業保險費承擔金額(僱主)
+		newVO.setAttributeValue("glbdef18", vo.getEmphirer());
+		// glbdef19,勞保承擔金額(個人)
+		newVO.setAttributeValue("glbdef19", vo.getLaborstuff());
+		// glbdef20,勞保承擔金額(僱主)
+		newVO.setAttributeValue("glbdef20", vo.getLaborhirer());
+		// glbdef21,勞退級距
+		newVO.setAttributeValue("glbdef21", vo.getRetirerange());
+		// glbdef22,勞退金提繳比例(個人)
+		newVO.setAttributeValue("glbdef22", vo.getRetirestuffrate());
+		// glbdef23,勞退金提繳金額(個人)
+		newVO.setAttributeValue("glbdef23", vo.getRetirestuff());
+		// glbdef24,勞退金提繳比例(僱主)
+		newVO.setAttributeValue("glbdef24", vo.getRetirehirerrate());
+		// glbdef25,勞退金提繳金額(僱主)
+		newVO.setAttributeValue("glbdef25", vo.getRetirehirer());
+		// glbdef26,勞保有效天數
+		newVO.setAttributeValue("glbdef26", vo.getLabordays());
+		// glbdef27,上月普通事故保險費承擔金額(個人)
+		newVO.setAttributeValue("glbdef27", vo.getLastmonthcomstuff());
+		// glbdef28,上月普通事故保險費承擔金額(僱主)
+		newVO.setAttributeValue("glbdef28", vo.getLastmonthcomhirer());
+		// glbdef29,上月職業災害保險費承擔金額(個人)
+		newVO.setAttributeValue("glbdef29", vo.getLastmonthdisstuff());
+		// glbdef30,上月職業災害保險費承擔金額(僱主)
+		newVO.setAttributeValue("glbdef30", vo.getLastmonthdishirer());
+		// glbdef31,上月就業保險費承擔金額(個人)
+		newVO.setAttributeValue("glbdef31", vo.getLastmonthempstuff());
+		// glbdef32,上月就業保險費承擔金額(僱主)
+		newVO.setAttributeValue("glbdef32", vo.getLastmonthemphirer());
+		// glbdef33,上月勞保承擔金額(個人)
+		newVO.setAttributeValue("glbdef33", vo.getLastmonthllaborstuff());
+		// glbdef34,上月勞保承擔金額(僱主)
+		newVO.setAttributeValue("glbdef34", vo.getLastmonthlaborhirer());
+		// glbdef35,上月勞退金提繳金額(個人)
+		newVO.setAttributeValue("glbdef35", vo.getLastmonthretirestuff());
+		// glbdef36,上月勞退金提繳金額(僱主)
+		newVO.setAttributeValue("glbdef36", vo.getLastmonthretirehirer());
+		// glbdef37,上月勞保有效天數
+		newVO.setAttributeValue("glbdef37", vo.getLastmonthlabordays());
+		// glbdef38,是否包含上月
+		newVO.setAttributeValue("glbdef38", vo.getIncludelastmonth());
+		// glbdef39,基本薪資
+		UFDouble baseSalary = vo.getLaborsalary();
+		if (baseSalary == null || baseSalary.equals(UFDouble.ZERO_DBL)) {
+		    baseSalary = vo.getHealthsalary();
+		}
+		newVO.setAttributeValue("glbdef39", baseSalary);
+		// glbdef40,年度
+		newVO.setAttributeValue("glbdef40", vo.getCyear());
+		// glbdef41,月份
+		newVO.setAttributeValue("glbdef41", vo.getCperiod());
+		// glbdef42,人力資源組織
+		newVO.setAttributeValue("glbdef42", vo.getPk_org());
+		// glbdef43 勞退有效天數
+		newVO.setAttributeValue("glbdef43", vo.getRetiredays());
+		// glbdef44,墊償薪資基金金額
+		newVO.setAttributeValue("glbdef44", vo.getRepayfund());
+		// glbdef45,上月墊償薪資基金金額
+		newVO.setAttributeValue("glbdef45", vo.getLastmonthrepayfund());
+		// 法人组织
+		newVO.setAttributeValue("legalpersonorg", vo.getPk_corp());
+		psnLaborInfoVOs.add(newVO);
+	    }
+	}
+
+	return psnLaborInfoVOs;
+    }
+
+    public void updateNhiCalcVO(NhiCalcVO[] vos) throws BusinessException {
+	getBaseDao().updateVOArray(vos);
+
+    }
+
+    // 保存彙總表
+    private void SaveNHITotal() throws BusinessException {
+	SimpleDocServiceTemplate service = new SimpleDocServiceTemplate("TWHRGLBDEF");
+	List<PsndocDefVO> nhiTotalVOs = getNHITotalSaveVOs();
+	if (nhiTotalVOs != null && nhiTotalVOs.size() > 0) {
+	    for (PsndocDefVO vo : nhiTotalVOs) {
+		PsndocDefVO[] existsVOs = service.queryByCondition(vo.getClass(), " pk_psndoc='" + vo.getPk_psndoc()
+			+ "' and dr=0 ");
+		if (existsVOs != null && existsVOs.length > 0) {
+		    // 更新已存在資料
+		    for (PsndocDefVO exvo : existsVOs) {
+			exvo.setRecordnum(exvo.getRecordnum() + 1);
+			exvo.setLastflag(UFBoolean.FALSE);
+			service.update(exvo, true);
+		    }
+		}
+		service.insert(vo);
+	    }
+	}
+    }
+
+    private List<PsndocDefVO> getNHITotalSaveVOs() throws BusinessException {
+	List<PsndocDefVO> psnLaborInfoVOs = new ArrayList<PsndocDefVO>();
+	if (this.getNhiDataList() != null && this.getNhiDataList().size() > 0) {
+	    for (NhiCalcVO vo : this.getNhiDataList()) {
+		// MOD TW_21104_勞健保計算修改 winstor 2018-09-18 start
+		if (psnLaborInfoVOs != null && psnLaborInfoVOs.size() > 0) {
+		    for (PsndocDefVO defvo : psnLaborInfoVOs) {
+			// 按人力资源组织，不按法人组织汇总
+			if (defvo.getPk_psndoc().equals(vo.getPk_psndoc())
+				&& defvo.getAttributeValue("pk_hrorg").equals(vo.getPk_org())) {
+			    // 取最前的日期
+			    if (!defvo.getBegindate().after(UFLiteralDate.getDate(vo.getBegindate().toString()))) {
+				defvo.setBegindate(UFLiteralDate.getDate(vo.getBegindate().toString()));
+			    }
+			    // 取最后的日期
+			    if (defvo.getEnddate().after(UFLiteralDate.getDate(vo.getEnddate().toString()))) {
+				defvo.setEnddate(UFLiteralDate.getDate(vo.getEnddate().toString()));
+			    }
+			    UFDouble glbdef5 = (UFDouble) (defvo.getAttributeValue("glbdef5") == null ? new UFDouble(0)
+				    : defvo.getAttributeValue("glbdef5"));
+			    // glbdef5,劳保投保天数
+			    defvo.setAttributeValue(
+				    "glbdef5",
+				    glbdef5.add((vo.getLabordays() == null ? 0 : vo.getLabordays())
+					    + (vo.getLastmonthlabordays() == null ? 0 : vo.getLastmonthlabordays())));
+			    // glbdef6,普通事故保险费承担金额(个人)
+			    defvo.setAttributeValue(
+				    "glbdef6",
+				    getUFDouble(vo.getComstuff()).add(getUFDouble(vo.getLastmonthcomstuff())).add(
+					    (UFDouble) defvo.getAttributeValue("glbdef6")));
+			    // glbdef7,普通事故保险费承担金额(雇主)
+			    defvo.setAttributeValue(
+				    "glbdef7",
+				    getUFDouble(vo.getComhirer()).add(getUFDouble(vo.getLastmonthcomhirer())).add(
+					    (UFDouble) defvo.getAttributeValue("glbdef7")));
+			    // glbdef8,职业灾害保险费承担金额(个人)
+			    defvo.setAttributeValue(
+				    "glbdef8",
+				    getUFDouble(vo.getDisstuff()).add(getUFDouble(vo.getLastmonthdisstuff())).add(
+					    (UFDouble) defvo.getAttributeValue("glbdef8")));
+			    // glbdef9,职业灾害保险费承担金额(雇主)
+			    defvo.setAttributeValue(
+				    "glbdef9",
+				    getUFDouble(vo.getDishirer()).add(getUFDouble(vo.getLastmonthdishirer())).add(
+					    (UFDouble) defvo.getAttributeValue("glbdef9")));
+			    // glbdef10,就业保险费承担金额(个人)
+			    defvo.setAttributeValue(
+				    "glbdef10",
+				    getUFDouble(vo.getEmpstuff()).add(getUFDouble(vo.getLastmonthempstuff())).add(
+					    (UFDouble) defvo.getAttributeValue("glbdef10")));
+			    // glbdef11,就业保险费承担金额(雇主)
+			    defvo.setAttributeValue(
+				    "glbdef11",
+				    getUFDouble(vo.getEmphirer()).add(getUFDouble(vo.getLastmonthemphirer())).add(
+					    (UFDouble) defvo.getAttributeValue("glbdef11")));
+			    // glbdef12,劳保承担金额(个人)
+			    defvo.setAttributeValue(
+				    "glbdef12",
+				    getUFDouble(vo.getLaborstuff()).add(getUFDouble(vo.getLastmonthllaborstuff())).add(
+					    (UFDouble) defvo.getAttributeValue("glbdef12")));
+			    // glbdef13,劳保承担金额(雇主)
+			    defvo.setAttributeValue(
+				    "glbdef13",
+				    getUFDouble(vo.getLaborhirer()).add(getUFDouble(vo.getLastmonthlaborhirer())).add(
+					    (UFDouble) defvo.getAttributeValue("glbdef13")));
+			    // glbdef15,劳退金提缴金额(个人)
+			    defvo.setAttributeValue("glbdef15",
+				    getUFDouble(vo.getRetirestuff()).add(getUFDouble(vo.getLastmonthretirestuff()))
+					    .add((UFDouble) defvo.getAttributeValue("glbdef15")));
+			    // glbdef16,劳退金提缴金额(雇主)
+			    defvo.setAttributeValue("glbdef16",
+				    getUFDouble(vo.getRetirehirer()).add(getUFDouble(vo.getLastmonthretirehirer()))
+					    .add((UFDouble) defvo.getAttributeValue("glbdef16")));
+			    if (vo.getHealthstuff() != null && vo.getHealthhirer() != null) {
+				// glbdef19,健保费承担金额(个人)
+				defvo.setAttributeValue("glbdef19",
+					getUFDouble(vo.getHealthstuff()).add(getUFDouble(vo.getLastmonthhealthstuff()))
+						.add((UFDouble) defvo.getAttributeValue("glbdef19")));
+				// glbdef20,健保费承担金额(雇主)
+				defvo.setAttributeValue("glbdef20",
+					getUFDouble(vo.getHealthhirer()).add(getUFDouble(vo.getLastmonthhealthhirer()))
+						.add((UFDouble) defvo.getAttributeValue("glbdef20")));
+				// glbdef21,政府补助健保费
+				defvo.setAttributeValue("glbdef21",
+					getUFDouble(vo.getHealthgov()).add(getUFDouble(vo.getLastmonthhealthgov()))
+						.add((UFDouble) defvo.getAttributeValue("glbdef21")));
+				// glbdef22,健保费应缴金额
+				defvo.setAttributeValue(
+					"glbdef22",
+					getUFDouble(vo.getHealthstuffact()).add(
+						getUFDouble(vo.getLastmonthhealthstuffact())).add(
+						(UFDouble) defvo.getAttributeValue("glbdef22")));
+			    }
+			    // glbdef25,劳退投保天数
+			    defvo.setAttributeValue("glbdef25", (vo.getRetiredays() == null ? 0 : vo.getRetiredays())
+				    + (vo.getLastmonthretiredays() == null ? 0 : vo.getLastmonthretiredays())
+				    + ((Integer) defvo.getAttributeValue("glbdef25")));
+			    // glbdef26,积欠薪资垫偿基金金额
+			    defvo.setAttributeValue("glbdef26",
+				    getUFDouble(vo.getRepayfund()).add((UFDouble) defvo.getAttributeValue("glbdef26")));
+			}
+			// 跳过，不创建新VO
+			continue;
+		    }
+		}
+		// TW_21104_勞健保計算修改 winstor 2018-09-18 end
+		PsndocDefVO newVO = PsndocDefUtil.getPsnNHISumVO();
+		newVO.setBegindate(UFLiteralDate.getDate(vo.getBegindate().toString()));
+		newVO.setEnddate(UFLiteralDate.getDate(vo.getEnddate().toString()));
+		newVO.setPk_psndoc(vo.getPk_psndoc());
+		newVO.setDr(0);
+		newVO.setLastflag(UFBoolean.TRUE);
+		newVO.setRecordnum(0);
+		newVO.setAttributeValue("pk_hrorg", vo.getPk_org());
+		// glbdef1,投保年份
+		newVO.setAttributeValue("glbdef1", vo.getCyear());
+		// glbdef2,投保月份
+		newVO.setAttributeValue("glbdef2", vo.getCperiod());
+		// glbdef3,基本薪资
+		UFDouble baseSalary = vo.getLaborsalary();
+		if (baseSalary == null || baseSalary.equals(UFDouble.ZERO_DBL)) {
+		    baseSalary = vo.getHealthsalary();
+		}
+		newVO.setAttributeValue("glbdef3", baseSalary);
+		// glbdef4,劳保级距
+		newVO.setAttributeValue("glbdef4", vo.getOldlaborrange());
+		// glbdef5,劳保投保天数
+		newVO.setAttributeValue("glbdef5",
+			(vo.getLabordays() == null ? 0 : vo.getLabordays())
+				+ (vo.getLastmonthlabordays() == null ? 0 : vo.getLastmonthlabordays()));
+		// glbdef6,普通事故保险费承担金额(个人)
+		newVO.setAttributeValue("glbdef6",
+			getUFDouble(vo.getComstuff()).add(getUFDouble(vo.getLastmonthcomstuff())));
+		// glbdef7,普通事故保险费承担金额(雇主)
+		newVO.setAttributeValue("glbdef7",
+			getUFDouble(vo.getComhirer()).add(getUFDouble(vo.getLastmonthcomhirer())));
+		// glbdef8,职业灾害保险费承担金额(个人)
+		newVO.setAttributeValue("glbdef8",
+			getUFDouble(vo.getDisstuff()).add(getUFDouble(vo.getLastmonthdisstuff())));
+		// glbdef9,职业灾害保险费承担金额(雇主)
+		newVO.setAttributeValue("glbdef9",
+			getUFDouble(vo.getDishirer()).add(getUFDouble(vo.getLastmonthdishirer())));
+		// glbdef10,就业保险费承担金额(个人)
+		newVO.setAttributeValue("glbdef10",
+			getUFDouble(vo.getEmpstuff()).add(getUFDouble(vo.getLastmonthempstuff())));
+		// glbdef11,就业保险费承担金额(雇主)
+		newVO.setAttributeValue("glbdef11",
+			getUFDouble(vo.getEmphirer()).add(getUFDouble(vo.getLastmonthemphirer())));
+		// glbdef12,劳保承担金额(个人)
+		newVO.setAttributeValue("glbdef12",
+			getUFDouble(vo.getLaborstuff()).add(getUFDouble(vo.getLastmonthllaborstuff())));
+		// glbdef13,劳保承担金额(雇主)
+		newVO.setAttributeValue("glbdef13",
+			getUFDouble(vo.getLaborhirer()).add(getUFDouble(vo.getLastmonthlaborhirer())));
+		// glbdef14,劳退级距
+		newVO.setAttributeValue("glbdef14", vo.getOldretirerange());
+		// glbdef15,劳退金提缴金额(个人)
+		newVO.setAttributeValue("glbdef15",
+			getUFDouble(vo.getRetirestuff()).add(getUFDouble(vo.getLastmonthretirestuff())));
+		// glbdef16,劳退金提缴金额(雇主)
+		newVO.setAttributeValue("glbdef16",
+			getUFDouble(vo.getRetirehirer()).add(getUFDouble(vo.getLastmonthretirehirer())));
+		if (vo.getHealthstuff() != null && vo.getHealthhirer() != null) {
+		    // glbdef17,健保级距
+		    newVO.setAttributeValue("glbdef17", getUFDouble(vo.getOldhealthrange()));
+		    // glbdef18,眷属人数(含本人)
+		    newVO.setAttributeValue("glbdef18", vo.getDependentcount());
+		    // glbdef19,健保费承担金额(个人)
+		    newVO.setAttributeValue("glbdef19",
+			    getUFDouble(vo.getHealthstuff()).add(getUFDouble(vo.getLastmonthhealthstuff())));
+		    // glbdef20,健保费承担金额(雇主)
+		    newVO.setAttributeValue("glbdef20",
+			    getUFDouble(vo.getHealthhirer()).add(getUFDouble(vo.getLastmonthhealthhirer())));
+		    // glbdef21,政府补助健保费
+		    newVO.setAttributeValue("glbdef21",
+			    getUFDouble(vo.getHealthgov()).add(getUFDouble(vo.getLastmonthhealthgov())));
+		    // glbdef22,健保费应缴金额
+		    newVO.setAttributeValue("glbdef22",
+			    getUFDouble(vo.getHealthstuffact()).add(getUFDouble(vo.getLastmonthhealthstuffact())));
+		    // glbdef24,是否包含上月健保
+		    newVO.setAttributeValue("glbdef24", vo.getIncludelastmonth());
+		}
+		// glbdef23,是否包含上月劳保
+		newVO.setAttributeValue("glbdef23", vo.getIncludelastmonth());
+		// glbdef25,劳退投保天数
+		newVO.setAttributeValue("glbdef25",
+			(vo.getRetiredays() == null ? 0 : vo.getRetiredays())
+				+ (vo.getLastmonthretiredays() == null ? 0 : vo.getLastmonthretiredays()));
+		// glbdef26,积欠薪资垫偿基金金额
+		newVO.setAttributeValue("glbdef26", getUFDouble(vo.getRepayfund()));
+		// 法人组织
+		newVO.setAttributeValue("legalpersonorg", vo.getPk_corp());
+		psnLaborInfoVOs.add(newVO);
+	    }
+	}
+
+	return psnLaborInfoVOs;
+    }
+
+    private UFDouble getUFDouble(UFDouble amount) {
+	return amount == null ? UFDouble.ZERO_DBL : amount;
+    }
+
+    /**
+     * 保存健保明细表
+     * 
+     * @throws BusinessException
+     */
+    private void saveNHEDetail() throws BusinessException {
+	SimpleDocServiceTemplate service = new SimpleDocServiceTemplate("TWHRGLBDEF");
+	List<PsnHeaDetail> nheDetailVOs = getNhiHealthDetailVOs();
+	if (nheDetailVOs != null && nheDetailVOs.size() > 0) {
+	    for (PsnHeaDetail vo : nheDetailVOs) {
+		service.insert(vo);
+	    }
+	}
+    }
+
+    /**
+     * @return
+     * @throws BusinessException
+     */
+    private List<PsnHeaDetail> getNhiHealthDetailVOs() throws BusinessException {
+	List<PsnHeaDetail> psnHealthInfoVOs = new ArrayList<PsnHeaDetail>();
+	if (this.getNhiDataList() != null && this.getNhiDataList().size() > 0) {
+	    for (NhiCalcVO vo : this.getNhiDataList()) {
+		if (vo.getHealthrange() != null && vo.getHealthrange().doubleValue() > 0) {
+		    Integer recordnum = 0;
+
+		    // 生成本人健保明细
+		    PsnHeaDetail newVO = new PsnHeaDetail();
+		    newVO.setBegindate(UFLiteralDate.getDate(vo.getBegindate().toString()));
+		    newVO.setEnddate(UFLiteralDate.getDate(vo.getEnddate().toString()));
+		    newVO.setPk_psndoc(vo.getPk_psndoc());
+		    newVO.setDr(0);
+		    newVO.setLastflag(UFBoolean.TRUE);
+		    newVO.setRecordnum(--recordnum);
+		    // 级距
+		    newVO.setAttributeValue("spacing", vo.getHealthrange());
+
+		    PsndocVO psndocVO = getPsndocByPk(vo.getPk_psndoc());
+		    // 姓名
+		    newVO.setAttributeValue("surname", psndocVO.getName());
+		    // 健保年份
+		    newVO.setAttributeValue("heayear", vo.getCyear());
+		    // 健保月份
+		    newVO.setAttributeValue("heamonth", vo.getCperiod());
+		    // 称谓
+		    newVO.setAttributeValue("appellation", "本人");
+		    // 健保保费
+		    newVO.setAttributeValue("heainspre", vo.getHealthstuff());
+		    newVO.setAttributeValue("pk_org", vo.getPk_org());
+		    // 法人组织
+		    newVO.setAttributeValue("legalpersonorg", vo.getPk_corp());
+
+		    List<EpyfamilyVO> list = this.getEpyList();
+		    for (int i = 0; i < list.size(); i++) {
+			EpyfamilyVO epyfamilyVO = list.get(i);
+			if (epyfamilyVO.getPk_psndoc().equals(newVO.getPk_psndoc())) {
+			    PsnHeaDetail newVO2 = (PsnHeaDetail) newVO.clone();
+			    // 称谓
+			    newVO2.setAttributeValue("appellation", epyfamilyVO.getAppellation());
+			    // 健保保费
+			    newVO2.setAttributeValue("heainspre", epyfamilyVO.getHealthamount());
+			    // 姓名
+			    newVO2.setAttributeValue("surname", epyfamilyVO.getName());
+			    // 补助身份
+			    newVO2.setAttributeValue("subsidyid", epyfamilyVO.getSub_identity1());
+			    newVO2.setRecordnum(--recordnum);
+			    psnHealthInfoVOs.add(newVO2);
+			}
+		    }
+		    psnHealthInfoVOs.add(newVO);
+		}
+	    }
+	}
+	return psnHealthInfoVOs;
+    }
+
+    /**
+     * 根据PK获取正在审核的人员信息
+     * 
+     * @param psndocPk
+     * @return
+     */
+    private PsndocVO getPsndocByPk(String psndocPk) {
+	List<PsndocVO> psnList = getPsndocList();
+	for (int j = 0; j < psnList.size(); j++) {
+	    PsndocVO psndocVO = psnList.get(j);
+	    if (psndocPk.equals(psndocVO.getPk_psndoc())) {
+		return psndocVO;
+	    }
+	}
+	return null;
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public void unAudit(String pk_org, String cyear, String cperiod) throws BusinessException {
+	if (!isAudit(pk_org, cyear, cperiod)) {
+	    throw new BusinessException(NCLangResOnserver.getInstance().getStrByID("68861705",
+		    "NhicalcMaintainImpl-0002")/*
+					        * 选定期间尚未审核。
+					        */);
+	}
+
+	this.setPk_org(pk_org);
+	this.setCalcYear(cyear);
+	this.setCalcMonth(cperiod);
+
+	String strSQL = " select def.pk_psndoc_sub from " + PsndocDefTableUtil.getPsnNHISumTablename() + " def ";
+	strSQL += getPsndocWherePart(UFBoolean.TRUE);
+	List<Object> delList = (List<Object>) this.getBaseDao().executeQuery(strSQL, new ColumnListProcessor());
+	if (delList != null && delList.size() > 0) {
+	    strSQL = "";
+	    int count = 0;
+	    for (Object id : delList) {
+		if (count <= 500) {
+		    if (StringUtils.isEmpty(strSQL)) {
+			strSQL = "'" + String.valueOf(id) + "'";
+		    } else {
+			strSQL += ",'" + String.valueOf(id) + "'";
+		    }
+		    count++;
+		} else {
+		    strSQL = "delete from " + PsndocDefTableUtil.getPsnNHISumTablename() + " where pk_psndoc_sub in ("
+			    + strSQL + ")";
+		    this.getBaseDao().executeUpdate(strSQL);
+		    strSQL = "";
+		    count = 0;
+		}
+	    }
+
+	    if (!StringUtils.isEmpty(strSQL)) {
+		strSQL = "delete from " + PsndocDefTableUtil.getPsnNHISumTablename() + " where pk_psndoc_sub in ("
+			+ strSQL + ")";
+		this.getBaseDao().executeUpdate(strSQL);
+	    }
+	}
+
+	strSQL = " select def.pk_psndoc_sub from " + PsndocDefTableUtil.getPsnNHIDetailTablename() + " def ";
+	strSQL += getPsndocWherePart(UFBoolean.TRUE);
+	strSQL += " AND def.glbdef42='" + pk_org + "'";
+	delList = (List<Object>) this.getBaseDao().executeQuery(strSQL, new ColumnListProcessor());
+	if (delList != null && delList.size() > 0) {
+	    strSQL = "";
+	    int count = 0;
+	    for (Object id : delList) {
+		if (count <= 500) {
+		    if (StringUtils.isEmpty(strSQL)) {
+			strSQL = "'" + String.valueOf(id) + "'";
+		    } else {
+			strSQL += ",'" + String.valueOf(id) + "'";
+		    }
+		    count++;
+		} else {
+		    strSQL = "delete from " + PsndocDefTableUtil.getPsnNHIDetailTablename()
+			    + " where pk_psndoc_sub in (" + strSQL + ")";
+		    this.getBaseDao().executeUpdate(strSQL);
+		    strSQL = "";
+		    count = 0;
+		}
+	    }
+
+	    if (!StringUtils.isEmpty(strSQL)) {
+		strSQL = "delete from " + PsndocDefTableUtil.getPsnNHIDetailTablename() + " where pk_psndoc_sub in ("
+			+ strSQL + ")";
+		this.getBaseDao().executeUpdate(strSQL);
+	    }
+	}
+
+	strSQL = " select def.pk_psndoc_sub from hi_psndoc_headetail def ";
+	strSQL += getPsndocWherePart(UFBoolean.TRUE);
+	delList = (List<Object>) this.getBaseDao().executeQuery(strSQL, new ColumnListProcessor());
+	if (delList != null && delList.size() > 0) {
+	    strSQL = "";
+	    int count = 0;
+	    for (Object id : delList) {
+		if (count <= 500) {
+		    if (StringUtils.isEmpty(strSQL)) {
+			strSQL = "'" + String.valueOf(id) + "'";
+		    } else {
+			strSQL += ",'" + String.valueOf(id) + "'";
+		    }
+		    count++;
+		} else {
+		    strSQL = "delete from hi_psndoc_headetail where pk_psndoc_sub in (" + strSQL + ")";
+		    this.getBaseDao().executeUpdate(strSQL);
+		    strSQL = "";
+		    count = 0;
+		}
+	    }
+
+	    if (!StringUtils.isEmpty(strSQL)) {
+		strSQL = "delete from hi_psndoc_headetail where pk_psndoc_sub in (" + strSQL + ")";
+		this.getBaseDao().executeUpdate(strSQL);
+	    }
+	}
+
+	refreshRecordnum(UFBoolean.TRUE);
+
+	strSQL = "UPDATE twhr_nhicalc SET isaudit='N' WHERE pk_org='" + pk_org + "' AND cyear='" + cyear
+		+ "'  AND cperiod='" + cperiod + "' AND dr=0";
+	this.getBaseDao().executeUpdate(strSQL);
+    }
+
+    @SuppressWarnings("unchecked")
+    private void refreshRecordnum(UFBoolean isaudit) throws BusinessException, DAOException {
+	String strSQL;
+	strSQL = "  select pk_psndoc_sub, row_number() over (partition by pk_psndoc order by begindate desc) - 1 recnumber from "
+		+ PsndocDefTableUtil.getPsnNHISumTablename() + " def" + getPsndocWherePart(isaudit);
+	List<Map> pknums = (List<Map>) this.getBaseDao().executeQuery(strSQL, new MapListProcessor());
+	if (pknums != null && pknums.size() > 0) {
+	    for (Map<String, Object> pknum : pknums) {
+		strSQL = "update " + PsndocDefTableUtil.getPsnNHISumTablename() + " set recordnum="
+			+ String.valueOf(pknum.get("recnumber")) + " where pk_psndoc_sub='"
+			+ pknum.get("pk_psndoc_sub") + "'";
+		this.getBaseDao().executeUpdate(strSQL);
+	    }
+	}
+
+	strSQL = "  select pk_psndoc_sub, row_number() over (partition by pk_psndoc order by begindate desc) - 1 recnumber from "
+		+ PsndocDefTableUtil.getPsnNHIDetailTablename() + " def" + getPsndocWherePart(isaudit);
+	pknums = (List<Map>) this.getBaseDao().executeQuery(strSQL, new MapListProcessor());
+	if (pknums != null && pknums.size() > 0) {
+	    for (Map<String, Object> pknum : pknums) {
+		strSQL = "update " + PsndocDefTableUtil.getPsnNHIDetailTablename() + " set recordnum="
+			+ String.valueOf(pknum.get("recnumber")) + " where pk_psndoc_sub='"
+			+ pknum.get("pk_psndoc_sub") + "'";
+		this.getBaseDao().executeUpdate(strSQL);
+	    }
+	}
+
+	strSQL = "  select pk_psndoc_sub, row_number() over (partition by pk_psndoc order by begindate desc) - 1 recnumber from hi_psndoc_headetail def"
+		+ getPsndocWherePart(isaudit);
+	pknums = (List<Map>) this.getBaseDao().executeQuery(strSQL, new MapListProcessor());
+	if (pknums != null && pknums.size() > 0) {
+	    for (Map<String, Object> pknum : pknums) {
+		strSQL = "update hi_psndoc_headetail set recordnum=" + String.valueOf(pknum.get("recnumber"))
+			+ " where pk_psndoc_sub='" + pknum.get("pk_psndoc_sub") + "'";
+		this.getBaseDao().executeUpdate(strSQL);
+	    }
+	}
+    }
+
+    private String getPsndocWherePart(UFBoolean isaudit) {
+	String strWherePart = " where  pk_psndoc in ( select  distinct pk_psndoc ";
+	strWherePart += "                        from    twhr_nhicalc where dr=0 and pk_org='" + this.getPk_org()
+		+ "' and cyear='" + this.getCalcYear() + "' and cperiod='" + this.getCalcMonth() + "' and isaudit='"
+		+ isaudit.toString() + "' ) ";
+	strWherePart += "         and dr = 0 ";
+	strWherePart += "         and enddate  >= '"
+		+ this.getFirstDayOfMonth(this.getCalcYear(), this.getCalcMonth()).toString() + "' ";
+	strWherePart += "         and begindate <= '"
+		+ this.getLastDayOfMonth(this.getCalcYear(), this.getCalcMonth()).toString() + "' ";
+	return strWherePart;
+    }
+
+    private UFDate getLastDayOfMonth(String year, String month) {
+	Calendar calendar = Calendar.getInstance();
+	calendar.set(Integer.valueOf(year), Integer.valueOf(month) - 1, 1);
+	int lastday = calendar.getActualMaximum(Calendar.DAY_OF_MONTH);
+	calendar.set(Calendar.DAY_OF_MONTH, lastday);
+	return new UFDate(calendar.getTime()).asEnd();
+    }
+
+    private UFDate getFirstDayOfMonth(String year, String month) {
+	Calendar calendar = Calendar.getInstance();
+	calendar.set(Integer.valueOf(year), Integer.valueOf(month) - 1, 1);
+	calendar.set(Calendar.DAY_OF_MONTH, 1);
+	return new UFDate(calendar.getTime()).asBegin();
+    }
+
+    public BaseDAO getBaseDao() {
+	if (baseDao == null) {
+	    baseDao = new BaseDAO();
+	}
+	return baseDao;
+    }
+
+    public String getCalcYear() {
+	return calcYear;
+    }
+
+    public void setCalcYear(String calcYear) {
+	this.calcYear = calcYear;
+    }
+
+    public String getCalcMonth() {
+	return calcMonth;
+    }
+
+    public void setCalcMonth(String calcMonth) {
+	this.calcMonth = calcMonth;
+    }
+
+    public String getPk_org() {
+	return pk_org;
+    }
+
+    public void setPk_org(String pk_org) {
+	this.pk_org = pk_org;
+    }
+
+    public List<NhiCalcVO> getNhiDataList() {
+	return nhiDataList;
+    }
+
+    public void setNhiDataList(List<NhiCalcVO> nhiDataList) {
+	this.nhiDataList = nhiDataList;
+    }
+
+    public List<EpyfamilyVO> getEpyList() {
+	return epyList;
+    }
+
+    public void setEpyList(List<EpyfamilyVO> epyList) {
+	this.epyList = epyList;
+    }
+
+    public List<PsndocVO> getPsndocList() {
+	return psndocList;
+    }
+
+    public void setPsndocList(List<PsndocVO> psndocList) {
+	this.psndocList = psndocList;
+    }
+
+    @Override
+    public BatchOperateVO batchSave(BatchOperateVO paramBatchOperateVO) throws BusinessException {
+	// TODO Auto-generated method stub
+	return null;
+    }
+
+    @Override
+    public ISuperVO[] queryByDataVisibilitySetting(LoginContext paramLoginContext, Class<? extends ISuperVO> paramClass)
+	    throws BusinessException {
+	// TODO Auto-generated method stub
+	return null;
+    }
+
+    @Override
+    public ISuperVO[] selectByWhereSql(String paramString, Class<? extends ISuperVO> paramClass)
+	    throws BusinessException {
+	// TODO Auto-generated method stub
+	return null;
+    }
+
+    public AggNhiCalcVO[] queryByCondition(LoginContext context, String condition) throws BusinessException {
+	// 拼组织的sql
+	// String etraCondsNext = NhiCalcVO.getDefaultTableName() + "." +
+	// NhiCalcVO.PK_ORG +
+	// (context.getPk_org()==null?" is null": " = '" + context.getPk_org() +
+	// "' ");
+	// //增加权限sql
+	// if(StringUtils.isBlank(condition)){
+	// condition = etraCondsNext;
+	// }
+	// else{
+	// condition += " and " + etraCondsNext;
+	// }
+
+	return getServiceTemplate().queryByContextAndCondWithOrder(context, AggNhiCalcVO.class, condition,
+		new String[] { "pk_org", "pk_psndoc", "begindate" });
+    }
+}

@@ -1,0 +1,290 @@
+package nc.ui.hrjf.deptadj.ace.handler;
+
+import java.util.List;
+import java.util.Map;
+
+import nc.bs.framework.common.NCLocator;
+import nc.bs.logging.Logger;
+import nc.itf.om.IDeptAdjustService;
+import nc.itf.uap.IUAPQueryBS;
+import nc.jdbc.framework.processor.MapListProcessor;
+import nc.ui.dcm.chnlrplstrct.maintain.action.MessageDialog;
+import nc.ui.pub.bill.BillCardBeforeEditListener;
+import nc.ui.pub.bill.BillEditEvent;
+import nc.ui.pub.bill.BillItem;
+import nc.ui.pub.bill.BillItemEvent;
+import nc.ui.pub.bill.IBillItem;
+import nc.ui.pubapp.uif2app.view.ShowUpableBillForm;
+import nc.vo.om.hrdept.HRDeptAdjustVO;
+import nc.vo.pub.lang.UFBoolean;
+import nc.vo.pub.lang.UFLiteralDate;
+
+public class BillFormEditor extends ShowUpableBillForm implements BillCardBeforeEditListener {
+	private int selectedRow = 0;
+
+	@Override
+	public void initUI() {
+		super.initUI();
+		if (isShowOrgPanel()) {
+			this.getBillOrgPanel().setPkOrg("0001A110000000000XBZ");
+			add(getBillOrgPanel(), "North");
+
+			setRequestFocus(false);
+		}
+		getBillCardPanel().setBillBeforeEditListenerHeadTail(this);
+
+	}
+
+	public void showMeUp() {
+		super.showMeUp();
+		getBillOrgPanel().setPkOrg("0001A110000000000XBZ");
+	}
+
+	@Override
+	public void afterEdit(BillEditEvent evt) {
+
+		super.afterEdit(evt);
+		if (IBillItem.HEAD == evt.getPos()) {
+			afterHeadChange(evt);
+
+		}
+	}
+
+	@Override
+	public boolean beforeEdit(BillItemEvent evt) {
+		String message = null;
+		try {
+			UFBoolean deptflag = UFBoolean.TRUE;
+			UFBoolean psnflag = UFBoolean.TRUE;
+			String pk_dept = (String) getHeadItemValue("pk_dept");
+			String effectivedate = String.valueOf(getHeadItemValue("effectivedate"));
+			if (null != pk_dept && null != effectivedate) {
+				// 接口
+				IDeptAdjustService managequery = NCLocator.getInstance().lookup(IDeptAdjustService.class);
+				HRDeptAdjustVO deptadjvo = new HRDeptAdjustVO();
+				deptadjvo.setPk_dept(pk_dept);
+				deptadjvo.setEffectivedate(new UFLiteralDate((String.valueOf(effectivedate))));
+				deptflag = managequery.validateDept(deptadjvo);
+				psnflag = managequery.validatePsn(deptadjvo);
+			}
+
+			if (("code").equals(evt.getItem().getKey())) {
+				if (!deptflag.booleanValue() || !psnflag.booleanValue()) {
+					return false;
+				}
+			} else if (("name").equals(evt.getItem().getKey())) {
+				if (!deptflag.booleanValue() || !psnflag.booleanValue()) {
+					return false;
+				}
+			} else if (("pk_fatherorg").equals(evt.getItem().getKey())) {
+				if (!deptflag.booleanValue() || !psnflag.booleanValue()) {
+					return false;
+				}
+			} else if (("shortname").equals(evt.getItem().getKey())) {
+				if (!deptflag.booleanValue() || !psnflag.booleanValue()) {
+					return false;
+				}
+			} else if (("displayorder").equals(evt.getItem().getKey())) {
+				if (!deptflag.booleanValue() || !psnflag.booleanValue()) {
+					return false;
+				}
+			} else if (("mnecode").equals(evt.getItem().getKey())) {
+				if (!deptflag.booleanValue() || !psnflag.booleanValue()) {
+					return false;
+				}
+			} else if (("principal").equals(evt.getItem().getKey())) {
+				if (!deptflag.booleanValue() || !psnflag.booleanValue()) {
+					return false;
+				}
+			}
+
+		} catch (Exception ex) {
+			Logger.error(ex.getMessage(), ex);
+			message = ex.getMessage();
+		}
+		if (null != message) {
+			return false;
+		}
+		return true;
+	}
+
+	private void afterHeadChange(BillEditEvent evt) {
+		// TODO Auto-generated method stub
+		String message = null;
+		try {
+			if ("effectivedate".equals(evt.getKey())) {
+				String pk_dept = (String) getHeadItemValue("pk_dept");
+				if (null != pk_dept) {
+					HRDeptAdjustVO deptadjvo = new HRDeptAdjustVO();
+					deptadjvo.setPk_dept(pk_dept);
+					deptadjvo.setEffectivedate(new UFLiteralDate((String.valueOf(evt.getValue()))));
+					// 调用接口
+					IUAPQueryBS iUAPQueryBS = (IUAPQueryBS) NCLocator.getInstance().lookup(IUAPQueryBS.class.getName());
+					IDeptAdjustService managequery = NCLocator.getInstance().lookup(IDeptAdjustService.class);
+					UFBoolean deptflag = managequery.validateDept(deptadjvo);
+					UFBoolean psnflag = managequery.validatePsn(deptadjvo);
+					if (deptflag.booleanValue() && psnflag.booleanValue()) {
+						List<Map<String, String>> deptlists = (List<Map<String, String>>) iUAPQueryBS
+								.executeQuery(
+										"select islastversion, address,memo, orgtype17,tel, dataoriginflag,orgtype13, displayorder, enablestate, deptcanceldate, hrcanceled, deptduty,createdate, deptlevel, "
+												+ "pk_group, pk_org,depttype, innercode, code,name,pk_fatherorg,mnecode,"
+												+ "displayorder,principal, pk_vid from "
+												+ "org_dept_v where pk_dept='"
+												+ pk_dept + "' and dr=0", new MapListProcessor());
+						IDeptAdjustService managedept = NCLocator.getInstance().lookup(IDeptAdjustService.class);
+						String pk_dept_v = managedept.queryLastDeptByPk(pk_dept);
+						for (Map<String, String> map : deptlists) {
+							if (map.get("pk_vid").equals(pk_dept_v)) {
+								setHeadItemValue("code", map.get("code"));
+								setHeadItemValue("name", map.get("name"));
+								setHeadItemValue("pk_fatherorg", map.get("pk_fatherorg"));
+								setHeadItemValue("shortname", map.get("shortname"));
+								setHeadItemValue("mnecode", map.get("mnecode"));
+								setHeadItemValue("displayorder", map.get("displayorder"));
+								setHeadItemValue("principal", map.get("principal"));
+								setHeadItemValue("pk_dept_v", String.valueOf(map.get("pk_vid")));
+								setHeadItemValue("iseffective", UFBoolean.FALSE);
+								setHeadItemValue("innercode", map.get("innercode"));
+								setHeadItemValue("pk_dept_v", map.get("pk_vid"));
+								setHeadItemValue("pk_group", map.get("pk_group"));
+								setHeadItemValue("pk_org", map.get("pk_org"));
+								setHeadItemValue("depttype", map.get("depttype"));
+								setHeadItemValue("deptlevel", map.get("deptlevel"));
+								setHeadItemValue("deptduty", map.get("deptduty"));
+								setHeadItemValue("createdate", map.get("createdate"));
+								setHeadItemValue("hrcanceled", map.get("hrcanceled"));
+								setHeadItemValue("deptcanceldate", map.get("deptcanceldate"));
+								setHeadItemValue("enablestate", map.get("enablestate"));
+								setHeadItemValue("displayorder", map.get("displayorder"));
+								setHeadItemValue("dataoriginflag", map.get("dataoriginflag"));
+								setHeadItemValue("orgtype13", map.get("orgtype13"));
+								setHeadItemValue("orgtype17", map.get("orgtype17"));
+								setHeadItemValue("tel", map.get("tel"));
+								setHeadItemValue("address", map.get("address"));
+								setHeadItemValue("memo", map.get("memo"));
+								setHeadItemValue("islastversion", map.get("islastversion"));
+							}
+						}
+					} else {
+						clearHeadItemValue("code");
+						clearHeadItemValue("name");
+						clearHeadItemValue("pk_fatherorg");
+						clearHeadItemValue("shortname");
+						clearHeadItemValue("mnecode");
+						clearHeadItemValue("displayorder");
+						clearHeadItemValue("principal");
+					}
+				}
+			} else if ("pk_dept".equals(evt.getKey())) {
+				IUAPQueryBS iUAPQueryBS = (IUAPQueryBS) NCLocator.getInstance().lookup(IUAPQueryBS.class.getName());
+				String effectivedate = String.valueOf(getHeadItemValue("effectivedate"));
+				if (null != effectivedate) {
+					String pk_dept = String.valueOf(getStrValue(evt.getValue()));
+					HRDeptAdjustVO deptadjvo = new HRDeptAdjustVO();
+					deptadjvo.setPk_dept(pk_dept);
+					deptadjvo.setEffectivedate(new UFLiteralDate(String.valueOf(effectivedate)));
+					// 调用接口
+					UFBoolean flag = UFBoolean.TRUE;
+					if (!flag.booleanValue()) {
+						clearHeadItemValue("code");
+						clearHeadItemValue("name");
+						clearHeadItemValue("pk_fatherorg");
+						clearHeadItemValue("shortname");
+						clearHeadItemValue("mnecode");
+						clearHeadItemValue("displayorder");
+						clearHeadItemValue("principal");
+					} else {
+						List<Map<String, String>> deptlists = (List<Map<String, String>>) iUAPQueryBS
+								.executeQuery(
+										"select islastversion, address,memo, orgtype17,tel, dataoriginflag,orgtype13, displayorder, enablestate, deptcanceldate, hrcanceled, deptduty,createdate, deptlevel, "
+												+ "pk_group, pk_org,depttype, innercode, code,name,pk_fatherorg,mnecode,"
+												+ "displayorder,principal, pk_vid from "
+												+ "org_dept_v where pk_dept='"
+												+ pk_dept + "' and dr=0", new MapListProcessor());
+						IDeptAdjustService managedept = NCLocator.getInstance().lookup(IDeptAdjustService.class);
+						String pk_dept_v = managedept.queryLastDeptByPk(pk_dept);
+						for (Map<String, String> map : deptlists) {
+							if (map.get("pk_vid").equals(pk_dept_v)) {
+								setHeadItemValue("code", map.get("code"));
+								setHeadItemValue("name", map.get("name"));
+								setHeadItemValue("pk_fatherorg", map.get("pk_fatherorg"));
+								setHeadItemValue("shortname", map.get("shortname"));
+								setHeadItemValue("mnecode", map.get("mnecode"));
+								setHeadItemValue("displayorder", map.get("displayorder"));
+								setHeadItemValue("principal", map.get("principal"));
+								setHeadItemValue("pk_dept_v", String.valueOf(map.get("pk_vid")));
+								setHeadItemValue("iseffective", UFBoolean.FALSE);
+								setHeadItemValue("innercode", map.get("innercode"));
+								setHeadItemValue("pk_dept_v", map.get("pk_vid"));
+								setHeadItemValue("pk_group", map.get("pk_group"));
+								setHeadItemValue("pk_org", map.get("pk_org"));
+								setHeadItemValue("depttype", map.get("depttype"));
+								setHeadItemValue("deptlevel", map.get("deptlevel"));
+								setHeadItemValue("deptduty", map.get("deptduty"));
+								setHeadItemValue("createdate", map.get("createdate"));
+								setHeadItemValue("hrcanceled", map.get("hrcanceled"));
+								setHeadItemValue("deptcanceldate", map.get("deptcanceldate"));
+								setHeadItemValue("enablestate", map.get("enablestate"));
+								setHeadItemValue("displayorder", map.get("displayorder"));
+								setHeadItemValue("dataoriginflag", map.get("dataoriginflag"));
+								setHeadItemValue("orgtype13", map.get("orgtype13"));
+								setHeadItemValue("orgtype17", map.get("orgtype17"));
+								setHeadItemValue("tel", map.get("tel"));
+								setHeadItemValue("address", map.get("address"));
+								setHeadItemValue("memo", map.get("memo"));
+								setHeadItemValue("islastversion", map.get("islastversion"));
+							}
+						}
+					}
+				}
+			}
+		} catch (Exception ex) {
+			Logger.error(ex.getMessage(), ex);
+			MessageDialog.showErrorDlg(getParent(), "报错信息", ex.getMessage());
+			message = ex.getMessage();
+		}
+		if (null != message) {
+			return;
+		}
+	}
+
+	public Object getHeadItemValue(String key) {
+		BillItem item = this.billCardPanel.getHeadItem(key);
+
+		if (item != null) {
+			return item.getValueObject();
+		}
+
+		return null;
+	}
+
+	private String getStrValue(Object value) {
+		if (value == null) {
+			return null;
+		}
+		if ((value instanceof String)) {
+			return (String) value;
+		}
+		if ((value instanceof String[])) {
+			return ((String[]) value)[0];
+		}
+		return value.toString();
+	}
+
+	public void setHeadItemValue(String key, Object value) {
+		this.billCardPanel.setHeadItem(key, value);
+	}
+
+	private void clearHeadItemValue(String... strHeadItemKeys) {
+		if ((strHeadItemKeys == null) || (strHeadItemKeys.length == 0)) {
+			return;
+		}
+		for (String strItemKey : strHeadItemKeys) {
+			BillItem item = getBillCardPanel().getHeadItem(strItemKey);
+			if (item != null) {
+				item.clearViewData();
+			}
+		}
+	}
+
+}

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<linked-hash-map>
+ <entry>
+    <string>TAXRATE</string>
+    <function>
+      <defaultName>6013twhr;06013twhr_res00001</defaultName>
+      <displayName>taxRate</displayName>
+      <hintMsgRes>6013twhr;06013twhr_res00002</hintMsgRes>
+      <inputSigRes>6013twhr;06013twhr_res00001</inputSigRes>
+      <pattern>taxRate\(\s*\d\s*,.*,.*,.*\)</pattern>
+      <arguments>taxRate({0},{1},{2},{3})</arguments>
+       <returntype>0</returntype>
+      <parapanel>nc.ui.wa.formular.TaxRateFunctionEditor4TW</parapanel>
+      <group>WA</group>
+      <process>nc.impl.wa.func.TaxRateData4TW</process>
+      <productCode>UPP6013func</productCode>
+    </function>
+  </entry>
+  
+</linked-hash-map>

@@ -1,0 +1,41 @@
+package nc.ui.hi.psndoc.view;
+
+
+import nc.bs.uif2.validation.ValidationFailure;
+import nc.bs.uif2.validation.Validator;
+import nc.vo.hi.psndoc.CourtDeductionSetting;
+import nc.vo.hi.psndoc.PsndocAggVO;
+
+public class CourtFineValidator implements Validator {
+
+	  
+	@Override
+	public ValidationFailure validate(Object e) {
+		PsndocAggVO aggvo = (PsndocAggVO) e;
+		String[] tabs = aggvo.getTableCodes();
+		for (String tab : tabs) {
+			if (tab.equals("hi_psndoc_courtdeduction")) {
+				CourtDeductionSetting[] courtdeductvos = (CourtDeductionSetting[]) aggvo.getTableVO(tab);
+				for(CourtDeductionSetting cdvo : courtdeductvos){
+					if(null != cdvo.getAttributeValue("monthexecutrate") && 
+							null == cdvo.getAttributeValue("monthexecutamount") &&
+							null == cdvo.getAttributeValue("deductsalarybase")){
+						//如有填寫月執行費率，則必須填寫。 
+						//MessageDialog.showErrorDlg(null, "校验", "檔案編號"+cdvo.getAttributeValue("filenumber")+"未输入扣款薪資基數");
+						return new ValidationFailure("檔案編號"+cdvo.getAttributeValue("filenumber")+"未输入扣款薪資基數");
+					}
+					if(null == cdvo.getAttributeValue("monthexecutrate") && 
+							null == cdvo.getAttributeValue("monthexecutamount") &&
+							null == cdvo.getAttributeValue("deductsalarybase")){
+						//若未填寫扣款薪資基數與月執行費率，則必須填寫。 
+						//MessageDialog.showErrorDlg(null, "校验", "檔案編號"+cdvo.getAttributeValue("filenumber")+"未输入月執行金額");
+						//return null;
+						return new ValidationFailure("檔案編號"+cdvo.getAttributeValue("filenumber")+"未输入月執行金額");
+					}
+				}
+			}
+		}
+		return null;
+	}
+
+}

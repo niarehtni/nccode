@@ -1,0 +1,288 @@
+package nc.wa.smartmodel.provider;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+
+import nc.bs.framework.common.NCLocator;
+import nc.bs.logging.Logger;
+import nc.hr.utils.InSQLCreator;
+import nc.itf.hr.wa.IClassitemQry;
+import nc.itf.hr.wa.IWaProviderService;
+import nc.pub.smart.context.SmartContext;
+import nc.pub.smart.data.DataSet;
+import nc.pub.smart.exception.SmartException;
+import nc.pub.smart.metadata.MetaData;
+import nc.pub.smart.provider.SemanticDataProvider;
+import nc.vo.pub.BusinessException;
+import nc.vo.wa.item.WaItemVO;
+import nc.vo.wa.paydata.DataVO;
+import nc.wa.smartmodel.provider.util.WaConditionVO;
+import nc.wa.smartmodel.provider.util.WaGlobalVO;
+import nc.wa.smartmodel.provider.util.WaOneBaseQueryCondition;
+
+import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang.StringUtils;
+
+import com.ufida.report.anareport.FreeReportContextKey;
+
+/**
+ * 固定报表语义提供者基础类<br>
+ * 目前名字还是带着WA以后可能去掉，看人事固定报表是否要加进来
+ * @author zhangliangb
+ * @since V6.0 2010-9-14
+ */
+public abstract class BaseWaProvider extends SemanticDataProvider
+{
+	public static final int defaultCount = 200;
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -2195008838198281790L;
+	/** 薪资语义提供者服务 */
+	private IWaProviderService waProviderService;
+	/** 薪资项目查询服务 */
+	private IClassitemQry itemQueryService;
+	protected InSQLCreator inSQLCreator = null;
+
+	protected void adjustDatas(SmartContext context, Object[][] datas)
+	{
+
+	}
+
+	/**
+	 * 从查询条件中得到查询模板条件，并将其调整成可用的条件SQL
+	 * @param waQueryCondition 查询条件
+	 * @return whereSql 调整后的查询模板条件SQL
+	 */
+	protected String adjustQueryCondition(WaOneBaseQueryCondition waQueryCondition,InSQLCreator inSQLCreator)throws BusinessException
+	{
+		String whereSql = "";
+		if (waQueryCondition == null)
+		{
+			return null;
+		}
+		whereSql = waQueryCondition.getQueryCondition();
+		// 添加表名前缀
+		whereSql = StringUtils.replace(whereSql, "pk_psndoc in", "wa_data.pk_psndoc in");
+		whereSql = StringUtils.replace(whereSql, "pk_psndoc =", "wa_data.pk_psndoc =");
+		whereSql = StringUtils.replace(whereSql, "pk_psnjob in", "wa_data.pk_psnjob in");
+		whereSql = StringUtils.replace(whereSql, "pk_psnjob =", "wa_data.pk_psnjob =");
+		return whereSql;
+	}
+
+	/**
+	 * 根据条件返回获取数据基本SQL
+	 * @param context 语义模型上下文
+	 * @param itemList 薪资项目集合
+	 * @param queryCondition 查询条件
+	 * @return baseSql 获取数据基本SQL
+	 */
+	protected abstract String generateBaseSql(SmartContext context, List<WaItemVO> itemList, String queryCondition,InSQLCreator inSqlCreator ) throws SmartException,BusinessException;
+
+
+
+
+
+	/**
+	 * 根据获取数据基本SQL和薪资项目对象集合获取执行SQL
+	 * @param baseSql 获取数据基本SQL
+	 * @param itemList 薪资项目集合
+	 * @return String 执行SQL
+	 */
+	protected abstract String generateQuerySql(String baseSql, List<WaItemVO> itemList,InSQLCreator inSqlCreator) throws BusinessException;
+
+	/**
+	 * 将结果集整理为二维数据形式
+	 * @param datasList 查询结果集
+	 * @return Object[][] 二维数据结果集
+	 */
+	protected Object[][] getDatas(List<HashMap<String, Object>> datasList,
+			List<WaItemVO> itemList) {
+		return null;
+	}
+
+	protected Object[][] getDatas(List<HashMap<String, Object>> datasList) {
+		return null;
+	}
+	protected IClassitemQry getItemQueryService()
+	{
+		if (itemQueryService == null)
+		{
+			itemQueryService = NCLocator.getInstance().lookup(IClassitemQry.class);
+		}
+		return itemQueryService;
+	}
+
+	/**
+	 * 从查询条件中获取所选薪资项目对象集合
+	 * @param waQueryCondition 查询条件
+	 * @return List<WaItemVO> 薪资项目对象集合
+	 */
+	protected List<WaItemVO> getWaItems(WaOneBaseQueryCondition waQueryCondition,InSQLCreator inSQLCreator) throws SmartException,BusinessException
+	{
+		WaConditionVO waConditionVO = waQueryCondition.getWaConditionVO();
+		WaItemVO[] waitems = new WaItemVO[0];
+		// 得到查询条件中所选薪资项目主键集合
+		String[] waItemPKArray = waConditionVO.getWaItemPkList();
+		if (waItemPKArray == null)
+		{
+			return null;
+		}
+		WaGlobalVO waGlobalVO = new WaGlobalVO();
+		waGlobalVO.setWaClassPK(waConditionVO.getWaClassPk());
+		waGlobalVO.setWaYear(waConditionVO.getBaseCperiod().substring(0, 4));
+		waGlobalVO.setWaPeriod(waConditionVO.getBaseCperiod().substring(4,6));
+
+		inSQLCreator.setCount(defaultCount);
+		String sqlTemp = WaItemVO.PK_WA_ITEM + " in (" + inSQLCreator.getInSQL(waItemPKArray) + ")";
+		try
+		{
+			//            LoginContext loginContext = new LoginContext();
+			// 上下文及所选薪资项目主键集合获得所选薪资项目对象集合
+			waitems = getItemQueryService().queryItemInfoWithCondition(waGlobalVO, sqlTemp);
+		}
+		catch (BusinessException e)
+		{
+			throw new SmartException(e);
+		}
+		return Arrays.asList(waitems);
+	}
+
+	protected IWaProviderService getWaProviderService()
+	{
+		if (waProviderService == null)
+		{
+			waProviderService = NCLocator.getInstance().lookup(IWaProviderService.class);
+		}
+		return waProviderService;
+	}
+
+	/**
+	 * 根据语义模型上下文，获取并返回数据集 二维数据容器
+	 * @param context 语义模型上下文
+	 * @return DataSet 二维数据集
+	 */
+	@Override
+	public DataSet provideData(SmartContext context) throws SmartException,BusinessException
+	{
+		// 通过KEY从语义模型上下文中获取薪资报表的查询条件
+		WaOneBaseQueryCondition waQueryCondition = (WaOneBaseQueryCondition) context.getAttribute(FreeReportContextKey.KEY_IQUERYCONDITION);
+
+		List<WaItemVO> itemList = new ArrayList<WaItemVO>();// 所选薪资项目对象集合
+
+		String queryCondition = "";// 查询模板条件SQL
+
+		String baseSql = "";// 获取数据基本SQL
+
+		String querySql = "";// 执行SQL
+
+		Object[][] datas = null;// 二维数据模型，存放返回结果集
+
+		if (waQueryCondition == null)
+		{
+			return new DataSet(provideMetaData(context), null);
+		}
+
+		inSQLCreator = new InSQLCreator();
+		inSQLCreator.setCount(defaultCount);
+
+		// 得到查询模板条件SQL，并将其调整成可用的条件SQL
+		queryCondition = adjustQueryCondition(waQueryCondition,inSQLCreator);
+
+		// 获取所选薪资项目对象集合
+		itemList = getWaItems(waQueryCondition,inSQLCreator);
+
+		// 根据条件返回获取数据基本SQL
+		baseSql = generateBaseSql(context, itemList, queryCondition,inSQLCreator);
+
+		// 获取执行SQL
+		querySql = generateQuerySql(baseSql, itemList,inSQLCreator);
+
+		List<HashMap<String, Object>> list = null;
+		try
+		{
+			
+			// 2017-08-16 zhousze 薪资加密：先解密数据库数据 begin
+			String waClassPk = "";
+			String baseCperiod = "";
+			String compareCperiod = "";
+			String wherePart = "";
+			String cyearperiods = "";
+			List<String> rptPKs = new ArrayList<String>(){
+				{
+					add("1001Z71000000000F04H");
+					add("1001Z710000000014UOH");
+					add("1001Z710000000013QK1");
+					add("1001Z710000000014W81");
+					add("1001Z710000000013L5L");
+					add("1001Z710000000014SD5");
+					add("1001Z71000000000EZCP");
+					add("1002Z71000000000J17K");
+				}
+			};
+			String rptPK = (String) context.getAttribute(FreeReportContextKey.REPORT_PUBLISHNODEALLREPPK);
+			//获取查询条件
+			if(waQueryCondition != null){
+				WaConditionVO waConditionVO = waQueryCondition.getWaConditionVO();
+				wherePart = waQueryCondition.getQueryCondition();
+				waClassPk = waConditionVO.getWaClassPk();
+				baseCperiod = waConditionVO.getBaseCperiod();
+				compareCperiod = waConditionVO.getCompareCperiod();
+				cyearperiods = ("'" + baseCperiod + "','" + compareCperiod + "'");
+			}
+			if (rptPKs.contains(rptPK)) {
+				getWaProviderService().update4D(waClassPk, cyearperiods, wherePart);
+			}
+			
+			// 获取报表数据
+			list = getWaProviderService().query(querySql);
+			
+			if (rptPKs.contains(rptPK)) {
+				getWaProviderService().update4E(waClassPk, cyearperiods, wherePart);
+			}
+			
+			// end
+		}
+		catch (BusinessException e)
+		{
+			Logger.error(e);
+			throw new SmartException(e);
+		}
+		finally
+		{
+			try
+			{
+				inSQLCreator.clear();
+			}
+			catch (BusinessException ex)
+			{
+				Logger.error(ex.getMessage(), ex);
+			}
+		}
+
+		if (list != null)
+		{
+			// 将结果集整理为二维数据形式
+
+			datas = getDatas(list);
+			if (ArrayUtils.isEmpty(datas)) {
+				datas = getDatas(list, itemList);
+			}
+		}
+		adjustDatas(context, datas);
+		// 返回数据集 二维数据容器
+		return new DataSet(provideMetaData(context), datas);
+	}
+
+	/**
+	 * 获取元数据模型
+	 * @param context 语义模型上下文
+	 * @return MetaData 元数据模型
+	 */
+	@Override
+	public abstract MetaData provideMetaData(SmartContext context) throws SmartException;
+
+
+}

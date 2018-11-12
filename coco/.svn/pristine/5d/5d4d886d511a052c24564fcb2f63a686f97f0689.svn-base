@@ -1,0 +1,9 @@
+<?xml version='1.0' encoding='gb2312'?>
+<module name="twhrpsndoclabor">
+	<public>
+		<component priority="0" singleton="true" remote="true" tx="CMT" supportAlias="true">
+			<interface>nc.itf.hr.wa.IPsndocwadocLabourService</interface>
+			<implementation>nc.impl.wa.psndocwadoc.PsndocwadocLabourImpl</implementation>
+		</component>
+	</public>
+</module>

@@ -1,0 +1,546 @@
+package nc.ui.twhr.twhr.ace.view;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import nc.ui.uif2.factory.AbstractJavaBeanDefinition;
+
+public class Twhr_config extends AbstractJavaBeanDefinition {
+	private Map<String, Object> context = new HashMap();
+
+	public nc.vo.uif2.LoginContext getContext() {
+		if (context.get("context") != null)
+			return (nc.vo.uif2.LoginContext) context.get("context");
+		nc.vo.uif2.LoginContext bean = new nc.vo.uif2.LoginContext();
+		context.put("context", bean);
+		setBeanFacotryIfBeanFacatoryAware(bean);
+		invokeInitializingBean(bean);
+		return bean;
+	}
+
+	public nc.ui.pubapp.pub.smart.SmartBatchAppModelService getBatchModelModelService() {
+		if (context.get("batchModelModelService") != null)
+			return (nc.ui.pubapp.pub.smart.SmartBatchAppModelService) context.get("batchModelModelService");
+		nc.ui.pubapp.pub.smart.SmartBatchAppModelService bean = new nc.ui.pubapp.pub.smart.SmartBatchAppModelService();
+		context.put("batchModelModelService", bean);
+		bean.setServiceItf("nc.itf.twhr.ITwhrMaintain");
+		bean.setVoClass("nc.vo.twhr.nhicalc.BaoAccountVO");
+		setBeanFacotryIfBeanFacatoryAware(bean);
+		invokeInitializingBean(bean);
+		return bean;
+	}
+
+	public nc.vo.bd.meta.GeneralBDObjectAdapterFactory getBOAdapterFactory() {
+		if (context.get("BOAdapterFactory") != null)
+			return (nc.vo.bd.meta.GeneralBDObjectAdapterFactory) context.get("BOAdapterFactory");
+		nc.vo.bd.meta.GeneralBDObjectAdapterFactory bean = new nc.vo.bd.meta.GeneralBDObjectAdapterFactory();
+		context.put("BOAdapterFactory", bean);
+		bean.setMode("MD");
+		setBeanFacotryIfBeanFacatoryAware(bean);
+		invokeInitializingBean(bean);
+		return bean;
+	}
+
+	public nc.ui.pubapp.uif2app.model.BatchBillTableModel getBatchModel() {
+		if (context.get("batchModel") != null)
+			return (nc.ui.pubapp.uif2app.model.BatchBillTableModel) context.get("batchModel");
+		nc.ui.pubapp.uif2app.model.BatchBillTableModel bean = new nc.ui.pubapp.uif2app.model.BatchBillTableModel();
+		context.put("batchModel", bean);
+		bean.setContext(getContext());
+		bean.setService(getBatchModelModelService());
+		bean.setBusinessObjectAdapterFactory(getBOAdapterFactory());
+		setBeanFacotryIfBeanFacatoryAware(bean);
+		invokeInitializingBean(bean);
+		return bean;
+	}
+
+	public nc.ui.pubapp.uif2app.model.BatchModelDataManager getBatchModelModelDataManager() {
+		if (context.get("batchModelModelDataManager") != null)
+			return (nc.ui.pubapp.uif2app.model.BatchModelDataManager) context.get("batchModelModelDataManager");
+		nc.ui.pubapp.uif2app.model.BatchModelDataManager bean = new nc.ui.pubapp.uif2app.model.BatchModelDataManager();
+		context.put("batchModelModelDataManager", bean);
+		bean.setModel(getBatchModel());
+		bean.setService(getBatchModelModelService());
+		setBeanFacotryIfBeanFacatoryAware(bean);
+		invokeInitializingBean(bean);
+		return bean;
+	}
+
+	public nc.ui.pubapp.uif2app.view.TemplateContainer getTemplateContainer() {
+		if (context.get("templateContainer") != null)
+			return (nc.ui.pubapp.uif2app.view.TemplateContainer) context.get("templateContainer");
+		nc.ui.pubapp.uif2app.view.TemplateContainer bean = new nc.ui.pubapp.uif2app.view.TemplateContainer();
+		context.put("templateContainer", bean);
+		bean.setContext(getContext());
+		bean.setNodeKeies(getManagedList0());
+		bean.load();
+		setBeanFacotryIfBeanFacatoryAware(bean);
+		invokeInitializingBean(bean);
+		return bean;
+	}
+
+	private List getManagedList0() {
+		List list = new ArrayList();
+		list.add("bt");
+		return list;
+	}
+
+	public nc.ui.twhr.twhr.ace.view.AccountOrgHeadPanel getOrgpanel() {
+		if (context.get("orgpanel") != null)
+			return (nc.ui.twhr.twhr.ace.view.AccountOrgHeadPanel) context.get("orgpanel");
+		nc.ui.twhr.twhr.ace.view.AccountOrgHeadPanel bean = new nc.ui.twhr.twhr.ace.view.AccountOrgHeadPanel();
+		context.put("orgpanel", bean);
+		bean.setModel(getBatchModel());
+		bean.setBatchDataManager(getBatchModelModelDataManager());
+		bean.setBatchModelModelDataManagerAna(getBatchModelModelDataManagerAna());
+		bean.setContext(getContext());
+		bean.setPk_orgtype("HRORGTYPE00000000000");
+		bean.initUI();
+		setBeanFacotryIfBeanFacatoryAware(bean);
+		invokeInitializingBean(bean);
+		return bean;
+	}
+
+	public nc.ui.pubapp.uif2app.view.ShowUpableBatchBillTable getBatchBillTable() {
+		if (context.get("batchBillTable") != null)
+			return (nc.ui.pubapp.uif2app.view.ShowUpableBatchBillTable) context.get("batchBillTable");
+		nc.ui.pubapp.uif2app.view.ShowUpableBatchBillTable bean = new nc.ui.pubapp.uif2app.view.ShowUpableBatchBillTable();
+		context.put("batchBillTable", bean);
+		bean.setModel(getBatchModel());
+		bean.setNodekey("bt");
+		bean.initUI();
+		setBeanFacotryIfBeanFacatoryAware(bean);
+		invokeInitializingBean(bean);
+		return bean;
+	}
+
+	public nc.ui.uif2.TangramContainer getContainer() {
+		if (context.get("container") != null)
+			return (nc.ui.uif2.TangramContainer) context.get("container");
+		nc.ui.uif2.TangramContainer bean = new nc.ui.uif2.TangramContainer();
+		context.put("container", bean);
+		bean.setTangramLayoutRoot(getVSNode_4d1650df());
+		bean.setActions(getManagedList1());
+		bean.setEditActions(getManagedList2());
+		bean.setModel(getBatchModel());
+		bean.initUI();
+		setBeanFacotryIfBeanFacatoryAware(bean);
+		invokeInitializingBean(bean);
+		return bean;
+	}
+
+	private nc.ui.uif2.tangramlayout.node.VSNode getVSNode_4d1650df() {
+		if (context.get("nc.ui.uif2.tangramlayout.node.VSNode#4d1650df") != null)
+			return (nc.ui.uif2.tangramlayout.node.VSNode) context.get("nc.ui.uif2.tangramlayout.node.VSNode#4d1650df");
+		nc.ui.uif2.tangramlayout.node.VSNode bean = new nc.ui.uif2.tangramlayout.node.VSNode();
+		context.put("nc.ui.uif2.tangramlayout.node.VSNode#4d1650df", bean);
+		bean.setUp(getCNode_5b055dd0());
+		bean.setDown(getVSNode_170ae842());
+		bean.setDividerLocation(24.0f);
+		bean.setName("");
+		setBeanFacotryIfBeanFacatoryAware(bean);
+		invokeInitializingBean(bean);
+		return bean;
+	}
+
+	private nc.ui.uif2.tangramlayout.node.CNode getCNode_5b055dd0() {
+		if (context.get("nc.ui.uif2.tangramlayout.node.CNode#5b055dd0") != null)
+			return (nc.ui.uif2.tangramlayout.node.CNode) context.get("nc.ui.uif2.tangramlayout.node.CNode#5b055dd0");
+		nc.ui.uif2.tangramlayout.node.CNode bean = new nc.ui.uif2.tangramlayout.node.CNode();
+		context.put("nc.ui.uif2.tangramlayout.node.CNode#5b055dd0", bean);
+		bean.setComponent(getOrgpanel());
+		setBeanFacotryIfBeanFacatoryAware(bean);
+		invokeInitializingBean(bean);
+		return bean;
+	}
+
+	private nc.ui.uif2.tangramlayout.node.VSNode getVSNode_170ae842() {
+		if (context.get("nc.ui.uif2.tangramlayout.node.VSNode#170ae842") != null)
+			return (nc.ui.uif2.tangramlayout.node.VSNode) context.get("nc.ui.uif2.tangramlayout.node.VSNode#170ae842");
+		nc.ui.uif2.tangramlayout.node.VSNode bean = new nc.ui.uif2.tangramlayout.node.VSNode();
+		context.put("nc.ui.uif2.tangramlayout.node.VSNode#170ae842", bean);
+		bean.setUp(getCNode_3d52315f());
+		bean.setDown(getCNode_5f27736c());
+		bean.setDividerLocation(300.0f);
+		bean.setName("");
+		setBeanFacotryIfBeanFacatoryAware(bean);
+		invokeInitializingBean(bean);
+		return bean;
+	}
+
+	private nc.ui.uif2.tangramlayout.node.CNode getCNode_3d52315f() {
+		if (context.get("nc.ui.uif2.tangramlayout.node.CNode#3d52315f") != null)
+			return (nc.ui.uif2.tangramlayout.node.CNode) context.get("nc.ui.uif2.tangramlayout.node.CNode#3d52315f");
+		nc.ui.uif2.tangramlayout.node.CNode bean = new nc.ui.uif2.tangramlayout.node.CNode();
+		context.put("nc.ui.uif2.tangramlayout.node.CNode#3d52315f", bean);
+		bean.setComponent(getBatchBillTable());
+		setBeanFacotryIfBeanFacatoryAware(bean);
+		invokeInitializingBean(bean);
+		return bean;
+	}
+
+	private nc.ui.uif2.tangramlayout.node.CNode getCNode_5f27736c() {
+		if (context.get("nc.ui.uif2.tangramlayout.node.CNode#5f27736c") != null)
+			return (nc.ui.uif2.tangramlayout.node.CNode) context.get("nc.ui.uif2.tangramlayout.node.CNode#5f27736c");
+		nc.ui.uif2.tangramlayout.node.CNode bean = new nc.ui.uif2.tangramlayout.node.CNode();
+		context.put("nc.ui.uif2.tangramlayout.node.CNode#5f27736c", bean);
+		bean.setComponent(getBatchBillTableAna());
+		setBeanFacotryIfBeanFacatoryAware(bean);
+		invokeInitializingBean(bean);
+		return bean;
+	}
+
+	private List getManagedList1() {
+		List list = new ArrayList();
+		list.add(getBatchEditAction());
+		list.add(getBatchRefreshAction());
+		list.add(getBatchAddLineAction());
+		list.add(getBatchDelLineAction());
+		list.add(getImportGroupAction());
+		list.add(getReconciliationAction());
+		list.add(getSynchroAction());
+		return list;
+	}
+
+	private List getManagedList2() {
+		List list = new ArrayList();
+		list.add(getBatchSaveAction());
+		list.add(getBatchCancelAction());
+		list.add(getBatchDelLineActiona());
+		return list;
+	}
+
+	public nc.ui.pubapp.uif2app.model.DefaultFuncNodeInitDataListener getInitDataListener() {
+		if (context.get("InitDataListener") != null)
+			return (nc.ui.pubapp.uif2app.model.DefaultFuncNodeInitDataListener) context.get("InitDataListener");
+		nc.ui.pubapp.uif2app.model.DefaultFuncNodeInitDataListener bean = new nc.ui.pubapp.uif2app.model.DefaultFuncNodeInitDataListener();
+		context.put("InitDataListener", bean);
+		bean.setModel(getBatchModel());
+		bean.setContext(getContext());
+		bean.setVoClassName("nc.vo.twhr.nhicalc.BaoAccountVO");
+		setBeanFacotryIfBeanFacatoryAware(bean);
+		invokeInitializingBean(bean);
+		return bean;
+	}
+
+	public nc.ui.pubapp.uif2app.model.AppEventHandlerMediator getBatchModelEventMediator() {
+		if (context.get("batchModelEventMediator") != null)
+			return (nc.ui.pubapp.uif2app.model.AppEventHandlerMediator) context.get("batchModelEventMediator");
+		nc.ui.pubapp.uif2app.model.AppEventHandlerMediator bean = new nc.ui.pubapp.uif2app.model.AppEventHandlerMediator();
+		context.put("batchModelEventMediator", bean);
+		bean.setModel(getBatchModel());
+		bean.setHandlerGroup(getManagedList3());
+		setBeanFacotryIfBeanFacatoryAware(bean);
+		invokeInitializingBean(bean);
+		return bean;
+	}
+
+	private List getManagedList3() {
+		List list = new ArrayList();
+		return list;
+	}
+
+	public nc.ui.pubapp.uif2app.actions.batch.BatchEditAction getBatchEditAction() {
+		if (context.get("batchEditAction") != null)
+			return (nc.ui.pubapp.uif2app.actions.batch.BatchEditAction) context.get("batchEditAction");
+		nc.ui.pubapp.uif2app.actions.batch.BatchEditAction bean = new nc.ui.pubapp.uif2app.actions.batch.BatchEditAction();
+		context.put("batchEditAction", bean);
+		bean.setModel(getBatchModel());
+		bean.setExceptionHandler(getExceptionHandler());
+		setBeanFacotryIfBeanFacatoryAware(bean);
+		invokeInitializingBean(bean);
+		return bean;
+	}
+
+	public nc.ui.twhr.twhr.action.ReconciliationAction getReconciliationAction() {
+		if (context.get("ReconciliationAction") != null)
+			return (nc.ui.twhr.twhr.action.ReconciliationAction) context.get("ReconciliationAction");
+		nc.ui.twhr.twhr.action.ReconciliationAction bean = new nc.ui.twhr.twhr.action.ReconciliationAction();
+		context.put("ReconciliationAction", bean);
+		bean.setModeldiff(getBatchModelAna());
+		bean.setBtnName("對賬");
+		bean.setModelManager(getBatchModelModelDataManagerAna());
+		bean.setModeltwhr(getBatchModel());
+		bean.setExceptionHandler(getExceptionHandler());
+		setBeanFacotryIfBeanFacatoryAware(bean);
+		invokeInitializingBean(bean);
+		return bean;
+	}
+
+	public nc.ui.twhr.twhr.action.SynchroAction getSynchroAction() {
+		if (context.get("SynchroAction") != null)
+			return (nc.ui.twhr.twhr.action.SynchroAction) context.get("SynchroAction");
+		nc.ui.twhr.twhr.action.SynchroAction bean = new nc.ui.twhr.twhr.action.SynchroAction();
+		context.put("SynchroAction", bean);
+		bean.setModel(getBatchModel());
+		bean.setBtnName("同步");
+		bean.setModelManager(getBatchModelModelDataManager());
+		bean.setExceptionHandler(getExceptionHandler());
+		setBeanFacotryIfBeanFacatoryAware(bean);
+		invokeInitializingBean(bean);
+		return bean;
+	}
+
+	public nc.ui.twhr.twhr.action.BatchRefreshAction getBatchRefreshAction() {
+		if (context.get("batchRefreshAction") != null)
+			return (nc.ui.twhr.twhr.action.BatchRefreshAction) context.get("batchRefreshAction");
+		nc.ui.twhr.twhr.action.BatchRefreshAction bean = new nc.ui.twhr.twhr.action.BatchRefreshAction();
+		context.put("batchRefreshAction", bean);
+		bean.setModel(getBatchModel());
+		bean.setBatchModelModelDataManagerAna(getBatchModelModelDataManagerAna());
+		bean.setOrgpanel(getOrgpanel());
+		bean.setBatchDataManager(getBatchModelModelDataManager());
+		bean.setModelManager(getBatchModelModelDataManager());
+		bean.setExceptionHandler(getExceptionHandler());
+		setBeanFacotryIfBeanFacatoryAware(bean);
+		invokeInitializingBean(bean);
+		return bean;
+	}
+
+	public nc.ui.twhr.twhr.action.TwhrAddLineAction getBatchAddLineAction() {
+		if (context.get("batchAddLineAction") != null)
+			return (nc.ui.twhr.twhr.action.TwhrAddLineAction) context.get("batchAddLineAction");
+		nc.ui.twhr.twhr.action.TwhrAddLineAction bean = new nc.ui.twhr.twhr.action.TwhrAddLineAction();
+		context.put("batchAddLineAction", bean);
+		bean.setModel(getBatchModel());
+		bean.setVoClassName("nc.vo.twhr.nhicalc.BaoAccountVO");
+		bean.setExceptionHandler(getExceptionHandler());
+		setBeanFacotryIfBeanFacatoryAware(bean);
+		invokeInitializingBean(bean);
+		return bean;
+	}
+
+	public nc.ui.pubapp.uif2app.actions.batch.BatchDelLineAction getBatchDelLineAction() {
+		if (context.get("batchDelLineAction") != null)
+			return (nc.ui.pubapp.uif2app.actions.batch.BatchDelLineAction) context.get("batchDelLineAction");
+		nc.ui.pubapp.uif2app.actions.batch.BatchDelLineAction bean = new nc.ui.pubapp.uif2app.actions.batch.BatchDelLineAction();
+		context.put("batchDelLineAction", bean);
+		bean.setModel(getBatchModel());
+		bean.setBatchBillTable(getBatchBillTable());
+		bean.setExceptionHandler(getExceptionHandler());
+		setBeanFacotryIfBeanFacatoryAware(bean);
+		invokeInitializingBean(bean);
+		return bean;
+	}
+
+	public nc.ui.twhr.twhr.action.ImportAccountAction getImportLaborProtectAction() {
+		if (context.get("ImportLaborProtectAction") != null)
+			return (nc.ui.twhr.twhr.action.ImportAccountAction) context.get("ImportLaborProtectAction");
+		nc.ui.twhr.twhr.action.ImportAccountAction bean = new nc.ui.twhr.twhr.action.ImportAccountAction();
+		context.put("ImportLaborProtectAction", bean);
+		bean.setModel(getBatchModel());
+		bean.setBtnName("導入勞保");
+		bean.setBatchRefreshAction(getBatchRefreshAction());
+		bean.setOrgpanel(getOrgpanel());
+		setBeanFacotryIfBeanFacatoryAware(bean);
+		invokeInitializingBean(bean);
+		return bean;
+	}
+
+	public nc.ui.twhr.twhr.action.ImportHealthInsuranceAction getImportHealthInsuranceAction() {
+		if (context.get("ImportHealthInsuranceAction") != null)
+			return (nc.ui.twhr.twhr.action.ImportHealthInsuranceAction) context.get("ImportHealthInsuranceAction");
+		nc.ui.twhr.twhr.action.ImportHealthInsuranceAction bean = new nc.ui.twhr.twhr.action.ImportHealthInsuranceAction();
+		context.put("ImportHealthInsuranceAction", bean);
+		bean.setModel(getBatchModel());
+		bean.setBtnName("導入健保");
+		bean.setBatchRefreshAction(getBatchRefreshAction());
+		bean.setOrgpanel(getOrgpanel());
+		setBeanFacotryIfBeanFacatoryAware(bean);
+		invokeInitializingBean(bean);
+		return bean;
+	}
+
+	public nc.ui.twhr.twhr.action.ImportRetireAction getImportRetireAction() {
+		if (context.get("ImportRetireAction") != null)
+			return (nc.ui.twhr.twhr.action.ImportRetireAction) context.get("ImportRetireAction");
+		nc.ui.twhr.twhr.action.ImportRetireAction bean = new nc.ui.twhr.twhr.action.ImportRetireAction();
+		context.put("ImportRetireAction", bean);
+		bean.setModel(getBatchModel());
+		bean.setBtnName("導入勞退");
+		bean.setBatchRefreshAction(getBatchRefreshAction());
+		bean.setOrgpanel(getOrgpanel());
+		setBeanFacotryIfBeanFacatoryAware(bean);
+		invokeInitializingBean(bean);
+		return bean;
+	}
+
+	public nc.ui.pubapp.uif2app.actions.batch.BatchSaveAction getBatchSaveAction() {
+		if (context.get("batchSaveAction") != null)
+			return (nc.ui.pubapp.uif2app.actions.batch.BatchSaveAction) context.get("batchSaveAction");
+		nc.ui.pubapp.uif2app.actions.batch.BatchSaveAction bean = new nc.ui.pubapp.uif2app.actions.batch.BatchSaveAction();
+		context.put("batchSaveAction", bean);
+		bean.setModel(getBatchModel());
+		bean.setEditor(getBatchBillTable());
+		bean.setValidationService(getBatchBillTableValidateService());
+		bean.setExceptionHandler(getExceptionHandler());
+		setBeanFacotryIfBeanFacatoryAware(bean);
+		invokeInitializingBean(bean);
+		return bean;
+	}
+
+	public nc.ui.pubapp.uif2app.actions.batch.BatchCancelAction getBatchCancelAction() {
+		if (context.get("batchCancelAction") != null)
+			return (nc.ui.pubapp.uif2app.actions.batch.BatchCancelAction) context.get("batchCancelAction");
+		nc.ui.pubapp.uif2app.actions.batch.BatchCancelAction bean = new nc.ui.pubapp.uif2app.actions.batch.BatchCancelAction();
+		context.put("batchCancelAction", bean);
+		bean.setModel(getBatchModel());
+		bean.setEditor(getBatchBillTable());
+		bean.setExceptionHandler(getExceptionHandler());
+		setBeanFacotryIfBeanFacatoryAware(bean);
+		invokeInitializingBean(bean);
+		return bean;
+	}
+
+	public nc.ui.twhr.twhr.action.TwhrAddLineActionacc getBatchAddLineActiona() {
+		if (context.get("batchAddLineActiona") != null)
+			return (nc.ui.twhr.twhr.action.TwhrAddLineActionacc) context.get("batchAddLineActiona");
+		nc.ui.twhr.twhr.action.TwhrAddLineActionacc bean = new nc.ui.twhr.twhr.action.TwhrAddLineActionacc();
+		context.put("batchAddLineActiona", bean);
+		bean.setModel(getBatchModel());
+		bean.setVoClassName("nc.vo.twhr.nhicalc.BaoAccountVO");
+		bean.setExceptionHandler(getExceptionHandler());
+		setBeanFacotryIfBeanFacatoryAware(bean);
+		invokeInitializingBean(bean);
+		return bean;
+	}
+
+	public nc.ui.pubapp.uif2app.actions.batch.BatchDelLineAction getBatchDelLineActiona() {
+		if (context.get("batchDelLineActiona") != null)
+			return (nc.ui.pubapp.uif2app.actions.batch.BatchDelLineAction) context.get("batchDelLineActiona");
+		nc.ui.pubapp.uif2app.actions.batch.BatchDelLineAction bean = new nc.ui.pubapp.uif2app.actions.batch.BatchDelLineAction();
+		context.put("batchDelLineActiona", bean);
+		bean.setModel(getBatchModel());
+		bean.setBatchBillTable(getBatchBillTable());
+		bean.setExceptionHandler(getExceptionHandler());
+		setBeanFacotryIfBeanFacatoryAware(bean);
+		invokeInitializingBean(bean);
+		return bean;
+	}
+
+	public nc.funcnode.ui.action.MenuAction getImportGroupAction() {
+		if (context.get("ImportGroupAction") != null)
+			return (nc.funcnode.ui.action.MenuAction) context.get("ImportGroupAction");
+		nc.funcnode.ui.action.MenuAction bean = new nc.funcnode.ui.action.MenuAction();
+		context.put("ImportGroupAction", bean);
+		bean.setCode("alteration");
+		bean.setName(getI18nFB_74178802());
+		bean.setActions(getManagedList4());
+		setBeanFacotryIfBeanFacatoryAware(bean);
+		invokeInitializingBean(bean);
+		return bean;
+	}
+
+	private java.lang.String getI18nFB_74178802() {
+		if (context.get("nc.ui.uif2.I18nFB#74178802") != null)
+			return (java.lang.String) context.get("nc.ui.uif2.I18nFB#74178802");
+		nc.ui.uif2.I18nFB bean = new nc.ui.uif2.I18nFB();
+		context.put("&nc.ui.uif2.I18nFB#74178802", bean);
+		bean.setResDir("menucode");
+		bean.setDefaultValue("??胺玂");
+		bean.setResId("D604099");
+		setBeanFacotryIfBeanFacatoryAware(bean);
+		invokeInitializingBean(bean);
+		try {
+			Object product = bean.getObject();
+			context.put("nc.ui.uif2.I18nFB#74178802", product);
+			return (java.lang.String) product;
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	private List getManagedList4() {
+		List list = new ArrayList();
+		list.add(getImportLaborProtectAction());
+		list.add(getImportHealthInsuranceAction());
+		list.add(getImportRetireAction());
+		return list;
+	}
+
+	public nc.ui.uif2.DefaultExceptionHanler getExceptionHandler() {
+		if (context.get("exceptionHandler") != null)
+			return (nc.ui.uif2.DefaultExceptionHanler) context.get("exceptionHandler");
+		nc.ui.uif2.DefaultExceptionHanler bean = new nc.ui.uif2.DefaultExceptionHanler(getContainer());
+		context.put("exceptionHandler", bean);
+		bean.setContext(getContext());
+		setBeanFacotryIfBeanFacatoryAware(bean);
+		invokeInitializingBean(bean);
+		return bean;
+	}
+
+	public nc.ui.uif2.model.DefaultBatchValidationService getBatchBillTableValidateService() {
+		if (context.get("batchBillTableValidateService") != null)
+			return (nc.ui.uif2.model.DefaultBatchValidationService) context.get("batchBillTableValidateService");
+		nc.ui.uif2.model.DefaultBatchValidationService bean = new nc.ui.uif2.model.DefaultBatchValidationService();
+		context.put("batchBillTableValidateService", bean);
+		bean.setEditor(getBatchBillTable());
+		setBeanFacotryIfBeanFacatoryAware(bean);
+		invokeInitializingBean(bean);
+		return bean;
+	}
+
+	public nc.ui.pubapp.pub.smart.SmartBatchAppModelService getBatchModelModelServiceAna() {
+		if (context.get("batchModelModelServiceAna") != null)
+			return (nc.ui.pubapp.pub.smart.SmartBatchAppModelService) context.get("batchModelModelServiceAna");
+		nc.ui.pubapp.pub.smart.SmartBatchAppModelService bean = new nc.ui.pubapp.pub.smart.SmartBatchAppModelService();
+		context.put("batchModelModelServiceAna", bean);
+		bean.setServiceItf("nc.itf.twhr.IDiffinsuranceaMaintain");
+		bean.setVoClass("nc.vo.twhr.diffinsurance.DiffinsuranceVO");
+		setBeanFacotryIfBeanFacatoryAware(bean);
+		invokeInitializingBean(bean);
+		return bean;
+	}
+
+	public nc.vo.bd.meta.GeneralBDObjectAdapterFactory getBOAdapterFactoryAna() {
+		if (context.get("BOAdapterFactoryAna") != null)
+			return (nc.vo.bd.meta.GeneralBDObjectAdapterFactory) context.get("BOAdapterFactoryAna");
+		nc.vo.bd.meta.GeneralBDObjectAdapterFactory bean = new nc.vo.bd.meta.GeneralBDObjectAdapterFactory();
+		context.put("BOAdapterFactoryAna", bean);
+		bean.setMode("MD");
+		setBeanFacotryIfBeanFacatoryAware(bean);
+		invokeInitializingBean(bean);
+		return bean;
+	}
+
+	public nc.ui.pubapp.uif2app.model.BatchBillTableModel getBatchModelAna() {
+		if (context.get("batchModelAna") != null)
+			return (nc.ui.pubapp.uif2app.model.BatchBillTableModel) context.get("batchModelAna");
+		nc.ui.pubapp.uif2app.model.BatchBillTableModel bean = new nc.ui.pubapp.uif2app.model.BatchBillTableModel();
+		context.put("batchModelAna", bean);
+		bean.setContext(getContext());
+		bean.setService(getBatchModelModelServiceAna());
+		bean.setBusinessObjectAdapterFactory(getBOAdapterFactoryAna());
+		setBeanFacotryIfBeanFacatoryAware(bean);
+		invokeInitializingBean(bean);
+		return bean;
+	}
+
+	public nc.ui.pubapp.uif2app.model.BatchModelDataManager getBatchModelModelDataManagerAna() {
+		if (context.get("batchModelModelDataManagerAna") != null)
+			return (nc.ui.pubapp.uif2app.model.BatchModelDataManager) context.get("batchModelModelDataManagerAna");
+		nc.ui.pubapp.uif2app.model.BatchModelDataManager bean = new nc.ui.pubapp.uif2app.model.BatchModelDataManager();
+		context.put("batchModelModelDataManagerAna", bean);
+		bean.setModel(getBatchModelAna());
+		bean.setService(getBatchModelModelServiceAna());
+		setBeanFacotryIfBeanFacatoryAware(bean);
+		invokeInitializingBean(bean);
+		return bean;
+	}
+
+	public nc.ui.twhr.nhicalc.ace.view.ShowUpableBatchBillTableaccount getBatchBillTableAna() {
+		if (context.get("batchBillTableAna") != null)
+			return (nc.ui.twhr.nhicalc.ace.view.ShowUpableBatchBillTableaccount) context.get("batchBillTableAna");
+		nc.ui.twhr.nhicalc.ace.view.ShowUpableBatchBillTableaccount bean = new nc.ui.twhr.nhicalc.ace.view.ShowUpableBatchBillTableaccount();
+		context.put("batchBillTableAna", bean);
+		bean.setModel(getBatchModelAna());
+		bean.setNodekey("bt");
+		bean.initUI();
+		setBeanFacotryIfBeanFacatoryAware(bean);
+		invokeInitializingBean(bean);
+		return bean;
+	}
+
+}

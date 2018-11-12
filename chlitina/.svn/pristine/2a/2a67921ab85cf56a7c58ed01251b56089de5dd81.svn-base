@@ -1,0 +1,90 @@
+insert into pub_billtemplet_t(basetab,dr,metadataclass,metadatapath,mixindex,pk_billtemplet,pk_billtemplet_t,pk_layout,pos,position,resid,tabcode,tabindex,tabname,ts,vdef1,vdef2,vdef3) values( null,0,'hrhi.hi_psndoc_retire','hi_psndoc_retire',null,'1001Z7100000000114F5','1001ZZ1000000000MQPH',null,1,1,'16007psn0032','hi_psndoc_retire',22,'离退待遇','2018-09-16 13:59:42',null,null,null)
+go
+insert into pub_billtemplet_t(basetab,dr,metadataclass,metadatapath,mixindex,pk_billtemplet,pk_billtemplet_t,pk_layout,pos,position,resid,tabcode,tabindex,tabname,ts,vdef1,vdef2,vdef3) values( null,0,'hrhi.hi_psndoc_bminfo','hi_psndoc_bminfo',null,'1001Z7100000000114F5','1001ZZ1000000000MQPI',null,1,1,'16007psn0043','hi_psndoc_bminfo',28,'社保信息','2018-09-16 13:59:42',null,null,null)
+go
+insert into pub_billtemplet_t(basetab,dr,metadataclass,metadatapath,mixindex,pk_billtemplet,pk_billtemplet_t,pk_layout,pos,position,resid,tabcode,tabindex,tabname,ts,vdef1,vdef2,vdef3) values( null,0,'hrhi.hi_psndoc_glbdef8','hi_psndoc_glbdef8',null,'1001Z7100000000114F5','1001ZZ1000000000MQPJ',null,1,1,'hi_psndoc_glbdef8','hi_psndoc_glbdef8',31,'勞保勞退信息','2018-09-16 13:59:42',null,null,null)
+go
+insert into pub_billtemplet_t(basetab,dr,metadataclass,metadatapath,mixindex,pk_billtemplet,pk_billtemplet_t,pk_layout,pos,position,resid,tabcode,tabindex,tabname,ts,vdef1,vdef2,vdef3) values( null,0,'hrhi.hi_psndoc_title','hi_psndoc_title',null,'1001Z7100000000114F5','1001ZZ1000000000MQPK',null,1,1,'16007psn0025','hi_psndoc_title',15,'职称信息','2018-09-16 13:59:42',null,null,null)
+go
+insert into pub_billtemplet_t(basetab,dr,metadataclass,metadatapath,mixindex,pk_billtemplet,pk_billtemplet_t,pk_layout,pos,position,resid,tabcode,tabindex,tabname,ts,vdef1,vdef2,vdef3) values( null,0,'hrhi.hi_psndoc_glbdef10','hi_psndoc_glbdef10',null,'1001Z7100000000114F5','1001ZZ1000000000MQPL',null,1,1,'hi_psndoc_glbdef10','hi_psndoc_glbdef10',33,'勞保投保明細','2018-09-16 13:59:42',null,null,null)
+go
+insert into pub_billtemplet_t(basetab,dr,metadataclass,metadatapath,mixindex,pk_billtemplet,pk_billtemplet_t,pk_layout,pos,position,resid,tabcode,tabindex,tabname,ts,vdef1,vdef2,vdef3) values( null,0,null,null,2,'1001Z7100000000114F5','1001ZZ1000000000MQPM',null,2,2,'UC001-0000095','audit_info',0,'审计信息','2018-09-16 13:59:42',null,null,null)
+go
+insert into pub_billtemplet_t(basetab,dr,metadataclass,metadatapath,mixindex,pk_billtemplet,pk_billtemplet_t,pk_layout,pos,position,resid,tabcode,tabindex,tabname,ts,vdef1,vdef2,vdef3) values( null,0,'hrhi.hi_psndoc_glbdef2','hi_psndoc_glbdef2',null,'1001Z7100000000114F5','1001ZZ1000000000MQPN',null,1,1,'hi_psndoc_glbdef2','hi_psndoc_glbdef2',15,'工作地点','2018-09-16 13:59:42',null,null,null)
+go
+insert into pub_billtemplet_t(basetab,dr,metadataclass,metadatapath,mixindex,pk_billtemplet,pk_billtemplet_t,pk_layout,pos,position,resid,tabcode,tabindex,tabname,ts,vdef1,vdef2,vdef3) values( null,0,'hrhi.hi_psndoc_glbdef4','hi_psndoc_glbdef4',null,'1001Z7100000000114F5','1001ZZ1000000000MQPO',null,1,1,'hi_psndoc_glbdef4','hi_psndoc_glbdef4',16,'就业证信息','2018-09-16 13:59:42',null,null,null)
+go
+insert into pub_billtemplet_t(basetab,dr,metadataclass,metadatapath,mixindex,pk_billtemplet,pk_billtemplet_t,pk_layout,pos,position,resid,tabcode,tabindex,tabname,ts,vdef1,vdef2,vdef3) values( null,0,'hrhi.hi_psndoc_family','hi_psndoc_family',null,'1001Z7100000000114F5','1001ZZ1000000000MQPP',null,1,1,'16007psn0023','hi_psndoc_family',8,'家庭信息','2018-09-16 13:59:42',null,null,null)
+go
+insert into pub_billtemplet_t(basetab,dr,metadataclass,metadatapath,mixindex,pk_billtemplet,pk_billtemplet_t,pk_layout,pos,position,resid,tabcode,tabindex,tabname,ts,vdef1,vdef2,vdef3) values( null,0,'hrhi.hi_psndoc_ctrt','hi_psndoc_ctrt',null,'1001Z7100000000114F5','1001ZZ1000000000MQPQ',null,1,1,'16007psn0019','hi_psndoc_ctrt',9,'合同信息','2018-09-16 13:59:42',null,null,null)
+go
+insert into pub_billtemplet_t(basetab,dr,metadataclass,metadatapath,mixindex,pk_billtemplet,pk_billtemplet_t,pk_layout,pos,position,resid,tabcode,tabindex,tabname,ts,vdef1,vdef2,vdef3) values( null,0,'hrhi.bd_psndoc',null,null,'1001Z7100000000114F5','1001ZZ1000000000MQPR',null,0,0,'UC001-0000068','bd_psndoc',0,'人员基本信息','2018-09-16 13:59:42',null,null,null)
+go
+insert into pub_billtemplet_t(basetab,dr,metadataclass,metadatapath,mixindex,pk_billtemplet,pk_billtemplet_t,pk_layout,pos,position,resid,tabcode,tabindex,tabname,ts,vdef1,vdef2,vdef3) values( null,0,'hrhi.hi_psndoc_pun','hi_psndoc_pun',null,'1001Z7100000000114F5','1001ZZ1000000000MQPS',null,1,1,'16007psn0031','hi_psndoc_pun',19,'惩罚信息','2018-09-16 13:59:42',null,null,null)
+go
+insert into pub_billtemplet_t(basetab,dr,metadataclass,metadatapath,mixindex,pk_billtemplet,pk_billtemplet_t,pk_layout,pos,position,resid,tabcode,tabindex,tabname,ts,vdef1,vdef2,vdef3) values( null,0,'hrhi.hi_psndoc_cert','hi_psndoc_cert',null,'1001Z7100000000114F5','1001ZZ1000000000MQPT',null,1,1,'16007psn0033','hi_psndoc_cert',13,'身份证件','2018-09-16 13:59:42',null,null,null)
+go
+insert into pub_billtemplet_t(basetab,dr,metadataclass,metadatapath,mixindex,pk_billtemplet,pk_billtemplet_t,pk_layout,pos,position,resid,tabcode,tabindex,tabname,ts,vdef1,vdef2,vdef3) values( null,0,'hrhi.hi_psndoc_glbdef1','hi_psndoc_glbdef1',null,'1001Z7100000000114F5','1001ZZ1000000000MQPU',null,1,1,'hi_psndoc_glbdef1','hi_psndoc_glbdef1',6,'劳动合同信息','2018-09-16 13:59:42',null,null,null)
+go
+insert into pub_billtemplet_t(basetab,dr,metadataclass,metadatapath,mixindex,pk_billtemplet,pk_billtemplet_t,pk_layout,pos,position,resid,tabcode,tabindex,tabname,ts,vdef1,vdef2,vdef3) values( null,0,'hrhi.hi_psndoc_glbdef12','hi_psndoc_glbdef12',null,'1001Z7100000000114F5','1001ZZ1000000000MQPV',null,1,1,'hi_psndoc_glbdef12','hi_psndoc_glbdef12',38,'二代健保資訊','2018-09-16 13:59:42',null,null,null)
+go
+insert into pub_billtemplet_t(basetab,dr,metadataclass,metadatapath,mixindex,pk_billtemplet,pk_billtemplet_t,pk_layout,pos,position,resid,tabcode,tabindex,tabname,ts,vdef1,vdef2,vdef3) values( null,0,'hrhi.hi_psndoc_keypsn','hi_psndoc_keypsn',null,'1001Z7100000000114F5','1001ZZ1000000000MQPW',null,1,1,'16007psn0044','hi_psndoc_keypsn',30,'关键人员历史信息','2018-09-16 13:59:42',null,null,null)
+go
+insert into pub_billtemplet_t(basetab,dr,metadataclass,metadatapath,mixindex,pk_billtemplet,pk_billtemplet_t,pk_layout,pos,position,resid,tabcode,tabindex,tabname,ts,vdef1,vdef2,vdef3) values( null,0,'hrhi.hi_psndoc_psnchg','hi_psndoc_psnchg',null,'1001Z7100000000114F5','1001ZZ1000000000MQPX',null,1,1,'16007psn0017','hi_psndoc_psnchg',5,'流动情况','2018-09-16 13:59:42',null,null,null)
+go
+insert into pub_billtemplet_t(basetab,dr,metadataclass,metadatapath,mixindex,pk_billtemplet,pk_billtemplet_t,pk_layout,pos,position,resid,tabcode,tabindex,tabname,ts,vdef1,vdef2,vdef3) values( null,0,'hrhi.hi_psndoc_glbdef7','hi_psndoc_glbdef7',null,'1001Z7100000000114F5','1001ZZ1000000000MQPY',null,1,1,'hi_psndoc_glbdef7','hi_psndoc_glbdef7',15,'工伤信息','2018-09-16 13:59:42',null,null,null)
+go
+insert into pub_billtemplet_t(basetab,dr,metadataclass,metadatapath,mixindex,pk_billtemplet,pk_billtemplet_t,pk_layout,pos,position,resid,tabcode,tabindex,tabname,ts,vdef1,vdef2,vdef3) values( null,0,'hrhi.hi_psndoc_nationduty','hi_psndoc_nationduty',null,'1001Z7100000000114F5','1001ZZ1000000000MQPZ',null,1,1,'16007psn0026','hi_psndoc_nationduty',16,'职业资格','2018-09-16 13:59:42',null,null,null)
+go
+insert into pub_billtemplet_t(basetab,dr,metadataclass,metadatapath,mixindex,pk_billtemplet,pk_billtemplet_t,pk_layout,pos,position,resid,tabcode,tabindex,tabname,ts,vdef1,vdef2,vdef3) values( null,0,'hrhi.hi_psndoc_glbdef14','hi_psndoc_glbdef14',null,'1001Z7100000000114F5','1001ZZ1000000000MQQ0',null,1,1,'hi_psndoc_glbdef14','hi_psndoc_glbdef14',37,'员工团保投保明细','2018-09-16 13:59:42',null,null,null)
+go
+insert into pub_billtemplet_t(basetab,dr,metadataclass,metadatapath,mixindex,pk_billtemplet,pk_billtemplet_t,pk_layout,pos,position,resid,tabcode,tabindex,tabname,ts,vdef1,vdef2,vdef3) values( null,0,'hrhi.hi_psndoc_glbdef9','hi_psndoc_glbdef9',null,'1001Z7100000000114F5','1001ZZ1000000000MQQ1',null,1,1,'hi_psndoc_glbdef9','hi_psndoc_glbdef9',32,'健保信息','2018-09-16 13:59:42',null,null,null)
+go
+insert into pub_billtemplet_t(basetab,dr,metadataclass,metadatapath,mixindex,pk_billtemplet,pk_billtemplet_t,pk_layout,pos,position,resid,tabcode,tabindex,tabname,ts,vdef1,vdef2,vdef3) values( null,0,'hrhi.hi_psndoc_glbdef5','hi_psndoc_glbdef5',null,'1001Z7100000000114F5','1001ZZ1000000000MQQ2',null,1,1,'hi_psndoc_glbdef5','hi_psndoc_glbdef5',18,'居住证积分信息','2018-09-16 13:59:42',null,null,null)
+go
+insert into pub_billtemplet_t(basetab,dr,metadataclass,metadatapath,mixindex,pk_billtemplet,pk_billtemplet_t,pk_layout,pos,position,resid,tabcode,tabindex,tabname,ts,vdef1,vdef2,vdef3) values( null,0,'hrhi.hi_psndoc_work','hi_psndoc_work',null,'1001Z7100000000114F5','1001ZZ1000000000MQQ3',null,1,1,'16007psn0018','hi_psndoc_work',6,'履历记录','2018-09-16 13:59:42',null,null,null)
+go
+insert into pub_billtemplet_t(basetab,dr,metadataclass,metadatapath,mixindex,pk_billtemplet,pk_billtemplet_t,pk_layout,pos,position,resid,tabcode,tabindex,tabname,ts,vdef1,vdef2,vdef3) values( null,0,'hrhi.hi_psndoc_glbdef11','hi_psndoc_glbdef11',null,'1001Z7100000000114F5','1001ZZ1000000000MQQ4',null,1,1,'hi_psndoc_glbdef11','hi_psndoc_glbdef11',34,'勞健保投保匯總','2018-09-16 13:59:42',null,null,null)
+go
+insert into pub_billtemplet_t(basetab,dr,metadataclass,metadatapath,mixindex,pk_billtemplet,pk_billtemplet_t,pk_layout,pos,position,resid,tabcode,tabindex,tabname,ts,vdef1,vdef2,vdef3) values( null,0,'hrhi.hi_psndoc_abroad','hi_psndoc_abroad',null,'1001Z7100000000114F5','1001ZZ1000000000MQQ5',null,1,1,'16007psn0029','hi_psndoc_abroad',21,'出国境情况','2018-09-16 13:59:42',null,null,null)
+go
+insert into pub_billtemplet_t(basetab,dr,metadataclass,metadatapath,mixindex,pk_billtemplet,pk_billtemplet_t,pk_layout,pos,position,resid,tabcode,tabindex,tabname,ts,vdef1,vdef2,vdef3) values( null,0,'hrhi.hi_psndoc_parttime','hi_psndoc_parttime',null,'1001Z7100000000114F5','1001ZZ1000000000MQQ6',null,1,1,'16007psn0015','hi_psndoc_parttime',3,'兼职记录','2018-09-16 13:59:42',null,null,null)
+go
+insert into pub_billtemplet_t(basetab,dr,metadataclass,metadatapath,mixindex,pk_billtemplet,pk_billtemplet_t,pk_layout,pos,position,resid,tabcode,tabindex,tabname,ts,vdef1,vdef2,vdef3) values( null,0,'hrhi.hi_psndoc_enc','hi_psndoc_enc',null,'1001Z7100000000114F5','1001ZZ1000000000MQQ7',null,1,1,'16007psn0030','hi_psndoc_enc',18,'奖励情况','2018-09-16 13:59:42',null,null,null)
+go
+insert into pub_billtemplet_t(basetab,dr,metadataclass,metadatapath,mixindex,pk_billtemplet,pk_billtemplet_t,pk_layout,pos,position,resid,tabcode,tabindex,tabname,ts,vdef1,vdef2,vdef3) values( null,0,'hrhi.hi_psndoc_speitem','hi_psndoc_speitem',null,'1001Z7100000000114F5','1001ZZ1000000000MQQ8',null,1,1,'16007psn0027','hi_psndoc_speitem',26,'专业技术(项目)工作','2018-09-16 13:59:42',null,null,null)
+go
+insert into pub_billtemplet_t(basetab,dr,metadataclass,metadatapath,mixindex,pk_billtemplet,pk_billtemplet_t,pk_layout,pos,position,resid,tabcode,tabindex,tabname,ts,vdef1,vdef2,vdef3) values( null,0,'hrhi.hi_psndoc_glbdef6','hi_psndoc_glbdef6',null,'1001Z7100000000114F5','1001ZZ1000000000MQQ9',null,1,1,'hi_psndoc_glbdef6','hi_psndoc_glbdef6',20,'社保缴费地','2018-09-16 13:59:42',null,null,null)
+go
+insert into pub_billtemplet_t(basetab,dr,metadataclass,metadatapath,mixindex,pk_billtemplet,pk_billtemplet_t,pk_layout,pos,position,resid,tabcode,tabindex,tabname,ts,vdef1,vdef2,vdef3) values( null,0,'hrhi.hi_psndoc_qulify','hi_psndoc_qulify',null,'1001Z7100000000114F5','1001ZZ1000000000MQQA',null,1,1,'26007psn-000123','hi_psndoc_qulify',29,'企业内部任职资格','2018-09-16 13:59:42',null,null,null)
+go
+insert into pub_billtemplet_t(basetab,dr,metadataclass,metadatapath,mixindex,pk_billtemplet,pk_billtemplet_t,pk_layout,pos,position,resid,tabcode,tabindex,tabname,ts,vdef1,vdef2,vdef3) values( null,0,'hrhi.hi_psndoc_glbdef3','hi_psndoc_glbdef3',null,'1001Z7100000000114F5','1001ZZ1000000000MQQB',null,1,1,'hi_psndoc_glbdef3','hi_psndoc_glbdef3',9,'协议信息','2018-09-16 13:59:42',null,null,null)
+go
+insert into pub_billtemplet_t(basetab,dr,metadataclass,metadatapath,mixindex,pk_billtemplet,pk_billtemplet_t,pk_layout,pos,position,resid,tabcode,tabindex,tabname,ts,vdef1,vdef2,vdef3) values( null,0,'hrhi.hi_psndoc_trial','hi_psndoc_trial',null,'1001Z7100000000114F5','1001ZZ1000000000MQQC',null,1,1,'16007psn0016','hi_psndoc_trial',4,'试用情况','2018-09-16 13:59:42',null,null,null)
+go
+insert into pub_billtemplet_t(basetab,dr,metadataclass,metadatapath,mixindex,pk_billtemplet,pk_billtemplet_t,pk_layout,pos,position,resid,tabcode,tabindex,tabname,ts,vdef1,vdef2,vdef3) values( null,0,'hrhi.hi_psndoc_ass','hi_psndoc_ass',null,'1001Z7100000000114F5','1001ZZ1000000000MQQD',null,1,1,'16007psn0039','hi_psndoc_ass',10,'员工考核信息','2018-09-16 13:59:42',null,null,null)
+go
+insert into pub_billtemplet_t(basetab,dr,metadataclass,metadatapath,mixindex,pk_billtemplet,pk_billtemplet_t,pk_layout,pos,position,resid,tabcode,tabindex,tabname,ts,vdef1,vdef2,vdef3) values( null,0,'hrhi.hi_psnjob','hi_psnjob',null,'1001Z7100000000114F5','1001ZZ1000000000MQQE',null,1,1,'16007psn0014','hi_psnjob',2,'工作记录','2018-09-16 13:59:42',null,null,null)
+go
+insert into pub_billtemplet_t(basetab,dr,metadataclass,metadatapath,mixindex,pk_billtemplet,pk_billtemplet_t,pk_layout,pos,position,resid,tabcode,tabindex,tabname,ts,vdef1,vdef2,vdef3) values( 'hi_psnjob',0,'hrhi.hi_psnorg','hi_psnorg',1,'1001Z7100000000114F5','1001ZZ1000000000MQQF',null,0,0,'16007psn0012','hi_psnorg',2,'组织关系','2018-09-16 13:59:42',null,null,null)
+go
+insert into pub_billtemplet_t(basetab,dr,metadataclass,metadatapath,mixindex,pk_billtemplet,pk_billtemplet_t,pk_layout,pos,position,resid,tabcode,tabindex,tabname,ts,vdef1,vdef2,vdef3) values( null,0,'hrhi.hi_psnjob','hi_psnjob',null,'1001Z7100000000114F5','1001ZZ1000000000MQQG',null,0,0,'16007psn0013','hi_psnjob',1,'工作信息','2018-09-16 13:59:42',null,null,null)
+go
+insert into pub_billtemplet_t(basetab,dr,metadataclass,metadatapath,mixindex,pk_billtemplet,pk_billtemplet_t,pk_layout,pos,position,resid,tabcode,tabindex,tabname,ts,vdef1,vdef2,vdef3) values( null,0,'hrhi.hi_psndoc_capa','hi_psndoc_capa',null,'1001Z7100000000114F5','1001ZZ1000000000MQQH',null,1,1,'16007psn0041','hi_psndoc_capa',11,'员工能力素质','2018-09-16 13:59:42',null,null,null)
+go
+insert into pub_billtemplet_t(basetab,dr,metadataclass,metadatapath,mixindex,pk_billtemplet,pk_billtemplet_t,pk_layout,pos,position,resid,tabcode,tabindex,tabname,ts,vdef1,vdef2,vdef3) values( null,0,'hrhi.hi_psndoc_wainfo','hi_psndoc_wainfo',null,'1001Z7100000000114F5','1001ZZ1000000000MQQI',null,1,1,'16007psn0042','hi_psndoc_wainfo',27,'薪资信息','2018-09-16 13:59:42',null,null,null)
+go
+insert into pub_billtemplet_t(basetab,dr,metadataclass,metadatapath,mixindex,pk_billtemplet,pk_billtemplet_t,pk_layout,pos,position,resid,tabcode,tabindex,tabname,ts,vdef1,vdef2,vdef3) values( null,0,'hrhi.hi_psndoc_partylog','hi_psndoc_partylog',null,'1001Z7100000000114F5','1001ZZ1000000000MQQJ',null,1,1,'16007psn0028','hi_psndoc_partylog',20,'参加党派记录','2018-09-16 13:59:42',null,null,null)
+go
+insert into pub_billtemplet_t(basetab,dr,metadataclass,metadatapath,mixindex,pk_billtemplet,pk_billtemplet_t,pk_layout,pos,position,resid,tabcode,tabindex,tabname,ts,vdef1,vdef2,vdef3) values( null,0,'hrhi.hi_psndoc_langability','hi_psndoc_langability',null,'1001Z7100000000114F5','1001ZZ1000000000MQQK',null,1,1,'16007psn0021','hi_psndoc_langability',17,'语言能力','2018-09-16 13:59:42',null,null,null)
+go
+insert into pub_billtemplet_t(basetab,dr,metadataclass,metadatapath,mixindex,pk_billtemplet,pk_billtemplet_t,pk_layout,pos,position,resid,tabcode,tabindex,tabname,ts,vdef1,vdef2,vdef3) values( null,0,'hrhi.hi_psndoc_train','hi_psndoc_train',null,'1001Z7100000000114F5','1001ZZ1000000000MQQL',null,1,1,'16007psn0040','hi_psndoc_train',12,'人员教育培训','2018-09-16 13:59:42',null,null,null)
+go
+insert into pub_billtemplet_t(basetab,dr,metadataclass,metadatapath,mixindex,pk_billtemplet,pk_billtemplet_t,pk_layout,pos,position,resid,tabcode,tabindex,tabname,ts,vdef1,vdef2,vdef3) values( null,0,'hrhi.hi_psndoc_edu','hi_psndoc_edu',null,'1001Z7100000000114F5','1001ZZ1000000000MQQM',null,1,1,'16007psn0020','hi_psndoc_edu',7,'学历信息','2018-09-16 13:59:42',null,null,null)
+go
+insert into pub_billtemplet_t(basetab,dr,metadataclass,metadatapath,mixindex,pk_billtemplet,pk_billtemplet_t,pk_layout,pos,position,resid,tabcode,tabindex,tabname,ts,vdef1,vdef2,vdef3) values( null,0,'hrhi.hi_psndoc_linkman','hi_psndoc_linkman',null,'1001Z7100000000114F5','1001ZZ1000000000MQQN',null,1,1,'16007psn0024','hi_psndoc_linkman',14,'紧急联系人','2018-09-16 13:59:42',null,null,null)
+go
+insert into pub_billtemplet_t(basetab,dr,metadataclass,metadatapath,mixindex,pk_billtemplet,pk_billtemplet_t,pk_layout,pos,position,resid,tabcode,tabindex,tabname,ts,vdef1,vdef2,vdef3) values( null,0,'hrhi.hi_psndoc_glbdef13','hi_psndoc_glbdef13',null,'1001Z7100000000114F5','1001ZZ1000000000MQQO',null,1,1,'hi_psndoc_glbdef13','hi_psndoc_glbdef13',36,'团保信息','2018-09-16 13:59:42',null,null,null)
+go
+insert into pub_billtemplet_t(basetab,dr,metadataclass,metadatapath,mixindex,pk_billtemplet,pk_billtemplet_t,pk_layout,pos,position,resid,tabcode,tabindex,tabname,ts,vdef1,vdef2,vdef3) values( null,0,'hrhi.hi_psnorg','hi_psnorg',null,'1001Z7100000000114F5','1001ZZ1000000000MQQP',null,1,1,'16007psn0012','hi_psnorg',1,'组织关系','2018-09-16 13:59:42',null,null,null)
+go

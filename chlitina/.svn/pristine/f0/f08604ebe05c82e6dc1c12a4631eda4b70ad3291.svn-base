@@ -1,0 +1,3 @@
+
+delete sm_menuitemreg where ( pk_menuitem in ('1001ZZ1000000000K3RQ') and (dr=0 or dr is null) )
+go

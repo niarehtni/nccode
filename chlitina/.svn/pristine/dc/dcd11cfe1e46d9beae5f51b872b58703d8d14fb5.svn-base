@@ -1,0 +1,2 @@
+insert into pub_billtemplet(bill_templetcaption,bill_templetname,devorg,dividerproportion,dr,funccode,layer,metadataclass,model_type,modulecode,nodecode,options,pk_billtemplet,pk_billtypecode,pk_corp,pk_org,resid,shareflag,ts,validateformula) values( '合同解除','SYSTEM',null,null,0,null,0,'hrcm.hi_psnjob',null,null,'6011make',null,'1002Z71000000000Y5C0','6011rel','@@@@',null,'16011make0014',null,'2018-09-16 14:01:33',null)
+go

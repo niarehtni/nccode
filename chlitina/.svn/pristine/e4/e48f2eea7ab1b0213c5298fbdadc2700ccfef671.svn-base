@@ -1,0 +1,10 @@
+insert into md_enumvalue(description,dr,enumsequence,hidden,id,industry,name,resid,ts,value,versiontype) values( 'TYPE_PSN',0,0,'N','16057299-f38f-4e2f-8b1f-49203f09998d','0','人员','md_psnmap_type_psn','2018-08-20 13:29:42','0',0)
+go
+insert into md_enumvalue(description,dr,enumsequence,hidden,id,industry,name,resid,ts,value,versiontype) values( 'TYPE_DEPT',0,1,'N','16057299-f38f-4e2f-8b1f-49203f09998d','0','部门','md_psnmap_type_dept','2018-08-20 13:29:42','1',0)
+go
+insert into md_enumvalue(description,dr,enumsequence,hidden,id,industry,name,resid,ts,value,versiontype) values( 'TYPE_ORG',0,2,'N','16057299-f38f-4e2f-8b1f-49203f09998d','0','组织','md_psnmap_type_org','2018-08-20 13:29:42','2',0)
+go
+insert into md_enumvalue(description,dr,enumsequence,hidden,id,industry,name,resid,ts,value,versiontype) values( null,0,0,'N','83f89f31-7481-4383-bf42-5c8a53b7679c','0','月薪',null,'2018-08-20 13:29:42','1',0)
+go
+insert into md_enumvalue(description,dr,enumsequence,hidden,id,industry,name,resid,ts,value,versiontype) values( null,0,1,'N','83f89f31-7481-4383-bf42-5c8a53b7679c','0','非月薪',null,'2018-08-20 13:29:42','2',0)
+go

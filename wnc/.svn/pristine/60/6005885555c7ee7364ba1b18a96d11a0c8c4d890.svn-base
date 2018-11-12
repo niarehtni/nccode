@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<formula-array>
+
+<formula>
+  <customType>9</customType>
+  <functionName>WageYear</functionName>
+  <functionClass>nc.ui.wa.formular.func.WageYear</functionClass>
+</formula>
+
+<formula>
+  <customType>9</customType>
+  <functionName>WagePeriod</functionName>
+  <functionClass>nc.ui.wa.formular.func.WagePeriod</functionClass>
+</formula>
+
+<formula>
+  <customType>9</customType>
+  <functionName>WaperiodStartDate</functionName>
+  <functionClass>nc.ui.wa.formular.func.WaperiodStartDate</functionClass>
+</formula>
+
+<formula>
+  <customType>9</customType>
+  <functionName>WaperiodEndDate</functionName>
+  <functionClass>nc.ui.wa.formular.func.WaperiodEndDate</functionClass>
+</formula>
+
+<formula>
+  <customType>9</customType>
+  <functionName>PreperiodStartDate</functionName>
+  <functionClass>nc.ui.wa.formular.func.PreperiodStartDate</functionClass>
+</formula>
+
+<formula>
+  <customType>9</customType>
+  <functionName>PreperiodEndDate</functionName>
+  <functionClass>nc.ui.wa.formular.func.PreperiodEndDate</functionClass>
+</formula>
+
+<formula>
+  <customType>9</customType>
+  <functionName>preAdjustDate</functionName>
+  <functionClass>nc.ui.wa.formular.func.PreAdjustDate</functionClass>
+</formula>
+
+<formula>
+  <customType>9</customType>
+  <functionName>RegisterDate</functionName>
+  <functionClass>nc.ui.wa.formular.func.RegisterDate</functionClass>
+</formula>
+
+<formula>
+  <customType>9</customType>
+  <functionName>DismissionDate</functionName>
+  <functionClass>nc.ui.wa.formular.func.DismissionDate</functionClass>
+</formula>
+
+<formula>
+  <customType>9</customType>
+  <functionName>WaperiodDays</functionName>
+  <functionClass>nc.ui.wa.formular.func.WaperiodDays</functionClass>
+</formula>
+<formula>
+  <customType>9</customType>
+  <functionName>WaperiodWorkDays</functionName>
+  <functionClass>nc.ui.wa.formular.func.WaperiodWorkDays</functionClass>
+</formula>
+<formula>
+  <customType>9</customType>
+  <functionName>wageDays</functionName>
+  <functionClass>nc.ui.wa.formular.func.WageDays</functionClass>
+</formula>
+<formula>
+  <customType>9</customType>
+  <functionName>StatisticLeaveChargePays</functionName>
+  <functionClass>nc.ui.wa.formular.func.StatisticLeaveChargePays</functionClass>
+</formula>
+<formula>
+  <customType>9</customType>
+  <functionName>overtimePays</functionName>
+  <functionClass>nc.ui.wa.formular.func.OvertimePays</functionClass>
+</formula>
+<formula>
+  <customType>9</customType>
+  <functionName>taxableOvertimePays</functionName>
+  <functionClass>nc.ui.wa.formular.func.TaxableOvertimePays</functionClass>
+</formula>
+<formula>
+  <customType>9</customType>
+  <functionName>FirstMonWorkDays</functionName>
+  <functionClass>nc.ui.wa.formular.func.FirstMonWorkDays</functionClass>
+</formula>
+<formula>
+  <customType>9</customType>
+  <functionName>LastMonWorkDays</functionName>
+  <functionClass>nc.ui.wa.formular.func.LastMonWorkDays</functionClass>
+</formula>
+<formula>
+  <customType>9</customType>
+  <functionName>taxRate</functionName>
+  <functionClass>nc.ui.wa.formular.func.TaxRate</functionClass>
+</formula>
+<formula>
+  <customType>9</customType>
+  <functionName>nhiIsLabor</functionName>
+  <functionClass>nc.ui.wa.formular.func.NhiIsLaborData</functionClass>
+</formula>
+<formula>
+  <customType>9</customType>
+  <functionName>nhiIsRetire</functionName>
+  <functionClass>nc.ui.wa.formular.func.NhiIsRetireData</functionClass>
+</formula>
+<formula>
+  <customType>9</customType>
+  <functionName>nhiIsHealth</functionName>
+  <functionClass>nc.ui.wa.formular.func.NhiIsHealthData</functionClass>
+</formula>
+<formula>
+  <customType>9</customType>
+  <functionName>intervalDuration</functionName>
+  <functionClass>nc.ui.wa.formular.func.IntervalDuration</functionClass>
+</formula>
+</formula-array>

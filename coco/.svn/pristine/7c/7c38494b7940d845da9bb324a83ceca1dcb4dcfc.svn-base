@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="nc.itf.hr.ta.HRtaEJB">
+	<public>
+		
+		<component priority="0" singleton="true" remote="true" tx="CMT"  supportAlias="false">
+			<interface>nc.itf.hrta.ILeaveextrarestMaintain</interface>
+			<implementation>nc.impl.hrta.LeaveextrarestMaintainImpl
+			</implementation>
+		</component>
+				
+		<component priority="0" singleton="true" remote="true" tx="CMT"  supportAlias="false">
+			<interface>nc.itf.hrta.ILeaveplanMaintain</interface>
+			<implementation>nc.impl.hrta.LeaveplanMaintainImpl
+			</implementation>
+		</component>
+		
+	</public>
+</module>

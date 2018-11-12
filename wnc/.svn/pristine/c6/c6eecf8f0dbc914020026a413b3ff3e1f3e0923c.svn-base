@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding='gb2312'?>
+<module name="hrjf">
+  <public>
+	<component remote="true" singleton="true"  tx="CMT">
+	  <interface>nc.itf.hrjf.IDeptadjMaintain</interface>
+	  <implementation>nc.impl.hrjf.DeptadjMaintainImpl</implementation>
+	</component>
+
+  </public> 
+</module> 

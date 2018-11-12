@@ -1,0 +1,45 @@
+package nc.bs.hrjf.deptadj.ace.bp;
+
+import nc.bs.hrjf.deptadj.plugin.bpplugin.DeptadjPluginPoint;
+import nc.impl.pubapp.pattern.data.bill.template.InsertBPTemplate;
+import nc.impl.pubapp.pattern.rule.processer.AroundProcesser;
+import nc.impl.pubapp.pattern.rule.IRule;
+import nc.vo.om.hrdept.AggHRDeptAdjustVO;
+
+/**
+ * 标准单据新增BP
+ */
+public class AceDeptadjInsertBP {
+
+	public AggHRDeptAdjustVO[] insert(AggHRDeptAdjustVO[] bills) {
+
+		InsertBPTemplate<AggHRDeptAdjustVO> bp = new InsertBPTemplate<AggHRDeptAdjustVO>(
+				DeptadjPluginPoint.INSERT);
+		this.addBeforeRule(bp.getAroundProcesser());
+		this.addAfterRule(bp.getAroundProcesser());
+		return bp.insert(bills);
+
+	}
+
+	/**
+	 * 新增后规则
+	 * 
+	 * @param processor
+	 */
+	private void addAfterRule(AroundProcesser<AggHRDeptAdjustVO> processor) {
+		// TODO 新增后规则
+		IRule<AggHRDeptAdjustVO> rule = null;
+	}
+
+	/**
+	 * 新增前规则
+	 * 
+	 * @param processor
+	 */
+	private void addBeforeRule(AroundProcesser<AggHRDeptAdjustVO> processer) {
+		// TODO 新增前规则
+		IRule<AggHRDeptAdjustVO> rule = null;
+		rule = new nc.bs.pubapp.pub.rule.FillInsertDataRule();
+		processer.addBeforeRule(rule);
+	}
+}

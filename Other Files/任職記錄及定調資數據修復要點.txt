@@ -1,0 +1,23 @@
+1. hi_psnorg
+    1.1 ENDFLAG已離職的為Y,未離職的為N
+    1.2 INDOCFLAG均為Y
+    1.3 JOINSYSDATE均為BEGINDATE
+    1.4 LASTFLAG均為Y
+    1.5 STARTPAYDATE均為BEGINDATE
+    1.6 STOPPAYDATE為各段離職日期
+2. hi_psnjob
+    2.1 ASSGID按PSNORG先後段纍加(用於定調資按在職時間段分組)
+    2.2 ENDDATE為各段結束時間,離職日為當日
+    2.3 新增離職記錄
+        2.3.1 BEGINDATE為離職後一日
+        2.3.2 ENDDATE為空
+        2.3.3 TRNSEVENT=4
+        2.3.4 TRNSREASON=1001A110000000000RBR
+        2.3.5 PK需要新建
+        2.3.6 其他與上一條相同
+    2.4 ENDFLAG離職記錄為Y,其他為N
+    2.5 ISMAINJOB均為Y
+    2.6 LASTFLAG離職記錄為Y,其他為N,最後一筆為Y
+    2.7 RECORDNUM順序
+3. hi_psndoc_work
+    3.1 ENDDATE與PSNJOB對等

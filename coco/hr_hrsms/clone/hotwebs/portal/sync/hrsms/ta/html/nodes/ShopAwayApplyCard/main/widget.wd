@@ -1,0 +1,668 @@
+<?xml version="1.0" encoding='UTF-8'?>
+<Widget controllerClazz="nc.bs.hrsms.ta.sss.away.ctrl.ShopAwayApplyCardView" dialog="false" i18nName="" langDir="" caption="店员出差申请详细界面" id="main" refId="main" sourcePackage="src/public/">
+    <PlugoutDescs>
+        <PlugoutDesc id="closewindow">
+            <PlugoutDescItem clazztype="java.lang.String" name="c_1">
+            </PlugoutDescItem>
+        </PlugoutDesc>
+    </PlugoutDescs>
+    <PluginDescs>
+    </PluginDescs>
+    <Models>
+        <Datasets>
+            <DatasetRelations>
+                <DatasetRelation detailDataset="hrtaawayb" detailForeignKey="pk_awayh" id="tbm_awayb_tbm_awayh" masterDataset="hrtaawayh" masterKeyField="pk_awayh">
+                </DatasetRelation>
+            </DatasetRelations>
+            <RefMdDataset caption="人员基本信息" controlwidgetopeStatus="false" enabled="true" id="$refds_hrhi_bd_psndoc" lazyLoad="true" notNullBody="false" objMeta="hrhi.bd_psndoc" voMeta="nc.vo.hi.psndoc.PsndocVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset caption="组织_部门版本信息" controlwidgetopeStatus="false" enabled="true" id="$refds_uap_dept_v" lazyLoad="true" notNullBody="false" objMeta="uap.dept_v" voMeta="nc.vo.vorg.DeptVersionVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset caption="组织_集团" controlwidgetopeStatus="false" enabled="true" id="$refds_uap_group" lazyLoad="true" notNullBody="false" objMeta="uap.group" voMeta="nc.vo.org.GroupVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <MdDataset caption="出差申请单子表" controlwidgetopeStatus="true" enabled="true" id="hrtaawayb" lazyLoad="true" notNullBody="false" objMeta="hrta.hrtaawayb" voMeta="nc.vo.ta.away.AwaybVO">
+                <FieldRelations>
+                    <FieldRelation id="pk_group_rel" needProcess="true" refDataset="$refds_uap_group">
+                        <MatchFields>
+                            <Field readField="name" writeField="pk_group_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_group" value="pk_group">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_org_rel" needProcess="true" refDataset="$refds_uap_hrorg">
+                        <MatchFields>
+                            <Field readField="name" writeField="pk_org_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_hrorg" value="pk_org">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_agentpsn_rel" needProcess="true" refDataset="$refds_hrhi_hi_psnjob">
+                        <MatchFields>
+                            <Field readField="pk_psndoc" writeField="pk_agentpsn_pk_psndoc">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_psnjob" value="pk_agentpsn">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_agentpsn_pk_psndoc_rel" needProcess="true" refDataset="$refds_hrhi_bd_psndoc">
+                        <MatchFields>
+                            <Field readField="name" writeField="pk_agentpsn_pk_psndoc_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_psndoc" value="pk_agentpsn_pk_psndoc">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_awaytype_rel" needProcess="true" refDataset="$refds_hrta_awaytype">
+                        <MatchFields>
+                            <Field readField="timeitemname" writeField="pk_awaytype_timeitemname">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_timeitem" value="pk_awaytype">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_timeitem_rel" needProcess="true" refDataset="$refds_hrta_awaytypecopy">
+                        <MatchFields>
+                            <Field readField="pk_timeitem" writeField="pk_awaytypecopy_pk_timeitem">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_timeitemcopy" value="pk_awaytypecopy">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_awaytypecopy_pk_timeitem_rel" needProcess="true" refDataset="$refds_hrta_awaytype">
+                        <MatchFields>
+                            <Field readField="timeitemname" writeField="pk_awaytypecopy_pk_timeitem_timeitemname">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_timeitem" value="pk_awaytypecopy_pk_timeitem">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                </FieldRelations>
+                <Fields>
+                    <ModifyField id="awaybegintime" nullAble="false">
+                    </ModifyField>
+                    <ModifyField id="awayendtime" nullAble="false">
+                    </ModifyField>
+                    <Field dataType="String" id="pk_agentpsn_pk_psndoc_name" nullAble="true" primaryKey="false" sourceField="pk_agentpsn_pk_psndoc">
+                    </Field>
+                </Fields>
+                <Events>
+                    <Event async="true" jsEventClaszz="nc.uap.lfw.core.event.conf.DatasetListener" methodName="onAfterDataChange_awayb" name="onAfterDataChange" onserver="true">
+                        <SubmitRule cardSubmit="false" panelSubmit="false" tabSubmit="false">
+                            <Widget cardSubmit="false" id="main" panelSubmit="false" tabSubmit="false">
+                                <Dataset id="hrtaawayh" type="ds_current_line">
+                                </Dataset>
+                                <Dataset id="hrtaawayb" type="ds_all_line">
+                                </Dataset>
+                            </Widget>
+                        </SubmitRule>
+                        <Params>
+                            <Param>
+                                <Name>datasetCellEvent</Name>
+                                <Value>
+                                </Value>
+                                <Desc>                                    <![CDATA[nc.uap.lfw.core.event.DatasetCellEvent]]>
+                                </Desc>
+                            </Param>
+                        </Params>
+                        <Action>
+                        </Action>
+                    </Event>
+                </Events>
+            </MdDataset>
+            <RefMdDataset caption="组织_业务单元_人力资源组织" controlwidgetopeStatus="false" enabled="false" id="$refds_uap_hrorg" lazyLoad="true" notNullBody="false" objMeta="uap.hrorg" voMeta="nc.vo.org.HROrgVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset caption="出差申请单主表" controlwidgetopeStatus="false" enabled="false" id="$refds_hrta_hrtaawayh" lazyLoad="true" notNullBody="false" objMeta="hrta.hrtaawayh" voMeta="nc.vo.ta.away.AwayhVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset caption="出差类别copy" controlwidgetopeStatus="false" enabled="false" id="$refds_hrta_awaytypecopy" lazyLoad="true" notNullBody="false" objMeta="hrta.awaytypecopy" voMeta="nc.vo.ta.timeitem.AwayTypeCopyVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <MdDataset caption="出差申请单主表" controlwidgetopeStatus="false" enabled="false" id="hrtaawayh" lazyLoad="false" notNullBody="false" objMeta="hrta.hrtaawayh" voMeta="nc.vo.ta.away.AwayhVO">
+                <FieldRelations>
+                    <FieldRelation id="pk_group_rel" needProcess="true" refDataset="$refds_uap_group">
+                        <MatchFields>
+                            <Field readField="name" writeField="pk_group_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_group" value="pk_group">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_org_rel" needProcess="true" refDataset="$refds_uap_hrorg">
+                        <MatchFields>
+                            <Field readField="name" writeField="pk_org_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_hrorg" value="pk_org">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="billmaker_rel" needProcess="true" refDataset="$refds_uap_user">
+                        <MatchFields>
+                            <Field readField="user_name" writeField="billmaker_user_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="cuserid" value="billmaker">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_awaytype_rel" needProcess="true" refDataset="$refds_hrta_awaytype">
+                        <MatchFields>
+                            <Field readField="timeitemname" writeField="pk_awaytype_timeitemname">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_timeitem" value="pk_awaytype">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_timeitem_rel" needProcess="true" refDataset="$refds_hrta_awaytypecopy">
+                        <MatchFields>
+                            <Field readField="pk_timeitem" writeField="pk_awaytypecopy_pk_timeitem">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_timeitemcopy" value="pk_awaytypecopy">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_awaytypecopy_pk_timeitem_rel" needProcess="true" refDataset="$refds_hrta_awaytype">
+                        <MatchFields>
+                            <Field readField="timeitemname" writeField="pk_awaytypecopy_pk_timeitem_timeitemname">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_timeitem" value="pk_awaytypecopy_pk_timeitem">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_psndoc_rel" needProcess="true" refDataset="$refds_hrhi_hi_psnjob">
+                        <MatchFields>
+                            <Field readField="pk_psndoc" writeField="pk_psnjob_pk_psndoc">
+                            </Field>
+                            <Field readField="clerkcode" writeField="pk_psnjob_clerkcode">
+                            </Field>
+                            <Field readField="pk_dept" writeField="pk_psnjob_pk_dept">
+                            </Field>
+                            <Field readField="pk_job" writeField="pk_psnjob_pk_job">
+                            </Field>
+                            <Field readField="pk_post" writeField="pk_psnjob_pk_post">
+                            </Field>
+                            <Field readField="pk_org" writeField="pk_psnjob_pk_org">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_psnjob" value="pk_psnjob">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_psnjob_pk_psndoc_rel" needProcess="true" refDataset="$refds_hrhi_bd_psndoc">
+                        <MatchFields>
+                            <Field readField="code" writeField="pk_psnjob_pk_psndoc_code">
+                            </Field>
+                            <Field readField="name" writeField="pk_psnjob_pk_psndoc_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_psndoc" value="pk_psnjob_pk_psndoc">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="approver_rel" needProcess="true" refDataset="$refds_uap_user">
+                        <MatchFields>
+                            <Field readField="user_name" writeField="approver_user_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="cuserid" value="approver">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="creator_rel" needProcess="true" refDataset="$refds_uap_user">
+                        <MatchFields>
+                            <Field readField="user_name" writeField="creator_user_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="cuserid" value="creator">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="modifier_rel" needProcess="true" refDataset="$refds_uap_user">
+                        <MatchFields>
+                            <Field readField="user_name" writeField="modifier_user_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="cuserid" value="modifier">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="transtypeid_rel" needProcess="true" refDataset="$refds_uap_BilltypeVO">
+                        <MatchFields>
+                            <Field readField="billtypename" writeField="transtypeid_billtypename">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_billtypeid" value="transtypeid">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_org_v_rel" needProcess="true" refDataset="$refds_uap_hrorg_v">
+                        <MatchFields>
+                            <Field readField="name" writeField="pk_org_v_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_vid" value="pk_org_v">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_dept_v_rel" needProcess="true" refDataset="$refds_uap_dept_v">
+                        <MatchFields>
+                            <Field readField="name" writeField="pk_dept_v_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_vid" value="pk_dept_v">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_psnjob_pk_post_rel" needProcess="true" refDataset="$refds_hrjf_om_post">
+                        <MatchFields>
+                            <Field readField="postname" writeField="pk_psnjob_pk_post_postname">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_post" value="pk_psnjob_pk_post">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_psnjob_pk_job_rel" needProcess="true" refDataset="$refds_hrjf_om_job">
+                        <MatchFields>
+                            <Field iscontains="Y" ismatch="Y" readField="pk_job" writeField="pk_psnjob_pk_job">
+                            </Field>
+                            <Field readField="jobname" writeField="pk_psnjob_pk_job_jobname">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_job" value="pk_psnjob_pk_job">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_psnjob_pk_org_rel" needProcess="true" refDataset="$refds_uap_org">
+                        <MatchFields>
+                            <Field iscontains="Y" ismatch="Y" readField="pk_org" writeField="pk_psnjob_pk_org">
+                            </Field>
+                            <Field readField="name" writeField="pk_psnjob_pk_org_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_org" value="pk_psnjob_pk_org">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_psnjob_pk_dept_rel" needProcess="true" refDataset="$refds_uap_dept">
+                        <MatchFields>
+                            <Field iscontains="Y" ismatch="Y" readField="pk_dept" writeField="pk_psnjob_pk_dept">
+                            </Field>
+                            <Field readField="name" writeField="pk_psnjob_pk_dept_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_dept" value="pk_psnjob_pk_dept">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                </FieldRelations>
+                <Fields>
+                    <ModifyField i18nName="w_ta-000284" id="bill_code" nullAble="false" text="申请单编码">
+                    </ModifyField>
+                    <Field dataType="String" i18nName="w_ta-000285" id="pk_psnjob_clerkcode" langDir="node_ta-res" nullAble="true" primaryKey="false" sourceField="pk_psnjob" text="员工号">
+                    </Field>
+                    <Field dataType="String" i18nName="w_ta-000286" id="pk_psnjob_pk_post" langDir="node_ta-res" nullAble="true" primaryKey="false" sourceField="pk_psnjob" text="岗位">
+                    </Field>
+                    <Field dataType="String" i18nName="w_ta-000287" id="pk_psnjob_pk_job" langDir="node_ta-res" nullAble="true" primaryKey="false" sourceField="pk_psnjob" text="职务">
+                    </Field>
+                    <Field dataType="String" i18nName="w_ta-000288" id="pk_psnjob_pk_dept" langDir="node_ta-res" nullAble="true" primaryKey="false" sourceField="pk_psnjob" text="部门">
+                    </Field>
+                    <Field dataType="String" i18nName="w_ta-000289" id="pk_psnjob_pk_org" langDir="node_ta-res" nullAble="true" primaryKey="false" sourceField="pk_psnjob" text="组织">
+                    </Field>
+                    <Field dataType="String" i18nName="w_ta-000290" id="pk_psnjob_pk_psndoc_code" langDir="node_ta-res" nullAble="true" primaryKey="false" sourceField="pk_psnjob_pk_psndoc" text="人员编码">
+                    </Field>
+                    <Field dataType="String" i18nName="w_ta-000286" id="pk_psnjob_pk_post_postname" langDir="node_ta-res" nullAble="true" primaryKey="false" sourceField="pk_psnjob_pk_post" text="岗位">
+                    </Field>
+                    <Field dataType="String" i18nName="w_ta-000287" id="pk_psnjob_pk_job_jobname" langDir="node_ta-res" nullAble="true" primaryKey="false" sourceField="pk_psnjob_pk_job" text="职务">
+                    </Field>
+                    <Field dataType="String" i18nName="w_ta-000289" id="pk_psnjob_pk_org_name" langDir="node_ta-res" nullAble="true" primaryKey="false" sourceField="pk_psnjob_pk_org" text="组织">
+                    </Field>
+                    <Field dataType="String" i18nName="w_ta-000288" id="pk_psnjob_pk_dept_name" langDir="node_ta-res" nullAble="true" primaryKey="false" sourceField="pk_psnjob_pk_dept" text="部门">
+                    </Field>
+                    <Field dataType="String" i18nName="w_ta-000298" id="pk_psnjob_pk_psndoc_name" langDir="node_ta-res" nullAble="true" primaryKey="false" sourceField="pk_psnjob_pk_psndoc" text="姓名">
+                    </Field>
+                </Fields>
+                <Events>
+                    <Event async="true" jsEventClaszz="nc.uap.lfw.core.event.conf.DatasetListener" methodName="onDataLoad_awayh" name="onDataLoad" onserver="true">
+                        <SubmitRule cardSubmit="false" panelSubmit="false" tabSubmit="false">
+                            <Widget cardSubmit="false" id="main" panelSubmit="false" tabSubmit="false">
+                                <Dataset id="hrtaawayh" type="ds_current_line">
+                                </Dataset>
+                            </Widget>
+                        </SubmitRule>
+                        <Params>
+                            <Param>
+                                <Name>dataLoadEvent</Name>
+                                <Value>
+                                </Value>
+                                <Desc>                                    <![CDATA[]]>
+                                </Desc>
+                            </Param>
+                        </Params>
+                        <Action>
+                        </Action>
+                    </Event>
+                    <Event async="true" jsEventClaszz="nc.uap.lfw.core.event.conf.DatasetListener" methodName="onAfterDataChange_awayh" name="onAfterDataChange" onserver="true">
+                        <SubmitRule cardSubmit="false" panelSubmit="false" tabSubmit="false">
+                            <Widget cardSubmit="false" id="main" panelSubmit="false" tabSubmit="false">
+                                <Dataset id="hrtaawayh" type="ds_current_line">
+                                </Dataset>
+                                <Dataset id="hrtaawayb" type="ds_all_line">
+                                </Dataset>
+                            </Widget>
+                        </SubmitRule>
+                        <Params>
+                            <Param>
+                                <Name>datasetCellEvent</Name>
+                                <Value>
+                                </Value>
+                                <Desc>                                    <![CDATA[nc.uap.lfw.core.event.DatasetCellEvent]]>
+                                </Desc>
+                            </Param>
+                        </Params>
+                        <Action>
+                        </Action>
+                    </Event>
+                </Events>
+            </MdDataset>
+            <RefMdDataset caption="用户" controlwidgetopeStatus="false" enabled="false" id="$refds_uap_user" lazyLoad="true" notNullBody="false" objMeta="uap.user" voMeta="nc.vo.sm.UserVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset caption="单据类型" controlwidgetopeStatus="false" enabled="false" id="$refds_uap_BilltypeVO" lazyLoad="true" notNullBody="false" objMeta="uap.BilltypeVO" voMeta="nc.vo.pub.billtype.BilltypeVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset caption="职务" controlwidgetopeStatus="false" enabled="false" id="$refds_hrjf_om_job" lazyLoad="true" notNullBody="false" objMeta="hrjf.om_job" voMeta="nc.vo.om.job.JobVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset caption="组织_部门" controlwidgetopeStatus="false" enabled="false" id="$refds_uap_dept" lazyLoad="true" notNullBody="false" objMeta="uap.dept" voMeta="nc.vo.org.DeptVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset caption="组织关系" controlwidgetopeStatus="false" enabled="false" id="$refds_hrhi_hi_psnorg" lazyLoad="true" notNullBody="false" objMeta="hrhi.hi_psnorg" voMeta="nc.vo.hi.psndoc.PsnOrgVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <MdDataset caption="岗位基本信息" controlwidgetopeStatus="false" enabled="false" id="$refds_hrjf_om_post" lazyLoad="true" notNullBody="false" objMeta="hrjf.om_post" voMeta="nc.vo.om.post.PostVO">
+                <Fields>
+                </Fields>
+            </MdDataset>
+            <RefMdDataset caption="组织_业务单元_人力资源组织版本信息" controlwidgetopeStatus="false" enabled="false" id="$refds_uap_hrorg_v" lazyLoad="true" notNullBody="false" objMeta="uap.hrorg_v" voMeta="nc.vo.vorg.HROrgVersionVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <MdDataset caption="组织" controlwidgetopeStatus="false" enabled="false" id="$refds_uap_org" lazyLoad="true" notNullBody="false" objMeta="uap.org" voMeta="nc.vo.org.OrgVO">
+                <Fields>
+                </Fields>
+            </MdDataset>
+            <RefMdDataset caption="工作记录" controlwidgetopeStatus="false" enabled="false" id="$refds_hrhi_hi_psnjob" lazyLoad="true" notNullBody="false" objMeta="hrhi.hi_psnjob" voMeta="nc.vo.hi.psndoc.PsnJobVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset caption="出差类别" controlwidgetopeStatus="false" enabled="false" id="$refds_hrta_awaytype" lazyLoad="true" notNullBody="false" objMeta="hrta.awaytype" voMeta="nc.vo.ta.timeitem.AwayTypeVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+        </Datasets>
+        <ComboDatas>
+            <MDComboDataConf caption="出差申请单主表" fullclassName="957c7ecd-b733-4839-9c46-c6828da14f00" id="combo_hrtaawayh_approve_state">
+            </MDComboDataConf>
+        </ComboDatas>
+        <RefNodes>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" i18nName="w_ta-000257" id="refnode_hrtaawayh_pk_group_name" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" readDs="masterDs" readFields="pk_group,name" refId="" refcode="集团" refnodeDelegator="" selLeafOnly="false" text="出差申请单主表_集团" usePower="false" writeDs="hrtaawayh" writeFields="pk_group,pk_group_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" i18nName="w_ta-000258" id="refnode_hrtaawayh_pk_org_v_name" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" readDs="masterDs" readFields="pk_vid,name" refId="" refcode="人力资源组织版本" refnodeDelegator="" selLeafOnly="false" text="出差申请单主表_人力资源组织版本" usePower="false" writeDs="hrtaawayh" writeFields="pk_org_v,pk_org_v_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" i18nName="w_ta-000259" id="refnode_hrtaawayh_pk_psnjob_pk_psndoc_name" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" readDs="masterDs" readFields="pk_psnjob,name" refId="" refcode="人员工作记录" refnodeDelegator="" selLeafOnly="false" text="出差申请单主表_人员工作记录" usePower="false" writeDs="hrtaawayh" writeFields="pk_psnjob,pk_psnjob_pk_psndoc_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" i18nName="w_ta-000260" id="refnode_hrtaawayh_approver_user_name" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" readDs="masterDs" readFields="cuserid,user_name" refId="" refcode="用户" refnodeDelegator="" selLeafOnly="false" text="出差申请单主表_用户" usePower="false" writeDs="hrtaawayh" writeFields="approver,approver_user_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" i18nName="w_ta-000261" id="refnode_hrtaawayb_pk_psndoc_name" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" readDs="masterDs" readFields="pk_psndoc,name" refId="" refcode="HR人员" refnodeDelegator="" selLeafOnly="false" text="出差申请单子表_HR人员" usePower="false" writeDs="hrtaawayb" writeFields="pk_psndoc,pk_psndoc_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" i18nName="w_ta-000262" id="refnode_hrtaawayb_pk_psnjob_pk_psndoc_name" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" readDs="masterDs" readFields="pk_psnjob,name" refId="" refcode="人员工作记录" refnodeDelegator="" selLeafOnly="false" text="出差申请单子表_人员工作记录" usePower="false" writeDs="hrtaawayb" writeFields="pk_psnjob,pk_psnjob_pk_psndoc_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" i18nName="w_ta-000263" id="refnode_hrtaawayb_pk_awaytype_timeitemname" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" readDs="masterDs" readFields="pk_timeitem,timeitemname" refId="" refcode="出差类别" refnodeDelegator="" selLeafOnly="false" text="出差申请单子表_出差类别" usePower="false" writeDs="hrtaawayb" writeFields="pk_awaytype,pk_awaytype_timeitemname">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" i18nName="w_ta-000260" id="refnode_hrtaawayh_billmaker_user_name" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" readDs="masterDs" readFields="cuserid,user_name" refId="" refcode="用户" refnodeDelegator="" selLeafOnly="false" text="出差申请单主表_用户" usePower="false" writeDs="hrtaawayh" writeFields="billmaker,billmaker_user_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" i18nName="w_ta-000265" id="refnode_hrtaawayh_pk_org_name" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" readDs="masterDs" readFields="pk_hrorg,name" refId="" refcode="人力资源组织" refnodeDelegator="" selLeafOnly="false" text="出差申请单主表_人力资源组织" usePower="false" writeDs="hrtaawayh" writeFields="pk_org,pk_org_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" i18nName="w_ta-000266" id="refnode_hrtaawayb_pk_org_name" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" readDs="masterDs" readFields="pk_hrorg,name" refId="" refcode="人力资源组织" refnodeDelegator="" selLeafOnly="false" text="出差申请单子表_人力资源组织" usePower="false" writeDs="hrtaawayb" writeFields="pk_org,pk_org_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" i18nName="w_ta-000260" id="refnode_hrtaawayh_modifier_user_name" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" readDs="masterDs" readFields="cuserid,user_name" refId="" refcode="用户" refnodeDelegator="" selLeafOnly="false" text="出差申请单主表_用户" usePower="false" writeDs="hrtaawayh" writeFields="modifier,modifier_user_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" i18nName="w_ta-000260" id="refnode_hrtaawayh_creator_user_name" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" readDs="masterDs" readFields="cuserid,user_name" refId="" refcode="用户" refnodeDelegator="" selLeafOnly="false" text="出差申请单主表_用户" usePower="false" writeDs="hrtaawayh" writeFields="creator,creator_user_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" i18nName="w_ta-000269" id="refnode_hrtaawayh_transtypeid_billtypename" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" readDs="masterDs" readFields="pk_billtypeid,billtypename,pk_billtypecode" refId="" refcode="影响因素交 易类型" refnodeDelegator="" selLeafOnly="false" text="交易类型参照" usePower="false" writeDs="hrtaawayh" writeFields="transtypeid,transtypeid_billtypename,transtype">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" i18nName="w_ta-000270" id="refnode_hrtaawayb_pk_group_name" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" readDs="masterDs" readFields="pk_group,name" refId="" refcode="集团" refnodeDelegator="" selLeafOnly="false" text="出差申请单子表_集团" usePower="false" writeDs="hrtaawayb" writeFields="pk_group,pk_group_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" i18nName="w_ta-000271" id="refnode_hrtaawayh_pk_psndoc_name" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" readDs="masterDs" readFields="pk_psndoc,name" refId="" refcode="HR人员" refnodeDelegator="" selLeafOnly="false" text="出差申请单主表_HR人员" usePower="false" writeDs="hrtaawayh" writeFields="pk_psndoc,pk_psndoc_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" i18nName="w_ta-000272" id="refnode_hrtaawayh_pk_awaytype_timeitemname" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" readDs="masterDs" readFields="pk_timeitem,timeitemname" refId="" refcode="出差类别" refnodeDelegator="" selLeafOnly="false" text="出差类别参照" usePower="false" writeDs="hrtaawayh" writeFields="pk_awaytype,pk_awaytype_timeitemname">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" i18nName="w_ta-000273" id="refnode_hrtaawayh_pk_awaytypecopy_pk_timeitem_timeitemname" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" readDs="masterDs" readFields="pk_timeitemcopy,timeitemname" refId="" refcode="出差类别拷贝" refnodeDelegator="" selLeafOnly="false" text="出差申请单主表_出差类别拷贝" usePower="false" writeDs="hrtaawayh" writeFields="pk_awaytypecopy,pk_awaytypecopy_pk_timeitem.timeitemname">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" i18nName="w_ta-000262" id="refnode_hrtaawayb_pk_agentpsn_pk_psndoc_name" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" readDs="masterDs" readFields="pk_psnjob,name" refId="" refcode="hrss人员工作记录" refnodeDelegator="" selLeafOnly="false" text="人员参照" usePower="false" writeDs="hrtaawayb" writeFields="pk_agentpsn,pk_agentpsn_pk_psndoc_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" i18nName="w_ta-000275" id="refnode_hrtaawayh_pk_dept_v_name" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" readDs="masterDs" readFields="pk_vid,name" refId="" refcode="部门版本" refnodeDelegator="" selLeafOnly="false" text="出差申请单主表_部门版本" usePower="false" writeDs="hrtaawayh" writeFields="pk_dept_v,pk_dept_v_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" i18nName="w_ta-000276" id="refnode_hrtaawayb_pk_awaytypecopy_pk_timeitem_timeitemname" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" readDs="masterDs" readFields="pk_timeitemcopy,timeitemname" refId="" refcode="出差类别拷贝" refnodeDelegator="" selLeafOnly="false" text="出差申请单子表_出差类别拷贝" usePower="false" writeDs="hrtaawayb" writeFields="pk_awaytypecopy,pk_awaytypecopy_pk_timeitem.timeitemname">
+            </NCRefNode>
+            
+             <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" i18nName="" id="refnode_hrtaawayh_pk_psnjob_clerkcode" langDir="" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" readDs="masterDs" readFields="pk_psnjob,clerkcode,pk_psndoc" refId="" refcode="部门人员(考勤档案)" refnodeDelegator="" selLeafOnly="false" text="出差申请单_人员" usePower="false" writeDs="hrtaawayh" writeFields="pk_psnjob,pk_psnjob_clerkcode,pk_psndoc">
+            </NCRefNode>
+        </RefNodes>
+    </Models>
+    <Components>
+        <FormComp caption="出差申请单主表人员信息" columnCount="3" dataset="hrtaawayh" eleWidth="150" enabled="true" id="headTab_card_psninfo_form" labelMinWidth="0" renderType="1" rowHeight="22" visible="true">
+           	<Element attachNext="false" colSpan="1" dataType="String" editable="true" editorType="StringText" enabled="ture" field="pk_psnjob" height="" i18nName="" id="pk_psnjob" imageOnly="false" langDir="" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" text="主键" toolbarType="Custom" visible="false" width="">
+            </Element>
+            
+            <Element allowExtendValue="false" attachNext="false" canUpload="false" colSpan="1" editMin="true" editSec="true" editable="true" editorType="Reference" enabled="true" field="pk_psnjob_clerkcode" height="" i18nName="" id="pk_psnjob_clerkcode" imageOnly="false" needNullOption="false" nextLine="false" nullAble="false" refNode="refnode_hrtaawayh_pk_psnjob_clerkcode" rowSpan="1" selectOnly="true" showLabel="true" text="员工号" toolbarType="Custom" visible="true" width="">
+            </Element>
+          <!--  <Element attachNext="false" colSpan="1" dataType="String" editable="true" editorType="StringText" enabled="ture" field="pk_psnjob_clerkcode" height="" i18nName="w_ta-000285" id="pk_psnjob_clerkcode" imageOnly="false" langDir="node_ta-res" nextLine="false" refNode="refnode_hrtaawayh_pk_psnjob_clerkcode" nullAble="true" rowSpan="1" selectOnly="true" text="员工号" toolbarType="Custom" visible="true" width="">
+            </Element>-->
+             <Element attachNext="false" colSpan="1" dataType="String" editable="true" editorType="StringText" enabled="ture" field="pk_psndoc" height="" i18nName="" id="pk_psndoc" imageOnly="false" langDir="" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" text="人员基本信息主键" toolbarType="Custom" visible="false" width="">
+            </Element>
+            
+            <Element attachNext="false" colSpan="1" dataType="String" editable="true" editorType="StringText" enabled="false" field="pk_psnjob_pk_psndoc_code" height="" i18nName="w_ta-000290" id="pk_psnjob_pk_psndoc_code" imageOnly="false" langDir="node_ta-res" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" text="人员编码" toolbarType="Custom" visible="true" width="">
+            </Element>
+            <Element attachNext="false" colSpan="1" dataType="String" editable="true" editorType="StringText" enabled="false" field="pk_psnjob_pk_psndoc_name" height="" i18nName="w_ta-000298" id="pk_psnjob_pk_psndoc_name" imageOnly="false" langDir="node_ta-res" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" text="姓名" toolbarType="Custom" visible="true" width="">
+            </Element>
+            <Element attachNext="false" colSpan="1" dataType="String" editable="true" editorType="StringText" enabled="false" field="pk_psnjob_pk_job_jobname" height="" i18nName="w_ta-000287" id="pk_psnjob_pk_job_jobname" imageOnly="false" langDir="node_ta-res" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" text="职务" toolbarType="Custom" visible="true" width="">
+            </Element>
+            <Element attachNext="false" colSpan="1" dataType="String" editable="true" editorType="StringText" enabled="false" field="pk_psnjob_pk_post_postname" height="" i18nName="w_ta-000286" id="pk_psnjob_pk_post_postname" imageOnly="false" langDir="node_ta-res" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" text="岗位" toolbarType="Custom" visible="true" width="">
+            </Element>
+            <Element attachNext="false" colSpan="1" dataType="String" editable="true" editorType="StringText" enabled="false" field="pk_psnjob_pk_org_name" height="" i18nName="w_ta-000289" id="pk_psnjob_pk_org_name" imageOnly="false" langDir="node_ta-res" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" text="组织" toolbarType="Custom" visible="true" width="">
+            </Element>
+            <Element attachNext="false" colSpan="1" dataType="String" editable="true" editorType="StringText" enabled="false" field="pk_psnjob_pk_dept_name" height="" i18nName="w_ta-000288" id="pk_psnjob_pk_dept_name" imageOnly="false" langDir="node_ta-res" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" text="部门" toolbarType="Custom" visible="true" width="">
+            </Element>
+        </FormComp>
+        <FormComp caption="出差申请单主表单据信息" columnCount="3" dataset="hrtaawayh" eleWidth="150" enabled="false" id="headTab_card_pk_awayh_form" labelMinWidth="0" renderType="1" rowHeight="22" visible="true">
+            <Element attachNext="false" colSpan="1" dataType="String" editable="true" editorType="StringText" enabled="true" field="bill_code" height="" i18nName="w_ta-000284" id="bill_code" imageOnly="false" langDir="node_ta-res" nextLine="false" nullAble="false" rowSpan="1" selectOnly="true" text="申请单编码" toolbarType="Custom" visible="true" width="">
+            </Element>
+            <Element attachNext="false" colSpan="1" dataType="String" editable="true" editorType="Reference" enabled="true" field="transtypeid_billtypename" height="" i18nName="w_ta-000300" id="transtypeid_billtypename" imageOnly="false" langDir="node_ta-res" nextLine="false" nullAble="true" refNode="refnode_hrtaawayh_transtypeid_billtypename" rowSpan="1" selectOnly="true" text="流程类型" toolbarType="Custom" visible="true" width="">
+            </Element>
+            <Element attachNext="false" colSpan="1" dataType="Integer" editable="true" editorType="ComboBox" enabled="false" field="approve_state" height="" i18nName="w_ta-000301" id="approve_state" imageOnly="false" langDir="node_ta-res" nextLine="false" nullAble="true" refComboData="combo_hrtaawayh_approve_state" rowSpan="1" selectOnly="true" text="单据状态" toolbarType="Custom" visible="true" width="">
+            </Element>
+            <Element attachNext="false" colSpan="1" dataType="String" editable="true" editorType="Reference" enabled="false" field="billmaker_user_name" height="" i18nName="w_ta-000302" id="billmaker_user_name" imageOnly="false" langDir="node_ta-res" nextLine="false" nullAble="true" refNode="refnode_hrtaawayh_billmaker_user_name" rowSpan="1" selectOnly="true" text="申请人" toolbarType="Custom" visible="true" width="">
+            </Element>
+            <Element attachNext="false" colSpan="1" dataType="UFLiteralDate" editable="true" editorType="DateText" enabled="false" field="apply_date" height="" i18nName="w_ta-000303" id="apply_date" imageOnly="false" langDir="node_ta-res" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" text="申请日期" toolbarType="Custom" visible="true" width="">
+            </Element>
+        </FormComp>
+        <GridComp autoRowHeight="false" canCopy="true" caption="出差申请单子表" dataset="hrtaawayb" editable="true" enabled="true" expandTree="false" id="bodyTab_card_awayb_sub_grid" multiSelect="false" pagenationTop="false" reference="false" selfDefImageBtnRender="" showColInfo="false" showHeader="true" showImageBtn="true" showNumCol="false" showSumRow="false" sortable="true" visible="true">
+            <Column autoExpand="false" dataType="UFDateTime" editable="true" editorType="DateTimeText" field="awaybegintime" fixedHeader="false" i18nName="w_ta-000306" id="awaybegintime" imageOnly="false" langDir="node_ta-res" nullAble="false" renderType="DateTimeRender" showCheckBox="true" sortable="true" sumCol="false" text="开始时间" textAlign="left" visible="true" width="150">
+            </Column>
+            <Column autoExpand="false" dataType="UFDateTime" editable="true" editorType="DateTimeText" field="awayendtime" fixedHeader="false" i18nName="w_ta-000307" id="awayendtime" imageOnly="false" langDir="node_ta-res" nullAble="false" renderType="DateTimeRender" showCheckBox="true" sortable="true" sumCol="false" text="结束时间" textAlign="left" visible="true" width="150">
+            </Column>
+            <Column autoExpand="false" dataType="UFDouble" editable="false" editorType="DecimalText" field="awayhour" fixedHeader="false" i18nName="w_ta-000308" id="awayhour" imageOnly="false" langDir="node_ta-res" nullAble="true" renderType="DecimalRender" showCheckBox="true" sortable="true" sumCol="false" text="出差时长" textAlign="right" visible="true" width="80">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="awayaddress" fixedHeader="false" i18nName="w_ta-000309" id="awayaddress" imageOnly="false" langDir="node_ta-res" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="出差地点" textAlign="left" visible="true" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="UFDouble" editable="true" editorType="DecimalText" field="aheadfee" fixedHeader="false" i18nName="w_ta-000310" id="aheadfee" imageOnly="false" langDir="node_ta-res" nullAble="true" renderType="DecimalRender" showCheckBox="true" sortable="true" sumCol="false" text="预支费用" textAlign="right" visible="true" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="UFDouble" editable="true" editorType="DecimalText" field="factfee" fixedHeader="false" i18nName="w_ta-000311" id="factfee" imageOnly="false" langDir="node_ta-res" nullAble="true" renderType="DecimalRender" showCheckBox="true" sortable="true" sumCol="false" text="实际支出" textAlign="right" visible="true" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="Reference" field="pk_agentpsn_pk_psndoc_name" fixedHeader="false" i18nName="w_ta-000312" id="pk_agentpsn_pk_psndoc_name" imageOnly="false" langDir="node_ta-res" nullAble="true" refNode="refnode_hrtaawayb_pk_agentpsn_pk_psndoc_name" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="工作交接人" textAlign="left" visible="true" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="Memo" editable="true" editorType="TextArea" field="workprocess" fixedHeader="false" i18nName="w_ta-000313" id="workprocess" imageOnly="false" langDir="node_ta-res" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="工作交接情况" textAlign="left" visible="true" width="120">
+            </Column>
+            <Column autoExpand="false" dataType="String" editable="true" editorType="StringText" field="awayremark" fixedHeader="false" i18nName="w_ta-000314" id="awayremark" imageOnly="false" langDir="node_ta-res" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="出差说明" textAlign="left" visible="true" width="120">
+            </Column>
+            <Column autoExpand="true" dataType="String" editable="true" editorType="StringText" field="workfinish" fixedHeader="false" i18nName="w_ta-000315" id="workfinish" imageOnly="false" langDir="node_ta-res" nullAble="true" renderType="DefaultRender" showCheckBox="true" sortable="true" sumCol="false" text="出差工作完成情况" textAlign="left" visible="true" width="120">
+            </Column>
+        </GridComp>
+        <FormComp caption="出差申请单主表审计信息" columnCount="3" dataset="hrtaawayh" eleWidth="150" enabled="false" id="tailTab_card_audition_form" labelMinWidth="0" renderType="1" rowHeight="22" visible="true">
+            <Element attachNext="false" colSpan="1" dataType="String" editable="true" editorType="Reference" enabled="false" field="creator_user_name" height="" i18nName="w_ta-000316" id="creator_user_name" imageOnly="false" langDir="node_ta-res" nextLine="false" nullAble="true" refNode="refnode_hrtaawayh_creator_user_name" rowSpan="1" selectOnly="true" text="创建人" toolbarType="Custom" visible="true" width="">
+            </Element>
+            <Element attachNext="false" colSpan="1" dataType="UFDateTime" editable="true" editorType="DateTimeText" enabled="false" field="creationtime" height="" i18nName="w_ta-000317" id="creationtime" imageOnly="false" langDir="node_ta-res" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" text="创建时间" toolbarType="Custom" visible="true" width="">
+            </Element>
+            <Element attachNext="false" colSpan="1" dataType="String" editable="true" editorType="Reference" enabled="false" field="modifier_user_name" height="" i18nName="w_ta-000318" id="modifier_user_name" imageOnly="false" langDir="node_ta-res" nextLine="false" nullAble="true" refNode="refnode_hrtaawayh_modifier_user_name" rowSpan="1" selectOnly="true" text="修改人" toolbarType="Custom" visible="true" width="">
+            </Element>
+            <Element attachNext="false" colSpan="1" dataType="UFDateTime" editable="true" editorType="DateTimeText" enabled="false" field="modifiedtime" height="" i18nName="w_ta-000319" id="modifiedtime" imageOnly="false" langDir="node_ta-res" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" text="修改时间" toolbarType="Custom" visible="true" width="">
+            </Element>
+        </FormComp>
+        <FormComp caption="出差申请单主表" columnCount="3" dataset="hrtaawayh" eleWidth="150" enabled="false" id="headTab_card_awayinf_form" labelMinWidth="0" renderType="1" rowHeight="22" visible="true">
+            <Element attachNext="false" colSpan="1" dataType="String" editable="true" editorType="Reference" enabled="true" field="pk_awaytype_timeitemname" height="" i18nName="w_ta-000283" id="pk_awaytype_timeitemname" imageOnly="false" langDir="node_ta-res" nextLine="false" nullAble="false" refNode="refnode_hrtaawayh_pk_awaytype_timeitemname" rowSpan="1" selectOnly="true" text="出差类别" toolbarType="Custom" visible="true" width="">
+            </Element>
+            <Element attachNext="false" colSpan="1" dataType="UFDouble" editable="true" editorType="DecimalText" enabled="false" field="sumhour" height="" i18nName="w_ta-000320" id="sumhour" imageOnly="false" langDir="node_ta-res" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" text="合计时长" toolbarType="Custom" visible="true" width="">
+            </Element>
+            <Element attachNext="false" colSpan="1" dataType="UFDouble" editable="true" editorType="DecimalText" enabled="false" field="sumaheadfee" height="" i18nName="w_ta-000321" id="sumaheadfee" imageOnly="false" langDir="node_ta-res" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" text="预支费用合计" toolbarType="Custom" visible="true" width="">
+            </Element>
+            <Element attachNext="false" colSpan="1" dataType="UFDouble" editable="true" editorType="DecimalText" enabled="false" field="sumfactfee" height="" i18nName="w_ta-000322" id="sumfactfee" imageOnly="false" langDir="node_ta-res" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" text="实际支出合计" toolbarType="Custom" visible="true" width="">
+            </Element>
+        </FormComp>
+    </Components>
+    <Menus>
+        <MenuBarComp id="menu_operate">
+        	<MenuItem i18nName="w_ta-000299" langDir="node_ta-res" id="btnSave" modifiers="2" stateManager="" text="保存" visible="false">
+                <Events>
+                    <Event async="true" jsEventClaszz="nc.uap.lfw.core.event.conf.MouseListener" methodName="onSave" name="onclick" onserver="true">
+                        <SubmitRule cardSubmit="false" panelSubmit="false" tabSubmit="false">
+                             <Widget cardSubmit="false" id="main" panelSubmit="false" tabSubmit="false">
+	                            <Dataset id="hrtaawayh" type="ds_current_line">
+	                            </Dataset>
+	                            <Dataset id="hrtaawayb" type="ds_all_line">
+	                            </Dataset>
+                        	</Widget>
+                        </SubmitRule>
+                        <Params>
+                            <Param>
+                                <Name>mouseEvent</Name>
+                                <Value>
+                                </Value>
+                                <Desc>                                    <![CDATA[]]>
+                                </Desc>
+                            </Param>
+                        </Params>
+                        <Action>
+                        </Action>
+                    </Event>
+                </Events>
+            </MenuItem>
+            <MenuItem i18nName="w_ta-001279" langDir="node_ta-res" id="btnSaveCommit" modifiers="2" stateManager="" text="保存提交"  visible="false">
+                <Events>
+                    <Event async="true" jsEventClaszz="nc.uap.lfw.core.event.conf.MouseListener" methodName="onSaveAndCommit" name="onclick" onserver="true">
+                        <SubmitRule cardSubmit="false" panelSubmit="false" tabSubmit="false">
+                             <Widget cardSubmit="false" id="main" panelSubmit="false" tabSubmit="false">
+	                            <Dataset id="hrtaawayh" type="ds_current_line">
+	                            </Dataset>
+	                            <Dataset id="hrtaawayb" type="ds_all_line">
+	                            </Dataset>
+                        	</Widget>
+                        </SubmitRule>
+                        <Params>
+                            <Param>
+                                <Name>mouseEvent</Name>
+                                <Value>
+                                </Value>
+                                <Desc>                                    <![CDATA[]]>
+                                </Desc>
+                            </Param>
+                        </Params>
+                        <Action>
+                        </Action>
+                    </Event>
+                </Events>
+            </MenuItem>
+            <MenuItem id="split1" modifiers="3" sep="true" text="split">
+            </MenuItem>
+            <MenuItem i18nName="w_ta-000305" langDir="node_ta-res" id="btnCancel" modifiers="2" stateManager="" text="取消"  visible="false">
+                <Events>
+                    <Event async="true" jsEventClaszz="nc.uap.lfw.core.event.conf.MouseListener" methodName="onCancel" name="onclick" onserver="true">
+                        <SubmitRule cardSubmit="false" panelSubmit="false" tabSubmit="false">
+                             <Widget cardSubmit="false" id="main" panelSubmit="false" tabSubmit="false">
+	                            <Dataset id="hrtaawayh" type="ds_current_line">
+	                            </Dataset>
+	                            <Dataset id="hrtaawayb" type="ds_all_line">
+	                            </Dataset>
+                        	</Widget>
+                        </SubmitRule>
+                        <Params>
+                            <Param>
+                                <Name>mouseEvent</Name>
+                                <Value>
+                                </Value>
+                                <Desc>                                    <![CDATA[]]>
+                                </Desc>
+                            </Param>
+                        </Params>
+                        <Action>
+                        </Action>
+                    </Event>
+                </Events>
+            </MenuItem>
+        </MenuBarComp>
+    </Menus>
+</Widget>

@@ -1,0 +1,128 @@
+package nc.bs.hrsms.ta.empleavereg4store.batchAdd;
+
+import nc.bs.hrsms.ta.sss.calendar.WorkCalendarConsts;
+import nc.bs.hrss.pub.HrssConsts;
+import nc.bs.hrss.pub.advpanel.AdvancePageModel;
+import nc.bs.hrss.pub.advpanel.IPagePanel;
+import nc.uap.lfw.core.LfwRuntimeEnvironment;
+import nc.uap.lfw.core.comp.LinkComp;
+import nc.uap.lfw.core.data.Dataset;
+import nc.uap.lfw.core.data.FieldSet;
+import nc.uap.lfw.core.page.LfwView;
+import nc.uap.lfw.core.page.LfwWindow;
+import nc.uap.lfw.jsp.uimeta.UIMeta;
+
+import org.apache.commons.lang.StringUtils;
+
+public class BatchAddPageModel extends AdvancePageModel {
+	/* 人员信息集 */
+	public static final String DS_PERSON = "dsPerson";
+
+	/* 起始日期 */
+	public static final String FLD_BEGIN = "begindate";
+	/* 终止日期 */
+	public static final String FLD_END = "enddate";
+	/* 原班别 */
+	public static final String FLD_ORI_CLASS = "oriClass";
+	/* 新班别 */
+	public static final String FLD_NEW_CLASS = "newClass";
+	/* 人员基本信息主键 */
+	public static final String FLD_PK_PSNDOC = "pk_psndoc";
+
+	/* 调班条件表单 */
+	public static final String COMP_FRM_CHANGE_CLASS_INFO = "frmChangeClassInfo";
+	/* 调班条件：原班别名称 form element id */
+	public static final String COMP_FE_ORI_CLASS_NAME = "oriClassName";
+	/* 确认按钮 */
+	public static final String COMP_BTN_OK = "btnOK";
+	/* 取消按钮 */
+	public static final String COMP_BTN_CANCEL = "btnCancel";
+
+	/* 确定按钮的监听器 */
+	public static final String LSNR_BTN_OK = "l_btn_ok";
+	/* 取消按钮的监听器 */
+	public static final String LSNR_BTN_CANCEL = "l_btn_cancel";
+
+	/* 原班别参照 */
+	public static final String REF_ORI_CLASS = "refOriClass";
+	/* 新班别参照 */
+	public static final String REF_NEW_CLASS = "refNewClass";
+
+	/* 父页面的人员信息 */
+	public static final String WSES_PSN_KEYS = "psnKeys";
+
+	/*按人员调班页面*/
+	public static final String PAGE_PSNLIST_WIDGET = "psnList";
+
+	/*按部门调班页面*/
+	public static final String PAGE_DEPTLIST_WIDGET = "deptList";
+
+	/*选中调班的人*/
+	public static final String SELECTED_PSN = "selectedPsn";
+	/*选中调班的部门*/
+	public static final String SELECTED_DEPT = "selectedDept";
+	/*pluginID*/
+	public static final String PLUGINID_PSN = "psnList";
+	/*pluginID*/
+	public static final String PLUGINID_DEPT = "deptList";
+
+	@Override
+	protected void initPageMetaStruct() {
+		super.initPageMetaStruct();
+	}
+	
+
+	public static void refreshPsnLink() {
+		refreshLinkInfo(DS_PERSON, "lnkPsn", nc.vo.ml.NCLangRes4VoTransl.getNCLangRes().getStrByID("c_ta-res","0c_ta-res0029")/*@res "请选择调班人员"*/);
+	}
+
+	private static void refreshLinkInfo( String dsID, String linkID, String defaultLabel) {
+		LfwView wdtMain = LfwRuntimeEnvironment.getWebContext().getPageMeta().getView(HrssConsts.PAGE_MAIN_WIDGET);
+		Dataset ds = wdtMain.getViewModels().getDataset(dsID);
+		int rowCount = ds.getRowCount();
+		LinkComp lnk = (LinkComp) wdtMain.getViewComponents().getComponent(linkID);
+		if (0 < rowCount) {
+			String[] names = new String[rowCount];
+			FieldSet fs = ds.getFieldSet();
+			int idx = 0;
+			if(dsID.equals(DS_PERSON)){
+				idx = fs.nameToIndex("pk_psndoc_name");
+			}else{
+				idx = fs.nameToIndex("name");
+			}
+
+			for (int i = 0; i < rowCount; i++) {
+				names[i] = (String) ds.getCurrentRowData().getRow(i).getValue(idx);
+			}
+			String label = StringUtils.join(names, ",");
+			lnk.setI18nName(label);
+		} else {
+			lnk.setI18nName(defaultLabel);
+		}
+
+	}
+	
+	@Override
+	protected String getFunCode() {
+		return WorkCalendarConsts.FUNC_CODE;
+	}
+
+	@Override
+	protected String getQueryTempletKey() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	protected IPagePanel[] getLeftComponents(LfwWindow pm, UIMeta um) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	protected String getRightPage() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+}

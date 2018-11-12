@@ -1,0 +1,8 @@
+insert into pub_queryscheme(cuserid,dr,funcode,isautorun,iscomplete,isdefault,isdeleted,ismodified,isprepared,isquickqs,modulename,name,name2,name3,name4,name5,name6,parentid,pk_org,pk_queryscheme,pk_template,qsobject,sequenc,ts) values( null,0,'60110account','N','N','N','N','N','Y','N','hrcm','协议信息','協議資訊',null,null,null,null,null,null,'1001Z710000000002XQS','1001Z71000000001V1LP',null,null,'2017-12-29 15:55:01')
+/
+insert into pub_queryscheme(cuserid,dr,funcode,isautorun,iscomplete,isdefault,isdeleted,ismodified,isprepared,isquickqs,modulename,name,name2,name3,name4,name5,name6,parentid,pk_org,pk_queryscheme,pk_template,qsobject,sequenc,ts) values( null,0,'60110account','N','Y','N','N','N','Y','N',null,'最新协议记录','最新協議記錄',null,null,null,null,null,null,'1001Z710000000005FZQ','1001Z71000000001V1LP',null,null,'2017-12-29 15:55:01')
+/
+insert into pub_queryscheme(cuserid,dr,funcode,isautorun,iscomplete,isdefault,isdeleted,ismodified,isprepared,isquickqs,modulename,name,name2,name3,name4,name5,name6,parentid,pk_org,pk_queryscheme,pk_template,qsobject,sequenc,ts) values( null,0,'60110account','N','N','N','N','N','Y','N','hrcm','人员','人員',null,null,null,null,null,null,'1002Z710000000000Q8L','1001Z71000000001V1LP',null,null,'2017-12-29 15:55:01')
+/
+insert into pub_queryscheme(cuserid,dr,funcode,isautorun,iscomplete,isdefault,isdeleted,ismodified,isprepared,isquickqs,modulename,name,name2,name3,name4,name5,name6,parentid,pk_org,pk_queryscheme,pk_template,qsobject,sequenc,ts) values( null,0,'60110account','N','N','N','N','N','Y','Y','hrcm','快速查询','快速查詢',null,null,null,null,null,'0001HR100000000005M3','1002Z710000000000Q8M','1001Z71000000001V1LP',null,null,'2017-12-29 15:55:01')
+/

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="wapt/src/public"/>
+	<classpathentry kind="src" path="wapt/src/private"/>
+	<classpathentry kind="src" path="wapt/resources"/>
+	<classpathentry kind="src" path="drp/src/public"/>
+	<classpathentry kind="src" path="drp/src/client"/>
+	<classpathentry kind="src" path="drp/src/private"/>
+	<classpathentry kind="src" path="drp/src/test"/>
+	<classpathentry kind="src" path="drp/resources"/>
+	<classpathentry kind="src" path="hi/src/public"/>
+	<classpathentry kind="src" path="hi/src/client"/>
+	<classpathentry kind="src" path="hi/src/private"/>
+	<classpathentry kind="src" path="hi/src/test"/>
+	<classpathentry kind="src" path="hi/src/portalspec"/>
+	<classpathentry kind="src" path="hi/resources"/>
+	<classpathentry kind="src" path="ta/src/public"/>
+	<classpathentry kind="src" path="ta/src/private"/>
+	<classpathentry kind="src" path="ta/src/portalspec"/>
+	<classpathentry kind="src" path="wabs/src/public"/>
+	<classpathentry kind="src" path="wabs/src/client"/>
+	<classpathentry kind="src" path="wabs/src/private"/>
+	<classpathentry combineaccessrules="false" exported="true" kind="src" path="/HRWA"/>
+	<classpathentry combineaccessrules="false" exported="true" kind="src" path="/HR_HRSS"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="con" path="nc.uap.lfw.library.container/Ant_Library"/>
+	<classpathentry kind="con" path="nc.uap.lfw.library.container/Product_LIB_Library"/>
+	<classpathentry kind="con" path="nc.uap.lfw.library.container/Product_Common_Library"/>
+	<classpathentry kind="con" path="nc.uap.lfw.library.container/Middleware_Library"/>
+	<classpathentry kind="con" path="nc.uap.lfw.library.container/Framework_Library"/>
+	<classpathentry kind="con" path="nc.uap.lfw.library.container/Module_Public_Library"/>
+	<classpathentry kind="con" path="nc.uap.lfw.library.container/Module_Client_Library"/>
+	<classpathentry kind="con" path="nc.uap.lfw.library.container/Module_Private_Library"/>
+	<classpathentry kind="con" path="nc.uap.lfw.library.container/Module_Lang_Library"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>

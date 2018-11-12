@@ -1,0 +1,257 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE beans PUBLIC "-//SPRING//DTD BEAN//EN" "http://www.springframework.org/dtd/spring-beans.dtd">
+
+<beans>
+	<import resource="classpath:nc/ui/ta/dailydata/dailydata_config.xml" />
+	<bean id="dailyDataService" class="nc.ui.ta.dataprocess.model.TimeDataModelService">
+	</bean>
+	<bean id="tbmProp" class="java.lang.Integer">
+		<constructor-arg value="2"></constructor-arg>
+	</bean>
+	<bean id="templetBodyVOCreator" class="nc.ui.ta.dataprocess.view.TimeDataTempletBodyVOCreator">
+		<property name="context" ref="context"></property>
+	</bean>
+	<!-- 人员列表界面下面的timedata界面 -->
+	<bean id="psnDailyDataPanel" class="nc.ui.ta.dataprocess.view.PsnTimeDataPanel" init-method="initUI">
+		<property name="model" ref="psnDailyDataModel"></property>
+		<property name="templetBodyVOCreator" ref="templetBodyVOCreator"></property>
+		<property name="metaDataName" value="timedata"></property>
+		<property name="cellRenderer" ref="psnTimedataCellRenderer"></property>
+	</bean>
+	
+	<!-- 日期界面右边的timedata界面 -->
+	<bean id="dateDailyDataPanel" class="nc.ui.ta.dataprocess.view.DateTimeDataPanel" init-method="initUI">
+		<property name="model" ref="dateDailyDataModel"></property>
+		<property name="templetBodyVOCreator" ref="templetBodyVOCreator"></property>
+		<property name="metaDataName" value="timedata"></property>
+		<property name="cellRenderer" ref="dateTimedataCellRenderer"></property>
+		<property name="south" ref="paginationBar" />
+	</bean>
+
+	<bean id="paginationModel" class="nc.ui.uif2.components.pagination.PaginationModel"
+		init-method="init">
+		<property name="paginationQueryService" ref="dailyDataService" />
+	</bean>
+	<!-- timedata的cellrenderer，适用于人员浏览界面 -->
+	<bean id="psnTimedataCellRenderer" class="nc.ui.ta.dataprocess.view.TimeDataCellRenderer">
+	</bean>
+	
+	<!-- timedata的cellrenderer，适用于日期浏览界面 -->
+	<bean id="dateTimedataCellRenderer" class="nc.ui.ta.dataprocess.view.TimeDataCellRenderer">
+	</bean>
+	
+	<bean id="separatorAction" class="nc.funcnode.ui.action.SeparatorAction" />
+	
+	<bean id="psnActions" class="nc.ui.uif2.actions.StandAloneToftPanelActionContainer">
+		<constructor-arg><ref bean="psnPanel"/></constructor-arg>
+		<property name="actions">
+			<list>
+				<ref bean="QueryAction"/>
+				<ref bean="RefreshAction"/>
+				<ref bean="FilterAction"/>
+				<ref bean="separatorAction" />
+				<ref bean="GenerateAction"/>
+				<ref bean="ClearDataAction"/>
+				<ref bean="separatorAction" />
+				<ref bean="UnGenAction" />
+				<ref bean="separatorAction" />
+				<ref bean="ViewCardInfoAction"/>
+				<ref bean="signCardAction"/>
+				<ref bean="separatorAction" />
+				<ref bean="ExportToFileAction"/>
+				<ref bean="PrintActiongroup"/>
+			</list>
+		</property>
+		<property name="model" ref="psnDailyDataModel"/>
+	</bean>
+	<bean id="dateActions" class="nc.ui.uif2.actions.StandAloneToftPanelActionContainer">
+		<constructor-arg><ref bean="dateDailyDataPanel"/></constructor-arg>
+		<property name="actions">
+			<list>
+				<ref bean="QueryAction"/>
+				<ref bean="RefreshAction"/>
+				<ref bean="FilterAction"/>
+				<ref bean="separatorAction" />
+				<ref bean="GenerateAction"/>
+				<ref bean="ClearDataAction"/>
+				<ref bean="separatorAction" />
+				<ref bean="UnGenAction" />
+				<ref bean="separatorAction" />
+				<ref bean="ViewCardInfoAction"/>
+				<!-- <ref bean="signCardAction"/> -->
+				<ref bean="separatorAction" />
+				<ref bean="ExportToFileAction"/>
+				<ref bean="PrintActiongroup"/>
+			</list>
+		</property>
+		<property name="model" ref="dateDailyDataModel"/>
+	</bean>
+	
+	<bean id="GenerateAction" class="nc.ui.ta.dataprocess.action.GenerateAction">
+		<property name="model" ref="psnModel"/>
+		<property name="psnDataManager" ref="modelDataManager"/>
+		<property name="dateManager" ref="dateModelDataManager"/>
+		<property name="dateViewDailyDataManager" ref="dateDailyDataModelDataManager"/>
+		<property name="enabled" value="false"/>
+		<property name="ncActionStatusJudge" ref="enableJudge"/>
+	</bean>
+	
+	<bean id="UnGenAction" class="nc.ui.ta.dataprocess.action.UnGenrateDataAction">
+		<property name="model" ref="psnModel"/>
+		<property name="enabled" value="false"/>
+		<property name="ncActionStatusJudge" ref="enableJudge"/>
+	</bean>
+	
+	<bean id="ClearDataAction" class="nc.ui.ta.dataprocess.action.ClearDataAction">
+		<property name="model" ref="psnModel"/>
+		<property name="enabled" value="false"/>
+		<property name="ncActionStatusJudge" ref="enableJudge"/>
+	</bean>
+	<bean id="ViewCardInfoAction" class="nc.ui.ta.dataprocess.action.ViewCardInfoAction">
+		<property name="modelforpsnview" ref="psnDailyDataModel"/>
+		<property name="modelfordateview" ref="dateDailyDataModel"></property>
+		<property name="psnDailyDataPanel" ref="psnDailyDataPanel"></property>
+		<property name="dateDailyDataPanel" ref="dateDailyDataPanel"></property>
+		<property name="enabled" value="false"/>
+	</bean>
+	<bean id="ExportToFileAction" class="nc.ui.ta.dataprocess.action.ExportToFileAction">
+		<property name="modelforpsnview" ref="psnDailyDataModel"/>
+		<property name="modelfordateview" ref="dateDailyDataModel"></property>
+		<property name="psnDailyDataPanel" ref="psnDailyDataPanel"></property>
+		<property name="dateDailyDataPanel" ref="dateDailyDataPanel"></property>
+		<property name="psnPanel" ref="psnPanel"></property>
+		<property name="enabled" value="false"/>
+	</bean>
+	<bean id="PrintActiongroup" class="nc.funcnode.ui.action.GroupAction">
+		<property name="code"><value>printgroup</value> </property>
+		<property name="name" >
+		<bean class="nc.ui.uif2.I18nFB">
+		     <property name="resDir" value="common"></property> 
+		    <property name="defaultValue" value="打印" />
+		    <property name="resId" value="UC001-0000007"></property>
+		     </bean>
+		</property>
+
+		<property name="actions">
+	 	<list>
+	 		<ref bean="printDirectAction"/>
+	  		<ref bean="printPreviewAction"/>
+	  		<ref bean="exportListAction"/>
+	 	</list>
+		</property>
+	</bean>
+	
+
+    
+    <bean id="printPreviewAction" class="nc.ui.ta.dataprocess.action.DataPrintPreviewAction">
+    	<property name="modelforpsnview" ref="psnDailyDataModel"/>
+		<property name="modelfordateview" ref="dateDailyDataModel"></property>
+		<property name="psnDailyDataPanel" ref="psnDailyDataPanel"></property>
+		<property name="dateDailyDataPanel" ref="dateDailyDataPanel"></property>
+		<property name="psnPanel" ref="psnPanel"></property>
+		<property name="enabled" value="false"/>
+    </bean>
+
+   <bean id="printDirectAction" class="nc.ui.ta.dataprocess.action.DataPrintDirectAction">
+   		<property name="modelforpsnview" ref="psnDailyDataModel"/>
+		<property name="modelfordateview" ref="dateDailyDataModel"></property>
+		<property name="psnDailyDataPanel" ref="psnDailyDataPanel"></property>
+		<property name="dateDailyDataPanel" ref="dateDailyDataPanel"></property>
+		<property name="psnPanel" ref="psnPanel"></property>
+		<property name="enabled" value="false"/>
+   </bean>
+   
+   <bean id="exportListAction" class="nc.ui.ta.dataprocess.action.ExportDataPrintAction">
+   		<property name="modelforpsnview" ref="psnDailyDataModel"/>
+		<property name="modelfordateview" ref="dateDailyDataModel"></property>
+		<property name="psnDailyDataPanel" ref="psnDailyDataPanel"></property>
+		<property name="dateDailyDataPanel" ref="dateDailyDataPanel"></property>
+		<property name="psnPanel" ref="psnPanel"></property>
+		<property name="enabled" value="false"/>
+    </bean>
+   
+   	<!-- 签卡            ======下面为签卡操作相关的配置  打开签卡节点====== -->
+   	<!--<bean id="signCardAction" class="nc.ui.ta.dataprocess.action.SignCardAction">
+		<property name="context" ref="context"></property>
+		<property name="psnModel" ref="psnModel"></property>
+		<property name="dateModel" ref="psnDailyDataModel"></property>
+		<property name="panel" ref="psnDailyDataPanel"></property>
+		<property name="nodeCode" value="60170signrgst"></property>
+	</bean>
+	
+		-->
+		
+		<!-- 签卡            ======下面为签卡操作相关的配置  不打开新节点====== -->
+   	<bean id="signCardAction" class="nc.ui.ta.dataprocess.action.FillSignCardAction">
+		<property name="psnModel" ref="psnModel"></property>
+		<property name="dateModel" ref="psnDailyDataModel"></property>
+		<property name="panel" ref="psnDailyDataPanel"></property>
+		<property name="signCardEditor" ref="signCardcardForm"/>
+		<property name="saveSignCardAction" ref="saveSignCardAction"/>
+		<property name="ncActionStatusJudge" ref="enableJudge"/>
+	</bean>
+	
+	<bean id="saveSignCardAction" class="nc.ui.ta.signcard.register.action.SaveSignCardRegAction">
+		<property name="editor" ref="signCardcardForm"/>
+		<property name="model" ref="psnModel"></property>
+		<property name="validator">
+	      <list>
+	        <ref bean="billNotNullValidator" />
+	        <ref bean="saveValidator" />
+	      </list>
+    	</property>
+	</bean>
+   	<!--签卡卡片界面-->
+	<bean id="signCardcardForm" class="nc.ui.ta.signcard.register.view.SignCardRegCardView" init-method="initUI">
+		<property name="model" ref="psnModel"></property>
+		<property name="nodekey" value="signreg"></property>
+		<property name="templateContainer" ref="templateContainer"/>
+		<property name="tabActions">
+	      <list>
+	       <ref bean="AddLineAction"/>
+			<ref bean="DelLineAction"/>
+			<ref bean="InsertLineAction"/>
+			<ref bean="CopyLineAction"/>
+			<ref bean="PasteLineAction"/>
+	      </list>
+   		</property>
+	</bean>
+	<!-- 模板容器，负责对模板的统一装载 -->
+	<bean id="templateContainer" class="nc.ui.uif2.editor.TemplateContainer"  init-method="load">
+		<property name="context" ref="context"/>
+		<property name="nodeKeies">
+			<list>
+			    <value>signreg</value>
+			    <value>psnquery</value>
+			</list>
+		</property>
+	</bean>
+   	<!-- 前台单据非空校验 -->
+	<bean id="billNotNullValidator" class="nc.ui.hr.uif2.validator.BillFormNotNullValidator">
+   	 <property name="billForm" ref="signCardcardForm" />
+ 	</bean>
+	<bean id="saveValidator" class="nc.vo.ta.signcard.register.validator.SaveSignCardRegValidator" />
+	
+	
+	<bean id="AddLineAction" class="nc.ui.ta.signcard.register.action.SignCardRegAddLineAction">
+		<property name="model" ref="psnModel"/>
+		<property name="cardPanel" ref="signCardcardForm"/>
+	</bean>
+	<bean id="DelLineAction" class="nc.ui.ta.signcard.register.action.SignCardRegDelLineAction">
+		<property name="model" ref="psnModel"/>
+		<property name="cardPanel" ref="signCardcardForm"/>
+	</bean>
+	<bean id="InsertLineAction" class="nc.ui.ta.signcard.register.action.SignCardRegInsertLineAction">
+		<property name="model" ref="psnModel"/>
+		<property name="cardPanel" ref="signCardcardForm"/>
+	</bean>
+	<bean id="CopyLineAction" class="nc.ui.ta.signcard.register.action.SignCardRegCopyLineAction">
+		<property name="model" ref="psnModel"/>
+		<property name="cardPanel" ref="signCardcardForm"/>
+	</bean>
+	<bean id="PasteLineAction" class="nc.ui.ta.signcard.register.action.SignCardRegPasteLineAction">
+		<property name="model" ref="psnModel"/>
+		<property name="cardPanel" ref="signCardcardForm"/>
+	</bean>
+	
+</beans>

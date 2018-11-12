@@ -1,0 +1,215 @@
+package nc.ui.wa.adjust.action;
+
+
+import java.awt.event.ActionEvent;
+import java.util.ArrayList;
+
+import nc.bs.framework.common.NCLocator;
+import nc.hr.frame.persistence.SimpleDocServiceTemplate;
+import nc.hr.utils.DataPermissionUtils;
+import nc.hr.utils.PubEnv;
+import nc.hr.utils.ResHelper;
+import nc.itf.hr.wa.IHRWADataResCode;
+import nc.itf.uap.pf.IPFWorkflowQry;
+import nc.itf.uap.pf.metadata.IFlowBizItf;
+import nc.md.data.access.NCObject;
+import nc.pub.wa.salaryencryption.util.SalaryEncryptionUtil;
+import nc.ui.hr.pf.action.PFSubmitAction;
+import nc.ui.uif2.editor.IEditor;
+import nc.ui.wa.adjust.view.WaAdjustCardForm;
+import nc.vo.hr.tools.pub.HRConstEnum;
+import nc.vo.pub.AggregatedValueObject;
+import nc.vo.pub.BusinessException;
+import nc.vo.pub.lang.UFDouble;
+import nc.vo.pub.pf.IPfRetCheckInfo;
+import nc.vo.uap.pf.PFBatchExceptionInfo;
+import nc.vo.uap.pf.PfProcessBatchRetObject;
+import nc.vo.uap.rbac.constant.INCSystemUserConst;
+import nc.vo.wa.adjust.AggPsnappaproveVO;
+import nc.vo.wa.adjust.PsnappaproveBVO;
+import nc.vo.wa.adjust.PsnappaproveVO;
+import nc.vo.wfengine.definition.WorkflowTypeEnum;
+
+import org.apache.commons.lang.StringUtils;
+
+/**
+ * 定调资 提交
+ * @author: xuhw
+ * @date: 2009-12-18 下午03:51:47
+ * @since: eHR V6.0
+ * @走查人:
+ * @走查日期:
+ * @修改人:
+ * @修改日期:
+ */
+@SuppressWarnings("serial")
+public class PFSubmitAdjustAction extends PFSubmitAction
+{
+	
+    private IEditor editor;
+    
+    private SimpleDocServiceTemplate service = new SimpleDocServiceTemplate(getClass().getName());
+
+
+    public PFSubmitAdjustAction()
+    {
+        super();
+		setResourceCode(IHRWADataResCode.ADJUST);
+
+    }
+
+
+	@Override
+    public void doAction(ActionEvent evt) throws Exception
+    {
+        Object objValue = getModel().getSelectedData();
+
+		if (objValue == null) {
+			return;
+		}
+        checkDataPermission();
+
+        AggPsnappaproveVO billvo = (AggPsnappaproveVO) objValue;
+        PsnappaproveBVO[] psnappaproveBVOs = (PsnappaproveBVO[]) billvo.getChildrenVO();
+    	PsnappaproveVO headVO = (PsnappaproveVO)billvo.getParentVO();
+    	
+    	// 2016-12-08 zhousze 薪资加密：这里处理提交数据加密 begin
+    	headVO.setSum_apply_money(headVO.getSum_apply_money() == null ? 
+    			null : new UFDouble(SalaryEncryptionUtil.encryption(headVO.getSum_apply_money().toDouble())));
+    	headVO.setSum_confim_money(headVO.getSum_confim_money() == null ? 
+    			null : new UFDouble(SalaryEncryptionUtil.encryption(headVO.getSum_confim_money().toDouble())));
+    	for (PsnappaproveBVO psnappaproveBVO : psnappaproveBVOs) {
+    		psnappaproveBVO.setWa_old_money(psnappaproveBVO.getWa_old_money() == null ? 
+					null : new UFDouble(SalaryEncryptionUtil.encryption(psnappaproveBVO.getWa_old_money().toDouble())));
+			psnappaproveBVO.setWa_cofm_money(psnappaproveBVO.getWa_cofm_money() == null ? 
+					null : new UFDouble(SalaryEncryptionUtil.encryption(psnappaproveBVO.getWa_cofm_money().toDouble())));
+			psnappaproveBVO.setWa_apply_money(psnappaproveBVO.getWa_apply_money() == null ? 
+					null : new UFDouble(SalaryEncryptionUtil.encryption(psnappaproveBVO.getWa_apply_money().toDouble())));
+			psnappaproveBVO.setWa_crt_apply_money(psnappaproveBVO.getWa_crt_apply_money() ==null ? 
+					null : new UFDouble(SalaryEncryptionUtil.encryption(psnappaproveBVO.getWa_crt_apply_money().toDouble())));
+			psnappaproveBVO.setWa_crt_cofm_money(psnappaproveBVO.getWa_crt_cofm_money() == null ? 
+					null : new UFDouble(SalaryEncryptionUtil.encryption(psnappaproveBVO.getWa_crt_cofm_money().toDouble())));
+			psnappaproveBVO.setWa_crt_old_money(psnappaproveBVO.getWa_crt_old_money() == null ? 
+					null : new UFDouble(SalaryEncryptionUtil.encryption(psnappaproveBVO.getWa_crt_old_money().toDouble())));
+    	}
+    	// end
+
+        if (INCSystemUserConst.NC_USER_PK.equals(headVO.getOperator()) ||headVO.getOperator() == null)
+           	headVO.setOperator(PubEnv.getPk_user());
+       int i=0;
+        for(PsnappaproveBVO psnappaproveBVO:psnappaproveBVOs){
+        	psnappaproveBVO.setPsnname((((WaAdjustCardForm) this.getEditor()).getBillCardPanel().getBodyValueAt(i,"pk_psnjob.pk_psndoc.name")).toString());
+        	psnappaproveBVO.setPk_wa_item_showname((String)(((WaAdjustCardForm) this.getEditor()).getBillCardPanel().getBodyValueAt(i++,PsnappaproveBVO.PK_WA_ITEM_SHOWNAME)));
+        }
+        billvo.setChildrenVO(psnappaproveBVOs);
+        super.doAction(evt);
+
+    }
+
+	
+	@Override
+	protected PfProcessBatchRetObject submitValidate(Integer iApproveType) throws BusinessException
+    {
+		Object objValue = getModel().getSelectedData();
+		validate(objValue);
+		String operationCode = getOperateCode();
+		String mdOperationCode = getMdOperateCode();
+		String resourceCode = getResourceCode(); 
+		AggregatedValueObject[]  pfAggVOs = selectData;
+		PFBatchExceptionInfo exInfo = new PFBatchExceptionInfo();
+        ArrayList<AggregatedValueObject> al = new ArrayList<AggregatedValueObject>();
+        
+        for (int i = 0; i < pfAggVOs.length; i++)
+        {
+        	
+        	AggPsnappaproveVO dbVO = (AggPsnappaproveVO)pfAggVOs[i];
+        	
+            if (dbVO == null)
+            {
+                exInfo.putErrorMessage(i, pfAggVOs[i], ResHelper.getString("6001pf", "06001pf0053")
+                /* @res "单据不存在" */);
+                continue;
+            }
+            
+        	PsnappaproveVO headVO = (PsnappaproveVO)dbVO.getParentVO();
+            
+        	 if (INCSystemUserConst.NC_USER_PK.equals(headVO.getOperator()) ||headVO.getOperator() == null)
+                   	headVO.setOperator(PubEnv.getPk_user());
+
+
+            
+            if (!checkDataPermission(operationCode, mdOperationCode, resourceCode, dbVO))
+            {
+                exInfo.putErrorMessage(i, dbVO, ResHelper.getString("6001pf", "06001pf0074")
+                /* @res "没有权限提交单据" */);
+                continue;
+            }
+            
+            NCObject dbObj = NCObject.newInstance(dbVO);
+            IFlowBizItf flowBiz = dbObj.getBizInterface(IFlowBizItf.class);
+            
+            if (IPfRetCheckInfo.NOSTATE != flowBiz.getApproveStatus())
+            {
+                exInfo.putErrorMessage(i, dbVO, ResHelper.getString("6001pf", "06001pf0075")
+                /* @res "单据的的状态不为自由态" */);
+                continue;
+            }
+            
+            if (HRConstEnum.APPROVE_TYPE_FORCE_WORK_FLOW == iApproveType)
+            {
+                String billtype = StringUtils.isBlank(flowBiz.getTranstype()) ? flowBiz.getBilltype() : flowBiz.getTranstype();
+                
+                boolean blExistWorkFlow =
+                    getWorkflowQry().isExistWorkflowDefinition(billtype, flowBiz.getPkorg(),  flowBiz.getBillMaker(),
+                        WorkflowTypeEnum.Approveflow.getIntValue());
+                
+                if (!blExistWorkFlow)
+                {
+                    exInfo.putErrorMessage(i, dbVO, ResHelper.getString("6001pf", "06001pf0065")
+                    /* @res "没有针对当前提交人的审批流" */);
+                    continue;
+                }
+            }
+            
+            al.add(pfAggVOs[i]);
+        }
+        
+        return new PfProcessBatchRetObject(al.toArray(new AggregatedValueObject[0]), exInfo);
+    }
+    private boolean checkDataPermission(String operateCode, String mdOperateCode, String resourceCode, AggregatedValueObject aggVO)
+            throws BusinessException
+    {
+        if (StringUtils.isBlank(operateCode) && StringUtils.isBlank(mdOperateCode) || StringUtils.isBlank(resourceCode))
+        {
+            return true;
+        }
+        
+        boolean blHasDataPermission = true;
+        
+        String resDataId = aggVO.getParentVO().getPrimaryKey();
+        if (StringUtils.isNotBlank(mdOperateCode))
+        {
+            blHasDataPermission = DataPermissionUtils.isUserhasPermissionByMetaDataOperation(resourceCode, resDataId, mdOperateCode);
+        }
+        else
+        {
+            blHasDataPermission = DataPermissionUtils.isUserhasPermission(resourceCode, resDataId, operateCode);
+        }
+        
+        return blHasDataPermission;
+    }
+    private IPFWorkflowQry getWorkflowQry()
+    {
+        return NCLocator.getInstance().lookup(IPFWorkflowQry.class);
+    }
+    
+    public IEditor getEditor()
+    {
+        return editor;
+    }
+
+    public void setEditor(IEditor editor)
+    {
+        this.editor = editor;
+    }
+}

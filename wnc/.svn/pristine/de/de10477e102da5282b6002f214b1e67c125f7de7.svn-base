@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="GBK"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+<bean id="menuItem" class="nc.pubapp.pade.funcmodel.vo.MenuItem">
+<property name="dr" value="0"/>
+<property name="funModelFilePath" value="groupinsurance/designmodel/funcmodel/groupgrade/funcregis/68J61040.menu"/>
+<property name="funcode" value="68J61040"/>
+<property name="ismenutype" value="false"/>
+<property name="menuitemcode" value="60401040"/>
+<property name="menuitemname" value="团保职等对照"/>
+<property name="pk_menuitem" value="0001ZZ1000000000ZZIZ"/>
+<property name="resid" value="D60401040"/>
+<property name="ts" value="2018-04-10 15:50:20"/>
+</bean>
+
+</beans>

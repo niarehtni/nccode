@@ -1,0 +1,76 @@
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '2a8adbf8-a049-11e8-839d-79b29e477abc','1001ZZ1000000000KGVY','bd_defdoc@@@code',null,'bd_defdoc','2018-08-15 15:34:02')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '2a8adbfb-a049-11e8-839d-79b29e477abc','1001ZZ1000000000KGVY','bd_defdoc@@@creationtime',null,'bd_defdoc','2018-08-15 15:34:02')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '2a8adbfc-a049-11e8-839d-79b29e477abc','1001ZZ1000000000KGVY','bd_defdoc@@@creator',null,'bd_defdoc','2018-08-15 15:34:02')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '2a8adbfe-a049-11e8-839d-79b29e477abc','1001ZZ1000000000KGVY','bd_defdoc@@@innercode',null,'bd_defdoc','2018-08-15 15:34:02')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '2a8adbff-a049-11e8-839d-79b29e477abc','1001ZZ1000000000KGVY','bd_defdoc@@PK@@',null,'bd_defdoc','2018-08-15 15:34:02')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '2a8adc00-a049-11e8-839d-79b29e477abc','1001ZZ1000000000KGVY','bd_defdoc@@@memo',null,'bd_defdoc','2018-08-15 15:34:02')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '2a8adc01-a049-11e8-839d-79b29e477abc','1001ZZ1000000000KGVY','bd_defdoc@@@mnecode',null,'bd_defdoc','2018-08-15 15:34:02')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '2a8adc02-a049-11e8-839d-79b29e477abc','1001ZZ1000000000KGVY','bd_defdoc@@@modifier',null,'bd_defdoc','2018-08-15 15:34:02')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '2a8adc04-a049-11e8-839d-79b29e477abc','1001ZZ1000000000KGVY','bd_defdoc@@@modifiedtime',null,'bd_defdoc','2018-08-15 15:34:02')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '2a8adc05-a049-11e8-839d-79b29e477abc','1001ZZ1000000000KGVY','bd_defdoc@@@name',null,'bd_defdoc','2018-08-15 15:34:02')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '2a8adc06-a049-11e8-839d-79b29e477abc','1001ZZ1000000000KGVY','bd_defdoc@@@shortname',null,'bd_defdoc','2018-08-15 15:34:02')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '2a8adc08-a049-11e8-839d-79b29e477abc','1001ZZ1000000000KGVY','bd_defdoc@@@pid',null,'bd_defdoc','2018-08-15 15:34:02')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '2a8adc0a-a049-11e8-839d-79b29e477abc','1001ZZ1000000000KGVY','bd_defdoc@@@pk_defdoclist',null,'bd_defdoc','2018-08-15 15:34:02')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '2a8adc0b-a049-11e8-839d-79b29e477abc','1001ZZ1000000000KGVY','bd_defdoc@@@pk_group',null,'bd_defdoc','2018-08-15 15:34:02')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '2a8adc0c-a049-11e8-839d-79b29e477abc','1001ZZ1000000000KGVY','bd_defdoc@@@pk_org',null,'bd_defdoc','2018-08-15 15:34:02')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '2a8adc0d-a049-11e8-839d-79b29e477abc','1001ZZ1000000000KGVY','bd_defdoc@@@enablestate',null,'bd_defdoc','2018-08-15 15:34:02')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '2a8adc0f-a049-11e8-839d-79b29e477abc','1001ZZ1000000000KGVY','bd_defdoc@@@dataoriginflag',null,'bd_defdoc','2018-08-15 15:34:02')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '2a8adc10-a049-11e8-839d-79b29e477abc','1001ZZ1000000000KGVY','bd_defdoc@@@datatype',null,'bd_defdoc','2018-08-15 15:34:02')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '2a8adc11-a049-11e8-839d-79b29e477abc','1001ZZ1000000000KGVY','bd_defdoc@@@def1',null,'bd_defdoc','2018-08-15 15:34:02')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '2a8adc12-a049-11e8-839d-79b29e477abc','1001ZZ1000000000KGVY','bd_defdoc@@@def2',null,'bd_defdoc','2018-08-15 15:34:02')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '2a8adc13-a049-11e8-839d-79b29e477abc','1001ZZ1000000000KGVY','bd_defdoc@@@def3',null,'bd_defdoc','2018-08-15 15:34:02')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '2a8adc14-a049-11e8-839d-79b29e477abc','1001ZZ1000000000KGVY','bd_defdoc@@@def4',null,'bd_defdoc','2018-08-15 15:34:02')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '2a8adc15-a049-11e8-839d-79b29e477abc','1001ZZ1000000000KGVY','bd_defdoc@@@def5',null,'bd_defdoc','2018-08-15 15:34:02')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '2a8adc16-a049-11e8-839d-79b29e477abc','1001ZZ1000000000KGVY','bd_defdoc@@@def6',null,'bd_defdoc','2018-08-15 15:34:02')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '2a8adc17-a049-11e8-839d-79b29e477abc','1001ZZ1000000000KGVY','bd_defdoc@@@def7',null,'bd_defdoc','2018-08-15 15:34:02')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '2a8adc18-a049-11e8-839d-79b29e477abc','1001ZZ1000000000KGVY','bd_defdoc@@@def8',null,'bd_defdoc','2018-08-15 15:34:02')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '2a8adc19-a049-11e8-839d-79b29e477abc','1001ZZ1000000000KGVY','bd_defdoc@@@def9',null,'bd_defdoc','2018-08-15 15:34:02')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '2a8adc1a-a049-11e8-839d-79b29e477abc','1001ZZ1000000000KGVY','bd_defdoc@@@def10',null,'bd_defdoc','2018-08-15 15:34:02')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '2a8adc1b-a049-11e8-839d-79b29e477abc','1001ZZ1000000000KGVY','bd_defdoc@@@def11',null,'bd_defdoc','2018-08-15 15:34:02')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '2a8adc1c-a049-11e8-839d-79b29e477abc','1001ZZ1000000000KGVY','bd_defdoc@@@def12',null,'bd_defdoc','2018-08-15 15:34:02')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '2a8adc1d-a049-11e8-839d-79b29e477abc','1001ZZ1000000000KGVY','bd_defdoc@@@def13',null,'bd_defdoc','2018-08-15 15:34:02')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '2a8adc1e-a049-11e8-839d-79b29e477abc','1001ZZ1000000000KGVY','bd_defdoc@@@def14',null,'bd_defdoc','2018-08-15 15:34:02')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '2a8adc1f-a049-11e8-839d-79b29e477abc','1001ZZ1000000000KGVY','bd_defdoc@@@def15',null,'bd_defdoc','2018-08-15 15:34:02')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '2a8adc20-a049-11e8-839d-79b29e477abc','1001ZZ1000000000KGVY','bd_defdoc@@@def16',null,'bd_defdoc','2018-08-15 15:34:02')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '2a8adc21-a049-11e8-839d-79b29e477abc','1001ZZ1000000000KGVY','bd_defdoc@@@def17',null,'bd_defdoc','2018-08-15 15:34:02')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '2a8adc22-a049-11e8-839d-79b29e477abc','1001ZZ1000000000KGVY','bd_defdoc@@@def18',null,'bd_defdoc','2018-08-15 15:34:02')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '2a8adc23-a049-11e8-839d-79b29e477abc','1001ZZ1000000000KGVY','bd_defdoc@@@def19',null,'bd_defdoc','2018-08-15 15:34:02')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '2a8b0234-a049-11e8-839d-79b29e477abc','1001ZZ1000000000KGVY','bd_defdoc@@@def20',null,'bd_defdoc','2018-08-15 15:34:02')
+go

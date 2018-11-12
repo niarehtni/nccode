@@ -1,0 +1,43 @@
+package nc.itf.hrwa;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import nc.vo.pub.BusinessException;
+import nc.vo.pub.lang.UFDouble;
+import nc.vo.pub.lang.UFLiteralDate;
+import nc.vo.wa.paydata.AggDaySalaryVO;
+
+public interface IWadaysalaryQueryService {
+	/**
+	 * Map<pk_psnjob, Map<salarydate,daysalary>>
+	 * @return
+	 * @throws BusinessException
+	 */
+	public Map<Object, HashMap<Object, Object>> getDaySalaryMap(String[] pk_psnjobs,UFLiteralDate begindate,UFLiteralDate enddate) throws BusinessException;
+	/**
+	 * 
+	 * @param pk_psnjob
+	 * @param calculDate
+	 * @return
+	 * @throws BusinessException
+	 */
+	public UFDouble getDaySalary(String pk_psnjob,UFLiteralDate calculDate) throws BusinessException;
+	/**
+	 * 
+	 * @param condition
+	 * @return
+	 * @throws BusinessException
+	 */
+	public AggDaySalaryVO[] queryByCondition(String condition) throws BusinessException;
+	/**
+	 * 
+	 * @param pk_psndocs
+	 * @param begindate
+	 * @param enddate
+	 * @return
+	 * @throws BusinessException
+	 */
+	public Map<String, Map<UFLiteralDate, Map<String,UFDouble>>> queryDaySalaryByPsndoc(String[] pk_psndocs,UFLiteralDate begindate,UFLiteralDate enddate)
+			throws BusinessException;
+}

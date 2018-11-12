@@ -1,0 +1,467 @@
+/*     */ package nc.bs.hrss.ta.overtime.ctrl;
+/*     */ 
+/*     */ import java.util.Calendar;
+/*     */ import java.util.TimeZone;
+/*     */ import nc.bs.hrss.pub.ServiceLocator;
+/*     */ import nc.bs.hrss.pub.exception.HrssException;
+/*     */ import nc.bs.hrss.pub.tool.ViewUtil;
+/*     */ import nc.bs.hrss.ta.common.ctrl.TaApplyBaseView;
+/*     */ import nc.bs.hrss.ta.overtime.OverTimeConsts;
+/*     */ import nc.bs.hrss.ta.overtime.lsnr.OverTimeAddProcessor;
+/*     */ import nc.bs.hrss.ta.overtime.lsnr.OverTimeCommitProcessor;
+/*     */ import nc.bs.hrss.ta.overtime.lsnr.OverTimeCopyProcessor;
+/*     */ import nc.bs.hrss.ta.overtime.lsnr.OverTimeEditProcessor;
+/*     */ import nc.bs.hrss.ta.overtime.lsnr.OverTimeLineAddProcessor;
+/*     */ import nc.bs.hrss.ta.overtime.lsnr.OverTimeLineDelProcessor;
+/*     */ import nc.bs.hrss.ta.overtime.lsnr.OverTimeSaveAddProcessor;
+/*     */ import nc.bs.hrss.ta.overtime.lsnr.OverTimeSaveProcessor;
+/*     */ import nc.itf.hrss.pub.cmd.prcss.IAddProcessor;
+/*     */ import nc.itf.hrss.pub.cmd.prcss.ICommitProcessor;
+/*     */ import nc.itf.hrss.pub.cmd.prcss.ICopyProcessor;
+/*     */ import nc.itf.hrss.pub.cmd.prcss.IEditProcessor;
+/*     */ import nc.itf.hrss.pub.cmd.prcss.ILineDelProcessor;
+/*     */ import nc.itf.hrss.pub.cmd.prcss.ILineInsertProcessor;
+/*     */ import nc.itf.hrss.pub.cmd.prcss.ISaveProcessor;
+/*     */ import nc.itf.ta.IOvertimeAppInfoDisplayer;
+/*     */ import nc.itf.ta.IOvertimeApplyQueryMaintain;
+/*     */ import nc.itf.ta.ITimeItemQueryService;
+/*     */ import nc.uap.lfw.core.comp.FormComp;
+/*     */ import nc.uap.lfw.core.comp.FormElement;
+/*     */ import nc.uap.lfw.core.ctrl.IController;
+/*     */ import nc.uap.lfw.core.data.Dataset;
+/*     */ import nc.uap.lfw.core.data.Row;
+/*     */ import nc.uap.lfw.core.data.RowData;
+/*     */ import nc.uap.lfw.core.event.DataLoadEvent;
+/*     */ import nc.uap.lfw.core.event.DatasetCellEvent;
+/*     */ import nc.uap.lfw.core.page.LfwView;
+/*     */ import nc.uap.lfw.core.serializer.impl.Dataset2SuperVOSerializer;
+/*     */ import nc.uap.lfw.core.serializer.impl.Datasets2AggVOSerializer;
+/*     */ import nc.uap.lfw.core.serializer.impl.SuperVO2DatasetSerializer;
+/*     */ import nc.vo.ml.AbstractNCLangRes;
+/*     */ import nc.vo.ml.NCLangRes4VoTransl;
+/*     */ import nc.vo.pub.AggregatedValueObject;
+/*     */ import nc.vo.pub.BusinessException;
+/*     */ import nc.vo.pub.SuperVO;
+/*     */ import nc.vo.pub.lang.UFBoolean;
+/*     */ import nc.vo.pub.lang.UFDate;
+/*     */ import nc.vo.pub.lang.UFDateTime;
+/*     */ import nc.vo.pub.lang.UFDouble;
+/*     */ import nc.vo.pub.lang.UFLiteralDate;
+/*     */ import nc.vo.ta.overtime.AggOvertimeVO;
+/*     */ import nc.vo.ta.overtime.OvertimebVO;
+/*     */ import nc.vo.ta.overtime.OvertimehVO;
+/*     */ import nc.vo.ta.timeitem.TimeItemCopyVO;
+/*     */ import org.apache.commons.lang.StringUtils;
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ public class OverTimeApplyView
+/*     */   extends TaApplyBaseView
+/*     */   implements IController
+/*     */ {
+/*     */   private static final long serialVersionUID = 1L;
+/*     */   
+/*     */   protected String getBillType()
+/*     */   {
+/*  72 */     return "6405";
+/*     */   }
+/*     */   
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */   protected String getDatasetId()
+/*     */   {
+/*  82 */     return "hrtaovertimeh";
+/*     */   }
+/*     */   
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */   protected Class<? extends AggregatedValueObject> getAggVoClazz()
+/*     */   {
+/*  92 */     return OverTimeConsts.CLASS_NAME_AGGVO;
+/*     */   }
+/*     */   
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */   protected Class<? extends IAddProcessor> getAddPrcss()
+/*     */   {
+/* 102 */     return OverTimeAddProcessor.class;
+/*     */   }
+/*     */   
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */   protected Class<? extends IEditProcessor> getEditPrcss()
+/*     */   {
+/* 112 */     return OverTimeEditProcessor.class;
+/*     */   }
+/*     */   
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */   protected Class<? extends ICopyProcessor> getCopyPrcss()
+/*     */   {
+/* 122 */     return OverTimeCopyProcessor.class;
+/*     */   }
+/*     */   
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */   protected Class<? extends ISaveProcessor> getSaveAddPrcss()
+/*     */   {
+/* 132 */     return OverTimeSaveAddProcessor.class;
+/*     */   }
+/*     */   
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */   protected Class<? extends ISaveProcessor> getSavePrcss()
+/*     */   {
+/* 142 */     return OverTimeSaveProcessor.class;
+/*     */   }
+/*     */   
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */   protected Class<? extends ICommitProcessor> getCommitPrcss()
+/*     */   {
+/* 150 */     return OverTimeCommitProcessor.class;
+/*     */   }
+/*     */   
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */   protected Class<? extends ILineInsertProcessor> getLineAddPrcss()
+/*     */   {
+/* 160 */     return OverTimeLineAddProcessor.class;
+/*     */   }
+/*     */   
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */   protected Class<? extends ILineDelProcessor> getLineDelPrcss()
+/*     */   {
+/* 170 */     return OverTimeLineDelProcessor.class;
+/*     */   }
+/*     */   
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */   public void onDataLoad_hrtaovertimeh(DataLoadEvent dataLoadEvent)
+/*     */   {
+/* 179 */     super.onDataLoad(dataLoadEvent);
+/*     */     
+/* 181 */     LfwView view = ViewUtil.getCurrentView();
+/* 182 */     Dataset ds = ViewUtil.getDataset(view, "hrtaovertimeh");
+/* 183 */     Row selRow = ds.getSelectedRow();
+/* 184 */     if (selRow == null) {
+/* 185 */       return;
+/*     */     }
+/* 187 */     Dataset dsDetail = ViewUtil.getDataset(view, "hrtaovertimeb");
+/* 188 */     RowData rowData = dsDetail.getCurrentRowData();
+/* 189 */     if (rowData == null) {
+/* 190 */       return;
+/*     */     }
+/* 192 */     Row[] rows = rowData.getRows();
+/* 193 */     if ((rows == null) || (rows.length == 0)) {
+/* 194 */       return;
+/*     */     }
+/*     */     
+/* 197 */     for (Row row : rows) {
+/* 198 */       row.setValue(dsDetail.nameToIndex("isEditable"), Boolean.valueOf(dsDetail.isEnabled()));
+/* 199 */       row.setValue(dsDetail.nameToIndex("pk_psndoc"), selRow.getValue(ds.nameToIndex("pk_psndoc")));
+/* 200 */       row.setValue(dsDetail.nameToIndex("pk_psnjob"), selRow.getValue(ds.nameToIndex("pk_psnjob")));
+/*     */     }
+/*     */   }
+/*     */   
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */   public void onAfterDataChange_hrtaovertimeh(DatasetCellEvent datasetCellEvent)
+/*     */   {
+/* 210 */     Dataset ds = (Dataset)datasetCellEvent.getSource();
+/*     */     
+/* 212 */     int colIndex = datasetCellEvent.getColIndex();
+/* 213 */     if (colIndex != ds.nameToIndex("pk_overtimetype")) {
+/* 214 */       return;
+/*     */     }
+/* 216 */     Row selRow = ds.getSelectedRow();
+/* 217 */     if (selRow == null) {
+/* 218 */       return;
+/*     */     }
+/*     */     
+/* 221 */     setTimeUnitText(ds, selRow);
+/*     */     
+/* 223 */     LfwView view = ViewUtil.getCurrentView();
+/* 224 */     Dataset dsDetail = ViewUtil.getDataset(view, "hrtaovertimeb");
+/* 225 */     RowData rowData = dsDetail.getCurrentRowData();
+/* 226 */     if (rowData == null) {
+/* 227 */       return;
+/*     */     }
+/* 229 */     Row[] rows = rowData.getRows();
+/* 230 */     if ((rows == null) || (rows.length == 0)) {
+/* 231 */       selRow.setValue(ds.nameToIndex("sumhour"), UFDouble.ZERO_DBL);
+/* 232 */       return;
+/*     */     }
+/*     */     
+/* 235 */     calculate(ds, dsDetail, selRow);
+/*     */   }
+/*     */   
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */   public static void setTimeUnitText(Dataset ds, Row masterRow)
+/*     */   {
+/* 246 */     String pk_org = masterRow.getString(ds.nameToIndex("pk_org"));
+/*     */     
+/*     */ 
+/* 249 */     String pk_overtimetype = masterRow.getString(ds.nameToIndex("pk_overtimetype"));
+/*     */     
+/* 251 */     LfwView view = ViewUtil.getCurrentView();
+/* 252 */     FormComp form = (FormComp)ViewUtil.getComponent(view, "headTab_card_overtimeinf_form");
+/*     */     
+/* 254 */     FormElement elem = form.getElementById("sumhour");
+/* 255 */     String text = NCLangRes4VoTransl.getNCLangRes().getStrByID("c_ta-res", "0c_ta-res0098");
+/*     */     
+/*     */ 
+/*     */ 
+/*     */ 
+/* 260 */     TimeItemCopyVO timeItemCopyVO = getTimeItemCopyVO(pk_org, pk_overtimetype);
+/* 261 */     if (timeItemCopyVO != null)
+/*     */     {
+/* 263 */       masterRow.setValue(ds.nameToIndex("pk_overtimetypecopy"), timeItemCopyVO.getPk_timeitemcopy());
+/* 264 */       Integer timeitemunit = timeItemCopyVO.getTimeitemunit();
+/* 265 */       if ((timeitemunit != null) && (0 == timeitemunit.intValue())) {
+/* 266 */         elem.setLabelPos(text + NCLangRes4VoTransl.getNCLangRes().getStrByID("c_ta-res", "0c_ta-res0001"));
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */       }
+/* 271 */       else if ((timeitemunit != null) && (1 == timeitemunit.intValue())) {
+/* 272 */         elem.setLabelPos(text + NCLangRes4VoTransl.getNCLangRes().getStrByID("c_ta-res", "0c_ta-res0002"));
+/*     */ 
+/*     */       }
+/*     */       else
+/*     */       {
+/*     */ 
+/* 278 */         elem.setLabelPos(text);
+/*     */       }
+/*     */     } else {
+/* 281 */       elem.setLabelPos(text);
+/*     */       
+/* 283 */       masterRow.setValue(ds.nameToIndex("pk_overtimetypecopy"), null);
+/*     */     }
+/*     */   }
+/*     */   
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */   public void onAfterDataChange_hrtaovertimeb(DatasetCellEvent datasetCellEvent)
+/*     */   {
+/* 293 */     Dataset dsDetail = (Dataset)datasetCellEvent.getSource();
+/*     */     
+/* 295 */     int colIndex = datasetCellEvent.getColIndex();
+/* 296 */     if ((colIndex != dsDetail.nameToIndex("overtimebegintime")) && (colIndex != dsDetail.nameToIndex("overtimeendtime")) && (colIndex != dsDetail.nameToIndex("deduct"))) {
+/* 297 */       return;
+/*     */     }
+/* 299 */     LfwView view = ViewUtil.getCurrentView();
+/* 300 */     Dataset dsMaster = ViewUtil.getDataset(view, "hrtaovertimeh");
+/* 301 */     Row rowMaster = dsMaster.getSelectedRow();
+/* 302 */     Row rowDetail = dsDetail.getSelectedRow();
+/*     */     
+/*     */ 
+/* 305 */     dateChangeEvent(dsDetail, rowDetail, dsMaster, rowMaster, colIndex);
+/*     */     
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/* 316 */     String pk_overtimetype = rowMaster.getString(dsMaster.nameToIndex("pk_overtimetype"));
+/* 317 */     if (StringUtils.isEmpty(pk_overtimetype)) {
+/* 318 */       return;
+/*     */     }
+/*     */     
+/* 321 */     UFDateTime beiginTime = (UFDateTime)rowDetail.getValue(dsDetail.nameToIndex("overtimebegintime"));
+/*     */     
+/* 323 */     UFDateTime endTime = (UFDateTime)rowDetail.getValue(dsDetail.nameToIndex("overtimeendtime"));
+/* 324 */     if ((beiginTime == null) || (endTime == null)) {
+/* 325 */       return;
+/*     */     }
+/* 327 */     SuperVO[] subVOs = new Dataset2SuperVOSerializer().serialize(dsDetail, rowDetail);
+/* 328 */     if ((subVOs == null) || (subVOs.length == 0)) {
+/* 329 */       return;
+/*     */     }
+/* 331 */     boolean isCanCheck = false;
+/*     */     try {
+/* 333 */       IOvertimeApplyQueryMaintain service = (IOvertimeApplyQueryMaintain)ServiceLocator.lookup(IOvertimeApplyQueryMaintain.class);
+/* 334 */       isCanCheck = service.isCanCheck((OvertimebVO)subVOs[0]);
+/*     */     } catch (HrssException e) {
+/* 336 */       new HrssException(e).alert();
+/*     */     } catch (BusinessException e) {
+/* 338 */       new HrssException(e).deal();
+/*     */     }
+/* 340 */     if (!isCanCheck) {
+/* 341 */       ((OvertimebVO)subVOs[0]).setIsneedcheck(UFBoolean.FALSE);
+/* 342 */       new SuperVO2DatasetSerializer().update(subVOs, dsDetail);
+/*     */     }
+/*     */   }
+/*     */   
+/*     */   private void dateChangeEvent(Dataset ds, Row selRow, Dataset dsMaster, Row rowMaster, int colIndex)
+/*     */   {
+/* 348 */     UFDateTime beiginTime = (UFDateTime)selRow.getValue(ds.nameToIndex("overtimebegintime"));
+/* 349 */     UFDateTime endTime = (UFDateTime)selRow.getValue(ds.nameToIndex("overtimeendtime"));
+/*     */     
+/* 351 */     if (colIndex == ds.nameToIndex("overtimebegintime")) {
+/* 352 */       if (beiginTime != null)
+/*     */       {
+/* 354 */         selRow.setValue(ds.nameToIndex("overtimebegindate"), new UFLiteralDate(beiginTime.getDate().toString()));
+/*     */       } else {
+/* 356 */         selRow.setValue(ds.nameToIndex("overtimebegindate"), null);
+/*     */       }
+/*     */     }
+/* 359 */     if (colIndex == ds.nameToIndex("overtimeendtime")) {
+/* 360 */       if (endTime != null)
+/*     */       {
+/* 362 */         selRow.setValue(ds.nameToIndex("overtimeenddate"), new UFLiteralDate(endTime.getDate().toString()));
+/*     */       } else {
+/* 364 */         selRow.setValue(ds.nameToIndex("overtimeenddate"), null);
+/*     */       }
+/*     */     }
+/* 367 */     if ((beiginTime != null) && (endTime != null))
+/*     */     {
+/* 369 */       calculate(dsMaster, ds, rowMaster);
+/*     */     }
+/*     */   }
+/*     */   
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */   private void calculate(Dataset ds, Dataset dsDetail, Row selRow)
+/*     */   {
+/* 381 */     Datasets2AggVOSerializer serializer = new Datasets2AggVOSerializer();
+/* 382 */     AggOvertimeVO aggVO = (AggOvertimeVO)serializer.serialize(ds, new Dataset[] { dsDetail }, OverTimeConsts.CLASS_NAME_AGGVO.getName());
+/*     */     
+/* 384 */     prepareBeforeCal(aggVO);
+/*     */     try {
+/* 386 */       TimeZone clientTimeZone = Calendar.getInstance().getTimeZone();
+/* 387 */       IOvertimeAppInfoDisplayer service = (IOvertimeAppInfoDisplayer)ServiceLocator.lookup(IOvertimeAppInfoDisplayer.class);
+/* 388 */       aggVO = (AggOvertimeVO)service.calculate(aggVO, clientTimeZone);
+/*     */     } catch (HrssException e) {
+/* 390 */       new HrssException(e).alert();
+/*     */     } catch (BusinessException e) {
+/* 392 */       new HrssException(e).deal();
+/*     */     }
+/*     */     
+/* 395 */     OvertimehVO headVO = (OvertimehVO)aggVO.getParentVO();
+/*     */     
+/* 397 */     selRow.setValue(ds.nameToIndex("sumhour"), headVO.getLength());
+/*     */     
+/*     */ 
+/* 400 */     OvertimebVO[] vos = aggVO.getOvertimebVOs();
+/*     */     
+/* 402 */     for (OvertimebVO bvo : vos) {
+/* 403 */       if (bvo.getDeduct() == null) {
+/* 404 */         bvo.setDeduct(Integer.valueOf(0));
+/*     */       }
+/*     */     }
+/* 407 */     new SuperVO2DatasetSerializer().update(vos, dsDetail);
+/*     */   }
+/*     */   
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */   private void prepareBeforeCal(AggOvertimeVO aggVO)
+/*     */   {
+/* 416 */     OvertimehVO headVO = aggVO.getOvertimehVO();
+/* 417 */     OvertimebVO[] vos = aggVO.getOvertimebVOs();
+/* 418 */     for (OvertimebVO subVO : vos)
+/*     */     {
+/* 420 */       subVO.setPk_group(headVO.getPk_group());
+/*     */       
+/* 422 */       subVO.setPk_org(headVO.getPk_org());
+/*     */       
+/* 424 */       subVO.setPk_psndoc(headVO.getPk_psndoc());
+/*     */       
+/* 426 */       subVO.setPk_psnjob(headVO.getPk_psnjob());
+/*     */       
+/* 428 */       subVO.setPk_psnorg(headVO.getPk_psnorg());
+/*     */       
+/* 430 */       subVO.setPk_overtimetype(headVO.getPk_overtimetype());
+/*     */       
+/* 432 */       subVO.setPk_overtimetypecopy(headVO.getPk_overtimetypecopy());
+/*     */     }
+/*     */   }
+/*     */   
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */ 
+/*     */   public static TimeItemCopyVO getTimeItemCopyVO(String pk_org, String pk_overtimetype)
+/*     */   {
+/* 444 */     TimeItemCopyVO timeItemCopyVO = null;
+/*     */     try
+/*     */     {
+/* 447 */       ITimeItemQueryService service = (ITimeItemQueryService)ServiceLocator.lookup(ITimeItemQueryService.class);
+/* 448 */       timeItemCopyVO = service.queryCopyTypesByDefPK(pk_org, pk_overtimetype, 1);
+/*     */     } catch (HrssException e) {
+/* 450 */       new HrssException(e).alert();
+/*     */     } catch (BusinessException e) {
+/* 452 */       new HrssException(e).deal();
+/*     */     }
+/* 454 */     return timeItemCopyVO;
+/*     */   }
+/*     */   
+/*     */   protected String getDetailDsId()
+/*     */   {
+/* 459 */     return "hrtaovertimeb";
+/*     */   }
+/*     */ }
+
+/* Location:           E:\nchome65_goldSph\nchome65_gold\modules\hrss\lib\pubhrss_ta.jar
+ * Qualified Name:     nc.bs.hrss.ta.overtime.ctrl.OverTimeApplyView
+ * Java Class Version: 7 (51.0)
+ * JD-Core Version:    0.7.1
+ */

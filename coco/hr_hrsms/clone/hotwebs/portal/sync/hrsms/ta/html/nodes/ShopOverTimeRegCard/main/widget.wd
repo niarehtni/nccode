@@ -1,0 +1,465 @@
+<?xml version="1.0" encoding='UTF-8'?>
+<Widget controllerClazz="nc.bs.hrsms.ta.sss.overtime.ctrl.ShopOverTimeRegCardView" i18nName="" langDir="" caption="店员加班登记详细界面" id="main" refId="main" sourcePackage="src/public/">
+    <Attributes>
+    </Attributes>
+    <PageMetas>
+    </PageMetas>
+    <PlugoutDescs>
+        <PlugoutDesc id="closewindow">
+            <PlugoutDescItem clazztype="java.lang.String" name="c_1">
+            </PlugoutDescItem>
+        </PlugoutDesc>
+    </PlugoutDescs>
+    <PluginDescs>
+    </PluginDescs>
+    <Events>
+    	
+       <Event async="true" jsEventClaszz="nc.uap.lfw.core.event.conf.DialogListener" methodName="onBeforeShow" name="beforeShow" onserver="true">
+			<SubmitRule cardSubmit="false" panelSubmit="false" tabSubmit="false">
+				
+			</SubmitRule>
+			<Params>
+				<Param>
+					<Name>dialogEvent</Name>
+					<Value>
+					</Value>
+					<Desc> <![CDATA[nc.uap.lfw.core.event.DialogEvent]]> </Desc>
+				</Param>
+			</Params>
+			<Action>
+			</Action>
+		</Event>
+    </Events>
+    <Models>
+        <Datasets>
+            
+            <RefMdDataset caption="人员基本信息" controlwidgetopeStatus="false" enabled="false" id="$refds_hrhi_bd_psndoc" lazyLoad="true" notNullBody="false" objMeta="hrhi.bd_psndoc" voMeta="nc.vo.hi.psndoc.PsndocVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            
+            <RefMdDataset caption="组织_部门版本信息" controlwidgetopeStatus="false" enabled="false" id="$refds_uap_dept_v" lazyLoad="true" notNullBody="false" objMeta="uap.dept_v" voMeta="nc.vo.vorg.DeptVersionVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset caption="组织_集团" controlwidgetopeStatus="false" enabled="false" id="$refds_uap_group" lazyLoad="true" notNullBody="false" objMeta="uap.group" voMeta="nc.vo.org.GroupVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset caption="加班类别copy" controlwidgetopeStatus="false" enabled="false" id="$refds_hrta_overtimetypecopy" lazyLoad="true" notNullBody="false" objMeta="hrta.overtimetypecopy" voMeta="nc.vo.ta.timeitem.OverTimeTypeCopyVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset caption="组织_业务单元_人力资源组织" controlwidgetopeStatus="false" enabled="false" id="$refds_uap_hrorg" lazyLoad="true" notNullBody="false" objMeta="uap.hrorg" voMeta="nc.vo.org.HROrgVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset caption="用户" controlwidgetopeStatus="false" enabled="false" id="$refds_uap_user" lazyLoad="true" notNullBody="false" objMeta="uap.user" voMeta="nc.vo.sm.UserVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            
+            <RefMdDataset caption="组织_部门" controlwidgetopeStatus="false" enabled="false" id="$refds_uap_dept" lazyLoad="true" notNullBody="false" objMeta="uap.dept" voMeta="nc.vo.org.DeptVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset caption="职务" controlwidgetopeStatus="false" enabled="false" id="$refds_hrjf_om_job" lazyLoad="true" notNullBody="false" objMeta="hrjf.om_job" voMeta="nc.vo.om.job.JobVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset caption="组织关系" controlwidgetopeStatus="false" enabled="false" id="$refds_hrhi_hi_psnorg" lazyLoad="true" notNullBody="false" objMeta="hrhi.hi_psnorg" voMeta="nc.vo.hi.psndoc.PsnOrgVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <MdDataset caption="岗位基本信息" controlwidgetopeStatus="false" enabled="false" id="$refds_hrjf_om_post" lazyLoad="true" notNullBody="false" objMeta="hrjf.om_post" voMeta="nc.vo.om.post.PostVO">
+                <Fields>
+                </Fields>
+            </MdDataset>
+            <MdDataset caption="加班登记" controlwidgetopeStatus="false" enabled="false" id="hrtaovertimereg" lazyLoad="false" notNullBody="false" objMeta="hrta.hrtaovertimereg" voMeta="nc.vo.ta.overtime.OvertimeRegVO">
+                <FieldRelations>
+                    <FieldRelation id="pk_group_rel" needProcess="true" refDataset="$refds_uap_group" useCache="false">
+                        <MatchFields>
+                            <Field readField="name" writeField="pk_group_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_group" value="pk_group">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_org_rel" needProcess="true" refDataset="$refds_uap_hrorg" useCache="false">
+                        <MatchFields>
+                            <Field readField="name" writeField="pk_org_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_hrorg" value="pk_org">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_overtimetype_rel" needProcess="true" refDataset="$refds_hrta_overtimetype" useCache="false">
+                        <MatchFields>
+                            <Field readField="timeitemname" writeField="pk_overtimetype_timeitemname">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_timeitem" value="pk_overtimetype">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_timeitem_rel" needProcess="true" refDataset="$refds_hrta_overtimetypecopy" useCache="false">
+                        <MatchFields>
+                            <Field readField="pk_timeitem" writeField="pk_overtimetypecopy_pk_timeitem">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_timeitemcopy" value="pk_overtimetypecopy">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_overtimetypecopy_pk_timeitem_rel" needProcess="true" refDataset="$refds_hrta_overtimetype" useCache="false">
+                        <MatchFields>
+                            <Field readField="timeitemname" writeField="pk_overtimetypecopy_pk_timeitem_timeitemname">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_timeitem" value="pk_overtimetypecopy_pk_timeitem">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_psndoc_rel" needProcess="true" refDataset="$refds_hrhi_hi_psnjob" useCache="false">
+                        <MatchFields>
+                            <Field readField="pk_psndoc" writeField="pk_psnjob_pk_psndoc">
+                            </Field>
+                            <Field readField="clerkcode" writeField="pk_psnjob_clerkcode">
+                            </Field>
+                            <Field readField="pk_dept" writeField="pk_psnjob_pk_dept">
+                            </Field>
+                            <Field readField="pk_job" writeField="pk_psnjob_pk_job">
+                            </Field>
+                            <Field readField="pk_post" writeField="pk_psnjob_pk_post">
+                            </Field>
+                            <Field readField="pk_org" writeField="pk_psnjob_pk_org">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_psnjob" value="pk_psnjob">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_psnjob_pk_psndoc_rel" needProcess="true" refDataset="$refds_hrhi_bd_psndoc" useCache="false">
+                        <MatchFields>
+                            <Field readField="code" writeField="pk_psnjob_pk_psndoc_code">
+                            </Field>
+                            <Field readField="name" writeField="pk_psnjob_pk_psndoc_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_psndoc" value="pk_psnjob_pk_psndoc">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    
+                    <FieldRelation id="creator_rel" needProcess="true" refDataset="$refds_uap_user" useCache="false">
+                        <MatchFields>
+                            <Field readField="user_name" writeField="creator_user_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="cuserid" value="creator">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="modifier_rel" needProcess="true" refDataset="$refds_uap_user" useCache="false">
+                        <MatchFields>
+                            <Field readField="user_name" writeField="modifier_user_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="cuserid" value="modifier">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    
+                    <FieldRelation id="pk_org_v_rel" needProcess="true" refDataset="$refds_uap_hrorg_v" useCache="false">
+                        <MatchFields>
+                            <Field readField="name" writeField="pk_org_v_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_vid" value="pk_org_v">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_dept_v_rel" needProcess="true" refDataset="$refds_uap_dept_v" useCache="false">
+                        <MatchFields>
+                            <Field readField="name" writeField="pk_dept_v_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_vid" value="pk_dept_v">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_psnjob_pk_post_rel" needProcess="true" refDataset="$refds_hrjf_om_post" useCache="false">
+                        <MatchFields>
+                            <Field readField="postname" writeField="pk_psnjob_pk_post_postname">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_post" value="pk_psnjob_pk_post">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_psnjob_pk_job_rel" needProcess="true" refDataset="$refds_hrjf_om_job" useCache="false">
+                        <MatchFields>
+                            <Field iscontains="Y" ismatch="Y" readField="pk_job" writeField="pk_psnjob_pk_job">
+                            </Field>
+                            <Field readField="jobname" writeField="pk_psnjob_pk_job_jobname">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_job" value="pk_psnjob_pk_job">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_psnjob_pk_org_rel" needProcess="true" refDataset="$refds_uap_org" useCache="false">
+                        <MatchFields>
+                            <Field iscontains="Y" ismatch="Y" readField="pk_org" writeField="pk_psnjob_pk_org">
+                            </Field>
+                            <Field readField="name" writeField="pk_psnjob_pk_org_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_org" value="pk_psnjob_pk_org">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                    <FieldRelation id="pk_psnjob_pk_dept_rel" needProcess="true" refDataset="$refds_uap_dept" useCache="false">
+                        <MatchFields>
+                            <Field iscontains="Y" ismatch="Y" readField="pk_dept" writeField="pk_psnjob_pk_dept">
+                            </Field>
+                            <Field readField="name" writeField="pk_psnjob_pk_dept_name">
+                            </Field>
+                        </MatchFields>
+                        <WhereField>
+                            <Field key="pk_dept" value="pk_psnjob_pk_dept">
+                            </Field>
+                        </WhereField>
+                    </FieldRelation>
+                </FieldRelations>
+                <Fields>
+                    
+                    <Field dataType="String" i18nName="w_ta-000298" id="pk_psnjob_pk_psndoc_name" langDir="node_ta-res" nullAble="true" primaryKey="false" sourceField="pk_psnjob_pk_psndoc" text="姓名">
+                    </Field>
+                    <Field dataType="String" i18nName="w_ta-000821" id="pk_psnjob_clerkcode" langDir="node_ta-res" nullAble="true" primaryKey="false" sourceField="pk_psnjob" text="员工号">
+                    </Field>
+                    <Field dataType="String" i18nName="w_ta-000822" id="pk_psnjob_pk_post" langDir="node_ta-res" nullAble="true" primaryKey="false" sourceField="pk_psnjob" text="岗位">
+                    </Field>
+                    <Field dataType="String" i18nName="w_ta-000816" id="pk_psnjob_pk_job" langDir="node_ta-res" nullAble="true" primaryKey="false" sourceField="pk_psnjob" text="职务">
+                    </Field>
+                    <Field dataType="String" i18nName="w_ta-000823" id="pk_psnjob_pk_dept" langDir="node_ta-res" nullAble="true" primaryKey="false" sourceField="pk_psnjob" text="部门">
+                    </Field>
+                    <Field dataType="String" i18nName="w_ta-000824" id="pk_psnjob_pk_org" langDir="node_ta-res" nullAble="true" primaryKey="false" sourceField="pk_psnjob" text="组织">
+                    </Field>
+                    <Field dataType="String" i18nName="w_ta-000825" id="pk_psnjob_pk_psndoc_code" langDir="node_ta-res" nullAble="true" primaryKey="false" sourceField="pk_psnjob_pk_psndoc" text="人员编码">
+                    </Field>
+                    <Field dataType="String" i18nName="w_ta-000822" id="pk_psnjob_pk_post_postname" langDir="node_ta-res" nullAble="true" primaryKey="false" sourceField="pk_psnjob_pk_post" text="岗位">
+                    </Field>
+                    <Field dataType="String" i18nName="w_ta-000816" id="pk_psnjob_pk_job_jobname" langDir="node_ta-res" nullAble="true" primaryKey="false" sourceField="pk_psnjob_pk_job" text="职务">
+                    </Field>
+                    <Field dataType="String" i18nName="w_ta-000824" id="pk_psnjob_pk_org_name" langDir="node_ta-res" nullAble="true" primaryKey="false" sourceField="pk_psnjob_pk_org" text="组织">
+                    </Field>
+                    <Field dataType="String" i18nName="w_ta-000823" id="pk_psnjob_pk_dept_name" langDir="node_ta-res" nullAble="true" primaryKey="false" sourceField="pk_psnjob_pk_dept" text="部门">
+                    </Field>
+                </Fields>
+                <Events>
+                    <Event async="true" methodName="onAfterDataChange" name="onAfterDataChange" onserver="true">
+                        <SubmitRule>
+                            <Widget id="main">
+                                <Dataset id="hrtaovertimereg" type="ds_current_line">
+                                </Dataset>
+                            </Widget>
+                        </SubmitRule>
+                        <Params>
+                            <Param>
+                                <Name>datasetCellEvent</Name>
+                                <Value>
+                                </Value>
+                                <Desc>                                    <![CDATA[nc.uap.lfw.core.event.DatasetCellEvent]]>
+                                </Desc>
+                            </Param>
+                        </Params>
+                        <Action>
+                        </Action>
+                    </Event>
+                </Events>
+            </MdDataset>
+            <RefMdDataset caption="组织_业务单元_人力资源组织版本信息" controlwidgetopeStatus="false" enabled="false" id="$refds_uap_hrorg_v" lazyLoad="true" notNullBody="false" objMeta="uap.hrorg_v" voMeta="nc.vo.vorg.HROrgVersionVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            
+            <MdDataset caption="组织" controlwidgetopeStatus="false" enabled="false" id="$refds_uap_org" lazyLoad="true" notNullBody="false" objMeta="uap.org" voMeta="nc.vo.org.OrgVO">
+                <Fields>
+                </Fields>
+            </MdDataset>
+            <RefMdDataset caption="加班类别" controlwidgetopeStatus="false" enabled="false" id="$refds_hrta_overtimetype" lazyLoad="true" notNullBody="false" objMeta="hrta.overtimetype" voMeta="nc.vo.ta.timeitem.OverTimeTypeVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+            <RefMdDataset caption="工作记录" controlwidgetopeStatus="false" enabled="false" id="$refds_hrhi_hi_psnjob" lazyLoad="true" notNullBody="false" objMeta="hrhi.hi_psnjob" voMeta="nc.vo.hi.psndoc.PsnJobVO">
+                <Fields>
+                </Fields>
+            </RefMdDataset>
+        </Datasets>
+        <ComboDatas>
+            <MDComboDataConf caption="休假与出差单据来源枚举" fullclassName="23881e93-d21e-42f0-829f-c49de7c5cacd" id="combo_hrtaovertimereg_billsource">
+            </MDComboDataConf>
+        </ComboDatas>
+        <RefNodes>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" hrOrgs="false" i18nName="w_ta-000789" id="refnode_hrtaovertimereg_pk_org_name" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" read="false" readDs="masterDs" readFields="pk_hrorg,name" refId="" refcode="人力资源组织" refnodeDelegator="" relationRefNodeId="" selLeafOnly="false" text="加班申请单主表_人力资源组织" usePower="false" writeDs="hrtaovertimereg" writeFields="pk_org,pk_org_name">
+            </NCRefNode>
+         
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" hrOrgs="false" i18nName="w_ta-000790" id="refnode_hrtaovertimereg_pk_overtimetype_timeitemname" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" read="false" readDs="masterDs" readFields="pk_timeitem,timeitemname" refId="" refcode="加班类别" refnodeDelegator="" relationRefNodeId="" selLeafOnly="false" text="加班类别参照" usePower="false" writeDs="hrtaovertimereg" writeFields="pk_overtimetype,pk_overtimetype_timeitemname">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" hrOrgs="false" i18nName="w_ta-000791" id="refnode_hrtaovertimereg_pk_psnjob_pk_psndoc_name" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" read="false" readDs="masterDs" readFields="pk_psnjob,name" refId="" refcode="人员工作记录" refnodeDelegator="" relationRefNodeId="" selLeafOnly="false" text="加班申请单主表_人员工作记录" usePower="false" writeDs="hrtaovertimereg" writeFields="pk_psnjob,pk_psnjob_pk_psndoc_name">
+            </NCRefNode>
+         
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" hrOrgs="false" i18nName="w_ta-000793" id="refnode_hrtaovertimereg_creator_user_name" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" read="false" readDs="masterDs" readFields="cuserid,user_name" refId="" refcode="用户" refnodeDelegator="" relationRefNodeId="" selLeafOnly="false" text="加班申请单主表_用户" usePower="false" writeDs="hrtaovertimereg" writeFields="creator,creator_user_name">
+            </NCRefNode>
+       
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" hrOrgs="false" i18nName="w_ta-000795" id="refnode_hrtaovertimereg_pk_psndoc_name" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" read="false" readDs="masterDs" readFields="pk_psndoc,name" refId="" refcode="HR人员" refnodeDelegator="" relationRefNodeId="" selLeafOnly="false" text="加班申请单主表_HR人员" usePower="false" writeDs="hrtaovertimereg" writeFields="pk_psndoc,pk_psndoc_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" hrOrgs="false" i18nName="w_ta-000796" id="refnode_hrtaovertimereg_pk_org_v_name" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" read="false" readDs="masterDs" readFields="pk_vid,name" refId="" refcode="人力资源组织版本" refnodeDelegator="" relationRefNodeId="" selLeafOnly="false" text="加班申请单主表_人力资源组织版本" usePower="false" writeDs="hrtaovertimereg" writeFields="pk_org_v,pk_org_v_name">
+            </NCRefNode>
+            
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" hrOrgs="false" i18nName="w_ta-000793" id="refnode_hrtaovertimereg_modifier_user_name" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" read="false" readDs="masterDs" readFields="cuserid,user_name" refId="" refcode="用户" refnodeDelegator="" relationRefNodeId="" selLeafOnly="false" text="加班申请单主表_用户" usePower="false" writeDs="hrtaovertimereg" writeFields="modifier,modifier_user_name">
+            </NCRefNode>
+
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" hrOrgs="false" i18nName="w_ta-000801" id="refnode_hrtaovertimereg_pk_group_name" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" read="false" readDs="masterDs" readFields="pk_group,name" refId="" refcode="集团" refnodeDelegator="" relationRefNodeId="" selLeafOnly="false" text="加班申请单主表_集团" usePower="false" writeDs="hrtaovertimereg" writeFields="pk_group,pk_group_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" hrOrgs="false" i18nName="w_ta-000802" id="refnode_hrtaovertimereg_pk_overtimetypecopy_pk_timeitem_timeitemname" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" read="false" readDs="masterDs" readFields="pk_timeitemcopy,timeitemname" refId="" refcode="加班类别拷贝" refnodeDelegator="" relationRefNodeId="" selLeafOnly="false" text="加班申请单主表_加班类别拷贝" usePower="false" writeDs="hrtaovertimereg" writeFields="pk_overtimetypecopy,pk_overtimetypecopy_pk_timeitem.timeitemname">
+            </NCRefNode>
+   
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" hrOrgs="false" i18nName="w_ta-000793" id="refnode_hrtaovertimereg_billmaker_user_name" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" read="false" readDs="masterDs" readFields="cuserid,user_name" refId="" refcode="用户" refnodeDelegator="" relationRefNodeId="" selLeafOnly="false" text="加班申请单主表_用户" usePower="false" writeDs="hrtaovertimereg" writeFields="billmaker,billmaker_user_name">
+            </NCRefNode>
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" filterRefNodeNames="false" hrOrgs="false" i18nName="w_ta-000806" id="refnode_hrtaovertimereg_pk_dept_v_name" langDir="node_ta-res" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" read="false" readDs="masterDs" readFields="pk_vid,name" refId="" refcode="部门版本" refnodeDelegator="" relationRefNodeId="" selLeafOnly="false" text="加班申请单主表_部门版本" usePower="false" writeDs="hrtaovertimereg" writeFields="pk_dept_v,pk_dept_v_name">
+            </NCRefNode>
+            
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" i18nName="" id="refnode_hrtaovertimereg_pk_psnjob_clerkcode" langDir="" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" readDs="masterDs" readFields="pk_psnjob,clerkcode,pk_psndoc" refId="" refcode="部门人员(考勤档案)" refnodeDelegator="" selLeafOnly="false" text="加班登记_人员" usePower="false" writeDs="hrtaovertimereg" writeFields="pk_psnjob,pk_psnjob_clerkcode,pk_psndoc">
+            </NCRefNode>
+            
+            <NCRefNode allowInput="false" dataListener="" dialogHeight="" dialogWidth="" i18nName="" id="refnode_hrtaovertimereg_pk_psnorg" langDir="" multiSel="false" orgs="false" pagemeta="reference" pagemodel="" readDs="masterDs" readFields="pk_psnorg,enddate" refId="" refcode="HR组织关系" refnodeDelegator="" selLeafOnly="false" text="加班申请单_HR组织关系" usePower="false" writeDs="hrtaovertimereg" writeFields="pk_psnorg,pk_psnorg_null">
+            </NCRefNode>
+        </RefNodes>
+    </Models>
+    <Components>
+        <FormComp caption="加班登记人员信息" columnCount="3" dataset="hrtaovertimereg" eleWidth="150" ellipsis="false" enabled="false" id="headTab_card_psninfo_form" labelMinWidth="0" renderType="1" rowHeight="22" visible="true">
+            <Element attachNext="false" colSpan="1" dataType="String" editable="true" editorType="StringText" enabled="ture" field="pk_psnjob" height="" i18nName="" id="pk_psnjob" imageOnly="false" langDir="" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" text="主键" toolbarType="Custom" visible="false" width="">
+            </Element>
+            <Element allowExtendValue="false" attachNext="false" canUpload="false" colSpan="1" editMin="true" editSec="true" editable="true" editorType="Reference" enabled="true" field="pk_psnjob_clerkcode" height="" i18nName="" id="pk_psnjob_clerkcode" imageOnly="false" needNullOption="false" nextLine="false" nullAble="false" refNode="refnode_hrtaovertimereg_pk_psnjob_clerkcode" rowSpan="1" selectOnly="true" showLabel="true" text="员工号" toolbarType="Custom" visible="true" width="">
+            </Element>
+           
+            <Element attachNext="false" colSpan="1" dataType="String" editable="true" editorType="StringText" enabled="ture" field="pk_psndoc" height="" i18nName="" id="pk_psndoc" imageOnly="false" langDir="" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" text="人员基本信息主键" toolbarType="Custom" visible="false" width="">
+            </Element>
+            <Element allowExtendValue="false" attachNext="false" colSpan="1" dataType="String" editable="true" editorType="StringText" enabled="false" field="pk_psnjob_pk_psndoc_code" height="" i18nName="w_ta-000825" id="pk_psnjob_pk_psndoc_code" imageOnly="false" langDir="node_ta-res" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" text="人员编码" toolbarType="Custom" visible="true" width="">
+            </Element>
+            <Element allowExtendValue="false" attachNext="false" colSpan="1" dataType="String" editable="true" editorType="StringText" enabled="false" field="pk_psnjob_pk_psndoc_name" height="" i18nName="w_ta-000828" id="pk_psnjob_pk_psndoc_name" imageOnly="false" langDir="node_ta-res" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" text="姓名" toolbarType="Custom" visible="true" width="">
+            </Element>
+            <Element allowExtendValue="false" attachNext="false" colSpan="1" dataType="String" editable="true" editorType="StringText" enabled="false" field="pk_psnjob_pk_job_jobname" height="" i18nName="w_ta-000816" id="pk_psnjob_pk_job_jobname" imageOnly="false" langDir="node_ta-res" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" text="职务" toolbarType="Custom" visible="true" width="">
+            </Element>
+            <Element allowExtendValue="false" attachNext="false" colSpan="1" dataType="String" editable="true" editorType="StringText" enabled="false" field="pk_psnjob_pk_post_postname" height="" i18nName="w_ta-000822" id="pk_psnjob_pk_post_postname" imageOnly="false" langDir="node_ta-res" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" text="岗位" toolbarType="Custom" visible="true" width="">
+            </Element>
+            <Element allowExtendValue="false" attachNext="false" colSpan="1" dataType="String" editable="true" editorType="StringText" enabled="false" field="pk_psnjob_pk_org_name" height="" i18nName="w_ta-000824" id="pk_psnjob_pk_org_name" imageOnly="false" langDir="node_ta-res" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" text="组织" toolbarType="Custom" visible="true" width="">
+            </Element>
+            <Element allowExtendValue="false" attachNext="false" colSpan="1" dataType="String" editable="true" editorType="StringText" enabled="false" field="pk_psnjob_pk_dept_name" height="" i18nName="w_ta-000823" id="pk_psnjob_pk_dept_name" imageOnly="false" langDir="node_ta-res" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" text="部门" toolbarType="Custom" visible="true" width="">
+            </Element>
+        </FormComp>
+        <FormComp caption="加班登记信息" columnCount="3" dataset="hrtaovertimereg" eleWidth="150" ellipsis="false" enabled="false" id="headTab_card_overtimeinf_form" labelMinWidth="0" renderType="1" rowHeight="22" visible="true">
+            <Element allowExtendValue="false" attachNext="false" colSpan="1" dataType="String" editable="true" editorType="Reference" enabled="true" field="pk_overtimetype_timeitemname" height="" i18nName="w_ta-000811" id="pk_overtimetype_timeitemname" imageOnly="false" langDir="node_ta-res" nextLine="false" nullAble="false" refNode="refnode_hrtaovertimereg_pk_overtimetype_timeitemname" rowSpan="1" selectOnly="true" text="加班类别" toolbarType="Custom" visible="true" width="">
+            </Element>
+            <Element allowExtendValue="false" attachNext="false" colSpan="1" dataType="UFDateTime" editable="true" editorType="DateTimeText" enabled="true" field="overtimebegintime" height="" i18nName="" id="overtimebegintime" imageOnly="false" langDir="node_ta-res" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" text="开始时间" toolbarType="Custom" visible="true" width="">
+            </Element>
+            <Element allowExtendValue="false" attachNext="false" colSpan="1" dataType="UFDateTime" editable="true" editorType="DateTimeText" enabled="true" field="overtimeendtime" height="" i18nName="" id="overtimeendtime" imageOnly="false" langDir="node_ta-res" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" text="结束时间" toolbarType="Custom" visible="true" width="">
+            </Element>
+            <Element allowExtendValue="false" attachNext="false" colSpan="1" dataType="Integer" editable="true" editorType="IntegerText" enabled="true" field="deduct" height="" i18nName="" id="deduct" imageOnly="false" langDir="" nextLine="false" nullAble="true"  rowSpan="1" selectOnly="true" text="扣除时长(分钟)" toolbarType="Custom" visible="true" width="">
+            </Element>
+            <Element allowExtendValue="false" attachNext="false" colSpan="1" dataType="UFDouble" editable="true" editorType="DecimalText" enabled="false" field="overtimehour" height="" i18nName="" id="overtimehour" imageOnly="false" langDir="" nextLine="false" nullAble="true"  rowSpan="1" selectOnly="true" text="申请时长(小时)" toolbarType="Custom" visible="true" width="">
+            </Element>
+             <Element allowExtendValue="false" attachNext="false" colSpan="1" dataType="UFDouble" editable="true" editorType="DecimalText" enabled="false" field="acthour" height="" i18nName="" id="acthour" imageOnly="false" langDir="" nextLine="false" nullAble="true"  rowSpan="1" selectOnly="true" text="实际时长(小时)" toolbarType="Custom" visible="true" width="">
+            </Element>
+            <Element allowExtendValue="false" attachNext="false" colSpan="1" dataType="UFDouble" editable="true" editorType="DecimalText" enabled="false" field="diffhour" height="" i18nName="" id="diffhour" imageOnly="false" langDir="" nextLine="false" nullAble="true"  rowSpan="1" selectOnly="true" text="差异时长(小时)" toolbarType="Custom" visible="true" width="">
+            </Element>
+             <Element allowExtendValue="false" attachNext="false" colSpan="1" dataType="String" editable="true" editorType="StringText" enabled="true" field="overtimeremark" height="" i18nName="" id="overtimeremark" imageOnly="false" langDir="" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" text="加班说明" toolbarType="Custom" visible="true" width="">
+            </Element>
+            <Element allowExtendValue="false" attachNext="false" colSpan="1" dataType="Integer" editable="true" editorType="ComboBox" enabled="false" field="billsource" height="" i18nName="" id="billsource" imageOnly="false" langDir="" nextLine="false" nullAble="true" refComboData="combo_hrtaovertimereg_billsource" rowSpan="1" selectOnly="true" text="单据来源" toolbarType="Custom" visible="true" width="">
+            </Element>
+             <Element attachNext="false" colSpan="3" editable="true" editorType="CheckBox" enabled="true" field="isneedcheck" height="" i18nName="" id="isneedcheck" imageOnly="false" langDir="" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" text="是否需要校验" toolbarType="Custom" visible="true" width="">
+			</Element>
+        </FormComp>
+        
+        <FormComp caption="审计信息" columnCount="3" dataset="hrtaovertimereg" eleWidth="150" ellipsis="false" enabled="false" id="tailTab_card_audition_form" labelMinWidth="0" renderType="1" rowHeight="22" visible="true">
+            <Element allowExtendValue="false" attachNext="false" colSpan="1" dataType="String" editable="true" editorType="Reference" enabled="false" field="creator_user_name" height="" i18nName="w_ta-000316" id="creator_user_name" imageOnly="false" langDir="node_ta-res" nextLine="false" nullAble="true" refNode="refnode_hrtaovertimereg_creator_user_name" rowSpan="1" selectOnly="true" text="创建人" toolbarType="Custom" visible="true" width="">
+            </Element>
+            <Element allowExtendValue="false" attachNext="false" colSpan="1" dataType="UFDateTime" editable="true" editorType="DateTimeText" enabled="false" field="creationtime" height="" i18nName="w_ta-000838" id="creationtime" imageOnly="false" langDir="node_ta-res" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" text="创建时间" toolbarType="Custom" visible="true" width="">
+            </Element>
+            <Element allowExtendValue="false" attachNext="false" colSpan="1" dataType="String" editable="true" editorType="Reference" enabled="false" field="modifier_user_name" height="" i18nName="w_ta-000837" id="modifier_user_name" imageOnly="false" langDir="node_ta-res" nextLine="false" nullAble="true" refNode="refnode_hrtaovertimereg_modifier_user_name" rowSpan="1" selectOnly="true" text="修改人" toolbarType="Custom" visible="true" width="">
+            </Element>
+            <Element allowExtendValue="false" attachNext="false" colSpan="1" dataType="UFDateTime" editable="true" editorType="DateTimeText" enabled="false" field="modifiedtime" height="" i18nName="w_ta-000839" id="modifiedtime" imageOnly="false" langDir="node_ta-res" nextLine="false" nullAble="true" rowSpan="1" selectOnly="true" text="修改时间" toolbarType="Custom" visible="true" width="">
+            </Element>
+        </FormComp>
+        
+    </Components>
+    <Menus>
+        <MenuBarComp id="menu_operate">
+            <MenuItem i18nName="w_ta-000299" id="btnSave" langDir="node_ta-res" modifiers="2" text="保存" visible="true">
+                <Events>
+                    <Event async="true" methodName="onSave" name="onclick" onserver="true">
+                        <SubmitRule>
+                            <Widget id="main">
+                                <Dataset id="hrtaovertimereg" type="ds_current_line">
+                                </Dataset>
+                            </Widget>
+                        </SubmitRule>
+                        <Params>
+                            <Param>
+                                <Name>mouseEvent</Name>
+                                <Value>
+                                </Value>
+                                <Desc>                                    <![CDATA[]]>
+                                </Desc>
+                            </Param>
+                        </Params>
+                        <Action>
+                        </Action>
+                    </Event>
+                </Events>
+            </MenuItem>
+            
+            <MenuItem i18nName="w_ta-000305" id="btnCancel" langDir="node_ta-res" modifiers="2" text="取消" visible="true">
+                <Events>
+                    <Event async="true" methodName="onCancel" name="onclick" onserver="true">
+                        <SubmitRule>
+                            <Widget id="main">
+                                <Dataset id="hrtaovertimereg" type="ds_current_line">
+                                </Dataset>
+                            </Widget>
+                        </SubmitRule>
+                        <Params>
+                            <Param>
+                                <Name>mouseEvent</Name>
+                                <Value>
+                                </Value>
+                                <Desc>                                    <![CDATA[]]>
+                                </Desc>
+                            </Param>
+                        </Params>
+                        <Action>
+                        </Action>
+                    </Event>
+                </Events>
+            </MenuItem>
+        </MenuBarComp>
+    </Menus>
+</Widget>

@@ -1,0 +1,78 @@
+package nc.ui.twhr.basedoc.handler;
+
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+
+import nc.ui.bd.manage.UIRefCellEditorNew;
+import nc.ui.plaf.basic.UIExtTabbedPaneUI;
+import nc.ui.pub.beans.RefEditListener;
+import nc.ui.pub.beans.UIRefPane;
+import nc.ui.pub.bill.BillItem;
+import nc.ui.pubapp.uif2app.event.IAppEventHandler;
+import nc.ui.pubapp.uif2app.event.card.CardBodyBeforeEditEvent;
+import nc.vo.pub.bill.MetaDataPropertyAdpter;
+import nc.vo.pubapp.pattern.exception.ExceptionUtils;
+
+@SuppressWarnings("restriction")
+public class BodyBeforeEditHandler implements
+		IAppEventHandler<CardBodyBeforeEditEvent>{
+
+	@Override
+	public void handleAppEvent(CardBodyBeforeEditEvent e) {
+		if (e.getKey().equals("numbervalue")) {
+			BillItem type = e.getBillCardPanel().getBodyItem("doctype");
+			if (type == null || type.getValueObject() == null
+					|| (Integer) type.getValueObject() == 3 || (Integer) type.getValueObject() == 4
+					|| (Integer) type.getValueObject() == 5 || (Integer) type.getValueObject() == 6) {
+				e.setReturnValue(Boolean.FALSE);
+			}
+		} else if (e.getKey().equals("waitemvalue")) {
+			BillItem type = e.getBillCardPanel().getBodyItem("doctype");
+			if (type == null || type.getValueObject() == null
+					|| (Integer) type.getValueObject() != 3) {
+				e.setReturnValue(Boolean.FALSE);
+			}
+		}else if (e.getKey().equals("textvalue")){
+			//文本类型 by he
+			BillItem type = e.getBillCardPanel().getBodyItem("doctype");
+			if (type == null || type.getValueObject() == null
+					|| (Integer) type.getValueObject() != 4) {
+				e.setReturnValue(Boolean.FALSE);
+			}
+			e.getBillCardPanel().getBillTable().getColumnModel().getColumn(6).getCellEditor();
+		}else if (e.getKey().equals("reftype")){
+			//参照类型 by he
+			BillItem type = e.getBillCardPanel().getBodyItem("doctype");
+			if (type == null || type.getValueObject() == null
+					|| (Integer) type.getValueObject() != 5) {
+				e.setReturnValue(Boolean.FALSE);
+			}
+		}else if (e.getKey().equals("refvalue")){
+			//参照值 by he
+			BillItem type = e.getBillCardPanel().getBodyItem("doctype");
+			if (type == null || type.getValueObject() == null
+					|| (Integer) type.getValueObject() != 5) {
+				e.setReturnValue(Boolean.FALSE);
+			}else{
+				if(e.getBillCardPanel().getBodyValueAt(e.getRow(), "reftype") != null){
+					UIRefPane refpane = new UIRefPane((String)e.getBillCardPanel().getBodyValueAt(e.getRow(), "reftype"));
+					UIRefCellEditorNew pane = new UIRefCellEditorNew(refpane);
+					pane.addCellEditorListener(null);
+					e.getBillCardPanel().getBillTable().getColumnModel().getColumn(8).setCellEditor(pane);
+					e.setReturnValue(Boolean.TRUE);
+				}
+			}
+		}else if (e.getKey().equals("logicvalue")){
+			//逻辑值 by he
+			BillItem type = e.getBillCardPanel().getBodyItem("doctype");
+			if (type == null || type.getValueObject() == null
+					|| (Integer) type.getValueObject() != 6) {
+				e.setReturnValue(Boolean.FALSE);
+			}
+		}
+
+		e.setReturnValue(Boolean.TRUE);
+	}
+
+	
+}

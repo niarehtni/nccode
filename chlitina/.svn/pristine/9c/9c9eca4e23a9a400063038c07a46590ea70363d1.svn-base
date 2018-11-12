@@ -1,0 +1,1064 @@
+package nc.vo.ta.leaveplan;
+
+import nc.vo.pub.IVOMeta;
+import nc.vo.pub.SuperVO;
+import nc.vo.pub.lang.UFBoolean;
+import nc.vo.pub.lang.UFDate;
+import nc.vo.pub.lang.UFDateTime;
+import nc.vo.pub.lang.UFDouble;
+import nc.vo.pub.lang.UFLiteralDate;
+import nc.vo.pubapp.pattern.model.meta.entity.vo.VOMetaFactory;
+
+/**
+ * <b> 此处简要描述此类功能 </b>
+ * <p>
+ *   此处添加累的描述信息
+ * </p>
+ *  创建日期:2018-9-5
+ * @author 
+ * @version NCPrj ??
+ */
+ 
+public class LeavePlanVO extends SuperVO {
+	
+/**
+*主键
+*/
+public String pk_leaveplan;
+/**
+*集团
+*/
+public String pk_group;
+/**
+*组织
+*/
+public String pk_org;
+/**
+*组织版本
+*/
+public String pk_org_v;
+/**
+*员工
+*/
+public String pk_psndoc;
+/**
+*部门
+*/
+public String pk_dept;
+/**
+*部门版本
+*/
+public String pk_dept_v;
+/**
+*休假类别
+*/
+public String pk_leavetype;
+/**
+*可休开始日期
+*/
+public UFLiteralDate begindate;
+/**
+*可休结束日期
+*/
+public UFLiteralDate enddate;
+/**
+*可休天数
+*/
+public Integer enableddays;
+/**
+*已休天数
+*/
+public Integer useddays;
+/**
+*剩余天数
+*/
+public Integer remaineddays;
+/**
+*是否附件
+*/
+public UFBoolean isattachment;
+/**
+*是否连续假
+*/
+public UFBoolean iscontinuous;
+/**
+*最后修改时间
+*/
+public UFDate lastmaketime;
+/**
+*制单人
+*/
+public String billmaker;
+/**
+*所属组织
+*/
+public String pkorg;
+/**
+*创建人
+*/
+public String creator;
+/**
+*创建时间
+*/
+public UFDate creationtime;
+/**
+*修改人
+*/
+public String modifier;
+/**
+*修改时间
+*/
+public UFDateTime modifiedtime;
+/**
+*name
+*/
+public String name;
+/**
+*code
+*/
+public String code;
+/**
+*单据日期
+*/
+public UFDate dbilldate;
+/**
+*自定义项1
+*/
+public String def1;
+/**
+*自定义项2
+*/
+public String def2;
+/**
+*自定义项3
+*/
+public String def3;
+/**
+*自定义项4
+*/
+public String def4;
+/**
+*自定义项5
+*/
+public String def5;
+/**
+*自定义项6
+*/
+public String def6;
+/**
+*自定义项7
+*/
+public String def7;
+/**
+*自定义项8
+*/
+public String def8;
+/**
+*自定义项9
+*/
+public String def9;
+/**
+*自定义项10
+*/
+public String def10;
+/**
+*自定义项11
+*/
+public String def11;
+/**
+*自定义项12
+*/
+public String def12;
+/**
+*自定义项13
+*/
+public String def13;
+/**
+*自定义项14
+*/
+public String def14;
+/**
+*自定义项15
+*/
+public String def15;
+/**
+*自定义项16
+*/
+public String def16;
+/**
+*自定义项17
+*/
+public String def17;
+/**
+*自定义项18
+*/
+public String def18;
+/**
+*自定义项19
+*/
+public String def19;
+/**
+*自定义项20
+*/
+public String def20;
+/**
+*制单时间
+*/
+public UFDateTime maketime;
+/**
+*时间戳
+*/
+public UFDateTime ts;
+    
+    
+/**
+* 属性 pk_leaveplan的Getter方法.属性名：主键
+*  创建日期:2018-9-5
+* @return java.lang.String
+*/
+public String getPk_leaveplan() {
+return this.pk_leaveplan;
+} 
+
+/**
+* 属性pk_leaveplan的Setter方法.属性名：主键
+* 创建日期:2018-9-5
+* @param newPk_leaveplan java.lang.String
+*/
+public void setPk_leaveplan ( String pk_leaveplan) {
+this.pk_leaveplan=pk_leaveplan;
+} 
+ 
+/**
+* 属性 pk_group的Getter方法.属性名：集团
+*  创建日期:2018-9-5
+* @return nc.vo.org.GroupVO
+*/
+public String getPk_group() {
+return this.pk_group;
+} 
+
+/**
+* 属性pk_group的Setter方法.属性名：集团
+* 创建日期:2018-9-5
+* @param newPk_group nc.vo.org.GroupVO
+*/
+public void setPk_group ( String pk_group) {
+this.pk_group=pk_group;
+} 
+ 
+/**
+* 属性 pk_org的Getter方法.属性名：组织
+*  创建日期:2018-9-5
+* @return nc.vo.org.OrgVO
+*/
+public String getPk_org() {
+return this.pk_org;
+} 
+
+/**
+* 属性pk_org的Setter方法.属性名：组织
+* 创建日期:2018-9-5
+* @param newPk_org nc.vo.org.OrgVO
+*/
+public void setPk_org ( String pk_org) {
+this.pk_org=pk_org;
+} 
+ 
+/**
+* 属性 pk_org_v的Getter方法.属性名：组织版本
+*  创建日期:2018-9-5
+* @return nc.vo.vorg.OrgVersionVO
+*/
+public String getPk_org_v() {
+return this.pk_org_v;
+} 
+
+/**
+* 属性pk_org_v的Setter方法.属性名：组织版本
+* 创建日期:2018-9-5
+* @param newPk_org_v nc.vo.vorg.OrgVersionVO
+*/
+public void setPk_org_v ( String pk_org_v) {
+this.pk_org_v=pk_org_v;
+} 
+ 
+/**
+* 属性 pk_psndoc的Getter方法.属性名：员工
+*  创建日期:2018-9-5
+* @return nc.vo.hi.psndoc.PsndocVO
+*/
+public String getPk_psndoc() {
+return this.pk_psndoc;
+} 
+
+/**
+* 属性pk_psndoc的Setter方法.属性名：员工
+* 创建日期:2018-9-5
+* @param newPk_psndoc nc.vo.hi.psndoc.PsndocVO
+*/
+public void setPk_psndoc ( String pk_psndoc) {
+this.pk_psndoc=pk_psndoc;
+} 
+ 
+/**
+* 属性 pk_dept的Getter方法.属性名：部门
+*  创建日期:2018-9-5
+* @return nc.vo.om.hrdept.HRDeptVO
+*/
+public String getPk_dept() {
+return this.pk_dept;
+} 
+
+/**
+* 属性pk_dept的Setter方法.属性名：部门
+* 创建日期:2018-9-5
+* @param newPk_dept nc.vo.om.hrdept.HRDeptVO
+*/
+public void setPk_dept ( String pk_dept) {
+this.pk_dept=pk_dept;
+} 
+ 
+/**
+* 属性 pk_dept_v的Getter方法.属性名：部门版本
+*  创建日期:2018-9-5
+* @return nc.vo.om.hrdept.HRDeptVersionVO
+*/
+public String getPk_dept_v() {
+return this.pk_dept_v;
+} 
+
+/**
+* 属性pk_dept_v的Setter方法.属性名：部门版本
+* 创建日期:2018-9-5
+* @param newPk_dept_v nc.vo.om.hrdept.HRDeptVersionVO
+*/
+public void setPk_dept_v ( String pk_dept_v) {
+this.pk_dept_v=pk_dept_v;
+} 
+ 
+/**
+* 属性 pk_leavetype的Getter方法.属性名：休假类别
+*  创建日期:2018-9-5
+* @return nc.vo.ta.timeitem.LeaveTypeVO
+*/
+public String getPk_leavetype() {
+return this.pk_leavetype;
+} 
+
+/**
+* 属性pk_leavetype的Setter方法.属性名：休假类别
+* 创建日期:2018-9-5
+* @param newPk_leavetype nc.vo.ta.timeitem.LeaveTypeVO
+*/
+public void setPk_leavetype ( String pk_leavetype) {
+this.pk_leavetype=pk_leavetype;
+} 
+ 
+/**
+* 属性 begindate的Getter方法.属性名：可休开始日期
+*  创建日期:2018-9-5
+* @return nc.vo.pub.lang.UFLiteralDate
+*/
+public UFLiteralDate getBegindate() {
+return this.begindate;
+} 
+
+/**
+* 属性begindate的Setter方法.属性名：可休开始日期
+* 创建日期:2018-9-5
+* @param newBegindate nc.vo.pub.lang.UFLiteralDate
+*/
+public void setBegindate ( UFLiteralDate begindate) {
+this.begindate=begindate;
+} 
+ 
+/**
+* 属性 enddate的Getter方法.属性名：可休结束日期
+*  创建日期:2018-9-5
+* @return nc.vo.pub.lang.UFLiteralDate
+*/
+public UFLiteralDate getEnddate() {
+return this.enddate;
+} 
+
+/**
+* 属性enddate的Setter方法.属性名：可休结束日期
+* 创建日期:2018-9-5
+* @param newEnddate nc.vo.pub.lang.UFLiteralDate
+*/
+public void setEnddate ( UFLiteralDate enddate) {
+this.enddate=enddate;
+} 
+ 
+/**
+* 属性 enableddays的Getter方法.属性名：可休天数
+*  创建日期:2018-9-5
+* @return java.lang.Integer
+*/
+public Integer getEnableddays() {
+return this.enableddays;
+} 
+
+/**
+* 属性enableddays的Setter方法.属性名：可休天数
+* 创建日期:2018-9-5
+* @param newEnableddays java.lang.Integer
+*/
+public void setEnableddays ( Integer enableddays) {
+this.enableddays=enableddays;
+} 
+ 
+/**
+* 属性 useddays的Getter方法.属性名：已休天数
+*  创建日期:2018-9-5
+* @return java.lang.Integer
+*/
+public Integer getUseddays() {
+return this.useddays;
+} 
+
+/**
+* 属性useddays的Setter方法.属性名：已休天数
+* 创建日期:2018-9-5
+* @param newUseddays java.lang.Integer
+*/
+public void setUseddays ( Integer useddays) {
+this.useddays=useddays;
+} 
+ 
+/**
+* 属性 remaineddays的Getter方法.属性名：剩余天数
+*  创建日期:2018-9-5
+* @return java.lang.Integer
+*/
+public Integer getRemaineddays() {
+return this.remaineddays;
+} 
+
+/**
+* 属性remaineddays的Setter方法.属性名：剩余天数
+* 创建日期:2018-9-5
+* @param newRemaineddays java.lang.Integer
+*/
+public void setRemaineddays ( Integer remaineddays) {
+this.remaineddays=remaineddays;
+} 
+ 
+/**
+* 属性 isattachment的Getter方法.属性名：是否附件
+*  创建日期:2018-9-5
+* @return nc.vo.pub.lang.UFBoolean
+*/
+public UFBoolean getIsattachment() {
+return this.isattachment;
+} 
+
+/**
+* 属性isattachment的Setter方法.属性名：是否附件
+* 创建日期:2018-9-5
+* @param newIsattachment nc.vo.pub.lang.UFBoolean
+*/
+public void setIsattachment ( UFBoolean isattachment) {
+this.isattachment=isattachment;
+} 
+ 
+/**
+* 属性 iscontinuous的Getter方法.属性名：是否连续假
+*  创建日期:2018-9-5
+* @return nc.vo.pub.lang.UFBoolean
+*/
+public UFBoolean getIscontinuous() {
+return this.iscontinuous;
+} 
+
+/**
+* 属性iscontinuous的Setter方法.属性名：是否连续假
+* 创建日期:2018-9-5
+* @param newIscontinuous nc.vo.pub.lang.UFBoolean
+*/
+public void setIscontinuous ( UFBoolean iscontinuous) {
+this.iscontinuous=iscontinuous;
+} 
+ 
+/**
+* 属性 lastmaketime的Getter方法.属性名：最后修改时间
+*  创建日期:2018-9-5
+* @return nc.vo.pub.lang.UFDate
+*/
+public UFDate getLastmaketime() {
+return this.lastmaketime;
+} 
+
+/**
+* 属性lastmaketime的Setter方法.属性名：最后修改时间
+* 创建日期:2018-9-5
+* @param newLastmaketime nc.vo.pub.lang.UFDate
+*/
+public void setLastmaketime ( UFDate lastmaketime) {
+this.lastmaketime=lastmaketime;
+} 
+ 
+/**
+* 属性 billmaker的Getter方法.属性名：制单人
+*  创建日期:2018-9-5
+* @return java.lang.String
+*/
+public String getBillmaker() {
+return this.billmaker;
+} 
+
+/**
+* 属性billmaker的Setter方法.属性名：制单人
+* 创建日期:2018-9-5
+* @param newBillmaker java.lang.String
+*/
+public void setBillmaker ( String billmaker) {
+this.billmaker=billmaker;
+} 
+ 
+/**
+* 属性 pkorg的Getter方法.属性名：所属组织
+*  创建日期:2018-9-5
+* @return java.lang.String
+*/
+public String getPkorg() {
+return this.pkorg;
+} 
+
+/**
+* 属性pkorg的Setter方法.属性名：所属组织
+* 创建日期:2018-9-5
+* @param newPkorg java.lang.String
+*/
+public void setPkorg ( String pkorg) {
+this.pkorg=pkorg;
+} 
+ 
+/**
+* 属性 creator的Getter方法.属性名：创建人
+*  创建日期:2018-9-5
+* @return nc.vo.sm.UserVO
+*/
+public String getCreator() {
+return this.creator;
+} 
+
+/**
+* 属性creator的Setter方法.属性名：创建人
+* 创建日期:2018-9-5
+* @param newCreator nc.vo.sm.UserVO
+*/
+public void setCreator ( String creator) {
+this.creator=creator;
+} 
+ 
+/**
+* 属性 creationtime的Getter方法.属性名：创建时间
+*  创建日期:2018-9-5
+* @return nc.vo.pub.lang.UFDate
+*/
+public UFDate getCreationtime() {
+return this.creationtime;
+} 
+
+/**
+* 属性creationtime的Setter方法.属性名：创建时间
+* 创建日期:2018-9-5
+* @param newCreationtime nc.vo.pub.lang.UFDate
+*/
+public void setCreationtime ( UFDate creationtime) {
+this.creationtime=creationtime;
+} 
+ 
+/**
+* 属性 modifier的Getter方法.属性名：修改人
+*  创建日期:2018-9-5
+* @return nc.vo.sm.UserVO
+*/
+public String getModifier() {
+return this.modifier;
+} 
+
+/**
+* 属性modifier的Setter方法.属性名：修改人
+* 创建日期:2018-9-5
+* @param newModifier nc.vo.sm.UserVO
+*/
+public void setModifier ( String modifier) {
+this.modifier=modifier;
+} 
+ 
+/**
+* 属性 modifiedtime的Getter方法.属性名：修改时间
+*  创建日期:2018-9-5
+* @return nc.vo.pub.lang.UFDateTime
+*/
+public UFDateTime getModifiedtime() {
+return this.modifiedtime;
+} 
+
+/**
+* 属性modifiedtime的Setter方法.属性名：修改时间
+* 创建日期:2018-9-5
+* @param newModifiedtime nc.vo.pub.lang.UFDateTime
+*/
+public void setModifiedtime ( UFDateTime modifiedtime) {
+this.modifiedtime=modifiedtime;
+} 
+ 
+/**
+* 属性 name的Getter方法.属性名：name
+*  创建日期:2018-9-5
+* @return java.lang.String
+*/
+public String getName() {
+return this.name;
+} 
+
+/**
+* 属性name的Setter方法.属性名：name
+* 创建日期:2018-9-5
+* @param newName java.lang.String
+*/
+public void setName ( String name) {
+this.name=name;
+} 
+ 
+/**
+* 属性 code的Getter方法.属性名：code
+*  创建日期:2018-9-5
+* @return java.lang.String
+*/
+public String getCode() {
+return this.code;
+} 
+
+/**
+* 属性code的Setter方法.属性名：code
+* 创建日期:2018-9-5
+* @param newCode java.lang.String
+*/
+public void setCode ( String code) {
+this.code=code;
+} 
+ 
+/**
+* 属性 dbilldate的Getter方法.属性名：单据日期
+*  创建日期:2018-9-5
+* @return nc.vo.pub.lang.UFDate
+*/
+public UFDate getDbilldate() {
+return this.dbilldate;
+} 
+
+/**
+* 属性dbilldate的Setter方法.属性名：单据日期
+* 创建日期:2018-9-5
+* @param newDbilldate nc.vo.pub.lang.UFDate
+*/
+public void setDbilldate ( UFDate dbilldate) {
+this.dbilldate=dbilldate;
+} 
+ 
+/**
+* 属性 def1的Getter方法.属性名：自定义项1
+*  创建日期:2018-9-5
+* @return java.lang.String
+*/
+public String getDef1() {
+return this.def1;
+} 
+
+/**
+* 属性def1的Setter方法.属性名：自定义项1
+* 创建日期:2018-9-5
+* @param newDef1 java.lang.String
+*/
+public void setDef1 ( String def1) {
+this.def1=def1;
+} 
+ 
+/**
+* 属性 def2的Getter方法.属性名：自定义项2
+*  创建日期:2018-9-5
+* @return java.lang.String
+*/
+public String getDef2() {
+return this.def2;
+} 
+
+/**
+* 属性def2的Setter方法.属性名：自定义项2
+* 创建日期:2018-9-5
+* @param newDef2 java.lang.String
+*/
+public void setDef2 ( String def2) {
+this.def2=def2;
+} 
+ 
+/**
+* 属性 def3的Getter方法.属性名：自定义项3
+*  创建日期:2018-9-5
+* @return java.lang.String
+*/
+public String getDef3() {
+return this.def3;
+} 
+
+/**
+* 属性def3的Setter方法.属性名：自定义项3
+* 创建日期:2018-9-5
+* @param newDef3 java.lang.String
+*/
+public void setDef3 ( String def3) {
+this.def3=def3;
+} 
+ 
+/**
+* 属性 def4的Getter方法.属性名：自定义项4
+*  创建日期:2018-9-5
+* @return java.lang.String
+*/
+public String getDef4() {
+return this.def4;
+} 
+
+/**
+* 属性def4的Setter方法.属性名：自定义项4
+* 创建日期:2018-9-5
+* @param newDef4 java.lang.String
+*/
+public void setDef4 ( String def4) {
+this.def4=def4;
+} 
+ 
+/**
+* 属性 def5的Getter方法.属性名：自定义项5
+*  创建日期:2018-9-5
+* @return java.lang.String
+*/
+public String getDef5() {
+return this.def5;
+} 
+
+/**
+* 属性def5的Setter方法.属性名：自定义项5
+* 创建日期:2018-9-5
+* @param newDef5 java.lang.String
+*/
+public void setDef5 ( String def5) {
+this.def5=def5;
+} 
+ 
+/**
+* 属性 def6的Getter方法.属性名：自定义项6
+*  创建日期:2018-9-5
+* @return java.lang.String
+*/
+public String getDef6() {
+return this.def6;
+} 
+
+/**
+* 属性def6的Setter方法.属性名：自定义项6
+* 创建日期:2018-9-5
+* @param newDef6 java.lang.String
+*/
+public void setDef6 ( String def6) {
+this.def6=def6;
+} 
+ 
+/**
+* 属性 def7的Getter方法.属性名：自定义项7
+*  创建日期:2018-9-5
+* @return java.lang.String
+*/
+public String getDef7() {
+return this.def7;
+} 
+
+/**
+* 属性def7的Setter方法.属性名：自定义项7
+* 创建日期:2018-9-5
+* @param newDef7 java.lang.String
+*/
+public void setDef7 ( String def7) {
+this.def7=def7;
+} 
+ 
+/**
+* 属性 def8的Getter方法.属性名：自定义项8
+*  创建日期:2018-9-5
+* @return java.lang.String
+*/
+public String getDef8() {
+return this.def8;
+} 
+
+/**
+* 属性def8的Setter方法.属性名：自定义项8
+* 创建日期:2018-9-5
+* @param newDef8 java.lang.String
+*/
+public void setDef8 ( String def8) {
+this.def8=def8;
+} 
+ 
+/**
+* 属性 def9的Getter方法.属性名：自定义项9
+*  创建日期:2018-9-5
+* @return java.lang.String
+*/
+public String getDef9() {
+return this.def9;
+} 
+
+/**
+* 属性def9的Setter方法.属性名：自定义项9
+* 创建日期:2018-9-5
+* @param newDef9 java.lang.String
+*/
+public void setDef9 ( String def9) {
+this.def9=def9;
+} 
+ 
+/**
+* 属性 def10的Getter方法.属性名：自定义项10
+*  创建日期:2018-9-5
+* @return java.lang.String
+*/
+public String getDef10() {
+return this.def10;
+} 
+
+/**
+* 属性def10的Setter方法.属性名：自定义项10
+* 创建日期:2018-9-5
+* @param newDef10 java.lang.String
+*/
+public void setDef10 ( String def10) {
+this.def10=def10;
+} 
+ 
+/**
+* 属性 def11的Getter方法.属性名：自定义项11
+*  创建日期:2018-9-5
+* @return java.lang.String
+*/
+public String getDef11() {
+return this.def11;
+} 
+
+/**
+* 属性def11的Setter方法.属性名：自定义项11
+* 创建日期:2018-9-5
+* @param newDef11 java.lang.String
+*/
+public void setDef11 ( String def11) {
+this.def11=def11;
+} 
+ 
+/**
+* 属性 def12的Getter方法.属性名：自定义项12
+*  创建日期:2018-9-5
+* @return java.lang.String
+*/
+public String getDef12() {
+return this.def12;
+} 
+
+/**
+* 属性def12的Setter方法.属性名：自定义项12
+* 创建日期:2018-9-5
+* @param newDef12 java.lang.String
+*/
+public void setDef12 ( String def12) {
+this.def12=def12;
+} 
+ 
+/**
+* 属性 def13的Getter方法.属性名：自定义项13
+*  创建日期:2018-9-5
+* @return java.lang.String
+*/
+public String getDef13() {
+return this.def13;
+} 
+
+/**
+* 属性def13的Setter方法.属性名：自定义项13
+* 创建日期:2018-9-5
+* @param newDef13 java.lang.String
+*/
+public void setDef13 ( String def13) {
+this.def13=def13;
+} 
+ 
+/**
+* 属性 def14的Getter方法.属性名：自定义项14
+*  创建日期:2018-9-5
+* @return java.lang.String
+*/
+public String getDef14() {
+return this.def14;
+} 
+
+/**
+* 属性def14的Setter方法.属性名：自定义项14
+* 创建日期:2018-9-5
+* @param newDef14 java.lang.String
+*/
+public void setDef14 ( String def14) {
+this.def14=def14;
+} 
+ 
+/**
+* 属性 def15的Getter方法.属性名：自定义项15
+*  创建日期:2018-9-5
+* @return java.lang.String
+*/
+public String getDef15() {
+return this.def15;
+} 
+
+/**
+* 属性def15的Setter方法.属性名：自定义项15
+* 创建日期:2018-9-5
+* @param newDef15 java.lang.String
+*/
+public void setDef15 ( String def15) {
+this.def15=def15;
+} 
+ 
+/**
+* 属性 def16的Getter方法.属性名：自定义项16
+*  创建日期:2018-9-5
+* @return java.lang.String
+*/
+public String getDef16() {
+return this.def16;
+} 
+
+/**
+* 属性def16的Setter方法.属性名：自定义项16
+* 创建日期:2018-9-5
+* @param newDef16 java.lang.String
+*/
+public void setDef16 ( String def16) {
+this.def16=def16;
+} 
+ 
+/**
+* 属性 def17的Getter方法.属性名：自定义项17
+*  创建日期:2018-9-5
+* @return java.lang.String
+*/
+public String getDef17() {
+return this.def17;
+} 
+
+/**
+* 属性def17的Setter方法.属性名：自定义项17
+* 创建日期:2018-9-5
+* @param newDef17 java.lang.String
+*/
+public void setDef17 ( String def17) {
+this.def17=def17;
+} 
+ 
+/**
+* 属性 def18的Getter方法.属性名：自定义项18
+*  创建日期:2018-9-5
+* @return java.lang.String
+*/
+public String getDef18() {
+return this.def18;
+} 
+
+/**
+* 属性def18的Setter方法.属性名：自定义项18
+* 创建日期:2018-9-5
+* @param newDef18 java.lang.String
+*/
+public void setDef18 ( String def18) {
+this.def18=def18;
+} 
+ 
+/**
+* 属性 def19的Getter方法.属性名：自定义项19
+*  创建日期:2018-9-5
+* @return java.lang.String
+*/
+public String getDef19() {
+return this.def19;
+} 
+
+/**
+* 属性def19的Setter方法.属性名：自定义项19
+* 创建日期:2018-9-5
+* @param newDef19 java.lang.String
+*/
+public void setDef19 ( String def19) {
+this.def19=def19;
+} 
+ 
+/**
+* 属性 def20的Getter方法.属性名：自定义项20
+*  创建日期:2018-9-5
+* @return java.lang.String
+*/
+public String getDef20() {
+return this.def20;
+} 
+
+/**
+* 属性def20的Setter方法.属性名：自定义项20
+* 创建日期:2018-9-5
+* @param newDef20 java.lang.String
+*/
+public void setDef20 ( String def20) {
+this.def20=def20;
+} 
+ 
+/**
+* 属性 maketime的Getter方法.属性名：制单时间
+*  创建日期:2018-9-5
+* @return nc.vo.pub.lang.UFDateTime
+*/
+public UFDateTime getMaketime() {
+return this.maketime;
+} 
+
+/**
+* 属性maketime的Setter方法.属性名：制单时间
+* 创建日期:2018-9-5
+* @param newMaketime nc.vo.pub.lang.UFDateTime
+*/
+public void setMaketime ( UFDateTime maketime) {
+this.maketime=maketime;
+} 
+ 
+/**
+* 属性 生成时间戳的Getter方法.属性名：时间戳
+*  创建日期:2018-9-5
+* @return nc.vo.pub.lang.UFDateTime
+*/
+public UFDateTime getTs() {
+return this.ts;
+}
+/**
+* 属性生成时间戳的Setter方法.属性名：时间戳
+* 创建日期:2018-9-5
+* @param newts nc.vo.pub.lang.UFDateTime
+*/
+public void setTs(UFDateTime ts){
+this.ts=ts;
+} 
+     
+    @Override
+    public IVOMeta getMetaData() {
+    return VOMetaFactory.getInstance().getVOMeta("hrta.leaveplan");
+    }
+   }
+    

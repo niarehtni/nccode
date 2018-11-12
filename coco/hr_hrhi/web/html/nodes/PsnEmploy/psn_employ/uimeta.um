@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding='UTF-8'?>
+<UIMeta flowmode="true" id="psn_employ_um" preferredHeight="" preferredWidth="">
+    <FlowvLayout id="mainFlowvLayout" widgetId="psn_employ">
+		<FlowvPanel id="panelv_operate" widgetId="psn_employ">
+         <CanvasLayout className="rightcanvas" id="menucanvas" widgetId="psn_employ">
+           <CanvasPanel id="canvasp1" widgetId="psn_employ">
+       	  	 <Menubar height="100%" id="menu_employ" left="0" position="relative" top="0" widgetId="psn_employ" width="100%">
+             </Menubar>
+           </CanvasPanel>
+         </CanvasLayout>
+        </FlowvPanel>
+        <FlowvPanel id="panelv06429dfds" widgetId="psn_employ" height="10">
+		</FlowvPanel>
+		 
+        <FlowvPanel id="g_p_2" leftPadding="20" rightPadding="20" widgetId="psn_employ">
+            <PanelLayout expand="true" id="layout02" title="人员基本信息" widgetId="psn_employ" className="small_panel_div">
+                <PanelPanel bottomPadding="10" id="panel02" topPadding="10" widgetId="psn_employ">
+                    <FormComp height="100%" id="from_employ" label_position="" left="0" position="relative" top="0" width="100%" widgetId="psn_employ">
+                    </FormComp>
+                </PanelPanel>
+            </PanelLayout>
+        </FlowvPanel>
+         
+        <FlowvPanel id="g_p_3" leftPadding="20" rightPadding="20" widgetId="psn_employ" width="100%">
+            <PanelLayout expand="true" id="layout03" title="工作情况" widgetId="psn_employ" className="small_panel_div">
+                <PanelPanel bottomPadding="10" id="panel03" topPadding="20" widgetId="psn_employ">
+                    <FormComp height="100%" id="from_job" label_position="" left="0" position="relative" top="0" width="100%" widgetId="psn_employ">
+                    </FormComp>
+                </PanelPanel>
+            </PanelLayout>
+        </FlowvPanel>
+         <FlowvPanel id="g_p_5" leftPadding="20" rightPadding="20" widgetId="psn_employ" width="100%">
+            <PanelLayout expand="true" id="layout05" title="工作关系" widgetId="psn_employ" className="small_panel_div">
+                <PanelPanel bottomPadding="10" id="panel05" topPadding="20" widgetId="psn_employ">
+                    <FormComp height="100%" id="form_org" label_position="" left="0" position="relative" top="0" width="100%" widgetId="psn_employ">
+                    </FormComp>
+                </PanelPanel>
+            </PanelLayout>
+        </FlowvPanel>
+       <FlowvPanel id="g_p_6" leftPadding="20" rightPadding="20" widgetId="psn_employ" width="100%">
+            <PanelLayout expand="true" id="layout06" title="试用情况" widgetId="psn_employ" className="small_panel_div">
+                <PanelPanel bottomPadding="10" id="panel06" topPadding="20" widgetId="psn_employ">
+                    <FormComp height="100%" id="form_trial" label_position=""  left="0" position="relative" top="10" width="100%" widgetId="psn_employ">
+                    </FormComp>
+                </PanelPanel>
+            </PanelLayout>
+        </FlowvPanel>
+        <FlowvPanel id="panelv06429dfds" widgetId="psn_employ" height="20">
+		</FlowvPanel>
+    </FlowvLayout>
+</UIMeta>

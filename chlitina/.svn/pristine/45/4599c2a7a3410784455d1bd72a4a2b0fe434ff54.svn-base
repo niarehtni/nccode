@@ -1,0 +1,22 @@
+--sqlserver
+
+alter table twhr_groupinsurancesetting add insurancecompany VARCHAR (100)
+
+delete from hr_infoset_item where pk_infoset_item='1001ZZ1000000000MOF4'
+INSERT INTO hr_infoset ([dr], [infoset_code], [infoset_name], [infoset_name2], [infoset_name3], [infoset_name4], [infoset_name5], [infoset_name6], [infoset_type], [look_history_flag], [main_table_flag], [memo], [meta_data], [meta_data_id], [pk_field_code], [pk_group], [pk_infoset], [pk_infoset_sort], [pk_org], [record_character], [resid], [respath], [showorder], [sync_main_code], [sync_main_table], [table_code], [ts], [user_def_flag], [vo_class_name]) VALUES ('0', N'hi_psndoc_glbdef13', N'团保信息', NULL, NULL, NULL, NULL, NULL, '1', NULL, N'N', NULL, N'hrhi.hi_psndoc_glbdef13', N'8bfc5950-4bf6-4cf3-b099-25556d6ab554', N'pk_psndoc_sub', N'~', N'TWHRA21000000000DEF6', N'1001Z710000000002XPO', N'GLOBLE00000000000000', '1', N'hi_psndoc_glbdef13', N'6007psn', '36', NULL, N'N', N'hi_psndoc_glbdef13', '2018-09-16 12:25:16', N'Y', N'nc.vo.hi.psndoc.Glbdef13VO');
+INSERT INTO hr_infoset_item ([accessor_classname], [calculation], [class_id], [creationtime], [creator], [custom_attr], [data_type], [data_type_id], [data_type_style], [default_value], [description], [dr], [dynamic_flag], [enum_id], [fixed_length], [help], [hided], [id], [is_active], [is_authen], [item_code], [item_formula], [item_formula_sql], [item_name], [item_name2], [item_name3], [item_name4], [item_name5], [item_name6], [max_length], [max_value], [meta_data], [min_value], [modifiedtime], [modifier], [not_serialize], [nullable], [pk_group], [pk_infoset], [pk_infoset_item], [pk_main_item], [pk_org], [precise], [read_only], [ref_leaf_flag], [ref_model_name], [resid], [respath], [showorder], [sub_formula], [sub_formula_sql], [ts], [unique_flag], [visibility]) VALUES (NULL, NULL, NULL, N'2018-09-16 12:25:16', N'1001A1100000000001JN', N'Y', '5', NULL, NULL, NULL, NULL, '0', NULL, NULL, NULL, NULL, N'N', NULL, NULL, NULL, N'insurancecompany', NULL, NULL, N'保险公司', N'保险公司', NULL, NULL, NULL, NULL, '20', NULL, NULL, NULL, NULL, NULL, NULL, N'Y', N'0001A1100000000005F5', N'TWHRA21000000000DEF6', N'1001ZZ1000000000MOF4', N'~', N'GLOBLE00000000000000', NULL, N'N', N'N', N'1001ZZ1000000000MODW', N'hi_psndoc_glbdef13_15418', N'6007psn', '111', NULL, NULL, '2018-09-16 12:25:16', N'N', NULL);
+
+
+delete from bd_mode_selected where pk_bdmode='1001ZZ1000000000MPWT'
+INSERT INTO bd_mode_selected ([comp], [dataoriginflag], [dr], [managemode], [mdclassid], [pk_bdmode], [ts], [uniquescope], [visiblescope]) VALUES (NULL, '0', '0', '3', N'1001ZZ1000000000MODV', N'1001ZZ1000000000MPWT', '2018-09-16 13:39:14', '3', '3');
+
+
+
+delete from bd_defdoclist where pk_defdoclist='1001ZZ1000000000MODV'
+INSERT INTO bd_defdoclist ([associatename], [bpfcomponentid], [code], [codectlgrade], [coderule], [comp], [componentid], [creationtime], [creator], [dataoriginflag], [docclass], [doclevel], [doctype], [dr], [funcode], [isgrade], [isrelease], [mngctlmode], [modifiedtime], [modifier], [name], [name2], [name3], [name4], [name5], [name6], [pk_defdoclist], [pk_group], [pk_org], [ts]) VALUES (N'bd_defdoc', N'e33ae36f-b966-11e8-a42e-ab44e9fc28de', N'HRBXGS', NULL, NULL, NULL, N'e2381943-b966-11e8-a42e-ab44e9fc28de', N'2018-09-16 12:13:36', N'1001A1100000000001JN', '0', NULL, '0', NULL, '0', NULL, N'N', N'N', '4', N'2018-09-16 13:39:12', N'1001A1100000000001JN', N'团保保险公司', N'团保保险公司', NULL, NULL, NULL, NULL, N'1001ZZ1000000000MODV', N'~', N'GLOBLE00000000000000', '2018-09-16 13:39:14');
+
+
+
+delete from bd_refinfo where pk_refinfo='1001ZZ1000000000MODW'
+INSERT INTO bd_refinfo ([code], [dr], [isneedpara], [isspecialref], [layer], [metadatanamespace], [metadatatypename], [modulename], [name], [para1], [para2], [para3], [pk_country], [pk_industry], [pk_refinfo], [refclass], [refsystem], [reftype], [reserv1], [reserv2], [reserv3], [resid], [residpath], [ts], [wherepart]) VALUES (N'D10104', '0', N'Y', NULL, '-1', NULL, N'Defdoc-HRBXGS', N'uap', N'团保保险公司(自定义档案)', N'1001ZZ1000000000MODV', N'bd_defdoc', NULL, NULL, NULL, N'1001ZZ1000000000MODW', N'nc.ui.bd.ref.model.DefdocGridRefModel', NULL, '0', NULL, NULL, N'HRBXGS', N'团保保险公司', N'10140uddb', '2018-09-16 13:39:12', NULL);
+

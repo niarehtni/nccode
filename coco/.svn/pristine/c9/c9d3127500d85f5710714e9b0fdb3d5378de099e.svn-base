@@ -1,0 +1,787 @@
+package nc.vo.hrwa.sumincometax;
+
+import nc.vo.pub.IVOMeta;
+import nc.vo.pub.SuperVO;
+import nc.vo.pub.lang.UFBoolean;
+import nc.vo.pub.lang.UFDate;
+import nc.vo.pub.lang.UFDateTime;
+import nc.vo.pub.lang.UFDouble;
+import nc.vo.pubapp.pattern.model.meta.entity.vo.VOMetaFactory;
+
+/**
+ * 
+ * @author ward.wong
+ * @date 20180126
+ * @date 20180227 新增給付總額調整、扣繳稅額調整、員工自提金額調整字段
+ * @功能描述 申报明细档汇总单据主表VO
+ * 
+ */
+public class SumIncomeTaxVO extends SuperVO {
+
+	/**
+	 * 申报明细档汇总主键
+	 */
+	public String pk_sumincometax;
+	/**
+	 * 员工编号
+	 */
+	public String code;
+	/**
+	 * 员工姓名
+	 */
+	public String pk_psndoc;
+	/**
+	 * 身份证号
+	 */
+	public String id;
+	/**
+	 * 申报凭单格式
+	 */
+	public String declaretype;
+	/**
+	 * 凭单填发格式
+	 */
+	public String granttype;
+	/**
+	 * 申报次数
+	 */
+	public String declarenum;
+	/**
+	 * 重复申报原因
+	 */
+	public String reason;
+	/**
+	 * 联络人姓名
+	 */
+	public String contactname;
+	/**
+	 * 联络人电话
+	 */
+	public String contacttel;
+	/**
+	 * 申报单位电子邮件
+	 */
+	public String contactemail;
+	/**
+	 * 业别代号
+	 */
+	public String businessno;
+	/**
+	 * 费用别代号
+	 */
+	public String costno;
+	/**
+	 * 项目别代号
+	 */
+	public String projectno;
+	/**
+	 * 证别号
+	 */
+	public String idtypeno;
+	/**
+	 * 起始期间
+	 */
+	public String beginperiod;
+	/**
+	 * 结束期间
+	 */
+	public String endperiod;
+	/**
+	 * 是否申报
+	 */
+	public UFBoolean isdeclare;
+	/**
+	 * 给付总额
+	 */
+	public UFDouble taxbase;
+	/**
+	 * 给付总额调整
+	 */
+	public UFDouble taxbaseadjust;
+	/**
+	 * 扣缴税额
+	 */
+	public UFDouble cacu_value;
+	/**
+	 * 扣缴税额调整
+	 */
+	public UFDouble cacu_valueadjust;
+	/**
+	 * 给付净额
+	 */
+	public UFDouble netincome;
+	/**
+	 * 员工自提金额
+	 */
+	public UFDouble pickedup;
+	/**
+	 * 员工自提金额调整
+	 */
+	public UFDouble pickedupadjust;
+	/**
+	 * 人力资源组织
+	 */
+	public String pk_hrorg;
+	/**
+	 * 单据日期
+	 */
+	public UFDate billdate;
+	/**
+	 * 创建人
+	 */
+	public String creator;
+	/**
+	 * 创建时间
+	 */
+	public UFDateTime creationtime;
+	/**
+	 * 修改人
+	 */
+	public String modifier;
+	/**
+	 * 修改时间
+	 */
+	public UFDateTime modifiedtime;
+	/**
+	 * 集团
+	 */
+	public String pk_group;
+	/**
+	 * 组织
+	 */
+	public String pk_org;
+	/**
+	 * 统一编号
+	 */
+	public String unifiednumber;
+	/**
+	 * 时间戳
+	 */
+	public UFDateTime ts;
+
+	/**
+	 * 属性 pk_sumincometax的Getter方法.属性名：申报明细档汇总主键 创建日期:2018-1-24
+	 * 
+	 * @return java.lang.String
+	 */
+	public String getPk_sumincometax() {
+		return this.pk_sumincometax;
+	}
+
+	/**
+	 * 属性pk_sumincometax的Setter方法.属性名：申报明细档汇总主键 创建日期:2018-1-24
+	 * 
+	 * @param newPk_sumincometax
+	 *            java.lang.String
+	 */
+	public void setPk_sumincometax(String pk_sumincometax) {
+		this.pk_sumincometax = pk_sumincometax;
+	}
+
+	/**
+	 * 属性 code的Getter方法.属性名：员工编号 创建日期:2018-1-24
+	 * 
+	 * @return java.lang.String
+	 */
+	public String getCode() {
+		return this.code;
+	}
+
+	/**
+	 * 属性code的Setter方法.属性名：员工编号 创建日期:2018-1-24
+	 * 
+	 * @param newCode
+	 *            java.lang.String
+	 */
+	public void setCode(String code) {
+		this.code = code;
+	}
+
+	/**
+	 * 属性 pk_psndoc的Getter方法.属性名：员工姓名 创建日期:2018-1-24
+	 * 
+	 * @return nc.vo.hi.psndoc.PsndocVO
+	 */
+	public String getPk_psndoc() {
+		return this.pk_psndoc;
+	}
+
+	/**
+	 * 属性pk_psndoc的Setter方法.属性名：员工姓名 创建日期:2018-1-24
+	 * 
+	 * @param newPk_psndoc
+	 *            nc.vo.hi.psndoc.PsndocVO
+	 */
+	public void setPk_psndoc(String pk_psndoc) {
+		this.pk_psndoc = pk_psndoc;
+	}
+
+	/**
+	 * 属性 id的Getter方法.属性名：身份证号 创建日期:2018-1-24
+	 * 
+	 * @return java.lang.String
+	 */
+	public String getId() {
+		return this.id;
+	}
+
+	/**
+	 * 属性id的Setter方法.属性名：身份证号 创建日期:2018-1-24
+	 * 
+	 * @param newId
+	 *            java.lang.String
+	 */
+	public void setId(String id) {
+		this.id = id;
+	}
+
+	/**
+	 * 属性 declaretype的Getter方法.属性名：申报凭单格式 创建日期:2018-1-24
+	 * 
+	 * @return nc.vo.bd.defdoc.DefdocVO
+	 */
+	public String getDeclaretype() {
+		return this.declaretype;
+	}
+
+	/**
+	 * 属性declaretype的Setter方法.属性名：申报凭单格式 创建日期:2018-1-24
+	 * 
+	 * @param newDeclaretype
+	 *            nc.vo.bd.defdoc.DefdocVO
+	 */
+	public void setDeclaretype(String declaretype) {
+		this.declaretype = declaretype;
+	}
+
+	/**
+	 * 属性 granttype的Getter方法.属性名：凭单填发格式 创建日期:2018-1-25
+	 * 
+	 * @return nc.vo.bd.defdoc.DefdocVO
+	 */
+	public String getGranttype() {
+		return this.granttype;
+	}
+
+	/**
+	 * 属性granttype的Setter方法.属性名：凭单填发格式 创建日期:2018-1-25
+	 * 
+	 * @param newGranttype
+	 *            nc.vo.bd.defdoc.DefdocVO
+	 */
+	public void setGranttype(String granttype) {
+		this.granttype = granttype;
+	}
+
+	/**
+	 * 属性 declarenum的Getter方法.属性名：申报次数 创建日期:2018-1-25
+	 * 
+	 * @return java.lang.String
+	 */
+	public String getDeclarenum() {
+		return this.declarenum;
+	}
+
+	/**
+	 * 属性declarenum的Setter方法.属性名：申报次数 创建日期:2018-1-25
+	 * 
+	 * @param newDeclarenum
+	 *            java.lang.String
+	 */
+	public void setDeclarenum(String declarenum) {
+		this.declarenum = declarenum;
+	}
+
+	/**
+	 * 属性 reason的Getter方法.属性名：重复申报原因 创建日期:2018-1-25
+	 * 
+	 * @return nc.vo.bd.defdoc.DefdocVO
+	 */
+	public String getReason() {
+		return this.reason;
+	}
+
+	/**
+	 * 属性reason的Setter方法.属性名：重复申报原因 创建日期:2018-1-25
+	 * 
+	 * @param newReason
+	 *            nc.vo.bd.defdoc.DefdocVO
+	 */
+	public void setReason(String reason) {
+		this.reason = reason;
+	}
+
+	/**
+	 * 属性 contactname的Getter方法.属性名：联络人姓名 创建日期:2018-1-25
+	 * 
+	 * @return java.lang.String
+	 */
+	public String getContactname() {
+		return this.contactname;
+	}
+
+	/**
+	 * 属性contactname的Setter方法.属性名：联络人姓名 创建日期:2018-1-25
+	 * 
+	 * @param newContactname
+	 *            java.lang.String
+	 */
+	public void setContactname(String contactname) {
+		this.contactname = contactname;
+	}
+
+	/**
+	 * 属性 contacttel的Getter方法.属性名：联络人电话 创建日期:2018-1-25
+	 * 
+	 * @return java.lang.String
+	 */
+	public String getContacttel() {
+		return this.contacttel;
+	}
+
+	/**
+	 * 属性contacttel的Setter方法.属性名：联络人电话 创建日期:2018-1-25
+	 * 
+	 * @param newContacttel
+	 *            java.lang.String
+	 */
+	public void setContacttel(String contacttel) {
+		this.contacttel = contacttel;
+	}
+
+	/**
+	 * 属性 contactemail的Getter方法.属性名：申报单位电子邮件 创建日期:2018-1-25
+	 * 
+	 * @return java.lang.String
+	 */
+	public String getContactemail() {
+		return this.contactemail;
+	}
+
+	/**
+	 * 属性contactemail的Setter方法.属性名：申报单位电子邮件 创建日期:2018-1-25
+	 * 
+	 * @param newContactemail
+	 *            java.lang.String
+	 */
+	public void setContactemail(String contactemail) {
+		this.contactemail = contactemail;
+	}
+
+	/**
+	 * 属性 businessno的Getter方法.属性名：业别代号 创建日期:2018-1-24
+	 * 
+	 * @return nc.vo.bd.defdoc.DefdocVO
+	 */
+	public String getBusinessno() {
+		return this.businessno;
+	}
+
+	/**
+	 * 属性businessno的Setter方法.属性名：业别代号 创建日期:2018-1-24
+	 * 
+	 * @param newBusinessno
+	 *            nc.vo.bd.defdoc.DefdocVO
+	 */
+	public void setBusinessno(String businessno) {
+		this.businessno = businessno;
+	}
+
+	/**
+	 * 属性 costno的Getter方法.属性名：费用别代号 创建日期:2018-1-24
+	 * 
+	 * @return nc.vo.bd.defdoc.DefdocVO
+	 */
+	public String getCostno() {
+		return this.costno;
+	}
+
+	/**
+	 * 属性costno的Setter方法.属性名：费用别代号 创建日期:2018-1-24
+	 * 
+	 * @param newCostno
+	 *            nc.vo.bd.defdoc.DefdocVO
+	 */
+	public void setCostno(String costno) {
+		this.costno = costno;
+	}
+
+	/**
+	 * 属性 projectno的Getter方法.属性名：项目别代号 创建日期:2018-1-24
+	 * 
+	 * @return nc.vo.bd.defdoc.DefdocVO
+	 */
+	public String getProjectno() {
+		return this.projectno;
+	}
+
+	/**
+	 * 属性projectno的Setter方法.属性名：项目别代号 创建日期:2018-1-24
+	 * 
+	 * @param newProjectno
+	 *            nc.vo.bd.defdoc.DefdocVO
+	 */
+	public void setProjectno(String projectno) {
+		this.projectno = projectno;
+	}
+
+	/**
+	 * 属性 idtypeno的Getter方法.属性名：证别号 创建日期:2018-1-24
+	 * 
+	 * @return java.lang.String
+	 */
+	public String getIdtypeno() {
+		return this.idtypeno;
+	}
+
+	/**
+	 * 属性idtypeno的Setter方法.属性名：证别号 创建日期:2018-1-24
+	 * 
+	 * @param newIdtypeno
+	 *            java.lang.String
+	 */
+	public void setIdtypeno(String idtypeno) {
+		this.idtypeno = idtypeno;
+	}
+
+	/**
+	 * 属性 beginperiod的Getter方法.属性名：起始期间 创建日期:2018-1-24
+	 * 
+	 * @return java.lang.String
+	 */
+	public String getBeginperiod() {
+		return this.beginperiod;
+	}
+
+	/**
+	 * 属性beginperiod的Setter方法.属性名：起始期间 创建日期:2018-1-24
+	 * 
+	 * @param newBeginperiod
+	 *            java.lang.String
+	 */
+	public void setBeginperiod(String beginperiod) {
+		this.beginperiod = beginperiod;
+	}
+
+	/**
+	 * 属性 endperiod的Getter方法.属性名：结束期间 创建日期:2018-1-24
+	 * 
+	 * @return java.lang.String
+	 */
+	public String getEndperiod() {
+		return this.endperiod;
+	}
+
+	/**
+	 * 属性endperiod的Setter方法.属性名：结束期间 创建日期:2018-1-24
+	 * 
+	 * @param newEndperiod
+	 *            java.lang.String
+	 */
+	public void setEndperiod(String endperiod) {
+		this.endperiod = endperiod;
+	}
+
+	/**
+	 * 属性 isdeclare的Getter方法.属性名：是否申报 创建日期:2018-1-24
+	 * 
+	 * @return nc.vo.pub.lang.UFBoolean
+	 */
+	public UFBoolean getIsdeclare() {
+		return this.isdeclare;
+	}
+
+	/**
+	 * 属性isdeclare的Setter方法.属性名：是否申报 创建日期:2018-1-24
+	 * 
+	 * @param newIsdeclare
+	 *            nc.vo.pub.lang.UFBoolean
+	 */
+	public void setIsdeclare(UFBoolean isdeclare) {
+		this.isdeclare = isdeclare;
+	}
+
+	/**
+	 * 属性 taxbase的Getter方法.属性名：给付总额 创建日期:2018-1-24
+	 * 
+	 * @return nc.vo.pub.lang.UFDouble
+	 */
+	public UFDouble getTaxbase() {
+		return this.taxbase;
+	}
+
+	/**
+	 * 属性taxbase的Setter方法.属性名：给付总额 创建日期:2018-1-24
+	 * 
+	 * @param newTaxbase
+	 *            nc.vo.pub.lang.UFDouble
+	 */
+	public void setTaxbase(UFDouble taxbase) {
+		this.taxbase = taxbase;
+	}
+
+	/**
+	 * 属性 cacu_value的Getter方法.属性名：扣缴税额 创建日期:2018-1-24
+	 * 
+	 * @return nc.vo.pub.lang.UFDouble
+	 */
+	public UFDouble getCacu_value() {
+		return this.cacu_value;
+	}
+
+	/**
+	 * 属性cacu_value的Setter方法.属性名：扣缴税额 创建日期:2018-1-24
+	 * 
+	 * @param newCacu_value
+	 *            nc.vo.pub.lang.UFDouble
+	 */
+	public void setCacu_value(UFDouble cacu_value) {
+		this.cacu_value = cacu_value;
+	}
+
+	/**
+	 * 属性 netincome的Getter方法.属性名：给付净额 创建日期:2018-1-24
+	 * 
+	 * @return nc.vo.pub.lang.UFDouble
+	 */
+	public UFDouble getNetincome() {
+		return this.netincome;
+	}
+
+	/**
+	 * 属性netincome的Setter方法.属性名：给付净额 创建日期:2018-1-24
+	 * 
+	 * @param newNetincome
+	 *            nc.vo.pub.lang.UFDouble
+	 */
+	public void setNetincome(UFDouble netincome) {
+		this.netincome = netincome;
+	}
+
+	/**
+	 * 属性 pickedup的Getter方法.属性名：员工自提金额 创建日期:2018-1-24
+	 * 
+	 * @return nc.vo.pub.lang.UFDouble
+	 */
+	public UFDouble getPickedup() {
+		return this.pickedup;
+	}
+
+	/**
+	 * 属性pickedup的Setter方法.属性名：员工自提金额 创建日期:2018-1-24
+	 * 
+	 * @param newPickedup
+	 *            nc.vo.pub.lang.UFDouble
+	 */
+	public void setPickedup(UFDouble pickedup) {
+		this.pickedup = pickedup;
+	}
+
+	/**
+	 * 属性 pk_hrorg的Getter方法.属性名：人力资源组织 创建日期:2018-1-24
+	 * 
+	 * @return nc.vo.org.HROrgVO
+	 */
+	public String getPk_hrorg() {
+		return this.pk_hrorg;
+	}
+
+	/**
+	 * 属性pk_hrorg的Setter方法.属性名：人力资源组织 创建日期:2018-1-24
+	 * 
+	 * @param newPk_hrorg
+	 *            nc.vo.org.HROrgVO
+	 */
+	public void setPk_hrorg(String pk_hrorg) {
+		this.pk_hrorg = pk_hrorg;
+	}
+
+	/**
+	 * 属性 billdate的Getter方法.属性名：单据日期 创建日期:2018-1-24
+	 * 
+	 * @return nc.vo.pub.lang.UFDate
+	 */
+	public UFDate getBilldate() {
+		return this.billdate;
+	}
+
+	/**
+	 * 属性billdate的Setter方法.属性名：单据日期 创建日期:2018-1-24
+	 * 
+	 * @param newBilldate
+	 *            nc.vo.pub.lang.UFDate
+	 */
+	public void setBilldate(UFDate billdate) {
+		this.billdate = billdate;
+	}
+
+	/**
+	 * 属性 creator的Getter方法.属性名：创建人 创建日期:2018-1-24
+	 * 
+	 * @return nc.vo.sm.UserVO
+	 */
+	public String getCreator() {
+		return this.creator;
+	}
+
+	/**
+	 * 属性creator的Setter方法.属性名：创建人 创建日期:2018-1-24
+	 * 
+	 * @param newCreator
+	 *            nc.vo.sm.UserVO
+	 */
+	public void setCreator(String creator) {
+		this.creator = creator;
+	}
+
+	/**
+	 * 属性 creationtime的Getter方法.属性名：创建时间 创建日期:2018-1-24
+	 * 
+	 * @return nc.vo.pub.lang.UFDateTime
+	 */
+	public UFDateTime getCreationtime() {
+		return this.creationtime;
+	}
+
+	/**
+	 * 属性creationtime的Setter方法.属性名：创建时间 创建日期:2018-1-24
+	 * 
+	 * @param newCreationtime
+	 *            nc.vo.pub.lang.UFDateTime
+	 */
+	public void setCreationtime(UFDateTime creationtime) {
+		this.creationtime = creationtime;
+	}
+
+	/**
+	 * 属性 modifier的Getter方法.属性名：修改人 创建日期:2018-1-24
+	 * 
+	 * @return nc.vo.sm.UserVO
+	 */
+	public String getModifier() {
+		return this.modifier;
+	}
+
+	/**
+	 * 属性modifier的Setter方法.属性名：修改人 创建日期:2018-1-24
+	 * 
+	 * @param newModifier
+	 *            nc.vo.sm.UserVO
+	 */
+	public void setModifier(String modifier) {
+		this.modifier = modifier;
+	}
+
+	/**
+	 * 属性 modifiedtime的Getter方法.属性名：修改时间 创建日期:2018-1-24
+	 * 
+	 * @return nc.vo.pub.lang.UFDateTime
+	 */
+	public UFDateTime getModifiedtime() {
+		return this.modifiedtime;
+	}
+
+	/**
+	 * 属性modifiedtime的Setter方法.属性名：修改时间 创建日期:2018-1-24
+	 * 
+	 * @param newModifiedtime
+	 *            nc.vo.pub.lang.UFDateTime
+	 */
+	public void setModifiedtime(UFDateTime modifiedtime) {
+		this.modifiedtime = modifiedtime;
+	}
+
+	/**
+	 * 属性 pk_group的Getter方法.属性名：集团 创建日期:2018-1-24
+	 * 
+	 * @return nc.vo.org.GroupVO
+	 */
+	public String getPk_group() {
+		return this.pk_group;
+	}
+
+	/**
+	 * 属性pk_group的Setter方法.属性名：集团 创建日期:2018-1-24
+	 * 
+	 * @param newPk_group
+	 *            nc.vo.org.GroupVO
+	 */
+	public void setPk_group(String pk_group) {
+		this.pk_group = pk_group;
+	}
+
+	/**
+	 * 属性 pk_org的Getter方法.属性名：组织 创建日期:2018-1-24
+	 * 
+	 * @return nc.vo.org.OrgVO
+	 */
+	public String getPk_org() {
+		return this.pk_org;
+	}
+
+	/**
+	 * 属性pk_org的Setter方法.属性名：组织 创建日期:2018-1-24
+	 * 
+	 * @param newPk_org
+	 *            nc.vo.org.OrgVO
+	 */
+	public void setPk_org(String pk_org) {
+		this.pk_org = pk_org;
+	}
+
+	public String getUnifiednumber() {
+		return unifiednumber;
+	}
+
+	public void setUnifiednumber(String unifiednumber) {
+		this.unifiednumber = unifiednumber;
+	}
+
+	public UFDouble getTaxbaseadjust() {
+		return taxbaseadjust;
+	}
+
+	public void setTaxbaseadjust(UFDouble taxbaseadjust) {
+		this.taxbaseadjust = taxbaseadjust;
+	}
+
+	public UFDouble getCacu_valueadjust() {
+		return cacu_valueadjust;
+	}
+
+	public void setCacu_valueadjust(UFDouble cacu_valueadjust) {
+		this.cacu_valueadjust = cacu_valueadjust;
+	}
+
+	public UFDouble getPickedupadjust() {
+		return pickedupadjust;
+	}
+
+	public void setPickedupadjust(UFDouble pickedupadjust) {
+		this.pickedupadjust = pickedupadjust;
+	}
+
+	/**
+	 * 属性 生成时间戳的Getter方法.属性名：时间戳 创建日期:2018-1-24
+	 * 
+	 * @return nc.vo.pub.lang.UFDateTime
+	 */
+	public UFDateTime getTs() {
+		return this.ts;
+	}
+
+	/**
+	 * 属性生成时间戳的Setter方法.属性名：时间戳 创建日期:2018-1-24
+	 * 
+	 * @param newts
+	 *            nc.vo.pub.lang.UFDateTime
+	 */
+	public void setTs(UFDateTime ts) {
+		this.ts = ts;
+	}
+
+	@Override
+	public IVOMeta getMetaData() {
+		return VOMetaFactory.getInstance().getVOMeta("hrwa.SumIncomeTaxVO");
+	}
+}

@@ -1,0 +1,88 @@
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '050c92f2-7785-4d25-a477-72c22c84f399','1d40b9cd-7fb8-4868-bc08-ad3f8602595d','twhr_groupinsurancesetting@@PK@@',0,'twhr_groupinsurancesetting','2018-09-17 13:23:17')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '0814b540-1b39-4b89-8a91-ce908c79bf4a','1d40b9cd-7fb8-4868-bc08-ad3f8602595d','twhr_groupinsurancesetting@@@def18',0,'twhr_groupinsurancesetting','2018-09-17 13:23:17')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '0ad22429-6464-434e-8cf2-533fba2d4812','1d40b9cd-7fb8-4868-bc08-ad3f8602595d','twhr_groupinsurancesetting@@@dupper',0,'twhr_groupinsurancesetting','2018-09-17 13:23:17')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '0b84ba27-be24-4166-8979-961ce9b866e6','1d40b9cd-7fb8-4868-bc08-ad3f8602595d','twhr_groupinsurancesetting@@@def4',0,'twhr_groupinsurancesetting','2018-09-17 13:23:17')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '14c36156-9d37-4129-8661-31c7f0e62f49','1d40b9cd-7fb8-4868-bc08-ad3f8602595d','twhr_groupinsurancesetting@@@def20',0,'twhr_groupinsurancesetting','2018-09-17 13:23:17')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '1a448052-7745-40d9-abe4-0f2a37a80677','1d40b9cd-7fb8-4868-bc08-ad3f8602595d','twhr_groupinsurancesetting@@@def17',0,'twhr_groupinsurancesetting','2018-09-17 13:23:17')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '210fb4f4-bd83-4bfe-909d-9d7d158171c2','1d40b9cd-7fb8-4868-bc08-ad3f8602595d','twhr_groupinsurancesetting@@@def16',0,'twhr_groupinsurancesetting','2018-09-17 13:23:17')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '269b794b-30d0-4670-acf1-c238b92491cc','1d40b9cd-7fb8-4868-bc08-ad3f8602595d','twhr_groupinsurancesetting@@@def8',0,'twhr_groupinsurancesetting','2018-09-17 13:23:17')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '2b317ebb-10ec-4923-9d74-58dfe4013dfb','1d40b9cd-7fb8-4868-bc08-ad3f8602595d','twhr_groupinsurancesetting@@@icalmode',0,'twhr_groupinsurancesetting','2018-09-17 13:23:17')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '2cd9656c-6865-4ee2-ae92-1dc63dbb2a5b','1d40b9cd-7fb8-4868-bc08-ad3f8602595d','twhr_groupinsurancesetting@@@def3',0,'twhr_groupinsurancesetting','2018-09-17 13:23:17')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '3fb2f3cb-d075-44fb-b134-6d5ed8f93fe8','1d40b9cd-7fb8-4868-bc08-ad3f8602595d','twhr_groupinsurancesetting@@@dtimes',0,'twhr_groupinsurancesetting','2018-09-17 13:23:17')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '53417dc6-415d-408c-8463-8d8b347ddd55','1d40b9cd-7fb8-4868-bc08-ad3f8602595d','twhr_groupinsurancesetting@@@insurancecompany',0,'twhr_groupinsurancesetting','2018-09-17 13:23:17')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '5b3b6abf-408e-4f92-b1fa-2a2f51d92f32','1d40b9cd-7fb8-4868-bc08-ad3f8602595d','twhr_groupinsurancesetting@@@cformular',0,'twhr_groupinsurancesetting','2018-09-17 13:23:17')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '5d638df7-9478-44df-9135-db65a6d01ce0','1d40b9cd-7fb8-4868-bc08-ad3f8602595d','twhr_groupinsurancesetting@@@def14',0,'twhr_groupinsurancesetting','2018-09-17 13:23:17')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '5e86546d-0b31-43a3-80c9-bca7ae5758c1','1d40b9cd-7fb8-4868-bc08-ad3f8602595d','twhr_groupinsurancesetting@@@lastmaketime',0,'twhr_groupinsurancesetting','2018-09-17 13:23:17')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '600d93c3-e216-4996-8e79-f67ced73e538','1d40b9cd-7fb8-4868-bc08-ad3f8602595d','twhr_groupinsurancesetting@@@drate',0,'twhr_groupinsurancesetting','2018-09-17 13:23:17')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '7bedb0a6-7f8a-4e78-b338-60c17c4d06f5','1d40b9cd-7fb8-4868-bc08-ad3f8602595d','twhr_groupinsurancesetting@@@def10',0,'twhr_groupinsurancesetting','2018-09-17 13:23:17')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '800c0962-0fec-465a-b8cc-51fad011637f','1d40b9cd-7fb8-4868-bc08-ad3f8602595d','twhr_groupinsurancesetting@@@dfixamount',0,'twhr_groupinsurancesetting','2018-09-17 13:23:17')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '8123d1a6-d5b8-4e6d-af9d-696ed9ac44fe','1d40b9cd-7fb8-4868-bc08-ad3f8602595d','twhr_groupinsurancesetting@@@creator',0,'twhr_groupinsurancesetting','2018-09-17 13:23:17')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '8270a7dc-ae30-4fac-b72b-6aa21d0f5f83','1d40b9cd-7fb8-4868-bc08-ad3f8602595d','twhr_groupinsurancesetting@@@creationtime',0,'twhr_groupinsurancesetting','2018-09-17 13:23:17')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '86cc020a-380b-4171-a3b9-2bf122a322f2','1d40b9cd-7fb8-4868-bc08-ad3f8602595d','twhr_groupinsurancesetting@@@def7',0,'twhr_groupinsurancesetting','2018-09-17 13:23:17')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '8bb2366a-f4a2-499d-8ee7-a649802368cc','1d40b9cd-7fb8-4868-bc08-ad3f8602595d','twhr_groupinsurancesetting@@@bautoreg',0,'twhr_groupinsurancesetting','2018-09-17 13:23:17')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '928e61c5-e2dd-4bf8-8923-709628f4c141','1d40b9cd-7fb8-4868-bc08-ad3f8602595d','twhr_groupinsurancesetting@@@def11',0,'twhr_groupinsurancesetting','2018-09-17 13:23:17')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( '92cc31e6-afe0-48e1-9cc5-66e04b37584f','1d40b9cd-7fb8-4868-bc08-ad3f8602595d','twhr_groupinsurancesetting@@@modifier',0,'twhr_groupinsurancesetting','2018-09-17 13:23:17')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'a3a4e3f0-c5fb-45e8-83f3-eb1d0409b914','1d40b9cd-7fb8-4868-bc08-ad3f8602595d','twhr_groupinsurancesetting@@@def5',0,'twhr_groupinsurancesetting','2018-09-17 13:23:17')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'ae100732-548d-4016-8a40-f9ca85baf386','1d40b9cd-7fb8-4868-bc08-ad3f8602595d','twhr_groupinsurancesetting@@@code',0,'twhr_groupinsurancesetting','2018-09-17 13:23:17')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'b1163693-4c0c-4263-a54e-8eb30ca57a6d','1d40b9cd-7fb8-4868-bc08-ad3f8602595d','twhr_groupinsurancesetting@@@cformularstr',0,'twhr_groupinsurancesetting','2018-09-17 13:23:17')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'b39281a5-cc61-4ae2-b43b-74f60f8eea55','1d40b9cd-7fb8-4868-bc08-ad3f8602595d','twhr_groupinsurancesetting@@@pk_org_v',0,'twhr_groupinsurancesetting','2018-09-17 13:23:17')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'b3fdd35d-f43f-4492-82d1-b10b52f5f12c','1d40b9cd-7fb8-4868-bc08-ad3f8602595d','twhr_groupinsurancesetting@@@pk_org',0,'twhr_groupinsurancesetting','2018-09-17 13:23:17')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'b8acd575-7f0e-4ee7-b425-669bfc4b94e5','1d40b9cd-7fb8-4868-bc08-ad3f8602595d','twhr_groupinsurancesetting@@@pk_group',0,'twhr_groupinsurancesetting','2018-09-17 13:23:17')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'bbe23893-c98f-4d07-914d-a2667ae75bbd','1d40b9cd-7fb8-4868-bc08-ad3f8602595d','twhr_groupinsurancesetting@@@def2',0,'twhr_groupinsurancesetting','2018-09-17 13:23:17')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'c51e6023-622e-4d64-b038-ac4ba367be4e','1d40b9cd-7fb8-4868-bc08-ad3f8602595d','twhr_groupinsurancesetting@@@name',0,'twhr_groupinsurancesetting','2018-09-17 13:23:17')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'cae9a708-7ba0-4c38-aa95-e34a86599d41','1d40b9cd-7fb8-4868-bc08-ad3f8602595d','twhr_groupinsurancesetting@@@def9',0,'twhr_groupinsurancesetting','2018-09-17 13:23:17')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'cf306201-a15f-4f3d-b54d-8f4700d341ea','1d40b9cd-7fb8-4868-bc08-ad3f8602595d','twhr_groupinsurancesetting@@@bselfpay',0,'twhr_groupinsurancesetting','2018-09-17 13:23:17')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'cfff5599-c181-4a1d-ba27-a4ba77628a9b','1d40b9cd-7fb8-4868-bc08-ad3f8602595d','twhr_groupinsurancesetting@@@def6',0,'twhr_groupinsurancesetting','2018-09-17 13:23:17')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'd5b469fa-0795-4bb4-844e-dc545be2d4b3','1d40b9cd-7fb8-4868-bc08-ad3f8602595d','twhr_groupinsurancesetting@@@def19',0,'twhr_groupinsurancesetting','2018-09-17 13:23:17')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'df47eea7-e3e3-4812-8760-a07a538ee549','1d40b9cd-7fb8-4868-bc08-ad3f8602595d','twhr_groupinsurancesetting@@@def15',0,'twhr_groupinsurancesetting','2018-09-17 13:23:17')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'e06be917-aefb-4cb1-99a3-69199d53f082','1d40b9cd-7fb8-4868-bc08-ad3f8602595d','twhr_groupinsurancesetting@@@cgrpinsid',0,'twhr_groupinsurancesetting','2018-09-17 13:23:17')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'e31f2b5d-8143-4bc2-964d-4006759cc2f8','1d40b9cd-7fb8-4868-bc08-ad3f8602595d','twhr_groupinsurancesetting@@@def13',0,'twhr_groupinsurancesetting','2018-09-17 13:23:17')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'e5826155-6b3d-46b0-922e-2cc6bea59ffe','1d40b9cd-7fb8-4868-bc08-ad3f8602595d','twhr_groupinsurancesetting@@@maketime',0,'twhr_groupinsurancesetting','2018-09-17 13:23:17')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'f347b068-12fd-4e24-b7fc-18c674da7a55','1d40b9cd-7fb8-4868-bc08-ad3f8602595d','twhr_groupinsurancesetting@@@cgrpinsrelid',0,'twhr_groupinsurancesetting','2018-09-17 13:23:17')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'f524d9e8-78e3-41bf-b7b7-b398bcf7d133','1d40b9cd-7fb8-4868-bc08-ad3f8602595d','twhr_groupinsurancesetting@@@def12',0,'twhr_groupinsurancesetting','2018-09-17 13:23:17')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'f890b977-34a0-4466-bca8-0c139154a0af','1d40b9cd-7fb8-4868-bc08-ad3f8602595d','twhr_groupinsurancesetting@@@modifiedtime',0,'twhr_groupinsurancesetting','2018-09-17 13:23:17')
+go
+insert into md_ormap(attributeid,classid,columnid,dr,tableid,ts) values( 'fdd8eee5-32b6-49bc-8e41-1bb390a65ef3','1d40b9cd-7fb8-4868-bc08-ad3f8602595d','twhr_groupinsurancesetting@@@rowno',0,'twhr_groupinsurancesetting','2018-09-17 13:23:17')
+go

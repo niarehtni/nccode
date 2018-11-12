@@ -1,0 +1,96 @@
+/*    */ package nc.ui.uif2.actions.batch;
+/*    */ 
+/*    */ import java.awt.event.ActionEvent;
+/*    */ import nc.bs.uif2.validation.IBatchValidationService;
+/*    */ import nc.ui.uif2.IShowMsgConstant;
+/*    */ import nc.ui.uif2.NCAction;
+/*    */ import nc.ui.uif2.ShowStatusBarMsgUtil;
+/*    */ import nc.ui.uif2.UIState;
+/*    */ import nc.ui.uif2.actions.ActionInitializer;
+/*    */ import nc.ui.uif2.editor.BatchBillTable;
+/*    */ import nc.ui.uif2.model.BatchBillTableModel;
+/*    */ import nc.uif2.annoations.MethodType;
+/*    */ import nc.uif2.annoations.ModelMethod;
+/*    */ import nc.uif2.annoations.ModelType;
+/*    */ import nc.uif2.annoations.ViewMethod;
+/*    */ import nc.uif2.annoations.ViewType;
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ 
+/*    */ public class GlbBatchSaveAction
+/*    */   extends NCAction
+/*    */ {
+/*    */   private static final long serialVersionUID = -7359817260677159564L;
+/* 31 */   private BatchBillTableModel model = null;
+/*    */   
+/* 33 */   private BatchBillTable editor = null;
+/*    */   
+/*    */ 
+/* 36 */   private IBatchValidationService validationService = null;
+/*    */   
+/*    */   public GlbBatchSaveAction()
+/*    */   {
+/* 40 */     ActionInitializer.initializeAction(this, "Save");
+/*    */   }
+/*    */   
+/*    */   public void doAction(ActionEvent e)
+/*    */     throws Exception
+/*    */   {
+/* 46 */     if (this.editor.beforeSave())
+/*    */     {
+/* 48 */       if ((this.validationService != null) && (this.model.getValidationService() == null))
+/* 49 */         this.model.setValidationService(this.validationService);
+/* 50 */       this.model.save();
+/*    */       
+/* 52 */       showSuccessInfo();
+/*    */     }
+/*    */   }
+/*    */   
+/*    */   protected void showSuccessInfo()
+/*    */   {
+/* 58 */     ShowStatusBarMsgUtil.showStatusBarMsg(IShowMsgConstant.getSaveSuccessInfo(), getModel().getContext());
+/*    */   }
+/*    */   
+/*    */ 
+/*    */   protected boolean isActionEnable()
+/*    */   {
+/* 64 */     return this.model.getUiState() == UIState.EDIT;
+/*    */   }
+/*    */   
+/*    */   @ModelMethod(modelType=ModelType.BatchBillTableModel, methodType=MethodType.GETTER)
+/*    */   public BatchBillTableModel getModel() {
+/* 69 */     return this.model;
+/*    */   }
+/*    */   
+/*    */   @ModelMethod(modelType=ModelType.BatchBillTableModel, methodType=MethodType.SETTER)
+/*    */   public void setModel(BatchBillTableModel model) {
+/* 74 */     this.model = model;
+/* 75 */     model.addAppEventListener(this);
+/*    */   }
+/*    */   
+/*    */   @ViewMethod(viewType=ViewType.BatchBillTable, methodType=MethodType.GETTER)
+/*    */   public BatchBillTable getEditor() {
+/* 80 */     return this.editor;
+/*    */   }
+/*    */   
+/*    */   @ViewMethod(viewType=ViewType.BatchBillTable, methodType=MethodType.SETTER)
+/*    */   public void setEditor(BatchBillTable editor) {
+/* 85 */     this.editor = editor;
+/*    */   }
+/*    */   
+/*    */   public IBatchValidationService getValidationService() {
+/* 89 */     return this.validationService;
+/*    */   }
+/*    */   
+/*    */   public void setValidationService(IBatchValidationService validationService) {
+/* 93 */     this.validationService = validationService;
+/*    */   }
+/*    */ }
+

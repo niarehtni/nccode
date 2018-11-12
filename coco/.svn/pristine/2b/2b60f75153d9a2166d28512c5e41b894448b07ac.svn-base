@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding='UTF-8'?>
+<UIMeta flowmode="true" id="main_um" jquery="0">
+    <FlowvLayout autoFill="0" id="flowvlayout4816" widgetId="main">
+        <FlowvPanel id="panelv14816" widgetId="main">
+            <PanelLayout i18nName="w_ta-000071" langDir="node_ta-res" borderWidth="1px" display="0" id="panellayout6351" left="0" paddingBottom="1" paddingLeft="1" paddingRight="1" paddingTop="1" roundRect="1" scroll="1" title="班次属性" top="0" transparent="1" visibility="1" widgetId="main" width="100" withBorder="1" className="small_panel_div">
+                <PanelPanel bottomPadding="40" id="panelpanel6367" topPadding="30" widgetId="main">
+                    <FormComp height="100%" id="frmshift" label_position="" left="0" position="relative" top="0" widgetId="main" width="100%">
+                    </FormComp>
+                </PanelPanel>
+            </PanelLayout>
+        </FlowvPanel>
+        <FlowvPanel id="panelv24816" widgetId="main">
+            <PanelLayout i18nName="w_ta-000077" langDir="node_ta-res" borderWidth="1px" display="0" id="panellayout4174" left="0" paddingBottom="1" paddingLeft="1" paddingRight="1" paddingTop="1" roundRect="1" scroll="1" title="工休时间列表（休息时长单位:分钟）" top="0" transparent="1" visibility="1" widgetId="main" width="100" withBorder="1" className="small_panel_div" expand="false">
+                <PanelPanel bottomPadding="40" id="panelpanel4174" topPadding="30" widgetId="main">
+                    <GridComp height="100%" id="gridRestTime" left="0" position="relative" top="0" widgetId="main" width="100%" autoExpand="1">
+                    </GridComp>
+                </PanelPanel>
+            </PanelLayout>
+        </FlowvPanel>
+        <FlowvPanel id="panelv38816" widgetId="main" height="5">
+        </FlowvPanel>
+        <FlowvPanel id="panelv34816" widgetId="main">
+            <PanelLayout i18nName="w_ta-000078" langDir="node_ta-res" borderWidth="1px" display="0" id="panellayout4661" left="0" paddingBottom="1" paddingLeft="1" paddingRight="1" paddingTop="1" roundRect="1" scroll="1" title="与正常作息时间冲突的假日时间列表" top="0" transparent="1" visibility="1" widgetId="main" width="100" withBorder="1" className="small_panel_div" expand="false">
+                <PanelPanel bottomPadding="40" id="panelpanel4661" topPadding="30" widgetId="main">
+                    <GridComp height="100%" id="gridHoliday" left="0" position="relative" top="0" widgetId="main" width="100%" autoExpand="1">
+                    </GridComp>
+                </PanelPanel>
+            </PanelLayout>
+        </FlowvPanel>
+        <FlowvPanel id="panelv48816" widgetId="main" height="5">
+        </FlowvPanel>
+        <FlowvPanel id="panelv44816" widgetId="main">
+            <PanelLayout i18nName="w_ta-000079" langDir="node_ta-res" borderWidth="1px" display="0" id="panellayout0241" left="0" paddingBottom="1" paddingLeft="1" paddingRight="1" paddingTop="1" roundRect="1" scroll="1" title="最终作息时间列表" top="0" transparent="1" visibility="1" widgetId="main" width="100" withBorder="1" className="small_panel_div" expand="false">
+                <PanelPanel bottomPadding="40" id="panelpanel0241" topPadding="30" widgetId="main">
+                    <GridComp height="100%" id="gridWorkTime" left="0" position="relative" top="0" widgetId="main" width="100%" autoExpand="1">
+                    </GridComp>
+                </PanelPanel>
+            </PanelLayout>
+        </FlowvPanel>
+        <FlowvPanel id="panelv58816" widgetId="main" height="45">
+        </FlowvPanel>
+    </FlowvLayout>
+</UIMeta>

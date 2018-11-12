@@ -1,0 +1,108 @@
+package nc.ui.om.hrdept.action;
+
+import java.awt.event.ActionEvent;
+
+import nc.bs.framework.common.NCLocator;
+import nc.itf.jf.IUpdatePsnJob;
+import nc.itf.ta.IPsnCalendarManageService;
+import nc.ui.hr.uif2.action.SaveAction;
+import nc.ui.om.hrdept.model.OrgTreeDataManager;
+import nc.ui.om.hrdept.model.TreeDeptAppModel;
+import nc.ui.om.hrdept.view.DeptCardForm;
+import nc.ui.pub.bill.BillCardPanel;
+import nc.ui.uif2.UIState;
+import nc.ui.uif2.editor.BillForm;
+import nc.ui.uif2.editor.IEditor;
+import nc.ui.uif2.model.HierachicalDataAppModel;
+import nc.vo.om.hrdept.AggHRDeptVO;
+import nc.vo.om.hrdept.HRDeptVO;
+
+
+
+
+/**
+ * 保存Action<br>
+ * 
+ * @author zhangdd
+ * 
+ */
+public class SaveDeptAction extends SaveAction {
+
+	private static final long serialVersionUID = 1L;
+	
+	private OrgTreeDataManager treeDataManager;
+
+    public OrgTreeDataManager getTreeDataManager()
+    {
+        return treeDataManager;
+    }
+
+    public void setTreeDataManager(OrgTreeDataManager treeDataManager)
+    {
+        this.treeDataManager = treeDataManager;
+    }
+
+    @Override
+    public void doAction(ActionEvent evt) throws Exception
+    {
+    	IEditor editor = getEditor();
+        AggHRDeptVO objValue = (AggHRDeptVO)editor.getValue();
+        String approvenum = (String) ((DeptCardForm) editor).getBillCardPanel().getHeadItem("approvenum").getValueObject();
+		String approvedept = (String) ((DeptCardForm) editor).getBillCardPanel().getHeadItem("approvedept").getValueObject();
+		((HRDeptVO)objValue.getParentVO()).setApprovenum(approvenum);
+		((HRDeptVO)objValue.getParentVO()).setApprovedept(approvedept);
+        
+        validate(objValue);
+        
+        boolean validateResult = true;
+        if (getEditor() instanceof BillForm)
+        {
+            validateResult = ((BillForm) getEditor()).getBillCardPanel().getBillData().execValidateFormulas();
+        }
+        else if (getEditor() instanceof BillCardPanel)
+        {
+            validateResult = ((BillCardPanel) getEditor()).getBillData().execValidateFormulas();
+        }
+        
+        if (!validateResult)
+        {
+            return;
+        }
+       
+        if (getModel().getUiState() == UIState.ADD)
+        {
+            Object returnObj = getModel().add(objValue);
+            AggHRDeptVO selectedVO=(AggHRDeptVO) returnObj;
+            if (getModel() instanceof HierachicalDataAppModel)
+            {
+                ((HierachicalDataAppModel) getModel()).setSelectedData(returnObj);
+            }
+            if (getTreeDataManager().getModel() instanceof HierachicalDataAppModel)
+            {
+                
+                TreeDeptAppModel treeAppModel=(TreeDeptAppModel) getTreeDataManager().getModel();
+                treeAppModel.directlyAdd(selectedVO.getParentVO());
+                treeAppModel.setSelectedData(selectedVO.getParentVO());
+            }
+            //更新工作信息里面的是否主管字段
+            NCLocator.getInstance().lookup(IUpdatePsnJob.class).updateSupervisor(((HRDeptVO)objValue.getParentVO()).getPrincipal());
+        }
+        else if (getModel().getUiState() == UIState.EDIT)
+        {
+        	//更新之前获取此部门的负责人
+        	String principal = NCLocator.getInstance().lookup(IUpdatePsnJob.class).getOldPrincipal(((HRDeptVO)objValue.getParentVO()).getPk_dept());
+            getModel().update(objValue);
+            AggHRDeptVO selectedVO=(AggHRDeptVO) objValue;
+            TreeDeptAppModel treeAppModel=(TreeDeptAppModel) getTreeDataManager().getModel();
+            treeAppModel.directlyUpdate(selectedVO.getParentVO());
+            treeAppModel.setSelectedData(selectedVO.getParentVO());
+          //更新工作信息里面的是否主管字段
+            NCLocator.getInstance().lookup(IUpdatePsnJob.class).updateSupervisor(((HRDeptVO)objValue.getParentVO()).getPrincipal(), principal);
+        }
+        
+        getModel().setUiState(UIState.NOT_EDIT);
+        
+        
+    }
+	
+}

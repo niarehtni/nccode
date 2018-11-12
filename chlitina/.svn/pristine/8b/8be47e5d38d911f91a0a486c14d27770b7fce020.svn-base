@@ -1,0 +1,148 @@
+package nc.ui.ta.psndocwadoc.view.labourjoin;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import nc.bs.framework.common.NCLocator;
+import nc.desktop.ui.WorkbenchEnvironment;
+import nc.itf.hr.hi.LabourHealthRegimentInsuranceEnum;
+import nc.itf.om.IAOSQueryService;
+import nc.itf.ta.IPsnCalendarManageMaintain;
+import nc.itf.ta.IPsnCalendarQueryMaintain;
+import nc.pub.fa.common.util.StringUtils;
+import nc.ui.hr.uif2.model.HRWizardModel;
+import nc.ui.pub.beans.MessageDialog;
+import nc.ui.pub.beans.wizard.IWizardDialogListener;
+import nc.ui.pub.beans.wizard.WizardActionException;
+import nc.ui.pub.beans.wizard.WizardEvent;
+import nc.ui.pub.beans.wizard.WizardException;
+import nc.ui.querytemplate.querytree.FromWhereSQL;
+import nc.ui.wa.psndocwadoc.model.PsndocwadocAppModel;
+import nc.vo.logging.Debug;
+import nc.vo.ml.NCLangRes4VoTransl;
+import nc.vo.pub.BusinessException;
+import nc.vo.pub.lang.UFLiteralDate;
+import nc.vo.ta.psncalendar.PsnJobCalendarVO;
+
+@SuppressWarnings("restriction")
+public class WizardListenerForLabourJoin implements IWizardDialogListener {
+
+	@Override
+	public void wizardCancel(WizardEvent event) throws WizardActionException {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void wizardFinish(WizardEvent event) throws WizardActionException {
+		String error = WorkbenchEnvironment.getInstance().getClientCache("labourerror") == null ? "" : 
+			           WorkbenchEnvironment.getInstance().getClientCache("labourerror").toString();
+		if(!StringUtils.isEmpty(error)){
+			WorkbenchEnvironment.getInstance().removeClientCache("labourerror");
+			MessageDialog.showErrorDlg(null, "错误信息", error);
+			throw new WizardActionException(new Exception(error));
+		}
+		HRWizardModel wizardModel = (HRWizardModel)event.getModel();
+		//取出日期范围
+		SelPsnStepForLabourJoin step1 = (SelPsnStepForLabourJoin)wizardModel.getSteps().get(0);
+		SelPsnPanelForLabourJoin pane1 = step1.getSelPsnPanelForLabourJoin();
+		String pk_org = pane1.getPK_BU();
+		
+		//取出人员主键
+		ConfirmPsnStepForLabourJoin step2 = (ConfirmPsnStepForLabourJoin)wizardModel.getSteps().get(1);
+		ConfirmPsnPanelForLabourJoin pane2 = step2.getConfirmPsnPanelForLabourJoin();
+		String[] pk_psndocs = pane2.getSelPkPsndocs();
+		
+		JoinSetStepForLabourJoin step3 = (JoinSetStepForLabourJoin) wizardModel.getSteps().get(2);
+		JoinSetPanelForLabourJoin pane3 = step3.getJoinSetPanelForLabourJoin();
+		//时间
+		String begindate = pane3.getRefBeginDate().getValueObj() == null ? "" : 
+			          pane3.getRefBeginDate().getValueObj().toString();
+		//劳保
+		Boolean islabourinsurance = pane3.getBaoCheckBox().isSelected();
+		//劳退
+		Boolean islabourtreat = pane3.getTuiCheckBox().isSelected();
+		//健保
+		Boolean ishealthinsurance = pane3.getJianCheckBox().isSelected();
+		//劳保投保身分
+		String labourinsurancestatus = "";
+		//劳保级距
+		String labourinsurancegradedistance = "";
+		//劳退提缴身分
+		String labourretreatstatus = "";
+		//劳退级距
+		String tuiJi = "";
+		//健保投保身份
+		String healthinsurancestatus = "";
+		//健保级距
+		String healthinsurancegradedistance = "";
+		if(islabourinsurance){
+			labourinsurancestatus = pane3.getLaoShenRefPane().getRefPK().toString();
+			labourinsurancegradedistance = pane3.getLaoJiRefPane().getRefValue("dd.id").toString();
+		}
+		if(islabourtreat){
+			labourretreatstatus = pane3.getTuiFenRefPane().getRefPK().toString();
+			tuiJi = pane3.getTuiJiRefPane().getRefValue("dd.id").toString();
+		}
+		if(ishealthinsurance){
+			healthinsurancestatus = pane3.getJianShenRefPane().getRefPK().toString();
+			healthinsurancegradedistance = pane3.getJianJiRefPane().getRefValue("dd.id").toString();
+		}
+		//劳保补助身分
+		String labourallowancestatus = pane3.getLaoBuPk() == null ? "" : pane3.getLaoBuPk();
+		//健保补助身分
+		String healthallowancestatus = pane3.getJianbuPk() == null ? "" : pane3.getJianbuPk();
+		//劳保特殊身份别
+		String labourinsurancespecialstatus = pane3.getTeShuPk() == null ? "" : pane3.getTeShuPk();
+		//自提比例
+		String selfliftingratio = pane3.getRateRefPane().getValueObj() == null ? "" : 
+					  pane3.getRateRefPane().getValueObj().toString();
+		//异动类型/投保形态
+		String insuranceform = String.valueOf(pane3.getYiDongRefPane().getSelectedObjects()[0]);
+		if("加保".equals(insuranceform)){
+			insuranceform = "1";
+		}else{
+			insuranceform = "3";
+		}
+		Map<LabourHealthRegimentInsuranceEnum,String> labourMap = new HashMap<LabourHealthRegimentInsuranceEnum,String>();
+		labourMap.put(LabourHealthRegimentInsuranceEnum.BEGINDATE, begindate);
+		labourMap.put(LabourHealthRegimentInsuranceEnum.ISLABOURINSURANCE, islabourinsurance == true ? "Y" : "N");
+		labourMap.put(LabourHealthRegimentInsuranceEnum.ISLABOURRETREAT, islabourtreat == true ? "Y" : "N");
+		labourMap.put(LabourHealthRegimentInsuranceEnum.ISHEALTHINSURANCE, ishealthinsurance == true ? "Y" : "N");
+		labourMap.put(LabourHealthRegimentInsuranceEnum.LABOURINSURANCESTATUS, labourinsurancestatus);
+		labourMap.put(LabourHealthRegimentInsuranceEnum.LABOURINSURANCEGRADEDISTANCE, labourinsurancegradedistance);
+		labourMap.put(LabourHealthRegimentInsuranceEnum.LABOURRETREATSTATUS, labourretreatstatus);
+		labourMap.put(LabourHealthRegimentInsuranceEnum.LABOURRETREATGRADEDISTANCE, tuiJi);
+		labourMap.put(LabourHealthRegimentInsuranceEnum.HEALTHINSURANCESTATUS, healthinsurancestatus);
+		labourMap.put(LabourHealthRegimentInsuranceEnum.HEALTHINSURANCEGRADEDISTANCE, healthinsurancegradedistance);
+		labourMap.put(LabourHealthRegimentInsuranceEnum.LABOURALLOWANCESTATUS, labourallowancestatus);
+		labourMap.put(LabourHealthRegimentInsuranceEnum.HEALTHALLOWANCESTATUS, healthallowancestatus);
+		labourMap.put(LabourHealthRegimentInsuranceEnum.LABOURINSURANCESPECIALSTATUS, labourinsurancespecialstatus);
+		labourMap.put(LabourHealthRegimentInsuranceEnum.SELFLIFTINGRATIO, selfliftingratio);
+		labourMap.put(LabourHealthRegimentInsuranceEnum.INSURANCEFORM, insuranceform);
+
+//		//取出遇假日排班取消标志
+//		IPsnCalendarQueryMaintain queryMaintain = NCLocator.getInstance().lookup(IPsnCalendarQueryMaintain.class);
+//		PsnJobCalendarVO[] calendarVOs = null;
+//		try {
+//			String pk_hrorg = NCLocator.getInstance().lookup(IAOSQueryService.class).queryHROrgByOrgPK(pk_org).getPk_org();
+//		} catch (BusinessException e) {
+//			Debug.error(e.getMessage(), e);
+//			WizardActionException wae = new WizardActionException(e);
+//			wae.addMsg("1", e.getMessage());
+//			throw wae;
+//		}
+//		PsndocwadocAppModel appModel = (PsndocwadocAppModel)wizardModel.getModel();
+////		appModel.setBeginEndDate(beginDate, endDate);
+//		appModel.initModel(calendarVOs);
+		event.getModel().gotoStepForwardNoValidate(0);
+	}
+
+	@Override
+	public void wizardFinishAndContinue(WizardEvent event)
+			throws WizardActionException {
+		// TODO Auto-generated method stub
+
+	}
+
+}

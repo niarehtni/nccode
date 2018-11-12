@@ -1,0 +1,129 @@
+package nc.impl.pub.ace;
+
+import nc.bs.twhr.twhr_declaration.ace.bp.AceTwhr_declarationInsertBP;
+import nc.bs.twhr.twhr_declaration.ace.bp.AceTwhr_declarationUpdateBP;
+import nc.bs.twhr.twhr_declaration.ace.bp.AceTwhr_declarationDeleteBP;
+import nc.bs.twhr.twhr_declaration.ace.bp.AceTwhr_declarationSendApproveBP;
+import nc.bs.twhr.twhr_declaration.ace.bp.AceTwhr_declarationUnSendApproveBP;
+import nc.bs.twhr.twhr_declaration.ace.bp.AceTwhr_declarationApproveBP;
+import nc.bs.twhr.twhr_declaration.ace.bp.AceTwhr_declarationUnApproveBP;
+import nc.impl.pubapp.pattern.data.bill.BillLazyQuery;
+import nc.impl.pubapp.pattern.data.bill.tool.BillTransferTool;
+import nc.ui.querytemplate.querytree.IQueryScheme;
+import nc.vo.twhr.twhr_declaration.AggDeclarationVO;
+import nc.vo.pub.BusinessException;
+import nc.vo.pub.VOStatus;
+import nc.vo.pubapp.pattern.exception.ExceptionUtils;
+
+public abstract class AceTwhr_declarationPubServiceImpl {
+	// 新增
+	public AggDeclarationVO[] pubinsertBills(AggDeclarationVO[] clientFullVOs,
+			AggDeclarationVO[] originBills) throws BusinessException {
+		try {
+			// 数据库中数据和前台传递过来的差异VO合并后的结果
+			BillTransferTool<AggDeclarationVO> transferTool = new BillTransferTool<AggDeclarationVO>(
+					clientFullVOs);
+			// 调用BP
+			AceTwhr_declarationInsertBP action = new AceTwhr_declarationInsertBP();
+			AggDeclarationVO[] retvos = action.insert(clientFullVOs);
+			// 构造返回数据
+			return transferTool.getBillForToClient(retvos);
+		} catch (Exception e) {
+			ExceptionUtils.marsh(e);
+		}
+		return null;
+	}
+
+	// 删除
+	public void pubdeleteBills(AggDeclarationVO[] clientFullVOs,
+			AggDeclarationVO[] originBills) throws BusinessException {
+		try {
+			// 调用BP
+			new AceTwhr_declarationDeleteBP().delete(clientFullVOs);
+		} catch (Exception e) {
+			ExceptionUtils.marsh(e);
+		}
+	}
+
+	// 修改
+	public AggDeclarationVO[] pubupdateBills(AggDeclarationVO[] clientFullVOs,
+			AggDeclarationVO[] originBills) throws BusinessException {
+		try {
+			// 加锁 + 检查ts
+			BillTransferTool<AggDeclarationVO> transferTool = new BillTransferTool<AggDeclarationVO>(
+					clientFullVOs);
+			AceTwhr_declarationUpdateBP bp = new AceTwhr_declarationUpdateBP();
+			AggDeclarationVO[] retvos = bp.update(clientFullVOs, originBills);
+			// 构造返回数据
+			return transferTool.getBillForToClient(retvos);
+		} catch (Exception e) {
+			ExceptionUtils.marsh(e);
+		}
+		return null;
+	}
+
+	public AggDeclarationVO[] pubquerybills(IQueryScheme queryScheme)
+			throws BusinessException {
+		AggDeclarationVO[] bills = null;
+		try {
+			this.preQuery(queryScheme);
+			BillLazyQuery<AggDeclarationVO> query = new BillLazyQuery<AggDeclarationVO>(
+					AggDeclarationVO.class);
+			bills = query.query(queryScheme, null);
+		} catch (Exception e) {
+			ExceptionUtils.marsh(e);
+		}
+		return bills;
+	}
+
+	/**
+	 * 由子类实现，查询之前对queryScheme进行加工，加入自己的逻辑
+	 * 
+	 * @param queryScheme
+	 */
+	protected void preQuery(IQueryScheme queryScheme) {
+		// 查询之前对queryScheme进行加工，加入自己的逻辑
+	}
+
+	// 提交
+	public AggDeclarationVO[] pubsendapprovebills(
+			AggDeclarationVO[] clientFullVOs, AggDeclarationVO[] originBills)
+			throws BusinessException {
+		AceTwhr_declarationSendApproveBP bp = new AceTwhr_declarationSendApproveBP();
+		AggDeclarationVO[] retvos = bp.sendApprove(clientFullVOs, originBills);
+		return retvos;
+	}
+
+	// 收回
+	public AggDeclarationVO[] pubunsendapprovebills(
+			AggDeclarationVO[] clientFullVOs, AggDeclarationVO[] originBills)
+			throws BusinessException {
+		AceTwhr_declarationUnSendApproveBP bp = new AceTwhr_declarationUnSendApproveBP();
+		AggDeclarationVO[] retvos = bp.unSend(clientFullVOs, originBills);
+		return retvos;
+	};
+
+	// 审批
+	public AggDeclarationVO[] pubapprovebills(AggDeclarationVO[] clientFullVOs,
+			AggDeclarationVO[] originBills) throws BusinessException {
+		for (int i = 0; clientFullVOs != null && i < clientFullVOs.length; i++) {
+			clientFullVOs[i].getParentVO().setStatus(VOStatus.UPDATED);
+		}
+		AceTwhr_declarationApproveBP bp = new AceTwhr_declarationApproveBP();
+		AggDeclarationVO[] retvos = bp.approve(clientFullVOs, originBills);
+		return retvos;
+	}
+
+	// 弃审
+
+	public AggDeclarationVO[] pubunapprovebills(AggDeclarationVO[] clientFullVOs,
+			AggDeclarationVO[] originBills) throws BusinessException {
+		for (int i = 0; clientFullVOs != null && i < clientFullVOs.length; i++) {
+			clientFullVOs[i].getParentVO().setStatus(VOStatus.UPDATED);
+		}
+		AceTwhr_declarationUnApproveBP bp = new AceTwhr_declarationUnApproveBP();
+		AggDeclarationVO[] retvos = bp.unApprove(clientFullVOs, originBills);
+		return retvos;
+	}
+
+}

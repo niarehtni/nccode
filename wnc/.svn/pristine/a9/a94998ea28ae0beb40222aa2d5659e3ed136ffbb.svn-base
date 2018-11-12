@@ -1,0 +1,52 @@
+package nc.pubimpl.ta.overtime;
+
+import java.util.Map;
+
+import nc.pubitf.ta.overtime.ISegRuleService;
+import nc.vo.pub.BusinessException;
+import nc.vo.pub.lang.UFDouble;
+import nc.vo.pub.lang.UFLiteralDate;
+import nc.vo.ta.overtime.AggSegRuleVO;
+
+public class SegRuleServiceImpl implements ISegRuleService {
+
+	@Override
+	public Map<String, Map<UFLiteralDate, AggSegRuleVO>> querySegRulesByPsn(
+			UFLiteralDate[] otDates, String[] pk_psndocs)
+			throws BusinessException {
+		// TODO 自動產生的方法 Stub
+		return null;
+	}
+
+	@Override
+	public Map<String, Map<UFLiteralDate, AggSegRuleVO>> querySegRulesByPsn(
+			String cyear, String cperiod, String[] pk_psndocs)
+			throws BusinessException {
+		// TODO 自動產生的方法 Stub
+		return null;
+	}
+
+	@Override
+	public Map<String, Map<UFLiteralDate, UFDouble>> sumOvertimeFeeByPsnDate(
+			Map<String, Map<UFLiteralDate, UFDouble>> psnDailyPays,
+			boolean includeOT2Holiday) throws BusinessException {
+		// TODO 自動產生的方法 Stub
+		return null;
+	}
+
+	@Override
+	public Map<String, UFDouble> sumAdditionalHolidayes(
+			UFLiteralDate startDate, UFLiteralDate endDate, String[] pk_psndocs)
+			throws BusinessException {
+		// TODO 自動產生的方法 Stub
+		return null;
+	}
+
+	@Override
+	public Map<String, UFDouble> sumAdditionalHolidayes(String cyear,
+			String cperiod, String[] pk_psndocs) throws BusinessException {
+		// TODO 自動產生的方法 Stub
+		return null;
+	}
+
+}

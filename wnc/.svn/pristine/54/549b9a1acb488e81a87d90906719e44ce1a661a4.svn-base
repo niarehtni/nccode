@@ -1,0 +1,92 @@
+package nc.ui.ta.calendar.pub;
+
+import java.awt.Color;
+
+import nc.bs.framework.common.NCLocator;
+import nc.itf.uap.IUAPQueryBS;
+import nc.jdbc.framework.SQLParameter;
+import nc.jdbc.framework.processor.ColumnProcessor;
+import nc.ui.ta.pub.IColorConst;
+import nc.vo.bd.holiday.HolidayVO;
+import nc.vo.pub.BusinessException;
+import nc.vo.ta.psncalendar.PsnJobCalendarVO;
+import nc.vo.ta.teamcalendar.TeamInfoCalendarVO;
+
+public class CalendarColorUtils {
+
+	/**
+	 * 取得某人某一天的单元格的颜色信息
+	 * @return
+	 */
+	public static Color getDateColor(String date,PsnJobCalendarVO jobCalendarVO){
+		if(!jobCalendarVO.isEffectiveDate(date)){//如果是无考勤档案的日期
+			return IColorConst.COLOR_NONTBMPSNDOC;
+		}
+		Integer dateType = jobCalendarVO.getDayTypeMap().get(date);
+		//按照日期查询相对应的datetype
+		String sql = "select date_daytype from tbm_psncalendar where calendar='" + date + "' and pk_psndoc ='"
+			+ jobCalendarVO.getPk_psndoc() +"'";
+		IUAPQueryBS ser = NCLocator.getInstance().lookup(IUAPQueryBS.class);
+		try {
+			if(ser.executeQuery(sql, new ColumnProcessor())!=null){
+				Integer init = (Integer) ser.executeQuery(sql, new ColumnProcessor());
+				dateType = init;
+			}
+		} catch (BusinessException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		if(dateType==null||dateType==HolidayVO.DAY_TYPE_WORKDAY){
+			return nc.ui.bd.holiday.IColorConst.COLOR_WORKDAY;
+		}
+		if(dateType==HolidayVO.DAY_TYPE_NONWORKDAY){
+			return nc.ui.bd.holiday.IColorConst.COLOR_NONWORKDAY;
+		}
+		if(dateType==HolidayVO.DAY_TYPE_HOLIDAY){
+			return nc.ui.bd.holiday.IColorConst.COLOR_HOLIDAY;
+		}
+		if(dateType==4){
+			return Color.RED;
+		}
+		return null;
+	} 
+	
+	/**
+	 * 取得某班组某一天的单元格的颜色信息
+	 * @return
+	 */
+	public static Color getDateColor(String date,TeamInfoCalendarVO teamCalendarVO){
+		
+		String sql = "select day_daytype from bd_teamcalendar where pk_team = ? and calendar = ?" ;
+		SQLParameter parm = new SQLParameter();
+		parm.addParam(teamCalendarVO.getCteamid());
+		parm.addParam(date);
+		IUAPQueryBS ser = NCLocator.getInstance().lookup(IUAPQueryBS.class);
+		Integer dateType = teamCalendarVO.getDayTypeMap().get(date);
+		try {
+			if(ser.executeQuery(sql,parm, new ColumnProcessor())!=null){
+				Integer init = (Integer) ser.executeQuery(sql,parm, new ColumnProcessor());
+				dateType = init;
+			}
+		} catch (BusinessException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		if(dateType==null || HolidayVO.DAY_TYPE_WORKDAY==dateType.intValue()){ //工作日
+			return nc.ui.bd.holiday.IColorConst.COLOR_WORKDAY;
+		}
+		if(dateType==HolidayVO.DAY_TYPE_NONWORKDAY){//公休
+			return nc.ui.bd.holiday.IColorConst.COLOR_NONWORKDAY;
+		}
+		if(dateType==HolidayVO.DAY_TYPE_HOLIDAY){//假日
+			return nc.ui.bd.holiday.IColorConst.COLOR_HOLIDAY;
+		}
+		if(dateType==HolidayVO.DAY_TYPE_HOLIDAY_NOTALL){//非全员假日
+			return nc.ui.bd.holiday.IColorConst.COLOR_NOTALLHOLIDAY;
+		}
+		if(dateType==4){
+			return Color.RED;
+		}
+		return null;
+	}
+}

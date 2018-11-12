@@ -1,0 +1,1 @@
+UPDATE  md_property set datatype = 'BS000010000100001039' where id='ee173ca8-b7ab-43ff-a7ce-c51a3e4ec751' or id = 'fe133997-8c74-414a-8d43-e1d76a7fc0c0';

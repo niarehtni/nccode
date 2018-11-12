@@ -1,0 +1,275 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE beans PUBLIC "-//SPRING//DTD BEAN//EN" "http://www.springframework.org/dtd/spring-beans.dtd">
+
+<beans>
+	<!-- 环境变量-->
+	<bean id="context" class="nc.vo.uif2.LoginContext">
+	</bean>
+	<!--
+		模型部分配置###########################################################
+	-->
+
+	<!-- 应用服务类，负责进行模型操作的处理 -->
+	<bean id="modelService" class="nc.ui.hr.uif2.model.HrDefaultAppModelService">
+			<property name="beanId" value="3834dbf1-a7ff-4300-aa16-b6db0255068b" />
+	</bean>
+
+	<!-- 对象转换器工厂，由此获取操作对象的特征信息 。模型属性之一-->
+	<bean id="boadatorfactory" class="nc.vo.bd.meta.BDObjectAdpaterFactory" />
+
+	<!-- 应用模型 -->
+
+	<bean id="billModel" class="nc.ui.uif2.model.BillManageModel">
+		<property name="service">
+			<ref bean="modelService" />
+		</property>
+		<property name="businessObjectAdapterFactory" ref="boadatorfactory" />
+		<property name="context">
+			<ref bean="context" />
+		</property>
+	</bean>
+
+		<!-- 管理应用模型 -->
+	<bean id="modelDataManager" class="nc.ui.hr.uif2.model.HrDefaultModelDataManager">
+		<property name="model" ref="billModel"></property>
+		<property name="service" ref="modelService"></property>
+	    <property name="queryDelegater" ref="modelService" />
+		<property name="context" ref="context"></property>
+	</bean>
+
+	<!-- 界面元素 ###########################################################-->
+
+	<!-- 模板容器 -->
+	<bean id="templateContainer" class="nc.ui.uif2.editor.TemplateContainer"
+		init-method="load">
+		<property name="context" ref="context" />
+		<property name="nodeKeies">
+			<list>
+				<value>othersou</value>
+			</list>
+		</property>
+	</bean>
+
+
+	<!--树控件，如果进行管理，需要实现接口IComponentWithActions存储动作-->
+
+	<!-- 列表视图 -->
+	<bean id="listView" class="nc.ui.hr.uif2.view.HrBillListView"
+		init-method="initUI">
+		<property name="nodekey"><value>othersou</value></property>
+		<property name="pos"><value>head</value></property>
+		<property name="model" ref="billModel"></property>
+		<property name="multiSelectionEnable">
+			<value>false</value>
+		</property>
+		<property name="templateContainer" ref="templateContainer"></property>
+	</bean>
+
+	<!--卡控件-->
+	<bean id="billForm" class="nc.ui.hr.uif2.view.HrBillFormEditor"
+		init-method="initUI">
+		<property name="model" ref="billModel"></property>
+		<property name="pos"><value>head</value></property>
+		<property name="nodekey"><value>othersou</value></property>
+		<property name="templateContainer" ref="templateContainer"></property>
+
+	</bean>
+
+	<bean id="cardEditorActions" class="nc.ui.uif2.actions.StandAloneToftPanelActionContainer">
+		<constructor-arg>
+			<ref bean="billForm" />
+		</constructor-arg>
+		<property name="actions">
+			<list>
+				<ref bean="AddAction" />
+				<ref bean="EditAction" />
+				<ref bean="DelAction" />
+				<ref bean="nullaction" />
+				<ref bean="RefreshAction" />
+
+			</list>
+		</property>
+		<property name="editActions">
+			<list>
+				<ref bean="SaveAction" />
+				<ref bean="nullaction" />
+				<ref bean="CancelAction" />
+			</list>
+		</property>
+		<property name="model" ref="billModel" />
+	</bean>
+
+	<bean id="listViewActions" class="nc.ui.uif2.actions.StandAloneToftPanelActionContainer">
+		<constructor-arg>
+			<ref bean="listView" />
+		</constructor-arg>
+		<property name="actions">
+			<list>
+				<ref bean="AddAction" />
+				<ref bean="EditAction" />
+				<ref bean="DelAction" />
+				<ref bean="nullaction" />
+				<ref bean="RefreshAction" />
+
+			</list>
+		</property>
+	</bean>
+	<!--按钮容器-->
+	<bean id="toftpanelActionContributors" class="nc.ui.uif2.actions.ActionContributors">
+		<property name="contributors">
+			<list>
+				<ref bean="listViewActions" />
+				<ref bean="cardEditorActions" />
+			</list>
+		</property>
+	</bean>
+
+	<!--异常关闭处理-->
+	<bean id="ClosingListener" class="nc.ui.uif2.FunNodeClosingHandler">
+		<property name="model" ref="billModel" />
+		<property name="saveaction" ref="SaveAction" />
+		<property name="cancelaction" ref="CancelAction" />
+	</bean>
+
+
+	<!--
+		Actions ###########################################################
+	-->
+	<bean id="AddAction" class="nc.ui.hr.uif2.action.AddAction">
+		<property name="model" ref="billModel"></property>
+	</bean>
+	<bean id="EditAction" class="nc.ui.hr.uif2.action.EditAction">
+		<property name="model" ref="billModel"></property>
+	</bean>
+	<bean id="DelAction" class="nc.ui.hr.uif2.action.DeleteAction">
+		<property name="model" ref="billModel" />
+		<property name="exceptionHandler" ref="exceptionHandler" />	
+		<property name="validationService" ref="billNotNullValidator"></property>
+	</bean>
+
+	<bean id="SaveAction" class="nc.ui.hr.uif2.action.SaveAction">
+		<property name="model" ref="billModel" />
+		<property name="editor" ref="billForm" />
+		<property name="validationService" ref="billNotNullValidator"></property>
+	</bean>
+
+	<bean id="billNotNullValidator" class="nc.ui.hr.uif2.validator.BillNotNullValidateService">
+		<constructor-arg ref="billForm">
+		</constructor-arg>
+		<property name="nextValidateService" ref="saveValidator" />
+	</bean>
+	
+	<bean id="saveValidator" class="nc.ui.wa.othersource.action.SaveValidatorService"/>
+	
+	
+	<bean id="CancelAction" class="nc.ui.hr.uif2.action.CancelAction">
+		<property name="model" ref="billModel" />
+	</bean>
+	<bean id="RefreshAction" class="nc.ui.hr.uif2.action.RefreshAction">
+		<property name="model" ref="billModel" />
+		<property name="dataManager" ref="modelDataManager"></property>
+		<property name="formEditor" ref="billForm"></property>		
+	</bean>
+
+
+	<bean id="nullaction" class="nc.funcnode.ui.action.SeparatorAction" />
+
+	
+
+
+
+
+	<bean id="preLineAction" class="nc.ui.uif2.actions.PreLineAction">
+		<property name="model" ref="billModel"></property>
+	</bean>
+	<bean id="nextLineAction" class="nc.ui.uif2.actions.NextLineAction">
+		<property name="model" ref="billModel"></property>
+	</bean>
+	<bean id="firstLineAction" class="nc.ui.uif2.actions.FirstLineAction">
+		<property name="model" ref="billModel"></property>
+	</bean>
+	<bean id="lastLineAction" class="nc.ui.uif2.actions.LastLineAction">
+		<property name="model" ref="billModel"></property>
+	</bean>
+	<!-- 返回按钮 -->
+	<bean id="editorReturnAction" class="nc.ui.uif2.actions.ShowMeUpAction">
+		<property name="goComponent" ref="listView" />
+	</bean>
+
+
+	<bean id="exceptionHandler" class="nc.ui.wa.pub.action.DelExceptionHanler">
+		<property name="context">
+			<ref bean="context" />
+		</property>
+	</bean>
+
+	<!-- 界面零件 -->
+	<!-- 卡片工具栏 -->
+	<bean id="editorToolBarPanel" class="nc.ui.uif2.tangramlayout.CardLayoutToolbarPanel">
+		<property name="model" ref="billModel" />
+		<property name="titleAction" ref="editorReturnAction" />
+		<property name="actions">
+			<list>
+				<ref bean="firstLineAction" />
+				<ref bean="preLineAction" />
+				<ref bean="nextLineAction" />
+				<ref bean="lastLineAction" />
+			</list>
+		</property>
+	</bean>
+	<bean id="orgpanel" class="nc.ui.hr.uif2.view.PrimaryOrgPanel"
+		init-method="initUI">
+		<property name="model" ref="billModel" />
+		<property name="dataManager" ref="modelDataManager" />
+		<property name="pk_orgtype" value="HRORGTYPE00000000000" />
+	</bean>
+	<bean id="container" class="nc.ui.uif2.TangramContainer"
+		init-method="initUI">
+		<property name="tangramLayoutRoot">
+			<bean class="nc.ui.uif2.tangramlayout.node.TBNode">
+				<property name="showMode" value="CardLayout" />
+				<property name="tabs">
+					<list>
+						<bean class="nc.ui.uif2.tangramlayout.node.VSNode">
+							<property name="showMode" value="NoDivider" />
+							<property name="up">
+								<bean class="nc.ui.uif2.tangramlayout.node.CNode">
+									<property name="component" ref="orgpanel" />
+								</bean>
+							</property>
+							<property name="down">
+								<bean class="nc.ui.uif2.tangramlayout.node.CNode">
+									<property name="component" ref="listView" />
+								</bean>
+							</property>
+							<property name="dividerLocation" value="30f" />
+						</bean>
+						<bean class="nc.ui.uif2.tangramlayout.node.VSNode">
+							<property name="showMode" value="NoDivider" />
+							<property name="up">
+								<bean class="nc.ui.uif2.tangramlayout.node.CNode">
+									<property name="component" ref="editorToolBarPanel" />
+								</bean>
+							</property>
+							<property name="down">
+								<bean class="nc.ui.uif2.tangramlayout.node.CNode">
+									<property name="component" ref="billForm" />
+								</bean>
+							</property>
+							<property name="dividerLocation" value="26f" />
+						</bean>
+					</list>
+				</property>
+			</bean>
+		</property>
+
+	</bean>
+	<!-- 超链接  -->
+	  <bean id="mouseClickShowPanelMediator" class="nc.ui.hr.uif2.mediator.HyperLinkClickMediator">
+		<property name="model" ref="billModel"/>
+		<property name="showUpComponent" ref="billForm"/>
+		<property name="hyperLinkColumn" value="code"/>
+	  </bean>
+
+</beans>

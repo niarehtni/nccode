@@ -1,0 +1,159 @@
+
+
+--TWHR_BASEDOC表的删除语句
+delete  TWHR_BASEDOC WHERE TS  LIKE '%2018-09-20%' AND NAME IS NOT NULL;
+--TWHR_BASEDOCnull
+
+
+
+Insert into TWHR_BASEDOC
+(def1,name,name2,name3,name4,name5,name6,def2,def3,def4,def5,def6,def7,def8,def9,def10,def11,def12,def13,def14,def15,def16,def17,def18,def19,def20,pk_group,pk_org,pk_org_v,creator,creationtime,modifier,modifiedtime,id,doccategory,code,doctype,numbervalue,waitemvalue,ts,dr)
+Values(null,'免稅額(標準)','免稅額(標準)',null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,'0001A1100000000005F5','0001A1100000000005F5','~','~',null,'~',null,'1001ZZ1000000000K96J',4,'TWSP0001',1,88000.00000000,'~','2018-09-20 16:25:53',0);
+
+Insert into TWHR_BASEDOC
+(def1,name,name2,name3,name4,name5,name6,def2,def3,def4,def5,def6,def7,def8,def9,def10,def11,def12,def13,def14,def15,def16,def17,def18,def19,def20,pk_group,pk_org,pk_org_v,creator,creationtime,modifier,modifiedtime,id,doccategory,code,doctype,numbervalue,waitemvalue,ts,dr)
+Values(null,'免稅額(年滿70歲)','免稅額(年滿70歲)',null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,'0001A1100000000005F5','0001A1100000000005F5','~','~',null,'~',null,'1001ZZ1000000000K96K',4,'TWSP0002',1,132000.00000000,'~','2018-09-20 16:27:39',0);
+
+Insert into TWHR_BASEDOC
+(def1,name,name2,name3,name4,name5,name6,def2,def3,def4,def5,def6,def7,def8,def9,def10,def11,def12,def13,def14,def15,def16,def17,def18,def19,def20,pk_group,pk_org,pk_org_v,creator,creationtime,modifier,modifiedtime,id,doccategory,code,doctype,numbervalue,waitemvalue,ts,dr)
+Values(null,'扣除額(單身)','扣除額(單身)',null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,'0001A1100000000005F5','0001A1100000000005F5','~','~',null,'~',null,'1001ZZ1000000000K96L',4,'TWSP0003',1,120000.00000000,'~','2018-09-20 16:29:14',0);
+
+Insert into TWHR_BASEDOC
+(def1,name,name2,name3,name4,name5,name6,def2,def3,def4,def5,def6,def7,def8,def9,def10,def11,def12,def13,def14,def15,def16,def17,def18,def19,def20,pk_group,pk_org,pk_org_v,creator,creationtime,modifier,modifiedtime,id,doccategory,code,doctype,numbervalue,waitemvalue,ts,dr)
+Values(null,'扣除額(夫妻合併)','扣除額(夫妻合併)',null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,'0001A1100000000005F5','0001A1100000000005F5','~','~',null,'~',null,'1001ZZ1000000000K96M',4,'TWSP0004',1,240000.00000000,'~','2018-09-20 16:29:14',0);
+
+Insert into TWHR_BASEDOC
+(def1,name,name2,name3,name4,name5,name6,def2,def3,def4,def5,def6,def7,def8,def9,def10,def11,def12,def13,def14,def15,def16,def17,def18,def19,def20,pk_group,pk_org,pk_org_v,creator,creationtime,modifier,modifiedtime,id,doccategory,code,doctype,numbervalue,waitemvalue,ts,dr)
+Values(null,'特別扣除額(薪資所得，每人)','特別扣除額(薪資所得，每人)',null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,'0001A1100000000005F5','0001A1100000000005F5','~','~',null,'~',null,'1001ZZ1000000000K96N',4,'TWSP0005',1,200000.00000000,'~','2018-09-20 16:30:09',0);
+
+Insert into TWHR_BASEDOC
+(def1,name,name2,name3,name4,name5,name6,def2,def3,def4,def5,def6,def7,def8,def9,def10,def11,def12,def13,def14,def15,def16,def17,def18,def19,def20,pk_group,pk_org,pk_org_v,creator,creationtime,modifier,modifiedtime,id,doccategory,code,doctype,numbervalue,waitemvalue,ts,dr)
+Values(null,'特別扣除額(儲蓄投資，每戶)','特別扣除額(儲蓄投資，每戶)',null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,'0001A1100000000005F5','0001A1100000000005F5','~','~',null,'~',null,'1001ZZ1000000000K96P',4,'TWSP0006',1,270000.00000000,'~','2018-09-20 16:31:23',0);
+
+Insert into TWHR_BASEDOC
+(def1,name,name2,name3,name4,name5,name6,def2,def3,def4,def5,def6,def7,def8,def9,def10,def11,def12,def13,def14,def15,def16,def17,def18,def19,def20,pk_group,pk_org,pk_org_v,creator,creationtime,modifier,modifiedtime,id,doccategory,code,doctype,numbervalue,waitemvalue,ts,dr)
+Values(null,'特別扣除額(身心障礙，每人)','特別扣除額(身心障礙，每人)',null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,'0001A1100000000005F5','0001A1100000000005F5','~','~',null,'~',null,'1001ZZ1000000000K96Q',4,'TWSP0007',1,200000.00000000,'~','2018-09-20 16:32:06',0);
+
+Insert into TWHR_BASEDOC
+(def1,name,name2,name3,name4,name5,name6,def2,def3,def4,def5,def6,def7,def8,def9,def10,def11,def12,def13,def14,def15,def16,def17,def18,def19,def20,pk_group,pk_org,pk_org_v,creator,creationtime,modifier,modifiedtime,id,doccategory,code,doctype,numbervalue,waitemvalue,ts,dr)
+Values(null,'代扣所得最小給付金額','代扣所得最小給付金額',null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,'0001A1100000000005F5','0001A1100000000005F5','~','~',null,'~',null,'1001ZZ1000000000K96R',4,'TWSP0008',1,84501.00000000,'~','2018-09-20 16:32:47',0);
+
+Insert into TWHR_BASEDOC
+(def1,name,name2,name3,name4,name5,name6,def2,def3,def4,def5,def6,def7,def8,def9,def10,def11,def12,def13,def14,def15,def16,def17,def18,def19,def20,pk_group,pk_org,pk_org_v,creator,creationtime,modifier,modifiedtime,id,doccategory,code,doctype,numbervalue,waitemvalue,ts,dr)
+Values(null,'基本工資(月)','基本工資(月)',null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,'0001A1100000000005F5','0001A1100000000005F5','~','~',null,'~',null,'1001ZZ1000000000K96S',4,'TWSP0009',1,22000.00000000,'~','2018-09-20 16:33:36',0);
+
+Insert into TWHR_BASEDOC
+(def1,name,name2,name3,name4,name5,name6,def2,def3,def4,def5,def6,def7,def8,def9,def10,def11,def12,def13,def14,def15,def16,def17,def18,def19,def20,pk_group,pk_org,pk_org_v,creator,creationtime,modifier,modifiedtime,id,doccategory,code,doctype,numbervalue,waitemvalue,ts,dr)
+Values(null,'外籍勞工扣稅基本工資倍數','外籍勞工扣稅基本工資倍數',null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,'0001A1100000000005F5','0001A1100000000005F5','~','~',null,'~',null,'1001ZZ1000000000K96T',4,'TWSP0010',1,1.50000000,'~','2018-09-20 16:34:25',0);
+
+Insert into TWHR_BASEDOC
+(def1,name,name2,name3,name4,name5,name6,def2,def3,def4,def5,def6,def7,def8,def9,def10,def11,def12,def13,def14,def15,def16,def17,def18,def19,def20,pk_group,pk_org,pk_org_v,creator,creationtime,modifier,modifiedtime,id,doccategory,code,doctype,numbervalue,waitemvalue,ts,dr)
+Values(null,'外籍勞工扣稅稅率','外籍勞工扣稅稅率',null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,'0001A1100000000005F5','0001A1100000000005F5','~','~',null,'~',null,'1001ZZ1000000000K96U',4,'TWSP0011',2,6.00000000,'~','2018-09-20 16:34:51',0);
+
+Insert into TWHR_BASEDOC
+(def1,name,name2,name3,name4,name5,name6,def2,def3,def4,def5,def6,def7,def8,def9,def10,def11,def12,def13,def14,def15,def16,def17,def18,def19,def20,pk_group,pk_org,pk_org_v,creator,creationtime,modifier,modifiedtime,id,doccategory,code,doctype,numbervalue,waitemvalue,ts,dr)
+Values(null,'外籍勞工超額扣稅稅率','外籍勞工超額扣稅稅率',null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,'0001A1100000000005F5','0001A1100000000005F5','~','~',null,'~',null,'1001ZZ1000000000K96V',4,'TWSP0012',2,18.00000000,'~','2018-09-20 16:36:39',0);
+
+Insert into TWHR_BASEDOC
+(def1,name,name2,name3,name4,name5,name6,def2,def3,def4,def5,def6,def7,def8,def9,def10,def11,def12,def13,def14,def15,def16,def17,def18,def19,def20,pk_group,pk_org,pk_org_v,creator,creationtime,modifier,modifiedtime,id,doccategory,code,doctype,numbervalue,waitemvalue,ts,dr)
+Values(null,'常住居民天數','常住居民天數',null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,'0001A1100000000005F5','0001A1100000000005F5','~','~',null,'~',null,'1001ZZ1000000000K96W',4,'TWSP0013',1,183.00000000,'~','2018-09-20 16:47:01',0);
+
+Insert into TWHR_BASEDOC
+(def1,name,name2,name3,name4,name5,name6,def2,def3,def4,def5,def6,def7,def8,def9,def10,def11,def12,def13,def14,def15,def16,def17,def18,def19,def20,pk_group,pk_org,pk_org_v,creator,creationtime,modifier,modifiedtime,id,doccategory,code,doctype,numbervalue,waitemvalue,ts,dr)
+Values(null,'代扣所得稅最小扣除額','代扣所得稅最小扣除額',null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,'0001A1100000000005F5','0001A1100000000005F5','~','~',null,'~',null,'1001ZZ1000000000K96X',4,'TWSP0014',1,2000.00000000,'~','2018-09-20 16:47:01',0);
+
+Insert into TWHR_BASEDOC
+(def1,name,name2,name3,name4,name5,name6,def2,def3,def4,def5,def6,def7,def8,def9,def10,def11,def12,def13,def14,def15,def16,def17,def18,def19,def20,pk_group,pk_org,pk_org_v,creator,creationtime,modifier,modifiedtime,id,doccategory,code,doctype,numbervalue,waitemvalue,ts,dr)
+Values(null,'員工福利金提撥率','員工福利金提撥率',null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,'0001A1100000000005F5','0001A1100000000005F5','~','~',null,'~',null,'1001ZZ1000000000K96Y',4,'TWLP0012',2,0.50000000,'~','2018-09-20 16:47:56',0);
+
+Insert into TWHR_BASEDOC
+(def1,name,name2,name3,name4,name5,name6,def2,def3,def4,def5,def6,def7,def8,def9,def10,def11,def12,def13,def14,def15,def16,def17,def18,def19,def20,pk_group,pk_org,pk_org_v,creator,creationtime,modifier,modifiedtime,id,doccategory,code,doctype,numbervalue,waitemvalue,ts,dr)
+Values(null,'普通事故保險費率','普通事故保險費率',null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,'0001A1100000000005F5','0001A1100000000005F5','~','~',null,'~',null,'1001ZZ1000000000K96Z',1,'TWLP0001',2,9.50000000,'~','2018-09-20 16:49:51',0);
+
+Insert into TWHR_BASEDOC
+(def1,name,name2,name3,name4,name5,name6,def2,def3,def4,def5,def6,def7,def8,def9,def10,def11,def12,def13,def14,def15,def16,def17,def18,def19,def20,pk_group,pk_org,pk_org_v,creator,creationtime,modifier,modifiedtime,id,doccategory,code,doctype,numbervalue,waitemvalue,ts,dr)
+Values(null,'普通事故保險費承擔比例(個人)','普通事故保險費承擔比例(個人)',null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,'0001A1100000000005F5','0001A1100000000005F5','~','~',null,'~',null,'1001ZZ1000000000K970',1,'TWLP0002',2,20.00000000,'~','2018-09-20 16:51:32',0);
+
+Insert into TWHR_BASEDOC
+(def1,name,name2,name3,name4,name5,name6,def2,def3,def4,def5,def6,def7,def8,def9,def10,def11,def12,def13,def14,def15,def16,def17,def18,def19,def20,pk_group,pk_org,pk_org_v,creator,creationtime,modifier,modifiedtime,id,doccategory,code,doctype,numbervalue,waitemvalue,ts,dr)
+Values(null,'普通事故保險費承擔比例(僱主)','普通事故保險費承擔比例(僱主)',null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,'0001A1100000000005F5','0001A1100000000005F5','~','~',null,'~',null,'1001ZZ1000000000K971',1,'TWLP0003',2,70.00000000,'~','2018-09-20 16:53:21',0);
+
+Insert into TWHR_BASEDOC
+(def1,name,name2,name3,name4,name5,name6,def2,def3,def4,def5,def6,def7,def8,def9,def10,def11,def12,def13,def14,def15,def16,def17,def18,def19,def20,pk_group,pk_org,pk_org_v,creator,creationtime,modifier,modifiedtime,id,doccategory,code,doctype,numbervalue,waitemvalue,ts,dr)
+Values(null,'就業保險費率','就業保險費率',null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,'0001A1100000000005F5','0001A1100000000005F5','~','~',null,'~',null,'1001ZZ1000000000K972',1,'TWLP0004',2,1.00000000,'~','2018-09-20 16:55:36',0);
+
+Insert into TWHR_BASEDOC
+(def1,name,name2,name3,name4,name5,name6,def2,def3,def4,def5,def6,def7,def8,def9,def10,def11,def12,def13,def14,def15,def16,def17,def18,def19,def20,pk_group,pk_org,pk_org_v,creator,creationtime,modifier,modifiedtime,id,doccategory,code,doctype,numbervalue,waitemvalue,ts,dr)
+Values(null,'就業保險費承擔比例(個人)','就業保險費承擔比例(個人)',null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,'0001A1100000000005F5','0001A1100000000005F5','~','~',null,'~',null,'1001ZZ1000000000K973',1,'TWLP0005',2,20.00000000,'~','2018-09-20 16:55:36',0);
+
+Insert into TWHR_BASEDOC
+(def1,name,name2,name3,name4,name5,name6,def2,def3,def4,def5,def6,def7,def8,def9,def10,def11,def12,def13,def14,def15,def16,def17,def18,def19,def20,pk_group,pk_org,pk_org_v,creator,creationtime,modifier,modifiedtime,id,doccategory,code,doctype,numbervalue,waitemvalue,ts,dr)
+Values(null,'就業保險費承擔比例(僱主)','就業保險費承擔比例(僱主)',null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,'0001A1100000000005F5','0001A1100000000005F5','~','~',null,'~',null,'1001ZZ1000000000K974',1,'TWLP0006',2,70.00000000,'~','2018-09-20 16:56:10',0);
+
+Insert into TWHR_BASEDOC
+(def1,name,name2,name3,name4,name5,name6,def2,def3,def4,def5,def6,def7,def8,def9,def10,def11,def12,def13,def14,def15,def16,def17,def18,def19,def20,pk_group,pk_org,pk_org_v,creator,creationtime,modifier,modifiedtime,id,doccategory,code,doctype,numbervalue,waitemvalue,ts,dr)
+Values(null,'職業災害保險費率(本業)','職業災害保險費率(本業)',null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,'0001A1100000000005F5','0001A1100000000005F5','~','~',null,'~',null,'1001ZZ1000000000K975',1,'TWLP0007',2,0.10000000,'~','2018-09-20 16:56:51',0);
+
+Insert into TWHR_BASEDOC
+(def1,name,name2,name3,name4,name5,name6,def2,def3,def4,def5,def6,def7,def8,def9,def10,def11,def12,def13,def14,def15,def16,def17,def18,def19,def20,pk_group,pk_org,pk_org_v,creator,creationtime,modifier,modifiedtime,id,doccategory,code,doctype,numbervalue,waitemvalue,ts,dr)
+Values(null,'職業災害保險費承擔比例(個人)','職業災害保險費承擔比例(個人)',null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,'0001A1100000000005F5','0001A1100000000005F5','~','~',null,'~',null,'1001ZZ1000000000K976',1,'TWLP0008',2,0E-8,'~','2018-09-20 16:57:32',0);
+
+Insert into TWHR_BASEDOC
+(def1,name,name2,name3,name4,name5,name6,def2,def3,def4,def5,def6,def7,def8,def9,def10,def11,def12,def13,def14,def15,def16,def17,def18,def19,def20,pk_group,pk_org,pk_org_v,creator,creationtime,modifier,modifiedtime,id,doccategory,code,doctype,numbervalue,waitemvalue,ts,dr)
+Values(null,'職業災害保險費承擔比例(僱主)','職業災害保險費承擔比例(僱主)',null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,'0001A1100000000005F5','0001A1100000000005F5','~','~',null,'~',null,'1001ZZ1000000000K977',1,'TWLP0009',2,100.00000000,'~','2018-09-20 16:58:01',0);
+
+Insert into TWHR_BASEDOC
+(def1,name,name2,name3,name4,name5,name6,def2,def3,def4,def5,def6,def7,def8,def9,def10,def11,def12,def13,def14,def15,def16,def17,def18,def19,def20,pk_group,pk_org,pk_org_v,creator,creationtime,modifier,modifiedtime,id,doccategory,code,doctype,numbervalue,waitemvalue,ts,dr)
+Values(null,'勞保政府補助比例','勞保政府補助比例',null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,'0001A1100000000005F5','0001A1100000000005F5','~','~',null,'~',null,'1001ZZ1000000000K978',1,'TWLP0010',2,10.00000000,'~','2018-09-20 16:58:32',0);
+
+Insert into TWHR_BASEDOC
+(def1,name,name2,name3,name4,name5,name6,def2,def3,def4,def5,def6,def7,def8,def9,def10,def11,def12,def13,def14,def15,def16,def17,def18,def19,def20,pk_group,pk_org,pk_org_v,creator,creationtime,modifier,modifiedtime,id,doccategory,code,doctype,numbervalue,waitemvalue,ts,dr)
+Values(null,'勞退金僱主提繳率','勞退金僱主提繳率',null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,'0001A1100000000005F5','0001A1100000000005F5','~','~',null,'~',null,'1001ZZ1000000000K979',1,'TWLP0011',2,6.00000000,'~','2018-09-20 16:58:59',0);
+
+Insert into TWHR_BASEDOC
+(def1,name,name2,name3,name4,name5,name6,def2,def3,def4,def5,def6,def7,def8,def9,def10,def11,def12,def13,def14,def15,def16,def17,def18,def19,def20,pk_group,pk_org,pk_org_v,creator,creationtime,modifier,modifiedtime,id,doccategory,code,doctype,numbervalue,waitemvalue,ts,dr)
+Values(null,'積欠工資墊償費率','積欠工資墊償費率',null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,'0001A1100000000005F5','0001A1100000000005F5','~','~',null,'~',null,'1001ZZ1000000000K97A',1,'TWLP0013',2,0.02500000,'~','2018-09-20 16:59:58',0);
+
+Insert into TWHR_BASEDOC
+(def1,name,name2,name3,name4,name5,name6,def2,def3,def4,def5,def6,def7,def8,def9,def10,def11,def12,def13,def14,def15,def16,def17,def18,def19,def20,pk_group,pk_org,pk_org_v,creator,creationtime,modifier,modifiedtime,id,doccategory,code,doctype,numbervalue,waitemvalue,ts,dr)
+Values(null,'勞保投保薪資上限','勞保投保薪資上限',null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,'0001A1100000000005F5','0001A1100000000005F5','~','~',null,'~',null,'1001ZZ1000000000K97B',1,'TWLP0014',1,45800.00000000,'~','2018-09-20 17:10:53',0);
+
+Insert into TWHR_BASEDOC
+(def1,name,name2,name3,name4,name5,name6,def2,def3,def4,def5,def6,def7,def8,def9,def10,def11,def12,def13,def14,def15,def16,def17,def18,def19,def20,pk_group,pk_org,pk_org_v,creator,creationtime,modifier,modifiedtime,id,doccategory,code,doctype,numbervalue,waitemvalue,ts,dr)
+Values(null,'勞退金提繳薪資上限','勞退金提繳薪資上限',null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,'0001A1100000000005F5','0001A1100000000005F5','~','~',null,'~',null,'1001ZZ1000000000K97C',1,'TWLP0015',1,150000.00000000,'~','2018-09-20 17:11:19',0);
+
+Insert into TWHR_BASEDOC
+(def1,name,name2,name3,name4,name5,name6,def2,def3,def4,def5,def6,def7,def8,def9,def10,def11,def12,def13,def14,def15,def16,def17,def18,def19,def20,pk_group,pk_org,pk_org_v,creator,creationtime,modifier,modifiedtime,id,doccategory,code,doctype,numbervalue,waitemvalue,ts,dr)
+Values(null,'員工最高勞退自提比例','員工最高勞退自提比例',null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,'0001A1100000000005F5','0001A1100000000005F5','~','~',null,'~',null,'1001ZZ1000000000K9XV',1,'TWLP0017',2,6.00000000,'~','2018-09-20 19:45:19',0);
+
+Insert into TWHR_BASEDOC
+(def1,name,name2,name3,name4,name5,name6,def2,def3,def4,def5,def6,def7,def8,def9,def10,def11,def12,def13,def14,def15,def16,def17,def18,def19,def20,pk_group,pk_org,pk_org_v,creator,creationtime,modifier,modifiedtime,id,doccategory,code,doctype,numbervalue,waitemvalue,ts,dr)
+Values(null,'健保投保薪資上限','健保投保薪資上限',null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,'0001A1100000000005F5','0001A1100000000005F5','~','~',null,'~',null,'1001ZZ1000000000K9XW',2,'TWLP0016',1,182000.00000000,'~','2018-09-20 19:45:47',0);
+
+Insert into TWHR_BASEDOC
+(def1,name,name2,name3,name4,name5,name6,def2,def3,def4,def5,def6,def7,def8,def9,def10,def11,def12,def13,def14,def15,def16,def17,def18,def19,def20,pk_group,pk_org,pk_org_v,creator,creationtime,modifier,modifiedtime,id,doccategory,code,doctype,numbervalue,waitemvalue,ts,dr)
+Values(null,'普通健保費率','普通健保費率',null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,'0001A1100000000005F5','0001A1100000000005F5','~','~',null,'~',null,'1001ZZ1000000000K9XX',2,'TWNP0001',2,4.69000000,'~','2018-09-20 19:46:33',0);
+
+Insert into TWHR_BASEDOC
+(def1,name,name2,name3,name4,name5,name6,def2,def3,def4,def5,def6,def7,def8,def9,def10,def11,def12,def13,def14,def15,def16,def17,def18,def19,def20,pk_group,pk_org,pk_org_v,creator,creationtime,modifier,modifiedtime,id,doccategory,code,doctype,numbervalue,waitemvalue,ts,dr)
+Values(null,'普通健保承擔比例(個人)','普通健保承擔比例(個人)',null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,'0001A1100000000005F5','0001A1100000000005F5','~','~',null,'~',null,'1001ZZ1000000000K9XY',2,'TWNP0002',2,30.00000000,'~','2018-09-20 19:47:28',0);
+
+Insert into TWHR_BASEDOC
+(def1,name,name2,name3,name4,name5,name6,def2,def3,def4,def5,def6,def7,def8,def9,def10,def11,def12,def13,def14,def15,def16,def17,def18,def19,def20,pk_group,pk_org,pk_org_v,creator,creationtime,modifier,modifiedtime,id,doccategory,code,doctype,numbervalue,waitemvalue,ts,dr)
+Values(null,'普通健保承擔比例(雇主)','普通健保承擔比例(雇主)',null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,'0001A1100000000005F5','0001A1100000000005F5','~','~',null,'~',null,'1001ZZ1000000000K9XZ',2,'TWNP0003',2,60.00000000,'~','2018-09-20 19:47:28',0);
+
+Insert into TWHR_BASEDOC
+(def1,name,name2,name3,name4,name5,name6,def2,def3,def4,def5,def6,def7,def8,def9,def10,def11,def12,def13,def14,def15,def16,def17,def18,def19,def20,pk_group,pk_org,pk_org_v,creator,creationtime,modifier,modifiedtime,id,doccategory,code,doctype,numbervalue,waitemvalue,ts,dr)
+Values(null,'平均眷屬人數','平均眷屬人數',null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,'0001A1100000000005F5','0001A1100000000005F5','~','~',null,'~',null,'1001ZZ1000000000K9Y0',2,'TWNP0004',1,1.61000000,'~','2018-09-20 19:48:19',0);
+
+Insert into TWHR_BASEDOC
+(def1,name,name2,name3,name4,name5,name6,def2,def3,def4,def5,def6,def7,def8,def9,def10,def11,def12,def13,def14,def15,def16,def17,def18,def19,def20,pk_group,pk_org,pk_org_v,creator,creationtime,modifier,modifiedtime,id,doccategory,code,doctype,numbervalue,waitemvalue,ts,dr)
+Values(null,'補充保險費率(個人)','補充保險費率(個人)',null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,'0001A1100000000005F5','0001A1100000000005F5','~','~',null,'~',null,'1001ZZ1000000000K9Y1',3,'TWEP0001',2,1.91000000,'~','2018-09-20 19:48:55',0);
+
+Insert into TWHR_BASEDOC
+(def1,name,name2,name3,name4,name5,name6,def2,def3,def4,def5,def6,def7,def8,def9,def10,def11,def12,def13,def14,def15,def16,def17,def18,def19,def20,pk_group,pk_org,pk_org_v,creator,creationtime,modifier,modifiedtime,id,doccategory,code,doctype,numbervalue,waitemvalue,ts,dr)
+Values(null,'補充保險費率(雇主)','補充保險費率(雇主)',null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,'0001A1100000000005F5','0001A1100000000005F5','~','~',null,'~',null,'1001ZZ1000000000K9Y2',3,'TWEP0002',2,1.91000000,'~','2018-09-20 19:49:15',0);
+
+Insert into TWHR_BASEDOC
+(def1,name,name2,name3,name4,name5,name6,def2,def3,def4,def5,def6,def7,def8,def9,def10,def11,def12,def13,def14,def15,def16,def17,def18,def19,def20,pk_group,pk_org,pk_org_v,creator,creationtime,modifier,modifiedtime,id,doccategory,code,doctype,numbervalue,waitemvalue,ts,dr)
+Values(null,'補充保費扣費項目','補充保費扣費項目',null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,'0001A1100000000005F5','0001A1100000000005F5','~','~',null,'~',null,'1001ZZ1000000000K9Y3',3,'TWEP0000',3,null,'~','2018-09-20 19:50:26',0);

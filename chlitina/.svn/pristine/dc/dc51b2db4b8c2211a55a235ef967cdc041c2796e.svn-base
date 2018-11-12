@@ -1,0 +1,2 @@
+insert into md_table(createtime,creator,databaseid,description,displayname,dr,fromsourcebmf,help,id,industry,isactive,isextendtable,modifier,modifytime,name,parenttable,resid,resmodule,ts,versiontype) values( '2017-08-12 13:33:32','YONYOU NC',null,null,'团保投保设定',0,'Y',null,'twhr_groupinsurancesetting','0',null,null,'YONYOU NC','2018-09-17 12:30:55','twhr_groupinsurancesetting',null,'2_GROUPINS-0010','groupinsurance','2018-09-17 13:23:17',0)
+/

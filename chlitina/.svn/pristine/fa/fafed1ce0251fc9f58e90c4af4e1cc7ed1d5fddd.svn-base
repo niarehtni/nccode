@@ -1,0 +1,9 @@
+package nc.pubitf.ta.overtime;
+
+import java.util.Map;
+
+import nc.vo.pub.lang.UFDouble;
+
+public interface ICreateMonthCacuTable {
+	public void createtableandinsert(Map<String, UFDouble> psndocandcount);
+}

@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wsdl:definitions
+xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+xmlns:wsaw="http://www.w3.org/2006/05/addressing/wsdl"
+xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+xmlns:jaxb="http://java.sun.com/xml/ns/jaxb"
+xmlns:jaxws="http://java.sun.com/xml/ns/jaxws"
+jaxb:version="2.0"
+xmlns:ns0="http://peacebird.webservice.pub.nc/IWSPeaceBird"
+targetNamespace="http://peacebird.webservice.pub.nc/IWSPeaceBird">
+
+<jaxws:bindings>
+	<jaxws:package name="nc.pub.webservice.peacebird"/>
+</jaxws:bindings>
+
+<wsdl:types>
+   <xsd:schema xmlns:ns="http://peacebird.webservice.pub.nc/IWSPeaceBird"
+			attributeFormDefault="unqualified"
+			elementFormDefault="unqualified"
+			targetNamespace="http://peacebird.webservice.pub.nc/IWSPeaceBird" jaxb:version="2.0">
+	<xsd:annotation>
+    	<xsd:appinfo>
+   			<jaxb:schemaBindings>
+    			<jaxb:package name="nc.pub.webservice.peacebird"/>
+    		</jaxb:schemaBindings>
+   		</xsd:appinfo>
+   	</xsd:annotation>
+	<xsd:element name="impSalary">
+         <xsd:complexType>
+            <xsd:sequence>
+				<xsd:element name="string"  minOccurs="0" nillable="true" type="xsd:string"/>
+             </xsd:sequence>  
+         </xsd:complexType>
+     </xsd:element>
+	<xsd:element name="impSalaryResponse">
+         <xsd:complexType>
+            <xsd:sequence>
+				<xsd:element name="return"  minOccurs="0" nillable="true" type="xsd:string"/>
+             </xsd:sequence>  
+         </xsd:complexType>
+     </xsd:element>
+   </xsd:schema>
+</wsdl:types>
+    <wsdl:message name="impSalaryRequest">
+        <wsdl:part name="parameters"  element="ns0:impSalary"/>
+    </wsdl:message>
+    <wsdl:message name="impSalaryResponse">
+        <wsdl:part name="parameters"  element="ns0:impSalaryResponse"/>
+    </wsdl:message>
+
+    <wsdl:portType name="IWSPeaceBirdPortType">
+        <wsdl:operation name="impSalary">
+            <wsdl:input message="ns0:impSalaryRequest" wsaw:Action="urn:impSalary"/>
+            <wsdl:output message="ns0:impSalaryResponse" wsaw:Action="urn:impSalaryResponse"/>
+        </wsdl:operation>
+    </wsdl:portType>
+    
+    
+    <wsdl:binding name="IWSPeaceBirdSOAP11Binding" type="ns0:IWSPeaceBirdPortType">
+        <soap:binding transport="http://schemas.xmlsoap.org/soap/http" style="document"/>
+        <wsdl:operation name="impSalary">
+            <soap:operation soapAction="urn:impSalary" style="document"/>
+            <wsdl:input>
+                <soap:body use="literal"/>
+            </wsdl:input>
+            <wsdl:output>
+                <soap:body use="literal"/>
+            </wsdl:output>
+        </wsdl:operation>
+    </wsdl:binding>
+    <wsdl:service name="IWSPeaceBird">
+        <wsdl:port name="IWSPeaceBirdSOAP11port_http" binding="ns0:IWSPeaceBirdSOAP11Binding">
+            <soap:address location="http://localhost/uapws/service/nc.pub.webservice.peacebird.IWSPeaceBird"/>
+        </wsdl:port>
+    </wsdl:service>
+</wsdl:definitions>

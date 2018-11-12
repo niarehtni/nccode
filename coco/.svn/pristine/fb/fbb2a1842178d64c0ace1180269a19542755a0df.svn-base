@@ -1,0 +1,453 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE beans PUBLIC "-//SPRING//DTD BEAN//EN" "http://www.springframework.org/dtd/spring-beans.dtd">
+
+<beans>
+	<!-- 环境变量 -->
+	<bean id="context" class="nc.vo.uif2.LoginContext" />
+
+	<!-- 模型部分配置 -->
+
+	<!-- 应用服务类，负责进行模型操作的处理 -->
+	<bean id="ManageModelService" class="nc.ui.wa.psndocwadoc.model.PsndocwadocModelService" />
+
+	<!-- 对象转换器工厂，由此获取操作对象的特征信息 -->
+	<!-- bean id="boadatorfactory" class="nc.vo.bd.meta.BDObjectAdpaterFactory" / -->
+
+	<!-- 管理应用模型 -->
+	<bean id="ManageAppModel" class="nc.ui.wa.psndocwadoc.model.PsndocwadocAppModel">
+		<property name="service" ref="ManageModelService"></property>
+		<!--  property name="businessObjectAdapterFactory" ref="boadatorfactory"></property-->
+		<property name="context" ref="context"></property>
+	</bean>
+
+	<!--
+		模板容器，负责对模板的统一装载 -->
+	<bean id="templateContainer" class="nc.ui.uif2.editor.TemplateContainer"
+		init-method="load">
+		<property name="context" ref="context" />
+		<property name="nodeKeies">
+			<list>
+				<value>60130713_01</value>
+			</list>
+		</property>
+	</bean>
+
+	<!-- 数据模型管理器，主要负责各种方式的模型初始化 -->
+	<bean id="modelDataManager" class="nc.ui.wa.psndocwadoc.model.PsndocwadocModelDataManager">
+		<property name="service" ref="ManageModelService"></property>
+		<property name="context" ref="context"></property>
+		<property name="model" ref="ManageAppModel"></property>
+	</bean>
+
+	<!-- 界面元素 -->
+	<!-- 列表视图 -->
+	<bean id="bodypanel" class="nc.ui.wa.psndocwadoc.view.PsnWadocSubPane"
+		init-method="initUI">
+		<property name="model" ref="ManageAppModel"></property>
+		<property name="nodekey" value="psndocwadoc"></property>
+		<property name="tabActions">
+			<list>
+				<ref bean="AddLineAction" />
+				<ref bean="InsertLineAction" />
+				<ref bean="EditAction" />
+				<ref bean="DelLineAction" />
+				<ref bean="SaveAction" />
+				<ref bean="CancelAction" />
+			</list>
+		</property>
+	</bean>
+	<bean id="mainpanel" class="nc.ui.wa.psndocwadoc.view.PsnWadocMainPane"
+		init-method="initUI">
+		<property name="model" ref="ManageAppModel" />
+		<property name="component" ref="bodypanel" />
+	</bean>
+	<!--
+		<bean id="batchAdjustForm"
+		class="nc.ui.wa.psndocwadoc.view.BatchAdjustForm"
+		init-method="initUI"> <property name="model" ref="ManageAppModel" />
+		<property name="nodekey" value="ddd"></property> <property
+		name="templateContainer" ref="templateContainer" /> </bean>
+	-->
+	<bean id="nullaction" class="nc.funcnode.ui.action.SeparatorAction" />
+
+	<bean id="EditAction" class="nc.ui.wa.psndocwadoc.action.EditPsndocwadocAction">
+		<property name="model" ref="ManageAppModel" />
+		<property name="component" ref="bodypanel" />
+		<property name="validator">
+			<list>
+				<ref bean="ValidateOrgNotNull" />
+			</list>
+		</property>
+	</bean>
+
+	<bean id="QueryAction" class="nc.ui.wa.psndocwadoc.action.QueryPsndocwadocAction">
+		<property name="model" ref="ManageAppModel" />
+		<property name="dataManager" ref="modelDataManager" />
+		<property name="queryDelegator">
+			<bean class="nc.ui.hr.uif2.HrQueryDelegator">
+			    <property name="model" ref="ManageAppModel" />
+				<property name="nodeKey" value="" />
+				<property name="context" ref="context" />
+			</bean>
+		</property>
+		<property name="validator">
+			<list>
+				<ref bean="ValidateOrgNotNull" />
+			</list>
+		</property>
+	</bean>
+	<bean id="RefreshAction" class="nc.ui.wa.psndocwadoc.action.RefreshPsndocwadocAction">
+		<property name="model" ref="ManageAppModel" />
+		<property name="dataManager" ref="modelDataManager" />
+		<property name="validator">
+			<list>
+				<ref bean="ValidateOrgNotNull" />
+			</list>
+		</property>
+	</bean>
+	<bean id="SaveAction" class="nc.ui.wa.psndocwadoc.action.SavePsndocwadocAction">
+		<property name="model" ref="ManageAppModel" />
+		<property name="component" ref="bodypanel" />
+		<property name="validator">
+			<list>
+				<ref bean="SaveValueValidator" />
+			</list>
+		</property>
+	</bean>
+	<bean id="billNotNullValidator" class="nc.ui.hr.uif2.validator.BillNotNullValidateService">
+		<constructor-arg ref="bodypanel">
+		</constructor-arg>
+	</bean>
+	<bean id="CancelAction" class="nc.ui.wa.psndocwadoc.action.CancelPsndocwadocAction">
+		<property name="model" ref="ManageAppModel" />
+	</bean>
+	<bean id="AddLineAction" class="nc.ui.wa.psndocwadoc.action.AddLinePsndocwadocAction">
+		<property name="model" ref="ManageAppModel" />
+		<property name="component" ref="bodypanel" />
+		<property name="mainComponent" ref="mainpanel" />
+		<property name="validator">
+			<list>
+				<ref bean="ValidateOrgNotNull" />
+			</list>
+		</property>
+	</bean>
+	<bean id="DelLineAction" class="nc.ui.wa.psndocwadoc.action.DelLinePsndocwadocAction">
+		<property name="model" ref="ManageAppModel" />
+		<property name="component" ref="bodypanel" />
+		<property name="mainComponent" ref="mainpanel" />
+	</bean>
+	<bean id="InsertLineAction" class="nc.ui.wa.psndocwadoc.action.InsertLinePsndocwadocAction">
+		<property name="model" ref="ManageAppModel" />
+		<property name="component" ref="bodypanel" />
+		<property name="mainComponent" ref="mainpanel" />
+	</bean>
+	<bean id="AdjustPsndocwadocAction" class="nc.ui.wa.psndocwadoc.action.AdjustPsndocwadocAction">
+		<property name="model" ref="ManageAppModel" />
+		<property name="component" ref="bodypanel" />
+		<property name="mainComponent" ref="mainpanel" />
+		<property name="validator">
+			<list>
+				<ref bean="ValidateOrgNotNull" />
+			</list>
+		</property>
+
+	</bean>
+  <bean id="datasource" class="nc.ui.wa.psndocwadoc.model.PsndocwadocMetaDataDataSource">
+   <property name="model" ref="ManageAppModel" />  
+   <property name="subPane" ref="bodypanel" />
+  </bean>
+
+	<bean id="PrintGroupAction" class="nc.funcnode.ui.action.GroupAction">
+		<property name="code" value="print"></property>
+		<property name="name">
+			<bean class="nc.ui.uif2.I18nFB">
+				<property name="resDir" value="xmlcode" />
+				<property name="defaultValue" value="打印" />
+				<property name="resId" value="X60130002" />
+			</bean>
+		</property>
+		<property name="actions">
+			<list>
+			    <ref bean="printAction" />
+				<ref bean="previewAction" />
+				<ref bean="outputAction" />
+				<ref bean="nullaction" />
+				<ref bean="templateprintAction" />
+				<ref bean="templatepreviewAction" />
+			</list>
+		</property>
+	</bean>
+	
+	<bean id="outputAction" class="nc.ui.wa.psndocwadoc.action.HrWADutipleListOutputAction">
+		<property name="model" ref="ManageAppModel" />
+		<property name="cardEditor" ref="bodypanel" />
+		<property name="mainPanel" ref="mainpanel" />
+		<property name="title" >
+			<bean class="nc.ui.uif2.I18nFB">
+				<property name="resDir" value="xmlcode" />
+				<property name="defaultValue" value="定调资信息列表" />
+				<property name="resId" value="X60130015" />
+			</bean>
+		 </property>
+	</bean>  
+	
+	<bean id="previewAction" class="nc.ui.wa.psndocwadoc.action.HrWADutipleListDirectPrintAction">
+		<property name="model" ref="ManageAppModel" />
+		<property name="directPrint" value="false" />
+		<property name="cardEditor" ref="bodypanel" />
+		<property name="mainPanel" ref="mainpanel" />
+		<property name="title" >
+			<bean class="nc.ui.uif2.I18nFB">
+				<property name="resDir" value="xmlcode" />
+				<property name="defaultValue" value="定调资信息列表" />
+				<property name="resId" value="X60130015" />
+			</bean>
+		 </property>
+	</bean>
+	<bean id="printAction" class="nc.ui.wa.psndocwadoc.action.HrWADutipleListDirectPrintAction">
+		<property name="model" ref="ManageAppModel" />
+		<property name="cardEditor" ref="bodypanel" />
+		<property name="mainPanel" ref="mainpanel" />
+		<property name="title" >
+			<bean class="nc.ui.uif2.I18nFB">
+				<property name="resDir" value="xmlcode" />
+				<property name="defaultValue" value="定调资信息列表" />
+				<property name="resId" value="X60130015" />
+			</bean>
+		 </property>
+	</bean>
+	<bean id="templatepreviewAction" class="nc.ui.wa.pub.action.WaTemplatePreviewAction">
+		<property name="model" ref="ManageAppModel" />
+	    <property name="nodeKey" value="adjmtcprint" />
+		<property name="datasource" ref="datasource" />
+	</bean>
+	<bean id="templateprintAction" class="nc.ui.wa.pub.action.WaTemplatePrintAction">
+		<property name="model" ref="ManageAppModel" />
+		<property name="nodeKey" value="adjmtcprint" />
+		<property name="datasource" ref="datasource" />
+	</bean>
+	
+	<!-- 数据导入按钮组 begin -->
+	<bean id="dataimportGroupAction" class="nc.funcnode.ui.action.MenuAction">
+		<property name="code" value="dataimport"></property>
+		<property name="name">
+			<bean class="nc.ui.uif2.I18nFB">
+				<property name="resDir" value="xmlcode" />
+				<property name="defaultValue" value="导入导出" />
+				<property name="resId" value="X60130040" />
+			</bean>
+		</property>
+		<property name="actions">
+			<list>
+				<ref bean="ImportDataPsndocwadocAction" />
+				<ref bean="exprotTempletAction" />
+				<!--<ref bean="detailInfoAction" />-->
+			</list>
+		</property>
+	</bean>
+	
+	<bean id="ImportDataPsndocwadocAction" class="nc.ui.wa.psndocwadoc.action.ImportDataPsndocwadocAction">
+		<property name="model" ref="ManageAppModel" />
+		<property name="component" ref="bodypanel" />
+		<property name="mainComponent" ref="mainpanel" />
+	</bean>
+		<bean id="exprotTempletAction" class="nc.ui.wa.psndocwadoc.action.PsndocwadocExportTempletAction">
+		<property name="model" ref="ManageAppModel" />
+		<property name="component" ref="bodypanel" />
+		<property name="mainComponent" ref="mainpanel" />
+	</bean>
+	<!-- <bean id="detailInfoAction" class="nc.ui.wa.psndocwadoc.action.PsndocwadocDetailInfoAction">
+		<property name="model" ref="ManageAppModel" />
+		<property name="component" ref="bodypanel" />
+		<property name="mainComponent" ref="mainpanel" />
+	</bean> -->
+	
+	<bean id="GenerateNHISettingAction" class="nc.ui.wa.psndocwadoc.action.GenerateNHISettingAction">
+		<property name="model" ref="ManageAppModel" />
+		<property name="component" ref="bodypanel" />
+		<property name="mainComponent" ref="mainpanel" />
+	</bean>
+
+	<bean id="GenerateGroupInsSettingAction" class="nc.ui.wa.psndocwadoc.action.GenerateGroupInsSettingAction">
+		<property name="model" ref="ManageAppModel" />
+		<property name="component" ref="bodypanel" />
+		<property name="mainComponent" ref="mainpanel" />
+	</bean>
+	
+	<!-- 数据导入按钮组 end -->
+	<bean id="ClosingListener" class="nc.ui.uif2.FunNodeClosingHandler">
+		<property name="model" ref="ManageAppModel" />
+		<property name="saveaction" ref="SaveAction" />
+		<property name="cancelaction" ref="CancelAction" />
+	</bean>
+	<bean id="ValidateOrgNotNull" class="nc.ui.hr.uif2.validator.OrgNotNullValidator">
+		<property name="model" ref="ManageAppModel" />
+	</bean>
+	<bean id="SaveValueValidator"
+		class="nc.ui.wa.psndocwadoc.validator.WaPsndocdadocSaveValueValidator">
+		<property name="model" ref="ManageAppModel" />
+	</bean>
+
+	<!-- 界面布局总装 -->
+	<bean id="container" class="nc.ui.uif2.TangramContainer"
+		init-method="initUI">
+
+		<property name="tangramLayoutRoot">
+			<bean class="nc.ui.uif2.tangramlayout.node.VSNode">
+				<property name="up">
+					<bean class="nc.ui.uif2.tangramlayout.node.CNode">
+						<property name="component" ref="orgpanel"></property>
+					</bean>
+				</property>
+
+				<property name="down">
+					<bean class="nc.ui.uif2.tangramlayout.node.VSNode">
+						<property name="up">
+							<bean class="nc.ui.uif2.tangramlayout.node.CNode">
+								<property name="component" ref="mainpanel" />
+							</bean>
+						</property>
+						<property name="down">
+
+							<bean class="nc.ui.uif2.tangramlayout.node.TBNode">
+								<property name="tabs">
+									<list>
+										<bean class="nc.ui.uif2.tangramlayout.node.CNode">
+											<property name="name">
+												<bean class="nc.ui.uif2.I18nFB">
+													<property name="resDir" value="xmlcode" />
+													<property name="defaultValue" value="定调资信息列表" />
+													<property name="resId" value="X60130015" />
+												</bean>
+											</property>
+											<property name="component" ref="bodypanel"></property>
+										</bean>
+									</list>
+								</property>
+							</bean>
+						</property>
+						<property name="dividerLocation">
+							<value>0.5f</value>
+						</property>
+					</bean>
+				</property>
+
+				<property name="dividerLocation">
+					<value>30</value>
+				</property>
+			</bean>
+		</property>
+
+
+		<property name="actions">
+			<list>
+				<ref bean="QueryAction" />
+				<ref bean="RefreshAction" />
+				<ref bean="nullaction" />
+				<ref bean="AdjustPsndocwadocAction" />
+				<ref bean="nullaction" />
+				<ref bean="dataimportGroupAction" />
+				<!-- <ref bean="nullaction" /> -->
+				<ref bean="PrintGroupAction" />
+				<ref bean="nullaction" />
+				<ref bean="GenerateNHISettingAction" />
+				<ref bean="GenerateGroupInsSettingAction" />
+				<ref bean="nullaction" />
+				
+				<!--  劳健保批量加退  MOD 张恒  {21427} 2018/9/12  -->
+				<ref bean="labourActionGroup"/>
+				<ref bean="nullaction" />
+				<!--  团保批量加退  MOD 张恒  {21427} 2018/9/20  -->
+				<ref bean="tuanActionGroup"/>
+				
+			</list>
+		</property>
+		<property name="editActions">
+			<list>
+				<ref bean="QueryAction" />
+				<ref bean="RefreshAction" />				
+				<ref bean="nullaction" />
+				<ref bean="AdjustPsndocwadocAction" />
+				<ref bean="nullaction" />
+				<ref bean="dataimportGroupAction" />
+				<!-- <ref bean="nullaction" /> -->
+				<ref bean="PrintGroupAction" />
+			</list>
+		</property>
+		<property name="model" ref="ManageAppModel" />
+	</bean>
+	
+	<!-- BEGIN  劳健保批量加退  MOD 张恒  {21427} 2018/9/12  -->
+	<bean id="labourActionGroup" class="nc.funcnode.ui.action.MenuAction">
+		<property name="code" value="labour"></property>
+		<property name="name" >
+		<bean class="nc.ui.uif2.I18nFB">
+		    <property name="resDir" value="6017labour"></property>
+		    <property name="defaultValue" value="劳健保批量加退" />
+		    <property name="resId" value="labour20180922-0000"></property>
+	     </bean>
+		</property>
+		<property name="actions">
+			<list>
+				<!-- 加保 -->
+				<ref bean="LabourJoinAction" />
+				<!-- 退保 -->
+				<ref bean="QuitJoinAction" />
+			</list>
+		</property>
+	</bean>
+	<bean id="LabourJoinAction" class="nc.ui.wa.psndocwadoc.action.LabourJoinAction">
+		<property name="model" ref="ManageAppModel"/>
+		<property name="ncActionStatusJudge" ref="enableJudge"/>
+	</bean>
+	<bean id="QuitJoinAction" class="nc.ui.wa.psndocwadoc.action.QuitJoinAction">
+		<property name="model" ref="ManageAppModel"/>
+		<property name="ncActionStatusJudge" ref="enableJudge"/>
+	</bean>
+	<!-- END  劳健保批量加退  MOD 张恒  {21427} 2018/9/12  -->
+	
+	<!-- BEGIN  团保保批量加退  MOD 张恒  {21427} 2018/9/20  -->
+	<bean id="tuanActionGroup" class="nc.funcnode.ui.action.MenuAction">
+		<property name="code" value="tuan"></property>
+		<property name="name" >
+			<bean class="nc.ui.uif2.I18nFB">
+			    <property name="resDir" value="6017labour"></property>
+			    <property name="defaultValue" value="团保批量加退" />
+			    <property name="resId" value="labour20180922-0001"></property>
+		     </bean>
+		</property>
+		<property name="actions">
+			<list>
+				<!-- 加保 -->
+				<ref bean="AddJoinAction" />
+				<!-- 退保 -->
+				<ref bean="OutJoinAction" />
+			</list>
+		</property>
+	</bean>
+	<bean id="AddJoinAction" class="nc.ui.wa.psndocwadoc.action.AddJoinAction">
+		<property name="model" ref="ManageAppModel"/>
+		<property name="ncActionStatusJudge" ref="enableJudge"/>
+	</bean>
+	<bean id="OutJoinAction" class="nc.ui.wa.psndocwadoc.action.OutJoinAction">
+		<property name="model" ref="ManageAppModel"/>
+		<property name="ncActionStatusJudge" ref="enableJudge"/>
+	</bean>
+	<!-- END  团保批量加退  MOD 张恒  {21427} 2018/9/12  -->
+
+	<!-- 界面零件 -->
+	<bean id="orgpanel" class="nc.ui.wa.psndocwadoc.view.PsnWadocOrgPanel" 
+		init-method="initUI">
+		<property name="model" ref="ManageAppModel" />
+		<property name="dataManager" ref="modelDataManager" />
+		<property name="pk_orgtype" value="HRORGTYPE00000000000" />
+	</bean>
+	
+	<!--  劳健保批量加退  MOD 张恒  {21427} 2018/9/12  -->
+	<bean id="enableJudge" class="nc.ui.ta.pub.action.EnableJudge">
+		<property name="model" ref="ManageAppModel"/>
+	</bean>
+</beans>
+
+

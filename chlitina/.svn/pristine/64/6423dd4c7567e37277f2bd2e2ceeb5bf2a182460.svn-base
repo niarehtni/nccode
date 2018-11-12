@@ -1,0 +1,2 @@
+insert into pub_billtemplet(bill_templetcaption,bill_templetname,devorg,dividerproportion,dr,funccode,layer,metadataclass,model_type,modulecode,nodecode,options,pk_billtemplet,pk_billtypecode,pk_corp,pk_org,resid,shareflag,ts,validateformula) values( '协议签订','SYSTEM',null,null,0,null,0,'hrcm.hi_psnjob',null,null,'agreement',null,'1001Z71000000000CFJA','6011agsign','@@@@',null,'1agreement0003',null,'2018-09-16 14:01:38',null)
+/

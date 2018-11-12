@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding='UTF-8'?>
+<!DOCTYPE UIMeta PUBLIC "-//Yonyou Co., Ltd.//UAP LFW UIMeta 6.3//EN" "http://uap.yonyou.com/dtd/uap_lfw_um_6_3.dtd">
+<UIMeta flowmode="true" id="EmpinfoWin_um" preferredHeight="0" preferredWidth="0">
+    <Widget id="main">
+    </Widget>
+</UIMeta>

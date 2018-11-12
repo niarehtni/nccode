@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="GBK"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+<bean id="refBean" class="com.yonyou.ria.ref.refmodel.cg.RefModelCGVO">
+<property name="author" value="Your Author Name"/>
+<property name="date" value="Your Create Data"/>
+<property name="dbEntity" value="allowance"/>
+<property name="dbModule" value="twhr"/>
+<property name="dbPK" value="0001ZZ10000000003D54"/>
+<property name="lsFieldCode">
+<list>
+<value>code</value>
+<value>name</value>
+<value>allowancetype</value>
+<value>allowanceamount</value>
+</list>
+</property>
+<property name="lsFieldName">
+<list>
+<value>编码</value>
+<value>名称</value>
+<value>补助方式</value>
+<value>补助数量</value>
+</list>
+</property>
+<property name="lsHiddenFieldCode">
+<list>
+<value>def1</value>
+<value>def2</value>
+<value>def3</value>
+<value>def4</value>
+<value>def5</value>
+<value>def6</value>
+<value>def7</value>
+<value>def8</value>
+<value>def9</value>
+<value>def10</value>
+<value>def11</value>
+<value>def12</value>
+<value>def13</value>
+<value>def14</value>
+<value>def15</value>
+<value>def16</value>
+<value>def17</value>
+<value>def18</value>
+<value>def19</value>
+<value>def20</value>
+<value>id</value>
+<value>startdate</value>
+<value>enddate</value>
+<value>creationtime</value>
+<value>modifiedtime</value>
+</list>
+</property>
+<property name="lsHiddenFieldName">
+<list>
+<value>自定义项1</value>
+<value>自定义项2</value>
+<value>自定义项3</value>
+<value>自定义项4</value>
+<value>自定义项5</value>
+<value>自定义项6</value>
+<value>自定义项7</value>
+<value>自定义项8</value>
+<value>自定义项9</value>
+<value>自定义项10</value>
+<value>自定义项11</value>
+<value>自定义项12</value>
+<value>自定义项13</value>
+<value>自定义项14</value>
+<value>自定义项15</value>
+<value>自定义项16</value>
+<value>自定义项17</value>
+<value>自定义项18</value>
+<value>自定义项19</value>
+<value>自定义项20</value>
+<value>补助类项目主键</value>
+<value>生效日期</value>
+<value>失效日期</value>
+<value>创建时间</value>
+<value>修改时间</value>
+</list>
+</property>
+<property name="mdEntityId" value="a4d6694e-ec27-4ce6-88fe-14b55f14a5aa"/>
+<property name="mdVersion" value="10"/>
+<property name="packageAndClassName"><bean class="com.yonyou.ria.codegen.pub.ClassBasicInfo">
+<property name="className" value="AllowanceRefModel"/>
+<property name="packageName" value="nc.ui.twhr.allowance.refmodel"/>
+</bean>
+</property>
+
+<property name="pkFieldCode" value="pk_allowance"/>
+<property name="project" value="Your Project"/>
+<property name="refCodeField" value="code"/>
+<property name="refName" value="补助类项目"/>
+<property name="refNameField" value="name"/>
+<property name="tableName" value="twhr_allowance"/>
+<property name="version" value="1.0"/>
+<property name="wherePart" value="1=1"/>
+</bean>
+
+</beans>

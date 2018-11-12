@@ -1,0 +1,156 @@
+/**
+ * @(#)SetEditInfoWizardStep.java 1.0 2018年1月17日
+ *
+ * Copyright (c) 2013, Yonyou. All rights reserved.
+ * YONYOU PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
+ */
+package nc.ui.bm.bmfile.view.dialog;
+
+import java.awt.BorderLayout;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+
+import nc.hr.utils.ResHelper;
+import nc.ui.pub.beans.UILabel;
+import nc.ui.pub.beans.UIPanel;
+import nc.ui.pub.beans.UIRefPane;
+import nc.ui.pub.beans.UIScrollPane;
+import nc.ui.pub.beans.wizard.IWizardStepListener;
+import nc.ui.pub.beans.wizard.WizardStep;
+import nc.ui.pub.beans.wizard.WizardStepEvent;
+import nc.ui.pub.beans.wizard.WizardStepException;
+import nc.ui.pub.beans.wizard.WizardStepValidateException;
+import nc.vo.bm.data.BmDataVO;
+import nc.vo.bm.pub.BmLoginContext;
+import nc.vo.bm.pub.DefRefUtils;
+
+import org.apache.commons.lang.StringUtils;
+
+/**
+ * @author niehg
+ * @since 6.3
+ */
+public class SetEditInfoWizardStep extends WizardStep implements IWizardStepListener {
+	private BmLoginContext loginContext;
+
+	public BmLoginContext getLoginContext() {
+		return loginContext;
+	}
+
+	public SetEditInfoWizardStep(BmLoginContext context) {
+		setTitle(ResHelper.getString("60150bmfile", "060150bmfile0075"));
+		setDescription(ResHelper.getString("60150bmfile", "060150bmfile0036")
+		/* @res "设置信息" */);
+		this.loginContext = context;
+
+		setComp(getScrollPanel());
+		addListener(this);
+	}
+
+	private UIScrollPane scrollPanel;
+	private UIRefPane agentcompRef;
+	private UIRefPane compVenderRef;
+	private UIRefPane psnVenderRef;
+
+	public UIScrollPane getScrollPanel() {
+		if (null == scrollPanel) {
+			UIPanel headPanel = new UIPanel();
+			headPanel.setLayout(new FlowLayout(FlowLayout.LEFT));
+			UILabel lebel = new UILabel(ResHelper.getString("60150bmfile", "160150bmfile0031")); // 社保代理公司
+			headPanel.add(lebel);
+			headPanel.add(getAgentcompRef());
+
+			UIPanel bodyPanel = new UIPanel();
+			bodyPanel.setLayout(new FlowLayout(FlowLayout.LEFT));
+			UILabel comLebel = new UILabel(ResHelper.getString("60150bmfile", "160150bmfile0032")); // 社保供应商代码(公司)
+			UILabel psnLebel = new UILabel(ResHelper.getString("60150bmfile", "160150bmfile0033")); // 社保供应商代码(个人)
+			bodyPanel.add(comLebel);
+			bodyPanel.add(getCompVenderRef());
+			bodyPanel.add(psnLebel);
+			bodyPanel.add(getPsnVenderRef());
+
+			UIPanel panel = new UIPanel();
+			panel.setLayout(new BorderLayout());
+			panel.add(headPanel, BorderLayout.NORTH);
+			panel.add(bodyPanel, BorderLayout.CENTER);
+
+			scrollPanel = new UIScrollPane(panel);
+		}
+		return scrollPanel;
+	}
+
+	public UIRefPane getAgentcompRef() {
+		if (null == agentcompRef) {
+			agentcompRef = new UIRefPane();
+			agentcompRef.setRefNodeName(DefRefUtils.qryRefNameByDefCode(DefRefUtils.DEF_AGENTCOMP)); // "社保代理公司(自定义档案)"
+			agentcompRef.setCacheEnabled(false);
+			agentcompRef.setPreferredSize(new Dimension(120, 25));
+		}
+		return agentcompRef;
+	}
+
+	public UIRefPane getCompVenderRef() {
+		if (null == compVenderRef) {
+			compVenderRef = new UIRefPane();
+			compVenderRef.setRefNodeName(DefRefUtils.qryRefNameByDefCode(DefRefUtils.DEF_VENDERCODE)); // "社保供应商代码(自定义档案)"
+			compVenderRef.setCacheEnabled(false);
+			compVenderRef.setPreferredSize(new Dimension(120, 25));
+		}
+		return compVenderRef;
+	}
+
+	public UIRefPane getPsnVenderRef() {
+		if (null == psnVenderRef) {
+			psnVenderRef = new UIRefPane();
+			psnVenderRef.setRefNodeName(DefRefUtils.qryRefNameByDefCode(DefRefUtils.DEF_VENDERCODE)); // "社保供应商代码(自定义档案)"
+			psnVenderRef.setCacheEnabled(false);
+			psnVenderRef.setPreferredSize(new Dimension(120, 25));
+		}
+		return psnVenderRef;
+	}
+
+	@Override
+	public void stepActived(WizardStepEvent paramWizardStepEvent) throws WizardStepException {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void stepDisactived(WizardStepEvent paramWizardStepEvent) throws WizardStepException {
+		BmDataVO[] dataVOs = (BmDataVO[]) getModel().getAttr("selectedBmData");
+		String agentComPk = getAgentcompRef().getRefPK();
+		String comVenderPK = getCompVenderRef().getRefPK();
+		String psnVenderPK = getPsnVenderRef().getRefPK();
+		for (BmDataVO vo : dataVOs) {
+			vo.setDef1(agentComPk);
+			vo.setDef2(comVenderPK);
+			vo.setDef3(psnVenderPK);
+		}
+		getModel().putAttr("selectedPsn", dataVOs);
+	}
+
+	public void validate() throws WizardStepValidateException {
+		super.validate();
+		String agentComPk = getAgentcompRef().getRefPK();
+		String comVenderPK = getCompVenderRef().getRefPK();
+		String psnVenderPK = getPsnVenderRef().getRefPK();
+		if (StringUtils.isBlank(agentComPk)) {
+			WizardStepValidateException e = new WizardStepValidateException();
+			e.addMsg(ResHelper.getString("60150bmfile", "060150bmfile0014"),
+					ResHelper.getString("60150bmfile", "060150bmfile0078"));
+			throw e;
+		}
+		if (StringUtils.isBlank(comVenderPK)) {
+			WizardStepValidateException e = new WizardStepValidateException();
+			e.addMsg(ResHelper.getString("60150bmfile", "060150bmfile0014"),
+					ResHelper.getString("60150bmfile", "060150bmfile0079"));
+			throw e;
+		}
+		if (StringUtils.isBlank(psnVenderPK)) {
+			WizardStepValidateException e = new WizardStepValidateException();
+			e.addMsg(ResHelper.getString("60150bmfile", "060150bmfile0014"),
+					ResHelper.getString("60150bmfile", "060150bmfile0080"));
+			throw e;
+		}
+	}
+}

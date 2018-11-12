@@ -1,0 +1,369 @@
+package nc.impl.ta.psncalendar;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang.StringUtils;
+import org.springframework.util.CollectionUtils;
+
+import nc.bs.bd.baseservice.ArrayClassConvertUtil;
+import nc.bs.dao.BaseDAO;
+import nc.bs.framework.common.InvocationInfoProxy;
+import nc.bs.hrsms.ta.sss.calendar.WorkCalendarConsts;
+import nc.bs.logging.Logger;
+import nc.hr.utils.InSQLCreator;
+import nc.hr.utils.MultiLangHelper;
+import nc.hr.utils.ResHelper;
+import nc.impl.ta.calendar.CalendarShiftMutexChecker;
+import nc.impl.ta.psncalendar.PsnCalendarDAO;
+import nc.impl.ta.psncalendar.PsnCalendarMaintainImpl;
+import nc.impl.ta.psncalendar.PsnCalendarUtils;
+import nc.itf.bd.shift.ShiftServiceFacade;
+import nc.itf.ta.IPsncalendarMng;
+import nc.jdbc.framework.SQLParameter;
+import nc.jdbc.framework.processor.BeanListProcessor;
+import nc.vo.bd.pub.EnableStateEnum;
+import nc.vo.bd.shift.AggShiftVO;
+import nc.vo.bd.shift.ShiftVO;
+import nc.vo.hr.tools.pub.GeneralVO;
+import nc.vo.pub.BusinessException;
+import nc.vo.pub.lang.UFBoolean;
+import nc.vo.pub.lang.UFLiteralDate;
+import nc.vo.ta.log.TaBusilogUtil;
+import nc.vo.ta.psncalendar.AggPsnCalendar;
+import nc.vo.ta.psncalendar.PsnCalendarCommonValue;
+import nc.vo.ta.psncalendar.PsnCalendarVO;
+import nc.vo.ta.psncalendar.PsnJobCalendarVO;
+import nc.vo.ta.psndoc.TBMPsndocCommonValue;
+import nc.vo.ta.psndoc.TBMPsndocVO;
+
+public class PsncalendarMngImpl extends PsnCalendarMaintainImpl implements IPsncalendarMng{
+
+	private HashMap<String, HashMap<String, String>> psnDateShiftHolidayTypeMap;
+
+
+	@Override
+	public List<String>[] importDatasHdType(HashMap<String, ArrayList<GeneralVO>> ImportvosMap,boolean isClearNull,HashMap<String, HashMap<String, String>> psnDateShiftHolidayTypeMap1) throws BusinessException {
+		
+		psnDateShiftHolidayTypeMap = psnDateShiftHolidayTypeMap1;
+		
+		for(String pk_org:ImportvosMap.keySet()){
+			
+			GeneralVO[] vos = ImportvosMap.get(pk_org).toArray(new GeneralVO[0]);
+			
+			if(ArrayUtils.isEmpty(vos))
+				return null;
+			String inSql = null;
+			InSQLCreator isc = new InSQLCreator();
+			try{
+//				int beginRowNum = 4;
+				int beginRowNum = 5;//增加了星期几行，改为5开始
+				List<String> psnVec = new ArrayList<String>();			//记录文件中出现的人员信息
+				List<String> psncodeVec = new ArrayList<String>();		//记录文件中出现的人员编码
+				List<String> wrongFormatVec = new ArrayList<String>(); // 数据格式不正确的错误集合
+				List<String> samePsnVec = new ArrayList<String>(); 		// 同一人有多条记录的错误集合
+				List<String> wrongShiftVec = new ArrayList<String>(); 	// 班次名称错误的错误集合
+				List<String> notFoundPsnVec = new ArrayList<String>(); 	// 找不到对应的人员编码的错误集合
+				List<String> mutextInFileVec = new ArrayList<String>(); // 文件中排班冲突的错误集合
+				List<String> mutextInDBVec = new ArrayList<String>(); 	// 与已有排班冲突的错误集合
+
+				// 查出涉及人员的考勤档案
+				for(int i = 0; i < vos.length;i++){
+					String psncode = (String) vos[i].getAttributeValue(PsnCalendarCommonValue.LISTCODE_PSNCODE);
+					if(StringUtils.isEmpty(psncode))
+						continue;
+					//将编码存入编码数列
+					psncodeVec.add(psncode);
+				}
+				//需去掉空格，因为InSQLCreator会自动补位
+				inSql = isc.getInSQL(psncodeVec.toArray(new String[0]),true);
+				String oriWhere = " bd_psndoc.code in(" + inSql + ")";
+//				String sql = " select tbm_psndoc.begindate,tbm_psndoc.pk_psndoc,pk_tbm_psndoc,timecardid,bd_psndoc.code psncode, bd_psndoc.name psnname ,bd_psnjob.pk_org psnjoborg " +
+//						" from tbm_psndoc inner join bd_psndoc on tbm_psndoc.pk_psndoc = bd_psndoc.pk_psndoc inner join bd_psnjob on bd_psnjob.pk_psnjob = tbm_psndoc.pk_psnjob " +
+//						" where tbm_psndoc.pk_org = ? and  "+oriWhere;
+				String sql = " select tbm_psndoc.begindate,tbm_psndoc.pk_psndoc,pk_tbm_psndoc,timecardid,bd_psndoc.code psncode, bd_psndoc.name psnname ,hi_psnjob.pk_org psnjoborg " +
+				" from tbm_psndoc inner join bd_psndoc on tbm_psndoc.pk_psndoc = bd_psndoc.pk_psndoc inner join hi_psnjob on hi_psnjob.pk_psnjob = tbm_psndoc.pk_psnjob " +
+				" where tbm_psndoc.pk_org = ? and  "+oriWhere;
+				SQLParameter parameter = new SQLParameter();
+				parameter.addParam(pk_org);
+				List<GeneralVO> tmpPsndocVOs = (ArrayList<GeneralVO>) new BaseDAO().executeQuery(sql, parameter,new BeanListProcessor(GeneralVO.class));
+				//将涉及人员的考勤档案用map存储
+				Map<String, GeneralVO> psncode_tbmPsndocMap = new HashMap<String, GeneralVO>();
+				if (!CollectionUtils.isEmpty(tmpPsndocVOs)) {
+					for (GeneralVO psndocVO : tmpPsndocVOs) {
+						String psncode = (String) psndocVO.getAttributeValue(TBMPsndocCommonValue.LISTCODE_PSNCODE);
+						String psnname = (String) psndocVO.getAttributeValue(TBMPsndocCommonValue.LISTCODE_PSNNAME);
+						// 如果有一个人有两条考勤记录，则取最新的
+						if (psncode_tbmPsndocMap.get(psncode + "_" + psnname) == null) {
+							psncode_tbmPsndocMap.put(psncode + "_" + psnname, psndocVO);
+						} else {
+							UFLiteralDate begindatetime = UFLiteralDate.getDate((String)psncode_tbmPsndocMap.get(psncode + "_" + psnname).getAttributeValue(TBMPsndocVO.BEGINDATE));
+							if (begindatetime.compareTo(UFLiteralDate.getDate((String)psndocVO.getAttributeValue(TBMPsndocVO.BEGINDATE))) < 0) {
+								psncode_tbmPsndocMap.put(psncode + "_" + psnname, psndocVO);
+							}
+						}
+					}
+				}
+				
+				// 获取当前组织所有班次信息，并用map存储,key是班次名称,value是AggBclbDefVO
+				AggShiftVO[] shiftVOs = ShiftServiceFacade.queryAllByHROrg(pk_org);
+				Map<String, AggShiftVO> shiftMap = new HashMap<String,AggShiftVO>();
+				if(!ArrayUtils.isEmpty(shiftVOs)){
+					for(AggShiftVO shiftVO:shiftVOs){
+						//此处使用的name应为多语环境下当前语种的name，不能直接使用getname否则不匹配，不同的业务单元下有重复的名称，导致匹配失败
+						shiftMap.put(MultiLangHelper.getName(shiftVO.getShiftVO())+shiftVO.getShiftVO().getPk_org(), shiftVO);
+					}
+				}
+
+				Map<String, Map<String, String>> modifiedCalendarMap = new HashMap<String, Map<String, String>>();//key是人员主键，value的key是日期，value是班次主键。存储了需要设置的班次的信息
+				//校验导入信息
+				for(int i = 0; i < vos.length; i++){
+					// 检查是否为空行,为空行则跳过
+					if(((UFBoolean)vos[i].getAttributeValue(PsnCalendarCommonValue.LISTCODE_ISNULLROW)).booleanValue())
+						continue;
+					vos[i].removeAttributeName(PsnCalendarCommonValue.LISTCODE_ISNULLROW);
+
+					String psncode = (String) vos[i].getAttributeValue(PsnCalendarCommonValue.LISTCODE_PSNCODE);
+					String psnname = (String) vos[i].getAttributeValue(PsnCalendarCommonValue.LISTCODE_PSNNAME);
+
+					// 校验数据格式
+					if (StringUtils.isEmpty(psncode))
+						wrongFormatVec.add(psncode);
+					if (StringUtils.isEmpty(psnname))
+						wrongFormatVec.add(psnname);
+
+					if(StringUtils.isNotEmpty(psncode)&&StringUtils.isNotEmpty(psnname)){
+						// 校验人员编码
+						if(psncode_tbmPsndocMap.get(psncode+"_"+psnname)==null){
+							notFoundPsnVec.add(String.valueOf((i + beginRowNum)));
+							continue;
+						}
+						// 校验重复记录
+						if (psnVec.contains(psncode + "_" + psnname)) {
+							int index = psnVec.indexOf(psncode + "_" + psnname);
+							if (!samePsnVec.contains(Integer.valueOf(index + beginRowNum))) {
+								samePsnVec.add(String.valueOf(index + beginRowNum));
+							}
+							samePsnVec.add(String.valueOf((i + beginRowNum)));
+							continue;
+						}
+						psnVec.add(psncode + "_" + psnname);
+					}
+					//所有表头信息
+					String[] fields = vos[i].getAttributeNames();
+					Map<String,String> modifyMap = new HashMap<String,String>();
+					//校验班次名称
+					for(int j = 3;j < fields.length;j++){
+						String shiftName = (String) vos[i].getAttributeValue(fields[j]);
+						// 设置的班次为空
+						if(StringUtils.isEmpty(shiftName)){
+							if(isClearNull)
+								modifyMap.put(fields[j], null);
+							continue;
+						}
+						// 公休直接保存
+						if(shiftName.equals(ResHelper.getString("6017psncalendar","06017psncalendar0092")/*@res "公休"*/)){
+							modifyMap.put(fields[j], ShiftVO.PK_GX);
+							continue;
+						}//tangcht
+						if(shiftName.equals(ResHelper.getString("coco_ta", "coco_cal_res011")/*@res "空班"*/)){
+							modifyMap.put(fields[j], WorkCalendarConsts.SHIFTPK_KB);
+							continue;
+						}
+						if(shiftName.equals(ResHelper.getString("coco_ta","coco_cal_res005")/*@res 国定假*/)){
+							modifyMap.put(fields[j], WorkCalendarConsts.SHIFTPK_GDJ);
+							continue;
+						}
+						if(shiftName.equals(ResHelper.getString("coco_ta","coco_cal_res002")/*@res 例假*/)){
+							modifyMap.put(fields[j], WorkCalendarConsts.SHIFTPK_LJ);
+							continue;
+						}
+						if(shiftName.equals(ResHelper.getString("coco_ta","coco_cal_res003")/*@res 休息日*/)){
+							modifyMap.put(fields[j], WorkCalendarConsts.SHIFTPK_XXR);
+							continue;
+						}
+						
+						GeneralVO generalVO = psncode_tbmPsndocMap.get(psncode+"_"+psnname);
+						//不存在此班次名称则加入班次名称错误信息
+						String shiftkey = shiftName+generalVO.getAttributeValue("psnjoborg");
+						if(shiftMap.get(shiftkey)==null){
+							wrongShiftVec.add(String.valueOf((i + beginRowNum))+"_"+j);
+							continue;
+						}
+						ShiftVO shiftVO = shiftMap.get(shiftkey).getShiftVO();
+						String pk_shiftorg = shiftVO.getPk_org();
+						if(!pk_shiftorg.equalsIgnoreCase((String) generalVO.getAttributeValue("psnjoborg"))&&!"DEFAULT".equalsIgnoreCase(shiftVO.getCode())){//633添加，班次是业务单元的，需判断和人员的业务单元是否匹配
+							wrongShiftVec.add(String.valueOf((i + beginRowNum))+"_"+j);
+							continue;
+						}
+						//V65新增，停用的班次不能导入
+						if(null == shiftVO.getEnablestate()||EnableStateEnum.ENABLESTATE_DISABLE.toIntValue() == shiftVO.getEnablestate()){
+							wrongShiftVec.add(String.valueOf((i + beginRowNum))+"_"+j);
+							continue;
+						}
+						modifyMap.put(fields[j], shiftVO.getPk_shift());
+					}
+					//如果编码或名称为空不需要存入班次修改Map
+					if(StringUtils.isEmpty(psncode)||StringUtils.isEmpty(psnname))
+						continue;
+					String pk_psndoc = (String) psncode_tbmPsndocMap.get(psncode+"_"+psnname).getAttributeValue(PsnCalendarCommonValue.LISTCODE_PKPSNDOC);
+					if(!modifyMap.isEmpty())
+						modifiedCalendarMap.put(pk_psndoc, modifyMap);
+					//校验后设置pk_psndoc属性，为后续校验班次冲突做准备
+					vos[i].setAttributeValue(PsnCalendarCommonValue.LISTCODE_PKPSNDOC, pk_psndoc);
+				}
+
+				//校验排班合法性
+				Map<String, Set<String>[]> mutextResultMap = new CalendarShiftMutexChecker().checkCalendar(pk_org, modifiedCalendarMap, true, false,false);
+				for(int i = 0;i < vos.length;i++){
+					String pk_psndoc = (String) vos[i].getAttributeValue(PsnCalendarCommonValue.LISTCODE_PKPSNDOC);
+					if(StringUtils.isEmpty(pk_psndoc))
+						continue;
+					//如果此行存在冲突
+					Set<String>[] mutextSet = mutextResultMap==null?null:mutextResultMap.get(pk_psndoc);
+					if(ArrayUtils.isEmpty(mutextSet))
+						continue;
+					// 文件中设置的班次存在冲突
+					if(!CollectionUtils.isEmpty(mutextSet[0])){
+						for(String mutextShift:mutextSet[0]){
+							int index = ArrayUtils.indexOf(vos[i].getAttributeNames(), mutextShift);
+							if(index<0)
+								continue;
+							mutextInFileVec.add(String.valueOf((i + beginRowNum))+"_"+index);
+						}
+					}
+					//与已有班次存在冲突
+					if(!CollectionUtils.isEmpty(mutextSet[1])){
+						for(String mutextShift:mutextSet[1]){
+							int index = ArrayUtils.indexOf(vos[i].getAttributeNames(), mutextShift);
+							if(index<0)
+								continue;
+							mutextInDBVec.add(String.valueOf((i + beginRowNum))+"_"+index);
+						}
+					}
+				}
+
+				// 如果有异常，则返回异常信息
+				if (samePsnVec.size() > 0 || wrongShiftVec.size() > 0 || wrongFormatVec.size() > 0
+						|| notFoundPsnVec.size() > 0 || mutextInFileVec.size() > 0 || mutextInDBVec.size() > 0) {
+					List<List<String>> lists = new ArrayList<List<String>>();
+					lists.add(wrongFormatVec);
+					lists.add(samePsnVec);
+					lists.add(wrongShiftVec);
+					lists.add(notFoundPsnVec);
+					lists.add(mutextInFileVec);
+					lists.add(mutextInDBVec);
+					return ArrayClassConvertUtil.convert(lists.toArray(), ArrayList.class);
+				}
+
+				//无异常则处理后保存
+				//所有表头信息
+				String[] fields = vos[0].getAttributeNames();
+				//取日期数组
+				String[] dateFields = (String[]) ArrayUtils.subarray(fields, 3, fields.length-1);
+				Arrays.sort(dateFields);
+				// 取所有修改的工作日历在数据库中的信息
+				PsnJobCalendarVO[] saveVOs = queryCalendarVOByPsndocs(pk_org, modifiedCalendarMap.keySet().toArray(new String[0]), UFLiteralDate.getDate(dateFields[0]), UFLiteralDate.getDate(dateFields[dateFields.length-1]));
+				if(ArrayUtils.isEmpty(saveVOs))
+					return null;
+				List<String> pk_psndocs = new ArrayList<String>();
+				for(PsnJobCalendarVO saveVO:saveVOs){
+					saveVO.getModifiedCalendarMap().putAll(modifiedCalendarMap.get(saveVO.getPk_psndoc()));
+					pk_psndocs.add(saveVO.getPk_psndoc());
+				}
+
+				//无异常直接保存
+				save(pk_org, saveVOs,true,false);
+				//业务日志
+				TaBusilogUtil.writeImportPsnCalendarBusiLog(pk_org, pk_psndocs.toArray(new String[0]));
+				return null;
+			}catch (Exception e) {
+				Logger.error(e.getMessage(), e);
+				throw new BusinessException(e.getMessage());
+			} finally {
+				isc.clear();
+			}
+		}
+		
+		return null;
+	
+	}
+	
+	
+	@Override
+	protected PsnJobCalendarVO[] save(String pk_hrorg, PsnJobCalendarVO[] vos,
+			boolean checkPsndocEffective, boolean log) throws BusinessException {
+		// TODO Auto-generated method stub
+		
+		if(ArrayUtils.isEmpty(vos))
+			return vos;
+		checkCalendarWhenSave(pk_hrorg, vos);//校验
+		PsnCalendarDAO dao = new PsnCalendarDAO();
+		dao.deleteExistsCalendarWhenSave(vos);//删除已有记录
+		String pk_group = InvocationInfoProxy.getInstance().getGroupId();
+		List<AggPsnCalendar> insertList = new ArrayList<AggPsnCalendar>();
+		//HR组织内所有班次
+		Map<String, AggShiftVO> shiftMap = ShiftServiceFacade.queryShiftAggVOMapByHROrg(pk_hrorg);
+		for(PsnJobCalendarVO vo:vos){
+			if(vo.getModifiedCalendarMap()==null||vo.getModifiedCalendarMap().size()==0)
+				continue;
+			for(String date:vo.getModifiedCalendarMap().keySet()){
+				String pk_shift = vo.getModifiedCalendarMap().get(date);
+				String pk_org = vo.getOrgMap().get(date);
+				vo.getCalendarMap().put(date, pk_shift);
+				if(StringUtils.isEmpty(pk_shift)||(checkPsndocEffective&&!vo.getPsndocEffectiveDateSet().contains(date)))
+					continue;
+				AggPsnCalendar calendarVO = PsnCalendarUtils.createAggVOByShiftVO(vo.getPk_psndoc(),pk_group, pk_org, date,pk_shift, shiftMap, false);
+				
+				calendarVO = setShiftholidaytype(calendarVO);
+				
+				insertList.add(calendarVO);
+			}
+			vo.getModifiedCalendarMap().clear();//清空存储修改数据的map
+		}
+		if(insertList.size()>0){
+			AggPsnCalendar[] aggvos = insertList.toArray(new AggPsnCalendar[0]);
+			PsnCalendarVO[] psnCalvos = new PsnCalendarVO[aggvos.length];
+			for(int i=0;i<aggvos.length;i++){
+				psnCalvos[i] = aggvos[i].getPsnCalendarVO();
+				//MOD set daytype according shiftholidaytype James
+				if(WorkCalendarConsts.SHIFTPK_GX.equals(psnCalvos[i].getPk_shiftholidaytype())|| WorkCalendarConsts.SHIFTPK_XXR.equals(psnCalvos[i].getPk_shiftholidaytype())){
+					psnCalvos[i].setDate_daytype(1);
+				}
+				else if(WorkCalendarConsts.SHIFTPK_GDJ.equals(psnCalvos[i].getPk_shiftholidaytype())){
+					psnCalvos[i].setDate_daytype(2);
+				}
+				else if(WorkCalendarConsts.SHIFTPK_LJ.equals(psnCalvos[i].getPk_shiftholidaytype())){
+					psnCalvos[i].setDate_daytype(4);
+				}
+				else {
+					psnCalvos[i].setDate_daytype(0);
+				}
+				
+			}
+			dao.insert(aggvos);
+			//业务日志
+			if(log)
+				TaBusilogUtil.writeEditPsnCalendarBusiLog(psnCalvos, null);
+		}
+		return vos;
+	
+	}
+
+
+	private AggPsnCalendar setShiftholidaytype(AggPsnCalendar calendarVO) {
+		
+		PsnCalendarVO psnCalendarVO = calendarVO.getPsnCalendarVO();
+		
+		if(psnDateShiftHolidayTypeMap != null && psnDateShiftHolidayTypeMap.get(psnCalendarVO.getPk_psndoc()) != null)
+			psnCalendarVO.setPk_shiftholidaytype(psnDateShiftHolidayTypeMap.get(psnCalendarVO.getPk_psndoc()).get(psnCalendarVO.getDate().toString()));
+		
+		return calendarVO;
+	}
+
+}
