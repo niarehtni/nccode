@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="nc.itf.hr.wa.HRWAEJB">
+	<public>
+		<component priority="0" singleton="true" remote="true" tx="CMT" supportAlias="false">
+			<interface>nc.itf.hr.wa.IWaPeriod</interface>
+			<implementation>nc.impl.wa.period.WaPeriodImpl</implementation>
+		</component>
+		<component priority="0" singleton="true" remote="true" supportAlias="false"
+			tx="NONE">
+			<interface>nc.itf.hr.wa.IWaPeriodQuery</interface>
+			<implementation>nc.impl.wa.period.WaPeriodQueryImpl</implementation>
+		</component>
+		<component priority="0" singleton="true" remote="true" supportAlias="false"
+			tx="CMT">
+			<interface>nc.itf.hr.wa.IExpandTable</interface>
+			<implementation>nc.impl.wa.expandtable.ExpandTableImpl</implementation>
+		</component>
+		<component name="nc.itf.hr.wa.IBudgetitemBatchQueryService" priority="0" remote="true"
+			singleton="true" supportAlias="false" tx="NONE">
+			<interface>nc.itf.hr.wa.IBudgetitemBatchQueryService</interface>
+			<implementation>nc.impl.wa.budgetitem.BudgetitemBatchQueryServiceImpl</implementation>
+		</component>
+		<component priority="0" singleton="true" remote="true" tx="NONE" supportAlias="true">
+			<interface>nc.itf.hr.wa.IBudgetAlarm4PaydataService</interface>
+			<implementation>nc.impl.wa.budgetmgt.alarm.BudgetAram4PayfileServiceImpl</implementation>
+		</component>
+		
+		<component priority="0" singleton="true" remote="true" tx="CMT" supportAlias="false">
+			<interface>nc.itf.hr.wa.ITaxForecastService</interface>
+			<implementation>nc.impl.wa.taxforecast.TaxForecastService</implementation>
+		</component>
+		<component priority="0" singleton="true" remote="true" supportAlias="false"
+			tx="NONE">
+			<interface>nc.itf.hr.wa.ITaxForecastQueryService</interface>
+			<implementation>nc.impl.wa.taxforecast.TaxForecastQueryService</implementation>
+		</component>
+		<component priority="0" singleton="true" remote="true" tx="CMT" supportAlias="false">
+			<interface>nc.itf.hr.wa.IOtherSourceManageService</interface>
+			<implementation>nc.impl.wa.othersource.OtherSourceServiceImpl</implementation>
+		</component>
+	</public>
+</module>
+

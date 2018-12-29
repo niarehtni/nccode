@@ -1,0 +1,1 @@
+alter table hi_psndoc_glbdef2  modify glbdef3 varchar2(20); 

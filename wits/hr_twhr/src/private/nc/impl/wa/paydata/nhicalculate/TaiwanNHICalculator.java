@@ -13,6 +13,8 @@ import nc.bs.ml.NCLangResOnserver;
 import nc.hr.frame.persistence.BaseDAOManager;
 import nc.hr.frame.persistence.SimpleDocServiceTemplate;
 import nc.hr.utils.ResHelper;
+import nc.impl.wa.paydata.nhicalculate.PsnHealthDataVO;
+import nc.impl.wa.paydata.nhicalculate.PsnLaborDataVO;
 import nc.itf.bd.defdoc.IDefdocQryService;
 import nc.itf.bd.defdoc.IDefdoclistQryService;
 import nc.itf.twhr.INhicalcMaintain;
@@ -975,13 +977,13 @@ public class TaiwanNHICalculator extends BaseDAOManager {
 					vo.setLaborDays(UFDouble.ZERO_DBL);
 				} else {
 					// 根据残障程度取政府补助比例
-					// 自缴比例 = 1 - 政府补助比例
+					// 政府补助比例
 					UFDouble disabledRate;
 					if (vo.getDisableType() == null) {
-						disabledRate = new UFDouble(1);
+						disabledRate = new UFDouble(0);
 					} else {
-						disabledRate = new UFDouble(1).sub(((AllowanceVO) getBaseDocValueByKey(AllowanceVO.class
-								.getName() + "_" + vo.getDisableType())).getAllowanceamount().div(100));
+						disabledRate = new UFDouble(((AllowanceVO) getBaseDocValueByKey(AllowanceVO.class.getName()
+								+ "_" + vo.getDisableType())).getAllowanceamount().div(100));
 					}
 
 					// 级距表中取出的是普通+就业
@@ -990,6 +992,9 @@ public class TaiwanNHICalculator extends BaseDAOManager {
 					// RangeTableTypeEnum.LABOR_RANGETABLE,
 					// vo.getLaborRange(), vo.getValidLaborDays());
 
+					UFDouble disableAmount = UFDouble.ZERO_DBL;
+					UFDouble originalAmount = UFDouble.ZERO_DBL;
+
 					// 普通事故-个人
 					UFDouble commonAccTotal = vo.getLaborRange().multiply(vo.getCommonAccRate());
 					if (disabledRate.equals(UFDouble.ZERO_DBL)
@@ -997,9 +1002,10 @@ public class TaiwanNHICalculator extends BaseDAOManager {
 									.multiply(vo.getValidLaborDays().div(30)).equals(UFDouble.ZERO_DBL)) {
 						vo.setCommonAccAmount_Psn(UFDouble.ZERO_DBL);
 					} else {
-						vo.setCommonAccAmount_Psn(commonAccTotal.multiply(vo.getCommonAccRate_Psn())
-								.multiply(vo.getValidLaborDays().div(30)).setScale(0, UFDouble.ROUND_HALF_UP)
-								.multiply(disabledRate).sub(0.5).setScale(0, UFDouble.ROUND_HALF_UP));
+						originalAmount = commonAccTotal.multiply(vo.getCommonAccRate_Psn())
+								.multiply(vo.getValidLaborDays().div(30)).setScale(0, UFDouble.ROUND_HALF_UP);
+						disableAmount = originalAmount.multiply(disabledRate).setScale(0, UFDouble.ROUND_HALF_UP);
+						vo.setCommonAccAmount_Psn(originalAmount.sub(disableAmount));
 					}
 					// 普通事故-公司
 					vo.setCommonAccAmount_Org(commonAccTotal.multiply(vo.getCommonAccRate_Org())
@@ -1011,9 +1017,10 @@ public class TaiwanNHICalculator extends BaseDAOManager {
 									.equals(UFDouble.ZERO_DBL)) {
 						vo.setEmpInsAmount_Psn(UFDouble.ZERO_DBL);
 					} else {
-						vo.setEmpInsAmount_Psn(empInsTotal.multiply(vo.getEmpInsRate_Psn())
-								.multiply(vo.getValidLaborDays()).div(30).setScale(0, UFDouble.ROUND_HALF_UP)
-								.multiply(disabledRate).sub(0.5).setScale(0, UFDouble.ROUND_HALF_UP));
+						originalAmount = empInsTotal.multiply(vo.getEmpInsRate_Psn()).multiply(vo.getValidLaborDays())
+								.div(30).setScale(0, UFDouble.ROUND_HALF_UP);
+						disableAmount = originalAmount.multiply(disabledRate).setScale(0, UFDouble.ROUND_HALF_UP);
+						vo.setEmpInsAmount_Psn(originalAmount.sub(disableAmount));
 					}
 					// 就业-公司
 					vo.setEmpInsAmount_Org(empInsTotal.multiply(vo.getEmpInsRate_Org())
@@ -1025,9 +1032,11 @@ public class TaiwanNHICalculator extends BaseDAOManager {
 									.equals(UFDouble.ZERO_DBL)) {
 						vo.setOccAccAmount_Psn(UFDouble.ZERO_DBL);
 					} else {
-						vo.setOccAccAmount_Psn(occAccTotal.multiply(vo.getOccAccRate_Psn())
-								.multiply(vo.getValidLaborDays()).div(30).setScale(0, UFDouble.ROUND_HALF_UP)
-								.multiply(disabledRate).sub(0.5).setScale(0, UFDouble.ROUND_HALF_UP));
+						originalAmount = occAccTotal.multiply(vo.getOccAccRate_Psn()).multiply(vo.getValidLaborDays())
+								.div(30).setScale(0, UFDouble.ROUND_HALF_UP);
+						disableAmount = originalAmount.multiply(disabledRate).add(0.5)
+								.setScale(0, UFDouble.ROUND_HALF_UP);
+						vo.setOccAccAmount_Psn(originalAmount.sub(disableAmount));
 					}
 					// 职灾-公司
 					vo.setOccAccAmount_Org(occAccTotal.multiply(vo.getOccAccRate_Org())

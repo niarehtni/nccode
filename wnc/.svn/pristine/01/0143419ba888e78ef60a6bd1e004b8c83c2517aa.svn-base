@@ -1,0 +1,2 @@
+insert into sm_funcregister(cfunid,class_name,dr,fun_desc,fun_name,fun_property,funcode,funtype,help_name,isbuttonpower,iscauserusable,isenable,isfunctype,mdid,orgtypecode,own_module,parent_id,pk_group,ts) values( '0001ZZ10000000057EWX','nc.ui.pubapp.uif2app.ToftPanelAdaptorEx',0,null,'部门调整申请',0,'60050deptadj',0,null,'N',null,'Y','N',null,'HRORGTYPE00000000000','6005','1002Z710000000004I1E',null,'2018-11-06 12:34:00')
+/

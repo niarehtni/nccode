@@ -1,0 +1,159 @@
+package nc.impl.twhr;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import nc.bs.dao.BaseDAO;
+import nc.hr.utils.InSQLCreator;
+import nc.impl.pub.ace.AceTwhrPubServiceImpl;
+import nc.impl.pubapp.pub.smart.BatchSaveAction;
+import nc.itf.twhr.ITwhrMaintain;
+import nc.ui.querytemplate.querytree.IQueryScheme;
+import nc.vo.bd.meta.BatchOperateVO;
+import nc.vo.pub.BusinessException;
+import nc.vo.twhr.nhicalc.BaoAccountVO;
+
+public class TwhrMaintainImpl extends AceTwhrPubServiceImpl implements ITwhrMaintain {
+	private BaseDAO basedao = new BaseDAO();
+
+	public BaseDAO getBasedao() {
+		if (null == basedao) {
+			return new BaseDAO();
+		}
+		return basedao;
+	}
+
+	@Override
+	public BaoAccountVO[] query(IQueryScheme queryScheme) throws BusinessException {
+		return super.pubquerybasedoc(queryScheme);
+	}
+
+	@Override
+	public BatchOperateVO batchSave(BatchOperateVO batchVO) throws BusinessException {
+		BatchSaveAction<BaoAccountVO> saveAction = new BatchSaveAction<BaoAccountVO>();
+		BatchOperateVO retData = saveAction.batchSave(batchVO);
+		return retData;
+	}
+
+	@Override
+	public void insertupdatehealth(BaoAccountVO[] baoaccountvos) throws BusinessException {
+		List<String> idlist = new ArrayList<String>();
+		List<BaoAccountVO> savelist = new ArrayList<BaoAccountVO>();
+		for (BaoAccountVO baovo : baoaccountvos) {
+			idlist.add(baovo.getIdno());
+			savelist.add(baovo);
+		}
+		String waperiod = savelist.get(0).getPk_period();
+		InSQLCreator insql = new InSQLCreator();
+		String psndocidInSQL = insql.getInSQL(idlist.toArray(new String[0]));
+		// 查询出表中已有的vo
+		List<BaoAccountVO> updatelist = new ArrayList<BaoAccountVO>();
+		List<BaoAccountVO> volist = (List<BaoAccountVO>) this.basedao.retrieveByClause(BaoAccountVO.class, "idno in("
+				+ psndocidInSQL + ") and pk_period='" + waperiod + "'");
+		List<BaoAccountVO> removelist = new ArrayList<BaoAccountVO>();
+		if (null != volist && volist.size() > 0) {
+			for (BaoAccountVO vo : volist) {
+				for (BaoAccountVO baovo : baoaccountvos) {
+					if (vo.getIdno().equals(baovo.getIdno())) {
+						removelist.add(baovo);
+						vo.setHealth_orgamount(baovo.getHealth_orgamount());
+						vo.setHealth_psnamount(baovo.getHealth_psnamount());
+						vo.setPk_group(baovo.getPk_group());
+						vo.setPk_org(baovo.getPk_org());
+						vo.setPk_period(baovo.getPk_period());
+						updatelist.add(vo);
+					}
+				}
+			}
+			savelist.removeAll(removelist);
+		}
+		if (null != savelist && savelist.size() > 0) {
+			this.basedao.insertVOArray(savelist.toArray(new BaoAccountVO[0]));
+		}
+		if (null != updatelist && updatelist.size() > 0) {
+			this.basedao.updateVOArray(updatelist.toArray(new BaoAccountVO[0]));
+		}
+	}
+
+	@Override
+	public void insertupdatelabor(BaoAccountVO[] baoaccountvos) throws BusinessException {
+		List<String> idlist = new ArrayList<String>();
+		List<BaoAccountVO> savelist = new ArrayList<BaoAccountVO>();
+		for (BaoAccountVO baovo : baoaccountvos) {
+			idlist.add(baovo.getIdno());
+			savelist.add(baovo);
+		}
+		String waperiod = savelist.get(0).getPk_period();
+		InSQLCreator insql = new InSQLCreator();
+		String psndocidInSQL = insql.getInSQL(idlist.toArray(new String[0]));
+		// 查询出表中已有的vo
+		List<BaoAccountVO> updatelist = new ArrayList<BaoAccountVO>();
+
+		List<BaoAccountVO> volist = (List<BaoAccountVO>) this.getBasedao().retrieveByClause(BaoAccountVO.class,
+				"idno in(" + psndocidInSQL + ") and pk_period='" + waperiod + "'");
+		List<BaoAccountVO> removelist = new ArrayList<BaoAccountVO>();
+		if (null != volist && volist.size() > 0) {
+			for (BaoAccountVO vo : volist) {
+				for (BaoAccountVO baovo : baoaccountvos) {
+					if (vo.getIdno().equals(baovo.getIdno())) {
+						removelist.add(baovo);
+						vo.setLabor_orgamount(baovo.getLabor_orgamount());
+						vo.setLabor_psnamount(baovo.getLabor_psnamount());
+						vo.setPk_group(baovo.getPk_group());
+						vo.setPk_org(baovo.getPk_org());
+						vo.setPk_period(baovo.getPk_period());
+						updatelist.add(vo);
+					}
+				}
+			}
+			savelist.removeAll(removelist);
+		}
+		if (null != savelist && savelist.size() > 0) {
+			this.basedao.insertVOArray(savelist.toArray(new BaoAccountVO[0]));
+		}
+		if (null != updatelist && updatelist.size() > 0) {
+			this.basedao.updateVOArray(updatelist.toArray(new BaoAccountVO[0]));
+		}
+	}
+
+	@Override
+	public void insertupdateretire(BaoAccountVO[] baoaccountvos) throws BusinessException {
+		List<String> idlist = new ArrayList<String>();
+		List<BaoAccountVO> savelist = new ArrayList<BaoAccountVO>();
+		for (BaoAccountVO baovo : baoaccountvos) {
+			idlist.add(baovo.getIdno());
+			savelist.add(baovo);
+		}
+		String waperiod = savelist.get(0).getPk_period();
+		InSQLCreator insql = new InSQLCreator();
+		String psndocidInSQL = insql.getInSQL(idlist.toArray(new String[0]));
+		// 查询出表中已有的vo
+		List<BaoAccountVO> updatelist = new ArrayList<BaoAccountVO>();
+
+		List<BaoAccountVO> volist = (List<BaoAccountVO>) this.getBasedao().retrieveByClause(BaoAccountVO.class,
+				"idno in(" + psndocidInSQL + ") and pk_period='" + waperiod + "'");
+		List<BaoAccountVO> removelist = new ArrayList<BaoAccountVO>();
+		if (null != volist && volist.size() > 0) {
+			for (BaoAccountVO vo : volist) {
+				for (BaoAccountVO baovo : baoaccountvos) {
+					if (vo.getIdno().equals(baovo.getIdno())) {
+						removelist.add(baovo);
+						vo.setRetire_orgamount(baovo.getRetire_orgamount());
+						vo.setRetire_psnamount(baovo.getRetire_psnamount());
+						vo.setPk_group(baovo.getPk_group());
+						vo.setPk_org(baovo.getPk_org());
+						vo.setPk_period(baovo.getPk_period());
+						updatelist.add(vo);
+					}
+				}
+			}
+			savelist.removeAll(removelist);
+		}
+		if (null != savelist && savelist.size() > 0) {
+			this.basedao.insertVOArray(savelist.toArray(new BaoAccountVO[0]));
+		}
+		if (null != updatelist && updatelist.size() > 0) {
+			this.basedao.updateVOArray(updatelist.toArray(new BaoAccountVO[0]));
+		}
+	}
+}

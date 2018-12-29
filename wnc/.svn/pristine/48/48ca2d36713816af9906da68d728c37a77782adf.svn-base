@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding='gb2312'?>
+<module name="hrpub">
+  <public>
+	<component remote="true" singleton="true"  tx="CMT">
+	  <interface>nc.itf.hrpub.IIopermitMaintain</interface>
+	  <implementation>nc.impl.hrpub.IopermitMaintainImpl</implementation>
+	</component>
+
+  </public> 
+</module> 

@@ -1,0 +1,1083 @@
+package nc.impl.hrpub.dataexchange;
+
+import java.lang.reflect.Method;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+
+import nc.bs.framework.common.NCLocator;
+import nc.bs.logging.Logger;
+import nc.bs.uap.oid.OidGenerator;
+import nc.itf.hrpub.IDataExchangeExternalExecutor;
+import nc.itf.hrpub.IMDExchangePersistService;
+import nc.itf.hrpub.util.MapKeyComparator;
+import nc.jdbc.framework.processor.ColumnProcessor;
+import nc.jdbc.framework.processor.MapListProcessor;
+import nc.jdbc.framework.processor.MapProcessor;
+import nc.md.model.IAttribute;
+import nc.md.model.IColumn;
+import nc.md.model.type.IType;
+import nc.vo.hrpub.mdmapping.AggMDClassVO;
+import nc.vo.hrpub.mdmapping.MDPropertyVO;
+import nc.vo.pub.BusinessException;
+import nc.vo.pub.lang.UFBoolean;
+import nc.vo.pub.lang.UFDate;
+import nc.vo.pub.lang.UFDateTime;
+
+import org.apache.commons.lang.StringUtils;
+import org.springframework.beans.factory.config.BeanDefinition;
+import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
+import org.springframework.core.type.filter.AssignableTypeFilter;
+
+/**
+ * @author ssx
+ *
+ */
+/**
+ * @author ssx
+ * 
+ */
+public class DataImportExecutor extends AbstractExecutor {
+
+	/**
+	 * 执行插入时采取的动作
+	 * 
+	 * @author ssx
+	 * 
+	 */
+	public enum ExecuteActionEnum {
+		SKIP, // 跳过
+		ERROR, // 报错
+		INSERT, // 插入
+		UPDATE // 更新
+	}
+
+	private IDataExchangeExternalExecutor extendBizClass = null;
+
+	Map<String, String> propertyIDNameMap = new HashMap<String, String>();
+	private String pk_org_v;
+	private Map<String, List<String>> extendSQLs;
+	private Map<String, String> newIDMap;
+	private Map<String, String> newVIDMap;
+	private List<String> insertSkip;
+	private List<String> updateSkip;
+	private String uniqueCheckExtraCondition;
+	private String uniqueCheckExclusiveCondition;
+	private ExecuteActionEnum actionOnDataExists;
+	private boolean extendClassLoaded = false;
+	private IMDExchangePersistService saveService;
+	private boolean isSaveByBP;
+	private Map<String, String> dataCache;
+	private String seedID = null;
+	private String seedVID = null;
+	private Map<String, Map<String, List<UFDate[]>>> psnDocMap;
+
+	public IMDExchangePersistService getSaveService() {
+		if (saveService == null) {
+			saveService = NCLocator.getInstance().lookup(IMDExchangePersistService.class);
+		}
+
+		return saveService;
+	}
+
+	public void setSaveService(IMDExchangePersistService saveservice) {
+		this.saveService = saveservice;
+	}
+
+	public DataImportExecutor() throws BusinessException {
+		super();
+	}
+
+	@Override
+	public void execute() throws BusinessException {
+		super.execute();
+
+		if (!this.isSaveByBP() && findLoadedExtendClass()) {
+			extendClassLoaded = true;
+		} else {
+			if (this instanceof IDataExchangeExternalExecutor) {
+				this.extendBizClass = (IDataExchangeExternalExecutor) this;
+				extendClassLoaded = true;
+			}
+		}
+
+		Logger.error("--- Data Exchange Log ---");
+		Logger.error("Biz handler Class found: " + String.valueOf(extendClassLoaded));
+
+		if (extendClassLoaded) {
+			Logger.error("Biz handler Class: syn public 2 handler.");
+			synClassProperties(this, this.extendBizClass);
+			Logger.error("Biz handler Class: beforeConvert");
+			extendBizClass.beforeConvert();
+			Logger.error("Biz handler Class: syn handler 2 public.");
+			synClassProperties(this.extendBizClass, this);
+		}
+		this.Logging("IMPORT:DOCONVERT");
+		doConvert();
+		if (extendClassLoaded) {
+			Logger.error("Biz handler Class: afterConvert");
+			extendBizClass.afterConvert();
+		}
+
+		if (extendClassLoaded) {
+			Logger.error("Biz handler Class: syn public 2 handler.");
+			synClassProperties(this, this.extendBizClass);
+			Logger.error("Biz handler Class: beforeUpdate");
+			extendBizClass.beforeUpdate();
+			Logger.error("Biz handler Class: syn handler 2 public.");
+			synClassProperties(this.extendBizClass, this);
+		}
+		if (isSaveByBP()) {
+			if (extendClassLoaded) {
+				Logger.error("Biz handler Class: doUpdateByBP");
+				this.Logging("IMPORT:DOBPUPDATE");
+				extendBizClass.doUpdateByBP();
+			}
+		} else {
+			this.Logging("IMPORT:DOUPDATE");
+			doUpdate();
+		}
+		if (extendClassLoaded) {
+			Logger.error("Biz handler Class: afterUpdate");
+			extendBizClass.afterUpdate();
+		}
+
+		prepareReturnValue();
+		this.Logging("IMPORT:FINISH");
+	}
+
+	/**
+	 * 查找當前類已加載的業務子類
+	 * 
+	 * @return
+	 * @throws BusinessException
+	 */
+	@SuppressWarnings("unchecked")
+	private boolean findLoadedExtendClass() throws BusinessException {
+		ClassPathScanningCandidateComponentProvider provider = new ClassPathScanningCandidateComponentProvider(true);
+		provider.addIncludeFilter(new AssignableTypeFilter(DataImportExecutor.class));
+		Set<BeanDefinition> components = provider.findCandidateComponents("nc/impl/hrpub/dataexchange/businessprocess");
+		Logger.error("--- Data Import External Class Check Log ---");
+		Logger.error("Components found: " + (components == null ? "0" : String.valueOf(components.size())));
+		for (BeanDefinition component : components) {
+			try {
+				Logger.error("Compnents bean class name: " + component.getBeanClassName());
+				Class loadedClass = Class.forName(component.getBeanClassName());
+				IDataExchangeExternalExecutor classImpl = (IDataExchangeExternalExecutor) loadedClass.newInstance();
+
+				// 加載類實現實體ID = 當前類處理實體ID
+				if (classImpl.getBizEntityID() instanceof List) {
+					if (((List<String>) classImpl.getBizEntityID()).contains(this.getBusinessEntity().getID())) {
+						this.extendBizClass = classImpl;
+						return true;
+					}
+				} else if (classImpl.getBizEntityID() instanceof String) {
+					if (classImpl.getBizEntityID().equals(this.getBusinessEntity().getID())) {
+						this.extendBizClass = classImpl;
+						return true;
+					}
+				}
+			} catch (Exception e) {
+				Logger.error(e.getMessage());
+			}
+		}
+
+		return false;
+	}
+
+	private void synClassProperties(DataImportExecutor source, IDataExchangeExternalExecutor target) {
+		if (target != null) {
+			Method[] methods = target.getClass().getMethods();
+			for (Method setMethod : methods) {
+				if (setMethod.getName().indexOf("set") == 0) {
+					String propName = setMethod.getName().substring(setMethod.getName().indexOf("set") + 3);
+					try {
+						Method getMethod = source.getClass().getMethod("get" + propName, null);
+						if (getMethod == null) {
+							getMethod = source.getClass().getMethod("is" + propName, null);
+						}
+
+						if (getMethod != null) {
+							setMethod.invoke(target, getMethod.invoke(source, null));
+						}
+					} catch (Exception e) {
+						Logger.error(e.getMessage());
+					}
+				}
+			}
+		}
+	}
+
+	private void synClassProperties(IDataExchangeExternalExecutor source, DataImportExecutor target) {
+		if (target != null) {
+			Method[] methods = target.getClass().getMethods();
+			for (Method setMethod : methods) {
+				if (setMethod.getName().indexOf("set") == 0) {
+					String propName = setMethod.getName().substring(setMethod.getName().indexOf("set") + 3);
+					try {
+						Method getMethod = source.getClass().getMethod("get" + propName, null);
+						if (getMethod == null) {
+							getMethod = source.getClass().getMethod("is" + propName, null);
+						}
+
+						if (getMethod != null) {
+							setMethod.invoke(target, getMethod.invoke(source, null));
+						}
+					} catch (Exception e) {
+						Logger.error(e.getMessage());
+					}
+				}
+			}
+		}
+	}
+
+	private void prepareReturnValue() {
+		this.setJsonValueObjects(new ArrayList<Map<String, Object>>());
+		this.getJsonValueObjects().add(new HashMap<String, Object>());
+		this.getJsonValueObjects().get(0).put("SESSIONKEY", this.getSessionid());
+		if (getErrorMessages().size() > 0) {
+			this.getJsonValueObjects().get(0).put("TASKSTATUS", "ERROR");
+			this.getJsonValueObjects().get(0).put("MESSAGE", new ArrayList<Map<String, Object>>());
+			for (Entry<String, String> entryMsg : getErrorMessages().entrySet()) {
+				Map msgmap = new HashMap<String, Object>();
+				msgmap.put("ROWNO", entryMsg.getKey());
+				msgmap.put("MESSAGE", entryMsg.getValue());
+				((List<Map<String, Object>>) this.getJsonValueObjects().get(0).get("MESSAGE")).add(msgmap);
+			}
+		} else {
+			this.getJsonValueObjects().get(0).put("TASKSTATUS", "DONE");
+		}
+	}
+
+	private void doUpdate() throws BusinessException {
+		if (this.getNcValueObjects() != null && this.getNcValueObjects().size() > 0) {
+			Map<String, String> statMap = new HashMap<String, String>();
+			String strSQL = "";
+			String rowno = "";
+			try {
+				for (Map<String, Object> rowNCMap : this.getNcValueObjects()) {
+					// 清除含有保留属性的项目
+					Map<String, Object> clearedNCMap = clearReservedNCMap(rowNCMap);
+					Map<String, Object> rowMap = new HashMap<String, Object>();
+					if (clearedNCMap != null && clearedNCMap.size() > 0) {
+						for (Entry<String, Object> kv : clearedNCMap.entrySet()) {
+							rowMap.put(kv.getKey().split(":")[1], kv.getValue());
+							rowno = kv.getKey().split(":")[0];
+						}
+
+						if (this.getErrorMessages().containsKey(rowno)) {
+							continue;
+						}
+
+						boolean isExists = isRowDataExists(rowMap);
+						if (isExists) {
+							// 檢查是否設定跳過更新
+							if (this.getUpdateSkip().contains(rowno)) {
+								statMap.put(rowno, ""); // 增加空字符，為保留在路過的時候還有額外SQL要執行
+								continue;
+							}
+
+							if (this.getActionOnDataExists().equals(ExecuteActionEnum.UPDATE)) {
+								// 生成更新脚本前的业务校验
+								if (extendClassLoaded) {
+									this.extendBizClass.beforeUpdateOperation(rowMap);
+								}
+
+								// 已存在，執行更新操作
+								strSQL = getUpdateSQL(rowMap);
+							} else if (this.getActionOnDataExists().equals(ExecuteActionEnum.ERROR)) {
+								throw new BusinessException("要保存的记录已存在");
+							} else if (this.getActionOnDataExists().equals(ExecuteActionEnum.SKIP)) {
+								continue;
+							}
+						} else {
+							// 檢查是否設定跳過新增
+							if (this.getInsertSkip().contains(rowno)) {
+								statMap.put(rowno, "");// 增加空字符，為保留在路過的時候還有額外SQL要執行
+								continue;
+							}
+
+							seedID = OidGenerator.getInstance().nextOid();
+							this.getNewIDMap().put(rowno, seedID);
+							seedVID = OidGenerator.getInstance().nextOid();
+							this.getNewVIDMap().put(rowno, seedVID);
+
+							// 生成插入脚本前的业务校验
+							if (extendClassLoaded) {
+								this.extendBizClass.beforeInsertOperation(rowMap);
+							}
+
+							// 不存在，執行插入操作
+							strSQL = getInsertSQL(rowMap, rowno);
+						}
+					}
+
+					if (!StringUtils.isEmpty(strSQL)) {
+						statMap.put(rowno, strSQL);
+					}
+				}
+			} catch (Exception e) {
+				getErrorMessages().put(rowno, e.getMessage());
+			}
+
+			MapKeyComparator mapCmp = new MapKeyComparator();
+			statMap = mapCmp.sortMapByKey(statMap);
+			if (statMap != null) {
+				for (Entry<String, String> sqlObj : statMap.entrySet()) {
+					try {
+						List<String> sqls = new ArrayList<String>();
+						if (this.getExtendSQLs().containsKey(sqlObj.getKey())) {
+							for (String sql : this.getExtendSQLs().get(sqlObj.getKey())) {
+								if (sql.contains("$NEWID$")) {
+									if (this.getNewIDMap().get(sqlObj.getKey()) == null) {
+										throw new BusinessException("未知錯誤：無法找到新增的PK");
+									}
+									sql = sql.replace("$NEWID$", this.getNewIDMap().get(sqlObj.getKey()));
+								}
+
+								if (sql.contains("$NEWVID$")) {
+									if (this.getNewVIDMap().get(sqlObj.getKey()) == null) {
+										throw new BusinessException("未知錯誤：無法找到新增的版本PK");
+									}
+									sql = sql.replace("$NEWVID$", this.getNewVIDMap().get(sqlObj.getKey()));
+								}
+								sqls.add(sql);
+							}
+						}
+
+						String s = sqlObj.getValue();
+						if (s.contains("$NEWID$")) {
+							s = s.replace("$NEWID$", this.getNewIDMap().get(sqlObj.getKey()));
+						}
+
+						if (s.contains("$NEWVID$")) {
+							s = s.replace("$NEWVID$", this.getNewVIDMap().get(sqlObj.getKey()));
+						}
+
+						if (!StringUtils.isEmpty(s)) {
+							sqls.add(s);
+						}
+
+						if (sqls.size() > 0) {
+							this.getSaveService().executeQueryWithNoCMT(sqls.toArray(new String[0]));
+						}
+					} catch (Exception e) {
+						getErrorMessages().put(sqlObj.getKey(), e.getMessage());
+					}
+				}
+			}
+		}
+		this.Logging("IMPORT:UPDATE");
+	}
+
+	private Map<String, Object> clearReservedNCMap(Map<String, Object> rowNCMap) {
+		Map<String, Object> clearedMap = new HashMap<String, Object>();
+
+		if (this.isHoldReservedProperties()) {
+			for (Entry<String, Object> kv : rowNCMap.entrySet()) {
+				if (!kv.getKey().contains("$RESERVED_PROPERTY$")) {
+					clearedMap.put(kv.getKey(), kv.getValue());
+				}
+			}
+		} else {
+			clearedMap = rowNCMap;
+		}
+		return clearedMap;
+	}
+
+	private String getUpdateSQL(Map<String, Object> rowMap) throws BusinessException {
+		String strSQL = "update " + this.getBusinessEntity().getTable().getName() + " set ";
+		String codeValue = "";
+		String pkValue = "";
+		String keyvalueList = "";
+		for (Entry<String, Object> kv : rowMap.entrySet()) {
+			IAttribute attr = this.getBusinessEntity().getAttributeByName(kv.getKey());
+
+			IColumn col = null;
+			if (attr == null) {
+				col = this.getBusinessEntity().getTable().getColumnByName(kv.getKey());
+			}
+
+			if (this.getEntityCode().equals(kv.getKey())) {
+				codeValue = (String) kv.getValue();
+				continue;
+			}
+
+			if (this.getEntityPK().equals(kv.getKey())) {
+				pkValue = (String) kv.getValue();
+				continue;
+			}
+
+			if (StringUtils.isEmpty(keyvalueList)) {
+				keyvalueList = kv.getKey();
+			} else {
+				keyvalueList += "," + kv.getKey();
+			}
+
+			if (attr != null && attr.getDataType().getTypeType() == 58) {
+				if (this.getLanguage() != null) {
+					keyvalueList += this.getMultiLangMap().get(this.getLanguage());
+				}
+			}
+			keyvalueList += "=";
+
+			int attrType = -1;
+
+			if (attr != null) {
+				attrType = attr.getDataType().getTypeType();
+			} else {
+				attrType = IType.TYPE_String;
+			}
+
+			switch (attrType) {
+			case IType.TYPE_UFDate: // 日期
+			case IType.TYPE_UFDateTime: // 日期时间
+			case IType.TYPE_UFDate_BEGIN: // 日期（开始）
+			case IType.TYPE_UFDate_END: // 日期（结束）
+			case IType.TYPE_UFDATE_LITERAL: // 模糊日期
+				kv.setValue(getDateString((String) kv.getValue()));
+			case IType.TYPE_String: // 字符
+			case IType.TYPE_MEMO: // 备注
+			case IType.TYPE_UFTime: // 时间
+			case IType.TYPE_UFID: // 主键
+			case IType.TYPE_IMAGE: // 图片类型
+			case IType.TYPE_CUSTOM: // 自定义项
+			case IType.MULTILANGUAGE: // 多语文本
+			case IType.TYPE_FREE: // 自由项
+			case IType.ENTITY: // Entity
+			case IType.ENUM: // Enum
+			case IType.REF: // REF
+			case IType.BIZINTERFACE: // Interface
+				if (kv.getValue() == null) {
+					keyvalueList += "null";
+				} else {
+					keyvalueList += "'" + String.valueOf(kv.getValue()) + "'";
+				}
+				if (attrType == 58 && !StringUtils.isEmpty(this.getMultiLangMap().get(this.getLanguage()))) {
+					keyvalueList += "," + kv.getKey();
+					keyvalueList += "=";
+					if (kv.getValue() == null) {
+						keyvalueList += "null";
+					} else {
+						keyvalueList += "'" + String.valueOf(kv.getValue()) + "'";
+					}
+				}
+				break;
+			case 32:
+				UFBoolean val = new UFBoolean((String) kv.getValue());
+				keyvalueList += "'" + String.valueOf(val.toString()) + "'";
+				break;
+			default:
+				if (kv.getValue() == null) {
+					keyvalueList += "null";
+				} else {
+					keyvalueList += String.valueOf(kv.getValue());
+				}
+				break;
+			}
+		}
+
+		// 生成審計信息
+		if (this.getBizAuditInfoMap().containsKey(this.MD_MODIFIER)) {
+			if (!keyvalueList.contains(this.getBizAuditInfoMap().get(this.MD_MODIFIER))) {
+				keyvalueList += "," + this.getBizAuditInfoMap().get(this.MD_MODIFIER) + "=";
+				keyvalueList += "'" + this.getCuserid() + "'";
+			}
+		}
+		if (this.getBizAuditInfoMap().containsKey(this.MD_MODIFIEDTIME)) {
+			if (!keyvalueList.contains(this.getBizAuditInfoMap().get(this.MD_MODIFIEDTIME))) {
+				keyvalueList += "," + this.getBizAuditInfoMap().get(this.MD_MODIFIEDTIME) + "=";
+				keyvalueList += "'" + (new UFDateTime()).toString() + "'";
+			}
+		}
+		// End Audit
+
+		strSQL += keyvalueList;
+		if (StringUtils.isEmpty(this.getEntityPK()) || !rowMap.containsKey(this.getEntityPK()) || StringUtils.isEmpty(pkValue)) {
+			if (!StringUtils.isEmpty(this.getUniqueCheckExclusiveCondition())) {
+				strSQL += this.appendExclusiveUniqueCheckCondition(rowMap);
+			} else {
+				strSQL += " where " + this.getEntityCode() + "='" + codeValue + "'" + this.appendUniqueCheckCondition(rowMap, "");
+			}
+		} else {
+			strSQL += " where " + this.getEntityPK() + "='" + pkValue + "'";
+		}
+
+		return strSQL;
+	}
+
+	private String appendUniqueCheckCondition(Map<String, Object> rowMap, String strSQL) {
+		if (!StringUtils.isEmpty(this.getUniqueCheckExtraCondition())) {
+			String condition = this.getUniqueCheckExtraCondition();
+			for (Entry<String, Object> entry : rowMap.entrySet()) {
+				condition = condition.replace("$" + entry.getKey() + "$", String.valueOf(entry.getValue()));
+			}
+
+			strSQL += " and " + condition;
+		}
+		return strSQL;
+	}
+
+	private String appendExclusiveUniqueCheckCondition(Map<String, Object> rowMap) {
+		String strSQL = "";
+		if (!StringUtils.isEmpty(this.getUniqueCheckExclusiveCondition())) {
+			String condition = this.getUniqueCheckExclusiveCondition();
+			for (Entry<String, Object> entry : rowMap.entrySet()) {
+				condition = condition.replace("$" + entry.getKey() + "$", String.valueOf(entry.getValue()));
+			}
+
+			strSQL = " where " + condition;
+		}
+
+		return strSQL;
+	}
+
+	private String getInsertSQL(Map<String, Object> rowMap, String rowno) throws BusinessException {
+		String strSQL = "insert into " + this.getBusinessEntity().getTable().getName();
+		String fieldList = "";
+		String valueList = "";
+		for (Entry<String, Object> kv : rowMap.entrySet()) {
+			IAttribute attr = this.getBusinessEntity().getAttributeByName(kv.getKey());
+			if (StringUtils.isEmpty(fieldList)) {
+				fieldList = kv.getKey();
+			} else {
+				fieldList += "," + kv.getKey();
+			}
+
+			if (attr != null && attr.getDataType().getTypeType() == 58) {
+				if (this.getLanguage() != null) {
+					fieldList += this.getMultiLangMap().get(this.getLanguage());
+				}
+				if (!StringUtils.isEmpty(this.getMultiLangMap().get(this.getLanguage()))) {
+					fieldList += "," + kv.getKey();
+				}
+			}
+
+			int attrType = -1;
+
+			if (attr != null) {
+				attrType = attr.getDataType().getTypeType();
+			} else {
+				attrType = IType.TYPE_String;
+			}
+
+			switch (attrType) {
+			case IType.TYPE_UFDate: // 日期
+			case IType.TYPE_UFDateTime: // 日期时间
+			case IType.TYPE_UFDate_BEGIN: // 日期（开始）
+			case IType.TYPE_UFDate_END: // 日期（结束）
+			case IType.TYPE_UFDATE_LITERAL: // 模糊日期
+				kv.setValue(getDateString((String) kv.getValue()));
+			case IType.TYPE_String: // 字符
+			case IType.TYPE_MEMO: // 备注
+			case IType.TYPE_UFTime: // 时间
+			case IType.TYPE_UFID: // 主键
+			case IType.TYPE_IMAGE: // 图片类型
+			case IType.TYPE_CUSTOM: // 自定义项
+			case IType.MULTILANGUAGE: // 多语文本
+			case IType.TYPE_FREE: // 自由项
+			case IType.ENTITY: // Entity
+			case IType.ENUM: // Enum
+			case IType.REF: // REF
+			case IType.BIZINTERFACE: // Interface
+				if (StringUtils.isEmpty(valueList)) {
+					if (kv.getValue() == null) {
+						valueList = "null";
+					} else {
+						valueList = "'" + String.valueOf(kv.getValue()) + "'";
+					}
+				} else {
+					if (kv.getValue() == null) {
+						valueList += ",null";
+					} else {
+						valueList += ",'" + String.valueOf(kv.getValue()) + "'";
+					}
+				}
+
+				if (attrType == 58) {
+					if (!StringUtils.isEmpty(this.getMultiLangMap().get(this.getLanguage()))) {
+						if (kv.getValue() == null) {
+							valueList += ",null";
+						} else {
+							valueList += ",'" + String.valueOf(kv.getValue()) + "'";
+						}
+					}
+				}
+				break;
+			case 32:
+				UFBoolean val = new UFBoolean((String) kv.getValue());
+				if (StringUtils.isEmpty(valueList)) {
+					valueList = "'" + String.valueOf(val.toString()) + "'";
+				} else {
+					valueList += ",'" + String.valueOf(val.toString()) + "'";
+				}
+				break;
+			default:
+				if (StringUtils.isEmpty(valueList)) {
+					valueList = String.valueOf(kv.getValue());
+				} else {
+					valueList += "," + String.valueOf(kv.getValue());
+				}
+				break;
+			}
+		}
+
+		if (!StringUtils.isEmpty(this.getEntityOrg())) {
+			if (!fieldList.contains(this.getEntityOrg())) {
+				fieldList += "," + this.getEntityOrg();
+				valueList += ",'" + this.getPk_org() + "'";
+			}
+		}
+
+		// 生成ID
+		fieldList += "," + this.getBusinessEntity().getPrimaryKey().getPKColumn().getName();
+		valueList += ",'" + this.getNewIDMap().get(rowno) + "'";
+
+		// end ID
+
+		// 生成審計信息
+		if (this.getBizAuditInfoMap().containsKey(this.MD_CREATOR)) {
+			if (!fieldList.contains(this.getBizAuditInfoMap().get(this.MD_CREATOR))) {
+				fieldList += "," + this.getBizAuditInfoMap().get(this.MD_CREATOR);
+				valueList += ",'" + this.getCuserid() + "'";
+			}
+		}
+		if (this.getBizAuditInfoMap().containsKey(this.MD_CREATEDTIME)) {
+			if (!fieldList.contains(this.getBizAuditInfoMap().get(this.MD_CREATEDTIME))) {
+				fieldList += "," + this.getBizAuditInfoMap().get(this.MD_CREATEDTIME);
+				valueList += ",'" + (new UFDateTime()).toString() + "'";
+			}
+		}
+		// End AuditInfo
+
+		strSQL += " (" + fieldList + ")";
+		strSQL += " values (" + valueList + ")";
+
+		return strSQL;
+	}
+
+	public String getDateString(String dateString) {
+		if (!StringUtils.isEmpty(dateString)) {
+			if (dateString.length() > 19) {
+				dateString = dateString.substring(0, 19);
+			}
+
+			dateString = dateString.trim().replace("/", "-");
+
+			// if (dateString.contains(":") && !dateString.contains("-")) {
+			// dateString = "0001-01-01" + " " + dateString;
+			// }
+
+			SimpleDateFormat format = null;
+			UFDateTime dt;
+			if (dateString.length() <= 10) {
+				format = new SimpleDateFormat("yyyy-MM-dd");
+				String dateStrs[] = dateString.split("-");
+				if (dateStrs[2].length() == 4) {
+					dateString = dateStrs[2] + "-" + dateStrs[0] + "-" + dateStrs[1];
+				}
+				dt = new UFDateTime(dateString + " 00:00:00");
+			} else {
+				format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+				String dateStrs[] = dateString.split(" ")[0].split("-");
+				if (dateStrs[2].length() == 4) {
+					dateString = dateStrs[2] + "-" + dateStrs[0] + "-" + dateStrs[1] + " " + dateString.split(" ")[1];
+				}
+				dt = new UFDateTime(dateString);
+			}
+
+			dateString = dt.toString(null, format);
+
+		} else {
+			dateString = null;
+		}
+
+		return dateString;
+	}
+
+	private boolean isRowDataExists(Map<String, Object> rowMap) throws BusinessException {
+		String strSQL = "select count(" + this.getEntityPK() + ") cnt from " + this.getBusinessEntity().getTable().getName();
+
+		if (!StringUtils.isEmpty(this.getUniqueCheckExclusiveCondition())) {
+			strSQL += this.appendExclusiveUniqueCheckCondition(rowMap);
+		} else {
+			strSQL += " where ";
+			if (this.isEntityIBDObjectImpl()) {
+				// 實現了IBDObject接口，按接口規範找Code或PK是否存在
+				if (!StringUtils.isEmpty(this.getEntityCode())) {
+					strSQL += this.getEntityCode() + "='" + rowMap.get(this.getEntityCode()) + "'";
+				} else {
+					strSQL += this.getEntityPK() + "='" + rowMap.get(this.getEntityPK()) + "'";
+				}
+			} else {
+				// 未實現IBDObject接口，按實體本身定義的PK進行匹配
+				strSQL += this.getBusinessEntity().getPrimaryKey().getPKColumn().getName() + "='" + rowMap.get(this.getBusinessEntity().getPrimaryKey().getPKColumn().getName()) + "'";
+			}
+
+			strSQL = this.appendUniqueCheckCondition(rowMap, strSQL);
+		}
+
+		Integer count = (Integer) this.getBaseDAO().executeQuery(strSQL, new ColumnProcessor());
+		return count > 0;
+	}
+
+	@Override
+	public void doConvert() throws BusinessException {
+		// Export.doConvert: JsonObject -> NCObject，資料轉換
+		if (this.getJsonValueObjects() != null && this.getJsonValueObjects().size() > 0) {
+			this.setNcValueObjects(new ArrayList<Map<String, Object>>());
+			for (Map<String, Object> jsonobj : this.getJsonValueObjects()) {
+				String rowno = "";
+				if (jsonobj != null && jsonobj.size() > 0) {
+					Map<String, Object> ncObj = new HashMap<String, Object>();
+					for (Entry<String, Object> obj : jsonobj.entrySet()) {
+						String jsonPropName = obj.getKey().toUpperCase();
+						if (jsonPropName.equals("ROWNO")) {
+							rowno = (String) obj.getValue();
+						}
+					}
+
+					if (StringUtils.isEmpty(rowno)) {
+						throw new BusinessException("匯入資料時ROWNO不能為空");
+					}
+					for (Entry<String, Object> obj : jsonobj.entrySet()) {
+						String jsonPropName = obj.getKey().toUpperCase();
+						if (!jsonPropName.equals("ROWNO")) {
+							String propID = getPropIDMappingName(jsonPropName, rowno);
+							if (!StringUtils.isEmpty(propID)) {
+								String propName = propID.contains("$RESERVED_PROPERTY$") ? propID : findPropertyName(propID);
+								if (!StringUtils.isEmpty(propName)) {
+									if (propName.contains("$RESERVED_PROPERTY$")) {
+										ncObj.put(rowno + ":" + propName, obj.getValue());
+									} else {
+										ncObj.put(rowno + ":" + propName, getValueByEntity(propID, obj.getValue()));
+									}
+								}
+							}
+						}
+					}
+
+					this.getNcValueObjects().add(ncObj);
+				}
+			}
+		}
+	}
+
+	private Object getValueByEntity(String propID, Object value) throws BusinessException {
+		if (this.getBizTableMap().containsKey(propID)) {
+			String strSQL = "select " + this.getBizKeyMap().get(propID) + " from " + this.getBizTableMap().get(propID) + " where " + this.getBizCodeMap().get(propID)
+					+ ((value == null || value.toString().toLowerCase().equals("null")) ? " is null " : "='" + String.valueOf(value).trim() + "'");
+
+			if (this.getBizTableMap().get(propID).equals("bd_defdoc")) {
+				strSQL += " and pk_defdoclist = (select pk_defdoclist from bd_defdoclist where code = (select replace(name, 'Defdoc-', '') from md_class where id = (select datatype from md_property where id='"
+						+ propID + "')))";
+			} else if (this.getBizOrgMap().containsKey(propID)) {
+				strSQL += " and (" + this.getBizOrgMap().get(propID) + " is null or " + this.getBizOrgMap().get(propID) + "='~' or " + this.getBizOrgMap().get(propID) + "='"
+						+ (this.getBizOrgMap().get(propID).equals("pk_group") ? this.getPk_group() : this.getPk_org())
+						+ (StringUtils.isEmpty(this.getPk_group()) ? "" : ("' or " + this.getBizOrgMap().get(propID) + "='" + this.getPk_group() + "'")) + " or " + this.getBizOrgMap().get(propID)
+						+ "='GLOBLE00000000000000')";
+			}
+
+			Object refValue = this.getBaseDAO().executeQuery(strSQL, new ColumnProcessor());
+			return refValue;
+		}
+
+		return (value == null || value.toString().toLowerCase().equals("null")) ? null : value;
+
+	}
+
+	private String findPropertyName(String propertyid) throws BusinessException {
+		if (!propertyIDNameMap.containsKey(propertyid)) {
+			List<IAttribute> attribs = this.getBusinessEntity().getAttributes();
+
+			for (IAttribute att : attribs) {
+				if (att.getID().toLowerCase().equals(propertyid.toLowerCase())) {
+					propertyIDNameMap.put(propertyid, att.getName());
+				}
+			}
+		}
+
+		return propertyIDNameMap.get(propertyid);
+	}
+
+	private String getPropIDMappingName(String mapName, String rowno) throws BusinessException {
+		AggMDClassVO mapping = this.getMdmappingVO();
+
+		if (mapping != null) {
+			MDPropertyVO[] props = (MDPropertyVO[]) mapping.getChildren(MDPropertyVO.class);
+			if (props != null && props.length > 0) {
+				for (MDPropertyVO prop : props) {
+					if (mapName.equals(prop.getMapfieldname())) {
+						return prop.getPk_property();
+					}
+				}
+			}
+		}
+
+		if (!this.isHoldReservedProperties()) {
+			if (!this.isSkipNotExistMapping()) {
+				throw new BusinessException("语义元数据中无法找到指定的栏位映射关系" + " [" + rowno + ":" + mapName + "]");
+			} else {
+				return null;
+			}
+		} else {
+			return "$RESERVED_PROPERTY$" + mapName;
+		}
+	}
+
+	protected String getPk_org_v() throws BusinessException {
+		if (StringUtils.isEmpty(pk_org_v)) {
+			String strSQL = "select pk_vid from org_orgs_v where pk_org = '" + this.getPk_org() + "' and islastversion = 'Y'";
+			pk_org_v = (String) this.getBaseDAO().executeQuery(strSQL, new ColumnProcessor());
+		}
+
+		return pk_org_v;
+	}
+
+	public Map<String, List<String>> getExtendSQLs() {
+		if (extendSQLs == null) {
+			extendSQLs = new HashMap<String, List<String>>();
+		}
+		return extendSQLs;
+	}
+
+	public void setExtendSQLs(Map<String, List<String>> extendSQLs) {
+		this.extendSQLs = extendSQLs;
+	}
+
+	public Map<String, String> getNewIDMap() {
+		if (newIDMap == null) {
+			newIDMap = new HashMap<String, String>();
+		}
+
+		return newIDMap;
+	}
+
+	public void setNewIDMap(Map<String, String> newIDMap) {
+		this.newIDMap = newIDMap;
+	}
+
+	public Map<String, String> getNewVIDMap() {
+		if (newVIDMap == null) {
+			newVIDMap = new HashMap<String, String>();
+		}
+		return newVIDMap;
+	}
+
+	public void setNewVIDMap(Map<String, String> newVIDMap) {
+		this.newVIDMap = newVIDMap;
+	}
+
+	public String getUniqueCheckExtraCondition() {
+		return uniqueCheckExtraCondition;
+	}
+
+	public void setUniqueCheckExtraCondition(String uniqueCheckExtraCondition) {
+		this.uniqueCheckExtraCondition = uniqueCheckExtraCondition;
+	}
+
+	/**
+	 * 取排他唯一性检查条件
+	 * 
+	 * 排他条件：只依据此条件做实体存在性查询，不再引用实体Code-PK翻译机制。
+	 * 一旦有排他条件出现，uniqueChenckExtraCondition不再生效
+	 * 
+	 * @return
+	 */
+	public String getUniqueCheckExclusiveCondition() {
+		return uniqueCheckExclusiveCondition;
+	}
+
+	public void setUniqueCheckExclusiveCondition(String uniqueCheckExclusiveCondition) {
+		this.uniqueCheckExclusiveCondition = uniqueCheckExclusiveCondition;
+	}
+
+	public ExecuteActionEnum getActionOnDataExists() {
+		if (actionOnDataExists == null) {
+			actionOnDataExists = ExecuteActionEnum.UPDATE;
+		}
+		return actionOnDataExists;
+	}
+
+	public void setActionOnDataExists(ExecuteActionEnum actionOnDataExists) {
+		this.actionOnDataExists = actionOnDataExists;
+	}
+
+	protected String getStringValue(Object value) {
+		if (value != null) {
+			return "'" + String.valueOf(value) + "'";
+		} else {
+			return "null";
+		}
+	}
+
+	protected String getRandomString(int length) {
+		String seed = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+		String tail = "";
+		for (int i = 0; i < length; i++) {
+			int pos = (int) (Math.random() * seed.length());
+			tail += seed.substring(pos, pos + 1);
+		}
+		return tail;
+	}
+
+	protected boolean isPropertyChanged(Map<String, Object> rowNCMap, String rowno, String oldPropName, String newPropName) {
+		String oldItem = (String) rowNCMap.get(rowno + ":" + oldPropName);
+		String newItem = (String) rowNCMap.get(rowno + ":" + newPropName);
+		return oldItem != null && !oldItem.equals(newItem);
+	}
+
+	public boolean isSaveByBP() {
+		return isSaveByBP;
+	}
+
+	public void setSaveByBP(boolean isSaveByBP) {
+		this.isSaveByBP = isSaveByBP;
+	}
+
+	public List<String> getInsertSkip() {
+		if (insertSkip == null) {
+			insertSkip = new ArrayList<String>();
+		}
+		return insertSkip;
+	}
+
+	public void setInsertSkip(List<String> insertSkip) {
+		this.insertSkip = insertSkip;
+	}
+
+	public List<String> getUpdateSkip() {
+		if (updateSkip == null) {
+			updateSkip = new ArrayList<String>();
+		}
+		return updateSkip;
+	}
+
+	public void setUpdateSkip(List<String> updateSkip) {
+		this.updateSkip = updateSkip;
+	}
+
+	protected Map<String, Object> getPsnjob(String pk_psndoc, String startdate) throws BusinessException {
+		String strSQL = "select pk_psnjob, pk_psnorg, pk_dept_v from hi_psnjob where pk_psndoc=" + getStringValue(pk_psndoc) + " and " + getStringValue(startdate)
+				+ " between begindate and isnull(enddate, '9999-12-31')";
+		Map<String, Object> psnjob = (Map<String, Object>) this.getBaseDAO().executeQuery(strSQL, new MapProcessor());
+
+		return psnjob;
+	}
+
+	protected void setDataCache(Map<String, String> datacache) {
+		dataCache = datacache;
+	}
+
+	protected Map<String, String> getDataCache() {
+		if (dataCache == null) {
+			dataCache = new HashMap<String, String>();
+		}
+
+		return dataCache;
+	}
+
+	protected String getKeyValue(String key, String strSQL) throws BusinessException {
+		String value = null;
+		if (!this.getDataCache().containsKey(key)) {
+			value = (String) this.getBaseDAO().executeQuery(strSQL, new ColumnProcessor());
+
+			if (StringUtils.isEmpty(value)) {
+				value = "~";
+			}
+
+			this.getDataCache().put(key, value);
+		}
+		return this.getDataCache().get(key);
+	}
+
+	protected String getCacheKey(String typeName, String key1String, String key2String) {
+		return typeName + key1String + key2String;
+	}
+
+	protected String getTimeItemCopyByOrg(String pk_timeitem, String pk_org) throws BusinessException {
+		String key = getCacheKey("TIMEITEM", pk_org, pk_timeitem);
+		String strSQL = "select pk_timeitemcopy from tbm_timeitemcopy where pk_timeitem = " + getStringValue(pk_timeitem) + " and pk_org=" + getStringValue(pk_org);
+		return getKeyValue(key, strSQL);
+	}
+
+	protected String getTimeItemByCode(String stype) throws BusinessException {
+		String key = getCacheKey("TIMEITEM", "NULL", stype);
+		String strSQL = "select pk_timeitem from tbm_timeitem where timeitemcode = " + getStringValue(stype);
+		return getKeyValue(key, strSQL);
+	}
+
+	public Map<String, Map<String, List<UFDate[]>>> getPsnDocMap() {
+		if (psnDocMap == null) {
+			psnDocMap = new HashMap<String, Map<String, List<UFDate[]>>>();
+		}
+		return psnDocMap;
+	}
+
+	public void setPsnDocMap(Map<String, Map<String, List<UFDate[]>>> psnDocMap) {
+		this.psnDocMap = psnDocMap;
+	}
+
+	/**
+	 * @param psncode
+	 *            员工编码（非员工号）
+	 * @param checkdate
+	 * @return
+	 * @throws BusinessException
+	 */
+	protected String getPsndocByCodeDate(String psncode, String checkdate) throws BusinessException {
+		if (!this.getPsnDocMap().containsKey(psncode)) {
+			String strSQL = "select pk_psndoc, begindate, isnull(enddate, '9999-12-31') enddate from hi_psnjob " + " where pk_psndoc = (select pk_psndoc from bd_psndoc where code = "
+					+ getStringValue(psncode) + ")";
+			List<Map<String, Object>> psnvalues = (List<Map<String, Object>>) this.getBaseDAO().executeQuery(strSQL, new MapListProcessor());
+			if (psnvalues != null && psnvalues.size() > 0) {
+				for (Map<String, Object> psnvalue : psnvalues) {
+					if (!this.getPsnDocMap().containsKey(psncode)) {
+						this.getPsnDocMap().put(psncode, new HashMap<String, List<UFDate[]>>());
+					}
+
+					String pk_psndoc = "";
+					UFDate dStart = null;
+					UFDate dEnd = null;
+					for (Entry<String, Object> value : psnvalue.entrySet()) {
+						if (value.getKey().equals("pk_psndoc")) {
+							pk_psndoc = (String) value.getValue();
+						} else if (value.getKey().equals("begindate")) {
+							dStart = new UFDate((String) value.getValue());
+						} else if (value.getKey().equals("enddate")) {
+							dEnd = new UFDate((String) value.getValue());
+						}
+					}
+					if (!this.getPsnDocMap().get(psncode).containsKey(pk_psndoc)) {
+						this.getPsnDocMap().get(psncode).put(pk_psndoc, new ArrayList<UFDate[]>());
+					}
+
+					this.getPsnDocMap().get(psncode).get(pk_psndoc).add(new UFDate[] { dStart, dEnd });
+				}
+			}
+		}
+
+		String pk_psndoc = "";
+		if (this.getPsnDocMap().containsKey(psncode)) {
+			if (this.getPsnDocMap().get(psncode) != null && this.getPsnDocMap().get(psncode).size() > 0) {
+				UFDate checkDate = new UFDate(checkdate);
+				for (Entry<String, List<UFDate[]>> checkPsn : this.getPsnDocMap().get(psncode).entrySet()) {
+					if (checkPsn.getValue() != null && checkPsn.getValue().size() > 0) {
+						for (UFDate[] dates : checkPsn.getValue()) {
+							if ((checkDate.after(dates[0]) || checkDate.isSameDate(dates[0])) && (checkDate.before(dates[1]) || checkDate.isSameDate(dates[1]))) {
+								pk_psndoc = checkPsn.getKey();
+								break;
+							}
+						}
+					}
+				}
+			}
+		}
+		return pk_psndoc;
+	}
+
+}

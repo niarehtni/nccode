@@ -1,0 +1,262 @@
+package nc.itf.om;
+
+import java.util.HashMap;
+
+import nc.vo.hr.tools.pub.GeneralVO;
+import nc.vo.om.hrdept.AggHRDeptVO;
+import nc.vo.om.hrdept.DeptCopyWrapperVO;
+import nc.vo.om.hrdept.DeptHistoryVO;
+import nc.vo.om.hrdept.DeptMergeWrapperVO;
+import nc.vo.om.hrdept.DeptTransDeptVO;
+import nc.vo.om.hrdept.DeptTransItemVO;
+import nc.vo.om.hrdept.DeptTransRefNameVO;
+import nc.vo.om.hrdept.DeptTransRuleVO;
+import nc.vo.om.hrdept.PostAdjustVO;
+import nc.vo.pub.BusinessException;
+import nc.vo.pub.SuperVO;
+import nc.vo.pub.lang.UFDate;
+
+public interface IDeptManageService
+{
+    
+    /**
+     * 删除<br>
+     * 
+     * @param vo
+     */
+    void delete(AggHRDeptVO vo) throws BusinessException;
+    
+    /**
+     * 增加<br>
+     * 
+     * @param vo
+     * @return
+     */
+    AggHRDeptVO insert(AggHRDeptVO vo) throws BusinessException;
+    
+    /**
+     * 修改<br>
+     * 
+     * @param vo
+     * @return
+     */
+    AggHRDeptVO update(AggHRDeptVO vo, boolean blChangeAudltInfo) throws BusinessException;
+    
+    /**
+     * 抽取方法给导入工具使用
+     * @param vo
+     * @param blChangeAudltInfo
+     * @return
+     * @throws BusinessException
+     */
+    AggHRDeptVO updateImportVO(AggHRDeptVO vo, boolean blChangeAudltInfo) throws BusinessException;
+    
+    /**
+     * 创建部门结构新版本<br>
+     * 
+     * @param pk_org
+     * @param vname
+     * @param vstartdate
+     * @throws BusinessException
+     */
+    public void createDeptStruVersion(String pk_org, String vname, UFDate vstartdate) throws BusinessException;
+    
+    /**
+     * 批量创建部门新版本
+     * <p>
+     * 用于部门的变更操作中需要同时版本化很多部门的场合
+     * 
+     * @param deptVO
+     * @throws BusinessException
+     */
+    public AggHRDeptVO[] createDeptVersion(AggHRDeptVO[] deptVOs) throws BusinessException;
+    
+    /**
+     * 创建部门新版本<br>
+     * 
+     * @param deptVO
+     * @throws BusinessException
+     */
+    public AggHRDeptVO createDeptVersion(AggHRDeptVO deptVO) throws BusinessException;
+    
+    /**
+     * 对部门进行复制<br>
+     * 
+     * @param wrapperVO
+     * @return
+     * @throws BusinessException
+     */
+    void copy(DeptCopyWrapperVO wrapperVO) throws BusinessException;
+    
+    /**
+     * 部门更名<br>
+     * 
+     * @param deptVO 部门VO
+     * @param updateCareer 是否同步新增工作履历
+     * @return
+     * @throws BusinessException
+     */
+    AggHRDeptVO rename(AggHRDeptVO deptVO, DeptHistoryVO historyVO, boolean updateCareer) throws BusinessException;
+    /**
+     * 部门更名<br>
+     * 
+     * @param deptVO 部门VO
+     * @param updateCareer 是否同步新增工作履历
+     * @param changeType 變動類型:1.只更名 2.只變更負責人 3.更名和負責人都進行
+     * @return
+     * @throws BusinessException
+     */
+    AggHRDeptVO renameAndPrincipalChange(AggHRDeptVO deptVO, DeptHistoryVO historyVO, boolean updateCareer,int changeType) throws BusinessException;
+    
+    /**
+     * 部门转移<br>
+     * 
+     * @param deptVO
+     * @param historyVO
+     * @return 被转移部门和接收部门
+     * @throws BusinessException
+     */
+    AggHRDeptVO[] shift(AggHRDeptVO deptVO, DeptHistoryVO historyVO) throws BusinessException;
+    
+    /**
+     * 为部门合并的第二步保存岗位信息<br>
+     * 
+     * @throws BusinessException
+     */
+    PostAdjustVO[] savePostForDeptMerge(PostAdjustVO[] alreadySavedPostVOs, PostAdjustVO[] backupPostVOs, PostAdjustVO[] postAdjustVOs)
+            throws BusinessException;
+    
+    /**
+     * 当选择的部门发生变化时回滚数据库里的岗位信息<br>
+     * 
+     * @throws BusinessException
+     */
+    void rollbackPostForDeptMerge(PostAdjustVO[] savedPostVOs, PostAdjustVO[] backupPostVOs) throws BusinessException;
+    
+    /**
+     * 部门合并<br>
+     * 
+     * @param wrapperVO
+     * @throws BusinessException
+     */
+    AggHRDeptVO[] merge(DeptMergeWrapperVO wrapperVO) throws BusinessException;
+    
+    /**
+     * 部门撤销<br>
+     * 
+     * @param vo
+     * @return
+     * @throws BusinessException
+     */
+    AggHRDeptVO[] cancel(AggHRDeptVO vo, DeptHistoryVO historyVO, boolean disableDept) throws BusinessException;
+    
+    /**
+     * 部门反撤销<br>
+     * 
+     * @param vo
+     * @param historyVO
+     * @param includeChildDept
+     * @param includePost
+     * @return
+     * @throws BusinessException
+     */
+    AggHRDeptVO[] uncancel(AggHRDeptVO vo, DeptHistoryVO historyVO, boolean includeChildDept, boolean includePost, boolean enableDept)
+            throws BusinessException;
+    
+    /**
+     * 执行跨业务单元部门转移
+     * 
+     * @param ruleVO
+     * @param refNameVOs
+     * @param transDeptVOs
+     * @param transItemVOs
+     * @param transPsnInfVOs
+     * @return
+     * @throws BusinessException
+     */
+    public void doTransDeptInf(DeptTransRuleVO ruleVO, DeptTransRefNameVO[] refNameVOs, DeptTransDeptVO[] transDeptVOs,
+            DeptTransItemVO[] transItemVOs, GeneralVO[] transPsnInfVOs) throws BusinessException;
+    
+    /**
+     * 导入工具插入，不发送消息<br>
+     * 
+     * @param vo
+     * @return
+     * @throws BusinessException
+     */
+    public AggHRDeptVO insertImportVO(AggHRDeptVO vo) throws BusinessException;
+    
+    /**
+     * 导入工具新增时的事件后通知
+     * 
+     * @param vo
+     * @throws BusinessException
+     */
+    public void fireAfterImportInsertEvent(AggHRDeptVO[] vos) throws BusinessException;
+    
+    /**
+     * 批改 <br>
+     * @param updateVO
+     * @param strFieldCode
+     * @param strPk_depts
+     * @return AggHRDeptVO
+     * @throws BusinessException
+     */
+    AggHRDeptVO[] batchUpdateDeptMain(SuperVO updateVO, String strFieldCode, String[] strPk_depts) throws BusinessException;
+    
+    /**
+     * 批量更名
+     * @param deptMap 部门aggvo对部门变更历史映射
+     * @param updateCareer 是否同步履历
+     * @param needCreateVersion 是否版本化
+     * @param versionMemo 新版本说明
+     * @return 批量更名后的VO对版本化提示信息的映射
+     * @throws BusinessException
+     */
+    public HashMap<AggHRDeptVO, String> rename(HashMap<AggHRDeptVO, DeptHistoryVO> deptMap, boolean updateCareer,
+            boolean needCreateVersion, String versionMemo) throws BusinessException;
+    
+    /**
+     * 批量撤销
+     * @param deptMap 部门aggvo对部门变更历史映射
+     * @param disableDept 是否停用
+     * @param needCreateVersion 是否版本化
+     * @param versionMemo 新版本说明
+     * @return 批量撤销后的VO对版本化提示信息的映射,包括下级部门
+     * @throws BusinessException
+     */
+    public HashMap<AggHRDeptVO, String> cancel(HashMap<AggHRDeptVO, DeptHistoryVO> deptMap, boolean disableDept, boolean needCreateVersion,
+            String versionMemo) throws BusinessException;
+    
+    /**
+     * 批量反撤销
+     * @param deptMap 部门aggvo对部门变更历史映射
+     * @param includeChildDept 是否包含下级部门
+     * @param includePost 是否包含岗位
+     * @param enableDept 是否启用
+     * @param needCreateVersion 是否版本化
+     * @param versionMemo 新版本说明
+     * @return 批量反撤销后的VO对版本化提示信息的映射
+     * @throws BusinessException
+     */
+    public HashMap<AggHRDeptVO, String> uncancel(HashMap<AggHRDeptVO, DeptHistoryVO> deptMap, boolean includeChildDept,
+            boolean includePost, boolean enableDept, boolean needCreateVersion, String versionMemo) throws BusinessException;
+    /**
+     * 创建部门新版本<br>
+     * 
+     * @param deptVO
+     * @param vstartdate 生效时间
+     * @throws BusinessException
+     */
+    public AggHRDeptVO createDeptVersion(AggHRDeptVO deptVO,UFDate vstartdate) throws BusinessException;
+    
+    /**
+     * 批量创建部门新版本
+     * <p>
+     * 用于部门的变更操作中需要同时版本化很多部门的场合
+     * 
+     * @param deptVO
+     * @throws BusinessException
+     */
+    public AggHRDeptVO[] createDeptVersion(AggHRDeptVO[] deptVOs,UFDate vstartdate) throws BusinessException;
+}

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="nc.itf.om.orginfo.OrginfoEJB">
+	<public>
+		<component priority="0" singleton="true" remote="true" tx="NONE" supportAlias="true">
+			<interface>nc.itf.jf.IUpdatePsnJob</interface>
+			<implementation>nc.impl.hrjf.UpdatePsnJobImpl</implementation>
+		</component>
+		
+		<component priority="0" singleton="true" remote="true" tx="CMT" supportAlias="true">
+			<interface>nc.itf.om.IDeptAdjustService</interface>
+			<implementation>nc.impl.om.deptadj.DeptAdjustServiceImpl</implementation>
+		</component>
+	
+	</public>
+</module>

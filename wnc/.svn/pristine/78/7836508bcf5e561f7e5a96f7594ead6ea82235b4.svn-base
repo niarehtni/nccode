@@ -1,0 +1,309 @@
+package nc.impl.twhr;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+
+import nc.bs.dao.BaseDAO;
+import nc.bs.dao.DAOException;
+import nc.impl.pub.ace.AceDiffinsuranceaPubServiceImpl;
+import nc.impl.pubapp.pub.smart.BatchSaveAction;
+import nc.itf.twhr.IDiffinsuranceaMaintain;
+import nc.jdbc.framework.processor.MapListProcessor;
+import nc.ui.querytemplate.querytree.IQueryScheme;
+import nc.vo.bd.meta.BatchOperateVO;
+import nc.vo.pub.BusinessException;
+import nc.vo.pub.ISuperVO;
+import nc.vo.pub.lang.UFDouble;
+import nc.vo.pubapp.pattern.exception.ExceptionUtils;
+import nc.vo.twhr.diffinsurance.DiffinsuranceVO;
+import nc.vo.twhr.nhicalc.BaoAccountVO;
+import nc.vo.uif2.LoginContext;
+
+public class DiffinsuranceaMaintainImpl extends AceDiffinsuranceaPubServiceImpl implements IDiffinsuranceaMaintain {
+	private BaseDAO dao;
+
+	@Override
+	public DiffinsuranceVO[] query(IQueryScheme queryScheme) throws BusinessException {
+		return super.pubquerybasedoc(queryScheme);
+	}
+
+	@Override
+	public BatchOperateVO batchSave(BatchOperateVO batchVO) throws BusinessException {
+		BatchSaveAction<DiffinsuranceVO> saveAction = new BatchSaveAction<DiffinsuranceVO>();
+		BatchOperateVO retData = saveAction.batchSave(batchVO);
+		return retData;
+	}
+
+	@Override
+	public void Blanace(String pk_org, String pk_period) throws BusinessException {
+		// Boolean vois = this.voExist(pk_org, pk_period);
+		// if (!vois) {
+
+		// }
+
+		// ExceptionUtils.wrappBusinessException("已存在差异分析数据");
+		// else {
+		String pk_period1 = pk_period.replace("-", "");
+		String sql = "pk_org='" + pk_org + "' and pk_period='" + pk_period + "' and dr=0";
+		// 1. 读对账单
+		Collection<BaoAccountVO> accVOs = this.getDao().retrieveByClause(BaoAccountVO.class, sql);
+		String sql2 = "select wa_data.pk_psndoc,max(f_22) ,sum(f_23),sum(f_24),max(f_27) ,sum(f_28),sum(f_29),max(f_46) ,sum(f_47),sum(f_50),bd_psndoc.id idno, wa_data.pk_org, wa_data.pk_group"
+				+ " from wa_data wa_data inner join bd_psndoc bd_psndoc on wa_data.PK_PSNDOC=bd_psndoc.PK_PSNDOC"
+				+ " where  wa_data.cyearperiod='"
+				+ pk_period1
+				+ "' and wa_data.pk_org='"
+				+ pk_org
+				+ "'  group  by id, wa_data.pk_org, wa_data.pk_group,wa_data.pk_psndoc";
+		// 2. 读薪资数据
+		List<Map> waDatas = (List<Map>) this.getDao().executeQuery(sql2, new MapListProcessor());
+
+		// 3. 对账,生成差异分析结果
+		List<DiffinsuranceVO> voList = new ArrayList<DiffinsuranceVO>();
+		for (BaoAccountVO vo : accVOs) {
+			Map wadata = this.getWaDataByID(waDatas, vo.getIdno());
+
+			if (wadata == null) {
+				// 4.无此员工
+				ExceptionUtils.wrappBusinessException("无此员工");
+			} else {
+				DiffinsuranceVO dvo = null;
+
+				int labor = 1;
+				if (null != vo.getLabor_amount()
+						&& !vo.getLabor_amount().equals(new UFDouble(wadata.get("max(f_22)").toString()))) {
+					// 2. 劳保级距不符 把级距放入分析表中
+					if (dvo == null) {
+						dvo = new DiffinsuranceVO();
+					}
+					dvo.setIdifftype(2);
+					dvo.setIchecktype(labor);
+					dvo.setDiff_amount(vo.getLabor_amount());// 对账单级距
+					dvo.setOrg_amount(new UFDouble(wadata.get("max(f_22)").toString()));// 薪资发放级距
+
+				} else {
+
+					UFDouble sublaboremployee = new UFDouble(wadata.get("sum(f_23)").toString()).sub(vo
+							.getLabor_psnamount() == null ? UFDouble.ZERO_DBL : vo.getLabor_psnamount());
+					UFDouble sublabormaster = new UFDouble(wadata.get("sum(f_24)").toString()).sub(vo
+							.getLabor_orgamount() == null ? UFDouble.ZERO_DBL : vo.getLabor_orgamount());
+
+					if (!sublaboremployee.equals(UFDouble.ZERO_DBL) || !sublabormaster.equals(UFDouble.ZERO_DBL)) {
+						if (dvo == null) {
+							dvo = new DiffinsuranceVO();
+						}
+						dvo.setIchecktype(labor);
+						dvo.setIdifftype(3);
+						dvo.setCheck_psnamount(vo.labor_psnamount);// 来源于对账单 员工
+						dvo.setCheck_orgamount(vo.labor_orgamount);// 雇主
+						dvo.setOrg_psnamount(new UFDouble(wadata.get("sum(f_23)").toString()));// 员工
+						dvo.setOrg_orgamount(new UFDouble(wadata.get("sum(f_24)").toString()));// 雇主
+																								// 取自薪资发放项目
+						dvo.setDiff_psnamount(sublaboremployee);
+						dvo.setDiff_orgamount(sublabormaster);
+						dvo.setPk_org(pk_org);
+						// dvo.setAttributeValue("DR", 0);
+						dvo.setPk_period(pk_period);
+						String pk_psndoc = wadata.get("pk_psndoc").toString();
+						dvo.setPk_psndoc(pk_psndoc);
+						dvo.setIdno(vo.idno);
+						voList.add(dvo);
+
+					}
+				}
+
+				// ==
+				int RetireInsurance = 2;
+				if (null != vo.getRetire_amount()
+						&& !vo.getRetire_amount().equals(new UFDouble(wadata.get("max(f_27)").toString()))) {
+					// 2. 劳保级距不符
+					// if (dvo == null) {
+					dvo = new DiffinsuranceVO();
+					// }
+					dvo.setIdifftype(2);
+					dvo.setIchecktype(RetireInsurance);
+					dvo.setDiff_amount(vo.getRetire_amount());// 对账单级距
+					dvo.setOrg_amount(new UFDouble(wadata.get("max(f_27)").toString()));// 薪资发放级距
+				} else {
+					UFDouble retirepsnamount = vo.getRetire_psnamount() == null ? UFDouble.ZERO_DBL : new UFDouble(vo
+							.getRetire_psnamount().toString());
+					UFDouble retireorgamount = vo.getRetire_orgamount() == null ? UFDouble.ZERO_DBL : new UFDouble(vo
+							.getRetire_orgamount().toString());
+					UFDouble sublaboremployee = new UFDouble(wadata.get("sum(f_28)").toString()).sub(retirepsnamount);
+					UFDouble sublabormaster = new UFDouble(wadata.get("sum(f_29)").toString()).sub(retireorgamount);
+
+					if (!sublaboremployee.equals(UFDouble.ZERO_DBL) || !sublabormaster.equals(UFDouble.ZERO_DBL)) {
+						// if (dvo == null) {
+						dvo = new DiffinsuranceVO();
+						// }
+						dvo.setIchecktype(RetireInsurance);
+						dvo.setIdifftype(3);
+						dvo.setCheck_psnamount(vo.retire_psnamount);// 来源于对账单 员工
+						dvo.setCheck_orgamount(vo.retire_orgamount);// 雇主
+						dvo.setOrg_psnamount(new UFDouble(wadata.get("sum(f_28)").toString()));// 员工
+						dvo.setOrg_orgamount(new UFDouble(wadata.get("sum(f_29)").toString()));// 雇主
+																								// 取自薪资发放项目
+						dvo.setDiff_psnamount(sublaboremployee);
+						dvo.setDiff_orgamount(sublabormaster);
+						dvo.setPk_org(pk_org);
+						dvo.setPk_period(pk_period);
+						String pk_psndoc = wadata.get("pk_psndoc").toString();
+						dvo.setPk_psndoc(pk_psndoc);
+						dvo.setIdno(vo.idno);
+						voList.add(dvo);
+
+					}
+				}
+
+				// ==
+
+				int HealthInsurance = 3;
+				if (null != vo.getHealth_amount()
+						&& !vo.getHealth_amount().equals(new UFDouble(wadata.get("max(f_46)").toString()))) {
+					// 2. 劳保级距不符
+					// if (dvo == null) {
+					dvo = new DiffinsuranceVO();
+					// }
+					dvo.setIchecktype(HealthInsurance);
+					dvo.setIdifftype(2);
+					dvo.setDiff_amount(vo.getHealth_amount());// 对账单级距
+					dvo.setOrg_amount(new UFDouble(wadata.get("max(f_46)").toString()));// 薪资发放级距
+				} else {
+
+					UFDouble sublaboremployee = new UFDouble(wadata.get("sum(f_47)").toString()).sub(vo
+							.getHealth_psnamount() == null ? UFDouble.ZERO_DBL : vo.getHealth_psnamount());
+					UFDouble sublabormaster = new UFDouble(wadata.get("sum(f_50)").toString()).sub(vo
+							.getHealth_orgamount() == null ? UFDouble.ZERO_DBL : vo.getHealth_orgamount());
+
+					if (!sublaboremployee.equals(UFDouble.ZERO_DBL) || !sublabormaster.equals(UFDouble.ZERO_DBL)) {
+						// if (dvo == null) {
+						dvo = new DiffinsuranceVO();
+						// }
+						dvo.setIchecktype(HealthInsurance);
+						dvo.setIdifftype(3);
+						dvo.setCheck_psnamount(vo.health_psnamount);// 来源于对账单 员工
+						dvo.setCheck_orgamount(vo.health_orgamount);// 雇主
+						dvo.setOrg_psnamount(new UFDouble(wadata.get("sum(f_47)").toString()));// 员工
+						dvo.setOrg_orgamount(new UFDouble(wadata.get("sum(f_50)").toString()));// 雇主
+																								// 取自薪资发放项目
+						dvo.setDiff_psnamount(sublaboremployee);
+						dvo.setDiff_orgamount(sublabormaster);
+						dvo.setPk_org(pk_org);
+						dvo.setPk_period(pk_period);
+						String pk_psndoc = wadata.get("pk_psndoc").toString();
+						dvo.setPk_psndoc(pk_psndoc);
+						dvo.setIdno(vo.idno);
+						voList.add(dvo);
+
+					}
+
+				}
+
+			}
+
+		}
+
+		for (Map wadata : waDatas) {
+			if (!idExist(wadata.get("idno"), accVOs)) {
+				// 1. 无投保记录
+
+				ExceptionUtils.wrappBusinessException("无投保记录");
+			}
+		}
+
+		// 4. 保存差异单
+		dao.insertVOList(voList);
+
+		String sql3 = "update  twhr_diffinsurance set dr=0 where dr is null";
+		dao.executeUpdate(sql3);
+		// 5 刷新在前台
+	}
+
+	// }
+	private boolean idExist(Object idno, Collection<BaoAccountVO> accVOs) {
+		for (BaoAccountVO vo : accVOs) {
+			String idnos = idno.toString();
+			String idnoacc = vo.getIdno().toString();
+			if (idnos.equals(idnoacc)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	private boolean voExist(String pk_org, String pk_period) {
+
+		String sql4 = "select * from twhr_diffinsurance where pk_org='" + pk_org + "' and pk_period='" + pk_period
+				+ "'";
+
+		try {
+			List<Map> waDatas = (List<Map>) this.getDao().executeQuery(sql4, new MapListProcessor());
+			if (waDatas.size() == 0) {
+				return true;
+
+			}
+		} catch (DAOException e) {
+			// TODO 自动生成的 catch 块
+			e.printStackTrace();
+		}
+
+		return false;
+	}
+
+	// 页面上的身份证
+	private Map getWaDataByID(List<Map> waDatas, String idno) {
+		for (Map data : waDatas) {
+			if (idno.equals(data.get("idno"))) {
+				return data;
+			}
+		}
+		return null;
+	}
+
+	public BaseDAO getDao() {
+		if (dao == null) {
+			dao = new BaseDAO();
+		}
+		return dao;
+	}
+
+	// 删除数据
+	@Override
+	public void Delete(String pk_org, String pk_period) throws BusinessException {
+
+		String deletesql = "delete  from twhr_diffinsurance where pk_org='" + pk_org + "' and pk_period='" + pk_period
+				+ "'";
+		dao.executeUpdate(deletesql);
+
+		// TODO 自动生成的方法存根
+
+	}
+
+	@Override
+	public Boolean ifexist(String pk_org, String pk_period) throws BusinessException {
+		String isexistsql = "select * from twhr_diffinsurance where pk_org='" + pk_org + "' and pk_period='"
+				+ pk_period + "'";
+		List<Map> waDatas = (List<Map>) this.getDao().executeQuery(isexistsql, new MapListProcessor());
+		if (waDatas.size() == 0) {
+			return true;
+		}
+
+		// TODO 自动生成的方法存根
+		return false;
+	}
+
+	@Override
+	public ISuperVO[] queryByDataVisibilitySetting(LoginContext arg0, Class<? extends ISuperVO> arg1)
+			throws BusinessException {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public ISuperVO[] selectByWhereSql(String arg0, Class<? extends ISuperVO> arg1) throws BusinessException {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+}

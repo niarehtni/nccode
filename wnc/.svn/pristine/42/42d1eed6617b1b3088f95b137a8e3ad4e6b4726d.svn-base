@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="gb2312"?>
+<module name="hrwa_salary_EJB">
+	<public>
+		<component priority="0" singleton="true" remote="true" tx="CMT" supportAlias="true">
+			<interface>nc.pub.smart.context.SmartContext.ISalaryScalesSmartQuary</interface>
+			<implementation>nc.impl.hrwa.salarysmart.SalaryScalesSmartQuaryImpl</implementation>
+		</component>
+	</public>
+</module>

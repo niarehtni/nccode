@@ -1,0 +1,123 @@
+package nc.ui.twhr.twhr_declaration.ace.action;
+import java.awt.Event;
+import java.awt.event.ActionEvent;
+import java.awt.event.KeyEvent;
+
+import javax.swing.SwingWorker;
+
+import nc.bs.framework.common.NCLocator;
+import nc.hr.utils.ResHelper;
+import nc.itf.twhr.ITwhr_declarationMaintain;
+import nc.ui.bd.pub.BDOrgPanel;
+import nc.ui.hr.uif2.action.HrAction;
+import nc.ui.hr.uif2.view.PrimaryOrgPanel;
+import nc.ui.pub.beans.MessageDialog;
+import nc.ui.pub.beans.progress.IProgressMonitor;
+import nc.ui.pub.beans.progress.NCProgresses;
+import nc.ui.pubapp.uif2app.query2.model.IModelDataManager;
+import nc.ui.twhr.twhr_declaration.ace.view.DateGeneraDlg;
+import nc.ui.uif2.ShowStatusBarMsgUtil;
+import nc.ui.wa.pub.BannerTimerDialog;
+import nc.vo.pub.lang.UFDate;
+
+
+/**
+ * 生成按钮
+ *
+ * @author: Ares.Tank
+ * @date: 2018-9-26 19:36:05
+ * @since: eHR V6.5
+ */
+public class GeneratAction extends HrAction {
+	private static final long serialVersionUID = 1L;
+	private PrimaryOrgPanel primaryOrgPanel = null;
+	private IModelDataManager iModelDataManager;
+	private Object startDateMonth = null;
+
+	public PrimaryOrgPanel getPrimaryOrgPanel() {
+		return primaryOrgPanel;
+	}
+
+	public void setPrimaryOrgPanel(PrimaryOrgPanel primaryOrgPanel) {
+		this.primaryOrgPanel = primaryOrgPanel;
+	}
+
+	public GeneratAction() {
+		putValue("Code", "generatAction");
+		setBtnName("生成");
+
+		putValue("ShortDescription", ResHelper.getString("68J61710", "declartic0001") + "(Ctrl+F)");
+		putValue("AcceleratorKey", javax.swing.KeyStroke.getKeyStroke(KeyEvent.VK_F, Event.CTRL_MASK));
+	}
+
+	public void doActionForExtend(ActionEvent e) throws Exception {
+
+	}
+
+	@Override
+	public void doAction(ActionEvent e) throws Exception {
+		// PeriodStateVO periodStateVO = (PeriodStateVO) getEditor().getValue();
+
+		// 生成日期确认
+		DateGeneraDlg dlg = new DateGeneraDlg(null, "選擇月份","年份");
+
+		dlg.initUI();
+		if(dlg.showModal() == 1){
+			startDateMonth = dlg.getdEffectiveDateMonth();
+
+			if( null == startDateMonth){
+				return ;
+			}
+			new Thread(new Runnable() {
+				@Override
+				public void run() {
+					IProgressMonitor progressMonitor = 
+							NCProgresses.createDialogProgressMonitor(getEntranceUI());
+					try{
+						progressMonitor.beginTask("生成中...", -1); // 导入数据...
+						progressMonitor.setProcessInfo("請稍後..."); // 数据导入中,请稍后......
+						ITwhr_declarationMaintain service = NCLocator.getInstance().lookup(ITwhr_declarationMaintain.class);
+						service.generatCompanyBVO(new UFDate(startDateMonth + "-01 00:00:00" ),
+								getPrimaryOrgPanel().getRefPane().getRefPK(),
+								getContext().getPk_group()
+								);
+					} catch (Exception e) {
+						MessageDialog.showErrorDlg(getEntranceUI(), null,
+								e.getMessage());
+					} finally {
+						progressMonitor.done();
+					}
+				}
+		}
+	).start();
+			
+			
+			
+			((nc.ui.pubapp.uif2app.query2.model.ModelDataManager)
+					((BDOrgPanel)getPrimaryOrgPanel()).getDataManager()).refresh();
+		}
+
+
+		
+		
+		
+		
+	}
+
+	/* (non-Javadoc)
+	 * @see nc.ui.uif2.NCAction#isActionEnable()
+	 */
+	@Override
+	protected boolean isActionEnable() {
+		if(null == getModel().getSelectedData()){
+			return false;
+		}else{
+			return true;
+		}
+	}
+
+
+
+
+
+}

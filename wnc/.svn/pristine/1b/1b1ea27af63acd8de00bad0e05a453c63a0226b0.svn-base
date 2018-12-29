@@ -1,0 +1,1 @@
+update org_dept set orgtype13 = 'Y'

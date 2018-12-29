@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!DOCTYPE beans PUBLIC "-//SPRING//DTD BEAN//EN" "http://www.springframework.org/dtd/spring-beans.dtd">
+
+<beans>
+	<import resource="classpath:nc/ui/bd/team/team01/view/team_config.xml" />
+	<!-- 列表视图 -->
+	<bean id="listView" class="nc.ui.ta.team.view.TATeamBillListView"
+		init-method="initUI">
+		<property name="model" ref="manageAppModel" />
+		<property name="multiSelectionEnable" value="true" />
+		<property name="templateContainer" ref="templateContainer" />
+		<!-- 在分配默认模版时，如果设置的话，则需要设置nodekey(在子xml中继承、覆盖、设置) -->
+		<!-- 列表自定义项处理 -->
+		<property name="userdefitemListPreparator">
+			<bean class="nc.ui.pubapp.uif2app.view.CompositeBillListDataPrepare">
+				<property name="billListDataPrepares">
+					<list>
+						<ref bean="userdefitemlistPreparator" />
+					</list>
+				</property>
+			</bean>
+		</property>
+
+	</bean>
+	
+	<bean id="actionsOfList" class="nc.ui.uif2.actions.StandAloneToftPanelActionContainer">
+		<constructor-arg ref="listView" />
+		<!-- 可以配置非编辑状态下和编辑状态下分别可见的Action，没有此需求时可以配置得一样 -->
+		<property name="actions">
+			<list>
+				<!-- 新增 -->
+				<ref bean="addAction" />
+				<!--修改 -->
+				<ref bean="editAction" />
+				<!--删除 -->
+				<ref bean="deleteAction" />
+				<ref bean="separate" />
+				<!--查询 -->
+				<ref bean="queryAction" />
+				<!--刷新 -->
+				<ref bean="refreshAction" />
+				<ref bean="separate" />
+				<!-- 启用/停用菜单 -->
+				<ref bean="enableActionMenu" />
+				<ref bean="separate" />
+				<!-- 打印菜单 -->
+				<ref bean="printMenuAction" />
+				<ref bean="separate" />
+				<!-- 同步按钮 -->
+				<!--ref bean="synAction" /-->
+			</list>
+		</property>
+	</bean>
+	
+	<!-- 同步按钮 -->
+	<bean id="synAction" class="nc.ui.ta.team.view.SynAction">
+		<property name="model" ref="manageAppModel" />
+	</bean>
+</beans>
+
+

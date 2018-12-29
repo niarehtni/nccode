@@ -729,9 +729,14 @@ public class SegDetailServiceImpl implements ISegDetailService {
 		// 考勤規則
 		TimeRuleVO timerule = getTimeRule(pk_org);
 
-		// 取該員工結算週期
-		OvertimeLimitScopeEnum curStatScope = getPsnStatScope(pk_org, pk_psndoc, curNode.getNodeData()
-			.getRegdate());
+				UFLiteralDate regDate = null;
+				if (curNode == null || curNode.getNodeData() == null) {
+					regDate = startDate;
+				} else {
+					regDate = curNode.getNodeData().getRegdate();
+				}
+				// 取該員工結算週期
+				OvertimeLimitScopeEnum curStatScope = getPsnStatScope(pk_org, pk_psndoc, regDate);
 
 		// 一個週期內加班不能超過的時數
 		UFDouble taxFreeLimitHours = timerule.getCtrlothours();

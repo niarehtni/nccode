@@ -1,4 +1,5 @@
 package nc.pubimpl.wa.paydata.nhiservice;
+
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
@@ -8,6 +9,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 import org.apache.commons.lang.StringUtils;
 
@@ -23,6 +25,7 @@ import nc.jdbc.framework.processor.ColumnListProcessor;
 import nc.jdbc.framework.processor.ColumnProcessor;
 import nc.jdbc.framework.processor.MapListProcessor;
 import nc.jdbc.framework.processor.MapProcessor;
+import nc.pub.encryption.util.SalaryEncryptionUtil;
 import nc.pubitf.para.DeclarationUtils;
 import nc.pubitf.para.SysInitQuery;
 import nc.pubitf.para.SysInitQuery4TWHR;
@@ -34,6 +37,7 @@ import nc.vo.pub.SuperVO;
 import nc.vo.pub.lang.UFBoolean;
 import nc.vo.pub.lang.UFDate;
 import nc.vo.pub.lang.UFDouble;
+import nc.vo.pub.lang.UFLiteralDate;
 import nc.vo.twhr.nhicalc.PsndocDefTableUtil;
 import nc.vo.twhr.twhr_declaration.AggDeclarationVO;
 import nc.vo.twhr.twhr_declaration.BusinessBVO;
@@ -45,17 +49,15 @@ public class CalculateTWNHIImpl implements ICalculateTWNHI {
 
 	private BaseDAO dao = new BaseDAO();
 
-	private static final String PART_TIME_PSN_MAP_KEY= "partTimePsn";
+	private static final String PART_TIME_PSN_MAP_KEY = "partTimePsn";
 
-	private static final String NOT_PART_TIME_PSN_MAP_KEY= "notPartTimePsn";
-	//申报格式:50薪资:1 90AB:2 其他:0
+	private static final String NOT_PART_TIME_PSN_MAP_KEY = "notPartTimePsn";
+	// 申报格式:50薪资:1 90AB:2 其他:0
 	private static final int DECLAREFORM_50 = 1;
 	private static final int DECLAREFORM_90AB = 2;
 	private static final int DECLAREFORM_OTHER = 0;
 
-
-
-	//90A/B薪资方案扣税级距
+	// 90A/B薪资方案扣税级距
 	private static final int WA_DATA_FOR_90AB = 20000;
 
 	@Override
@@ -82,22 +84,26 @@ public class CalculateTWNHIImpl implements ICalculateTWNHI {
 	public void updateExtendNHIInfo(String pk_group, String pk_hrorg,
 			String pk_wa_class, String pk_periodscheme, String pk_wa_period,
 			UFDate payDate) throws BusinessException {
-		
-		//计算人力资源下的所有法人组织
-		Set<String> legalOrgs = LegalOrgUtilsEX.getOrgsByLegal(pk_hrorg, pk_group);
-		//计算之前,同个组织下,同个薪资方案,同个期间的记录
+
+		// 计算人力资源下的所有法人组织
+		Set<String> legalOrgs = LegalOrgUtilsEX.getOrgsByLegal(pk_hrorg,
+				pk_group);
+		// 计算之前,同个组织下,同个薪资方案,同个期间的记录
 		delExtendNHIInfo(pk_group, pk_hrorg, pk_wa_class, pk_wa_period);
-		for(String pk_org : legalOrgs){
+		for (String pk_org : legalOrgs) {
 			// 取劳健保启用参数
 			// 当参数为否时，跳出该方法
 			// ssx added for 2nd health ins on 2017-07-22
 			if (null == SysInitQuery.getParaBoolean(pk_org, "TWHR01")
-					||!SysInitQuery.getParaBoolean(pk_org, "TWHR01").booleanValue()) {
+					|| !SysInitQuery.getParaBoolean(pk_org, "TWHR01")
+							.booleanValue()) {
 				continue;
 			}
 			// 取人員列表
-			String[] pk_psndocs = getWaDataPsndocs(pk_org, pk_wa_class, pk_periodscheme, pk_wa_period);
-			//PeriodVO pvo = (PeriodVO) dao.retrieveByPK(PeriodVO.class, pk_wa_period);// 薪资期间
+			String[] pk_psndocs = getWaDataPsndocs(pk_org, pk_wa_class,
+					pk_periodscheme, pk_wa_period);
+			// PeriodVO pvo = (PeriodVO) dao.retrieveByPK(PeriodVO.class,
+			// pk_wa_period);// 薪资期间
 
 			// List<String> inserted_psndocs = new ArrayList<String>();
 			// SimpleDocServiceTemplate service = new SimpleDocServiceTemplate(
@@ -109,56 +115,71 @@ public class CalculateTWNHIImpl implements ICalculateTWNHI {
 			if (DECLAREFORM_50 == waclassType) {
 				// 50薪资
 				// 区分兼职人员和非兼职人员
-				Map<String, Set<String>> checkPartTimePsn = checkPartTimePsn(pk_psndocs, payDate);
+				Map<String, Set<String>> checkPartTimePsn = checkPartTimePsn(
+						pk_psndocs, payDate);
 				// 非兼职人员的计算
 				if (null != checkPartTimePsn.get(NOT_PART_TIME_PSN_MAP_KEY)) {
-					for (String pk_psndoc : checkPartTimePsn.get(NOT_PART_TIME_PSN_MAP_KEY)) {
+					for (String pk_psndoc : checkPartTimePsn
+							.get(NOT_PART_TIME_PSN_MAP_KEY)) {
 						if (null == pk_psndoc) {
 							continue;
 						}
 						// 找非兼職人員每个人本期需要扣二代健保的薪资金额
-						UFDouble curAmount = getCurrentPeriodAmount4NotPartTimePsn(pk_group, pk_org, pk_wa_class,
-								pk_wa_period, pk_psndoc);
+						UFDouble curAmount = getCurrentPeriodAmount4NotPartTimePsn(
+								pk_group, pk_org, pk_wa_class, pk_wa_period,
+								pk_psndoc);
 						// 排除不需要扣二代健保的人员
-						if (needUpdateExNHI(pk_group, pk_org, pk_wa_period, pk_psndoc, curAmount)) {
+						if (needUpdateExNHI(pk_group, pk_org, pk_wa_period,
+								pk_psndoc, curAmount)) {
 							// updatedPsn.add(pk_psndoc);
 							// 加上本期的全年累计金额
-							UFDouble annaAmount = curAmount.add(getLastPeriodAnnualSum(pk_group, pk_org, pk_wa_class,
-									payDate, pk_psndoc));
+							UFDouble annaAmount = curAmount
+									.add(getLastPeriodAnnualSum(pk_group,
+											pk_org, pk_wa_class, payDate,
+											pk_psndoc));
 							// 计算非兼职人员补充保费
-							UFDouble curInsAmount = getCurrentPeriodInsAmount4NotPartTimePsn(pk_group, pk_org,
-									pk_wa_class, pk_wa_period, pk_psndoc, annaAmount, curAmount, payDate);
+							UFDouble curInsAmount = getCurrentPeriodInsAmount4NotPartTimePsn(
+									pk_group, pk_org, pk_wa_class,
+									pk_wa_period, pk_psndoc, annaAmount,
+									curAmount, payDate);
 							// 非兼職人員的回寫邏輯
-							updateNotPartTimePsn(pk_group, pk_org, pk_wa_class, pk_wa_period, curInsAmount, pk_psndoc,
+							updateNotPartTimePsn(pk_group, pk_org, pk_wa_class,
+									pk_wa_period, curInsAmount, pk_psndoc,
 									payDate, annaAmount, curAmount);
 
 						}
 					}
 				}
-				List<PsndocDefVO> laborInfo4PartTimeInfoVOs = new ArrayList<PsndocDefVO>();
+				// List<PsndocDefVO> laborInfo4PartTimeInfoVOs = new
+				// ArrayList<PsndocDefVO>();
 				// 兼职人员的计算逻辑
 				if (null != checkPartTimePsn.get(PART_TIME_PSN_MAP_KEY)) {
-					for (String pk_psndoc : checkPartTimePsn.get(PART_TIME_PSN_MAP_KEY)) {
+					for (String pk_psndoc : checkPartTimePsn
+							.get(PART_TIME_PSN_MAP_KEY)) {
+
 						if (null == pk_psndoc) {
 							continue;
 						}
 						// 找兼職人員每个人本期需要扣二代健保的薪资金额
-						UFDouble curAmount = getCurrentPeriodAmount4PartTimePsn(pk_group, pk_org, pk_wa_class,
-								pk_wa_period, pk_psndoc);
+						UFDouble curAmount = getCurrentPeriodAmount4PartTimePsn(
+								pk_group, pk_org, pk_wa_class, pk_wa_period,
+								pk_psndoc);
 						// 排除不需要扣二代健保的人员
-						if (needUpdateExNHI4PartTimePsn(pk_group, pk_org, pk_wa_period, pk_psndoc, curAmount)) {
+						if (needUpdateExNHI4PartTimePsn(pk_group, pk_org,
+								pk_wa_period, pk_psndoc, curAmount)) {
 							// updatedPsn.add(pk_psndoc);
 							// 本期补充保费金额
-							UFDouble curInsAmount = getCurrentPeriodInsAmount4PartTimePsn(pk_group, pk_org, pk_wa_class,
+							UFDouble curInsAmount = getCurrentPeriodInsAmount4PartTimePsn(
+									pk_group, pk_org, pk_wa_class,
 									pk_wa_period, pk_psndoc, curAmount);
 							// 兼職人員的回寫邏輯
-							updatePartTimePsn(pk_group, pk_org, pk_wa_class, pk_wa_period, curInsAmount, curAmount,
+							updatePartTimePsn(pk_group, pk_org, pk_wa_class,
+									pk_wa_period, curInsAmount, curAmount,
 									pk_psndoc, payDate);
 
 						}
 					}
 				}
-
 			} else if (DECLAREFORM_90AB == waclassType) {
 				// 90 A/B薪资
 				for (String pk_psndoc : pk_psndocs) {
@@ -166,28 +187,62 @@ public class CalculateTWNHIImpl implements ICalculateTWNHI {
 						continue;
 					}
 					// 找兼職人員或90A/90B每个人本期需要扣二代健保的薪资金额
-					UFDouble curAmount = getCurrentPeriodAmount4PartTimePsn(pk_group, pk_org, pk_wa_class, pk_wa_period,
+					UFDouble curAmount = getCurrentPeriodAmount4PartTimePsn(
+							pk_group, pk_org, pk_wa_class, pk_wa_period,
 							pk_psndoc);
 					// 排除不需要扣二代健保的人员
-					if (needUpdateExNHI4PartTimePsn(pk_group, pk_org, pk_wa_period, pk_psndoc, curAmount)) {
+					if (needUpdateExNHI4PartTimePsn(pk_group, pk_org,
+							pk_wa_period, pk_psndoc, curAmount)) {
 						// updatedPsn.add(pk_psndoc);
 						// 本期补充保费金额
-						UFDouble curInsAmount = getCurrentPeriodInsAmountFor90AB(pk_group, pk_org, pk_wa_class,
-								pk_wa_period, pk_psndoc, curAmount);
+						UFDouble curInsAmount = getCurrentPeriodInsAmountFor90AB(
+								pk_group, pk_org, pk_wa_class, pk_wa_period,
+								pk_psndoc, curAmount);
 						// 90人員的回寫邏輯
-						update90ABPsn(pk_group, pk_org, pk_wa_class, pk_wa_period, curInsAmount, curAmount, pk_psndoc,
-								payDate);
-
+						update90ABPsn(pk_group, pk_org, pk_wa_class,
+								pk_wa_period, curInsAmount, curAmount,
+								pk_psndoc, payDate);
 					}
 				}
 
 			}
+			// 回写计算标志
+			updateHeathCaculate(pk_org, pk_wa_class, pk_wa_period, payDate);
 
 		}
 
 	}
+
+	// 二代健保计算标志回写-添加
+	private void updateHeathCaculate(String pk_org, String pk_wa_class,
+			String pk_wa_period, UFDate payDate) throws DAOException {
+		UUID uuid = UUID.randomUUID();
+		String sqlStr = "insert into twhr_healthcaculateflag (pk_healthcaculateflag,pk_org,pk_wa_class,pk_wa_period,pay_date) "
+				+ " values( '"
+				+ uuid.toString().replace("-", "").substring(0, 19)
+				+ "','"
+				+ pk_org
+				+ "','"
+				+ pk_wa_class
+				+ "','"
+				+ pk_wa_period
+				+ "','"
+				+ payDate + "') ";
+		dao.executeUpdate(sqlStr);
+	}
+
+	// 二代健保计算标志回写-取消
+	private void updateHealthFlag(String pk_org, String pk_wa_class,
+			String pk_wa_period) throws DAOException {
+		String sqlStr = " delete from twhr_healthcaculateflag "
+				+ " where pk_org = '" + pk_org + "' and pk_wa_class = '"
+				+ pk_wa_class + "' and pk_wa_period = '" + pk_wa_period + "' ";
+		dao.executeUpdate(sqlStr);
+	}
+
 	/**
 	 * 判断薪资方案是否为50薪资
+	 * 
 	 * @param pk_wa_class
 	 * @return 50薪资:1 90AB:2 其他:0
 	 * @throws BusinessException
@@ -200,21 +255,21 @@ public class CalculateTWNHIImpl implements ICalculateTWNHI {
 		String sqlStr = "select code from bd_defdoc "
 				+ " where bd_defdoc.pk_defdoc= ("
 				+ " select declareform from WA_WACLASS where pk_wa_class='"
-				+ pk_wa_class
-				+ "' )";
-		//判断薪资方案类型
-		IUAPQueryBS iUAPQueryBS = (IUAPQueryBS)NCLocator.getInstance().lookup(IUAPQueryBS.class.getName());
-		List list
-			= (List)iUAPQueryBS.executeQuery(sqlStr, new ColumnListProcessor());
+				+ pk_wa_class + "' )";
+		// 判断薪资方案类型
+		IUAPQueryBS iUAPQueryBS = (IUAPQueryBS) NCLocator.getInstance().lookup(
+				IUAPQueryBS.class.getName());
+		List list = (List) iUAPQueryBS.executeQuery(sqlStr,
+				new ColumnListProcessor());
 		if (null != list && list.size() > 0) {
 			for (Object obj : list) {
 				if (null != obj) {
 					dbCode = obj.toString();
-					if(dbCode.equals("50")){
+					if (dbCode.equals("50")) {
 						return DECLAREFORM_50;
-					}else if(dbCode.equals("9A")){
+					} else if (dbCode.equals("9A")) {
 						return DECLAREFORM_90AB;
-					}else if(dbCode.equals("9B")){
+					} else if (dbCode.equals("9B")) {
 						return DECLAREFORM_90AB;
 					}
 				}
@@ -226,25 +281,30 @@ public class CalculateTWNHIImpl implements ICalculateTWNHI {
 
 	/**
 	 * 计算90A/B薪资方案人员的补充保费
+	 * 
 	 * @param pk_group
 	 * @param pk_org
 	 * @param pk_wa_class
 	 * @param pk_wa_period
 	 * @param pk_psndoc
-	 * @param curAmount 本期勾选兼职人员薪资项目累加金额
+	 * @param curAmount
+	 *            本期勾选兼职人员薪资项目累加金额
 	 * @return
 	 * @throws BusinessException
 	 * @date 2018年9月22日 下午12:23:58
 	 * @description
 	 */
-	private UFDouble getCurrentPeriodInsAmountFor90AB(String pk_group, String pk_org, String pk_wa_class,
-			String pk_wa_period, String pk_psndoc, UFDouble curAmount) throws BusinessException {
+	private UFDouble getCurrentPeriodInsAmountFor90AB(String pk_group,
+			String pk_org, String pk_wa_class, String pk_wa_period,
+			String pk_psndoc, UFDouble curAmount) throws BusinessException {
 		UFDouble rtn = UFDouble.ZERO_DBL;
 
 		if (curAmount.doubleValue() > WA_DATA_FOR_90AB) {
-			UFDouble heathRate = SysInitQuery4TWHR.getParaDbl(pk_org, "TWEP0001");
-			if(null==heathRate){
-				throw new BusinessException("無法找到補充保險費率(個人)設置，請檢查自定義項(TWEP0001)的設定內容。");
+			UFDouble heathRate = SysInitQuery4TWHR.getParaDbl(pk_org,
+					"TWEP0001");
+			if (null == heathRate) {
+				throw new BusinessException(
+						"無法找到補充保險費率(個人)設置，請檢查自定義項(TWEP0001)的設定內容。");
 			}
 			rtn = rtn.multiply(heathRate).div(100);
 
@@ -252,32 +312,35 @@ public class CalculateTWNHIImpl implements ICalculateTWNHI {
 		return dealRtn(rtn);
 	}
 
-
 	/**
 	 * 計算兼职人员本期補充保費金額
+	 * 
 	 * @param pk_group
 	 * @param pk_org
 	 * @param pk_wa_class
 	 * @param pk_wa_period
 	 * @param pk_psndoc
-	 * @param curAmount 本期兼職人員需要扣除的二代健保薪資項的匯總
+	 * @param curAmount
+	 *            本期兼職人員需要扣除的二代健保薪資項的匯總
 	 * @return
 	 * @throws BusinessException
 	 * @date 2018年9月21日 下午2:50:52
 	 * @description
 	 */
-	private UFDouble getCurrentPeriodInsAmount4PartTimePsn(String pk_group, String pk_org, String pk_wa_class,
-			String pk_wa_period, String pk_psndoc, UFDouble curAmount) throws BusinessException {
+	private UFDouble getCurrentPeriodInsAmount4PartTimePsn(String pk_group,
+			String pk_org, String pk_wa_class, String pk_wa_period,
+			String pk_psndoc, UFDouble curAmount) throws BusinessException {
 		UFDouble rtn = UFDouble.ZERO_DBL;
 		UFDouble baseSalary = SysInitQuery4TWHR.getParaDbl(pk_org, "TWSP0009");
-		if(null==baseSalary){
+		if (null == baseSalary) {
 			throw new BusinessException("無法找到基本工資(月)設置，請檢查自定義項(TWSP0009)的設定內容。");
 		}
 		UFDouble heathRate = SysInitQuery4TWHR.getParaDbl(pk_org, "TWEP0001");
-		if(null==heathRate){
-			throw new BusinessException("無法找到補充保險費率(個人)設置，請檢查自定義項(TWEP0001)的設定內容。");
+		if (null == heathRate) {
+			throw new BusinessException(
+					"無法找到補充保險費率(個人)設置，請檢查自定義項(TWEP0001)的設定內容。");
 		}
-		if(curAmount.sub(baseSalary).doubleValue()>0){
+		if (curAmount.sub(baseSalary).doubleValue() > 0) {
 			rtn = curAmount.multiply(heathRate).div(100);
 		}
 		return dealRtn(rtn);
@@ -285,22 +348,26 @@ public class CalculateTWNHIImpl implements ICalculateTWNHI {
 
 	/**
 	 * 非兼職人員的回寫邏輯
+	 * 
 	 * @param pk_org
 	 * @param pk_wa_class
 	 * @param pk_wa_period
-	 * @param curInsAmount 补充保费
-	 *
+	 * @param curInsAmount
+	 *            补充保费
+	 * 
 	 * @throws BusinessException
 	 * @date 2018年9月21日 下午12:12:35
 	 * @description 回寫到薪資項目上和二代健保申報節點
 	 */
-	private void updateNotPartTimePsn(String pk_group, String pk_org, String pk_wa_class, String pk_wa_period, UFDouble curInsAmount,
-			String pk_psndoc,UFDate payDate,UFDouble annaAmount,UFDouble curAmount) throws BusinessException {
-		//List<Map> curInsAmountPSN = new ArrayList<Map>();
+	private void updateNotPartTimePsn(String pk_group, String pk_org,
+			String pk_wa_class, String pk_wa_period, UFDouble curInsAmount,
+			String pk_psndoc, UFDate payDate, UFDouble annaAmount,
+			UFDouble curAmount) throws BusinessException {
+		// List<Map> curInsAmountPSN = new ArrayList<Map>();
 
-		//在是否二代健保累計項目總合不為零的狀況回寫
-		//mod 為零也回寫
-		if(null!=curInsAmount){
+		// 在是否二代健保累計項目總合不為零的狀況回寫
+		// mod 為零也回寫
+		if (null != curInsAmount) {
 			// 查询薪資項目上補充保費項目(TWEX0000规定的)
 			String strSQL = "select itemkey from wa_classitem where pk_org='"
 					+ pk_org
@@ -316,99 +383,79 @@ public class CalculateTWNHIImpl implements ICalculateTWNHI {
 			String itemkey = (String) dao.executeQuery(strSQL,
 					new ColumnProcessor());
 			if (!StringUtils.isEmpty(itemkey)) {
-				strSQL = "update wa_data set "+itemkey+" = "+ curInsAmount.doubleValue()
-						+" where pk_org='"+pk_org+"' AND pk_wa_class='"+pk_wa_class+"' "
-						+" AND cyear=(( "
-						+" SELECT cyear FROM wa_period WHERE pk_wa_period='"+pk_wa_period+"'))"
-						+" AND cperiod=(( "
-						+" SELECT cperiod FROM wa_period WHERE pk_wa_period='"+pk_wa_period+"'))"
-						+" AND pk_psndoc = '"+pk_psndoc+"'";
+				strSQL = "update wa_data set " + itemkey + " = "
+						+ curInsAmount.doubleValue() + " where pk_org='"
+						+ pk_org + "' AND pk_wa_class='" + pk_wa_class + "' "
+						+ " AND cyear=(( "
+						+ " SELECT cyear FROM wa_period WHERE pk_wa_period='"
+						+ pk_wa_period + "'))" + " AND cperiod=(( "
+						+ " SELECT cperiod FROM wa_period WHERE pk_wa_period='"
+						+ pk_wa_period + "'))" + " AND pk_psndoc = '"
+						+ pk_psndoc + "'";
 				dao.executeUpdate(strSQL);
-			}else{
+			} else {
 				throw new BusinessException("計算失敗!未找到補充保費項目TWEX0000.");
 			}
-			//回写前,把该人员的,该组织的,全部薪资方案的,该期间的年度累计更新为最新的
-			strSQL = "update declaration_nonparttime set totalbonusforyear = "+annaAmount
-					+ " where vbdef1 = '"+pk_org+"' and vbdef3 = '"+pk_wa_period+"' and vbdef4 = '"+pk_psndoc+"' " ;
+			// 回写前,把该人员的,该组织的,全部薪资方案的,该期间的年度累计更新为最新的
+			strSQL = "update declaration_nonparttime set totalbonusforyear = "
+					+ annaAmount + " where vbdef1 = '" + pk_org
+					+ "' and vbdef3 = '" + pk_wa_period + "' and vbdef4 = '"
+					+ pk_psndoc + "' ";
 			dao.executeUpdate(strSQL);
-			ITwhr_declarationMaintain service = NCLocator.getInstance().lookup(ITwhr_declarationMaintain.class);
-			//回写到二代健保頁簽  '非兼職頁籤'
+			ITwhr_declarationMaintain service = NCLocator.getInstance().lookup(
+					ITwhr_declarationMaintain.class);
+			// 回写到二代健保頁簽 '非兼職頁籤'
 			AggDeclarationVO avo = DeclarationUtils.getAggDeclarationVO();
 			avo.getParentVO().setPk_group(pk_group);
 			avo.getParentVO().setPk_org(pk_org);
 
-
-
-			SuperVO[] svos= new SuperVO[1];
-			//svos[0] = DeclarationUtils.getNonPartTimeBVO();
+			SuperVO[] svos = new SuperVO[1];
+			// svos[0] = DeclarationUtils.getNonPartTimeBVO();
 			NonPartTimeBVO newVO = DeclarationUtils.getNonPartTimeBVO();
-			//给付日期:
+			// 给付日期:
 			newVO.setPay_date(payDate);
 
-			Map<String,Object> baseInfo = getBaseInfo(pk_psndoc,pk_org);
+			Map<String, Object> baseInfo = getBaseInfo(pk_psndoc, pk_org);
 
 			// 所得人姓名
-			newVO.setBeneficiary_name(
-					null != baseInfo.get("beneficiary_name") ? baseInfo.get("beneficiary_name").toString() : null);
+			newVO.setBeneficiary_name(null != baseInfo.get("beneficiary_name") ? baseInfo
+					.get("beneficiary_name").toString() : null);
 			// 所得人身份证号
-			newVO.setBeneficiary_id(
-					null != baseInfo.get("beneficiary_id") ? baseInfo.get("beneficiary_id").toString() : null);
+			newVO.setBeneficiary_id(null != baseInfo.get("beneficiary_id") ? baseInfo
+					.get("beneficiary_id").toString() : null);
 			// 投保单位代号
-			newVO.setInsurance_unit_code(
-					null != baseInfo.get("insurance_unit_code") ? baseInfo.get("insurance_unit_code").toString() : null);
+			newVO.setInsurance_unit_code(null != baseInfo
+					.get("insurance_unit_code") ? baseInfo.get(
+					"insurance_unit_code").toString() : null);
 			// 部门
-			newVO.setPk_dept(
-					null != baseInfo.get("pk_dept") ? baseInfo.get("pk_dept").toString() : null);
+			newVO.setPk_dept(null != baseInfo.get("pk_dept") ? baseInfo.get(
+					"pk_dept").toString() : null);
 
-			//单次给付金额 
+			// 单次给付金额
 			newVO.setSingle_pay(curAmount);
-			//单次扣缴补充保险费金额
+			// 单次扣缴补充保险费金额
 			newVO.setSingle_withholding(curInsAmount);
-			//扣费单月投保金额(级距)
-			newVO.setDeductions_month_insure(getPsndocGrande(pk_psndoc,payDate));
-			//同年度累计奖金金额 
+			// 扣费单月投保金额(级距)
+			newVO.setDeductions_month_insure(getPsndocGrande(pk_psndoc, payDate));
+			// 同年度累计奖金金额
 			newVO.setTotalbonusforyear(annaAmount);
-			//写入薪资方案、薪资期间、法人组织 用作取消计算的标识
+			// 写入薪资方案、薪资期间、法人组织 用作取消计算的标识
 			newVO.setVbdef1(pk_org);
 			newVO.setVbdef2(pk_wa_class);
 			newVO.setVbdef3(pk_wa_period);
 			newVO.setVbdef4(pk_psndoc);
 
-
 			svos[0] = newVO;
 			avo.setChildren(NonPartTimeBVO.class, svos);
 			service.writeBack4HealthCaculate(avo);
 
-			/*PsndocDefVO newVO = PsndocDefUtil.getPsnNHIExtendVO();
-			newVO.setPk_psndoc(pk_psndoc);
-			newVO.setDr(0);
-			newVO.setCreator("NC_USER0000000000000");
-			if (pvo != null) {
-				newVO.setBegindate(pvo.getCstartdate());
-				newVO.setEnddate(pvo.getCenddate());
-			}
-			// glbdef1,薪資期間
-			newVO.setAttributeValue("glbdef1", pk_wa_period);
-			// glbdef2,薪資方案
-			newVO.setAttributeValue("glbdef2", pk_wa_class);
-			// glbdef3,當期金額
-			newVO.setAttributeValue("glbdef3", curAmount);
-			// glbdef4,發放日期
-			newVO.setAttributeValue("glbdef4", payDate);
-			// glbdef5,當年獎金纍計
-			newVO.setAttributeValue("glbdef5", annaAmount);
-			// glbdef6,本次補充保費
-			newVO.setAttributeValue("glbdef6", curInsAmount);
-			// recordnum
-			newVO.setAttributeValue("recordnum", -1);
-			inserted_psndocs.add(pk_psndoc);
-			psnLaborInfoVOs.add(newVO);*/
-
 		}
 
 	}
+
 	/**
 	 * 90A/B 薪资方案的回写
+	 * 
 	 * @param pk_org
 	 * @param pk_wa_class
 	 * @param pk_wa_period
@@ -417,12 +464,14 @@ public class CalculateTWNHIImpl implements ICalculateTWNHI {
 	 * @date 2018年9月22日 下午12:31:58
 	 * @description
 	 */
-	private void update90ABPsn(String pk_group ,String pk_org, String pk_wa_class, String pk_wa_period, UFDouble curInsAmount,
-			UFDouble curAmount,String pk_psndoc,UFDate payDate) throws BusinessException {
+	private void update90ABPsn(String pk_group, String pk_org,
+			String pk_wa_class, String pk_wa_period, UFDouble curInsAmount,
+			UFDouble curAmount, String pk_psndoc, UFDate payDate)
+			throws BusinessException {
 
-		//在是否二代健保累計項目總合不為零的狀況回寫 
-		//小于零也要回写
-		if(null!=curInsAmount){
+		// 在是否二代健保累計項目總合不為零的狀況回寫
+		// 小于零也要回写
+		if (null != curInsAmount) {
 
 			// 查询薪資項目上補充保費項目(TWEX0000规定的)
 			String strSQL = "select itemkey from wa_classitem where pk_org='"
@@ -439,54 +488,51 @@ public class CalculateTWNHIImpl implements ICalculateTWNHI {
 			String itemkey = (String) dao.executeQuery(strSQL,
 					new ColumnProcessor());
 
-
-
 			if (!StringUtils.isEmpty(itemkey)) {
-				strSQL = "update wa_data set "+itemkey+" = "+ curInsAmount.doubleValue()
-						+" where pk_org='"+pk_org+"' AND pk_wa_class='"+pk_wa_class+"' "
-						+" AND cyear=(( "
-						+" SELECT cyear FROM wa_period WHERE pk_wa_period='"+pk_wa_period+"'))"
-						+" AND cperiod=(( "
-						+" SELECT cperiod FROM wa_period WHERE pk_wa_period='"+pk_wa_period+"'))"
-						+" AND pk_psndoc = '"+pk_psndoc+"'";
+				strSQL = "update wa_data set " + itemkey + " = "
+						+ curInsAmount.doubleValue() + " where pk_org='"
+						+ pk_org + "' AND pk_wa_class='" + pk_wa_class + "' "
+						+ " AND cyear=(( "
+						+ " SELECT cyear FROM wa_period WHERE pk_wa_period='"
+						+ pk_wa_period + "'))" + " AND cperiod=(( "
+						+ " SELECT cperiod FROM wa_period WHERE pk_wa_period='"
+						+ pk_wa_period + "'))" + " AND pk_psndoc = '"
+						+ pk_psndoc + "'";
 				dao.executeUpdate(strSQL);
-			}else{
+			} else {
 				throw new BusinessException("計算失敗!未找到補充保費項目TWEX0000.");
 			}
 
-			//回写到二代健保頁簽'執行業務所得'
-			ITwhr_declarationMaintain service = NCLocator.getInstance().lookup(ITwhr_declarationMaintain.class);
+			// 回写到二代健保頁簽'執行業務所得'
+			ITwhr_declarationMaintain service = NCLocator.getInstance().lookup(
+					ITwhr_declarationMaintain.class);
 
 			AggDeclarationVO avo = DeclarationUtils.getAggDeclarationVO();
 			avo.getParentVO().setPk_group(pk_group);
 			avo.getParentVO().setPk_org(pk_org);
 
-
-
-			SuperVO[] svos= new SuperVO[1];
-			//svos[0] = DeclarationUtils.getNonPartTimeBVO();
+			SuperVO[] svos = new SuperVO[1];
+			// svos[0] = DeclarationUtils.getNonPartTimeBVO();
 			BusinessBVO newVO = DeclarationUtils.getBusinessBVO();
-			//给付日期:
+			// 给付日期:
 			newVO.setPay_date(payDate);
 
-			Map<String,Object> baseInfo = getBaseInfo(pk_psndoc,pk_org);
+			Map<String, Object> baseInfo = getBaseInfo(pk_psndoc, pk_org);
 
-			//所得人姓名
-			newVO.setBeneficiary_name(baseInfo.get("beneficiary_name").toString());
-			//所得人身份证号
+			// 所得人姓名
+			newVO.setBeneficiary_name(baseInfo.get("beneficiary_name")
+					.toString());
+			// 所得人身份证号
 			newVO.setBeneficiary_id(baseInfo.get("beneficiary_id").toString());
-			//部门
+			// 部门
 			newVO.setPk_dept(baseInfo.get("pk_dept").toString());
 
-
-
-			//单次给付金额
+			// 单次给付金额
 			newVO.setSingle_pay(curAmount);
-			//单次扣缴补充保险费金额
+			// 单次扣缴补充保险费金额
 			newVO.setSingle_withholding(curInsAmount);
 
-
-			//写入薪资方案、薪资期间、法人组织 用作取消计算的标识
+			// 写入薪资方案、薪资期间、法人组织 用作取消计算的标识
 			newVO.setVbdef1(pk_org);
 			newVO.setVbdef2(pk_wa_class);
 			newVO.setVbdef3(pk_wa_period);
@@ -495,50 +541,46 @@ public class CalculateTWNHIImpl implements ICalculateTWNHI {
 			svos[0] = newVO;
 			avo.setChildren(NonPartTimeBVO.class, svos);
 			service.writeBack4HealthCaculate(avo);
-			/*PsndocDefVO newVO = PsndocDefUtil.getPsnNHIExtendVO();
-			newVO.setPk_psndoc(pk_psndoc);
-			newVO.setDr(0);
-			newVO.setCreator("NC_USER0000000000000");
-			if (pvo != null) {
-				newVO.setBegindate(pvo.getCstartdate());
-				newVO.setEnddate(pvo.getCenddate());
-			}
-			// glbdef1,薪資期間
-			newVO.setAttributeValue("glbdef1", pk_wa_period);
-			// glbdef2,薪資方案
-			newVO.setAttributeValue("glbdef2", pk_wa_class);
-			// glbdef3,當期金額
-			newVO.setAttributeValue("glbdef3", curAmount);
-			// glbdef4,發放日期
-			newVO.setAttributeValue("glbdef4", payDate);
-			// glbdef5,當年獎金纍計
-			newVO.setAttributeValue("glbdef5", annaAmount);
-			// glbdef6,本次補充保費
-			newVO.setAttributeValue("glbdef6", curInsAmount);
-			// recordnum
-			newVO.setAttributeValue("recordnum", -1);
-			inserted_psndocs.add(pk_psndoc);
-			psnLaborInfoVOs.add(newVO);*/
+			/*
+			 * PsndocDefVO newVO = PsndocDefUtil.getPsnNHIExtendVO();
+			 * newVO.setPk_psndoc(pk_psndoc); newVO.setDr(0);
+			 * newVO.setCreator("NC_USER0000000000000"); if (pvo != null) {
+			 * newVO.setBegindate(pvo.getCstartdate());
+			 * newVO.setEnddate(pvo.getCenddate()); } // glbdef1,薪資期間
+			 * newVO.setAttributeValue("glbdef1", pk_wa_period); // glbdef2,薪資方案
+			 * newVO.setAttributeValue("glbdef2", pk_wa_class); // glbdef3,當期金額
+			 * newVO.setAttributeValue("glbdef3", curAmount); // glbdef4,發放日期
+			 * newVO.setAttributeValue("glbdef4", payDate); // glbdef5,當年獎金纍計
+			 * newVO.setAttributeValue("glbdef5", annaAmount); // glbdef6,本次補充保費
+			 * newVO.setAttributeValue("glbdef6", curInsAmount); // recordnum
+			 * newVO.setAttributeValue("recordnum", -1);
+			 * inserted_psndocs.add(pk_psndoc); psnLaborInfoVOs.add(newVO);
+			 */
 
 		}
 
 	}
+
 	/**
 	 * 兼職人員的回寫邏輯
+	 * 
 	 * @param pk_org
 	 * @param pk_wa_class
 	 * @param pk_wa_period
-	 * @param curInsAmount 本期的薪資項的匯總金額
+	 * @param curInsAmount
+	 *            本期的薪資項的匯總金額
 	 * @throws BusinessException
 	 * @date 2018年9月21日 下午3:36:48
 	 * @description
 	 */
-	private void updatePartTimePsn(String pk_group ,String pk_org, String pk_wa_class, String pk_wa_period, UFDouble curInsAmount,
-			UFDouble curAmount, String pk_psndoc,UFDate payDate) throws BusinessException {
+	private void updatePartTimePsn(String pk_group, String pk_org,
+			String pk_wa_class, String pk_wa_period, UFDouble curInsAmount,
+			UFDouble curAmount, String pk_psndoc, UFDate payDate)
+			throws BusinessException {
 
-		//在是否二代健保累計項目總合不為零的狀況回寫
-		//mod 為0也會回寫 2018年10月26日13:24:09 
-		if(null!=curInsAmount){
+		// 在是否二代健保累計項目總合不為零的狀況回寫
+		// mod 為0也會回寫 2018年10月26日13:24:09
+		if (null != curInsAmount) {
 
 			// 查询薪資項目上補充保費項目(TWEX0000规定的)
 			String strSQL = "select itemkey from wa_classitem where pk_org='"
@@ -555,54 +597,50 @@ public class CalculateTWNHIImpl implements ICalculateTWNHI {
 			String itemkey = (String) dao.executeQuery(strSQL,
 					new ColumnProcessor());
 
-
-
 			if (!StringUtils.isEmpty(itemkey)) {
-				strSQL = "update wa_data set "+itemkey+" = "+ curInsAmount.doubleValue()
-						+" where pk_org='"+pk_org+"' AND pk_wa_class='"+pk_wa_class+"' "
-						+" AND cyear=(( "
-						+" SELECT cyear FROM wa_period WHERE pk_wa_period='"+pk_wa_period+"'))"
-						+" AND cperiod=(( "
-						+" SELECT cperiod FROM wa_period WHERE pk_wa_period='"+pk_wa_period+"'))"
-						+" AND pk_psndoc = '"+pk_psndoc+"'";
+				strSQL = "update wa_data set " + itemkey + " = "
+						+ curInsAmount.doubleValue() + " where pk_org='"
+						+ pk_org + "' AND pk_wa_class='" + pk_wa_class + "' "
+						+ " AND cyear=(( "
+						+ " SELECT cyear FROM wa_period WHERE pk_wa_period='"
+						+ pk_wa_period + "'))" + " AND cperiod=(( "
+						+ " SELECT cperiod FROM wa_period WHERE pk_wa_period='"
+						+ pk_wa_period + "'))" + " AND pk_psndoc = '"
+						+ pk_psndoc + "'";
 				dao.executeUpdate(strSQL);
-			}else{
+			} else {
 				throw new BusinessException("計算失敗!未找到補充保費項目TWEX0000.");
 			}
 
-			ITwhr_declarationMaintain service = NCLocator.getInstance().lookup(ITwhr_declarationMaintain.class);
+			ITwhr_declarationMaintain service = NCLocator.getInstance().lookup(
+					ITwhr_declarationMaintain.class);
 
 			AggDeclarationVO avo = DeclarationUtils.getAggDeclarationVO();
 			avo.getParentVO().setPk_group(pk_group);
 			avo.getParentVO().setPk_org(pk_org);
 
-
-
-
-			SuperVO[] svos= new SuperVO[1];
-			//svos[0] = DeclarationUtils.getNonPartTimeBVO();
+			SuperVO[] svos = new SuperVO[1];
+			// svos[0] = DeclarationUtils.getNonPartTimeBVO();
 			PartTimeBVO newVO = DeclarationUtils.getPartTimeBVO();
-			//给付日期:
+			// 给付日期:
 			newVO.setPay_date(payDate);
 
-			Map<String,Object> baseInfo = getBaseInfo(pk_psndoc,pk_org);
+			Map<String, Object> baseInfo = getBaseInfo(pk_psndoc, pk_org);
 
-			//所得人姓名
-			newVO.setBeneficiary_name(baseInfo.get("beneficiary_name").toString());
-			//所得人身份证号
+			// 所得人姓名
+			newVO.setBeneficiary_name(baseInfo.get("beneficiary_name")
+					.toString());
+			// 所得人身份证号
 			newVO.setBeneficiary_id(baseInfo.get("beneficiary_id").toString());
-			//部门
+			// 部门
 			newVO.setPk_dept(baseInfo.get("pk_dept").toString());
 
-
-
-			//单次给付金额
+			// 单次给付金额
 			newVO.setSingle_pay(curAmount);
-			//单次扣缴补充保险费金额
+			// 单次扣缴补充保险费金额
 			newVO.setSingle_withholding(curInsAmount);
 
-
-			//写入薪资方案、薪资期间、法人组织 用作取消计算的标识
+			// 写入薪资方案、薪资期间、法人组织 用作取消计算的标识
 			newVO.setVbdef1(pk_org);
 			newVO.setVbdef2(pk_wa_class);
 			newVO.setVbdef3(pk_wa_period);
@@ -611,30 +649,21 @@ public class CalculateTWNHIImpl implements ICalculateTWNHI {
 			svos[0] = newVO;
 			avo.setChildren(NonPartTimeBVO.class, svos);
 			service.writeBack4HealthCaculate(avo);
-			/*PsndocDefVO newVO = PsndocDefUtil.getPsnNHIExtendVO();
-			newVO.setPk_psndoc(pk_psndoc);
-			newVO.setDr(0);
-			newVO.setCreator("NC_USER0000000000000");
-			if (pvo != null) {
-				newVO.setBegindate(pvo.getCstartdate());
-				newVO.setEnddate(pvo.getCenddate());
-			}
-			// glbdef1,薪資期間
-			newVO.setAttributeValue("glbdef1", pk_wa_period);
-			// glbdef2,薪資方案
-			newVO.setAttributeValue("glbdef2", pk_wa_class);
-			// glbdef3,當期金額
-			newVO.setAttributeValue("glbdef3", curAmount);
-			// glbdef4,發放日期
-			newVO.setAttributeValue("glbdef4", payDate);
-			// glbdef5,當年獎金纍計
-			newVO.setAttributeValue("glbdef5", annaAmount);
-			// glbdef6,本次補充保費
-			newVO.setAttributeValue("glbdef6", curInsAmount);
-			// recordnum
-			newVO.setAttributeValue("recordnum", -1);
-			inserted_psndocs.add(pk_psndoc);
-			psnLaborInfoVOs.add(newVO);*/
+			/*
+			 * PsndocDefVO newVO = PsndocDefUtil.getPsnNHIExtendVO();
+			 * newVO.setPk_psndoc(pk_psndoc); newVO.setDr(0);
+			 * newVO.setCreator("NC_USER0000000000000"); if (pvo != null) {
+			 * newVO.setBegindate(pvo.getCstartdate());
+			 * newVO.setEnddate(pvo.getCenddate()); } // glbdef1,薪資期間
+			 * newVO.setAttributeValue("glbdef1", pk_wa_period); // glbdef2,薪資方案
+			 * newVO.setAttributeValue("glbdef2", pk_wa_class); // glbdef3,當期金額
+			 * newVO.setAttributeValue("glbdef3", curAmount); // glbdef4,發放日期
+			 * newVO.setAttributeValue("glbdef4", payDate); // glbdef5,當年獎金纍計
+			 * newVO.setAttributeValue("glbdef5", annaAmount); // glbdef6,本次補充保費
+			 * newVO.setAttributeValue("glbdef6", curInsAmount); // recordnum
+			 * newVO.setAttributeValue("recordnum", -1);
+			 * inserted_psndocs.add(pk_psndoc); psnLaborInfoVOs.add(newVO);
+			 */
 
 		}
 
@@ -642,6 +671,7 @@ public class CalculateTWNHIImpl implements ICalculateTWNHI {
 
 	/**
 	 * 区分兼职和非兼职人员
+	 * 
 	 * @param pk_psndocs
 	 * @return Map<psnType,Set<pk_psndoc>>
 	 * @param payDate
@@ -649,42 +679,68 @@ public class CalculateTWNHIImpl implements ICalculateTWNHI {
 	 * @date 2018年9月21日 上午9:56:57
 	 * @description
 	 */
-	private Map<String, Set<String>> checkPartTimePsn(String[] pk_psndocs,UFDate payDate) throws BusinessException {
-		Set<String> allPsndoc = new HashSet<>();//所有人去重
+	private Map<String, Set<String>> checkPartTimePsn(String[] pk_psndocs,
+			UFDate payDate) throws BusinessException {
+		Set<String> allPsndoc = new HashSet<>();// 所有人去重
 		allPsndoc.addAll(Arrays.asList(pk_psndocs));
 
-		Map<String,Set<String>> resultSetMap = new HashMap<>();
-		resultSetMap.put(PART_TIME_PSN_MAP_KEY,new HashSet<String>());
-		resultSetMap.put(NOT_PART_TIME_PSN_MAP_KEY,new HashSet<String>());
+		Map<String, Set<String>> resultSetMap = new HashMap<>();
+		resultSetMap.put(PART_TIME_PSN_MAP_KEY, new HashSet<String>());
+		resultSetMap.put(NOT_PART_TIME_PSN_MAP_KEY, new HashSet<String>());
 
 		InSQLCreator insql = new InSQLCreator();
 		String psndocsInSQL = insql.getInSQL(pk_psndocs);
 
-		//取员工最新的健保记录
-		String sqlStr = " select pk_psndoc,enddate "
-				+ " from "+PsndocDefTableUtil.getPsnHealthTablename()+" g2"
-				+ " where g2.pk_psndoc in (" + psndocsInSQL + ") "
-				+ " and g2.lastflag ='Y' ";
-		List<Map> mapList =
-				(List<Map>) dao.executeQuery(sqlStr, new MapListProcessor());
-		for(Map map : mapList){
-			if(null != map && null != map.get("pk_psndoc")){
-				if(null==map.get("enddate")
-						||map.get("enddate").equals("9999-12-31")
-						||map.get("enddate").equals(payDate)){
-					//非兼职人员
-					resultSetMap.get(NOT_PART_TIME_PSN_MAP_KEY).add((String)map.get("pk_psndoc"));
+		// 取员工最新的健保记录
+		String sqlStr = "select g2.pk_psndoc,g2.enddate  from  "
+				+ " (select pk_psndoc,max(nvl(enddate,'9999-12-31')) enddateN,max(recordnum) lastnum  "
+				+ " from "
+				+ PsndocDefTableUtil.getPsnHealthTablename()
+				+ " g2 where pk_psndoc in("
+				+ psndocsInSQL
+				+ ") group by pk_psndoc) c "
+				+ " left join  "
+				+ PsndocDefTableUtil.getPsnHealthTablename()
+				+ " g2 "
+				+ " on c.lastnum = g2.recordnum and c.pk_psndoc = g2.pk_psndoc and c.enddateN = nvl(g2.enddate,'9999-12-31') ";
+		List<Map> mapList = (List<Map>) dao.executeQuery(sqlStr,
+				new MapListProcessor());
+		for (Map map : mapList) {
+
+			if (null != map && null != map.get("pk_psndoc")) {
+				// endDate为空,或为9999
+				if (null == map.get("enddate")
+						|| map.get("enddate").equals("9999-12-31")) {
+					// 非兼职人员
+					resultSetMap.get(NOT_PART_TIME_PSN_MAP_KEY).add(
+							(String) map.get("pk_psndoc"));
 					allPsndoc.remove(map.get("pk_psndoc"));
+				} else {
+					UFLiteralDate enddate = null;
+					UFLiteralDate payDateL = null;
+					try {
+						enddate = new UFLiteralDate((String) map.get("enddate"));
+					} catch (Exception e) {
+						continue;
+					}
+					// 同一年发放日期和enddate在同一年
+					if (enddate.getYear() == payDate.getYear()) {
+						// 非兼职人员
+						resultSetMap.get(NOT_PART_TIME_PSN_MAP_KEY).add(
+								(String) map.get("pk_psndoc"));
+						allPsndoc.remove(map.get("pk_psndoc"));
+					}
 				}
 			}
 		}
-		//其余为兼职人员
-		resultSetMap.put(PART_TIME_PSN_MAP_KEY,allPsndoc);
+		// 其余为兼职人员
+		resultSetMap.put(PART_TIME_PSN_MAP_KEY, allPsndoc);
 		return resultSetMap;
 	}
 
 	/**
 	 * 不需要扣二代健保的人员
+	 * 
 	 * @param pk_group
 	 * @param pk_org
 	 * @param pk_wa_period
@@ -736,8 +792,10 @@ public class CalculateTWNHIImpl implements ICalculateTWNHI {
 
 		return needs;
 	}
+
 	/**
 	 * 不需要扣二代健保的人员(兼职人员用)
+	 * 
 	 * @param pk_group
 	 * @param pk_org
 	 * @param pk_wa_period
@@ -769,8 +827,10 @@ public class CalculateTWNHIImpl implements ICalculateTWNHI {
 
 		return needs;
 	}
+
 	/**
 	 * 得到最新一期的全年累计
+	 * 
 	 * @param pk_group
 	 * @param pk_org
 	 * @param pk_wa_class
@@ -781,20 +841,20 @@ public class CalculateTWNHIImpl implements ICalculateTWNHI {
 	 * @throws BusinessException
 	 */
 	private UFDouble getLastPeriodAnnualSum(String pk_group, String pk_org,
-			String pk_wa_class, UFDate payDate,
-			String pk_psndoc) throws BusinessException {
+			String pk_wa_class, UFDate payDate, String pk_psndoc)
+			throws BusinessException {
 		UFDouble rtn = UFDouble.ZERO_DBL;
-		//glbdef5 上一期的当年累计,同一個月的會有多個薪資方案,取最新的那個
-		//(其实全部都一样,回写的时候会把全部薪资方案的年度累计都置为最新的)
+		// glbdef5 上一期的当年累计,同一個月的會有多個薪資方案,取最新的那個
+		// (其实全部都一样,回写的时候会把全部薪资方案的年度累计都置为最新的)
 		String strSQL = " SELECT nonpt.totalbonusforyear "
-					+ " FROM declaration_nonparttime nonpt "
-					+ " left join wa_period wap on wap.pk_wa_period = nonpt.vbdef3 "
-					+ " WHERE wap.cperiod = ( "
-					+ " select max(wap.cperiod) from declaration_nonparttime subnonpt "
-					+ " left join wa_period wap on wap.pk_wa_period = subnonpt.vbdef3 "
-					+ " where wap.cyear = '"+String.valueOf(payDate.getYear())
-					+ " ' and subnonpt.dr = 0 ) "
-					+ " and vbdef4 = '"+pk_psndoc+"' order by nonpt.ts";
+				+ " FROM declaration_nonparttime nonpt "
+				+ " left join wa_period wap on wap.pk_wa_period = nonpt.vbdef3 "
+				+ " WHERE wap.cperiod = ( "
+				+ " select max(wap.cperiod) from declaration_nonparttime subnonpt "
+				+ " left join wa_period wap on wap.pk_wa_period = subnonpt.vbdef3 "
+				+ " where wap.cyear = '" + String.valueOf(payDate.getYear())
+				+ " ' and subnonpt.dr = 0 ) " + " and vbdef4 = '" + pk_psndoc
+				+ "' order by nonpt.ts";
 		String lastPeriodSumPSN = String.valueOf(dao.executeQuery(strSQL,
 				new ColumnProcessor()));
 		if (lastPeriodSumPSN != null && !lastPeriodSumPSN.equals("null")) {
@@ -802,25 +862,29 @@ public class CalculateTWNHIImpl implements ICalculateTWNHI {
 		}
 		return rtn;
 	}
-/**
- * 计算非兼职人员本期的补充保费
- *
- * @param pk_group
- * @param pk_org
- * @param pk_wa_class
- * @param pk_wa_period
- * @param pk_psndoc
- * @param annaAmount 加上本期的全年累计金额
- * @param curAmount 本期薪資項
- * @return 補充保費
- * @throws BusinessException
- * @description 用最新累計的金額，與最新一筆健保信息的4倍健保級距比較，
- * 若超過4倍投保金額，則將超過後的金額與本次累積的金額比較，取小者* TWEP0001補充保險費率(個人)為補充保費
- * 若不超过4倍的投保金额,则补充保费为0
- */
-	private UFDouble getCurrentPeriodInsAmount4NotPartTimePsn(String pk_group, String pk_org, String pk_wa_class,
-			String pk_wa_period, String pk_psndoc, UFDouble annaAmount, UFDouble curAmount, UFDate payDate)
-			throws BusinessException {
+
+	/**
+	 * 计算非兼职人员本期的补充保费
+	 * 
+	 * @param pk_group
+	 * @param pk_org
+	 * @param pk_wa_class
+	 * @param pk_wa_period
+	 * @param pk_psndoc
+	 * @param annaAmount
+	 *            加上本期的全年累计金额
+	 * @param curAmount
+	 *            本期薪資項
+	 * @return 補充保費
+	 * @throws BusinessException
+	 * @description 用最新累計的金額，與最新一筆健保信息的4倍健保級距比較，
+	 *              若超過4倍投保金額，則將超過後的金額與本次累積的金額比較，取小者* TWEP0001補充保險費率(個人)為補充保費
+	 *              若不超过4倍的投保金额,则补充保费为0
+	 */
+	private UFDouble getCurrentPeriodInsAmount4NotPartTimePsn(String pk_group,
+			String pk_org, String pk_wa_class, String pk_wa_period,
+			String pk_psndoc, UFDouble annaAmount, UFDouble curAmount,
+			UFDate payDate) throws BusinessException {
 		UFDouble rtn = UFDouble.ZERO_DBL;
 
 		UFDouble num = getPsndocGrande(pk_psndoc, payDate);
@@ -837,9 +901,11 @@ public class CalculateTWNHIImpl implements ICalculateTWNHI {
 				} else {
 					rtn = beyondNum;
 				}
-				UFDouble heathRate = SysInitQuery4TWHR.getParaDbl(pk_org, "TWEP0001");
+				UFDouble heathRate = SysInitQuery4TWHR.getParaDbl(pk_org,
+						"TWEP0001");
 				if (null == heathRate) {
-					throw new BusinessException("無法找到補充保險費率(個人)設置，請檢查自定義項(TWEP0001)的設定內容。");
+					throw new BusinessException(
+							"無法找到補充保險費率(個人)設置，請檢查自定義項(TWEP0001)的設定內容。");
 				}
 				rtn = rtn.multiply(heathRate).div(100);
 
@@ -848,19 +914,25 @@ public class CalculateTWNHIImpl implements ICalculateTWNHI {
 				rtn = UFDouble.ZERO_DBL;
 			}
 		}
-		//四舍五入
+		// 四舍五入
 		return dealRtn(rtn);
 	}
-	
+
+	/**
+	 * 四舍五入
+	 * 
+	 * @param rtn
+	 * @return
+	 */
 	private UFDouble dealRtn(UFDouble rtn) {
-		if(rtn == null){
+		if (rtn == null) {
 			return rtn;
 		}
-		double   f   =   rtn.doubleValue();
-		BigDecimal   b   =   new   BigDecimal(f);
-		double   f1   =   b.setScale(0,   RoundingMode.HALF_UP).doubleValue();
-	return new UFDouble(f1);
-}
+		double f = rtn.doubleValue();
+		BigDecimal b = new BigDecimal(f);
+		double f1 = b.setScale(0, RoundingMode.HALF_UP).doubleValue();
+		return new UFDouble(f1);
+	}
 
 	/**
 	 *
@@ -874,12 +946,12 @@ public class CalculateTWNHIImpl implements ICalculateTWNHI {
 	 * @date 2018年9月21日 上午11:34:42
 	 * @description
 	 */
-	private UFDouble getCurrentPeriodAmount4NotPartTimePsn(String pk_group, String pk_org,
-			String pk_wa_class, String pk_wa_period, String pk_psndoc)
-			throws BusinessException {
+	private UFDouble getCurrentPeriodAmount4NotPartTimePsn(String pk_group,
+			String pk_org, String pk_wa_class, String pk_wa_period,
+			String pk_psndoc) throws BusinessException {
 		UFDouble rtn = UFDouble.ZERO_DBL;
 		List<Map> curAmountPSN = new ArrayList<Map>();
-		//找出所有勾选'二代健保累计项目'的薪资项
+		// 找出所有勾选'二代健保累计项目'的薪资项
 		String strSQL = "select itemkey from wa_classitem cls inner join twhr_waitem_30 tw on cls.pk_wa_item = tw.pk_wa_item where cls.pk_org='"
 				+ pk_org
 				+ "' and pk_wa_class='"
@@ -899,10 +971,12 @@ public class CalculateTWNHIImpl implements ICalculateTWNHI {
 				}
 				strSQL = strSQL + "isnull(" + (String) itemkey + ",0)";
 			}
-			//对所有的勾选项目进行累加,(选计算所有人的,下次查询缓存读取???????? 问下这个人@ssx )
+			// 对所有的勾选项目进行累加,(选计算所有人的,下次查询缓存读取???????? 问下这个人@ssx )
 			strSQL = "select ("
 					+ strSQL
-					+ ") curamount, pk_psndoc from wa_data where pk_org='"
+					+ ") curamount, pk_psndoc from wa_data where pk_psndoc = '"
+					+ pk_psndoc
+					+ "' and pk_org='"
 					+ pk_org
 					+ "' and pk_wa_class='"
 					+ pk_wa_class
@@ -927,8 +1001,10 @@ public class CalculateTWNHIImpl implements ICalculateTWNHI {
 
 		return rtn;
 	}
+
 	/**
 	 * 用于兼职人员或90A/90B计算所有薪资项的二代健保金额
+	 * 
 	 * @param pk_group
 	 * @param pk_org
 	 * @param pk_wa_class
@@ -937,9 +1013,9 @@ public class CalculateTWNHIImpl implements ICalculateTWNHI {
 	 * @return
 	 * @throws BusinessException
 	 */
-	private UFDouble getCurrentPeriodAmount4PartTimePsn(String pk_group, String pk_org,
-			String pk_wa_class, String pk_wa_period, String pk_psndoc)
-			throws BusinessException {
+	private UFDouble getCurrentPeriodAmount4PartTimePsn(String pk_group,
+			String pk_org, String pk_wa_class, String pk_wa_period,
+			String pk_psndoc) throws BusinessException {
 		UFDouble rtn = UFDouble.ZERO_DBL;
 		List<Map> curAmountPSN = new ArrayList<Map>();
 		String strSQL = "select itemkey from wa_classitem cls inner join twhr_waitem_30 tw on cls.pk_wa_item = tw.pk_wa_item where cls.pk_org='"
@@ -951,7 +1027,7 @@ public class CalculateTWNHIImpl implements ICalculateTWNHI {
 				+ "')) and cperiod=((select cperiod from wa_period where pk_wa_period='"
 				+ pk_wa_period + "')) and  tw.ishealthinsparttime = 'Y' ";
 
-		//把這些薪資項目進行匯總
+		// 把這些薪資項目進行匯總
 		List itemKeys = (List) dao.executeQuery(strSQL,
 				new ColumnListProcessor());
 		if (itemKeys != null && itemKeys.size() > 0) {
@@ -964,7 +1040,9 @@ public class CalculateTWNHIImpl implements ICalculateTWNHI {
 			}
 			strSQL = "select ("
 					+ strSQL
-					+ ") curamount, pk_psndoc from wa_data where pk_org='"
+					+ ") curamount, pk_psndoc from wa_data where pk_psndoc = '"
+					+ pk_psndoc
+					+ "' and pk_org='"
 					+ pk_org
 					+ "' and pk_wa_class='"
 					+ pk_wa_class
@@ -1116,51 +1194,64 @@ public class CalculateTWNHIImpl implements ICalculateTWNHI {
 		}
 
 	}
+
 	/**
 	 * 获取人员的健保级距
+	 * 
 	 * @return
 	 * @author Ares.Tank
 	 * @throws BusinessException
 	 * @date 2018年9月26日 上午11:53:54
 	 * @description
 	 */
-	private UFDouble getPsndocGrande(String pk_psndoc,UFDate payDate) throws BusinessException{
-		//按照日期查找人员的健保记录
-		String sqlStr = " select isnull(g2.glbdef16,0) " + " from " + PsndocDefTableUtil.getPsnHealthTablename() + " g2"
-						+ " where g2.pk_psndoc = '"+pk_psndoc+"' "
-						+ " and g2.begindate < '" +payDate.toString()+"' and isnull(g2.enddate,'9999-12-31')>'"
-						+payDate.toString()+"'  and g2.glbdef2 = '本人' ";
-		List qDataList = (List) dao.executeQuery(sqlStr, new ColumnListProcessor());
+	private UFDouble getPsndocGrande(String pk_psndoc, UFDate payDate)
+			throws BusinessException {
+		// 按照日期查找人员的健保记录
+		String sqlStr = " select isnull(g2.glbdef16,0) " + " from "
+				+ PsndocDefTableUtil.getPsnHealthTablename() + " g2"
+				+ " where g2.pk_psndoc = '" + pk_psndoc + "' "
+				+ " and g2.begindate < '" + payDate.toString()
+				+ "' and isnull(g2.enddate,'9999-12-31')>'"
+				+ payDate.toString() + "'  and g2.glbdef2 = '本人' ";
+		List qDataList = (List) dao.executeQuery(sqlStr,
+				new ColumnListProcessor());
 		for (Object numObj : qDataList) {
-			UFDouble num ;
-			try{
+			UFDouble num;
+			try {
 				num = new UFDouble(numObj.toString());
 				return num;
 
-			}catch(NumberFormatException e){
+			} catch (NumberFormatException e) {
 				num = UFDouble.ZERO_DBL;
-				Debug.error("健保信息出现脏数据,人员信息:"+pk_psndoc);
+				Debug.error("健保信息出现脏数据,人员信息:" + pk_psndoc);
 
 			}
 		}
 		return null;
 	}
-	//获取健保基本信息
-	private Map<String,Object> getBaseInfo(String psndoc ,String pk_org) throws BusinessException{
-		//Map<String,Object> resultMap = new HashMap<>();
+
+	// 获取健保基本信息
+	private Map<String, Object> getBaseInfo(String psndoc, String pk_org)
+			throws BusinessException {
+		// Map<String,Object> resultMap = new HashMap<>();
 		String sqlStr = "SELECT psn.name as beneficiary_name, psn.id as beneficiary_id, "
 				+ " org.glbdef40 as insurance_unit_code ,job.pk_dept as pk_dept"
 				+ "	FROM bd_psndoc psn "
 				+ " left JOIN org_hrorg org on psn.pk_org = org.pk_hrorg "
 				+ " left join hi_psnjob job on job.pk_psndoc = psn.pk_psndoc and lastflag = 'Y' "
-				+ " WHERE psn.pk_psndoc = '"+psndoc+"'"
-				+ " and org.pk_hrorg = '"+pk_org+"'"
+				+ " WHERE psn.pk_psndoc = '"
+				+ psndoc
+				+ "'"
+				+ " and org.pk_hrorg = '"
+				+ pk_org
+				+ "'"
 				+ " and psn.dr = 0 and org.dr = 0 and job.dr = 0 ";
-		List<Map> sqlResultMapList = (List<Map>)dao.executeQuery(sqlStr, new MapListProcessor());
-		if(null != sqlResultMapList){
+		List<Map> sqlResultMapList = (List<Map>) dao.executeQuery(sqlStr,
+				new MapListProcessor());
+		if (null != sqlResultMapList) {
 
-			for(Map sqlResultMap : sqlResultMapList){
-				if(null!=sqlResultMap){
+			for (Map sqlResultMap : sqlResultMapList) {
+				if (null != sqlResultMap) {
 					return sqlResultMap;
 				}
 
@@ -1168,79 +1259,93 @@ public class CalculateTWNHIImpl implements ICalculateTWNHI {
 
 		}
 
-
 		return new HashMap();
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see nc.itf.twhr.ICalculateTWNHI#delExtendNHIInfo(java.lang.String)
 	 */
 	@Override
-	public void delExtendNHIInfo(String pk_group ,String pk_orgs,String pk_wa_class,String pk_wa_period) throws BusinessException {
+	public void delExtendNHIInfo(String pk_group, String pk_orgs,
+			String pk_wa_class, String pk_wa_period) throws BusinessException {
 		// 删除子表和主表的信息
 		// 计算人力资源下的所有法人组织
-		Set<String> legalOrgs = LegalOrgUtilsEX.getOrgsByLegal(pk_orgs, pk_group);
+		Set<String> legalOrgs = LegalOrgUtilsEX.getOrgsByLegal(pk_orgs,
+				pk_group);
 		for (String pk_org : legalOrgs) {
-			//取消时,先把这月比这笔薪资方案后发放的方案的年度累计金额减去本次的金额 
-			//查询所有人员,这个薪资方案这个薪资期间的的给付金额
+			// 取消时,先把这月比这笔薪资方案后发放的方案的年度累计金额减去本次的金额
+			// 查询所有人员,这个薪资方案这个薪资期间的的给付金额
 			String sqlStr = "select vbdef4,single_pay from declaration_nonparttime where  vbdef1 = '"
-					+  pk_org+ "' and vbdef2 = '"+pk_wa_class+"' and vbdef3 = '"+pk_wa_period+"'";
-			Map<String,UFDouble> psndocMap = new HashMap<>();
+					+ pk_org
+					+ "' and vbdef2 = '"
+					+ pk_wa_class
+					+ "' and vbdef3 = '" + pk_wa_period + "'";
+			Map<String, UFDouble> psndocMap = new HashMap<>();
 			try {
-				 List<Map<String,Object>> resultMapList 
-				 	= (List<Map<String,Object>>)dao.executeQuery(sqlStr,new MapListProcessor());
-				 if(null != resultMapList && resultMapList.size() > 0){
-					 for(Map<String,Object> rowMap :resultMapList){
-						 String key = null;
-						 UFDouble value = null;
-						 try{
-							 key = String.valueOf(rowMap.get("vbdef4"));
-							 value = new UFDouble(String.valueOf(rowMap.get("single_pay"))); 
-						 }catch(Exception e){
-							 Debug.debug(e.getMessage());
-						 }
-						 if(key!=null && value != null){
-							 psndocMap.put(key, value);
-						 }						 
-					 }
-				 }
+				List<Map<String, Object>> resultMapList = (List<Map<String, Object>>) dao
+						.executeQuery(sqlStr, new MapListProcessor());
+				if (null != resultMapList && resultMapList.size() > 0) {
+					for (Map<String, Object> rowMap : resultMapList) {
+						String key = null;
+						UFDouble value = null;
+						try {
+							key = String.valueOf(rowMap.get("vbdef4"));
+							value = new UFDouble(String.valueOf(rowMap
+									.get("single_pay")));
+						} catch (Exception e) {
+							Debug.debug(e.getMessage());
+						}
+						if (key != null && value != null) {
+							psndocMap.put(key, value);
+						}
+					}
+				}
 			} catch (BusinessException e) {
 				Debug.debug(e.getMessage());
 			}
-			
-			
-			
-			//删除前,把该人员的,该组织的,全部薪资方案的,该期间的年度累计更新为最新的(要减去删除的那笔)
-			for(String pk_psndoc : psndocMap.keySet()){
-				
-				
-				
-				sqlStr = " update declaration_nonparttime " 
-						+ " set totalbonusforyear = totalbonusforyear- " + psndocMap.get(pk_psndoc).doubleValue()
-						+ " where  main.vbdef1 = '"+pk_org+"' and main.vbdef3 ='"+pk_wa_period+"'" 
-						+"' and main.vbdef4 ='"+pk_psndoc+"'" ;
+
+			// 删除前,把该人员的,该组织的,全部薪资方案的,该期间的年度累计更新为最新的(要减去删除的那笔)
+			for (String pk_psndoc : psndocMap.keySet()) {
+
+				sqlStr = " update declaration_nonparttime "
+						+ " set totalbonusforyear = totalbonusforyear- "
+						+ psndocMap.get(pk_psndoc).doubleValue()
+						+ " where  main.vbdef1 = '" + pk_org
+						+ "' and main.vbdef3 ='" + pk_wa_period + "'"
+						+ "' and main.vbdef4 ='" + pk_psndoc + "'";
 				try {
-					 dao.executeUpdate(sqlStr);
+					dao.executeUpdate(sqlStr);
 				} catch (BusinessException e) {
 					Debug.debug(e.getMessage());
 				}
 			}
-			 sqlStr = "delete from  declaration_business " + " where vbdef1 = '"
+			sqlStr = "delete from  declaration_business " + " where vbdef1 = '"
 					+ pk_org + "'" + " and vbdef2 = '" + pk_wa_class + "'"
-					+ " and vbdef3 = '" + pk_wa_period
+					+ " and vbdef3 = '" + pk_wa_period + "' and dr = 0";
+
+			try {
+				dao.executeUpdate(sqlStr);
+			} catch (BusinessException e) {
+				Debug.debug(e.getMessage());
+			}
+
+			sqlStr = "delete from  declaration_nonparttime "
+					+ " where vbdef1 = '" + pk_org + "'" + " and vbdef2 = '"
+					+ pk_wa_class + "'" + " and vbdef3 = '" + pk_wa_period
 					+ "' and dr = 0";
 
 			try {
-				 dao.executeUpdate(sqlStr);
+				dao.executeUpdate(sqlStr);
 			} catch (BusinessException e) {
 				Debug.debug(e.getMessage());
 
 			}
 
-
-			sqlStr = "delete from  declaration_nonparttime " + " where vbdef1 = '" + pk_org
-					+ "'" + " and vbdef2 = '" + pk_wa_class + "'" + " and vbdef3 = '"
-					+ pk_wa_period + "' and dr = 0";
+			sqlStr = "delete from  declaration_parttime " + " where vbdef1 = '"
+					+ pk_org + "'" + " and vbdef2 = '" + pk_wa_class + "'"
+					+ " and vbdef3 = '" + pk_wa_period + "' and dr = 0";
 
 			try {
 				dao.executeUpdate(sqlStr);
@@ -1249,28 +1354,17 @@ public class CalculateTWNHIImpl implements ICalculateTWNHI {
 
 			}
 
-			sqlStr = "delete from  declaration_parttime " + " where vbdef1 = '" + pk_org
-					+ "'" + " and vbdef2 = '" + pk_wa_class + "'" + " and vbdef3 = '"
-					+ pk_wa_period + "' and dr = 0";
-
-			try {
-				dao.executeUpdate(sqlStr);
-			} catch (BusinessException e) {
-				Debug.debug(e.getMessage());
-
-			}
-
-			sqlStr = "delete from  declaration_company " + " where vbdef1 = '" + pk_org
-					+ "'" + " and vbdef2 = '" + pk_wa_class + "'" + " and vbdef3 = '"
-					+ pk_wa_period + "' and dr = 0";
+			sqlStr = "delete from  declaration_company " + " where vbdef1 = '"
+					+ pk_org + "'" + " and vbdef2 = '" + pk_wa_class + "'"
+					+ " and vbdef3 = '" + pk_wa_period + "' and dr = 0";
 
 			try {
 				dao.executeUpdate(sqlStr);
 			} catch (BusinessException e) {
 				Debug.debug(e.getMessage());
 			}
-			
-			//置空二代健保的薪资项
+
+			// 置空二代健保的薪资项
 			// 查询薪資項目上補充保費項目(TWEX0000规定的)
 			String strSQL = "select itemkey from wa_classitem where pk_org='"
 					+ pk_org
@@ -1287,39 +1381,17 @@ public class CalculateTWNHIImpl implements ICalculateTWNHI {
 					new ColumnProcessor());
 
 			if (!StringUtils.isEmpty(itemkey)) {
-				strSQL = "update wa_data set "
-						+ itemkey
-						+ " = 0"
-						+ " where pk_org='" + pk_org
-						+ "' AND pk_wa_class='" + pk_wa_class + "' "
-						+ " AND cyear=(( "
+				strSQL = "update wa_data set " + itemkey + " = 0"
+						+ " where pk_org='" + pk_org + "' AND pk_wa_class='"
+						+ pk_wa_class + "' " + " AND cyear=(( "
 						+ " SELECT cyear FROM wa_period WHERE pk_wa_period='"
 						+ pk_wa_period + "'))" + " AND cperiod=(( "
 						+ " SELECT cperiod FROM wa_period WHERE pk_wa_period='"
 						+ pk_wa_period + "')) ";
 				dao.executeUpdate(strSQL);
 			}
-			
+			updateHealthFlag(pk_org, pk_wa_class, pk_wa_period);
 		}
 	}
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
 
 }

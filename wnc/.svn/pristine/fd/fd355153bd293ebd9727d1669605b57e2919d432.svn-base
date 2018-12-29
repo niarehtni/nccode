@@ -1,0 +1,2 @@
+insert into pub_alerttype(apptag,belong_system,bizconfigclass,busi_plugin,category,descrip_resid,description,dr,executeinterval,exeintervalunit,hycode,name_resid,org_multiselectable,org_nullable,orgtype,pk_alertquery,pk_alerttype,pk_busiobj,pk_funcnode,tasktype,ts,type_code,type_name) values( null,'hrjf',null,'nc.impl.om.deptadj.plugin.DeptVerExecutorPlugin','preset',null,'部门版本化',0,1,2,null,null,'N','Y','GLOBLE00000000000000',null,'1001ZZ1000000004CKKY',null,null,1,'2018-11-06 16:07:54',null,'部门版本化')
+/

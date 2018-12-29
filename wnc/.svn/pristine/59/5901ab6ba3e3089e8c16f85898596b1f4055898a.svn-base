@@ -1,0 +1,28 @@
+package nc.vo.ta.overtime;
+
+import nc.md.model.IEnumValue;
+import nc.md.model.impl.MDEnum;
+
+/**
+ * <b>此处简要描述此枚举的功能 </b>
+ * <p>
+ *   此处添加该枚举的描述信息
+ * </p>
+ *  创建日期:2018/11/15
+ * @author 
+ * @version NCPrj ??
+ */
+public class HolidayTypeEnum extends MDEnum{
+	public HolidayTypeEnum(IEnumValue enumvalue){
+		super(enumvalue);
+	}
+
+	
+	
+	public static final HolidayTypeEnum 休假登记 = MDEnum.valueOf(HolidayTypeEnum.class, Integer.valueOf(1));
+	
+	
+	public static final HolidayTypeEnum 销假记录 = MDEnum.valueOf(HolidayTypeEnum.class, Integer.valueOf(2));
+	
+
+}

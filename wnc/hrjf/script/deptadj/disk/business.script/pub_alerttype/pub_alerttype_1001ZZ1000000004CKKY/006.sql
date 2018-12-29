@@ -1,0 +1,2 @@
+insert into pub_timeconfig(dr,effibegindate,effibegintime,effienddate,effiendtime,endtime,executeday,executeinterval,executetime,exeintervalunit,frequencytype,intervaltime,isruncycledaily,pk_reference,pk_timeconfig,starttime,timezone,ts) values( 0,'2018-11-06','17:09:33',null,null,null,null,null,'17:09:05',null,3,1,'Y','1001ZZ1000000004CMYD','1001ZZ1000000004DBL4',null,'GMT+08:00','2018-11-07 17:08:42')
+/
