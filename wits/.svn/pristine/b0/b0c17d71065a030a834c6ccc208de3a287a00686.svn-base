@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="nc.itf.hr.wa.HRWAEJB"> 
+  <public>
+    <component priority="0" singleton="true" remote="true" tx="NONE" supportAlias="true">
+      <interface>nc.itf.hr.wa.ITaxupgrade_toolQueryService</interface>
+      <implementation>nc.impl.wa.taxupgrade_tool.Taxupgrade_toolQueryServiceImpl</implementation> 
+    </component>
+    <component priority="0" singleton="true" remote="true" tx="CMT" supportAlias="true">
+      <interface>nc.itf.hr.wa.ITaxupgrade_toolModelService</interface>
+      <implementation>nc.impl.wa.taxupgrade_tool.Taxupgrade_toolServiceImpl</implementation>
+    </component>
+    
+        <component priority="0" singleton="true" remote="true" tx="NONE" supportAlias="true">
+      <interface>nc.itf.hr.wa.ITaxSpecialStatisticsQueryService</interface>
+      <implementation>nc.impl.wa.taxspecial_statistics.TaxSpecialStatisticsQueryServiceImpl</implementation> 
+    </component>
+    <component priority="0" singleton="true" remote="true" tx="CMT" supportAlias="true">
+      <interface>nc.itf.hr.wa.ITaxSpecialStatisticsManageService</interface>
+      <implementation>nc.impl.wa.taxspecial_statistics.TaxSpecialStatisticsManageServiceImpl</implementation>
+    </component>
+     <component priority="0" singleton="true" remote="true" tx="NONE" supportAlias="true">
+      <interface>nc.itf.hr.wa.ITaxaddtionalQueryService</interface>
+      <implementation>nc.impl.wa.taxaddtional.TaxAddtionalQueryImpl</implementation> 
+    </component>
+    <component priority="0" singleton="true" remote="true" tx="CMT" supportAlias="true">
+      <interface>nc.itf.hr.wa.ITaxaddtionalManageService</interface>
+      <implementation>nc.impl.wa.taxaddtional.TaxAddtionalImpl</implementation>
+    </component>
+  </public>
+</module>
+

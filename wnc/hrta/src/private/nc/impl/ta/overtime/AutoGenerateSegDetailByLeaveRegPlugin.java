@@ -1,0 +1,84 @@
+package nc.impl.ta.overtime;
+
+import java.util.List;
+
+import nc.bs.dao.BaseDAO;
+import nc.bs.framework.common.NCLocator;
+import nc.bs.logging.Logger;
+import nc.bs.pub.pa.PreAlertObject;
+import nc.bs.pub.pa.PreAlertReturnType;
+import nc.bs.pub.taskcenter.BgWorkingContext;
+import nc.bs.pub.taskcenter.IBackgroundWorkPlugin;
+import nc.jdbc.framework.processor.ColumnListProcessor;
+import nc.pubitf.ta.overtime.ISegDetailService;
+import nc.vo.hi.psndoc.PsndocVO;
+import nc.vo.pub.BusinessException;
+import nc.vo.ta.leave.LeaveRegVO;
+import nc.vo.ta.timeitem.LeaveTypeCopyVO;
+import nc.vo.ta.timeitem.LeaveTypeVO;
+
+public class AutoGenerateSegDetailByLeaveRegPlugin implements IBackgroundWorkPlugin {
+	private BaseDAO baseDao;
+	private ISegDetailService service;
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public PreAlertObject executeTask(BgWorkingContext context) throws BusinessException {
+		StringBuilder sb = new StringBuilder();
+		Integer total = 0;
+		Integer succ = 0;
+		Integer faild = 0;
+		List<String> leaveregpks = (List<String>) this.getBaseDao().executeQuery(
+				"select pk_leavereg from tbm_leavereg lv "
+						+ "where pk_leavereg not in (select pk_leavereg from hrta_segdetailconsume "
+						+ "where pk_psndoc = lv.pk_psndoc) and lv.leavebegindate >= '2018-03-01'",
+				new ColumnListProcessor());
+
+		if (leaveregpks != null && leaveregpks.size() > 0) {
+			for (String pk_leavereg : leaveregpks) {
+				LeaveRegVO vo = null;
+				try {
+					total++;
+					vo = (LeaveRegVO) this.getBaseDao().retrieveByPK(LeaveRegVO.class, pk_leavereg);
+					this.getService().regOvertimeSegDetailConsume(new LeaveRegVO[] { vo });
+					succ++;
+				} catch (BusinessException e) {
+					sb.append("員工 ["
+							+ ((PsndocVO) this.getBaseDao().retrieveByPK(PsndocVO.class, vo.getPk_psndoc())).getCode()
+							+ "]  -  ");
+					sb.append("休假開始日期 [" + vo.getLeavebegindate() + "]  -  ");
+					LeaveTypeCopyVO lvtvo = (LeaveTypeCopyVO) this.getBaseDao().retrieveByPK(LeaveTypeCopyVO.class,
+							vo.getPk_leavetypecopy());
+					sb.append("休假類別 ["
+							+ ((LeaveTypeVO) this.getBaseDao().retrieveByPK(LeaveTypeVO.class, lvtvo.getPk_timeitem()))
+									.getTimeitemcode() + "]  -  ");
+					sb.append("錯誤信息：" + e.getMessage() + "\r\n");
+					faild++;
+				}
+			}
+		}
+
+		Logger.error("总计执行：" + total + "\r\n成功：" + succ + "\r\n失败：" + faild + "\r\n\r\n" + sb.toString());
+
+		PreAlertObject obj = new PreAlertObject();
+		obj.setReturnType(PreAlertReturnType.RETURNMESSAGE);
+		obj.setReturnObj(sb);
+		return obj;
+	}
+
+	public BaseDAO getBaseDao() {
+		if (baseDao == null) {
+			baseDao = new BaseDAO();
+		}
+
+		return baseDao;
+	}
+
+	public ISegDetailService getService() {
+		if (service == null) {
+			service = NCLocator.getInstance().lookup(ISegDetailService.class);
+		}
+		return service;
+	}
+
+}

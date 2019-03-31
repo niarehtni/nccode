@@ -1,0 +1,111 @@
+package nc.ui.hrta.leaveextrarest.ace.view;
+
+import nc.bs.framework.common.NCLocator;
+import nc.itf.bd.psn.psndoc.IPsndocQueryService;
+import nc.itf.ta.IPsnCalendarQueryService;
+import nc.itf.uap.IUAPQueryBS;
+import nc.ui.pub.bill.BillEditEvent;
+import nc.vo.bd.psn.PsnjobVO;
+import nc.vo.hi.psndoc.PsnJobVO;
+import nc.vo.hi.psndoc.PsnOrgVO;
+import nc.vo.pub.BusinessException;
+import nc.vo.pub.lang.UFLiteralDate;
+import nc.vo.pubapp.pattern.exception.ExceptionUtils;
+import nc.vo.ta.leaveextrarest.AggLeaveExtraRestVO;
+import nc.vo.ta.leaveextrarest.LeaveExtraRestVO;
+import nc.vo.ta.psncalendar.AggPsnCalendar;
+import nc.vo.ta.psncalendar.PsnCalendarVO;
+
+public class ShowUpableBillForm extends nc.ui.pubapp.uif2app.view.ShowUpableBillForm {
+	/**
+	 * serial no
+	 */
+	private static final long serialVersionUID = 8910293530249474838L;
+	IPsnCalendarQueryService service = null;
+
+	@Override
+	public void afterEdit(BillEditEvent evt) {
+
+		super.afterEdit(evt);
+
+		if (LeaveExtraRestVO.DATEBEFORECHANGE.equals(evt.getKey())) {
+			// 变化前日期
+			UFLiteralDate date = (UFLiteralDate) evt.getValue();
+			if (date != null) {
+				AggLeaveExtraRestVO aggvo = (AggLeaveExtraRestVO) this.getValue();
+				String pk_psndoc = aggvo.getParentVO().getPk_psndoc();
+				int type = getTypeOfDate(date, pk_psndoc);
+				this.billCardPanel.setHeadItem(LeaveExtraRestVO.TYPEBEFORECHANGE, type);
+
+				// 按年资起算日（比对变动前日期）
+				try {
+					IPsndocQueryService psnQuery = NCLocator.getInstance().lookup(IPsndocQueryService.class);
+					PsnjobVO psnjobvo = psnQuery.queryPsnJobVOByPsnDocPK(pk_psndoc);
+					IUAPQueryBS query = NCLocator.getInstance().lookup(IUAPQueryBS.class);
+					PsnJobVO jobvo = (PsnJobVO) query.retrieveByPK(PsnJobVO.class, psnjobvo.getPk_psnjob());
+					PsnOrgVO psnOrgVO = (PsnOrgVO) query.retrieveByPK(PsnOrgVO.class, jobvo.getPk_psnorg());
+					UFLiteralDate workAgeStartDate = (UFLiteralDate) psnOrgVO.getAttributeValue("workagestartdate"); // 年资起算日
+					UFLiteralDate maxLeaveDate = null;
+					if (workAgeStartDate != null) {
+						if (workAgeStartDate.toString().substring(4).equals("-02-29")) {
+							maxLeaveDate = new UFLiteralDate(String.valueOf(aggvo.getParentVO().getDatebeforechange()
+									.getYear())
+									+ "-02-28");
+							if (maxLeaveDate.before(aggvo.getParentVO().getBilldate())) {
+								maxLeaveDate = new UFLiteralDate(String.valueOf(aggvo.getParentVO()
+										.getDatebeforechange().getYear() + 1)
+										+ "-02-28");
+							}
+						} else {
+							maxLeaveDate = new UFLiteralDate(String.valueOf(aggvo.getParentVO().getDatebeforechange()
+									.getYear())
+									+ workAgeStartDate.toString().substring(4)).getDateBefore(1);
+							if (maxLeaveDate.before(aggvo.getParentVO().getBilldate())) {
+								maxLeaveDate = new UFLiteralDate(String.valueOf(aggvo.getParentVO()
+										.getDatebeforechange().getYear() + 1)
+										+ workAgeStartDate.toString().substring(4)).getDateBefore(1);
+							}
+						}
+
+						this.billCardPanel.setHeadItem(LeaveExtraRestVO.EXPIREDATE, maxLeaveDate);
+					} else {
+						throw new BusinessException("外加补休日期按年资起算日计算错误，请检查员工组织关系年资起算日设定。");
+					}
+				} catch (BusinessException e) {
+					ExceptionUtils.wrappBusinessException(e.getMessage());
+				}
+			}
+		} else if (LeaveExtraRestVO.DATEAFTERCHANGE.equals(evt.getKey())) {
+			// 变化后日期
+			UFLiteralDate date = (UFLiteralDate) evt.getValue();
+			if (date != null) {
+				AggLeaveExtraRestVO aggvo = (AggLeaveExtraRestVO) this.getValue();
+				String pk_psndoc = aggvo.getParentVO().getPk_psndoc();
+				int type = getTypeOfDate(date, pk_psndoc);
+				this.billCardPanel.setHeadItem(LeaveExtraRestVO.TYPEAFTERCHANGE, type);
+			}
+		}
+
+	}
+
+	private int getTypeOfDate(UFLiteralDate date, String pk_psndoc) {
+		try {
+			AggPsnCalendar psncld = getService().queryByPsnDate(pk_psndoc, date);
+			PsnCalendarVO cldvo = (PsnCalendarVO) psncld.getParentVO();
+			if (cldvo != null) {
+				return cldvo.getDate_daytype();
+			}
+		} catch (BusinessException e) {
+			ExceptionUtils.wrappBusinessException(e.getMessage());
+		}
+
+		return -1;
+	}
+
+	public IPsnCalendarQueryService getService() {
+		if (service == null) {
+			service = NCLocator.getInstance().lookup(IPsnCalendarQueryService.class);
+		}
+		return service;
+	}
+}

@@ -1,0 +1,59 @@
+package nc.pubimpl.ta.leaveextrarest;
+
+import nc.bs.dao.BaseDAO;
+import nc.hr.utils.InSQLCreator;
+import nc.pubitf.ta.leaveextrarest.ILeaveExtraRestService;
+import nc.vo.pub.BusinessException;
+import nc.vo.pub.lang.UFLiteralDate;
+import nc.vo.ta.leaveextrarest.LeaveExtraRestVO;
+
+import org.apache.commons.lang.StringUtils;
+
+public class LeaveExtraRestServiceImpl implements ILeaveExtraRestService {
+
+	private BaseDAO baseDao = null;
+
+	public BaseDAO getBaseDao() {
+		if (baseDao == null) {
+			baseDao = new BaseDAO();
+		}
+		return baseDao;
+	}
+
+	@Override
+	public void settledByExpiryDate(String pk_org, String[] pk_psndocs, UFLiteralDate settleDate, Boolean isForce)
+			throws BusinessException {
+		String strCondition = " dr=0 and isnull(issettled,'~')='~' ";
+
+		if (isForce) {
+			// 如果為強制結算，必須指定人員列表，不允許整個組織強制結算
+			if (pk_psndocs == null || pk_psndocs.length == 0) {
+				throw new BusinessException("強制結算錯誤：未指定結算人員。");
+			}
+		} else {
+			// 非強制結算時，結算日期不能為空
+			if (settleDate == null) {
+				throw new BusinessException("結算錯誤：結算日期不能為空。");
+			}
+
+			strCondition += " and expiredate='" + settleDate.toString() + "' ";
+		}
+
+		// 以人為先：指定人員的，按指定人員進行結算，否則按整個組織進行結算
+		if (pk_psndocs == null || pk_psndocs.length == 0) {
+			if (StringUtils.isEmpty(pk_org)) {
+				throw new BusinessException("結算錯誤：結算組織和結算人員不能同時為空。");
+			}
+
+			strCondition += " and pk_org = '" + pk_org + "'";
+		} else {
+			InSQLCreator insql = new InSQLCreator();
+			strCondition += " and pk_psndoc in (" + insql.getInSQL(pk_psndocs) + ")";
+		}
+
+		this.getBaseDao().executeUpdate(
+				"update " + LeaveExtraRestVO.getDefaultTableName() + " set issettled='Y' where " + strCondition);
+
+	}
+
+}

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding='gb2312'?>
+<module name="hrwa">
+  <public>
+	<component remote="true" singleton="true"  tx="CMT">
+	  <interface>nc.itf.hrwa.IWaitemgroupMaintain</interface>
+	  <implementation>nc.impl.hrwa.WaitemgroupMaintainImpl</implementation>
+	</component>
+
+  </public> 
+</module> 

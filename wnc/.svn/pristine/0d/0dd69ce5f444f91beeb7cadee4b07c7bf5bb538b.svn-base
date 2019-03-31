@@ -1,0 +1,107 @@
+package nc.ui.overtime.otleavebalance.action;
+
+import java.awt.event.ActionEvent;
+
+import nc.bs.framework.common.NCLocator;
+import nc.pubitf.para.SysInitQuery;
+import nc.pubitf.ta.leaveextrarest.ILeaveExtraRestService;
+import nc.pubitf.ta.overtime.ISegDetailService;
+import nc.ui.hr.uif2.action.HrAction;
+import nc.ui.overtime.otleavebalance.model.OTLeaveBalanceModeDataManager;
+import nc.ui.overtime.otleavebalance.view.OTLeaveBalanceOrgPanel;
+import nc.ui.uif2.ShowStatusBarMsgUtil;
+import nc.vo.pub.BusinessException;
+import nc.vo.pub.lang.UFLiteralDate;
+import nc.vo.pubapp.pattern.exception.ExceptionUtils;
+import nc.vo.ta.overtime.OTLeaveBalanceVO;
+import nc.vo.ta.timeitem.LeaveTypeCopyVO;
+
+public class SettleAction extends HrAction {
+
+	/**
+	 * serial no
+	 */
+	private static final long serialVersionUID = 8003671914946574952L;
+
+	public SettleAction() {
+		setCode("SettleAction");
+		setBtnName("结算");
+	}
+
+	private OTLeaveBalanceOrgPanel orgpanel;
+	private OTLeaveBalanceModeDataManager headModelDataManager;
+
+	@Override
+	public void doAction(ActionEvent e) throws Exception {
+		String pk_otleavetype = null;
+		String pk_exleavetype = null;
+
+		try {
+			pk_otleavetype = SysInitQuery.getParaString(getContext().getPk_org(), "TWHRT08");
+			pk_exleavetype = SysInitQuery.getParaString(getContext().getPk_org(), "TWHRT10");
+			// 休假類型
+			LeaveTypeCopyVO leaveTypeVo = (LeaveTypeCopyVO) ((OTLeaveBalanceModeDataManager) getOrgpanel()
+					.getDataManager()).getHierachicalModel().getSelectedData();
+
+			// 選中人員
+			OTLeaveBalanceVO headvo = (OTLeaveBalanceVO) getHeadModelDataManager().getModel().getSelectedData();
+			String pk_psndoc = headvo.getPk_psndoc();
+
+			if (leaveTypeVo != null) {
+				// 结算日期：当前日期前一日
+				UFLiteralDate settleDate = new UFLiteralDate().getDateBefore(1);
+
+				String [] temp = (String[]) getOrgpanel().getRefPane().getValueObj();
+				String pk_org = null;
+				if(temp != null && temp.length > 0){
+					pk_org = temp[0];
+				}
+				if(pk_org == null){
+					throw new BusinessException("讀取組織失敗!");
+				}
+
+				if (leaveTypeVo != null && leaveTypeVo.getPk_timeitemcopy().equals(pk_otleavetype)) {
+					// 加班转调休
+					ISegDetailService otSegSettleSvc = NCLocator.getInstance().lookup(ISegDetailService.class);
+					otSegSettleSvc.settleByExpiryDate(pk_org, new String[] { pk_psndoc }, settleDate, false);
+					ShowStatusBarMsgUtil.showStatusBarMsg("加班轉調休結算完成。", getModel().getContext());
+				} else if (leaveTypeVo != null && leaveTypeVo.getPk_timeitemcopy().equals(pk_exleavetype)) {
+					// 外加补休
+					ILeaveExtraRestService leaveExtraRestSvc = NCLocator.getInstance().lookup(
+							ILeaveExtraRestService.class);
+					leaveExtraRestSvc.settledByExpiryDate(pk_org, new String[] { pk_psndoc }, settleDate, false);
+					ShowStatusBarMsgUtil.showStatusBarMsg("外加補休結算完成。", getModel().getContext());
+				}
+			}
+		} catch (BusinessException ex) {
+			ExceptionUtils.wrappBusinessException(ex.getMessage());
+		}
+	}
+
+	public OTLeaveBalanceOrgPanel getOrgpanel() {
+		return orgpanel;
+	}
+
+	public void setOrgpanel(OTLeaveBalanceOrgPanel orgpanel) {
+		this.orgpanel = orgpanel;
+	}
+
+	@Override
+	protected boolean isActionEnable() {
+		return getOrgpanel().getRefPane().getValueObj() != null &&
+				// MOD 补充选取年度不为空 或 开始日期与截止日期不为空 任一成立时可结算by Andy on 2019-01-23
+				 (  (getOrgpanel().getCboYear().getSelectdItemValue() != null && !getOrgpanel().getCboYear().getSelectdItemValue().equals(""))
+				   ||( getOrgpanel().getRefBeginDate().getValueObj() != null&& getOrgpanel().getRefEndDate().getValueObj() != null)  )
+				
+				&& ((OTLeaveBalanceModeDataManager) getOrgpanel().getDataManager()).getHierachicalModel()
+						.getSelectedData() != null;
+	}
+
+	public OTLeaveBalanceModeDataManager getHeadModelDataManager() {
+		return headModelDataManager;
+	}
+
+	public void setHeadModelDataManager(OTLeaveBalanceModeDataManager headModelDataManager) {
+		this.headModelDataManager = headModelDataManager;
+	}
+}

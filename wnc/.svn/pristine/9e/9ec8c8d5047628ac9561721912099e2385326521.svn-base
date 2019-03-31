@@ -1,0 +1,24 @@
+package nc.pubitf.ta.leaveextrarest;
+
+import nc.vo.pub.BusinessException;
+import nc.vo.pub.lang.UFLiteralDate;
+
+public interface ILeaveExtraRestService {
+	/**
+	 * 按給定固定時薪及起迄時間結算（批量）
+	 * 
+	 * 業務邏輯：根據給定的日期、人員，將所有最長可休日期 = 結算日期的、未結算的員工外加補休進行結算
+	 * 
+	 * @param pk_org
+	 *            組織
+	 * @param pk_psndocs
+	 *            人員列表
+	 * @param settleDate
+	 *            結算日期
+	 * @param isForce
+	 *            強制結算：TRUE時不檢查結算日期，強制結算指定所有人的通常用於離職結算
+	 * @throws BusinessException
+	 */
+	void settledByExpiryDate(String pk_org, String[] pk_psndocs, UFLiteralDate settleDate, Boolean isForce)
+			throws BusinessException;
+}

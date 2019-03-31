@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE beans PUBLIC "-//SPRING//DTD BEAN//EN" "http://www.springframework.org/dtd/spring-beans.dtd">
+
+<beans>
+	<!-- 环境变量 -->
+	<bean id="context" class="nc.vo.uif2.LoginContext">
+	</bean>
+	<!-- 模型 部分配置########################################################### -->
+
+	<!-- 应用服务类，负责进行模型操作的处理 -->
+	<bean id="ModelService"
+		class="nc.ui.wa.taxupgrade_tool.model.Taxupgrade_toolModelService" />
+
+	<!-- 对象转换器工厂，由此获取操作对象的特征信息 。模型属性之一 -->
+	<bean id="boadatorfactory" class="nc.vo.bd.meta.BDObjectAdpaterFactory" />
+
+	<!-- 应用模型 -->
+
+	<bean id="appModel" class="nc.ui.wa.taxupgrade_tool.model.Taxupgrade_toolAppModel">
+		<property name="service" ref="ModelService" />
+		<property name="businessObjectAdapterFactory" ref="boadatorfactory" />
+		<property name="context" ref="context" />
+	</bean>
+
+	<!-- 界面元素 ########################################################### -->
+
+	<!--卡控件 -->
+	<bean id="viewForm" class="nc.ui.wa.taxupgrade_tool.view.Taxupgrade_toolForm"
+		init-method="initUI">
+		<property name="model" ref="appModel"></property>
+	</bean>
+
+	<!-- Actions ########################################################### -->
+
+	<bean id="separatorAction" class="nc.funcnode.ui.action.SeparatorAction" />
+
+	<bean id="initItemAction"
+		class="nc.ui.wa.taxupgrade_tool.action.Taxupgrade_toolInitItemAction">
+		<property name="model" ref="appModel"></property>
+		<property name="editor" ref="viewForm"></property>
+	</bean>
+	<bean id="initClassItemAction"
+		class="nc.ui.wa.taxupgrade_tool.action.Taxupgrade_toolInitClassItemAction">
+		<property name="model" ref="appModel"></property>
+		<property name="editor" ref="viewForm"></property>
+	</bean>
+	<bean id="initTaxAction"
+		class="nc.ui.wa.taxupgrade_tool.action.Taxupgrade_toolInitTaxTableAction">
+		<property name="model" ref="appModel"></property>
+		<property name="editor" ref="viewForm"></property>
+	</bean>
+		<bean id="initPeriodAction"
+		class="nc.ui.wa.taxupgrade_tool.action.Taxupgrade_toolInitPeriodAction">
+		<property name="model" ref="appModel"></property>
+		<property name="editor" ref="viewForm"></property>
+	</bean>
+	<bean id="refreshAction"
+		class="nc.ui.wa.taxupgrade_tool.action.Taxupgrade_toolRefreshAction">
+		<property name="model" ref="appModel"></property>
+		<property name="editor" ref="viewForm"></property>
+	</bean>
+	<bean id="unInitAction"
+		class="nc.ui.wa.taxupgrade_tool.action.Taxupgrade_toolUnIninitAction">
+		<property name="model" ref="appModel"></property>
+		<property name="editor" ref="viewForm"></property>
+	</bean>
+	<bean id="deductionUpgradeAction"
+		class="nc.ui.wa.taxupgrade_tool.action.Taxupgrade_toolDeductionUpgradeAction">
+		<property name="model" ref="appModel"></property>
+		<property name="editor" ref="viewForm"></property>
+	</bean>
+	<bean id="container" class="nc.ui.uif2.TangramContainer"
+		init-method="initUI">
+		<property name="tangramLayoutRoot">
+			<bean class="nc.ui.uif2.tangramlayout.node.CNode">
+				<property name="component" ref="viewForm"></property>
+			</bean>
+		</property>
+		<property name="actions">
+			<list>
+				<ref bean="refreshAction" />
+				<ref bean="separatorAction" />
+
+				<ref bean="initPeriodAction" />
+				<ref bean="separatorAction" />
+				
+				<ref bean="initTaxAction" />
+				<ref bean="separatorAction" />
+				
+				<ref bean="initItemAction" />
+				<ref bean="separatorAction" />
+				
+				<ref bean="initClassItemAction" />
+				<ref bean="separatorAction" />
+				
+				<ref bean="unInitAction" />
+				<ref bean="separatorAction" />
+				<ref bean="deductionUpgradeAction" />
+			</list>
+		</property>
+		<property name="model">
+			<ref bean="appModel" />
+		</property>
+	</bean>
+
+</beans>

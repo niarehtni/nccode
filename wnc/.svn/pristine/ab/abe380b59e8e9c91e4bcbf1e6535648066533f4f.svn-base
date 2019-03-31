@@ -1,0 +1,104 @@
+package nc.ui.overtime.otleavebalance.view;
+
+import java.awt.Component;
+
+import nc.ui.overtime.otleavebalance.action.QueryAction;
+import nc.ui.overtime.otleavebalance.model.OTLeaveBalanceModeDataManager;
+import nc.ui.pub.beans.UILabel;
+import nc.ui.pub.beans.UIRefPane;
+import nc.ui.pub.beans.ValueChangedEvent;
+import nc.ui.pub.beans.calendar.CalendarValueChangeEvent;
+import nc.ui.pub.beans.calendar.ICalendarValueChangeListener;
+import nc.ui.ta.pub.view.TAParamOrgPanel;
+
+import org.apache.commons.lang.StringUtils;
+
+public class OTLeaveBalanceOrgPanel extends TAParamOrgPanel implements ICalendarValueChangeListener {
+
+    /**
+     * serial id
+     */
+    private static final long serialVersionUID = 261505913090515929L;
+    private UILabel lblBeginDate = null;
+    private UILabel lblEndDate = null;
+    private UIRefPane refBeginDate = null;
+    private UIRefPane refEndDate = null;
+    private QueryAction queryAction = null;
+
+    @Override
+    public void initUI() {
+	super.initUI();
+	add(new UILabel());
+	add(this.getLblBeginDate());
+	add(this.getRefBeginDate());
+	add(new UILabel());
+	add(this.getLblEndDate());
+	add(this.getRefEndDate());
+
+	if (!StringUtils.isEmpty(getContext().getPk_org())) {
+	    ((OTLeaveBalanceModeDataManager) getDataManager()).initHierachicalModel();
+	}
+    }
+
+    public UIRefPane getRefEndDate() {
+	if (refEndDate == null) {
+	    refEndDate = new UIRefPane("日历");
+	    refEndDate.setName("refEndDate");
+	    refEndDate.getUITextField().setShowMustInputHint(true);
+	    refEndDate.addValueChangedListener(this);
+	    refEndDate.addCalendarValueChangeListener(this);
+	}
+	return refEndDate;
+    }
+
+    private Component getLblEndDate() {
+	if (lblEndDate == null) {
+	    lblEndDate = new UILabel();
+	    lblEndDate.setName("lblEndDate");
+	    lblEndDate.setText("截止日期");
+	}
+	return lblEndDate;
+    }
+
+    public UIRefPane getRefBeginDate() {
+	if (refBeginDate == null) {
+	    refBeginDate = new UIRefPane("日历");
+	    refBeginDate.setName("refBeginDate");
+	    refBeginDate.getUITextField().setShowMustInputHint(true);
+	    refBeginDate.addValueChangedListener(this);
+	    refBeginDate.addCalendarValueChangeListener(this);
+	}
+	return refBeginDate;
+    }
+
+    private Component getLblBeginDate() {
+	if (lblBeginDate == null) {
+	    lblBeginDate = new UILabel();
+	    lblBeginDate.setName("lblBeginDate");
+	    lblBeginDate.setText("开始日期");
+	}
+	return lblBeginDate;
+    }
+
+    public void valueChanged(ValueChangedEvent event) {
+	super.valueChanged(event);
+	String pk_org = getRefPane().getRefPK();
+	if (event.getSource() == getRefPane()) {
+	    getModel().getContext().setPk_org(pk_org);
+	    ((OTLeaveBalanceModeDataManager) getDataManager()).initHierachicalModel();
+	}
+    }
+
+    @Override
+    public void calendarValueChanged(CalendarValueChangeEvent arg0) {
+	getQueryAction().updateStatus();
+    }
+
+    public QueryAction getQueryAction() {
+	return queryAction;
+    }
+
+    public void setQueryAction(QueryAction queryAction) {
+	this.queryAction = queryAction;
+    }
+}

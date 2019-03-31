@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE beans PUBLIC "-//SPRING//DTD BEAN//EN" "http://www.springframework.org/dtd/spring-beans.dtd">
+
+<beans>
+
+	<!-- 环境变量 -->
+	<bean id="context" class="nc.vo.uif2.LoginContext">
+	</bean>
+
+	<!-- 应用服务类，负责进行模型操作的处理 -->
+	<bean id="modelService" class="nc.ui.wa.taxaddtional.model.TaxaddtionalAppModelService" />
+
+	<!-- 对象转换器工厂，由此获取操作对象的特征信息 -->
+	<bean id="boadatorfactory" class="nc.vo.bd.meta.BDObjectAdpaterFactory" />
+
+	<!-- 批量操作应用模型 -->
+	<bean id="appModel" class="nc.ui.wa.taxaddtional.model.TaxaddtionalModel">
+		<property name="service" ref="modelService"></property>
+		<property name="businessObjectAdapterFactory" ref="boadatorfactory"></property>
+		<property name="context" ref="context"></property>
+	</bean>
+
+	<!-- 数据模型管理器，主要负责各种方式的模型初始化 -->
+	<bean id="modelDataManager"
+		class="nc.ui.wa.taxaddtional.model.TaxaddtionalModelDataManager">
+		<property name="service" ref="modelService"></property>
+		<property name="model" ref="appModel"></property>
+		<property name="context" ref="context"></property>
+		<property name="paginationModel" ref="paginationModel" />
+		<property name="paginationBar" ref="paginationBar" />
+	</bean>
+
+	<!-- 模板容器，负责对模板的统一装载 -->
+	<bean id="templateContainer" class="nc.ui.uif2.editor.TemplateContainer"
+		init-method="load">
+		<property name="context" ref="context" />
+		<property name="nodeKeies">
+			<list>
+				<value>taxsd</value>
+			</list>
+		</property>
+	</bean>
+	<!-- 分页面板 -->
+	<bean id="paginationBar" class="nc.ui.uif2.components.pagination.PaginationBar">
+		<property name="paginationModel" ref="paginationModel" />
+	</bean>
+
+	<bean id="paginationModel" class="nc.ui.uif2.components.pagination.PaginationModel"
+		init-method="init">
+		<property name="paginationQueryService" ref="modelService" />
+	</bean>
+	<!-- 列表视图 -->
+	<bean id="listView" class="nc.ui.wa.taxaddtional.view.TaxaddtionalListView"
+		init-method="initUI">
+		<property name="model" ref="appModel"></property>
+		<property name="multiSelectionEnable">
+			<value>false</value>
+		</property>
+		<property name="pos">
+			<value>head</value>
+		</property>
+		<property name="templateContainer" ref="templateContainer"></property>
+		<property name="nodekey" value="taxsd" />
+		<property name="billListPanelValueSetter">
+			<bean class="nc.ui.hr.append.model.AppendableBillListPanelSetter">
+			</bean>
+		</property>
+		<property name="south" ref="paginationBar" />
+	</bean>
+
+	<!-- Actions ########################################################### -->
+	<bean id="refreshAction" class="nc.ui.uif2.actions.RefreshAction">
+		<property name="model" ref="appModel" />
+		<property name="dataManager" ref="modelDataManager"></property>
+	</bean>
+ 
+	<bean id="nullAction" class="nc.funcnode.ui.action.SeparatorAction" />
+	<bean id="queryAction" class="nc.ui.wa.taxaddtional.action.QueryTaxaddtionalAction">
+		<property name="model" ref="appModel" />
+		<property name="dataManager" ref="modelDataManager"></property>
+		<property name="queryDelegator">
+			<bean class="nc.ui.hr.uif2.HrQueryDelegator">
+				<property name="nodeKey" value="taxsdquery" />
+				<property name="context" ref="context" />
+				<property name="model" ref="appModel" />
+			</bean>
+		</property>
+	</bean>
+ 
+	<bean id="importAction" class="nc.ui.wa.taxaddtional.action.ImportAction">
+		<property name="model" ref="appModel" />
+		<property name="dataManager" ref="modelDataManager" />
+		<property name="orgpanel" ref="orgpanel" />
+		<property name="editor" ref="listView" />
+	</bean>
+
+	<bean id="exportAction" class="nc.ui.wa.taxaddtional.action.ExportAction">
+		<property name="model" ref="appModel" />
+		<property name="dataManager" ref="modelDataManager" />
+		<property name="orgpanel" ref="orgpanel" />
+		<property name="editor" ref="listView" />
+		<property name="queryDelegator">
+			<bean class="nc.ui.wa.taxaddtional.model.TaxaddtionalQueryDelegator">
+				<property name="nodeKey" value="taxsde" />
+				<property name="context" ref="context" />
+				<property name="model" ref="appModel" />
+			</bean>
+		</property>
+	</bean>
+
+	<bean id="PrintGroupListAction" class="nc.funcnode.ui.action.GroupAction">
+		<property name="code" value="print"></property>
+		<property name="name">
+			<bean class="nc.ui.uif2.I18nFB">
+				<property name="resDir" value="xmlcode" />
+				<property name="defaultValue" value="打印" />
+				<property name="resId" value="X60130002" />
+			</bean>
+		</property>
+		<property name="actions">
+			<list>
+				<ref bean="PrintListAction" />
+				<ref bean="PreviewListAction" />
+				<ref bean="exportListAction" />
+			</list>
+		</property>
+	</bean>
+	<bean id="PrintListAction" class="nc.ui.hr.uif2.action.print.DirectPrintAction">
+		<property name="model" ref="appModel" />
+		<property name="listView" ref="listView" />
+	</bean>
+	<bean id="PreviewListAction" class="nc.ui.hr.uif2.action.print.DirectPreviewAction">
+		<property name="model" ref="appModel" />
+		<property name="listView" ref="listView" />
+	</bean>
+	<bean id="exportListAction" class="nc.ui.hr.uif2.action.print.ExportListAction">
+		<property name="model" ref="appModel" />
+		<property name="listView" ref="listView" />
+	</bean>
+
+	<bean id="orgpanel" class="nc.ui.hr.uif2.view.PrimaryOrgPanel"
+		init-method="initUI">
+		<property name="model" ref="appModel" />
+		<property name="dataManager" ref="modelDataManager" />
+		<property name="context" ref="context"></property>
+		<property name="pk_orgtype" value="HRORGTYPE00000000000" />
+	</bean>
+
+	<!-- 界面布局总装 -->
+	<bean id="container" class="nc.ui.uif2.TangramContainer"
+		init-method="initUI">
+		<property name="tangramLayoutRoot">
+			<bean class="nc.ui.uif2.tangramlayout.node.VSNode">
+				<property name="showMode" value="NoDivider" />
+				<property name="up">
+					<bean class="nc.ui.uif2.tangramlayout.node.CNode">
+						<property name="component" ref="orgpanel" />
+					</bean>
+				</property>
+				<property name="down">
+					<bean class="nc.ui.uif2.tangramlayout.node.CNode">
+						<property name="component" ref="listView" />
+					</bean>
+				</property>
+				<property name="dividerLocation" value="30f" />
+			</bean>
+		</property>
+		<property name="actions">
+			<list>
+				<ref bean="refreshAction" />
+				<ref bean="queryAction" />
+				<ref bean="nullAction" />
+				<ref bean="importAction" />
+				<ref bean="exportAction" />
+				<ref bean="nullAction" />
+				<ref bean="PrintGroupListAction" />
+			</list>
+		</property>
+	</bean>
+</beans>

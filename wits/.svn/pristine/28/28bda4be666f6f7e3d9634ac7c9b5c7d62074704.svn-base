@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component conRouterType="手动" createTime="2011-05-09 13:29:36" creator="" description="" displayName="薪资期间" fromSourceBmf="true" gencodestyle="NC传统样式" help="" id="606a77d1-2267-4936-93ed-ea5c96b85c53" isbizmodel="true" mainEntity="" modifier="" modifyTime="2011-08-22 13:36:58" name="periodscheme_action" namespace="hrwa" ownModule="hrwa" preLoad="false" resModuleName="periodscheme" resid="2period-000007" version="4" versionType="0">
+    <celllist>
+        <Reference componentID="606a77d1-2267-4936-93ed-ea5c96b85c53" createTime="2011-05-09 13:29:46" creator="" description="" displayName="displayname" fullClassName="nc.vohrwa.periodscheme_action.reference" height="301" help="" id="38da01f5-ba01-4c5b-b93a-7e403edd2ea7" mdFilePath="\period\periodscheme.bmf" modifier="" modifyTime="2011-08-22 13:36:50" moduleName="hrwa" name="reference" refId="87cda780-2e10-409f-8e07-a097bb07afd0" resid="" versionType="0" visibility="public" width="158" x="89" y="131"/>
+        <busioperation componentID="606a77d1-2267-4936-93ed-ea5c96b85c53" createTime="2011-05-09 13:30:07" creator="" dataType="87cda780-2e10-409f-8e07-a097bb07afd0" dbtype="" description="" displayName="删除" fullClassName="nc.vohrwa.periodscheme_action.Delete" height="100" help="" id="468baccd-4228-4204-b78a-243e6b003640" isAuthorization="true" isBusiActivity="false" modifier="" modifyTime="2011-08-22 13:36:50" name="Delete" resid="2period-000013" typeDisplayName="薪资期间" typeName="PeriodVO" version="" versionType="0" visibility="public" width="80" x="311" y="135">
+            <refoperationlist/>
+        </busioperation>
+        <busioperation componentID="606a77d1-2267-4936-93ed-ea5c96b85c53" createTime="2011-05-09 13:30:10" creator="" dataType="87cda780-2e10-409f-8e07-a097bb07afd0" dbtype="" description="" displayName="复制" fullClassName="nc.vohrwa.periodscheme_action.Copy" height="100" help="" id="94e024cd-880e-4e48-9f8d-44d11d00c30c" isAuthorization="true" isBusiActivity="false" modifier="" modifyTime="2011-08-22 13:36:50" name="Copy" resid="2period-000017" typeDisplayName="薪资期间" typeName="PeriodVO" version="" versionType="0" visibility="public" width="80" x="314" y="250">
+            <refoperationlist/>
+        </busioperation>
+        <busioperation componentID="606a77d1-2267-4936-93ed-ea5c96b85c53" createTime="2011-05-09 13:30:12" creator="" dataType="87cda780-2e10-409f-8e07-a097bb07afd0" dbtype="" description="" displayName="查看薪资方案" fullClassName="nc.vohrwa.periodscheme_action.QueryWaCategory" height="100" help="" id="a41c5c38-42c1-4a0a-a868-c1e2700140f5" isAuthorization="true" isBusiActivity="false" modifier="" modifyTime="2011-08-22 13:36:50" name="QueryWaCategory" resid="2period-000016" typeDisplayName="薪资期间" typeName="PeriodVO" version="" versionType="0" visibility="public" width="80" x="309" y="378">
+            <refoperationlist/>
+        </busioperation>
+        <busioperation componentID="606a77d1-2267-4936-93ed-ea5c96b85c53" createTime="2011-05-09 13:30:13" creator="" dataType="87cda780-2e10-409f-8e07-a097bb07afd0" dbtype="" description="" displayName="打印" fullClassName="nc.vohrwa.periodscheme_action.Print" height="100" help="" id="fc85bcf1-1b0f-4e3f-b1ce-d648eb7a671f" isAuthorization="true" isBusiActivity="false" modifier="" modifyTime="2011-08-22 13:36:50" name="Print" resid="2period-000012" typeDisplayName="薪资期间" typeName="PeriodVO" version="" versionType="0" visibility="public" width="80" x="173" y="464">
+            <refoperationlist/>
+        </busioperation>
+        <busioperation componentID="606a77d1-2267-4936-93ed-ea5c96b85c53" createTime="2011-05-09 13:30:15" creator="" dataType="87cda780-2e10-409f-8e07-a097bb07afd0" dbtype="" description="" displayName="修改" fullClassName="nc.vohrwa.periodscheme_action.Edit" height="100" help="" id="625dd349-0cb9-47a5-a7d0-036091442906" isAuthorization="true" isBusiActivity="false" modifier="" modifyTime="2011-08-22 13:36:50" name="Edit" resid="2period-000015" typeDisplayName="薪资期间" typeName="PeriodVO" version="" versionType="0" visibility="public" width="80" x="267" y="10">
+            <refoperationlist/>
+        </busioperation>
+        <busioperation componentID="606a77d1-2267-4936-93ed-ea5c96b85c53" createTime="2011-05-09 13:30:16" creator="" dataType="87cda780-2e10-409f-8e07-a097bb07afd0" dbtype="" description="" displayName="新增" fullClassName="nc.vohrwa.periodscheme_action.Add" height="100" help="" id="082cbd3c-6691-4c3e-8929-b7cf36a2edd1" isAuthorization="true" isBusiActivity="false" modifier="" modifyTime="2011-08-22 13:36:50" name="Add" resid="2period-000014" typeDisplayName="薪资期间" typeName="PeriodVO" version="" versionType="0" visibility="public" width="80" x="117" y="10">
+            <refoperationlist/>
+        </busioperation>
+    </celllist>
+    <connectlist>
+        <dependConnection componentID="606a77d1-2267-4936-93ed-ea5c96b85c53" createTime="2011-05-09 13:34:50" creator="" description="" displayName="" help="" id="8ba974b5-8673-4d44-8606-2496edd5792c" modifier="" modifyTime="2011-05-09 13:34:50" name="depend connection" realsource="082cbd3c-6691-4c3e-8929-b7cf36a2edd1" realtarget="87cda780-2e10-409f-8e07-a097bb07afd0" source="082cbd3c-6691-4c3e-8929-b7cf36a2edd1" target="38da01f5-ba01-4c5b-b93a-7e403edd2ea7" versionType="0">
+            <points/>
+        </dependConnection>
+        <dependConnection componentID="606a77d1-2267-4936-93ed-ea5c96b85c53" createTime="2011-05-09 13:34:54" creator="" description="" displayName="" help="" id="3656d292-e315-4f81-8d5c-c467ec257267" modifier="" modifyTime="2011-05-09 13:34:54" name="depend connection" realsource="625dd349-0cb9-47a5-a7d0-036091442906" realtarget="87cda780-2e10-409f-8e07-a097bb07afd0" source="625dd349-0cb9-47a5-a7d0-036091442906" target="38da01f5-ba01-4c5b-b93a-7e403edd2ea7" versionType="0">
+            <points/>
+        </dependConnection>
+        <dependConnection componentID="606a77d1-2267-4936-93ed-ea5c96b85c53" createTime="2011-05-09 13:34:56" creator="" description="" displayName="" help="" id="10cdbc51-1719-4150-a62f-e24d495e8ceb" modifier="" modifyTime="2011-05-09 13:34:56" name="depend connection" realsource="468baccd-4228-4204-b78a-243e6b003640" realtarget="87cda780-2e10-409f-8e07-a097bb07afd0" source="468baccd-4228-4204-b78a-243e6b003640" target="38da01f5-ba01-4c5b-b93a-7e403edd2ea7" versionType="0">
+            <points/>
+        </dependConnection>
+        <dependConnection componentID="606a77d1-2267-4936-93ed-ea5c96b85c53" createTime="2011-05-09 13:34:57" creator="" description="" displayName="" help="" id="0b2d1741-34ed-480d-905d-3c97aa70f411" modifier="" modifyTime="2011-05-09 13:34:57" name="depend connection" realsource="94e024cd-880e-4e48-9f8d-44d11d00c30c" realtarget="87cda780-2e10-409f-8e07-a097bb07afd0" source="94e024cd-880e-4e48-9f8d-44d11d00c30c" target="38da01f5-ba01-4c5b-b93a-7e403edd2ea7" versionType="0">
+            <points/>
+        </dependConnection>
+        <dependConnection componentID="606a77d1-2267-4936-93ed-ea5c96b85c53" createTime="2011-05-09 13:34:59" creator="" description="" displayName="" help="" id="9611fd7d-4026-4e51-b9f8-74b5e7d4cc40" modifier="" modifyTime="2011-05-09 13:34:59" name="depend connection" realsource="a41c5c38-42c1-4a0a-a868-c1e2700140f5" realtarget="87cda780-2e10-409f-8e07-a097bb07afd0" source="a41c5c38-42c1-4a0a-a868-c1e2700140f5" target="38da01f5-ba01-4c5b-b93a-7e403edd2ea7" versionType="0">
+            <points/>
+        </dependConnection>
+        <dependConnection componentID="606a77d1-2267-4936-93ed-ea5c96b85c53" createTime="2011-05-09 13:35:00" creator="" description="" displayName="" help="" id="4927e5ff-b671-4e35-a809-fc0663643ada" modifier="" modifyTime="2011-05-09 13:35:00" name="depend connection" realsource="fc85bcf1-1b0f-4e3f-b1ce-d648eb7a671f" realtarget="87cda780-2e10-409f-8e07-a097bb07afd0" source="fc85bcf1-1b0f-4e3f-b1ce-d648eb7a671f" target="38da01f5-ba01-4c5b-b93a-7e403edd2ea7" versionType="0">
+            <points/>
+        </dependConnection>
+    </connectlist>
+    <refdepends>
+        <dependfile entityid="87cda780-2e10-409f-8e07-a097bb07afd0"/>
+    </refdepends>
+    <refdependLoseIDs/>
+    <cellRemoveLog/>
+    <rulers>
+        <ruler isHorizontal="true" unit="0">
+            <guideList/>
+        </ruler>
+        <ruler isHorizontal="false" unit="0">
+            <guideList/>
+        </ruler>
+    </rulers>
+</component>

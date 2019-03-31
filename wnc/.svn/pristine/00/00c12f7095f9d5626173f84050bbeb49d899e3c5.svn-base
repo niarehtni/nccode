@@ -1,0 +1,44 @@
+package nc.ui.overtime.otleavebalance.action;
+
+import java.awt.event.ActionEvent;
+
+import nc.ui.hr.uif2.action.HrAction;
+import nc.ui.overtime.otleavebalance.model.OTLeaveBalanceModeDataManager;
+import nc.ui.overtime.otleavebalance.view.OTLeaveBalanceOrgPanel;
+
+public class SettleAction extends HrAction {
+
+    /**
+     * serial no
+     */
+    private static final long serialVersionUID = 8003671914946574952L;
+
+    public SettleAction() {
+	setCode("SettleAction");
+	setBtnName("Ω·À„");
+    }
+
+    private OTLeaveBalanceOrgPanel orgpanel;
+
+    @Override
+    public void doAction(ActionEvent e) throws Exception {
+
+    }
+
+    public OTLeaveBalanceOrgPanel getOrgpanel() {
+	return orgpanel;
+    }
+
+    public void setOrgpanel(OTLeaveBalanceOrgPanel orgpanel) {
+	this.orgpanel = orgpanel;
+    }
+
+    @Override
+    protected boolean isActionEnable() {
+	return getOrgpanel().getRefPane().getValueObj() != null
+		&& getOrgpanel().getRefBeginDate().getValueObj() != null
+		&& getOrgpanel().getRefEndDate().getValueObj() != null
+		&& ((OTLeaveBalanceModeDataManager) getOrgpanel().getDataManager()).getHierachicalModel()
+			.getSelectedData() != null;
+    }
+}

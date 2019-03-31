@@ -1,0 +1,89 @@
+package nc.impl.wa.func_tax;
+
+
+import nc.impl.wa.func.AbstractWAFormulaParse;
+import nc.vo.hr.func.FunctionReplaceVO;
+import nc.vo.hr.func.FunctionVO;
+import nc.vo.pub.BusinessException;
+import nc.vo.wa.classitem.WaClassItemVO;
+import nc.vo.wa.formula.IFormulaAli;
+import nc.vo.wa.pub.WaLoginContext;
+
+/**
+ * 本次扣税计税公式 - 附加费用扣除额
+ * 适用税率 - 速算扣除数
+ * 
+ * 汇总薪资方案已经审核
+ * 
+ * @author: xuhw
+ * @date:
+ * @since: eHR V6.5
+ * @走查人:
+ * @走查日期:
+ * @修改人:
+ * @修改日期:
+ */
+@SuppressWarnings("serial")
+public class TaxfunTaxableAmtCurrentPeriodProcesser extends AbstractWAFormulaParse implements IFormulaAli {
+
+	@Override
+	public FunctionReplaceVO getReplaceStr(String formula) throws BusinessException {
+		WaLoginContext context = getContext();
+		String cyear = context.getCyear();
+		String cperiod = context.getCperiod();
+
+		StringBuffer sbsql = new StringBuffer();
+		String[] arguments = getArguments(formula);
+		FunctionReplaceVO fvo = new FunctionReplaceVO();
+		String itemkey = arguments[0];
+		String itemkey1 = arguments[1];
+		fvo.setAliTableName("wa_data");
+		StringBuffer sqlBuffer = new StringBuffer();
+//		//查找本次扣税基数公式  
+//		String itemSql = "select vformula  from wa_classitem where itemkey = ? and pk_wa_class = ? and cperiod = ? and cyear = ? ";
+//		SQLParameter sqp = new SQLParameter();
+//		sqp.addParam(itemkey);
+//		sqp.addParam(context.getPk_wa_class());
+//		sqp.addParam(cperiod);
+//		sqp.addParam(cyear);
+//		WaClassItemVO classitemvo = getDaoManager().executeQueryVO(itemSql,sqp, WaClassItemVO.class);
+//		String vformula = null;
+//		if (classitemvo != null && !StringUtils.isEmpty(classitemvo.getVformula())) {
+//			//判断是否有本次扣税基数
+//			vformula = classitemvo.getVformula().replaceAll("-"," - ");
+//			vformula = vformula.replaceAll("\\+"," \\+ ");
+//			vformula = vformula+" ";
+//			vformula = vformula.replaceAll("wa_data.f_6 ", "0");
+//		}
+		String key = "data2."+itemkey + " - wa_data.f_6 " + " - data2." + itemkey1;
+		key = key.replaceAll("wa_data", "data2");
+		// -- 统一员工 同一个人力资源组织 合并计税方案 审核过的数据的合计
+		sqlBuffer.append(" SELECT ");
+		sqlBuffer.append(key);
+		sqlBuffer.append( " from wa_data data2 ");
+		sqlBuffer.append(" 	WHERE	    ");
+		sqlBuffer.append(" 		data2.pk_wa_data = wa_data.pk_wa_data  ");
+		 
+
+		fvo.setReplaceStr(coalesce(sqlBuffer.toString()));
+
+		return fvo;
+	}
+
+	@Override
+	public String[] getAliItemKeys(WaClassItemVO itemVO, WaLoginContext context, FunctionVO functionVO)
+			throws BusinessException {
+		if (itemVO == null || context == null || functionVO == null || itemVO.getVformula() == null) {
+			return null;
+		}
+
+		setFunctionVO(functionVO);
+		setContext(context);
+
+		String[] arguments = getArguments(itemVO.getVformula());
+
+		String itemkey = arguments[0];
+		String itemkey1 = arguments[1];
+		return new String[] { itemkey, itemkey1 };
+	}
+}

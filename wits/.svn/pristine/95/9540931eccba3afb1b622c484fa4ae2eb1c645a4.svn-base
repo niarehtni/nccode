@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE beans PUBLIC "-//SPRING//DTD BEAN//EN" "http://www.springframework.org/dtd/spring-beans.dtd">
+
+<beans>
+	<!-- 环境变量 -->
+	<bean id="context" class="nc.vo.wa.pub.WaLoginContext">
+	</bean>
+
+	<!-- 模型部分配置 -->
+
+	<!-- 应用服务类，负责进行模型操作的处理 -->
+	<bean id="ManageModelService"
+		class="nc.ui.wa.taxspecial_statistics.model.TaxSpecialStatisticsModelService" />
+
+
+	<!-- 对象转换器工厂，由此获取操作对象的特征信息 -->
+	<bean id="boadatorfactory" class="nc.vo.bd.meta.BDObjectAdpaterFactory" />
+
+	<!-- 管理应用模型 -->
+	<bean id="ManageAppModel"
+		class="nc.ui.wa.taxspecial_statistics.model.TaxSpecialStatisticsAppModel">
+		<property name="service" ref="ManageModelService"></property>
+		<property name="businessObjectAdapterFactory" ref="boadatorfactory"></property>
+		<property name="context" ref="context"></property>
+	</bean>
+
+	<!-- 模板容器，负责对模板的统一装载 -->
+	<bean id="templateContainer" class="nc.ui.uif2.editor.TemplateContainer"
+		init-method="load">
+		<property name="context" ref="context" />
+		<property name="nodeKeies">
+			<list>
+				<value>taxsspcial</value>
+			</list>
+		</property>
+	</bean>
+
+	<!-- 数据模型管理器，主要负责各种方式的模型初始化 -->
+	<bean id="modelDataManager"
+		class="nc.ui.wa.taxspecial_statistics.model.TaxSpecialStatisticsModelDataManager">
+		<property name="service" ref="ManageModelService"></property>
+		<property name="context" ref="context"></property>
+		<property name="model" ref="ManageAppModel"></property>
+		<property name="paginationModel" ref="paginationModel" />
+		<property name="paginationBar" ref="paginationBar" />
+	</bean>
+
+	<!-- 界面元素 -->
+	<!-- 列表视图 -->
+	<bean id="listView"
+		class="nc.ui.wa.taxspecial_statistics.view.TaxSpecialStatisticsListView"
+		init-method="initUI">
+		<property name="model" ref="ManageAppModel"></property>
+		<property name="dataManager" ref="modelDataManager" />
+		<property name="multiSelectionEnable">
+			<value>false</value>
+		</property>
+		<property name="pos">
+			<value>head</value>
+		</property>
+		<property name="templateContainer" ref="templateContainer"></property>
+		<property name="nodekey" value="taxsspcial" />
+		<property name="billListPanelValueSetter">
+			<bean class="nc.ui.hr.append.model.AppendableBillListPanelSetter">
+			</bean>
+		</property>
+		<property name="south" ref="paginationBar" />
+	</bean>
+
+
+	<!-- 分页面板 -->
+	<bean id="paginationBar" class="nc.ui.uif2.components.pagination.PaginationBar">
+		<property name="paginationModel" ref="paginationModel" />
+	</bean>
+
+	<bean id="paginationModel" class="nc.ui.uif2.components.pagination.PaginationModel"
+		init-method="init">
+		<property name="paginationQueryService" ref="ManageModelService" />
+	</bean>
+
+	<bean id="nullaction" class="nc.funcnode.ui.action.SeparatorAction" />
+
+
+	<bean id="QueryAction"
+		class="nc.ui.wa.taxspecial_statistics.action.QueryTaxSpecialStatisticsAction">
+		<property name="model" ref="ManageAppModel" />
+		<property name="orgpanel" ref="orgpanel" />
+		<property name="dataManager" ref="modelDataManager" />
+		<property name="queryDelegator">
+			<bean
+				class="nc.ui.wa.taxspecial_statistics.view.TaxSpecialStatisticsQueryDelegator">
+				<property name="nodeKey" value="taxsspcial" />
+				<property name="context" ref="context" />
+				<property name="model" ref="ManageAppModel" />
+			</bean>
+		</property>
+	</bean>
+	<bean id="RefreshAction"
+		class="nc.ui.wa.taxspecial_statistics.action.TaxSpecialStatisticsRefreshAction">
+		<property name="model" ref="ManageAppModel" />
+		<property name="dataManager" ref="modelDataManager" />
+		<property name="orgpanel" ref="orgpanel" />
+
+	</bean>
+	<bean id="genericAction"
+		class="nc.ui.wa.taxspecial_statistics.action.TaxSpecialStatisticsGenericAction">
+		<property name="model" ref="ManageAppModel" />
+		<property name="dataManager" ref="modelDataManager" />
+		<property name="orgpanel" ref="orgpanel" />
+		<property name="editor" ref="listView" />
+
+	</bean>
+
+	<bean id="lockAction"
+		class="nc.ui.wa.taxspecial_statistics.action.TaxSpecialStatisticsLockAction">
+		<property name="model" ref="ManageAppModel" />
+		<property name="dataManager" ref="modelDataManager" />
+		<property name="orgpanel" ref="orgpanel" />
+		<property name="editor" ref="listView" />
+
+	</bean>
+	<bean id="unlockAction"
+		class="nc.ui.wa.taxspecial_statistics.action.TaxSpecialStatisticsUnLockAction">
+		<property name="model" ref="ManageAppModel" />
+		<property name="dataManager" ref="modelDataManager" />
+		<property name="orgpanel" ref="orgpanel" />
+		<property name="editor" ref="listView" />
+
+	</bean>
+	<!-- 界面布局总装 -->
+	<bean id="container" class="nc.ui.uif2.TangramContainer"
+		init-method="initUI">
+		<property name="tangramLayoutRoot">
+			<bean class="nc.ui.uif2.tangramlayout.node.VSNode">
+				<property name="showMode" value="NoDivider" />
+				<property name="up">
+					<bean class="nc.ui.uif2.tangramlayout.node.CNode">
+						<property name="component" ref="orgpanel" />
+					</bean>
+				</property>
+				<property name="down">
+					<bean class="nc.ui.uif2.tangramlayout.node.CNode">
+						<property name="component" ref="listView" />
+					</bean>
+				</property>
+				<property name="dividerLocation" value="30f" />
+			</bean>
+		</property>
+		<property name="actions">
+			<list>
+				<ref bean="RefreshAction" />
+				<ref bean="QueryAction" />
+				<ref bean="nullaction" />
+				<ref bean="genericAction" />
+				<ref bean="nullaction" />
+				<ref bean="lockAction" />
+				<ref bean="unlockAction" />
+			</list>
+		</property>
+	</bean>
+
+	<!-- 界面零件 -->
+	<bean id="orgpanel"
+		class="nc.ui.wa.taxspecial_statistics.view.TaxSpecialStatisticsHeadPanel"
+		init-method="initUI">
+		<constructor-arg>
+			<ref bean="listView" />
+		</constructor-arg>
+		<property name="model" ref="ManageAppModel" />
+		<property name="context" ref="context"></property>
+		<property name="dataManager" ref="modelDataManager" />
+		<property name="pk_orgtype" value="HRORGTYPE00000000000" />
+	</bean>
+
+</beans>
+
+

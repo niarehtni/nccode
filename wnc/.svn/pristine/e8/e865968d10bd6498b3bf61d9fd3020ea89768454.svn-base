@@ -1,0 +1,68 @@
+package nc.impl.pub;
+
+import java.util.Collection;
+import java.util.List;
+
+import nc.bs.dao.BaseDAO;
+import nc.bs.dao.DAOException;
+import nc.bs.framework.common.InvocationInfoProxy;
+import nc.jdbc.framework.processor.ColumnListProcessor;
+import nc.vo.pub.BusinessException;
+import nc.vo.pub.lang.UFDouble;
+import nc.vo.pub.lang.UFLiteralDate;
+import nc.vo.ta.leave.LeaveRegVO;
+import nc.vo.ta.overtime.OTLeaveBalanceVO;
+
+public class OTLeaveBalanceUtils {
+	@SuppressWarnings("unchecked")
+	public static String[] getPsnListByDateScope(String pk_org, String[] pk_psndocs, UFLiteralDate beginDate,
+			UFLiteralDate endDate) throws DAOException {
+		if (pk_psndocs == null || pk_psndocs.length == 0) {
+			List<String> psnList = (List<String>) new BaseDAO().executeQuery(
+					"select distinct pk_psndoc from tbm_psndoc where pk_org = '" + pk_org
+							+ "' and isnull(dr,0)=0 and '" + beginDate.toString() + "' <= enddate and '"
+							+ endDate.toString() + "' >= begindate", new ColumnListProcessor());
+			if (psnList != null && psnList.size() > 0) {
+				pk_psndocs = psnList.toArray(new String[0]);
+			}
+		}
+		return pk_psndocs;
+	}
+
+	public static LeaveRegVO[] getLeaveRegByPsnDate(String pk_org, String pk_psndoc, UFLiteralDate beginDate,
+			UFLiteralDate endDate, String pk_leavetypecopy) throws BusinessException {
+		String strSQL = "pk_org='" + pk_org + "' and pk_psndoc='" + pk_psndoc + "' and pk_leavetypecopy='"
+				+ pk_leavetypecopy + "' and leavebegindate between '" + beginDate.toString() + "' and '"
+				+ endDate.toString() + "' and dr=0";
+		Collection<LeaveRegVO> vos = new BaseDAO().retrieveByClause(LeaveRegVO.class, strSQL);
+
+		if (vos != null && vos.size() > 0) {
+			return vos.toArray(new LeaveRegVO[0]);
+		}
+
+		return new LeaveRegVO[0];
+	}
+
+	public static OTLeaveBalanceVO createNewHeadVO(String pk_org, String pk_psndoc, UFDouble totalAmount,
+			UFDouble spentAmount, UFDouble remainAmount, UFDouble frozenAmount, UFDouble useableAmount) {
+		OTLeaveBalanceVO newHeadVo = new OTLeaveBalanceVO();
+		newHeadVo.setPk_psndoc(pk_psndoc);
+		newHeadVo.setPk_otleavebalance(pk_psndoc);
+		newHeadVo.setPk_org(pk_org);
+		newHeadVo.setPk_group(InvocationInfoProxy.getInstance().getGroupId());
+		newHeadVo.setTotalhours(totalAmount);
+		newHeadVo.setConsumedhours(spentAmount);
+		newHeadVo.setRemainhours(remainAmount);
+		newHeadVo.setFrozenhours(frozenAmount);
+		newHeadVo.setFreehours(useableAmount);
+		return newHeadVo;
+	}
+
+	public static UFDouble getUFDouble(Object value) {
+		if (value == null) {
+			return UFDouble.ZERO_DBL;
+		} else {
+			return new UFDouble(String.valueOf(value));
+		}
+	}
+}

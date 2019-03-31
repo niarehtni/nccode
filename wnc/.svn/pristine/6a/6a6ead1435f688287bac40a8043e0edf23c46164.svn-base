@@ -1,0 +1,1 @@
+alter table twhr_nhicalc_family add sub_identity1 varchar(20) default '~' NULL;

@@ -1,0 +1,302 @@
+package nc.pubimpl.ta.leaveextrarest;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+
+import nc.bs.dao.BaseDAO;
+import nc.bs.dao.DAOException;
+import nc.hr.utils.InSQLCreator;
+import nc.impl.pub.OTLeaveBalanceUtils;
+import nc.jdbc.framework.processor.ColumnProcessor;
+import nc.pubitf.para.SysInitQuery;
+import nc.pubitf.ta.leaveextrarest.ILeaveExtraRestService;
+import nc.vo.pub.BusinessException;
+import nc.vo.pub.lang.UFBoolean;
+import nc.vo.pub.lang.UFDouble;
+import nc.vo.pub.lang.UFLiteralDate;
+import nc.vo.ta.leave.LeaveRegVO;
+import nc.vo.ta.leaveextrarest.LeaveExtraRestVO;
+import nc.vo.ta.overtime.OTBalanceDetailVO;
+import nc.vo.ta.overtime.OTLeaveBalanceVO;
+import nc.vo.ta.overtime.SoureBillTypeEnum;
+
+import org.apache.commons.lang.StringUtils;
+
+public class LeaveExtraRestServiceImpl implements ILeaveExtraRestService {
+
+	private BaseDAO baseDao = null;
+
+	public BaseDAO getBaseDao() {
+		if (baseDao == null) {
+			baseDao = new BaseDAO();
+		}
+		return baseDao;
+	}
+
+	@Override
+	public void settledByExpiryDate(String pk_org, String[] pk_psndocs, UFLiteralDate settleDate, Boolean isForce)
+			throws BusinessException {
+		String strCondition = " dr=0 and isnull(issettled,'N')='N' ";
+
+		if (isForce) {
+			// 如果為強制結算，必須指定人員列表，不允許整個組織強制結算
+			if (pk_psndocs == null || pk_psndocs.length == 0) {
+				throw new BusinessException("強制結算錯誤：未指定結算人員。");
+			}
+		} else {
+			// 非強制結算時，結算日期不能為空
+			if (settleDate == null) {
+				throw new BusinessException("結算錯誤：結算日期不能為空。");
+			}
+
+			strCondition += " and expiredate ='" + settleDate.toString() + "' ";
+		}
+
+		// 以人為先：指定人員的，按指定人員進行結算，否則按整個組織進行結算
+		if (pk_psndocs == null || pk_psndocs.length == 0) {
+			if (StringUtils.isEmpty(pk_org)) {
+				throw new BusinessException("結算錯誤：結算組織和結算人員不能同時為空。");
+			}
+
+			strCondition += " and pk_org = '" + pk_org + "'";
+		} else {
+			InSQLCreator insql = new InSQLCreator();
+			strCondition += " and pk_psndoc in (" + insql.getInSQL(pk_psndocs) + ")";
+		}
+
+		this.getBaseDao().executeUpdate(
+				"update " + LeaveExtraRestVO.getDefaultTableName() + " set issettled='Y' where " + strCondition);
+
+	}
+
+	@Override
+	public OTLeaveBalanceVO[] getLeaveExtHoursByType(String pk_org, String[] pk_psndocs, UFLiteralDate beginDate,
+			UFLiteralDate endDate, String pk_leavetypecopy, boolean isSettled) throws BusinessException {
+
+		List<OTLeaveBalanceVO> headvos = new ArrayList<OTLeaveBalanceVO>();
+
+		pk_psndocs = OTLeaveBalanceUtils.getPsnListByDateScope(pk_org, pk_psndocs, beginDate, endDate);
+
+		UFDouble dayHoursRate = getDayHourRate(pk_org, pk_leavetypecopy);
+
+		if (pk_psndocs != null && pk_psndocs.length > 0) {
+			for (String pk_psndoc : pk_psndocs) {
+				UFDouble totalAmount = UFDouble.ZERO_DBL; // 享有
+				UFDouble spentAmount = UFDouble.ZERO_DBL;// 已休
+				UFDouble remainAmount = UFDouble.ZERO_DBL;// 剩余
+				UFDouble frozenAmount = UFDouble.ZERO_DBL;// 冻结
+				UFDouble useableAmount = UFDouble.ZERO_DBL; // 可用
+
+				LeaveExtraRestVO[] extvos = getLeaveExtraRestVOsByPsnDate(pk_org, pk_psndoc, beginDate, endDate,
+						isSettled);
+				LeaveRegVO[] leaveRegVOs = OTLeaveBalanceUtils.getLeaveRegByPsnDate(pk_org, pk_psndoc, beginDate,
+						endDate, pk_leavetypecopy);
+				// 享有
+				for (LeaveExtraRestVO vo : extvos) {
+					totalAmount = totalAmount.add(OTLeaveBalanceUtils.getUFDouble(vo.getChangedayorhour()).multiply(
+							dayHoursRate));
+				}
+
+				if (!totalAmount.equals(UFDouble.ZERO_DBL)) {
+					// 已休
+					if (leaveRegVOs != null && leaveRegVOs.length > 0) {
+						for (LeaveRegVO lrvo : leaveRegVOs) {
+							spentAmount = spentAmount.add(OTLeaveBalanceUtils.getUFDouble(lrvo.getLeavehour())
+									.multiply(dayHoursRate));
+						}
+					}
+
+					// 剩餘
+					remainAmount.add(totalAmount.sub(spentAmount));
+					// 可用
+					useableAmount.add(totalAmount.sub(spentAmount).sub(frozenAmount));
+
+					if (!totalAmount.equals(UFDouble.ZERO_DBL) || !spentAmount.equals(UFDouble.ZERO_DBL)
+							|| !remainAmount.equals(UFDouble.ZERO_DBL) || !frozenAmount.equals(UFDouble.ZERO_DBL)
+							|| !useableAmount.equals(UFDouble.ZERO_DBL)) {
+						// 创建表头
+						OTLeaveBalanceVO headVo = OTLeaveBalanceUtils.createNewHeadVO(pk_org, pk_psndoc, totalAmount,
+								spentAmount, remainAmount, frozenAmount, useableAmount);
+						headVo.setQstartdate(beginDate);
+						headVo.setQenddate(endDate);
+						headvos.add(headVo);
+					}
+				}
+			}
+		}
+
+		return headvos.toArray(new OTLeaveBalanceVO[0]);
+	}
+
+	@SuppressWarnings("unchecked")
+	private LeaveExtraRestVO[] getLeaveExtraRestVOsByPsnDate(String pk_org, String pk_psndoc, UFLiteralDate beginDate,
+			UFLiteralDate endDate, boolean isSettled) throws BusinessException {
+		String strSQL = "pk_org='" + pk_org + "' and pk_psndoc='" + pk_psndoc + "' and expiredate between '"
+				+ beginDate.toString() + "' and '" + endDate.toString() + "' and dr=0 "
+				+ (isSettled ? " and isnull(issettled,'~')='Y' " : "");
+		Collection<LeaveExtraRestVO> vos = this.getBaseDao().retrieveByClause(LeaveExtraRestVO.class, strSQL);
+
+		if (vos != null && vos.size() > 0) {
+			return vos.toArray(new LeaveExtraRestVO[0]);
+		}
+
+		return new LeaveExtraRestVO[0];
+	}
+
+	@Override
+	public OTBalanceDetailVO[] getLeaveExtByType(String pk_org, String pk_psndoc, String queryYear,
+			UFLiteralDate beginDate, UFLiteralDate endDate, String pk_leavetypecopy, boolean isSettled)
+			throws BusinessException {
+		List<OTBalanceDetailVO> detailVOs = new ArrayList<OTBalanceDetailVO>();
+
+		if (!StringUtils.isEmpty(pk_psndoc)) {
+			LeaveExtraRestVO[] extvos = getLeaveExtraRestVOsByPsnDate(pk_org, pk_psndoc, beginDate, endDate, isSettled);
+			LeaveRegVO[] leaveRegVOs = OTLeaveBalanceUtils.getLeaveRegByPsnDate(pk_org, pk_psndoc, beginDate, endDate,
+					pk_leavetypecopy);
+			String pk_otleavetype = SysInitQuery.getParaString(pk_org, "TWHRT08");
+			// 已休
+			UFDouble spentAmount = UFDouble.ZERO_DBL;
+			if (pk_otleavetype != null && pk_otleavetype.equals(pk_leavetypecopy)) {
+				if (leaveRegVOs != null && leaveRegVOs.length > 0) {
+					for (LeaveRegVO lrvo : leaveRegVOs) {
+						spentAmount = spentAmount.add(lrvo.getLeavehour());
+					}
+				}
+			}
+
+			// 创建表行
+			for (LeaveExtraRestVO vo : extvos) {
+				OTBalanceDetailVO detailVo = new OTBalanceDetailVO();
+				detailVo.setPk_otleavebalance(pk_psndoc);
+				detailVo.setSourcetype(SoureBillTypeEnum.EXTRALEAVE.toIntValue());
+				detailVo.setPk_sourcebill(vo.getPk_extrarest());
+				detailVo.setCalendar(vo.getBilldate());
+				detailVo.setBillhours(vo.getChangedayorhour());
+				if (spentAmount.doubleValue() >= vo.getChangedayorhour().doubleValue()) {
+					detailVo.setConsumedhours(vo.getChangedayorhour());
+					spentAmount.sub(vo.getChangedayorhour());
+				} else {
+					detailVo.setConsumedhours(spentAmount);
+					spentAmount = UFDouble.ZERO_DBL;
+				}
+
+				detailVo.setFrozenhours(UFDouble.ZERO_DBL);
+				detailVo.setCloseflag(new UFBoolean(detailVo.getBillhours().doubleValue() == detailVo
+						.getConsumedhours().doubleValue()));
+				detailVo.setPk_balancedetail(vo.getPk_extrarest());
+				detailVOs.add(detailVo);
+			}
+		}
+		return detailVOs.toArray(new OTBalanceDetailVO[0]);
+	}
+
+	@Override
+	public void unSettleByPsn(String pk_psndoc) throws BusinessException {
+		if (StringUtils.isEmpty(pk_psndoc)) {
+			throw new BusinessException("反結算錯誤：未指定進行反結算的人員。");
+		}
+
+		// 反結算日期
+		String lastSettledDate = (String) this.getBaseDao().executeQuery(
+				"select max(expiredate) from " + LeaveExtraRestVO.getDefaultTableName() + " where "
+						+ LeaveExtraRestVO.ISSETTLED + "='Y' and isnull(" + LeaveExtraRestVO.SETTLEDATE + ",'~')='~'",
+				new ColumnProcessor());
+		if (StringUtils.isEmpty(lastSettledDate)) {
+			throw new BusinessException("反結算錯誤：未找到指定人員的可反結算外加補休記錄。");
+		}
+
+		// 反結算
+		this.getBaseDao().executeUpdate(
+				"update " + LeaveExtraRestVO.getDefaultTableName() + " set " + LeaveExtraRestVO.ISSETTLED + "='N', "
+						+ LeaveExtraRestVO.SETTLEDATE + "=null where  " + LeaveExtraRestVO.PK_PSNDOC + "='" + pk_psndoc
+						+ "' and " + LeaveExtraRestVO.EXPIREDATE + "= '" + lastSettledDate + "'");
+	}
+
+	@Override
+	public OTLeaveBalanceVO[] getLeaveExtHoursByType(String pk_org, String[] pk_psndocs, String queryYear,
+			String pk_leavetypecopy, boolean isSettled) throws BusinessException {
+		List<OTLeaveBalanceVO> headvos = new ArrayList<OTLeaveBalanceVO>();
+
+		Map<String, UFLiteralDate> psnWorkStartDate = OTLeaveBalanceUtils.getPsnWorkStartDateMap(pk_org, pk_psndocs,
+				queryYear, pk_leavetypecopy);
+
+		UFDouble dayHoursRate = getDayHourRate(pk_org, pk_leavetypecopy);
+
+		if (psnWorkStartDate != null && psnWorkStartDate.keySet().size() > 0) {
+			for (String pk_psndoc : psnWorkStartDate.keySet()) {
+				if (psnWorkStartDate.get(pk_psndoc) != null) {
+
+					UFLiteralDate beginDate = null;
+					UFLiteralDate endDate = null;
+					beginDate = OTLeaveBalanceUtils.getBeginDateByWorkAgeStartDate(queryYear, psnWorkStartDate,
+							pk_psndoc);
+					endDate = OTLeaveBalanceUtils.getEndDateByWorkAgeStartDate(queryYear, psnWorkStartDate, pk_psndoc);
+
+					UFDouble totalAmount = UFDouble.ZERO_DBL; // 享有
+					UFDouble spentAmount = UFDouble.ZERO_DBL;// 已休
+					UFDouble remainAmount = UFDouble.ZERO_DBL;// 剩余
+					UFDouble frozenAmount = UFDouble.ZERO_DBL;// 冻结
+					UFDouble useableAmount = UFDouble.ZERO_DBL; // 可用
+
+					LeaveExtraRestVO[] extvos = getLeaveExtraRestVOsByPsnDate(pk_org, pk_psndoc, beginDate, endDate,
+							isSettled);
+					LeaveRegVO[] leaveRegVOs = OTLeaveBalanceUtils.getLeaveRegByPsnYear(pk_org, pk_psndoc, queryYear,
+							pk_leavetypecopy);
+					// 享有
+					for (LeaveExtraRestVO vo : extvos) {
+						totalAmount = totalAmount.add(OTLeaveBalanceUtils.getUFDouble(vo.getChangedayorhour())
+								.multiply(dayHoursRate));
+					}
+
+					if (!totalAmount.equals(UFDouble.ZERO_DBL)) {
+						// 已休
+						if (leaveRegVOs != null && leaveRegVOs.length > 0) {
+							for (LeaveRegVO lrvo : leaveRegVOs) {
+								spentAmount = spentAmount.add(OTLeaveBalanceUtils.getUFDouble(lrvo.getLeavehour())
+										.multiply(dayHoursRate));
+							}
+						}
+
+						// 剩餘
+						remainAmount.add(totalAmount.sub(spentAmount));
+						// 可用
+						useableAmount.add(totalAmount.sub(spentAmount).sub(frozenAmount));
+
+						if (!totalAmount.equals(UFDouble.ZERO_DBL) || !spentAmount.equals(UFDouble.ZERO_DBL)
+								|| !remainAmount.equals(UFDouble.ZERO_DBL) || !frozenAmount.equals(UFDouble.ZERO_DBL)
+								|| !useableAmount.equals(UFDouble.ZERO_DBL)) {
+							// 创建表头
+							OTLeaveBalanceVO headVo = OTLeaveBalanceUtils.createNewHeadVO(pk_org, pk_psndoc,
+									totalAmount, spentAmount, remainAmount, frozenAmount, useableAmount);
+							headVo.setQstartdate(beginDate);
+							headVo.setQenddate(endDate);
+							headvos.add(headVo);
+						}
+					}
+				}
+			}
+		}
+
+		return headvos.toArray(new OTLeaveBalanceVO[0]);
+	}
+
+	@SuppressWarnings("unchecked")
+	private UFDouble getDayHourRate(String pk_org, String pk_leavetypecopy) throws DAOException {
+		// 按休假類型定義的單位決定按日或按小時計算
+		// Collection<TimeRuleVO> timerule =
+		// this.getBaseDao().retrieveByClause(TimeRuleVO.class,
+		// "pk_org='" + pk_org + "'");
+		UFDouble dayHoursRate = new UFDouble(1);
+		// if (timerule != null && timerule.size() > 0) {
+		// LeaveTypeCopyVO leavetype = (LeaveTypeCopyVO)
+		// this.getBaseDao().retrieveByPK(LeaveTypeCopyVO.class,
+		// pk_leavetypecopy);
+		// dayHoursRate = leavetype.getTimeitemunit() == 1 ?
+		// timerule.toArray(new TimeRuleVO[0]).clone()[0]
+		// .getDaytohour() : new UFDouble(1);
+		// }
+		return dayHoursRate;
+	}
+}

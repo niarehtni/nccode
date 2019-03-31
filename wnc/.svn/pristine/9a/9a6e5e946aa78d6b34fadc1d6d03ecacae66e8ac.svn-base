@@ -1,0 +1,679 @@
+package nc.impl.hrwa;
+
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import nc.bs.dao.BaseDAO;
+import nc.bs.dao.DAOException;
+import nc.bs.framework.common.NCLocator;
+import nc.bs.logging.Logger;
+import nc.hr.utils.InSQLCreator;
+import nc.hr.utils.SQLHelper;
+import nc.itf.hrwa.IWadaysalaryService;
+import nc.itf.ta.ITBMPsndocQueryMaintain;
+import nc.jdbc.framework.processor.ColumnListProcessor;
+import nc.jdbc.framework.processor.ColumnProcessor;
+import nc.jdbc.framework.processor.MapListProcessor;
+import nc.jdbc.framework.processor.ResultSetProcessor;
+import nc.pubitf.uapbd.IWorkCalendarPubService;
+import nc.pubitf.uapbd.WorkCalendarPubUtil;
+import nc.vo.bd.workcalendar.CalendarDateType;
+import nc.vo.bd.workcalendar.WorkCalendarDateVO;
+import nc.vo.bd.workcalendar.WorkCalendarVO;
+import nc.vo.hr.tools.pub.GeneralVO;
+import nc.vo.hrwa.wadaysalary.DaySalaryEnum;
+import nc.vo.hrwa.wadaysalary.DaySalaryVO;
+import nc.vo.pub.BusinessException;
+import nc.vo.pub.lang.UFDateTime;
+import nc.vo.pub.lang.UFDouble;
+import nc.vo.pub.lang.UFLiteralDate;
+import nc.vo.ta.psndoc.TBMPsndocVO;
+import nc.vo.util.BDValueCheckUtil;
+
+import org.apache.commons.lang.StringUtils;
+
+public class WadaysalaryServiceImpl implements IWadaysalaryService {
+
+    @Override
+    public void calculSalaryByHrorg(String pk_hrorg, UFLiteralDate calculDate) throws BusinessException {
+	// 获取需要计算的人员的数组
+	String calculDateStr = calculDate.toStdString();
+	String pk_psndocs[] = getPkPsndocs(pk_hrorg, calculDateStr);
+	if (pk_psndocs == null || pk_psndocs.length < 1) {
+	    nc.bs.logging.Logger.warn(pk_hrorg + "：该组织下不存在考勤人员");
+	    return;
+	}
+	// 查询当前组织下需要固定周期计算日薪的薪资方案
+	String[] pk_wa_classs = getWaClassByOrg(pk_hrorg);
+	// 查询满足条件的定调资项目
+	String inpsndocsql = new InSQLCreator().getInSQL(pk_psndocs, true);
+	String qrySql = "SELECT\n" + "	wadoc.pk_psndoc,\n" + "	wadoc.pk_psnjob,\n" + "	wadoc.pk_psndoc_sub,\n"
+		+ "	wadoc.ts as wadocts,\n" + "	wadoc.pk_wa_item,\n" + "	wadoc.nmoney\n" + "FROM\n"
+		+ "	hi_psndoc_wadoc wadoc\n" + "LEFT JOIN wa_item waitem ON wadoc.pk_wa_item = waitem.pk_wa_item\n"
+		+ "WHERE\n" + "	wadoc.pk_psndoc IN (" + inpsndocsql + ")\n"
+		+ "AND wadoc.waflag = 'Y'\n"// 发放标志为Y
+		+ "AND wadoc.begindate <= '" + calculDateStr + "'\n" + "AND (\n" + "	wadoc.enddate >= '"
+		+ calculDateStr + "'\n" + "	OR wadoc.enddate IS NULL\n" + ")";
+	HashMap<Object, List<GeneralVO>> psndocWadocMap = executeQuery(qrySql);
+	if (psndocWadocMap == null) {
+	    nc.bs.logging.Logger.warn("查询结果为空");
+	    return;
+	}
+	// 查询参数设置-日薪计算天数取值方式
+	int daynumtype = getSysintValue(pk_hrorg, DaySalaryEnum.DAYSYSINT);
+	// 日薪计算结果
+	List<DaySalaryVO> listDaySalaryVOs = new ArrayList<DaySalaryVO>();
+	// 对薪资方案进行遍历
+	for (int i = 0; i < pk_wa_classs.length; i++) {
+	    String pk_wa_class = pk_wa_classs[i];
+	    // 获取日薪计算天数
+	    double daysalarynum = getDaySalaryNum(pk_hrorg, pk_wa_class, calculDate, daynumtype);
+	    // 按照人员遍历
+	    for (Map.Entry<Object, List<GeneralVO>> e : psndocWadocMap.entrySet()) {
+		String pk_psndoc = e.getKey().toString();
+		List<GeneralVO> listGeneralVOs = e.getValue();
+		// 对每个人的定调资项目遍历
+		for (int j = 0, size = listGeneralVOs.size(); j < size; j++) {
+		    DaySalaryVO salaryVO = new DaySalaryVO();
+		    GeneralVO generalVO = listGeneralVOs.get(j);
+		    salaryVO.setSalarydate(calculDate);
+		    salaryVO.setPk_wa_class(pk_wa_class);
+		    salaryVO.setCyear(calculDate.getYear());
+		    salaryVO.setCperiod(calculDate.getMonth());
+		    salaryVO.setPk_hrorg(pk_hrorg);
+		    salaryVO.setPk_psndoc(pk_psndoc);
+		    salaryVO.setPk_psndoc_sub(generalVO.getAttributeValue("pk_psndoc_sub").toString());
+		    salaryVO.setWadocts(new UFDateTime(generalVO.getAttributeValue("wadocts").toString()));
+		    salaryVO.setPk_psnjob(generalVO.getAttributeValue("pk_psnjob").toString());
+		    salaryVO.setPk_wa_item(generalVO.getAttributeValue("pk_wa_item").toString());
+		    UFDouble nmoney = generalVO.getAttributeValue("nmoney") != null ? new UFDouble(generalVO
+			    .getAttributeValue("nmoney").toString()) : UFDouble.ZERO_DBL;
+		    // 定调资日薪、时薪
+		    UFDouble daysalary = nmoney.div(daysalarynum);
+		    UFDouble hoursalary = daysalary.div(DaySalaryEnum.HOURSALARYNUM);
+		    if (daynumtype == DaySalaryEnum.DAYNUMTYPE1) {// 薪资期间计薪日天数
+			if (!checkWorkCalendar(calculDate, pk_hrorg)) {
+			    // 如果计算日期是“休”，则日薪为0
+			    daysalary = UFDouble.ZERO_DBL;
+			    hoursalary = UFDouble.ZERO_DBL;
+			}
+		    }
+		    salaryVO.setDaysalary(daysalary);
+		    salaryVO.setHoursalary(hoursalary);
+		    listDaySalaryVOs.add(salaryVO);
+		}
+	    }
+	}
+	// 在插入數據之前，做清空處理
+	getDao().deleteByClause(DaySalaryVO.class,
+		"pk_hrorg='" + pk_hrorg + "' and salarydate='" + calculDate.toStdString() + "'");
+	getDao().insertVOList(listDaySalaryVOs);
+	// 检查是否有需要重算的数据，并重算
+	checkDaysalaryAndRecalculate(pk_hrorg, calculDate);
+
+    }
+
+    @Override
+    public void calculSalaryByWaItem(String pk_hrorg, String pk_wa_class, UFLiteralDate calculDate, String pk_psndoc,
+	    String[] pk_wa_items) throws BusinessException {
+	// 获取需要计算的人员的数组
+	String calculDateStr = calculDate.toStdString();
+	int daynumtype = getSysintValue(pk_hrorg, DaySalaryEnum.DAYSYSINT);
+	double daysalarynum = getDaySalaryNum(pk_hrorg, pk_wa_class, calculDate, daynumtype);
+	// 查询满足条件的定调资项目
+	String inwaitemsql = new InSQLCreator().getInSQL(pk_wa_items, true);
+	String qrySql = "SELECT\n" + "	wadoc.pk_psndoc,\n" + "	wadoc.pk_psnjob,\n" + "	wadoc.pk_psndoc_sub,\n"
+		+ "	wadoc.ts as wadocts,\n" + "	wadoc.pk_wa_item,\n" + "	wadoc.nmoney\n" + "FROM\n"
+		+ "	hi_psndoc_wadoc wadoc\n" + "LEFT JOIN wa_item waitem ON wadoc.pk_wa_item = waitem.pk_wa_item\n"
+		+ "WHERE\n" + "	wadoc.pk_psndoc = '" + pk_psndoc
+		+ "'\n"
+		+ "AND wadoc.waflag = 'Y'\n"// 发放标志为Y
+		+ "AND wadoc.begindate <= '" + calculDateStr + "'\n" + "AND (\n" + "	wadoc.enddate >= '"
+		+ calculDateStr + "'\n" + "	OR wadoc.enddate IS NULL\n" + ")\n" + "AND wadoc.pk_wa_item in ("
+		+ inwaitemsql + ")";
+	HashMap<Object, List<GeneralVO>> psndocWadocMap = executeQuery(qrySql);
+	if (psndocWadocMap == null) {
+	    nc.bs.logging.Logger.warn("查询结果为空");
+	    return;
+	}
+	List<DaySalaryVO> listDaySalaryVOs = new ArrayList<DaySalaryVO>();
+	for (Map.Entry<Object, List<GeneralVO>> e : psndocWadocMap.entrySet()) {
+	    List<GeneralVO> listGeneralVOs = e.getValue();
+	    for (int i = 0, size = listGeneralVOs.size(); i < size; i++) {
+		GeneralVO generalVO = listGeneralVOs.get(i);
+		DaySalaryVO salaryVO = new DaySalaryVO();
+		salaryVO.setSalarydate(calculDate);
+		salaryVO.setPk_wa_class(pk_wa_class);
+		salaryVO.setCyear(calculDate.getYear());
+		salaryVO.setCperiod(calculDate.getMonth());
+		salaryVO.setPk_hrorg(pk_hrorg);
+		salaryVO.setPk_psndoc(pk_psndoc);
+		salaryVO.setPk_psndoc_sub(generalVO.getAttributeValue("pk_psndoc_sub").toString());
+		salaryVO.setWadocts(new UFDateTime(generalVO.getAttributeValue("wadocts").toString()));
+		salaryVO.setPk_psnjob(generalVO.getAttributeValue("pk_psnjob").toString());
+		salaryVO.setPk_wa_item(generalVO.getAttributeValue("pk_wa_item").toString());
+		UFDouble nmoney = generalVO.getAttributeValue("nmoney") != null ? new UFDouble(generalVO
+			.getAttributeValue("nmoney").toString()) : UFDouble.ZERO_DBL;
+		// 定调资日薪、时薪
+		UFDouble daysalary = nmoney.div(daysalarynum);
+		UFDouble hoursalary = daysalary.div(DaySalaryEnum.HOURSALARYNUM);
+		if (daynumtype == DaySalaryEnum.DAYNUMTYPE1) {// 薪资期间计薪日天数
+		    if (!checkWorkCalendar(calculDate, pk_hrorg)) {
+			// 如果计算日期是“休”，则日薪为0
+			daysalary = UFDouble.ZERO_DBL;
+			hoursalary = UFDouble.ZERO_DBL;
+		    }
+		}
+		salaryVO.setDaysalary(daysalary);
+		salaryVO.setHoursalary(hoursalary);
+		listDaySalaryVOs.add(salaryVO);
+	    }
+	}
+	// 在插入數據之前，做清空處理
+	getDao().deleteByClause(
+		DaySalaryVO.class,
+		"pk_hrorg='" + pk_hrorg + "' and pk_wa_class='" + pk_wa_class + "' and pk_psndoc = '" + pk_psndoc
+			+ "' and salarydate='" + calculDate.toStdString() + "' and pk_wa_item in (" + inwaitemsql + ")");
+	getDao().insertVOList(listDaySalaryVOs);
+
+    }
+
+    /**
+     * 检查某个组织下面的日薪数据是否需要重算，并重算
+     * 
+     * @param pk_org
+     * @param calculdate
+     * @throws BusinessException
+     */
+    public void checkDaysalaryAndRecalculate(String pk_org, UFLiteralDate calculdate) throws BusinessException {
+	String checkSql = "SELECT  \n" + "	daysalary.salarydate,\n" + "	daysalary.pk_wa_class,\n"
+		+ "	daysalary.pk_psndoc,\n" + "	daysalary.pk_wa_item\n" + "FROM\n" + "	wa_daysalary daysalary\n"
+		+ "LEFT JOIN hi_psndoc_wadoc wadoc ON (\n" + "	daysalary.pk_psndoc = wadoc.pk_psndoc\n"
+		+ "	AND daysalary.pk_wa_item = wadoc.pk_wa_item\n" + "	AND daysalary.salarydate >= wadoc.begindate\n"
+		+ "	AND (\n" + "		daysalary.salarydate <= wadoc.enddate\n" + "		OR wadoc.enddate IS NULL\n" + "	)\n"
+		+ ")\n" 
+		+ "  left join pub_sysinit sysinit on (tbmpsndoc.pk_org = '"+pk_org+"' and sysinit.dr = 0 and sysinit.initcode = 'HRWA021')  "
+		+ "WHERE\n" + "	daysalary.salarydate < '"
+		+ calculdate.toStdString()
+		+ "'\n"
+		+ "AND (daysalary.wadocts <> wadoc.ts OR salary.wadocts IS NULL or salary.initcode <> sysinit.value or salary.initcode  IS NULL)\n"
+		+ "AND daysalary.pk_hrorg = '"
+		+ pk_org
+		+ "'\n"
+		+ "UNION ALL\n"
+		+ "	SELECT\n"
+		+ "		daysalary.salarydate,\n"
+		+ "		daysalary.pk_wa_class,\n"
+		+ "		daysalary.pk_psndoc,\n"
+		+ "		daysalary.pk_wa_item\n"
+		+ "	FROM\n"
+		+ "		wa_daysalary daysalary\n"
+		+ "	LEFT JOIN hi_psndoc_wadoc wadoc ON daysalary.pk_psndoc_sub = wadoc.pk_psndoc_sub\n"
+		+ "	WHERE\n"
+		+ "		daysalary.pk_hrorg = '"
+		+ pk_org
+		+ "'\n"
+		+ "	AND daysalary.salarydate < '"
+		+ calculdate.toStdString() + "'\n" + "	AND wadoc.pk_psndoc_sub IS NULL";
+	HashMap<String, HashMap<String, HashMap<String, List<String>>>> checkresultHashMap = executeQuery2(checkSql);
+	if (checkresultHashMap.size() < 1) {
+	    return;
+	}
+	for (Map.Entry<String, HashMap<String, HashMap<String, List<String>>>> e : checkresultHashMap.entrySet()) {
+	    String key = e.getKey();
+	    UFLiteralDate reCalculdate = new UFLiteralDate(key);
+	    HashMap<String, HashMap<String, List<String>>> reWaClassMap = e.getValue();
+	    for (Map.Entry<String, HashMap<String, List<String>>> e2 : reWaClassMap.entrySet()) {
+		String pk_wa_class = e2.getKey();
+		HashMap<String, List<String>> reRsndocAndWaitems = e2.getValue();
+		for (Map.Entry<String, List<String>> e3 : reRsndocAndWaitems.entrySet()) {
+		    String pk_psndoc = e3.getKey();
+		    String[] waitems = e3.getValue().toArray(new String[0]);
+		    calculSalaryByWaItem(pk_org, pk_wa_class, reCalculdate, pk_psndoc, waitems);
+		}
+	    }
+	}
+    }
+
+    /**
+     * 检查该计算日期是“平/休”
+     * 
+     * @param calculDate
+     * @param pk_org
+     * @return
+     * @throws BusinessException
+     */
+    public boolean checkWorkCalendar(UFLiteralDate calculDate, String pk_org) throws BusinessException {
+	WorkCalendarVO calendarVO = WorkCalendarPubUtil.getInstance().getWorkCalendarVOByPkOrg(pk_org);
+	if ((calendarVO == null) || (BDValueCheckUtil.isNullORZeroLength(calendarVO.getCalendardates()))) {
+	    Logger.error("未查询到有效的工作日历");
+	    return false;
+	}
+	for (WorkCalendarDateVO dataVO : calendarVO.getCalendardates()) {
+	    if (dataVO.getCalendardate().isSameDate(calculDate)
+		    && (CalendarDateType.WEEKENDDAY.ordinal() != dataVO.getDatetype().intValue())) {
+
+		return true;
+	    }
+	}
+	return false;
+    }
+
+    /**
+     * 
+     * 获取需要计算日薪的人员：根据考勤档案进行查询
+     * 
+     * @param pk_hrorg
+     * @param calculDate
+     * @return
+     * @throws BusinessException
+     */
+    public String[] getPkPsndocs(String pk_hrorg, String calculDate) throws BusinessException {
+	String condition = "pk_org ='" + pk_hrorg + "' and begindate<='" + calculDate
+		+ "' and isnull(enddate, '9999-12-31')>='" + calculDate + "' and isnull(dr,0)=0";
+	ITBMPsndocQueryMaintain service = NCLocator.getInstance().lookup(ITBMPsndocQueryMaintain.class);
+	TBMPsndocVO[] tbmPsndocVOs = service.queryByCondition(condition);
+	String[] psndocpks = SQLHelper.getStrArray(tbmPsndocVOs, TBMPsndocVO.PK_PSNDOC);
+	return psndocpks;
+    }
+
+    /**
+     * 根据组织，查询出需要计算日薪的薪资方案
+     * 
+     * @param pk_hrorg
+     * @return
+     * @throws BusinessException
+     */
+    public String[] getWaClassByOrg(String pk_hrorg) throws BusinessException {
+	String qrySql = "SELECT\n" + "	pk_wa_class\n" + "FROM\n" + "	wa_waclass\n" + "WHERE\n" + "	pk_org = '"
+		+ pk_hrorg + "'\n" + "AND stopflag = 'N'\n" + "AND isdaysalary = 'Y'\n" + "AND isnull(dr, 0) = 0";
+	@SuppressWarnings("unchecked")
+	List<String> waClassList = (List<String>) getDao().executeQuery(qrySql, new ColumnListProcessor());
+	if (waClassList == null || waClassList.size() < 1) {
+	    throw new BusinessException("組織：" + pk_hrorg + ",未設置需要固定週期計算日薪的薪資方案");
+	}
+	return waClassList.toArray(new String[0]);
+    }
+
+    public Map<String, UFLiteralDate> getPeriodDate(String pk_hrorg, String pk_wa_class, UFLiteralDate calculdate)
+	    throws BusinessException {
+	String qrySql = "SELECT\n" + "	period.cstartdate,\n" + "	period.cenddate\n" + "FROM\n"
+		+ "	wa_waclass waclass\n"
+		+ "LEFT JOIN wa_period period ON period.pk_periodscheme = waclass.pk_periodscheme\n" + "WHERE\n"
+		+ "	waclass.pk_wa_class = '" + pk_wa_class + "'\n" + "AND period.cstartdate <= '"
+		+ calculdate.toStdString() + "'\n" + "AND period.cenddate >= '" + calculdate.toStdString() + "'";
+	@SuppressWarnings("unchecked")
+	List<HashMap<String, Object>> listMaptemp = (ArrayList<HashMap<String, Object>>) getDao().executeQuery(qrySql,
+		new MapListProcessor());
+	if (listMaptemp != null && listMaptemp.size() > 0) {
+	    HashMap<String, Object> hashMap = listMaptemp.get(0);
+	    String begindate = hashMap.get("cstartdate").toString();
+	    String enddate = hashMap.get("cenddate").toString();
+	    Map<String, UFLiteralDate> map = new HashMap<String, UFLiteralDate>();
+	    map.put("begindate", new UFLiteralDate(begindate));
+	    map.put("enddate", new UFLiteralDate(enddate));
+	    return map;
+	} else {
+	    StringBuffer message = new StringBuffer();
+	    message.append("組織：" + pk_hrorg + "\n");
+	    message.append("薪资方案：" + pk_wa_class + "\n");
+	    message.append("計算日期：" + calculdate.toStdString() + "\n");
+	    message.append("為維護薪资期间");
+	    throw new BusinessException(message.toString());
+	}
+
+    }
+
+    /**
+     * 查询参数值
+     * 
+     * @param pk_org
+     * @param initcode
+     * @return
+     * @throws DAOException
+     */
+    public int getSysintValue(String pk_org, String initcode) throws DAOException {
+	String qrySql = "select value from pub_sysinit where initcode='" + initcode + "' and pk_org ='" + pk_org
+		+ "' and isnull(dr,0)=0";
+	Object object = getDao().executeQuery(qrySql, new ColumnProcessor());
+	int sysValue = 0;
+	try {
+	    sysValue = Integer.valueOf(object.toString());
+	} catch (Exception e) {
+
+	    nc.bs.logging.Logger.error("sql:" + qrySql + "\n result:" + object + "\n initcode:" + initcode
+		    + "\n 考勤时薪天数或者日薪天数错误！");
+	}
+	return sysValue;
+    }
+
+    // /**
+    // * 取考勤时薪天数取值方式时间
+    // * @param pk_hrorg
+    // * @param calculDate
+    // * @param tbmnumtype
+    // * @return
+    // * @throws BusinessException
+    // */
+    // public double getTbmSalaryNum(String pk_hrorg, UFLiteralDate calculDate,
+    // int tbmnumtype) throws BusinessException {
+    // if (tbmnumtype == DaySalaryEnum.TBMNUMTYPE1) {
+    // return DaySalaryEnum.TBMSALARYNUM01;////固定值30天
+    // }
+    // if (tbmnumtype == DaySalaryEnum.TBMNUMTYPE2) {
+    // return DaySalaryEnum.TBMSALARYNUM02;//固定21.75天
+    // }
+    // if (tbmnumtype == DaySalaryEnum.TBMNUMTYPE3) {
+    // // 查询考勤期间
+    // String sqlsys = "SELECT\n" +
+    // "	begindate,\n" +
+    // "	enddate\n" +
+    // "FROM\n" +
+    // "	tbm_period\n" +
+    // "WHERE\n" +
+    // "	begindate <= '"+calculDate+"'\n" +
+    // "AND enddate >= '"+calculDate+"'\n" +
+    // "AND pk_org = '"+pk_hrorg+"'\n" +
+    // "AND isnull(dr, 0) = 0";
+    // @SuppressWarnings("unchecked")
+    // List<HashMap<String, Object>> listMaptemp = (ArrayList<HashMap<String,
+    // Object>>) getDao()
+    // .executeQuery(sqlsys.toString(), new MapListProcessor());
+    // String begindate = null;
+    // String enddate = null;
+    // if (listMaptemp != null && listMaptemp.size() > 0) {
+    // HashMap<String, Object> hashMap = listMaptemp.get(0);
+    // begindate = hashMap.get("begindate").toString();
+    // enddate = hashMap.get("enddate").toString();
+    // } else {
+    // StringBuffer message=new StringBuffer();
+    // message.append("組織："+pk_hrorg+"\n");
+    // message.append("計算日期："+calculDate.toStdString()+"\n");
+    // message.append("為維護考勤期間");
+    // throw new BusinessException(message.toString());
+    // }
+    // return UFLiteralDate.getDaysBetween(new UFLiteralDate(begindate),
+    // new UFLiteralDate(enddate)) + 1;
+    // }
+    // return DaySalaryEnum.TBMSALARYNUM01;//固定值30天;
+    // }
+
+    /**
+     * 取日薪计算天数取值
+     * 
+     * @param pk_hrorg
+     *            组织
+     * @param pk_wa_class
+     *            薪资方案
+     * @param calculDate
+     *            计算日期
+     * @param daysalarynumtype
+     *            控制参数
+     * @return
+     * @throws BusinessException
+     */
+    public double getDaySalaryNum(String pk_hrorg, String pk_wa_class, UFLiteralDate calculDate, int daysalarynumtype)
+	    throws BusinessException {
+	// 薪资期间计薪日天数（节日+平日）
+	if (daysalarynumtype == DaySalaryEnum.DAYNUMTYPE1) {
+	    Map<String, UFLiteralDate> periodMap = getPeriodDate(pk_hrorg, pk_wa_class, calculDate);
+	    UFDouble temp = getCalendarPubService().getWorkCalndPsnWageDays(pk_hrorg, periodMap.get("begindate"),
+		    periodMap.get("enddate"));
+	    return temp.toDouble();
+	}
+	// 薪资期间天数
+	if (daysalarynumtype == DaySalaryEnum.DAYNUMTYPE2) {
+	    Map<String, UFLiteralDate> periodMap = getPeriodDate(pk_hrorg, pk_wa_class, calculDate);
+	    return UFLiteralDate.getDaysBetween(periodMap.get("begindate"), periodMap.get("enddate")) + 1;
+	}
+	// 固定30天
+	if (daysalarynumtype == DaySalaryEnum.DAYNUMTYPE3) {
+	    return DaySalaryEnum.DAYSAYSALARYNUM03;
+	}
+	return DaySalaryEnum.DAYSAYSALARYNUM03;
+    }
+
+    private BaseDAO dao;
+
+    public BaseDAO getDao() {
+	if (null == dao) {
+	    dao = new BaseDAO();
+	}
+	return dao;
+    }
+
+    private IWorkCalendarPubService calendarPubService;
+
+    private IWorkCalendarPubService getCalendarPubService() {
+	if (null == calendarPubService) {
+	    calendarPubService = NCLocator.getInstance().lookup(IWorkCalendarPubService.class);
+	}
+	return calendarPubService;
+    }
+
+    @SuppressWarnings({ "unchecked" })
+    private HashMap<Object, List<GeneralVO>> executeQuery(String qrysql) throws DAOException {
+
+	HashMap<Object, List<GeneralVO>> param1ParamsMap = (HashMap<Object, List<GeneralVO>>) getDao().executeQuery(
+		qrysql, new ResultSetProcessor() {
+
+		    /**
+					 * 
+					 */
+		    private static final long serialVersionUID = -6223698366816831149L;
+
+		    @Override
+		    public Object handleResultSet(ResultSet rs) throws SQLException {
+			HashMap<Object, List<GeneralVO>> retMap = new HashMap<Object, List<GeneralVO>>();
+
+			while (rs.next()) {
+
+			    List<GeneralVO> listGeneralVOs = retMap.get(rs.getObject(1));
+
+			    if (listGeneralVOs == null) {
+
+				listGeneralVOs = new ArrayList<GeneralVO>();
+
+				listGeneralVOs.add(processorToGeneralVO(rs));
+				retMap.put(rs.getObject(1), listGeneralVOs);
+			    } else {
+
+				listGeneralVOs.add(processorToGeneralVO(rs));
+			    }
+
+			}
+
+			return retMap;
+		    }
+		});
+
+	return param1ParamsMap;
+    }
+
+    /**
+     * HashMap<String,HashMap<String, List<String>>>
+     * HashMap<计算时间,HashMap<pk_wa_class,HashMap<pk_psndoc, List<pk_wa_item>>>>
+     * 
+     * @param qrysql
+     * @return
+     * @throws DAOException
+     */
+    @SuppressWarnings("unchecked")
+    private HashMap<String, HashMap<String, HashMap<String, List<String>>>> executeQuery2(String qrysql)
+	    throws DAOException {
+
+	HashMap<String, HashMap<String, HashMap<String, List<String>>>> param1ParamsMap = (HashMap<String, HashMap<String, HashMap<String, List<String>>>>) getDao()
+		.executeQuery(qrysql, new ResultSetProcessor() {
+
+		    /**
+			 * 
+			 */
+		    private static final long serialVersionUID = -4700240988126059729L;
+
+		    @Override
+		    public Object handleResultSet(ResultSet rs) throws SQLException {
+			HashMap<String, HashMap<String, HashMap<String, List<String>>>> retMap = new HashMap<String, HashMap<String, HashMap<String, List<String>>>>();
+			while (rs.next()) {
+			    HashMap<String, HashMap<String, List<String>>> param2VoMap = retMap.get(rs.getObject(1));
+			    if (param2VoMap == null) {
+				param2VoMap = new HashMap<String, HashMap<String, List<String>>>();
+				HashMap<String, List<String>> param3VoMap = new HashMap<String, List<String>>();
+				param2VoMap.put(rs.getObject(2).toString(), param3VoMap);
+				List<String> list = new ArrayList<>();
+				list.add(rs.getObject(4).toString());
+				param3VoMap.put(rs.getObject(3).toString(), list);
+				retMap.put(rs.getObject(1).toString(), param2VoMap);
+			    } else {
+				HashMap<String, List<String>> param3VoMap = param2VoMap.get(rs.getObject(2));
+				if (param3VoMap == null) {
+				    param3VoMap = new HashMap<String, List<String>>();
+				    List<String> list = new ArrayList<>();
+				    list.add(rs.getObject(4).toString());
+				    param3VoMap.put(rs.getObject(3).toString(), list);
+				} else {
+				    List<String> list = param3VoMap.get(rs.getObject(3).toString());
+				    if (list == null) {
+					list = new ArrayList<>();
+					list.add(rs.getObject(4).toString());
+					param3VoMap.put(rs.getObject(3).toString(), list);
+				    } else {
+					list.add(rs.getObject(4).toString());
+					param3VoMap.put(rs.getObject(3).toString(), list);
+				    }
+				}
+			    }
+
+			}
+			return retMap;
+		    }
+		});
+
+	return param1ParamsMap;
+    }
+
+    protected GeneralVO processorToGeneralVO(ResultSet rs) throws SQLException {
+
+	ResultSetMetaData meta = rs.getMetaData();
+	int cols = meta.getColumnCount();
+	GeneralVO result = new GeneralVO();
+
+	for (int i = 1; i <= cols; i++) {
+
+	    String strRealName = StringUtils.isNotEmpty(meta.getColumnLabel(i)) ? meta.getColumnLabel(i) : meta
+		    .getColumnName(i);
+	    result.setAttributeValue(strRealName.toLowerCase(), rs.getObject(i));
+	}
+
+	return result;
+    }
+
+    @Override
+    public void deleteDaySalary(String pk_hrorg, UFLiteralDate calculdate, int continueTime) throws BusinessException {
+	UFLiteralDate continuedate = calculdate.getDateBefore(continueTime);
+	String deleteSql = "delete from wa_daysalary where pk_hrorg='" + pk_hrorg + "' and salarydate<'"
+		+ continuedate.toStdString() + "'";
+	getDao().executeUpdate(deleteSql);
+    }
+
+    @Override
+    public void checkDaySalaryAndCalculSalary(String pk_hrorg, UFLiteralDate calculdate, int checkrange)
+	    throws BusinessException {
+	for (int i = 1; i <= checkrange; i++) {
+	    UFLiteralDate checkDate = calculdate.getDateBefore(i);
+	 // 查询参数设置-日薪计算天数取值方式
+		int daynumtype = getSysintValue(pk_hrorg, DaySalaryEnum.DAYSYSINT);
+	    String checkSql = "select count(*) from wa_daysalary where pk_hrorg='" + pk_hrorg + "' and salarydate='"
+		    + checkDate.toStdString() + "' and isnull(dr,0)=0 and initcode = '"+daynumtype+"'";
+	    int count = (int) getDao().executeQuery(checkSql, new ColumnProcessor());
+	    if (count == 0) {
+		calculSalaryByHrorg(pk_hrorg, checkDate);
+	    }
+	}
+    }
+
+    @Override
+    public void checkDaySalaryAndCalculSalary(String pk_wa_class, String[] pk_psndocs, UFLiteralDate begindate,
+	    UFLiteralDate enddate) throws BusinessException {
+	String inpsndocsql = new InSQLCreator().getInSQL(pk_psndocs, true);
+	// 查询出定调资存在新增、修改的记录以及记录为空的数据
+	//按薪资方案的组织进行过滤,防止兼职人员加重
+	String checkSql = "SELECT DISTINCT\n" + "	waclass.pk_org,\n" + "	calendar.calendardate,\n"
+		+ "	wadoc.pk_psndoc,\n" + "	wadoc.pk_psnjob,\n" + "	wadoc.pk_psndoc_sub,\n" + "	wadoc.ts AS wadocts,\n"
+		+ "	wadoc.pk_wa_item,\n" + "	wadoc.nmoney,\n" + "	salary.pk_daysalary\n" + "FROM\n"
+		+ "	hi_psndoc_wadoc wadoc\n"
+		+ "LEFT JOIN bd_workcalendardate calendar ON calendar.calendardate >= wadoc.begindate\n" + "AND (\n"
+		+ "	calendar.calendardate <= wadoc.enddate\n" + "	OR wadoc.enddate IS NULL\n" + ")\n"
+		+ " LEFT JOIN wa_waclass waclass on waclass.pk_wa_class = '"+pk_wa_class+"' "
+		+ "LEFT JOIN wa_daysalary salary ON (\n salary.pk_wa_class = '" + pk_wa_class + "'\n and	salary.pk_psndoc = wadoc.pk_psndoc\n"
+		+ "	AND wadoc.pk_wa_item = salary.pk_wa_item\n" + "	AND calendar.calendardate = salary.salarydate\n"
+		+ ")\n" 
+		+ " left join pub_sysinit sysinit on (waclass.pk_org = sysinit.pk_org and sysinit.dr = 0 and sysinit.initcode = '"+DaySalaryEnum.DAYSYSINT+"') "
+		+ "WHERE\n" + "	wadoc.waflag = 'Y'\n " 
+		+ "AND calendar.calendardate <= '" + enddate.toStdString() + "'\n" + "AND calendar.calendardate >= '"
+		+ begindate.toStdString() + "'\n" + "AND wadoc.pk_psndoc in (" + inpsndocsql + ")\n" + "AND (\n"
+		+ "	wadoc.ts <> salary.wadocts\n" + "	OR salary.wadocts IS NULL\n" 
+		+ " or salary.initcode <> sysinit.value or salary.initcode  IS NULL )  and wadoc.pk_org = waclass.pk_org ";
+	HashMap<Object, List<GeneralVO>> psndocWadocMap = executeQuery(checkSql);
+	if (psndocWadocMap == null || psndocWadocMap.size() < 1) {
+	    return;
+	}
+	// 需要删除的日薪记录
+	List<String> deletePks = new ArrayList<String>();
+	// 考勤日薪计算结果
+	List<DaySalaryVO> listTbmDaySalaryVOs = new ArrayList<DaySalaryVO>();
+	for (Map.Entry<Object, List<GeneralVO>> e : psndocWadocMap.entrySet()) {
+	    String pk_org = e.getKey().toString();
+	    // 查询参数设置-考勤日薪计算天数取值方式
+	    int daynumtype = getSysintValue(pk_org, DaySalaryEnum.DAYSYSINT);
+	    List<GeneralVO> listGeneralVOs = e.getValue();
+	    // 对每个人的定调资项目遍历
+	    for (int j = 0, size = listGeneralVOs.size(); j < size; j++) {
+		DaySalaryVO salaryVO = new DaySalaryVO();
+		GeneralVO generalVO = listGeneralVOs.get(j);
+		UFLiteralDate calculdate = new UFLiteralDate(generalVO.getAttributeValue("calendardate").toString());
+		
+		salaryVO.setSalarydate(calculdate);
+		salaryVO.setCyear(calculdate.getYear());
+		salaryVO.setCperiod(calculdate.getMonth());
+		salaryVO.setPk_hrorg(pk_org);
+		salaryVO.setPk_psndoc(generalVO.getAttributeValue("pk_psndoc").toString());
+		salaryVO.setPk_psndoc_sub(generalVO.getAttributeValue("pk_psndoc_sub").toString());
+		salaryVO.setWadocts(new UFDateTime(generalVO.getAttributeValue("wadocts").toString()));
+		salaryVO.setPk_psnjob(generalVO.getAttributeValue("pk_psnjob").toString());
+		salaryVO.setPk_wa_item(generalVO.getAttributeValue("pk_wa_item").toString());
+		salaryVO.setPk_wa_class(pk_wa_class);
+		UFDouble nmoney = generalVO.getAttributeValue("nmoney") != null ? new UFDouble(generalVO
+			.getAttributeValue("nmoney").toString()) : UFDouble.ZERO_DBL;
+		double daysalarynum = getDaySalaryNum(pk_org, pk_wa_class, calculdate, daynumtype);
+		UFDouble daysalary = nmoney.div(daysalarynum);
+		UFDouble hoursalary = daysalary.div(DaySalaryEnum.HOURSALARYNUM);
+		if (daynumtype == DaySalaryEnum.DAYNUMTYPE1) {// 薪资期间计薪日天数
+			if (!checkWorkCalendar(calculdate,pk_org )) {
+			    // 如果计算日期是“休”，则日薪为0
+			    daysalary = UFDouble.ZERO_DBL;
+			    hoursalary = UFDouble.ZERO_DBL;
+			}
+		    }
+		salaryVO.setDaysalary(daysalary);
+		salaryVO.setHoursalary(hoursalary);
+		listTbmDaySalaryVOs.add(salaryVO);
+		String pk_salary = null ==generalVO.getAttributeValue("pk_daysalary")?"":generalVO.getAttributeValue("pk_daysalary").toString();
+		if (StringUtils.isNotBlank(pk_salary)) {
+		    deletePks.add(pk_salary);
+		}
+	    }
+	}
+	// 删除已经不存在的定调资记录
+	String deletesql = "delete from wa_daysalary where pk_psndoc_sub not in (select pk_psndoc_sub from hi_psndoc_wadoc)";
+	getDao().executeUpdate(deletesql);
+	if (deletePks.size() > 1) {
+	    getDao().deleteByPKs(DaySalaryVO.class, deletePks.toArray(new String[0]));
+	}
+	getDao().insertVOList(listTbmDaySalaryVOs);
+    }
+}

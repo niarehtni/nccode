@@ -1,0 +1,320 @@
+<?xml version="1.0" encoding="GBK"?>
+
+<!DOCTYPE beans PUBLIC "-//SPRING//DTD BEAN//EN" "http://www.springframework.org/dtd/spring-beans.dtd">
+
+<beans>
+
+	<!-- 环境变量 -->
+	<bean id="context" class="nc.vo.ta.pub.TALoginContext"></bean>
+
+	<!-- 模型部分配置*********************************************************** -->
+
+	<!-- 应用服务类，负责进行模型操作的处理 -->
+	<bean id="bmModelModelService" class="nc.ui.overtime.otleavebalance.serviceproxy.OTLeaveBalanceMaintainProxy">
+		<property name="orgPanel" ref="orgpanel" />
+		<property name="hierachicalModel" ref="hierachicalAppModel" />
+	</bean>
+
+	
+	<!-- 对象转换器工厂，由此获取操作对象的特征信息 -->
+	<bean id="BOAdapterFactory" class="nc.vo.bd.meta.GeneralBDObjectAdapterFactory">
+		<property name="mode" value="MD"/>
+	</bean>
+   
+    <!-- 层次结构构造策略 -->
+	<bean id="treeCreateStrategy" class="nc.vo.bd.meta.BDObjectTreeCreateStrategy">
+		<property name="factory" ref="BOAdapterFactory"/>
+		<property name="rootName">
+		<bean class="nc.ui.uif2.I18nFB">
+		    	<property name="resDir" value="common"></property>	
+			    <property name="defaultValue" value="休假类别" />
+			    <property name="resId" value="UC000-0000234"></property>
+	    	</bean>
+		</property>
+	</bean> 
+	
+	<!-- 层次应用模型-->
+	<bean id="hierachicalAppModel" class="nc.ui.uif2.model.HierachicalDataAppModel">
+		<property name="service" ref ="treeModelService" />
+		<property name="treeCreateStrategy" ref="treeCreateStrategy" />
+		<property name="businessObjectAdapterFactory" ref="BOAdapterFactory" />
+		<property name="context" ref="context" />
+	</bean>
+
+	<bean id="treeModelService" class="nc.ui.overtime.otleavebalance.model.OTLeaveBalanceModelService" />
+
+	<!-- 模型元素 -->
+	<!--========= 模型元素：[PUBAPP平面模型(BillManageModel)实例对象] ==========-->
+	<bean id="headModel" class="nc.ui.overtime.otleavebalance.model.OTLeaveBalanceModel">
+		<property name="context"><ref bean="context"/></property>
+		<property name="otListModel" ref="otListModel"/>
+		<property name="lvListModel" ref="lvListModel"/>
+		<property name="businessObjectAdapterFactory"><ref bean="BOAdapterFactory"/></property>
+	</bean>
+
+	<bean id="otListModel" class="nc.ui.pubapp.uif2app.model.BillManageModel">
+		<property name="context"><ref bean="context"/></property>
+		<property name="businessObjectAdapterFactory"><ref bean="BOAdapterFactory"/></property>
+	</bean>
+	
+	<bean id="lvListModel" class="nc.ui.pubapp.uif2app.model.BillManageModel">
+		<property name="context"><ref bean="context"/></property>
+		<property name="businessObjectAdapterFactory"><ref bean="BOAdapterFactory"/></property>
+	</bean>
+	
+	<!-- 数据模型管理器，主要负责各种方式的模型初始化 -->
+	<bean id="headModelDataManager" class="nc.ui.overtime.otleavebalance.model.OTLeaveBalanceModeDataManager">
+		<property name="model" ref="headModel"/>
+		<property name="service" ref="bmModelModelService" />
+		<property name="hierachicalModel" ref="hierachicalAppModel"/>
+		<property name="orgpanel" ref="orgpanel" />
+		<property name="context" ref="context" />
+	</bean>
+
+	<bean id="otListModelDataManager" class="nc.ui.overtime.otleavebalance.model.OTLeaveBalanceModeDataManager">
+		<property name="model" ref="otListModel"/>
+		<property name="service" ref="bmModelModelService" />
+		<property name="hierachicalModel" ref="hierachicalAppModel"/>
+		<property name="orgpanel" ref="orgpanel" />
+		<property name="context" ref="context" />
+	</bean>
+
+	<bean id="lvListModelDataManager" class="nc.ui.overtime.otleavebalance.model.OTLeaveBalanceModeDataManager">
+		<property name="model" ref="lvListModel"/>
+		<property name="service" ref="bmModelModelService" />
+		<property name="hierachicalModel" ref="hierachicalAppModel"/>
+		<property name="orgpanel" ref="orgpanel" />
+		<property name="context" ref="context" />
+	</bean>
+	
+	<!-- Mediator，模型之间监听关系部分 -->
+	<bean id="modelMediator" class="nc.ui.overtime.otleavebalance.handler.OTLeaveBalanceMediator">
+		<property name="hierachicalModel" ref="hierachicalAppModel"/>
+		<property name="dataManager" ref="headModelDataManager"/>
+	</bean>
+
+	<bean id="headListMouseClickMediator" class="nc.ui.overtime.otleavebalance.handler.MouseClickEventHandler">
+		<property name="headModel" ref="headModel" />
+		<property name="otListModel" ref="otListModel" />
+		<property name="leaveListView" ref="leaveListView" />
+		<property name="hierachicalModel" ref="hierachicalAppModel" />
+		<property name="context" ref="context" />
+		<property name="orgpanel" ref="orgpanel" />
+		<property name="otListView" ref="otListView" />
+	</bean>
+
+    <!-- 组织面板//newadd -->
+
+	<!-- 卡片界面的工具栏和返回按钮 -->
+
+
+	<!-- 模板容器，负责对模板的统一装载 -->
+	<bean id="templateContainer" class="nc.ui.pubapp.uif2app.view.TemplateContainer"  init-method="load">
+		<property name="context" ref="context"/>
+		<property name="nodeKeies">
+			<list>
+				<value>tp</value>
+				<value>sc</value>
+				<value>sp</value>
+			</list>
+		</property>
+	</bean>
+
+
+	<!-- 界面元素 ***********************************************************-->
+	<bean id="treeCellRenderer" class="nc.ui.overtime.otleavebalance.view.OTLeaveBalanceTreeCellRenderer"/>
+	
+	<!--树控件-->
+	<bean id="treePanel" class="nc.ui.uif2.components.TreePanel" init-method="initUI">
+		<property name="model" ref="hierachicalAppModel"></property>
+		<property name="rootvisibleflag" value="true"></property>
+		<property name="treeCellRenderer" ref="treeCellRenderer"/>
+	</bean>
+
+	<!--====== 视图元素：[PUBAPP列表视图控件(ShowUpableBillListView)实例对象] ==============-->
+	<bean id="billListView" class="nc.ui.pubapp.uif2app.view.BillListView" init-method="initUI">
+		<property name="model"><ref bean="headModel" /></property>
+		<property name="nodekey" value="tp" />
+		<property name="multiSelectionEnable" value="false" />
+		<property name="templateContainer" ref="templateContainer"/>
+	</bean>
+	
+	<bean id="otListView" class="nc.ui.pubapp.uif2app.view.BillListView" init-method="initUI">
+		<property name="model"><ref bean="otListModel" /></property>
+		<property name="nodekey" value="sc" />
+		<property name="multiSelectionEnable" value="false" />
+		<property name="templateContainer" ref="templateContainer"/>
+	</bean>
+	
+	<bean id="leaveListView" class="nc.ui.pubapp.uif2app.view.BillListView" init-method="initUI">
+		<property name="model"><ref bean="lvListModel" /></property>
+		<property name="nodekey" value="sp" />
+		<property name="multiSelectionEnable" value="false" />
+		<property name="templateContainer" ref="templateContainer"/>
+	</bean>
+	
+	<bean id="orgpanel" class="nc.ui.overtime.otleavebalance.view.OTLeaveBalanceOrgPanel" init-method="initUI">
+		<property name="model" ref="headModel" />
+		<property name="dataManager" ref="headModelDataManager" />
+		<property name="queryAction" ref="defaultQueryAction" />
+		<property name="pk_orgtype" value="HRORGTYPE00000000000" />
+	</bean>
+	
+	<!-- 界面布局总装*********************************************************** -->
+	<bean id="container" class="nc.ui.uif2.TangramContainer" init-method="initUI">
+		<property name="tangramLayoutRoot">
+          			<bean class="nc.ui.uif2.tangramlayout.node.VSNode">
+           				<property name="showMode" value="NoDivider" />
+           				<property name="up">
+	       					<bean class="nc.ui.uif2.tangramlayout.node.CNode">
+	          					<property name="component" ref="orgpanel" />
+             				</bean>
+           				</property>
+           				<property name="down">
+							<bean class="nc.ui.uif2.tangramlayout.node.HSNode">
+								<property name="left">
+									<bean class="nc.ui.uif2.tangramlayout.node.CNode">
+										<property name="component">
+											<ref bean="treePanel" />
+										</property>
+									</bean>
+								</property>
+								<property name="right">
+									<bean class="nc.ui.uif2.tangramlayout.node.VSNode">
+										<property name="up">
+											<bean class="nc.ui.uif2.tangramlayout.node.CNode">
+												<property name="component">
+													<ref bean="billListView" />
+												</property>
+											</bean>
+										</property>
+										<property name="down">
+											<bean class="nc.ui.uif2.tangramlayout.node.HSNode">
+												<property name="left">
+													<bean class="nc.ui.uif2.tangramlayout.node.CNode">
+														<property name="component">
+															<ref bean="otListView" />
+														</property>
+													</bean>
+												</property>
+												<property name="right">
+													<bean class="nc.ui.uif2.tangramlayout.node.CNode">
+														<property name="component">
+															<ref bean="leaveListView" />
+														</property>
+													</bean>
+												</property>
+												<property name="dividerLocation" value="700.0f" />
+											</bean>
+										</property>
+										<property name="dividerLocation" value="240.0f" />
+									</bean>
+								</property>	
+								<property name="dividerLocation" value="240.0f" />
+								<property name="name" value="列表" />
+							</bean>
+						</property>
+						<property name="dividerLocation" value="30f" />
+				</bean>
+		</property>
+		<property name="actions">
+			<list>
+				<ref bean="defaultQueryAction" />
+				<ref bean="separatorAction" />
+				<ref bean="settleActionGroup" />
+				<ref bean="separatorAction" />
+				<ref bean="metaDataBasedPrintAction" />
+				<ref bean="outputAction" />
+				<ref bean="separatorAction" />
+
+			</list>
+		</property>
+		
+		<property name="model">
+			<ref bean="headModel" />
+		</property>
+	</bean>
+	
+	<!-- 打开节点监听 newadd-->
+	<bean id="InitDataListener" class="nc.ui.pubapp.uif2app.model.DefaultFuncNodeInitDataListener">
+		<property name="model" ref="headModel"/>
+		<property name="context" ref="context"></property>
+		<property name="voClassName" value="nc.vo.ta.overtime.AggOTLeaveBalanceVO"/>
+	</bean>
+
+
+
+	<!-- ClosingListener 编辑态关闭节点时提示是否保存//newadd***************************************************-->
+	<!-- 节点关闭前校验 -->
+	<bean id="ClosingListener" class="nc.ui.pubapp.common.validateservice.ClosingCheck" >
+		<property name="model" ref="headModel" />
+		<property name="saveAction" ref="saveAction" />
+	</bean>
+
+
+	<!--======= 动作：[newActions] [查询] ===========-->
+	<bean id="defaultQueryAction" class="nc.ui.overtime.otleavebalance.action.QueryAction">
+		<property name="model"><ref bean="headModel"/></property>
+		<property name="templateContainer"><ref bean="defaultQueryActionQueryTemplateContainer" /></property>
+		<property name="nodeKey" value="qt"></property>
+		<property name="dataManager"><ref bean="headModelDataManager"/></property>
+		<property name="exceptionHandler"><ref bean="exceptionHandler" /></property>
+		<property name="orgpanel"><ref bean="orgpanel" /></property>
+	</bean>
+
+	<bean id="defaultQueryActionQueryTemplateContainer" class="nc.ui.uif2.editor.QueryTemplateContainer">
+		<property name="nodeKey" value="qt" />
+		<property name="context"><ref bean="context"/></property>
+	</bean>
+	
+	<!--======= 动作：[newActions] [结算] ===========-->
+	<bean id="settleAction" class="nc.ui.overtime.otleavebalance.action.SettleAction">
+		<property name="model"><ref bean="headModel"/></property>
+		<property name="orgpanel"><ref bean="orgpanel" /></property>
+	</bean>
+
+	<!--======= 动作：[newActions] [反结算] ===========-->
+	<bean id="unSettleAction" class="nc.ui.overtime.otleavebalance.action.UnSettleAction">
+		<property name="model"><ref bean="headModel"/></property>
+		<property name="orgpanel"><ref bean="orgpanel" /></property>
+	</bean>
+	
+	<!-- 结算按钮组 -->
+	<bean id="settleActionGroup" class="nc.funcnode.ui.action.MenuAction">
+		<property name="code" value="settleActions" />
+		<property name="name"  value="结算"/>
+		<property name="actions">
+			<list>
+				<ref bean="settleAction" />
+				<ref bean="unSettleAction" />
+			</list>
+		</property>
+	</bean>
+	
+	<!--======= 动作：[newActions] [打印] ===========-->
+	<bean id="metaDataBasedPrintAction" class="nc.ui.pubapp.uif2app.actions.MetaDataBasedPrintAction">
+		<property name="model"><ref bean="headModel"/></property>
+		<property name="actioncode" value="Print"></property>
+		<property name="actionname" value="打印"></property>
+		<property name="preview" value="false"></property>
+		<property name="nodeKey" value="ot" />
+		<property name="exceptionHandler"><ref bean="exceptionHandler" /></property>
+	</bean>
+
+	<!--======= 动作：[newActions] [输出...] ===========-->
+	<bean id="outputAction" class="nc.ui.pubapp.uif2app.actions.OutputAction">
+		<property name="model"><ref bean="headModel"/></property>
+		<property name="exceptionHandler"><ref bean="exceptionHandler" /></property>
+	</bean>
+
+	<!--分隔按钮-->
+	<bean id="separatorAction" class="nc.funcnode.ui.action.SeparatorAction" />
+    
+	<bean id="exceptionHandler" class="nc.ui.uif2.DefaultExceptionHanler">
+		<constructor-arg><ref bean="container"/></constructor-arg>
+		<property name="context"><ref bean="context" /></property>
+	</bean>
+	
+	
+	<!-- 批量保存校验服务类 -->
+</beans>

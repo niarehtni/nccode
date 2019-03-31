@@ -1,0 +1,207 @@
+package nc.ui.wa.formular;
+
+import java.awt.Dimension;
+import java.util.List;
+
+import javax.swing.SwingConstants;
+
+import nc.bs.framework.common.NCLocator;
+import nc.hr.utils.ResHelper;
+import nc.itf.uap.IUAPQueryBS;
+import nc.ui.hr.formula.itf.IVariableFactory;
+import nc.ui.pub.beans.UIButton;
+import nc.ui.pub.beans.UILabel;
+import nc.ui.pub.beans.UIRefPane;
+import nc.ui.uif2.model.AbstractUIAppModel;
+import nc.vo.pub.BusinessException;
+import nc.vo.uif2.LoginContext;
+import nc.vo.wa.item.WaItemVO;
+
+import org.apache.commons.lang.StringUtils;
+
+/**
+ * 
+ * @author ward
+ * @date 2018年9月19日22:31:51
+ * @desc 日薪汇总函数
+ * 
+ */
+@SuppressWarnings({ "serial" })
+public class DaySalaryFunctionEditor extends WaAbstractFunctionEditor {
+	private UILabel ivjUILabel = null;
+	private UIRefPane refWaItem = null;
+
+	// 薪资项目分组参照 Ares.Tank 2019年1月20日21:17:47
+	private UILabel groupLabel = null;
+	private UIRefPane groupRef = null;
+
+	// 指定专案代码薪资维护函数
+	private static final String funcname = "@" + ResHelper.getString("wadaysalary", "wadaysalary_func_999999") + "@";
+
+	public DaySalaryFunctionEditor() {
+		super();
+		initialize();
+	}
+
+	public String getFuncName() {
+		return funcname;
+	}
+
+	private void initialize() {
+		try {
+			setLayout(null);
+			setSize(300, 150);
+			setTitle("請選擇參數");
+
+			add(getWaItemLabel(), getWaItemLabel().getName());
+			add(getRefWaItem(), getRefWaItem().getName());
+
+			add(getGroupLabel(), getGroupLabel().getName());
+			add(getGroupRef(), getGroupRef().getName());
+
+			add(getOkButton(), getOkButton().getName());
+			add(getCancelButton(), getOkButton().getName());
+		} catch (Throwable ivjExc) {
+			handleException(ivjExc);
+		}
+
+		initConnection();
+	}
+
+	public UILabel getGroupLabel() {
+		if (this.groupLabel == null) {
+			try {
+				this.groupLabel = new UILabel();
+				this.groupLabel.setName("UILabel3");
+				this.groupLabel.setText("薪资项目分组：");
+				this.groupLabel.setHorizontalAlignment(SwingConstants.RIGHT);
+				this.groupLabel.setBounds(10, 50, 100, 22);
+			} catch (Throwable ivjExc) {
+				handleException(ivjExc);
+			}
+		}
+		return this.groupLabel;
+	}
+
+	public UIRefPane getGroupRef() {
+		if (groupRef == null) {
+			groupRef = new UIRefPane("薪资项目分组");
+			groupRef.getRefModel().setMutilLangNameRef(false);
+			groupRef.setPk_org(null);
+			groupRef.setVisible(true);
+			groupRef.setPreferredSize(new Dimension(50, 20));
+			groupRef.setButtonFireEvent(true);
+			groupRef.getUITextField().setShowMustInputHint(true);
+			groupRef.setName("groupRef");
+			groupRef.setBounds(120, 50, 150, 22);
+
+		}
+		return groupRef;
+	}
+
+	public boolean checkPara(int dataType) {
+		try {
+			String nullstr = "";
+			if (StringUtils.isEmpty(getRefWaItem().getRefPK())) {
+				throw new BusinessException("請選擇薪資項目");
+			}
+
+			if (getGroupRef().getRefPK() == null) {
+				throw new BusinessException("請選擇薪資項目分組");
+			}
+
+			return true;
+		} catch (Exception e) {
+			handleException(e);
+			showErrMsg(e.getMessage());
+		}
+		return false;
+	}
+
+	public String[] getPara() {
+		String[] paras = new String[2];
+		paras[0] = "\"" + getRefWaItem().getRefPK() + "\"";
+		paras[1] = "\"" + getGroupRef().getRefPK() + "\"";
+		return paras;
+	}
+
+	public void initData() {
+		getRefWaItem().setPk_org(getModel().getContext().getPk_org());
+		groupRef.setPk_org(getModel().getContext().getPk_org());
+	}
+
+	public void setModel(AbstractUIAppModel model) {
+		super.setModel(model);
+		initData();
+	}
+
+	private UIRefPane getRefWaItem() {
+		if (this.refWaItem == null) {
+			try {
+				this.refWaItem = new UIRefPane("薪资发放项目");
+				this.refWaItem.setName("refWaItem");
+				this.refWaItem.setPk_org(null);
+				this.refWaItem.setButtonFireEvent(true);
+				this.refWaItem.setBounds(120, 20, 150, 22);
+				this.refWaItem.getUITextField().setShowMustInputHint(true);
+			} catch (Throwable e) {
+				handleException(e);
+			}
+		}
+		return this.refWaItem;
+	}
+
+	private UILabel getWaItemLabel() {
+		if (this.ivjUILabel == null) {
+			try {
+				this.ivjUILabel = new UILabel();
+				this.ivjUILabel.setName("UILabel2");
+				this.ivjUILabel.setText(ResHelper.getString("6013commonbasic", "06013commonbasic0024"));
+				this.ivjUILabel.setBounds(10, 20, 100, 22);
+				this.ivjUILabel.setHorizontalAlignment(SwingConstants.RIGHT);
+			} catch (Throwable ivjExc) {
+				handleException(ivjExc);
+			}
+		}
+		return this.ivjUILabel;
+	}
+
+	@SuppressWarnings("unchecked")
+	private WaItemVO[] getItems(LoginContext context) throws BusinessException {
+		WaItemVO[] items = null;
+		StringBuilder where = new StringBuilder();
+		where.append(" (pk_group='").append(context.getPk_group()).append("' ");
+		where.append(" or pk_org='").append(context.getPk_org()).append("') ");
+		List<WaItemVO> result = (List<WaItemVO>) NCLocator.getInstance().lookup(IUAPQueryBS.class)
+				.retrieveByClause(WaItemVO.class, where.toString());
+		if (null != result) {
+			items = result.toArray(new WaItemVO[0]);
+		}
+
+		return items;
+	}
+
+	public UIButton getOkButton() {
+		if (okButton == null) {
+			okButton = new UIButton(ResHelper.getString("common", "UC001-0000044"));
+			okButton.setBounds(48, 98, 80, 22);
+		}
+		return okButton;
+	}
+
+	public UIButton getCancelButton() {
+		if (cancelButton == null) {
+			cancelButton = new UIButton(ResHelper.getString("common", "UC001-0000008"));
+			cancelButton.setBounds(172, 98, 80, 22);
+		}
+		return cancelButton;
+	}
+
+	protected String getStdDes(String tableDes, String fldDes) {
+		if (StringUtils.isBlank(tableDes)) {
+			return IVariableFactory.VARIABLE_LEFT_BRACKET + fldDes + IVariableFactory.VARIABLE_RIGHT_BRACKET;
+		}
+		return IVariableFactory.VARIABLE_LEFT_BRACKET + tableDes + IVariableFactory.ITEM_SEPERATOR + fldDes
+				+ IVariableFactory.VARIABLE_RIGHT_BRACKET;
+	}
+}

@@ -91,7 +91,7 @@
 				<ref bean="QueryAction" />
 				<ref bean="RefreshAction" />
 				<ref bean="nullaction" />
-				<ref bean="OnTimeCaculateAction" />
+				<!-- <ref bean="OnTimeCaculateAction" /> -->
 				<ref bean="CaculateAction" />
 				<ref bean="ReTotalAction" />
 				<ref bean="WaTimesCollectAction" />
