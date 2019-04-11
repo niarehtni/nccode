@@ -21,13 +21,13 @@ import nc.vo.pub.lang.UFLiteralDate;
 import nc.vo.wa.pub.WaLoginContext;
 
 /**
- * #21266 按日合计考勤扣款项函数解析器
+ * 按日合计离职考勤扣款项函数解析器
  * 
- * @author yejk
- * @date 2018-9-11
+ * @author ssx
+ * @date 2019-4-7
  */
-@SuppressWarnings({ "serial", "restriction" })
-public class LeaveFeeParse extends AbstractPreExcutorFormulaParse {
+@SuppressWarnings({ "serial" })
+public class LeaveLeaveFeeParse extends AbstractPreExcutorFormulaParse {
 
 	/**
 	 * @Description: 执行解析
@@ -70,6 +70,12 @@ public class LeaveFeeParse extends AbstractPreExcutorFormulaParse {
 		UFLiteralDate startDate = new UFLiteralDate(dateListMap.get(0).get("begindate").toString());
 		UFLiteralDate endDate = new UFLiteralDate(dateListMap.get(0).get("enddate").toString());
 		/* 通过薪资期间获取考勤期间的起止日期 end */
+
+		// MOD (按日合计离职考勤扣款)
+		// add by ssx on 2019-04-07
+		startDate = endDate.getDateAfter(1);
+		endDate = startDate.getDateAfter(startDate.getDaysMonth() - startDate.getDay()); // 月末最後一天
+		// MOD end
 
 		// String[] formulaArg = formula.toString().split(",");
 		String[] arguments = getArguments(formula.toString());

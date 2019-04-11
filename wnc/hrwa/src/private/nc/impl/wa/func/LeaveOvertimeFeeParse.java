@@ -21,13 +21,13 @@ import nc.vo.pub.lang.UFLiteralDate;
 import nc.vo.wa.pub.WaLoginContext;
 
 /**
- * #21266 按日合计加班费函数解析器
+ * #21266 按日合计离职加班费函数解析器
  * 
  * @author yejk
  * @date 2018-9-7
  */
 @SuppressWarnings({ "serial", "restriction" })
-public class OvertimeFeeParse extends AbstractPreExcutorFormulaParse {
+public class LeaveOvertimeFeeParse extends AbstractPreExcutorFormulaParse {
 
 	/**
 	 * @Description: 执行解析
@@ -114,7 +114,7 @@ public class OvertimeFeeParse extends AbstractPreExcutorFormulaParse {
 			 * startDate, endDate, null, null,pk_group_item);
 			 */
 			Map<String, UFDouble[]> ovtFeeResult = segDetailService.calculateOvertimeFeeByDate(pk_org, psndocArr,
-					startDate, endDate, null, null, pk_group_item, false);
+					startDate, endDate, null, null, pk_group_item, true);
 			if (null == ovtFeeResult || ovtFeeResult.size() == 0) {
 				throw new BusinessException("调用接口ISegDetailService获取应税(免税)加班费为空");
 			} else {

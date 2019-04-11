@@ -13,7 +13,7 @@ import nc.vo.wa.paydata.IFormula;
  * @author sunsx
  * 
  */
-public class YearRestHoursFunc extends AbstractWAFormulaParse {
+public class LeaveYearRestHoursFunc extends AbstractWAFormulaParse {
 
 	/**
 	 * serial no
@@ -25,7 +25,7 @@ public class YearRestHoursFunc extends AbstractWAFormulaParse {
 		FunctionReplaceVO fvo = new FunctionReplaceVO();
 		fvo.setAliTableName("wa_cacu_data");
 		fvo.setReplaceStr(" wa_cacu_data.cacu_value ");
-		IFormula excutor = new YearRestHoursFormulaPreExecutor(false);
+		IFormula excutor = new YearRestHoursFormulaPreExecutor(true);
 		((AbstractWAFormulaParse) excutor).setFunctionVO(getFunctionVO());
 		excutor.excute(formula, getContext());
 		return fvo;
