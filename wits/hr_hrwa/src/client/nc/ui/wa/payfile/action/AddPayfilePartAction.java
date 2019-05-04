@@ -1,18 +1,18 @@
 package nc.ui.wa.payfile.action;
 
+import java.awt.Event;
 import java.awt.event.ActionEvent;
+import java.awt.event.KeyEvent;
 
-import javax.swing.AbstractAction;
 import javax.swing.Action;
+import javax.swing.KeyStroke;
 
 import nc.bs.framework.common.NCLocator;
-import nc.bs.uif2.IActionCode;
+import nc.funcnode.ui.action.INCAction;
 import nc.hr.utils.ResHelper;
 import nc.itf.uap.IUAPQueryBS;
 import nc.ui.pub.bill.BillCardPanel;
-import nc.ui.pub.query.tools.ImageIconAccessor;
 import nc.ui.uif2.UIState;
-import nc.ui.uif2.actions.ActionInitializer;
 import nc.ui.wa.payfile.model.PayfileAppModel;
 import nc.ui.wa.payfile.refmodel.PersonType;
 import nc.ui.wa.payfile.view.PayfileFormEditor;
@@ -20,32 +20,31 @@ import nc.vo.wa.category.WaClassVO;
 import nc.vo.wa.payfile.PayfileVO;
 
 /**
- * 新增正式人员Action
+ * 新增兼职人员
  *
  * @author: zhoucx
- * @date: 2009-11-27 上午09:12:39
+ * @date: 2009-11-30 下午04:40:03
  * @since: eHR V6.0
  * @走查人:
  * @走查日期:
  * @修改人:
  * @修改日期:
  */
-public class AddPayfileAction extends PayfileBaseAction {
+public class AddPayfilePartAction extends AddPayfileAction {
 
-	private static final long serialVersionUID = 3560637576039585517L;
+	private static final long serialVersionUID = -5475225571900947575L;
 	
 	private static String DF9A="1001ZZ1000000001NEGQ";//业务代号
 	private static String DF9B="1001ZZ1000000001NEGR";//费用别代号
 	private static String DF92="1001ZZ1000000001NEGT";//项目代号
 
-	public AddPayfileAction() {
+	public AddPayfilePartAction() {
 		super();
-		ActionInitializer.initializeAction(this, IActionCode.ADD);
-		putValue(AbstractAction.SMALL_ICON, ImageIconAccessor.getIcon("toolbar/icon2/addline.gif"));
-		setBtnName(ResHelper.getString("common","UC001-0000108")/*@res "新增"*/);
-		putValue(Action.SHORT_DESCRIPTION, ResHelper.getString("common","UC001-0000108")/*@res "新增"*/+"(Ctrl+N)");
+		setBtnName(ResHelper.getString("60130payfile","060130payfile0238")/*@res "新增兼职人员"*/);
+		putValue(INCAction.CODE, "AddPart");
+		putValue(Action.ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_P, Event.CTRL_MASK + Event.SHIFT_MASK));
+		putValue(Action.SHORT_DESCRIPTION, ResHelper.getString("60130payfile","060130payfile0239")/*@res "新增兼职人员(Ctrl+Shif+P)"*/);
 	}
-	
 
 	/*
 	 * (non-Javadoc)
@@ -54,9 +53,11 @@ public class AddPayfileAction extends PayfileBaseAction {
 	 */
 	@Override
 	public void doActionForExtend(ActionEvent e) throws Exception {
-		((PayfileAppModel) getModel()).setPType(PersonType.NORMAL);
+		((PayfileAppModel) getModel()).setPType(PersonType.PARTTIME);
 		getModel().setUiState(UIState.ADD);
 		
+		// {MOD:个税申报}
+				// begin
 		IUAPQueryBS query = (IUAPQueryBS) NCLocator.getInstance().lookup(IUAPQueryBS.class.getName());
 		String wa_class = getWaContext().getPk_wa_class();//getModel().getSelectedData();
 		WaClassVO vo = (WaClassVO) query.retrieveByPK(WaClassVO.class, wa_class);
@@ -79,16 +80,7 @@ public class AddPayfileAction extends PayfileBaseAction {
 			panel.getHeadItem("feetype").setEnabled(false);//费用别代号
 			panel.getHeadItem("projectcode").setEnabled(false);//项目代号
 		}
+				// end
 	}
-
-	@Override
-	protected boolean isActionEnable() {
-		boolean enabled = UIState.NOT_EDIT == getModel().getUiState() ;
-		if(getWaLoginVO().getBatch()!=null&&getWaLoginVO().getBatch()>100){
-			return false;
-		}
-		return enabled && super.isActionEnable();
-	}
-
 
 }

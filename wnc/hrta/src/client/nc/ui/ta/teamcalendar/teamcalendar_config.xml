@@ -106,7 +106,7 @@
 				<ref bean="EditAction" />
 				<ref bean="BatchEditAction" />
 				<!--  Ares.Tank 批改日历天类型按钮 2018-9-8 10:01:02 -->
-				<!-- <ref bean="BatchChangeCalendarDayTypeAction" /> -->
+				<ref bean="BatchChangeCalendarDayTypeAction" />
 			</list>
 		</property>
 	</bean>

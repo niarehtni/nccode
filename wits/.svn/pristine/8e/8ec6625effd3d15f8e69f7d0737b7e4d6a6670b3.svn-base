@@ -9,6 +9,7 @@ import java.util.Map;
 
 import javax.naming.NamingException;
 
+import nc.jdbc.framework.generator.SequenceGenerator;
 import nc.bs.dao.BaseDAO;
 import nc.bs.dao.DAOException;
 import nc.bs.framework.common.NCLocator;
@@ -16,6 +17,7 @@ import nc.bs.logging.Logger;
 import nc.hr.frame.persistence.AppendBaseDAO;
 import nc.hr.utils.InSQLCreator;
 import nc.hr.utils.PubEnv;
+import nc.hr.utils.ResHelper;
 import nc.hr.utils.SQLHelper;
 import nc.impl.wa.common.WaCommonImpl;
 import nc.itf.hr.wa.IHRWADataResCode;
@@ -23,7 +25,7 @@ import nc.itf.hr.wa.WaPowerSqlHelper;
 import nc.itf.om.IAOSQueryService;
 import nc.itf.om.IAOSQueryService.OrgQueryMode;
 import nc.jdbc.framework.SQLParameter;
-import nc.jdbc.framework.generator.SequenceGenerator;
+import nc.jdbc.framework.processor.MapProcessor;
 import nc.jdbc.framework.processor.ResultSetProcessor;
 import nc.jdbc.framework.util.DBConsts;
 import nc.ui.wa.pub.WADelegator;
@@ -42,6 +44,7 @@ import nc.vo.wa.payfile.ItemsVO;
 import nc.vo.wa.payfile.PayfileVO;
 import nc.vo.wa.period.PeriodVO;
 import nc.vo.wa.pub.HRWACommonConstants;
+import nc.vo.wa.pub.PeriodStateVO;
 import nc.vo.wa.pub.WACLASSTYPE;
 import nc.vo.wa.pub.WaLoginContext;
 import nc.vo.wa.pub.WaLoginVO;
@@ -61,7 +64,6 @@ import org.apache.commons.lang.StringUtils;
  * @修改人:
  * @修改日期:
  */
-@SuppressWarnings("restriction")
 public class PayfileDAO extends AppendBaseDAO {
 
 	/**

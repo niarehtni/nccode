@@ -2801,7 +2801,7 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain,
 					//離職留停人員可以結算本年假結算 wangywt 20190424 begin
 					if (settlementDate.after(effectiveDate)||getPsnStateFlag(vo))
 						exceedEffectiveDateList.add(vo);
-					// wangywt 20190424 end 
+					// wangywt 20190424 end
 				}
 			//END 张恒{21481} 特休假薪資計算 2018/8/21
 			}else{

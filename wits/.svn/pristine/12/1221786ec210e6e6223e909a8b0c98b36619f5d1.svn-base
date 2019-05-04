@@ -30,7 +30,7 @@ import nc.vo.pub.lang.UFDouble;
 import nc.vo.wa.category.WaClassVO;
 import nc.vo.wa.payfile.PayfileVO;
 import nc.vo.wa.payfile.Taxtype;
-
+ 
 /**
  * 批量修改 第三步
  *
@@ -306,13 +306,8 @@ public class BatchEditWizardThirdStep extends WizardStep implements IWizardStepL
 		Boolean stopedit = (Boolean) getHeadItem(PayfileVO.STOPEDIT).getValueObject();
 		Boolean fipedit = (Boolean) getHeadItem(PayfileVO.FIPEDIT).getValueObject();
 		Boolean libedit = (Boolean) getHeadItem(PayfileVO.LIBEDIT).getValueObject();
-		
-		// {MOD:个税申报}
-		String feetype = (String)getHeadItem(PayfileVO.FEETYPE).getValueObject();
-		String pj = (String)getHeadItem(PayfileVO.PROJECTCODE).getValueObject();
-		String biz = (String)getHeadItem(PayfileVO.BIZTYPE).getValueObject();
 		WizardStepValidateException e = new WizardStepValidateException();
-		if (!taxedit && !taxfreeedit && !stopedit&&!fipedit&&!libedit && feetype==null && pj==null && biz==null) {
+		if (!taxedit && !taxfreeedit && !stopedit&&!fipedit&&!libedit) {
 			e.addMsg(ResHelper.getString("60130payfile","060130payfile0256")/*@res "错误"*/, ResHelper.getString("60130payfile","060130payfile0297")/*@res "没有要修改的薪资项目！"*/);
 		}
 		if (taxedit) {

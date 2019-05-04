@@ -1,0 +1,12 @@
+-- 薪资方案显示设置
+INSERT INTO wa_payfiledsp ([bshow], [displayseq], [dr], [item_key], [pk_payfiledsp], [pk_user], [pk_wa_class], [ts], [type]) VALUES (N'Y', '24', '0', N'biztype', N'1001A110000000002CYA', N'1001A1100000000002C3', N'1001A110000000000A4U', '2019-04-19 16:55:55', N'0');
+INSERT INTO wa_payfiledsp ([bshow], [displayseq], [dr], [item_key], [pk_payfiledsp], [pk_user], [pk_wa_class], [ts], [type]) VALUES (N'Y', '25', '0', N'feetype', N'1001A110000000002CYB', N'1001A1100000000002C3', N'1001A110000000000A4U', '2019-04-19 16:55:55', N'0');
+INSERT INTO wa_payfiledsp ([bshow], [displayseq], [dr], [item_key], [pk_payfiledsp], [pk_user], [pk_wa_class], [ts], [type]) VALUES (N'Y', '26', '0', N'projectcode', N'1001A110000000002CYC', N'1001A1100000000002C3', N'1001A110000000000A4U', '2019-04-19 16:55:55', N'0');
+
+INSERT INTO wa_payfiledsp ([bshow], [displayseq], [dr], [item_key], [pk_payfiledsp], [pk_user], [pk_wa_class], [ts], [type]) VALUES (N'Y', '24', '0', N'biztype', N'1001A11000000003ZIOA', N'1001A110000000001NEU', N'1001A110000000001C5Q', '2019-04-19 21:51:00', N'1');
+INSERT INTO wa_payfiledsp ([bshow], [displayseq], [dr], [item_key], [pk_payfiledsp], [pk_user], [pk_wa_class], [ts], [type]) VALUES (N'Y', '25', '0', N'feetype', N'1001A11000000003ZIOB', N'1001A110000000001NEU', N'1001A110000000001C5Q', '2019-04-19 21:51:00', N'1');
+INSERT INTO wa_payfiledsp ([bshow], [displayseq], [dr], [item_key], [pk_payfiledsp], [pk_user], [pk_wa_class], [ts], [type]) VALUES (N'Y', '26', '0', N'projectcode', N'1001A11000000003ZIOC', N'1001A110000000001NEU', N'1001A110000000001C5Q', '2019-04-19 21:51:00', N'1');
+
+INSERT INTO wa_payfiledsp ([bshow], [displayseq], [dr], [item_key], [pk_payfiledsp], [pk_user], [pk_wa_class], [ts], [type]) VALUES (N'Y', '24', '0', N'biztype', N'1001AA100000000A4DTA', N'1001A1100000000002BY', N'1001AA100000000A25TE', '2019-04-19 21:51:00', N'1');
+INSERT INTO wa_payfiledsp ([bshow], [displayseq], [dr], [item_key], [pk_payfiledsp], [pk_user], [pk_wa_class], [ts], [type]) VALUES (N'Y', '25', '0', N'feetype', N'1001AA100000000A4DTB', N'1001A1100000000002BY', N'1001AA100000000A25TE', '2019-04-19 21:51:00', N'1');
+INSERT INTO wa_payfiledsp ([bshow], [displayseq], [dr], [item_key], [pk_payfiledsp], [pk_user], [pk_wa_class], [ts], [type]) VALUES (N'Y', '26', '0', N'projectcode', N'1001AA100000000A4DTC', N'1001A1100000000002BY', N'1001AA100000000A25TE', '2019-04-19 21:51:00', N'1'); 
