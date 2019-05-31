@@ -1,0 +1,113 @@
+package nc.ui.twhr.twhr.action;
+
+import java.awt.event.ActionEvent;
+
+import nc.bs.framework.common.NCLocator;
+import nc.itf.twhr.IDiffinsuranceaMaintain;
+import nc.jdbc.framework.PersistenceManager;
+import nc.ui.pub.beans.MessageDialog;
+import nc.ui.pub.beans.UIDialog;
+import nc.ui.pubapp.uif2app.model.BatchBillTableModel;
+import nc.ui.pubapp.uif2app.model.BatchModelDataManager;
+import nc.ui.uif2.NCAction;
+import nc.vo.pubapp.pattern.exception.ExceptionUtils;
+import nc.vo.twhr.nhicalc.BaoAccountVO;
+
+public class ReconciliationAction extends NCAction {
+	private BatchBillTableModel modeldiff = null;
+	private BatchModelDataManager modelManager = null;
+	private BatchBillTableModel modeltwhr = null;
+	private NCAction batchRefreshAction;
+
+	public BatchBillTableModel getModeldiff() {
+		return modeldiff;
+	}
+
+	public NCAction getBatchRefreshAction() {
+		return batchRefreshAction;
+	}
+
+	public void setBatchRefreshAction(NCAction batchRefreshAction) {
+		this.batchRefreshAction = batchRefreshAction;
+	}
+
+	public void setModeldiff(BatchBillTableModel modeldiff) {
+		this.modeldiff = modeldiff;
+	}
+
+	public BatchBillTableModel getModeltwhr() {
+		return modeltwhr;
+	}
+
+	public void setModeltwhr(BatchBillTableModel modeltwhr) {
+		this.modeltwhr = modeltwhr;
+	}
+
+	@Override
+	public void doAction(ActionEvent paramActionEvent) throws Exception {
+		// TODO 自动生成的方法存根
+		BaoAccountVO bvo = (BaoAccountVO) modeltwhr.getSelectedData();
+		if (bvo == null) {
+			ExceptionUtils.wrappBusinessException("請檢查是否選擇組織或日期");
+		} else if (bvo != null) {
+			String pk_org = bvo.getPk_org();
+			String pk_period = bvo.getPk_period();
+
+			if (!getService().ifexist(pk_org, pk_period)) {
+				if (MessageDialog.showYesNoDlg(modeltwhr.getContext().getEntranceUI(), "是否覆蓋", "已存在差異分析數據是否覆蓋!") == UIDialog.ID_YES) {
+
+					getService().Delete(pk_org, pk_period);
+					getService().Blanace(pk_org, pk_period);
+					getBatchRefreshAction().doAction(null);
+					// getModelManager().initModel();
+				} else {
+					return;
+
+				}
+			} else {
+				getService().Blanace(pk_org, pk_period);
+				getModelManager().initModel();
+			}
+		}
+
+		modelManager.initModel();
+		getBatchRefreshAction().doAction(null);
+	}
+
+	private IDiffinsuranceaMaintain service;
+
+	public IDiffinsuranceaMaintain getService() {
+		if (null == service) {
+			service = NCLocator.getInstance().lookup(IDiffinsuranceaMaintain.class);
+
+		}
+		return service;
+	}
+
+	@Override
+	protected boolean isActionEnable() {
+		// if(model.)
+		return true;
+	}
+
+	public ReconciliationAction() {
+		setBtnName("對賬");
+		setCode("reconciliation");
+
+	}
+
+	public BatchModelDataManager getModelManager() {
+		return modelManager;
+	}
+
+	public void setModelManager(BatchModelDataManager modelManager) {
+		this.modelManager = modelManager;
+	}
+
+	public void setService(IDiffinsuranceaMaintain service) {
+		this.service = service;
+	}
+
+	PersistenceManager sessionManager = null;
+
+}

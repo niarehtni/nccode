@@ -1,0 +1,643 @@
+package nc.hr.utils;
+
+import java.lang.reflect.Method;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Types;
+import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import nc.bs.framework.common.InvocationInfoProxy;
+import nc.bs.logging.Logger;
+import nc.bs.mw.sqltrans.TempTable;
+import nc.jdbc.framework.ConnectionFactory;
+import nc.jdbc.framework.JdbcSession;
+import nc.jdbc.framework.PersistenceManager;
+import nc.jdbc.framework.SQLParameter;
+import nc.jdbc.framework.exception.DbException;
+import nc.jdbc.framework.util.DBUtil;
+import nc.uap.lfw.core.LfwRuntimeEnvironment;
+import nc.vo.cache.CacheManager;
+import nc.vo.cache.ICache;
+import nc.vo.cache.config.CacheConfig;
+import nc.vo.hr.temptable.TempTableVO;
+import nc.vo.pub.BeanHelper;
+import nc.vo.pub.BusinessException;
+import nc.vo.pub.SuperVO;
+import nc.vo.pub.lang.UFBoolean;
+import nc.vo.pub.lang.UFDate;
+import nc.vo.pub.lang.UFDateTime;
+import nc.vo.pub.lang.UFDouble;
+import nc.vo.pub.lang.UFLiteralDate;
+
+import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang.StringUtils;
+
+/**************************************************************
+ * 该类只能在后台使用<br>
+ * Created on 2012-3-23 10:14:20<br>
+ * 
+ * @author zengcheng
+ **************************************************************/
+public class InSQLCreator {
+	private static final HashMap<Class, String> hashFieldSQL = new HashMap<Class, String>() {
+		{
+			put(String.class, " varchar(200) null");
+
+			put(int.class, " smallint null");
+			put(Integer.class, " smallint null");
+
+			put(boolean.class, " char(1) null");
+			put(UFBoolean.class, " char(1) null");
+
+			put(UFDate.class, " char(10) null");
+			put(UFDateTime.class, " char(19) null");
+			put(UFLiteralDate.class, " char(10) null");
+
+			put(double.class, " decimal(16,4) null");
+			put(Double.class, " decimal(16,4) null");
+			put(UFDouble.class, " decimal(16,4) null");
+		}
+	};
+
+	private static final HashMap<Class, Integer> hashFieldType = new HashMap<Class, Integer>() {
+		{
+			put(String.class, Types.VARCHAR);
+
+			put(int.class, Types.INTEGER);
+			put(Integer.class, Types.INTEGER);
+
+			put(boolean.class, Types.CHAR);
+			put(UFBoolean.class, Types.CHAR);
+
+			put(UFDate.class, Types.CHAR);
+			put(UFDateTime.class, Types.CHAR);
+			put(UFLiteralDate.class, Types.CHAR);
+
+			put(double.class, Types.DECIMAL);
+			put(Double.class, Types.DECIMAL);
+			put(UFDouble.class, Types.DECIMAL);
+		}
+	};
+
+	/** 适用于只用主键拼in语句的情况，数据中只有 in_pk、ts、dr 字段 */
+	private static final String strTempTableColumn = "in_pk varchar(200) not null,showorder smallint null,ts char(19) null,dr smallint null";
+
+	/**
+	 * 临时表名前缀，临时表名命名规则：hr_temptable_0、hr_temptable_1、hr_temptable_2 ...
+	 * hr_temptable_X
+	 */
+	private static final String strTempTableName = "hr_temptable_";
+
+	private int iCount = 200;
+
+	private final List<String> listTableNames = new ArrayList<String>();
+
+	private final TempTable tempTable;
+
+	/**************************************************************
+	 * 该类只能在后台使用<br>
+	 * Created on 2012-10-22 16:53:25<br>
+	 * 
+	 * @author Rocex Wang
+	 **************************************************************/
+	public InSQLCreator() {
+		super();
+
+		tempTable = new TempTable();
+	}
+
+	/**************************************************************
+	 * <br>
+	 * Created on 2012-3-23 9:47:23<br>
+	 * 
+	 * @throws BusinessException
+	 **************************************************************/
+	public void clear() throws BusinessException {
+	}
+
+	/**************************************************************
+	 * <br>
+	 * Created on 2012-7-31 19:53:11<br>
+	 * 
+	 * @param ds
+	 * @return PersistenceManager
+	 * @throws DbException
+	 * @author Rocex Wang
+	 **************************************************************/
+	protected PersistenceManager createPersistenceManager(String ds) throws DbException {
+		PersistenceManager manager = PersistenceManager.getInstance(ds);
+
+		manager.setMaxRows(100000);
+		manager.setAddTimeStamp(true);
+
+		return manager;
+	}
+
+	/**************************************************************
+	 * <br>
+	 * Created on 2012-10-22 15:51:36<br>
+	 * 
+	 * @return String
+	 * @throws BusinessException
+	 * @author Rocex Wang
+	 **************************************************************/
+	public String createTempTable() throws BusinessException {
+		return createTempTable(createTempTableName(strTempTableName), strTempTableColumn, TempTableVO.IN_PK);
+	}
+
+	public String recreateTempTable() throws BusinessException {
+		String strTableName = createTempTableName(strTempTableName);
+
+		// MOD by ssx on 2019-05-10
+		// 由於Oracle創建過的臨時表會存在於系統中，可能導致表結構不同而後續操作失敗
+		// 先刪除，再創建
+		try {
+			Connection connection = ConnectionFactory.getConnection();
+			Statement stmt = connection.createStatement();
+			stmt.execute("drop table " + strTableName);
+		} catch (SQLException e) {
+			Logger.error(e.getMessage());
+		}
+		//
+
+		return createTempTable(strTableName, strTempTableColumn, TempTableVO.IN_PK);
+	}
+
+	/**************************************************************
+	 * <br>
+	 * Created on 2013-7-5 16:10:29<br>
+	 * 
+	 * @param strPks
+	 *            要插入的主键值
+	 * @return 临时表名
+	 * @throws BusinessException
+	 * @author Rocex Wang
+	 **************************************************************/
+	public String createTempTable(String... strPks) throws BusinessException {
+		String strTempTable = createTempTable(createTempTableName(strTempTableName), TempTableVO.IN_PK
+				+ " varchar(200) not null,ts char(19) null,dr smallint null", TempTableVO.IN_PK);
+
+		insertPks(strTempTable, TempTableVO.IN_PK, false, strPks);
+
+		return strTempTable;
+	}
+
+	/**************************************************************
+	 * <br>
+	 * Created on 2013-7-5 16:10:29<br>
+	 * 
+	 * @param strTableName
+	 *            临时表名
+	 * @param strPks
+	 *            要插入的主键值
+	 * @return 临时表名
+	 * @throws BusinessException
+	 * @author Rocex Wang
+	 **************************************************************/
+	public String createTempTable(String strTableName, String... strPks) throws BusinessException {
+		createTempTable(strTableName, strTempTableColumn, TempTableVO.IN_PK);
+
+		insertPks(strTableName, TempTableVO.IN_PK, false, strPks);
+
+		return strTableName;
+	}
+
+	/**************************************************************
+	 * <br>
+	 * Created on 2012-10-22 15:51:36<br>
+	 * 
+	 * @return String 临时表表名
+	 * @author Rocex Wang
+	 * @param strTableName
+	 * @param strColumn
+	 * @param strIndexColumn
+	 * @throws BusinessException
+	 **************************************************************/
+	public String createTempTable(String strTableName, String strColumn, String strIndexColumn)
+			throws BusinessException {
+		PubEnv.checkRunOnServer();
+
+		Connection connection = null;
+
+		try {
+			connection = ConnectionFactory.getConnection();
+
+			strTableName = tempTable.createTempTable(connection, strTableName, strColumn, strIndexColumn);
+		} catch (SQLException ex) {
+			// 如果创建临时表失败，就试图再创建一次
+			try {
+				if (connection == null) {
+					connection = ConnectionFactory.getConnection();
+				}
+
+				strTableName = tempTable.createTempTable(connection, strTableName, strColumn, strIndexColumn);
+			} catch (SQLException ex1) {
+				Logger.error(ex.getMessage(), ex);
+			}
+
+			Logger.error(ex.getMessage(), ex);
+		} finally {
+			DBUtil.closeConnection(connection);
+		}
+
+		listTableNames.add(strTableName);
+
+		return strTableName;
+	}
+
+	/**************************************************************
+	 * <br>
+	 * Created on 2012-10-22 15:51:36<br>
+	 * 
+	 * @return String
+	 * @author Rocex Wang
+	 * @param strTableName
+	 * @param strFields
+	 * @param strAttrs
+	 * @param superVOs
+	 * @throws BusinessException
+	 **************************************************************/
+	public String createTempTable(String strTableName, String strFields[], String strAttrs[], SuperVO... superVOs)
+			throws BusinessException {
+		if (ArrayUtils.isEmpty(strFields) || ArrayUtils.isEmpty(strAttrs) || ArrayUtils.isEmpty(superVOs)
+				|| strFields.length != strAttrs.length) {
+			return null;
+		}
+
+		if (!ArrayUtils.contains(strFields, "ts")) {
+			strFields = (String[]) ArrayUtils.add(strFields, "ts");
+			strAttrs = (String[]) ArrayUtils.add(strAttrs, "ts");
+		}
+
+		if (!ArrayUtils.contains(strFields, "dr")) {
+			strFields = (String[]) ArrayUtils.add(strFields, "dr");
+			strAttrs = (String[]) ArrayUtils.add(strAttrs, "dr");
+		}
+
+		SuperVO superVO = superVOs[0];
+
+		String strCreateFieldSQL = "";
+
+		for (int i = 0; i < strFields.length; i++) {
+			Method method = BeanHelper.getGetMethod(superVO, strAttrs[i]);
+
+			Class returnType = method.getReturnType();
+
+			String strSQLTmp = hashFieldSQL.get(returnType);
+
+			if (strSQLTmp == null) {
+				strSQLTmp = " varchar(200) null";
+			}
+
+			strCreateFieldSQL = strCreateFieldSQL + strFields[i] + strSQLTmp + ",";
+		}
+
+		strCreateFieldSQL = strCreateFieldSQL.substring(0, strCreateFieldSQL.length() - 1);
+
+		return createTempTable(
+				StringUtils.isEmpty(strTableName) ? createTempTableName(strTempTableName) : strTableName,
+				strCreateFieldSQL, null);
+	}
+
+	/**************************************************************
+	 * <br>
+	 * Created on 2012-11-2 9:18:09<br>
+	 * 
+	 * @param strPreTableName
+	 * @return 增加了序号的临时表名
+	 * @author Rocex Wang
+	 **************************************************************/
+	protected String createTempTableName(String strPreTableName) {
+		ICache cache = CacheManager.getInstance().getCache(
+				new CacheConfig(getClass().getName(), false, -1, 10000, CacheConfig.CacheType.LRU, 0));
+
+		String strCallId = InvocationInfoProxy.getInstance().getCallId();
+
+		// 自助端没有维护callid，所以需要取自助的一些请求级的id
+		if (strCallId == null) {
+			// 此處有BUG，存在LfwRuntimeEnvironment.getWebContext()為空的情況
+			// strCallId =
+			// String.valueOf(LfwRuntimeEnvironment.getWebContext().getRequest().hashCode());
+			if (LfwRuntimeEnvironment.getWebContext() != null) {
+				strCallId = String.valueOf(LfwRuntimeEnvironment.getWebContext().getRequest().hashCode());
+			} else {
+				strCallId = new UFLiteralDate().toString();
+			}
+		}
+
+		Integer iTempTableCounter = (Integer) cache.get(strCallId);
+
+		if (iTempTableCounter == null) {
+			iTempTableCounter = 0;
+		}
+
+		cache.put(strCallId, iTempTableCounter + 1);
+
+		Logger.error(MessageFormat
+				.format("nc.hr.utils.InSQLCreator.createTempTableName():strPreTableName->{0},strCallId->{1},iTempTableCounter->{2}",
+						strPreTableName, strCallId, iTempTableCounter));
+
+		return strPreTableName + iTempTableCounter;
+	}
+
+	/**************************************************************
+	 * <br>
+	 * Created on 2012-8-2 13:28:12<br>
+	 * 
+	 * @author Rocex Wang
+	 * @return the tempTableCounter
+	 **************************************************************/
+	public int getCount() {
+		return iCount;
+	}
+
+	/**************************************************************
+	 * <br>
+	 * Created on 2012-3-23 9:30:22<br>
+	 * 
+	 * @param strPks
+	 * @return String
+	 * @throws BusinessException
+	 **************************************************************/
+	public String getInSQL(String... strPks) throws BusinessException {
+		return getInSQL(strPks, false);
+	}
+
+	/**************************************************************
+	 * <br>
+	 * Created on 2012-3-23 9:30:24<br>
+	 * 
+	 * @param strPks
+	 * @param blNeedTrim
+	 * @return String
+	 * @throws BusinessException
+	 **************************************************************/
+	public String getInSQL(String[] strPks, boolean blNeedTrim) throws BusinessException {
+		if (ArrayUtils.isEmpty(strPks)) {
+			return null;
+		}
+
+		if (strPks.length < iCount) {
+			return SQLHelper.joinToInSql(strPks, -1);
+		}
+
+		String strTableName = createTempTable(strPks);
+
+		// insertPks(strTableName, TempTableVO.IN_PK, false, strPks);
+
+		String strInSQL = "select " + (blNeedTrim ? "rtrim({0})" : "{0}") + " from {1}";
+
+		strInSQL = MessageFormat.format(strInSQL, TempTableVO.IN_PK, strTableName);
+
+		return strInSQL;
+	}
+
+	/**************************************************************
+	 * <br>
+	 * Created on 2012-3-23 9:30:29<br>
+	 * 
+	 * @param superVOs
+	 * @param strPkFieldName
+	 * @return String
+	 * @throws BusinessException
+	 **************************************************************/
+	public String getInSQL(SuperVO[] superVOs, String strPkFieldName) throws BusinessException {
+		if (superVOs == null || superVOs.length == 0 || strPkFieldName == null || strPkFieldName.trim().length() == 0) {
+			return null;
+		}
+
+		if (superVOs.length < iCount) {
+			return SQLHelper.joinToString(superVOs, strPkFieldName);
+		}
+
+		String strPks[] = new String[superVOs.length];
+
+		for (int i = 0; i < superVOs.length; i++) {
+			strPks[i] = (String) superVOs[i].getAttributeValue(strPkFieldName);
+		}
+
+		return getInSQL(strPks);
+	}
+
+	/**************************************************************
+	 * 将select语句的查询结果作为一个临时表的select返回。传入的select语句应该保证只查询一个字段<br>
+	 * Created on 2007-11-23 13:15:58<br>
+	 * 
+	 * @param strSelectSQL
+	 * @return String
+	 * @throws BusinessException
+	 **************************************************************/
+	public String getInSQLBySelect(String strSelectSQL) throws BusinessException {
+		String strTableName = createTempTable();
+
+		PreparedStatement ps = null;
+		Connection connection = null;
+
+		try {
+			connection = ConnectionFactory.getConnection();
+			ps = connection.prepareStatement("insert into " + strTableName + " (" + TempTableVO.IN_PK + ") "
+					+ strSelectSQL);
+
+			ps.execute();
+		} catch (SQLException ex) {
+			throw new BusinessException(ex.getMessage(), ex);
+		} finally {
+			DBUtil.closeStmt(ps);
+			DBUtil.closeConnection(connection);
+		}
+
+		return "select " + TempTableVO.IN_PK + " from " + strTableName;
+	}
+
+	/***************************************************************************
+	 * 这个方法不再返回in子句，而是需要在外围的sql中关联临时表，然后用临时表中的showorder作为整个sql的排序字段，最终的sql形如：<br>
+	 * select * from bd_psndoc a inner join strTempTableName b on
+	 * a.pk_psndoc=b.in_pk order by b.showorder<br>
+	 * Created on 2014-7-25 12:39:18<br>
+	 * 
+	 * @param strPks
+	 * @return 临时表名
+	 * @throws BusinessException
+	 * @author Rocex Wang
+	 ***************************************************************************/
+	public String getInSQLOrdered(String... strPks) throws BusinessException {
+		int iCount2 = getCount();
+
+		// 设置成0是为了强制走临时表
+		setCount(0);
+
+		String strTableName = createTempTable(createTempTableName(strTempTableName), strTempTableColumn,
+				TempTableVO.IN_PK);
+
+		insertPks(strTableName, TempTableVO.IN_PK, true, strPks);
+
+		setCount(iCount2);
+
+		return strTableName;
+	}
+
+	/**************************************************************
+	 * <br>
+	 * Created on 2012-7-31 20:01:48<br>
+	 * 
+	 * @param strTableName
+	 * @param strPks
+	 * @param strPkColumn
+	 * @throws BusinessException
+	 * @author Rocex Wang
+	 **************************************************************/
+	protected void insertPks(String strTableName, String strPkColumn, boolean blOrdered, String... strPks)
+			throws BusinessException {
+		if (ArrayUtils.isEmpty(strPks)) {
+			return;
+		}
+
+		String strSQL = null;
+
+		if (blOrdered) {
+			strSQL = "insert into {0}({1},{2}) values(?,?)";
+
+			strSQL = MessageFormat.format(strSQL, strTableName, strPkColumn, "showorder");
+		} else {
+			strSQL = "insert into {0}({1}) values(?)";
+
+			strSQL = MessageFormat.format(strSQL, strTableName, strPkColumn);
+		}
+
+		List<SQLParameter> listPara = new ArrayList<SQLParameter>();
+
+		for (int i = 0; i < strPks.length; i++) {
+			if (StringUtils.isEmpty(strPks[i])) {
+				continue;
+			}
+
+			SQLParameter paras = new SQLParameter();
+
+			paras.addParam(SQLHelper.transfer(strPks[i]));
+
+			if (blOrdered) {
+				paras.addParam(i);
+			}
+
+			listPara.add(paras);
+		}
+
+		PersistenceManager manager = null;
+
+		try {
+			manager = createPersistenceManager(null);
+			JdbcSession session = manager.getJdbcSession();
+			session.addBatch(strSQL, listPara.toArray(new SQLParameter[0]));
+
+			session.executeBatch();
+		} catch (DbException ex) {
+			throw new BusinessException(ex.getMessage(), ex);
+		} finally {
+			if (manager != null) {
+				manager.release();
+			}
+		}
+	}
+
+	/**************************************************************
+	 * <br>
+	 * Created on 2012-8-16 14:53:52<br>
+	 * 
+	 * @param strTableName
+	 * @param strFields
+	 *            数据库字段名，必须和 strAttrs 一一对应
+	 * @param strAttrs
+	 *            vo中属性名，必须和 strFields 一一对应
+	 * @param superVOs
+	 * @throws BusinessException
+	 * @author Rocex Wang
+	 * @return String
+	 **************************************************************/
+	public String insertValues(String strTableName, String strFields[], String strAttrs[], SuperVO... superVOs)
+			throws BusinessException {
+		if (ArrayUtils.isEmpty(strFields) || ArrayUtils.isEmpty(strAttrs) || ArrayUtils.isEmpty(superVOs)
+				|| strFields.length != strAttrs.length) {
+			return null;
+		}
+
+		strTableName = createTempTable(strTableName, strFields, strAttrs, superVOs);
+
+		String strFieldSQL = "";
+		String strValueSQL = "";
+
+		for (int i = 0; i < strFields.length; i++) {
+			strFieldSQL += "," + strFields[i];
+			strValueSQL += ",?";
+		}
+
+		String strSQL = "insert into {0}({1}) values({2})";
+
+		strSQL = MessageFormat.format(strSQL, strTableName, strFieldSQL.substring(1), strValueSQL.substring(1));
+
+		Map<String, Integer> hashAttrType = new HashMap<String, Integer>();// 属性对应的数据库数据类型
+
+		for (String strAttr : strAttrs) {
+			Method method = BeanHelper.getGetMethod(superVOs[0], strAttr);
+			Class returnType = method.getReturnType();
+			Integer iType = hashFieldType.get(returnType);
+
+			hashAttrType.put(strAttr, iType);
+		}
+
+		SQLParameter paras[] = new SQLParameter[superVOs.length];
+
+		for (int i = 0; i < superVOs.length; i++) {
+			paras[i] = new SQLParameter();
+
+			for (String strAttr : strAttrs) {
+				Object attrValue = superVOs[i].getAttributeValue(strAttr);
+
+				if (attrValue == null) {
+					Integer type = hashAttrType.get(strAttr);
+					paras[i].addNullParam(type == null ? Types.VARCHAR : type);
+				} else if (attrValue instanceof Collection) {
+					paras[i].addParam(superVOs[i].getAttributeValue(strAttr).toString());
+				} else {
+					paras[i].addParam(superVOs[i].getAttributeValue(strAttr));
+				}
+			}
+		}
+
+		PersistenceManager manager = null;
+
+		try {
+			manager = createPersistenceManager(null);
+			JdbcSession session = manager.getJdbcSession();
+			session.addBatch(strSQL, paras);
+
+			session.executeBatch();
+		} catch (DbException ex) {
+			throw new BusinessException(ex.getMessage(), ex);
+		} finally {
+			if (manager != null) {
+				manager.release();
+			}
+		}
+
+		return strTableName;
+	}
+
+	/**************************************************************
+	 * <br>
+	 * Created on 2012-8-2 13:28:12<br>
+	 * 
+	 * @author Rocex Wang
+	 * @param count
+	 *            the count to set
+	 **************************************************************/
+	public void setCount(int count) {
+		iCount = count;
+	}
+}

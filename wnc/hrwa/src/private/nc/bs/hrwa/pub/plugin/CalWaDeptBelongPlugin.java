@@ -1,0 +1,366 @@
+package nc.bs.hrwa.pub.plugin;
+
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+
+import nc.bs.dao.BaseDAO;
+import nc.bs.dao.DAOException;
+import nc.bs.pub.pa.PreAlertObject;
+import nc.bs.pub.taskcenter.BgWorkingContext;
+import nc.bs.pub.taskcenter.IBackgroundWorkPlugin;
+import nc.jdbc.framework.processor.ResultSetProcessor;
+import nc.vo.pub.BusinessException;
+import nc.vo.wa.pub.plugin.WaDeptBelongVO;
+
+import org.apache.commons.lang.StringUtils;
+
+/**
+ * @description 薪资部门所属部门查询后台任务
+ * @description 每次执行报表查询前，需要先手动执行该任务，以确保部门数据的正确性
+ * @since 2019-05-25
+ * @author Connie.ZH
+ * 
+ */
+public class CalWaDeptBelongPlugin implements IBackgroundWorkPlugin {
+
+	private static BaseDAO dao;
+
+	// 董事长所在部门PK
+	private static final String CHAIRMAN_DEPT = "1001A1100000000001V9";
+
+	// 查询最底层的部门
+	private static final String getButtomDepts = "select org_dept.pk_dept from org_dept where org_dept.enablestate=2 and org_dept.hrcanceled='N' and org_dept.pk_dept not in ( (select pk_dept from org_dept where pk_dept  in ( select pk_fatherorg from org_dept))) group by org_dept.pk_dept";
+
+	public static final String CAL_CYEAR = "cyear";
+	private static final String CAL_CPERIOD = "cperiod";
+	private static final int Highest_Level = 20;// actually, they won't have 20
+												// dept levels
+	private static final int Default_Level = 30;// actually, they won't have 30
+												// dept levels
+
+	// dept levels
+
+	private synchronized static BaseDAO getDao() {
+		if (dao == null) {
+			dao = new BaseDAO();
+		}
+		return dao;
+	}
+
+	@Override
+	public PreAlertObject executeTask(BgWorkingContext bgwc) throws BusinessException {
+		// 0. clear
+		getDao().executeUpdate("truncate table wa_dept_belong");
+		LinkedHashMap<String, Object> keyMap = bgwc.getKeyMap();
+		String cyear = (String) keyMap.get(CAL_CYEAR);
+		String cperiod = (String) keyMap.get("cperiod");
+		if (StringUtils.isEmpty(cyear) || StringUtils.isEmpty(cperiod)) {
+			throw new BusinessException("Both cyear and cperiod can not be empty!");
+		}
+		// 1. find all the buttomest dept
+		String[] buttomDepts = (String[]) getDao().executeQuery(getButtomDepts, new ResultSetProcessor() {
+			@Override
+			public Object handleResultSet(ResultSet rs) {
+				List<String> buttomDepts = new ArrayList<String>();
+				try {
+					while (rs.next()) {
+						buttomDepts.add(rs.getString(1));
+					}
+				} catch (SQLException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				return buttomDepts.toArray(new String[0]);
+			}
+		});
+		// 2. insert all the original employees's number to the all depts
+		List<WaDeptBelongVO> buttonDeptListIDL = new ArrayList<WaDeptBelongVO>();
+		try {
+			buttonDeptListIDL = (ArrayList<WaDeptBelongVO>) getDao()
+					.executeQuery(
+							" select dept.pk_dept,v.num,dept.pk_fatherorg from org_dept dept left join  V_WA_DEPT_CAL_IDL v on v.workdept=dept.pk_dept and cyear='"
+									+ cyear
+									+ "' and cperiod = '"
+									+ cperiod
+									+ "'  where  dept.pk_dept in ('"
+									+ StringUtils.join(buttomDepts, "','") + "')", new ResultSetProcessor() {
+								@Override
+								public Object handleResultSet(ResultSet rs) {
+									List<WaDeptBelongVO> retList = new ArrayList<WaDeptBelongVO>();
+									try {
+										while (rs.next()) {
+											WaDeptBelongVO vo = new WaDeptBelongVO();
+											vo.setError_flag("N");
+											vo.setDir("IDL");
+											vo.setDept_level(0);
+											vo.setPk_dept(rs.getString(1));
+											vo.setOri_num(null == rs.getString(2) ? 0 : new Integer(rs.getString(2)));
+											vo.setPk_fatherorg(rs.getString(3));
+											vo.setCal_num(vo.getOri_num());
+											retList.add(vo);
+										}
+									} catch (SQLException e) {
+										// TODO Auto-generated catch block
+										e.printStackTrace();
+									}
+									return retList;
+								}
+							});
+		} catch (DAOException e) {
+			throw new BusinessException(e.getMessage());
+		}
+
+		List<WaDeptBelongVO> buttonDeptListDL = new ArrayList<WaDeptBelongVO>();
+		try {
+			buttonDeptListDL = (ArrayList<WaDeptBelongVO>) getDao()
+					.executeQuery(
+							" select dept.pk_dept,v.num,dept.pk_fatherorg from org_dept dept left join  V_WA_DEPT_CAL_DL v on v.workdept=dept.pk_dept and cyear='"
+									+ cyear
+									+ "' and cperiod = '"
+									+ cperiod
+									+ "' where  dept.pk_dept in ('"
+									+ StringUtils.join(buttomDepts, "','") + "')", new ResultSetProcessor() {
+								@Override
+								public Object handleResultSet(ResultSet rs) {
+									List<WaDeptBelongVO> retList = new ArrayList<WaDeptBelongVO>();
+									try {
+										while (rs.next()) {
+											WaDeptBelongVO vo = new WaDeptBelongVO();
+											vo.setError_flag("N");
+											vo.setDir("DL");
+											vo.setDept_level(0);
+											vo.setPk_dept(rs.getString(1));
+											vo.setOri_num(null == rs.getString(2) ? 0 : new Integer(rs.getString(2)));
+											vo.setPk_fatherorg(rs.getString(3));
+											vo.setCal_num(vo.getOri_num());
+											retList.add(vo);
+										}
+									} catch (SQLException e) {
+										// TODO Auto-generated catch block
+										e.printStackTrace();
+									}
+									return retList;
+								}
+							});
+		} catch (DAOException e) {
+			throw new BusinessException(e.getMessage());
+		}
+		getDao().insertVOList(buttonDeptListDL);
+		getDao().insertVOList(buttonDeptListIDL);
+		insertDeptBelong("DL", cyear, cperiod, buttomDepts);
+		insertDeptBelong("IDL", cyear, cperiod, buttomDepts);
+		// query all depts
+		List<WaDeptBelongVO> allDLs = (List<WaDeptBelongVO>) getDao().retrieveByClause(WaDeptBelongVO.class,
+				" dir = 'DL'  order by dept_level asc");
+		List<WaDeptBelongVO> allIDLs = (List<WaDeptBelongVO>) getDao().retrieveByClause(WaDeptBelongVO.class,
+				" dir = 'IDL'  order by dept_level asc");
+		updateBaseDeptLevel(allIDLs);
+		updateBaseDeptLevel(allDLs);
+		// 3. calculate all the employees's number then update(by dept
+		// level,from buttom to top)
+		int startLevel = 0;
+		while (startLevel <= Highest_Level) {
+			updateDeptLevel(allDLs, startLevel);
+			startLevel++;
+		}
+
+		startLevel = 0;
+		while (startLevel <= Highest_Level) {// they won't have 20 dept levels
+			updateDeptLevel(allIDLs, startLevel);
+			startLevel++;
+		}
+
+		// calcaulate dept number from buttom to top(except buttom depts)
+		for (int i = 1; i <= Default_Level; i++) {
+			for (WaDeptBelongVO idlvo : allIDLs) {
+				if (i == idlvo.getDept_level()) {
+					int num = idlvo.getOri_num();
+					for (WaDeptBelongVO cal_idlvo : allIDLs) {
+						if (idlvo.getPk_dept().equals(cal_idlvo.getPk_fatherorg()) && cal_idlvo.getCal_num() < 3) {
+							num += cal_idlvo.getOri_num();
+						}
+					}
+					idlvo.setCal_num(num);
+				}
+			}
+		}
+
+		for (int i = 1; i <= Default_Level; i++) {
+			for (WaDeptBelongVO dlvo : allDLs) {
+				if (i == dlvo.getDept_level()) {
+					int num = dlvo.getOri_num();
+					for (WaDeptBelongVO cal_dlvo : allDLs) {
+						if (dlvo.getPk_dept().equals(cal_dlvo.getPk_fatherorg()) && cal_dlvo.getCal_num() < 3) {
+							num += cal_dlvo.getOri_num();
+						}
+					}
+					dlvo.setCal_num(num);
+				}
+			}
+		}
+		// 4. calculate all the pk_dept_belong
+		for (WaDeptBelongVO dlvo : allDLs) {
+			if (dlvo.getCal_num() >= 3) {
+				dlvo.setPk_dept_belong(dlvo.getPk_dept());
+			}
+		}
+		for (WaDeptBelongVO idlvo : allIDLs) {
+			if (idlvo.getCal_num() >= 3) {
+				idlvo.setPk_dept_belong(idlvo.getPk_dept());
+			}
+		}
+		int cnt = allDLs.size();
+		while (cnt > 0) {
+			updateBelongDept(allDLs);
+			cnt--;
+		}
+		cnt = allIDLs.size();
+		while (cnt > 0) {
+			updateBelongDept(allIDLs);
+			cnt--;
+		}
+		getDao().updateVOList(allDLs);
+		getDao().updateVOList(allIDLs);
+		return null;
+	}
+
+	/**
+	 * @description insert dept belong records of non-buttom depts
+	 * @param type
+	 * @param cyear
+	 * @param cperiod
+	 * @param buttomDeptArr
+	 *            (buttom depts)
+	 * @throws DAOException
+	 * @throws BusinessException
+	 */
+	private void insertDeptBelong(String type, String cyear, String cperiod, String[] buttomDeptArr)
+			throws DAOException, BusinessException {
+		final List<WaDeptBelongVO> list = new ArrayList<WaDeptBelongVO>();
+		final String dir = type;
+		String tableName = "V_WA_DEPT_CAL_IDL";
+		if ("DL".equals(type)) {
+			tableName = "V_WA_DEPT_CAL_DL";
+		}
+		String sql = " select dept.pk_dept,dept.pk_fatherorg,v.num from org_dept dept left join " + tableName
+				+ " v on v.workdept = dept.pk_dept and cyear='" + cyear + "' and cperiod = '" + cperiod
+				+ "' and psnclcode = '" + dir
+				+ "' where dept.HRCANCELED='N' and dept.enablestate = 2 and dept.pk_dept not in ('"
+				+ StringUtils.join(buttomDeptArr, "','") + "')";
+		getDao().executeQuery(sql, new ResultSetProcessor() {
+			@Override
+			public Object handleResultSet(ResultSet rs) {
+				try {
+					while (rs.next()) {
+						WaDeptBelongVO vo = new WaDeptBelongVO();
+						vo.setError_flag("N");
+						vo.setDir(dir);
+						vo.setDept_level(Default_Level);
+						vo.setPk_dept(rs.getString(1));
+						vo.setPk_fatherorg(rs.getString(2));
+						vo.setOri_num(null == rs.getString(3) ? 0 : new Integer(rs.getString(3)));
+						list.add(vo);
+					}
+				} catch (SQLException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				return null;
+			}
+		});
+		if (!list.isEmpty()) {
+			getDao().insertVOList(list);
+		} else {
+			throw new BusinessException("Query dept error !");
+		}
+	}
+
+	/**
+	 * @description set dept level to zero, when it don't have child dept
+	 * @param list
+	 */
+	private void updateBaseDeptLevel(List<WaDeptBelongVO> list) {
+		for (int j = 0; j < list.size(); j++) {
+			if (0 != list.get(j).getDept_level()) {
+				String pk_dept = list.get(j).getPk_dept();
+				boolean flag = false;
+				for (int k = 0; k < list.size(); k++) {
+					if (pk_dept.equals(list.get(k).getPk_fatherorg())) {
+						flag = true;
+						break;
+					}
+				}
+				if (!flag) {
+					list.get(j).setDept_level(0);
+				}
+			}
+		}
+	}
+
+	/**
+	 * @description calculate the dept level of each dept
+	 * @param list
+	 * @param startLevel
+	 */
+	private void updateDeptLevel(List<WaDeptBelongVO> list, int startLevel) {
+		for (int j = 0; j < list.size(); j++) {
+			if (startLevel == list.get(j).getDept_level()) {
+				for (int k = 0; k < list.size(); k++) {
+					if (list.get(k).getPk_dept().equals(list.get(j).getPk_fatherorg())) {
+						list.get(k).setDept_level(startLevel + 1);
+					}
+				}
+			}
+		}
+	}
+
+	/**
+	 * @description update belong dept by cal num
+	 * @param list
+	 */
+	private void updateBelongDept(List<WaDeptBelongVO> list) {
+		for (int j = 0; j < list.size(); j++) {
+			if (StringUtils.isEmpty(list.get(j).getPk_dept_belong())) {
+				String pk_fatherorg = list.get(j).getPk_fatherorg();
+				if (CHAIRMAN_DEPT.equals(pk_fatherorg)) {
+					for (WaDeptBelongVO tmpvo : list) {
+						if (tmpvo.getPk_dept().equals(CHAIRMAN_DEPT)) {
+							if (tmpvo.getCal_num() >= 3) {
+								list.get(j).setPk_dept_belong(CHAIRMAN_DEPT);
+							}
+						} else {
+							list.get(j).setPk_dept_belong("error-" + list.get(j).getPk_dept());
+							list.get(j).setError_flag("Y");
+						}
+					}
+					return;
+				} else if (StringUtils.isEmpty(pk_fatherorg)) {
+					list.get(j).setPk_dept_belong("error-" + list.get(j).getPk_dept());
+					list.get(j).setError_flag("Y");
+					return;
+				}
+				while (!CHAIRMAN_DEPT.equals(pk_fatherorg) && !StringUtils.isEmpty(pk_fatherorg)) {
+					for (int k = 0; k < list.size(); k++) {
+						if (list.get(k).getPk_dept().equals(pk_fatherorg)) {
+							if (list.get(k).getCal_num() >= 3) {
+								list.get(j).setPk_dept_belong(list.get(k).getPk_dept());
+								return;
+							} else {
+								pk_fatherorg = list.get(k).getPk_fatherorg();
+								if (CHAIRMAN_DEPT.equals(pk_fatherorg) || StringUtils.isEmpty(pk_fatherorg)) {
+									list.get(j).setPk_dept_belong("error-" + list.get(j).getPk_dept());
+									list.get(j).setError_flag("Y");
+									return;
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+}

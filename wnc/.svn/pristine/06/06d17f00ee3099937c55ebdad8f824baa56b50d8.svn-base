@@ -1,0 +1,327 @@
+<?xml version="1.0" encoding="GBK"?>
+
+<!DOCTYPE beans PUBLIC "-//SPRING//DTD BEAN//EN" "http://www.springframework.org/dtd/spring-beans.dtd">
+
+<beans>
+
+	<!-- 环境变量 -->
+	<bean id="context" class="nc.vo.uif2.LoginContext"></bean>
+
+	<!-- 模型部分配置*********************************************************** -->
+
+	<!-- 应用服务类，负责进行模型操作的处理 -->
+	<bean id="batchModelModelService" class="nc.ui.pubapp.pub.smart.SmartBatchAppModelService">
+		<property name="serviceItf" value="nc.itf.twhr.ITwhrMaintain" />
+		<property name="voClass" value="nc.vo.twhr.nhicalc.BaoAccountVO" />
+	</bean>
+
+	
+	<!-- 对象转换器工厂，由此获取操作对象的特征信息 -->
+	<bean id="BOAdapterFactory" class="nc.vo.bd.meta.GeneralBDObjectAdapterFactory">
+		<property name="mode" value="MD"/>
+	</bean>
+
+   
+	<!-- 层次结构构造策略 -->
+
+	<!-- 模型元素 -->
+	<!--========= 模型元素：[PUBAPP单表模型(BatchBillTableModel)实例对象] ==========-->
+	<bean id="batchModel" class="nc.ui.pubapp.uif2app.model.BatchBillTableModel">
+		<property name="context"><ref bean="context"/></property>
+		<property name="service"><ref bean="batchModelModelService" /></property>
+		<property name="businessObjectAdapterFactory"><ref bean="BOAdapterFactory"/></property>
+	</bean>
+
+
+	
+	<!-- 数据模型管理器，主要负责各种方式的模型初始化 -->
+	<bean id="batchModelModelDataManager" class="nc.ui.pubapp.uif2app.model.BatchModelDataManager">
+		<property name="model"><ref bean="batchModel"/></property>
+		<property name="service"><ref bean="batchModelModelService" /></property>
+	</bean>
+
+	
+	<!-- Mediator，模型之间监听关系部分 -->
+
+
+    <!-- 组织面板//newadd -->
+
+	<!-- 卡片界面的工具栏和返回按钮 -->
+
+
+	<!-- 模板容器，负责对模板的统一装载 -->
+	<bean id="templateContainer" class="nc.ui.pubapp.uif2app.view.TemplateContainer"  init-method="load">
+		<property name="context" ref="context"/>
+		<property name="nodeKeies">
+			<list>
+				<value>bt</value>
+			</list>
+		</property>
+	</bean>
+
+
+	<!-- 界面元素 ***********************************************************-->
+	<!--====== 视图元素：[组织面板控件实例对象] ==============-->
+	<bean id="orgpanel" class="nc.ui.twhr.twhr.ace.view.AccountOrgHeadPanel" init-method="initUI">
+		<property name="model"><ref bean="batchModel" /></property>
+		<property name="batchDataManager" ref="batchModelModelDataManager" />
+		<property name="batchModelModelDataManagerAna" ref="batchModelModelDataManagerAna" />
+		<property name="context" ref="context" />
+		<property name="pk_orgtype" value="HRORGTYPE00000000000" />
+	</bean>
+
+	<!--====== 视图元素：[PUBAPP单表编辑控件(BatchBillTable)实例对象] ==============-->
+	<bean id="batchBillTable" class="nc.ui.pubapp.uif2app.view.ShowUpableBatchBillTable" init-method="initUI">
+		<property name="model"><ref bean="batchModel" /></property>
+		<property name="nodekey" value="bt" />
+	</bean>
+
+	
+	<!-- 界面布局总装*********************************************************** -->
+	<bean id="container" class="nc.ui.uif2.TangramContainer" init-method="initUI">
+		<property name="tangramLayoutRoot">
+			<bean class="nc.ui.uif2.tangramlayout.node.VSNode">
+				<property name="up">
+					<bean class="nc.ui.uif2.tangramlayout.node.CNode">
+						<property name="component">
+							<ref bean="orgpanel" />
+						</property>
+					</bean>
+				</property>
+				<property name="down">
+					<bean class="nc.ui.uif2.tangramlayout.node.VSNode">
+						<property name="up">
+							<bean class="nc.ui.uif2.tangramlayout.node.CNode">
+								<property name="component">
+									<ref bean="batchBillTable" />
+								</property>
+							</bean>
+						</property>
+						<property name="down">
+							<bean class="nc.ui.uif2.tangramlayout.node.CNode">
+								<property name="component">
+									<ref bean="batchBillTableAna" />
+								</property>
+							</bean>
+						</property>
+						<property name="dividerLocation" value="300.0f" />
+						<property name="name" value="" />
+					</bean>
+				</property>
+				<property name="dividerLocation" value="24.0f" />
+				<property name="name" value="" />
+			</bean>
+		</property>
+		<property name="actions">
+			<list>
+				<ref bean="batchEditAction" />
+				<ref bean="batchRefreshAction" />
+				<ref bean="batchAddLineAction" />
+				<ref bean="batchDelLineAction" />
+				<ref bean="ImportGroupAction" />
+				<!-- <ref bean="ImportAccountAction" /> -->
+				<ref bean="ReconciliationAction" />
+				<!--<ref bean="SynchroAction" /> -->
+				
+				
+               
+			</list>
+		</property>
+		
+		<property name="editActions">
+			<list>
+				<ref bean="batchSaveAction" />
+				<ref bean="batchCancelAction" />
+				
+				<ref bean="batchDelLineActiona" />
+				
+			</list>
+		</property>
+
+		<property name="model">
+			<ref bean="batchModel" />
+		</property>		
+		<!--
+		<property name="model">
+			<ref bean="$vmObject.topActionDependModel"/>
+		</property>
+		-->
+	</bean>
+	
+	<!-- 打开节点监听 newadd-->
+	<bean id="InitDataListener" class="nc.ui.pubapp.uif2app.model.DefaultFuncNodeInitDataListener">
+		<property name="model" ref="batchModel"/>
+		<property name="context" ref="context"></property>
+		<property name="voClassName" value="nc.vo.twhr.nhicalc.BaoAccountVO"/>
+	</bean>
+
+
+
+	<!-- ClosingListener 编辑态关闭节点时提示是否保存//newadd***************************************************-->
+
+
+	<!-- 事件监听newadd -->
+	<bean id="batchModelEventMediator" class="nc.ui.pubapp.uif2app.model.AppEventHandlerMediator">
+		<property name="model" ref="batchModel" />
+		<property name="handlerGroup">
+			<list>
+			</list>
+		</property>
+	</bean>
+
+	<!--懒加载信息配置*******************************************************-->
+
+
+
+
+
+	<!-- Action部分 ***********************************************************-->
+	<!--======= 动作：[newActions] [修改] ===========-->
+	
+	<bean id="batchEditAction" class="nc.ui.pubapp.uif2app.actions.batch.BatchEditAction">
+		<property name="model"><ref bean="batchModel"/></property>
+		<property name="exceptionHandler"><ref bean="exceptionHandler" /></property>
+	</bean>
+	<bean id="ReconciliationAction" class="nc.ui.twhr.twhr.action.ReconciliationAction">
+		<property name="modeldiff"><ref bean="batchModelAna"/></property>
+		 <property name="batchRefreshAction" ref="batchRefreshAction" />
+		<property name="modelManager"><ref bean="batchModelModelDataManagerAna"/></property>
+		<property name="modeltwhr"><ref bean="batchModel"/></property>
+		
+		<property name="exceptionHandler"><ref bean="exceptionHandler" /></property>
+	</bean>
+	<bean id="SynchroAction" class="nc.ui.twhr.twhr.action.SynchroAction">
+		<property name="model"><ref bean="batchModel"/></property>
+		<property name="modelManager"><ref bean="batchModelModelDataManager"/></property>
+		<property name="exceptionHandler"><ref bean="exceptionHandler" /></property>
+	</bean>
+
+	<!--======= 动作：[newActions] [刷新] ===========-->
+	<bean id="batchRefreshAction" class="nc.ui.twhr.twhr.action.BatchRefreshAction">
+		<property name="model"><ref bean="batchModel"/></property>
+		<property name="batchModelModelDataManagerAna"><ref bean="batchModelModelDataManagerAna"/></property>
+		 <property name="orgpanel" ref ="orgpanel"/>
+		 <property name="batchDataManager" ref="batchModelModelDataManager" />
+		<property name="modelManager"><ref bean="batchModelModelDataManager"/></property>
+		
+		
+		<property name="exceptionHandler"><ref bean="exceptionHandler" /></property>
+	</bean>
+
+	<!--======= 动作：[newActions] [新增] ===========-->
+	<bean id="batchAddLineAction" class="nc.ui.twhr.twhr.action.TwhrAddLineAction">
+		<property name="model"><ref bean="batchModel"/></property>
+		<property name="voClassName" value="nc.vo.twhr.nhicalc.BaoAccountVO" />
+		<property name="exceptionHandler"><ref bean="exceptionHandler" /></property>
+	</bean>
+
+	<!--======= 动作：[newActions] [删除] ===========-->
+	<bean id="batchDelLineAction" class="nc.ui.pubapp.uif2app.actions.batch.BatchDelLineAction">
+		<property name="model"><ref bean="batchModel"/></property>
+		<property name="batchBillTable"><ref bean="batchBillTable"/></property>
+		<property name="exceptionHandler"><ref bean="exceptionHandler" /></property>
+	</bean>
+	<bean id="ImportLaborProtectAction" class="nc.ui.twhr.twhr.action.ImportAccountAction">
+     	<property name="model" ref="batchModel" />
+        <property name="batchRefreshAction" ref="batchRefreshAction" />
+        <property name="orgpanel" ref="orgpanel"/>
+     </bean> 
+	<bean id="ImportHealthInsuranceAction" class="nc.ui.twhr.twhr.action.ImportHealthInsuranceAction">
+     	<property name="model" ref="batchModel" />
+        <property name="batchRefreshAction" ref="batchRefreshAction" />
+        <property name="orgpanel" ref="orgpanel"/>
+     </bean>  
+	 <bean id="ImportRetireAction" class="nc.ui.twhr.twhr.action.ImportRetireAction">
+     	<property name="model" ref="batchModel" />
+        <property name="batchRefreshAction" ref="batchRefreshAction" />
+        <property name="orgpanel" ref="orgpanel"/>
+     </bean>  
+	<!--======= 动作：[newActions] [保存] ===========-->
+	<bean id="batchSaveAction" class="nc.ui.pubapp.uif2app.actions.batch.BatchSaveAction">
+		<property name="model"><ref bean="batchModel"/></property>
+		<property name="editor"><ref bean="batchBillTable"/></property>
+		<property name="validationService"><ref bean="batchBillTableValidateService" /></property>
+		<property name="exceptionHandler"><ref bean="exceptionHandler" /></property>
+	</bean>
+
+	<!--======= 动作：[newActions] [取消] ===========-->
+	<bean id="batchCancelAction" class="nc.ui.pubapp.uif2app.actions.batch.BatchCancelAction">
+		<property name="model"><ref bean="batchModel"/></property>
+		<property name="editor"><ref bean="batchBillTable"/></property>
+		<property name="exceptionHandler"><ref bean="exceptionHandler" /></property>
+	</bean>
+
+	<!--======= 动作：[newActions] [删除] ===========-->
+	<bean id="batchDelLineActiona" class="nc.ui.pubapp.uif2app.actions.batch.BatchDelLineAction">
+		<property name="model"><ref bean="batchModel"/></property>
+		<property name="batchBillTable"><ref bean="batchBillTable"/></property>
+		<property name="exceptionHandler"><ref bean="exceptionHandler" /></property>
+	</bean>
+	
+   <!-- 导入劳保健保按钮组 -->
+	<bean id="ImportGroupAction" class="nc.funcnode.ui.action.MenuAction">
+		<property name="code" value="alteration" />
+		<property name="name">
+			<bean class="nc.ui.uif2.I18nFB">
+				<property name="resDir" value="menucode"></property>
+				<property name="defaultValue" value="导入劳健保" />
+				<property name="resId" value="D604099"></property>
+			</bean>
+		</property>
+		<property name="actions">
+			<list>
+				<ref bean="ImportLaborProtectAction" />
+				<ref bean="ImportHealthInsuranceAction" />
+				<ref bean="ImportRetireAction" />
+			</list>
+		</property>
+	</bean>
+    
+	<bean id="exceptionHandler" class="nc.ui.uif2.DefaultExceptionHanler">
+		<constructor-arg><ref bean="container"/></constructor-arg>
+		<property name="context"><ref bean="context" /></property>
+	</bean>
+	
+	
+	<!-- 批量保存校验服务类 -->
+    <bean id="batchBillTableValidateService" class="nc.ui.uif2.model.DefaultBatchValidationService">
+    	<property name="editor"><ref bean="batchBillTable" /></property>
+    </bean>
+
+
+
+
+	
+	<!-- 应用服务类，负责进行模型操作的处理 -->
+	<bean id="batchModelModelServiceAna" class="nc.ui.pubapp.pub.smart.SmartBatchAppModelService">
+		<property name="serviceItf" value="nc.itf.twhr.IDiffinsuranceaMaintain" />
+		<property name="voClass" value="nc.vo.twhr.diffinsurance.DiffinsuranceVO" />
+	</bean>
+	
+	<!-- 对象转换器工厂，由此获取操作对象的特征信息 -->
+	<bean id="BOAdapterFactoryAna" class="nc.vo.bd.meta.GeneralBDObjectAdapterFactory">
+		<property name="mode" value="MD"/>
+	</bean>
+	
+	<!--========= 模型元素：[PUBAPP单表模型(BatchBillTableModel)实例对象] ==========-->
+	<bean id="batchModelAna" class="nc.ui.pubapp.uif2app.model.BatchBillTableModel">
+		<property name="context"><ref bean="context"/></property>
+		<property name="service"><ref bean="batchModelModelServiceAna" /></property>
+		<property name="businessObjectAdapterFactory"><ref bean="BOAdapterFactoryAna"/></property>
+	</bean>
+
+	
+	<!-- 数据模型管理器，主要负责各种方式的模型初始化 -->
+	<bean id="batchModelModelDataManagerAna" class="nc.ui.pubapp.uif2app.model.BatchModelDataManager">
+		<property name="model"><ref bean="batchModelAna"/></property>
+		<property name="service"><ref bean="batchModelModelServiceAna" /></property>
+	</bean>
+
+	<!--====== 视图元素：[PUBAPP单表编辑控件(BatchBillTable)实例对象] ==============-->
+	<bean id="batchBillTableAna" class="nc.ui.twhr.nhicalc.ace.view.ShowUpableBatchBillTableaccount" init-method="initUI">
+		<property name="model"><ref bean="batchModelAna" /></property>
+		<property name="nodekey" value="bt" />
+	</bean>
+	
+
+</beans>

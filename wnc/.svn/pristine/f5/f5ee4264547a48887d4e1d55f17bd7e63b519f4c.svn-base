@@ -1,0 +1,1035 @@
+package nc.impl.hrwa;
+
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import nc.bs.dao.BaseDAO;
+import nc.bs.dao.DAOException;
+import nc.bs.framework.common.NCLocator;
+import nc.bs.wa.util.LocalizationSysinitUtil;
+import nc.hr.utils.InSQLCreator;
+import nc.hr.utils.ResHelper;
+import nc.itf.hrwa.IGetAggIncomeTaxData;
+import nc.jdbc.framework.processor.ColumnListProcessor;
+import nc.jdbc.framework.processor.ColumnProcessor;
+import nc.jdbc.framework.processor.MapListProcessor;
+import nc.pub.encryption.util.SalaryEncryptionUtil;
+import nc.pubitf.twhr.IBasedocPubQuery;
+import nc.vo.bd.countryzone.CountryZoneVO;
+import nc.vo.hi.psndoc.PsnOrgVO;
+import nc.vo.hi.psndoc.PsndocVO;
+import nc.vo.hrwa.incometax.AggIncomeTaxVO;
+import nc.vo.hrwa.incometax.IncomeTaxUtil;
+import nc.vo.hrwa.incometax.IncomeTaxVO;
+import nc.vo.hrwa.sumincometax.AggSumIncomeTaxVO;
+import nc.vo.hrwa.sumincometax.CIncomeTaxVO;
+import nc.vo.hrwa.sumincometax.SumIncomeTaxVO;
+import nc.vo.pub.BusinessException;
+import nc.vo.pub.lang.UFBoolean;
+import nc.vo.pub.lang.UFDate;
+import nc.vo.pub.lang.UFDateTime;
+import nc.vo.pub.lang.UFDouble;
+import nc.vo.pub.lang.UFLiteralDate;
+import nc.vo.twhr.basedoc.BaseDocVO;
+
+import org.apache.commons.lang.StringUtils;
+
+/**
+ * @author ward.wong
+ * @date 20180126
+ * @version v1.0
+ * @功能描述 获取申报明细档汇总接口实现类
+ * 
+ */
+public class GetAggIncomeTaxDataImpl implements IGetAggIncomeTaxData {
+
+	/**
+	 * @功能描述 根据条件生成相关人员申报明细档
+	 * @param unifiednumber
+	 *            统一编号
+	 * @param declaretype
+	 *            申报凭单格式
+	 * @param year
+	 *            薪资年度
+	 * @param beginMonth
+	 *            起始时间
+	 * @param endMonth
+	 *            截止时间
+	 * @return
+	 * @throws BusinessException
+	 */
+	@Override
+	public List<AggIncomeTaxVO> getPsnIncomeTaxData(String unifiednumber, String[] declaretype, String year,
+			String beginMonth, String endMonth) throws BusinessException {
+		// 根据统一编号获取组织
+		String[] orgs = getOrgs(unifiednumber);
+		StringBuffer qrySql = new StringBuffer();
+		qrySql.append("SELECT\n");
+		qrySql.append("	psn.pk_hrorg AS pk_hrorg,\n");// 人力资源组织
+		qrySql.append("	hi_psndoc_ptcost.declareformat AS declaretype,\n");// 申报格式
+		qrySql.append("	hi_psndoc_ptcost.pk_psndoc_sub AS pk_wa_data,\n");// 劳务费用主键
+		qrySql.append("	hi_psndoc_ptcost.projectcode AS projectcode,\n");// 项目编码
+		qrySql.append("	hi_psndoc_ptcost.feetype AS feetype,\n");// 费别
+		qrySql.append("	hi_psndoc_ptcost.biztype AS biztype,\n");// 业别
+		qrySql.append("	psn.code AS code,\n");
+		qrySql.append("	psn.pk_psndoc AS pk_psndoc,\n");
+		qrySql.append("	psn.id AS id,\n");
+		qrySql.append("	psn.pk_group AS pk_group,\n");
+		qrySql.append(" hi_psndoc_ptcost.paydate AS cpaydate,\n");
+		qrySql.append("	SUBSTRING(hi_psndoc_ptcost.paydate,1,4)+SUBSTRING(hi_psndoc_ptcost.paydate,6,2) AS cperiod,\n");
+		qrySql.append(" SUBSTRING(hi_psndoc_ptcost.paydate,1,4)+SUBSTRING(hi_psndoc_ptcost.paydate,6,2) AS cyearperiod,\n");// 会计期间
+		qrySql.append(" hi_psndoc_ptcost.payamount AS taxbase,\n");
+		qrySql.append(" hi_psndoc_ptcost.taxamount AS cacu_value,\n");
+		qrySql.append(" ISNULL(hi_psndoc_ptcost.payamount, 0)-ISNULL(hi_psndoc_ptcost.taxamount, 0) AS netincome,\n");
+		qrySql.append(" 'N' AS isforeignmonthdec,\n");
+		qrySql.append(" '" + year + "' AS cyear\n");
+		qrySql.append(" FROM hi_psndoc_ptcost hi_psndoc_ptcost\n");
+		qrySql.append(" INNER JOIN bd_psndoc psn ON psn.pk_psndoc = hi_psndoc_ptcost.pk_psndoc\n");
+		qrySql.append(" WHERE ISNULL(hi_psndoc_ptcost.dr, 0)=0 AND ISNULL(psn.dr, 0)=0\n");
+
+		InSQLCreator isc = new InSQLCreator();
+		String inDeclaretypeSql = isc.getInSQL(declaretype);
+		qrySql.append(" AND hi_psndoc_ptcost.declareformat in (" + inDeclaretypeSql + ")\n");// 申报凭单格式
+		String[] startStr = beginMonth.split("-");
+		String[] endStr = endMonth.split("-");
+		int startyear = Integer.parseInt(startStr[0]);
+		int startMonth = Integer.parseInt(startStr[1]);
+		int endyear = Integer.parseInt(endStr[0]);
+		int endMon = Integer.parseInt(endStr[1]);
+		String firstday = getFirstDayOfMonth(startyear, startMonth);
+		// String firstday =
+		// getFirstDayOfMonth(Integer.parseInt(year),Integer.parseInt(beginMonth));
+		String lastday = getLastDayOfMonth(endyear, endMon);
+		qrySql.append(" AND hi_psndoc_ptcost.paydate>='" + firstday + "'\n");
+		qrySql.append(" AND hi_psndoc_ptcost.paydate<='" + lastday + "'\n");
+
+		List<Map<String, Object>> incomeTaxList = (List<Map<String, Object>>) getDao().executeQuery(qrySql.toString(),
+				new MapListProcessor());
+		if (null == incomeTaxList || incomeTaxList.isEmpty()) {
+			return null;
+		}
+		Map<String, String> voAttrTypeMap = IncomeTaxUtil.getVOFieldType(IncomeTaxVO.class);
+		List<AggIncomeTaxVO> aggVoList = new ArrayList<AggIncomeTaxVO>();
+		List<String> psnList = new ArrayList<String>();
+		List<String> pk_wa_dataList = new ArrayList<String>();
+		for (Map<String, Object> hvoMap : incomeTaxList) {
+			IncomeTaxVO hvo = getHVOFromMap(hvoMap, voAttrTypeMap);
+			if (null != hvo) {
+				AggIncomeTaxVO aggVO = new AggIncomeTaxVO();
+				aggVO.setParentVO(hvo);
+				aggVoList.add(aggVO);
+				psnList.add(hvo.getPk_psndoc());
+				pk_wa_dataList.add(hvo.getPk_wa_data());
+			}
+		}
+
+		// 判断档案是否已经生产，如果已经生成未汇总则覆盖，否则不能生成
+		Map<String, UFBoolean> isgather = getIsgather(pk_wa_dataList.toArray(new String[0]));
+		List<String> deleteList = new ArrayList<String>();
+		Iterator<AggIncomeTaxVO> it = aggVoList.iterator();
+		while (it.hasNext()) {
+			AggIncomeTaxVO aggVO = it.next();
+			IncomeTaxVO hvo = aggVO.getParentVO();
+			if (null != isgather.get(hvo.getPk_wa_data())) {
+				if (isgather.get(hvo.getPk_wa_data()).booleanValue()) {// 已汇总
+					it.remove();
+				} else {
+					deleteList.add(hvo.getPk_wa_data());
+				}
+			}
+		}
+		if (deleteList.size() > 0) {
+			String inPsndocSql = isc.getInSQL(deleteList.toArray(new String[0]));
+			String updateSql = "update hrwa_incometax set dr='1' where pk_wa_data in (" + inPsndocSql + ")";
+			getDao().executeUpdate(updateSql);
+		}
+		return aggVoList;
+	}
+
+	/**
+	 * @功能描述 根据条件生成申报明细档
+	 * @param isForeignMonth
+	 *            是否外籍员工逐月申报
+	 * @param unifiednumber
+	 *            统一编号
+	 * @param declaretype
+	 *            申报凭单格式
+	 * @param waclass
+	 *            薪资方案
+	 * @param year
+	 *            薪资年度
+	 * @param beginMonth
+	 *            起始时间
+	 * @param endMonth
+	 *            截止时间
+	 * @return
+	 * @throws BusinessException
+	 */
+	@Override
+	public List<AggIncomeTaxVO> getAggIncomeTaxData(boolean isForeignMonth, String unifiednumber, String[] declaretype,
+			String[] waclass, String year, String beginMonth, String endMonth) throws BusinessException {
+		// 根据统一编号获取组织
+		String[] orgs = getOrgs(unifiednumber);
+		// 获取参数TWHR07的值
+		Map<String, String> twhr07Map = getSysinit(orgs, "TWHR07");
+		StringBuffer qrySql = new StringBuffer();
+		qrySql.append("SELECT\n");
+		qrySql.append("	psn.code AS code,\n");// 人员编码
+		qrySql.append("	psn.pk_psndoc AS pk_psndoc,\n");// 人员
+		qrySql.append("	psn.id AS id,\n");// 身份证
+		qrySql.append("	wa.cyear AS cyear,\n");
+		qrySql.append("	wa.cperiod AS cperiod,\n");
+		qrySql.append("	wa.cyearperiod AS cyearperiod,\n");// 会计期间
+		qrySql.append("	wa.pk_wa_class AS pk_wa_class,\n");// 薪资方案
+		qrySql.append("	wa.pk_wa_data AS pk_wa_data,\n");// 薪资发放主键
+		qrySql.append("	psn.pk_hrorg AS pk_hrorg,\n");// 组织
+		qrySql.append("	psn.pk_group AS pk_group,\n");// 集团
+		qrySql.append(" wap.cpaydate AS cpaydate,\n");// 发放日期
+		qrySql.append(" wap.payoffflag AS payoffflag,\n");// 发放标志
+		// mod start Ares.Tank 加密数据在数据库进行加减操作时有极小概率会出现错误,故先解密 2018-8-21 10:57:44
+		qrySql.append("	SALARY_DECRYPT(wa." + LocalizationSysinitUtil.getTwhrlWa("TWHRLWA01") + ")" + " AS taxbase,\n");// 本次扣税基数
+		qrySql.append("	SALARY_DECRYPT(wa." + LocalizationSysinitUtil.getTwhrlWa("TWHRLWA02") + ")"
+				+ " AS cacu_value,\n");// 本次扣税
+		qrySql.append("	SALARY_DECRYPT(wa." + LocalizationSysinitUtil.getTwhrlWa("TWHRLWA01") + ")"
+				+ " - SALARY_DECRYPT(wa." + LocalizationSysinitUtil.getTwhrlWa("TWHRLWA02") + ")" + " AS netincome,\n");// 给付净额
+		qrySql.append("	SALARY_DECRYPT(wa." + LocalizationSysinitUtil.getTwhrlWa("TWHRLWA03") + ")"
+				+ " - SALARY_DECRYPT(wa." + LocalizationSysinitUtil.getTwhrlWa("TWHRLWA04") + ")"
+				+ " + SALARY_DECRYPT(wa." + LocalizationSysinitUtil.getTwhrlWa("TWHRLWA05") + ")" + " AS pickedup,\n");// 员工自提金额
+		qrySql.append(" wac.declareform AS declaretype,\n");// 申报格式
+		qrySql.append(" wa.biztype AS biztype,\n");// 业务别
+		qrySql.append(" wa.projectcode AS projectcode,\n");// 项目别
+		qrySql.append(" wa.feetype AS feetype\n");// 费用别
+		qrySql.append("FROM\n");
+		qrySql.append("	wa_data wa\n");
+		qrySql.append("INNER JOIN bd_psndoc psn ON wa.pk_psndoc = psn.pk_psndoc\n");
+		qrySql.append("INNER JOIN wa_waclass wac on wa.pk_wa_class=wac.pk_wa_class\n");
+		qrySql.append("INNER JOIN (\n");
+		qrySql.append("	SELECT\n");
+		qrySql.append("		wa_periodstate.pk_wa_class,\n");
+		qrySql.append("		wa_periodstate.payoffflag,\n");
+		qrySql.append("		wa_periodstate.cpaydate,\n");
+		qrySql.append("		wa_period.cyear,\n");
+		qrySql.append("		wa_period.cperiod\n");
+		qrySql.append("	FROM\n");
+		qrySql.append("		wa_periodstate\n");
+		qrySql.append("	INNER JOIN wa_period ON (\n");
+		qrySql.append("		wa_periodstate.pk_wa_period = wa_period.pk_wa_period\n");
+		qrySql.append("	)\n");
+		qrySql.append(") wap ON (\n");
+		qrySql.append("	wa.pk_wa_class = wap.pk_wa_class\n");
+		qrySql.append("	AND wa.cyear = wap.cyear\n");
+		qrySql.append("	AND wa.cperiod = wap.cperiod\n");
+		qrySql.append(")");
+		qrySql.append("where \n");
+		InSQLCreator isc = new InSQLCreator();
+		// by he申报格式单选变多选
+		String inDeclaretypeSql = isc.getInSQL(declaretype);
+		qrySql.append(" wac.declareform in (" + inDeclaretypeSql + ")\n");// 申报凭单格式
+
+		// 如果一个月内多次发薪,则获取多次发薪的薪资方案,否则返回当前的薪资方案.
+		waclass = getRealWaclass(waclass, beginMonth, endMonth, year);
+		String inWaclassSql = isc.getInSQL(waclass);
+		qrySql.append(" AND wac.pk_wa_class in (" + inWaclassSql + ")\n");// 薪资方案
+		if (isForeignMonth) {
+			qrySql.append("AND psn." + LocalizationSysinitUtil.getTwhrlPsn("TWHRLPSN01") + "='Y'\n");
+		}
+		qrySql.append("AND wap.payoffflag='Y'\n");// 已发放
+		qrySql.append("AND (\n");
+		for (int i = 0; i < orgs.length; i++) {
+			String twhr07 = twhr07Map.get(orgs[i]);
+			if (i != 0) {
+				qrySql.append(" or \n");
+			}
+			if ("1001ZZ1000000001O22Q".equals(twhr07)) {// 发放日期
+				String[] startStr = beginMonth.split("-");
+				String[] endStr = endMonth.split("-");
+				int startyear = Integer.parseInt(startStr[0]);
+				int startMonth = Integer.parseInt(startStr[1]);
+				int endyear = Integer.parseInt(endStr[0]);
+				int endMon = Integer.parseInt(endStr[1]);
+				String firstday = getFirstDayOfMonth(startyear, startMonth);
+				// String firstday =
+				// getFirstDayOfMonth(Integer.parseInt(year),Integer.parseInt(beginMonth));
+				String lastday = getLastDayOfMonth(endyear, endMon);
+				// String lastday =
+				// getLastDayOfMonth(Integer.parseInt(year),Integer.parseInt(endMonth));
+				qrySql.append("(wac.pk_org = '" + orgs[i] + "' AND wap.cpaydate<='" + lastday
+						+ " 23:59:59' AND wap.cpaydate>='" + firstday + " 00:00:00')\n");
+			} else if ("1001ZZ1000000001O22R".equals(twhr07)) {// 薪资期间
+				String inCyearperiod = isc.getInSQL(getCyearperiod(year, beginMonth, endMonth));
+				qrySql.append("(wac.pk_org = '" + orgs[i] + "' AND wa.cyearperiod in (" + inCyearperiod + "))\n");
+			} else {
+				throw new BusinessException(ResHelper.getString("incometax", "2incometax-n-000048")/* "组织参数TWHR07未维护" */);
+			}
+		}
+		qrySql.append(")\n");
+		List<Map<String, Object>> incomeTaxList = (List<Map<String, Object>>) getDao().executeQuery(qrySql.toString(),
+				new MapListProcessor());
+		if (null == incomeTaxList || incomeTaxList.isEmpty()) {
+			return null;
+		}
+		Map<String, String> voAttrTypeMap = IncomeTaxUtil.getVOFieldType(IncomeTaxVO.class);
+		List<AggIncomeTaxVO> aggVoList = new ArrayList<AggIncomeTaxVO>();
+		List<String> psnList = new ArrayList<String>();
+		List<String> pk_wa_dataList = new ArrayList<String>();
+		for (Map<String, Object> hvoMap : incomeTaxList) {
+			IncomeTaxVO hvo = getHVOFromMap(hvoMap, voAttrTypeMap);
+			if (null != hvo) {
+				AggIncomeTaxVO aggVO = new AggIncomeTaxVO();
+				// mod start Ares.Tank 对刚刚解密的数据再加密回去 2018-8-21 11:04:06
+				// ps. 这是一件非常蠢的事,不要问我为什么,我只是来改bug的,我只能这么干
+				if (hvo.getCacu_value() != null) {
+					hvo.setCacu_value(new UFDouble(SalaryEncryptionUtil.encryption(hvo.getCacu_value().getDouble())));
+				}
+				if (hvo.getNetincome() != null) {
+					hvo.setNetincome(new UFDouble(SalaryEncryptionUtil.encryption(hvo.getNetincome().getDouble())));
+				}
+				if (hvo.getTaxbase() != null) {
+					hvo.setTaxbase(new UFDouble(SalaryEncryptionUtil.encryption(hvo.getTaxbase().getDouble())));
+				}
+				if (hvo.getPickedup() != null) {
+					hvo.setPickedup(new UFDouble(SalaryEncryptionUtil.encryption(hvo.getPickedup().getDouble())));
+				}
+				// mod end Ares.Tank 对刚刚解密的数据再加密回去 2018-8-21 11:04:06
+				aggVO.setParentVO(hvo);
+				aggVoList.add(aggVO);
+				psnList.add(hvo.getPk_psndoc());
+				pk_wa_dataList.add(hvo.getPk_wa_data());
+			}
+		}
+
+		Map<String, String> twhr08Map = getSysinit(orgs, "TWHR08");
+		Map<String, String> twhr09Map = getSysinit(orgs, "TWHR09");
+		Map<String, UFDouble> expireNumMap = getBaseDocUFDoubleValue(orgs, "TWSP0013");
+		Map<String, PsndocVO> psnMap = getMapPsndocVO(psnList.toArray(new String[0]));
+
+		// MOD(外籍满与未满183天员工申请生成的判断修复)
+		// by ssx on 2019-05-21
+		if (isForeignMonth) {
+			// 外籍逐月申报：判断是否外籍员工，如果满了183天，则不属于外籍员工
+			Iterator<AggIncomeTaxVO> it = aggVoList.iterator();
+			while (it.hasNext()) {
+				AggIncomeTaxVO aggVO = it.next();
+				IncomeTaxVO hvo = aggVO.getParentVO();
+				String twhr08 = twhr08Map.get(hvo.getPk_hrorg());
+				String twhr09 = twhr09Map.get(hvo.getPk_hrorg());
+				UFBoolean isForeign = (UFBoolean) psnMap.get(hvo.getPk_psndoc()).getAttributeValue(
+						LocalizationSysinitUtil.getTwhrlPsn("TWHRLPSN01"));
+				UFDouble expireNum = expireNumMap.get(hvo.getPk_hrorg());
+				if (!isForeign.booleanValue()
+						|| isExpire(twhr08, twhr09, expireNum, psnMap.get(hvo.getPk_psndoc()), hvo.getCyear(),
+								hvo.getCperiod())) {
+					it.remove();
+				}
+			}
+		} else {
+			// 非逐月申报：判断是否外籍员工，不满183天，应从申报范围中删除
+			Iterator<AggIncomeTaxVO> it = aggVoList.iterator();
+			while (it.hasNext()) {
+				AggIncomeTaxVO aggVO = it.next();
+				IncomeTaxVO hvo = aggVO.getParentVO();
+				String twhr08 = twhr08Map.get(hvo.getPk_hrorg());
+				String twhr09 = twhr09Map.get(hvo.getPk_hrorg());
+				UFBoolean isForeign = (UFBoolean) psnMap.get(hvo.getPk_psndoc()).getAttributeValue(
+						LocalizationSysinitUtil.getTwhrlPsn("TWHRLPSN01"));
+				UFDouble expireNum = expireNumMap.get(hvo.getPk_hrorg());
+				if (isForeign.booleanValue()
+						&& !isExpire(twhr08, twhr09, expireNum, psnMap.get(hvo.getPk_psndoc()), hvo.getCyear(),
+								hvo.getCperiod())) {
+					it.remove();
+				}
+			}
+		}
+		// end
+
+		// 判断档案是否已经生产，如果已经生成未汇总则覆盖，否则不能生成
+		Map<String, UFBoolean> isgather = getIsgather(pk_wa_dataList.toArray(new String[0]));
+		List<String> deleteList = new ArrayList<String>();
+		Iterator<AggIncomeTaxVO> it = aggVoList.iterator();
+		while (it.hasNext()) {
+			AggIncomeTaxVO aggVO = it.next();
+			IncomeTaxVO hvo = aggVO.getParentVO();
+			if (null != isgather.get(hvo.getPk_wa_data())) {
+				if (isgather.get(hvo.getPk_wa_data()).booleanValue()) {// 已汇总
+					it.remove();
+				} else {
+					deleteList.add(hvo.getPk_wa_data());
+				}
+			}
+		}
+		if (deleteList.size() > 0) {
+			String inPsndocSql = isc.getInSQL(deleteList.toArray(new String[0]));
+			String updateSql = "update hrwa_incometax set dr='1' where pk_wa_data in (" + inPsndocSql + ")";
+			getDao().executeUpdate(updateSql);
+		}
+		return aggVoList;
+	}
+
+	/**
+	 * 如果一个月内多次发薪,则获取多次发薪的薪资方案,否则返回当前的薪资方案. 注:标准平台有个坑,多次发薪时,实际上是使用不同的薪资方案发薪的
+	 * 
+	 * @param waclass
+	 * @return
+	 * @throws DAOException
+	 */
+	private String[] getRealWaclass(String[] waclass, String startMonthStr, String endMonthStr, String yearStr)
+			throws DAOException {
+		Set<String> result = new HashSet<>();
+		int startyear = 0;
+		int endyear = 0;
+		int startMonth = 0;
+		int endMonth = 0;
+		try {
+			String[] startStr = startMonthStr.split("-");
+			String[] endStr = endMonthStr.split("-");
+			startyear = Integer.parseInt(startStr[0]);
+			startMonth = Integer.parseInt(startStr[1]);
+			endyear = Integer.parseInt(endStr[0]);
+			endMonth = Integer.parseInt(endStr[1]);
+		} catch (NumberFormatException e) {
+			return waclass;
+		}
+		if (0 == startyear || 0 == startMonth || 0 == endMonth || 0 == endyear) {
+			return waclass;
+		}
+		if (waclass != null && startyear != 0 && startMonth != 0 && endMonth != 0 && endyear != 0) {
+			List<String> exStrList = new ArrayList<>();
+			// 拼一下后缀
+			for (int j = startyear; j <= endyear; j++) {
+				int begin = 1;
+				int end = 12;
+				if (startyear == j) {
+					begin = startMonth;
+				}
+				if (endyear == j) {
+					end = endMonth;
+				}
+				for (int i = begin; i <= end; i++) {
+					// 201712_times_
+					String ex = "" + j + "" + (i < 10 ? "0" + i : i) + "_times_";
+					exStrList.add(ex);
+				}
+			}
+
+			StringBuilder sqlStr = new StringBuilder();
+			for (String pkWaClass : waclass) {
+				// 查询这个薪资方案的code
+				sqlStr.delete(0, sqlStr.length());
+				sqlStr.append("select code from wa_waclass where pk_wa_class = '").append(pkWaClass).append("'");
+				String code = (String) getDao().executeQuery(sqlStr.toString(), new ColumnProcessor());
+				result.add(pkWaClass);
+
+				sqlStr.delete(0, sqlStr.length());
+				sqlStr.append(" select pk_wa_class from wa_waclass where ");
+				int i = 0;
+				for (String ex : exStrList) {
+					if (0 == i) {
+						sqlStr.append(" code like '").append(code).append(ex).append("%'");
+					} else {
+						sqlStr.append(" or code like '").append(code).append(ex).append("%'");
+					}
+					i++;
+				}
+				sqlStr.append("");
+				List<Map<String, String>> realPkRowList = (List) getDao().executeQuery(sqlStr.toString(),
+						new MapListProcessor());
+				int count = 0;
+				for (Map<String, String> rowMap : realPkRowList) {
+					if (rowMap != null && rowMap.get("pk_wa_class") != null) {
+						count++;
+						result.add(rowMap.get("pk_wa_class"));
+					}
+				}
+				if (count <= 0) {
+					result.add(pkWaClass);
+				}
+			}
+			return result.toArray(new String[0]);
+		}
+		return waclass;
+	}
+
+	/**
+	 * 判断员工工作是否满183天
+	 * 
+	 * @param twhr08
+	 * @param twhr09
+	 * @param psn
+	 * @return
+	 * @throws BusinessException
+	 */
+	@SuppressWarnings("unchecked")
+	private boolean isExpire(String twhr08, String twhr09, UFDouble expireNum, PsndocVO psn, String year, String month)
+			throws BusinessException {
+		String isResident = psn.getAttributeValue(LocalizationSysinitUtil.getTwhrlPsn("TWHRLPSN02")) != null ? psn
+				.getAttributeValue(LocalizationSysinitUtil.getTwhrlPsn("TWHRLPSN02")).toString() : "N";
+		if ("Y".equals(isResident)) {
+			return true;
+		}
+		if ("1001ZZ1000000001NCMA".equals(twhr08)) {// 扣税核算入境日期
+			if (LocalizationSysinitUtil.getTwhrlPsn("TWHRLPSN03") == null) {
+				throw new BusinessException("參數TWHRLPSN03為空!");
+			}
+			if (psn.getAttributeValue(LocalizationSysinitUtil.getTwhrlPsn("TWHRLPSN03")) == null) {
+				throw new BusinessException("員工:" + psn.getCode() + ",扣税核算入境日期為空!");
+			}
+			UFDate permitDate = new UFDate(psn.getAttributeValue(LocalizationSysinitUtil.getTwhrlPsn("TWHRLPSN03"))
+					.toString());
+			UFDate oneDay = new UFDate(year + "-01-01");// 会计年第一天
+			UFDate currentMonthLastDay = new UFDate(getLastDayOfMonth(Integer.parseInt(year), Integer.parseInt(month)));// 薪资结束日期
+			int days = 0;
+			if (permitDate.before(oneDay)) {
+				days = UFDate.getDaysBetween(oneDay, currentMonthLastDay);
+			} else {
+				days = UFDate.getDaysBetween(permitDate, currentMonthLastDay);
+			}
+			if (days - expireNum.intValue() >= 0) {
+				return true;
+			}
+		} else if ("1001ZZ1000000001NCMB".equals(twhr08)) {// 居留证到期日
+			if ("null".equals(twhr09) || "".equals(twhr09)) {
+				throw new BusinessException(ResHelper.getString("notice", "2notice-tw-000008")/* "系统参数居留证到期日(TWHR09)未设置，请维护后重新操作。" */);
+			}
+			// MOD (補充183判斷邏輯)
+			// 當年度入職者，
+			// 如入職日小於居留證到期基準日並且居留證到期日晚於年度結束日，則代表滿183天；
+			//
+			// 如非當年度入職者，
+			// 居留證到期日期大於居留證到期基準日，則代表滿183天
+			//
+			// 其餘情況皆屬於外籍員工未滿183天。
+
+			// 居留證到期日
+			UFLiteralDate permitDate = new UFDate(psn.getAttributeValue(
+					LocalizationSysinitUtil.getTwhrlPsn("TWHRLPSN04")).toString())
+					.toUFLiteralDate(UFLiteralDate.BASE_TIMEZONE);
+
+			// 居留證到期基準日
+			UFLiteralDate datumDay = new UFDate(twhr09).toUFLiteralDate(UFLiteralDate.BASE_TIMEZONE);
+
+			// 是否當年入職（當年=薪資計算所在年度，即：入職年度=薪資計算期間所在年度）
+			UFLiteralDate joinDate = null;
+			Collection<PsnOrgVO> psnorgs = getDao().retrieveByClause(PsnOrgVO.class,
+					"pk_psndoc='" + psn.getPk_psndoc() + "' and endflag='N' and lastflag='Y'");
+			if (psnorgs != null && psnorgs.size() >= 0) {
+				joinDate = psnorgs.toArray(new PsnOrgVO[0])[0].getJoinsysdate();
+			}
+
+			if (joinDate == null) {
+				throw new BusinessException("未找到員工 [] 的到職日，無法判斷其居留情況。");
+			}
+
+			if (joinDate.getYear() == Integer.valueOf(year)) {
+				// 當年入職
+				// 如入職日小於居留證到期基準日並且居留證到期日晚於年度結束日
+				if (joinDate.before(datumDay) && permitDate.after(new UFLiteralDate(year + "-12-31"))) {
+					return true;
+				}
+			} else {
+				// 非當年入職
+				// 居留證到期日期大於居留證到期基準日
+				if (permitDate.after(datumDay)) {
+					return true;
+				}
+			}
+			// end
+		}
+		return false;
+	}
+
+	/**
+	 * 判断员工工作是否满183天
+	 * 
+	 * @param twhr08
+	 * @param twhr09
+	 * @param psn
+	 * @return
+	 * @throws BusinessException
+	 */
+	private boolean isExpirenew(String twhr08, String twhr09, UFDouble expireNum, PsndocVO psn, String year,
+			String month) throws BusinessException {
+		String isResident = psn.getAttributeValue(LocalizationSysinitUtil.getTwhrlPsn("TWHRLPSN02")) != null ? psn
+				.getAttributeValue(LocalizationSysinitUtil.getTwhrlPsn("TWHRLPSN02")).toString() : "N";
+		if ("Y".equals(isResident)) {
+			return true;
+		}
+		if ("1001ZZ1000000001NCMA".equals(twhr08)) {// 扣税核算入境日期
+			// 扣税核算入境日期
+			UFDate permitDate = null;
+			if (null == psn.getAttributeValue("glbdef8")) {
+				throw new BusinessException("員工編號[" + psn.getCode() + "]扣稅核算入境日期未設置");
+			} else {
+				permitDate = new UFDate(String.valueOf(psn.getAttributeValue("glbdef8")));
+			}
+			UFDate oneDay = new UFDate(year + "-01-01");// 会计年第一天
+			UFDate currentMonthLastDay = new UFDate(getLastDayOfMonth(Integer.parseInt(year), Integer.parseInt(month)));// 薪资结束日期
+			int days = 0;
+			if (null != permitDate && permitDate.before(oneDay)) {
+				days = UFDate.getDaysBetween(oneDay, currentMonthLastDay);
+			}
+			if (null != permitDate && (permitDate.after(oneDay) || permitDate.isSameDate(oneDay))) {
+				days = UFDate.getDaysBetween(permitDate, currentMonthLastDay);
+			}
+			if (days - expireNum.intValue() >= 0) {
+				return true;
+			}
+		} else if ("1001ZZ1000000001NCMB".equals(twhr08)) {// 居留证到期日
+			// 居留证到期日
+			if (null == psn.getAttributeValue("glbdef9") || "".equals(psn.getAttributeValue("glbdef8"))) {
+				// throw new BusinessException(ResHelper.getString("notice",
+				// "2notice-tw-000008")/* "系统参数居留证到期日(TWHR09)未设置，请维护后重新操作。" */);
+				throw new BusinessException("員工編號[" + psn.getCode() + "]居留證到期日未設置");
+			}
+			UFDate permitDate = new UFDate(String.valueOf(psn.getAttributeValue("glbdef9")));
+			UFDate datumDay = new UFDate(twhr09);
+			if (permitDate.after(datumDay)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	public String getLastDayOfMonth(int year, int month) {
+		Calendar cal = Calendar.getInstance();
+		// 设置年份
+		cal.set(Calendar.YEAR, year);
+		// 设置月份
+		cal.set(Calendar.MONTH, month - 1);
+		// 获取某月最大天数
+		int lastDay = cal.getActualMaximum(Calendar.DAY_OF_MONTH);
+		// 设置日历中月份的最大天数
+		cal.set(Calendar.DAY_OF_MONTH, lastDay);
+		// 格式化日期
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+		String lastDayOfMonth = sdf.format(cal.getTime());
+
+		return lastDayOfMonth;
+	}
+
+	public String getFirstDayOfMonth(int year, int month) {
+		Calendar cal = Calendar.getInstance();
+		// 设置年份
+		cal.set(Calendar.YEAR, year);
+		// 设置月份
+		cal.set(Calendar.MONTH, month - 1);
+		// 获取某月最大天数
+		int firstday = cal.getMinimum(Calendar.DATE);
+		// 设置日历中月份的最大天数
+		cal.set(Calendar.DAY_OF_MONTH, firstday);
+		// 格式化日期
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+		String firstDayOfMonth = sdf.format(cal.getTime());
+
+		return firstDayOfMonth;
+	}
+
+	public String[] getCyearperiod(String year, String beginMonth, String endMonth) {
+		Calendar cal = Calendar.getInstance();
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyyMM");
+		List<String> cyearperiodList = new ArrayList<String>();
+
+		String[] startStr = beginMonth.split("-");
+		String[] endStr = endMonth.split("-");
+		int startyear = Integer.parseInt(startStr[0]);
+		int startMonth = Integer.parseInt(startStr[1]);
+		int endyear = Integer.parseInt(endStr[0]);
+		int endMon = Integer.parseInt(endStr[1]);
+		// 拼一下后缀
+		for (int j = startyear; j <= endyear; j++) {
+			int begin = 1;
+			int end = 12;
+			if (startyear == j) {
+				begin = startMonth;
+			}
+			if (endyear == j) {
+				end = endMon;
+			}
+			for (int i = begin; i <= end; i++) {
+				// 设置年份
+				cal.set(Calendar.YEAR, Integer.valueOf(j));
+				// 设置月份
+				cal.set(Calendar.MONTH, i - 1);
+				cyearperiodList.add(sdf.format(cal.getTime()));
+				// cyearperiods[i] = sdf.format(cal.getTime());
+			}
+		}
+		String[] cyearperiods = new String[cyearperiodList.size()];
+		cyearperiodList.toArray(cyearperiods);
+		return cyearperiods;
+	}
+
+	/**
+	 * 获取参数设置参数
+	 * 
+	 * @param pk_org
+	 * @param initcode
+	 * @return
+	 * @throws BusinessException
+	 */
+	private Map<String, String> getSysinit(String[] pk_orgs, String initcode) throws BusinessException {
+		InSQLCreator isc = new InSQLCreator();
+		String inOrgSql = isc.getInSQL(pk_orgs);
+		String qrySql = "select pk_org,value from pub_sysinit where initcode='" + initcode + "' and pk_org in ("
+				+ inOrgSql + ") and isnull(dr,0)=0";
+		List<HashMap<String, Object>> listMaps = (ArrayList<HashMap<String, Object>>) getDao().executeQuery(
+				qrySql.toString(), new MapListProcessor());
+		Map<String, String> map = new HashMap<String, String>();
+		if (listMaps != null && listMaps.size() > 0) {
+			for (int i = 0; i < listMaps.size(); i++) {
+				HashMap<String, Object> hashMap = listMaps.get(i);
+				String pk_org = hashMap.get("pk_org") != null ? hashMap.get("pk_org").toString() : "";
+				String value = hashMap.get("value") != null ? hashMap.get("value").toString() : "";
+				map.put(pk_org, value);
+			}
+		}
+		return map;
+	}
+
+	public String getSysinitValue(String pk_org, String initcode) throws BusinessException {
+		String qrySql = "select value from pub_sysinit where initcode='" + initcode + "' and pk_org='" + pk_org
+				+ "' and isnull(dr,0)=0";
+		Object sysinitValue = getDao().executeQuery(qrySql, new ColumnProcessor());
+		return String.valueOf(sysinitValue);
+	}
+
+	/**
+	 * 根据统一编号获取组织
+	 * 
+	 * @param unifiednumber
+	 * @return
+	 * @throws BusinessException
+	 */
+	public String[] getOrgs(String unifiednumber) throws BusinessException {
+		String qrySql = "select pk_hrorg from org_hrorg where " + LocalizationSysinitUtil.getTwhrlOrg("TWHRLORG03")
+				+ " = '" + unifiednumber + "' or " + LocalizationSysinitUtil.getTwhrlOrg("TWHRLORG15") + " = '"
+				+ unifiednumber + "'";
+		List<String> orgs = (ArrayList<String>) getDao().executeQuery(qrySql, new ColumnListProcessor());
+		return orgs.toArray(new String[0]);
+	}
+
+	private BaseDAO dao;
+
+	private BaseDAO getDao() {
+		if (null == dao) {
+			dao = new BaseDAO();
+		}
+		return dao;
+	}
+
+	private Map<String, UFDouble> getBaseDocUFDoubleValue(String[] pk_orgs, String paramCode) throws BusinessException {
+		InSQLCreator isc = new InSQLCreator();
+		String inOrgSql = isc.getInSQL(pk_orgs);
+		Collection<BaseDocVO> result = getDao().retrieveByClause(BaseDocVO.class,
+				"dr=0 and pk_org in (" + inOrgSql + ")  and code='" + paramCode + "'");
+		if (result == null) {
+			throw new BusinessException(ResHelper.getString("incometax", "2incometax-n-000049")/* "未定義薪資參數：" */
+					+ paramCode);
+		}
+		BaseDocVO[] baseDocVOs = result.toArray(new BaseDocVO[0]);
+		Map<String, UFDouble> map = new HashMap<String, UFDouble>();
+		for (int i = 0; i < baseDocVOs.length; i++) {
+			BaseDocVO baseDocVO = baseDocVOs[i];
+			UFDouble value = UFDouble.ZERO_DBL;
+			if (baseDocVO.getDoctype() == 1) {
+				value = baseDocVO.getNumbervalue();
+			} else if (baseDocVO.getDoctype() == 2) {
+				value = baseDocVO.getNumbervalue().div(100);
+			}
+			map.put(baseDocVO.getPk_org(), value);
+		}
+		return map;
+	}
+
+	private UFDouble getBaseDocUFDoubleValue(String pk_org, String paramCode) throws BusinessException {
+		IBasedocPubQuery baseQry = NCLocator.getInstance().lookup(IBasedocPubQuery.class);
+		BaseDocVO baseDoc = baseQry.queryBaseDocByCode(pk_org, paramCode);
+		if (baseDoc == null) {
+			throw new BusinessException(ResHelper.getString("incometax", "2incometax-n-000049")/* "未定義薪資參數：" */
+					+ paramCode);
+		}
+
+		UFDouble value = UFDouble.ZERO_DBL;
+		if (baseDoc.getDoctype() == 1) {
+			value = baseDoc.getNumbervalue();
+		} else if (baseDoc.getDoctype() == 2) {
+			value = baseDoc.getNumbervalue().div(100);
+		}
+
+		return value;
+	}
+
+	private IncomeTaxVO getHVOFromMap(Map<String, Object> viewValueMap, Map<String, String> voAttrTypeMap) {
+		if (null != viewValueMap && !viewValueMap.isEmpty()) {
+			IncomeTaxVO hvo = new IncomeTaxVO();
+			for (String voAttr : voAttrTypeMap.keySet()) {
+				String value = IncomeTaxUtil.getStringValue(viewValueMap.get(voAttr));
+				if (StringUtils.isNotBlank(voAttr)) {
+					String attrType = voAttrTypeMap.get(voAttr);
+					if (StringUtils.isNotBlank(attrType)) {
+						IncomeTaxUtil.setVoFieldValueByType(hvo, attrType, voAttr, value);
+					}
+				}
+			}
+			return hvo;
+		}
+		return null;
+	}
+
+	private Map<String, PsndocVO> getMapPsndocVO(String[] pks) throws BusinessException {
+		InSQLCreator isc = new InSQLCreator();
+		String inPsndocSql = isc.getInSQL(pks);
+		String where = PsndocVO.PK_PSNDOC + " in(" + inPsndocSql + ")";
+		@SuppressWarnings("unchecked")
+		List<PsndocVO> list = (ArrayList<PsndocVO>) getDao().retrieveByClause(PsndocVO.class, where);
+		Map<String, PsndocVO> map = new HashMap<String, PsndocVO>();
+		for (int i = 0; i < list.size(); i++) {
+			PsndocVO psndocVO = list.get(i);
+			map.put(psndocVO.getPk_psndoc(), psndocVO);
+		}
+		return map;
+	}
+
+	private Map<String, UFBoolean> getIsgather(String[] pk_wa_data) throws BusinessException {
+		InSQLCreator isc = new InSQLCreator();
+		String inPsndocSql = isc.getInSQL(pk_wa_data);
+		String qrySql = "SELECT\n" + "	pk_wa_data,\n" + "	isgather\n" + "FROM\n" + "	hrwa_incometax\n" + "WHERE\n"
+				+ "	pk_wa_data IN (" + inPsndocSql + ")\n" + "AND ISNULL(dr, 0) = 0";
+		List<HashMap<String, Object>> listMaps = (ArrayList<HashMap<String, Object>>) getDao().executeQuery(
+				qrySql.toString(), new MapListProcessor());
+		Map<String, UFBoolean> map = new HashMap<String, UFBoolean>();
+		if (listMaps != null && listMaps.size() > 0) {
+			for (int i = 0; i < listMaps.size(); i++) {
+				HashMap<String, Object> hashMap = listMaps.get(i);
+				String pk_org = hashMap.get("pk_wa_data") != null ? hashMap.get("pk_wa_data").toString() : "";
+				String value = hashMap.get("isgather") != null ? hashMap.get("isgather").toString() : "N";
+				map.put(pk_org, new UFBoolean(value));
+			}
+		}
+		return map;
+	}
+
+	/**
+	 * @author ward.wong(by he 修改)
+	 * @date 20180126
+	 * @version v1.0
+	 * @功能描述 证别号判断方法实现
+	 * 
+	 */
+	@Override
+	public String getIdtypeno(String pk_psndoc, String cyearperiod) throws BusinessException {
+		PsndocVO psndoc = (PsndocVO) getDao().retrieveByPK(PsndocVO.class, pk_psndoc);
+		// 查询出国籍的code
+		String country = "TW";
+		if (null == psndoc.getCountry()) {
+			List<CountryZoneVO> countrylist = (List<CountryZoneVO>) this.dao.retrieveByClause(CountryZoneVO.class,
+					"dr != 1");
+			for (CountryZoneVO vo : countrylist) {
+				if (vo.getPk_country().equals(psndoc.getCountry())) {
+					country = vo.getCode();
+				}
+			}
+		}
+
+		// 国籍为空或者国籍为tw，证号别为0
+		// 国籍为大陆 未满183天为3，满183天为5
+		// 国籍为非台湾非大陆，未满183天为3，满183天为7
+
+		if ("TW".equals(country)) {
+			return "0";
+		} else if ("CN".equals(country)) {
+			String twhr08 = getSysinitValue(psndoc.getPk_org(), "TWHR08");
+			String twhr09 = getSysinitValue(psndoc.getPk_org(), "TWHR09");
+			UFDouble expireNum = getBaseDocUFDoubleValue(psndoc.getPk_org(), "TWSP0013");
+			String cyear = cyearperiod.substring(0, 4);
+			String cperiod = cyearperiod.substring(5, 6);
+			if (isExpirenew(twhr08, twhr09, expireNum, psndoc, cyear, cperiod)) {
+				return "5";
+			} else {
+				return "3";
+			}
+		} else {
+			String twhr08 = getSysinitValue(psndoc.getPk_org(), "TWHR08");
+			String twhr09 = getSysinitValue(psndoc.getPk_org(), "TWHR09");
+			UFDouble expireNum = getBaseDocUFDoubleValue(psndoc.getPk_org(), "TWSP0013");
+			String cyear = cyearperiod.substring(0, 4);
+			String cperiod = cyearperiod.substring(5, 6);
+			if (isExpirenew(twhr08, twhr09, expireNum, psndoc, cyear, cperiod)) {
+				return "7";
+			} else {
+				return "3";
+			}
+		}
+		/*
+		 * String isForeign = psndoc.getAttributeValue("glbdef7") != null ?
+		 * psndoc.getAttributeValue("glbdef7").toString() : "N";
+		 * 
+		 * if (null == psndoc.getCountry() || "".equals(psndoc.getCountry()) ||
+		 * "0001Z010000000079UJK".equals(psndoc.getCountry())) { if
+		 * ("N".equals(isForeign)) { return "0"; } else { throw new
+		 * BusinessException(ResHelper.getString("incometax",
+		 * "2incometax-n-000051") "人员" + psndoc.getName() + "(" +
+		 * psndoc.getCode() + ResHelper.getString("incometax",
+		 * "2incometax-n-000050") "),证别号错误，请检查！" ); } } else if
+		 * ("0001Z010000000079UJJ".equals(psndoc.getCountry())) { if
+		 * ("N".equals(isForeign)) { throw new
+		 * BusinessException(ResHelper.getString("incometax",
+		 * "2incometax-n-000051") "人员" + psndoc.getName() + "(" +
+		 * psndoc.getCode() + ResHelper.getString("incometax",
+		 * "2incometax-n-000050") "),证别号错误，请检查！" ); } else { String twhr08 =
+		 * getSysinitValue(psndoc.getPk_org(), "TWHR08"); String twhr09 =
+		 * getSysinitValue(psndoc.getPk_org(), "TWHR09"); UFDouble expireNum =
+		 * getBaseDocUFDoubleValue(psndoc.getPk_org(), "TWSP0013"); String cyear
+		 * = cyearperiod.substring(0, 4); String cperiod =
+		 * cyearperiod.substring(5, 6); if (isExpire(twhr08, twhr09, expireNum,
+		 * psndoc, cyear, cperiod)) { return "3"; } else { return "5"; } } }
+		 * else { if ("N".equals(isForeign)) { throw new
+		 * BusinessException(ResHelper.getString("incometax",
+		 * "2incometax-n-000051") "人员" + psndoc.getName() + "(" +
+		 * psndoc.getCode() + ResHelper.getString("incometax",
+		 * "2incometax-n-000050") "),证别号错误，请检查！" ); } else { String twhr08 =
+		 * getSysinitValue(psndoc.getPk_org(), "TWHR08"); String twhr09 =
+		 * getSysinitValue(psndoc.getPk_org(), "TWHR09"); UFDouble expireNum =
+		 * getBaseDocUFDoubleValue(psndoc.getPk_org(), "TWSP0013"); String cyear
+		 * = cyearperiod.substring(0, 4); String cperiod =
+		 * cyearperiod.substring(5, 6); if (isExpire(twhr08, twhr09, expireNum,
+		 * psndoc, cyear, cperiod)) { return "3"; } else { return "7"; } } }
+		 */
+	}
+
+	@Override
+	public void deleteSumIncomeTax(String[] pk_incometax) throws BusinessException {
+		InSQLCreator isc = new InSQLCreator();
+		String inPsndocSql = isc.getInSQL(pk_incometax);
+		// 查询出汇总信息的主表VO
+		String qrySql = "select pk_sumincometax from hrwa_incometaxdetail where pk_incometax in(" + inPsndocSql + ")";
+		List<String> pk_sumincometaxs = (List<String>) getDao().executeQuery(qrySql, new ColumnListProcessor());
+		// 删除汇总信息主表VO
+		if (pk_sumincometaxs != null && pk_sumincometaxs.size() > 0)
+			getDao().deleteByPKs(SumIncomeTaxVO.class, pk_sumincometaxs.toArray(new String[0]));
+		// 删除汇总信息子表VO
+		getDao().deleteByClause(CIncomeTaxVO.class, "pk_incometax in(" + inPsndocSql + ")");
+	}
+
+	@Override
+	public void markIncomeTaxVO(String[] pk_incometax) throws BusinessException {
+		InSQLCreator isc = new InSQLCreator();
+		String inPsndocSql = isc.getInSQL(pk_incometax);
+		String updateQry = "update hrwa_incometax set isdeclare='Y',ts='" + new UFDateTime().toString()
+				+ "' where pk_incometax in(" + inPsndocSql + ") and isnull(dr,0)=0";
+		getDao().executeUpdate(updateQry);
+
+	}
+
+	@Override
+	public void unMarkIncomeTaxVO(String[] pk_incometax) throws BusinessException {
+		InSQLCreator isc = new InSQLCreator();
+		String inPsndocSql = isc.getInSQL(pk_incometax);
+		String updateQry = "update hrwa_incometax set isdeclare='N',ts='" + new UFDateTime().toString()
+				+ "' where pk_incometax in(" + inPsndocSql + ") and isnull(dr,0)=0";
+		getDao().executeUpdate(updateQry);
+
+	}
+
+	@Override
+	public void cancleGather(String[] pk_incometax) throws BusinessException {
+		InSQLCreator isc = new InSQLCreator();
+		String inPsndocSql = isc.getInSQL(pk_incometax);
+		String updateQry = "update hrwa_incometax set isgather='N',ts='" + new UFDateTime().toString()
+				+ "' where pk_incometax in(" + inPsndocSql + ") and isnull(dr,0)=0";
+		getDao().executeUpdate(updateQry);
+
+	}
+
+	@Override
+	public AggSumIncomeTaxVO getAggSumIncomeTaxByIncome(String pk_incometax) throws BusinessException {
+		// 根据申报明细档查询出申报汇总单据主表PK
+		String qrySql = "SELECT pk_sumincometax from hrwa_incometaxdetail where pk_incometax='" + pk_incometax
+				+ "' and isnull(dr,0)=0";
+		Object object = getDao().executeQuery(qrySql, new ColumnProcessor());
+		if (object == null) {
+			return null;
+		}
+		// 查询主表VO
+		SumIncomeTaxVO sumIncomeTaxVO = (SumIncomeTaxVO) getDao().retrieveByPK(SumIncomeTaxVO.class, object.toString());
+		if (sumIncomeTaxVO == null) {
+			return null;
+		}
+		// 查询子表VO
+		Collection<CIncomeTaxVO> incomeTaxVOs = getDao().retrieveByClause(CIncomeTaxVO.class,
+				"pk_sumincometax='" + object.toString() + "' and isnull(dr,0)=0");
+		AggSumIncomeTaxVO aggvo = new AggSumIncomeTaxVO();
+		aggvo.setParentVO(sumIncomeTaxVO);
+		aggvo.setChildrenVO(incomeTaxVOs.toArray(new CIncomeTaxVO[0]));
+		return aggvo;
+	}
+
+	public Map<String, String> getPsnNameByPks(String[] pks) throws BusinessException {
+		InSQLCreator isc = new InSQLCreator();
+		String inPsndocSql = isc.getInSQL(pks);
+		String where = PsndocVO.PK_PSNDOC + " in(" + inPsndocSql + ")";
+		@SuppressWarnings("unchecked")
+		List<PsndocVO> lPsndocVOs = (ArrayList<PsndocVO>) getDao().retrieveByClause(PsndocVO.class, where);
+		Map<String, String> psndocMap = new HashMap<String, String>();
+		for (PsndocVO vo : lPsndocVOs) {
+			if (null == vo.getName2() || "".equals(vo.getName2())) {
+				psndocMap.put(vo.getPk_psndoc(), vo.getName());
+			} else {
+				psndocMap.put(vo.getPk_psndoc(), vo.getName2());
+			}
+		}
+		return psndocMap;
+	}
+
+	public Map<String, String> getWaClassName(String[] pks) throws BusinessException {
+		InSQLCreator isc = new InSQLCreator();
+		String inSql = isc.getInSQL(pks);
+		String qrySql = "select pk_wa_class,name from wa_waclass where pk_wa_class in(" + inSql + ")";
+		@SuppressWarnings("unchecked")
+		List<HashMap<String, Object>> listMaps = (ArrayList<HashMap<String, Object>>) getDao().executeQuery(
+				qrySql.toString(), new MapListProcessor());
+		Map<String, String> map = new HashMap<String, String>();
+		if (listMaps != null && listMaps.size() > 0) {
+			for (int i = 0; i < listMaps.size(); i++) {
+				HashMap<String, Object> hashMap = listMaps.get(i);
+				String pk_wa_class = hashMap.get("pk_wa_class") != null ? hashMap.get("pk_wa_class").toString() : "";
+				String name = hashMap.get("name") != null ? hashMap.get("name").toString() : "";
+				map.put(pk_wa_class, name);
+			}
+		}
+		return map;
+	}
+
+	@Override
+	public AggSumIncomeTaxVO getAggSumIncomeTaxByPK(String pk) throws BusinessException {
+		if (pk == null) {
+			return null;
+		}
+		// 查询主表VO
+		SumIncomeTaxVO sumIncomeTaxVO = (SumIncomeTaxVO) getDao().retrieveByPK(SumIncomeTaxVO.class, pk);
+		if (sumIncomeTaxVO == null) {
+			return null;
+		}
+		// 查询子表VO
+		@SuppressWarnings("unchecked")
+		Collection<CIncomeTaxVO> incomeTaxVOs = getDao().retrieveByClause(CIncomeTaxVO.class,
+				"pk_sumincometax='" + pk + "' and isnull(dr,0)=0");
+		AggSumIncomeTaxVO aggvo = new AggSumIncomeTaxVO();
+		aggvo.setParentVO(sumIncomeTaxVO);
+		aggvo.setChildrenVO(incomeTaxVOs.toArray(new CIncomeTaxVO[0]));
+		return aggvo;
+	}
+
+	@Override
+	public void reloadLocalizationRefs() throws BusinessException {
+		LocalizationSysinitUtil.reloadRefs();
+	}
+
+}
