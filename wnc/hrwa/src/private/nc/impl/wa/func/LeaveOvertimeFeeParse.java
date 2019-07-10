@@ -70,7 +70,7 @@ public class LeaveOvertimeFeeParse extends AbstractPreExcutorFormulaParse {
 		UFLiteralDate startDate = new UFLiteralDate(dateListMap.get(0).get("begindate").toString());
 		UFLiteralDate endDate = new UFLiteralDate(dateListMap.get(0).get("enddate").toString());
 		/* 通过薪资期间获取考勤期间的起止日期 end */
-
+		int intComp = -1;
 		// 分离参数
 		String[] arguments = getArguments(formula.toString());
 		Pattern p = Pattern.compile("\\d");
@@ -102,12 +102,12 @@ public class LeaveOvertimeFeeParse extends AbstractPreExcutorFormulaParse {
 		/* 获取计算人员集合 end */
 
 		int rows = (int) basedao.executeQuery("select count(*) from wa_cacu_overtimefee where pk_wa_class='"
-				+ pk_wa_class + "' and creator='" + this.getContext().getWaLoginVO().getCreator() + "'",
-				new ColumnProcessor());
+				+ pk_wa_class + "' and creator='" + this.getContext().getWaLoginVO().getCreator() + "' and intcomp="
+				+ String.valueOf(intComp), new ColumnProcessor());
 		if (rows == 0) {
 			// 调用接口返回应税或免税加班费
 			ISegDetailService segDetailService = NCLocator.getInstance().lookup(ISegDetailService.class);
-			// TODO 计算加班费,传入分组入口
+			// 计算加班费,传入分组入口
 			/*
 			 * Map<String, UFDouble[]> ovtFeeResult =
 			 * segDetailService.calculateTaxableByDate(pk_org, psndocArr,
@@ -134,41 +134,10 @@ public class LeaveOvertimeFeeParse extends AbstractPreExcutorFormulaParse {
 					updateSql += "amounttaxable";
 				}
 				updateSql += " from wa_cacu_overtimefee where pk_wa_class='" + pk_wa_class + "' and creator='"
-						+ this.getContext().getWaLoginVO().getCreator() + "' and pk_psndoc='" + psndocArr[i]
-						+ "') where pk_wa_class = '" + pk_wa_class + "' and pk_psndoc = '" + psndocArr[i] + "'";
+						+ this.getContext().getWaLoginVO().getCreator() + "' and intcomp=" + String.valueOf(intComp)
+						+ " and pk_psndoc='" + psndocArr[i] + "') where pk_wa_class = '" + pk_wa_class
+						+ "' and pk_psndoc = '" + psndocArr[i] + "'";
 				session.addBatch(updateSql);
-			}
-			session.executeBatch();
-		} catch (DbException e) {
-			e.printStackTrace();
-		} finally {
-			if (sessionManager != null) {
-				sessionManager.release();
-			}
-		}
-	}
-
-	private void writeToTempData(String pk_wa_class, String creator, Map<String, UFDouble[]> ovtFeeResult) {
-		// 批量更新
-		PersistenceManager sessionManager = null;
-		try {
-			sessionManager = PersistenceManager.getInstance();
-			JdbcSession session = sessionManager.getJdbcSession();
-			for (String pk_psndoc : ovtFeeResult.keySet()) {
-				UFDouble amountTaxFree = ovtFeeResult.get(pk_psndoc)[0];
-				UFDouble amountTaxable = ovtFeeResult.get(pk_psndoc)[1];
-				session.addBatch("delete from wa_cacu_overtimefee where pk_wa_class='" + pk_wa_class
-						+ "' and creator='" + creator + "' and pk_psndoc='" + pk_psndoc + "';");
-				session.addBatch("insert into wa_cacu_overtimefee (pk_wa_class, creator, pk_psndoc, amounttaxfree, amounttaxable) values ('"
-						+ pk_wa_class
-						+ "','"
-						+ creator
-						+ "','"
-						+ pk_psndoc
-						+ "',"
-						+ amountTaxFree.toString()
-						+ ","
-						+ amountTaxable.toString() + ");");
 			}
 			session.executeBatch();
 		} catch (DbException e) {

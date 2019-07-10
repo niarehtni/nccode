@@ -1,7 +1,9 @@
 package nc.impl.hrpub.dataexchange.businessprocess;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import nc.bs.framework.common.NCLocator;
 import nc.itf.om.IDeptAdjustService;
@@ -15,6 +17,9 @@ import nc.vo.pub.lang.UFLiteralDate;
 import org.apache.commons.lang.StringUtils;
 
 public class DepartmentHistoryAppendImportExecutor extends DepartmentHistoryImportExecutor {
+	private Map<String, AggHRDeptVO> rowData;
+	private Map<String, String> effData;
+
 	public DepartmentHistoryAppendImportExecutor() throws BusinessException {
 		super();
 	}
@@ -27,8 +32,6 @@ public class DepartmentHistoryAppendImportExecutor extends DepartmentHistoryImpo
 		this.setUniqueCheckExclusiveCondition(" code='$code$' and " + this.getUniqueCheckExtraCondition());
 
 		if (this.getNcValueObjects() != null && this.getNcValueObjects().size() > 0) {
-			IDeptAdjustService deptSvc = NCLocator.getInstance().lookup(IDeptAdjustService.class);
-
 			String rowNo = "";
 			for (Map<String, Object> rowNCMap : this.getNcValueObjects()) {
 				try {
@@ -70,8 +73,9 @@ public class DepartmentHistoryAppendImportExecutor extends DepartmentHistoryImpo
 								+ this.getReservedPropertyName("NEXP_LEVEL"))).trim()));
 
 						aggvo.setParentVO(hrdeptvo);
-						deptSvc.executeDeptVersion(aggvo,
-								new UFLiteralDate(getDateString((String) rowNCMap.get(rowNo + ":effectdate"))));
+
+						rowData.put(rowNo, aggvo);
+						effData.put(rowNo, (String) rowNCMap.get(rowNo + ":effectdate"));
 					}
 
 				} catch (Exception e) {
@@ -83,20 +87,51 @@ public class DepartmentHistoryAppendImportExecutor extends DepartmentHistoryImpo
 
 	@Override
 	public void afterUpdate() throws BusinessException {
-		// TODO 自動產生的方法 Stub
+		IDeptAdjustService deptSvc = NCLocator.getInstance().lookup(IDeptAdjustService.class);
 
+		if (this.getRowData() != null && this.getRowData().size() > 0) {
+			for (Entry<String, AggHRDeptVO> data : this.getRowData().entrySet()) {
+				try {
+					deptSvc.executeDeptVersion(data.getValue(),
+							new UFLiteralDate(getDateString(this.getEffData().get(data.getKey()))));
+				} catch (BusinessException e) {
+					this.getErrorMessages().put(data.getKey(), e.getMessage());
+				}
+			}
+		}
 	}
 
 	@Override
 	public void afterQuery() throws BusinessException {
-		// TODO 自動產生的方法 Stub
 
 	}
 
 	@Override
 	public void doUpdateByBP() throws BusinessException {
-		// TODO 自動產生的方法 Stub
 
+	}
+
+	public Map<String, AggHRDeptVO> getRowData() {
+		if (rowData == null) {
+			rowData = new HashMap<String, AggHRDeptVO>();
+		}
+
+		return rowData;
+	}
+
+	public void setRowData(Map<String, AggHRDeptVO> rowData) {
+		this.rowData = rowData;
+	}
+
+	public Map<String, String> getEffData() {
+		if (this.effData == null) {
+			this.effData = new HashMap<String, String>();
+		}
+		return effData;
+	}
+
+	public void setEffData(Map<String, String> effData) {
+		this.effData = effData;
 	}
 
 }

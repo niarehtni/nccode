@@ -2,6 +2,7 @@ package nc.impl.hrpub.dataexchange.businessprocess;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
@@ -10,13 +11,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import nc.bs.dao.BaseDAO;
 import nc.bs.framework.common.NCLocator;
 import nc.impl.hrpub.MDExchangeServiceImpl;
 import nc.impl.hrpub.dataexchange.DataImportExecutor;
 import nc.itf.hi.IPsndocQryService;
 import nc.itf.hrpub.IDataExchangeExternalExecutor;
+import nc.itf.ta.IPsnCalendarManageService;
 import nc.itf.trn.rds.IRdsManageService;
 import nc.itf.uap.IUAPQueryBS;
+import nc.jdbc.framework.processor.ColumnProcessor;
 import nc.jdbc.framework.processor.MapListProcessor;
 import nc.vo.hi.psndoc.PsnJobVO;
 import nc.vo.hi.psndoc.PsndocAggVO;
@@ -26,6 +30,7 @@ import nc.vo.pub.SuperVO;
 import nc.vo.pub.lang.UFBoolean;
 import nc.vo.pub.lang.UFDateTime;
 import nc.vo.pub.lang.UFLiteralDate;
+import nc.vo.ta.psndoc.TBMPsndocVO;
 
 import org.apache.commons.lang.StringUtils;
 
@@ -33,6 +38,7 @@ public class PsnjobBPImportExecutor extends DataImportExecutor implements IDataE
 
 	private Map<String, PsndocAggVO> rowNCVO;
 	private Map<String, String> rowPsnTypeMap;
+	private BaseDAO baseDao;
 	Map<String, List> upgJsonObjs = new HashMap<String, List>();
 
 	public PsnjobBPImportExecutor() throws BusinessException {
@@ -76,7 +82,12 @@ public class PsnjobBPImportExecutor extends DataImportExecutor implements IDataE
 					PsnJobVO psnjobVO = new PsnJobVO();
 					psnjobVO.setAssgid(psndocVO.getPsnJobVO().getAssgid());
 					psnjobVO.setBegindate(new UFLiteralDate((String) rowNCMap.get(rowNo + ":begindate")));
-					psnjobVO.setClerkcode(psndocVO.getCode());
+
+					psnjobVO.setClerkcode((String) rowNCMap.get(rowNo + ":clerkcode"));
+					if (StringUtils.isEmpty(psnjobVO.getClerkcode())) {
+						throw new BusinessException("员工号不能为空。");
+					}
+
 					if (null == rowNCMap.get(rowNo + ":creationtime")) {
 						psnjobVO.setCreationtime(psndocVO.getCreationtime());
 					} else {
@@ -133,7 +144,7 @@ public class PsnjobBPImportExecutor extends DataImportExecutor implements IDataE
 						psnjobVO.setMemo((String) rowNCMap.get(rowNo + ":memo"));
 					}
 					if (null == rowNCMap.get(rowNo + ":pk_dept")) {
-						psnjobVO.setPk_dept(psndocVO.getPsnJobVO().getPk_dept());
+						throw new BusinessException("部門編碼[NDEPNO]為空或者根據編碼查不到相應部門");
 					} else {
 						psnjobVO.setPk_dept((String) rowNCMap.get(rowNo + ":pk_dept"));
 					}
@@ -192,7 +203,6 @@ public class PsnjobBPImportExecutor extends DataImportExecutor implements IDataE
 
 	@Override
 	public void afterUpdate() throws BusinessException {
-		// TODO 自动生成的方法存根
 
 	}
 
@@ -263,45 +273,106 @@ public class PsnjobBPImportExecutor extends DataImportExecutor implements IDataE
 			for (Entry<String, PsndocAggVO> rowData : rowNCVO.entrySet()) {
 				arraylist.add(rowData.getKey());
 			}
+
+			// MOD by ssx for skip error happened person on 2019-06-14
+			List<String> errPsns = new ArrayList<String>();
+			String pk_psndoc = "";
+			// end
+
 			// 通过日期进行排序
 			ListSort(arraylist);
 			for (String s : arraylist) {
 				try {
-					PsndocAggVO aggVO = this.getMDQueryService().queryPsndocVOByPk(
-							rowNCVO.get(s).getParentVO().getPk_psndoc());
-					PsndocVO psndocVO = aggVO.getParentVO();
-					rowNCVO.get(s).setParentVO(psndocVO);
-					this.getVOSaveService().addPsnjob(rowNCVO.get(s), "hi_psndoc_deptchg", true, this.getPk_org());
+					// MOD by ssx for skip error happened person on 2019-06-14
+					pk_psndoc = rowNCVO.get(s).getParentVO().getPk_psndoc();
+					// end
 
-					if (upgJsonObjs != null && upgJsonObjs.size() > 0) {
-						String classid = (new MDExchangeServiceImpl()).checkExchangeRights(this.getOperationType(),
-								this.getPk_org(), this.getPk_ioschema(), this.getCuserid(), "hi_psndoc_glbdef9");
+					if (!errPsns.contains(pk_psndoc)) {
+						PsndocAggVO aggVO = this.getMDQueryService().queryPsndocVOByPk(
+								rowNCVO.get(s).getParentVO().getPk_psndoc());
+						PsndocVO psndocVO = aggVO.getParentVO();
+						rowNCVO.get(s).setParentVO(psndocVO);
 
-						// 含有晉陞資料
-						PsnInfosetImportExecutor infosetImporter = new PsnInfosetImportExecutor();
-						infosetImporter.setNcEntityName("hi_psndoc_glbdef9");
-						infosetImporter.setJsonValueObjects(upgJsonObjs.get(s.split(":")[0]));
-						infosetImporter.setPk_ioschema(this.getPk_ioschema());
-						infosetImporter.setPk_org(this.getPk_org());
-						infosetImporter.setPk_group(this.getPk_group());
-						infosetImporter.setCuserid(this.getCuserid());
-						infosetImporter.setClassid(classid);
-						infosetImporter.setOperationType(this.getOperationType());
-						infosetImporter.setSessionid(this.getSessionid() + (s.split(":")[0]));
-						infosetImporter.setLanguage(this.getLanguage());
-						infosetImporter.setHoldReservedProperties(false);
-						infosetImporter.setSkipNotExistMapping(true);
-						infosetImporter.execute();
+						PsndocAggVO rtnAggVO = this.getVOSaveService().addPsnjob(rowNCVO.get(s), "hi_psndoc_deptchg",
+								true, this.getPk_org());
 
-						if (infosetImporter.getErrorMessages() != null && infosetImporter.getErrorMessages().size() > 0) {
-							this.getErrorMessages().putAll(infosetImporter.getErrorMessages());
+						setupTeam(rtnAggVO);
+
+						if (upgJsonObjs != null && upgJsonObjs.size() > 0) {
+							String classid = (new MDExchangeServiceImpl()).checkExchangeRights(this.getOperationType(),
+									this.getPk_org(), this.getPk_ioschema(), this.getCuserid(), "hi_psndoc_glbdef9");
+
+							// 含有晉陞資料
+							PsnInfosetImportExecutor infosetImporter = new PsnInfosetImportExecutor();
+							infosetImporter.setNcEntityName("hi_psndoc_glbdef9");
+							infosetImporter.setJsonValueObjects(upgJsonObjs.get(s.split(":")[0]));
+							infosetImporter.setPk_ioschema(this.getPk_ioschema());
+							infosetImporter.setPk_org(this.getPk_org());
+							infosetImporter.setPk_group(this.getPk_group());
+							infosetImporter.setCuserid(this.getCuserid());
+							infosetImporter.setClassid(classid);
+							infosetImporter.setOperationType(this.getOperationType());
+							infosetImporter.setSessionid(this.getSessionid() + (s.split(":")[0]));
+							infosetImporter.setLanguage(this.getLanguage());
+							infosetImporter.setHoldReservedProperties(false);
+							infosetImporter.setSkipNotExistMapping(true);
+							infosetImporter.execute();
+
+							if (infosetImporter.getErrorMessages() != null
+									&& infosetImporter.getErrorMessages().size() > 0) {
+								this.getErrorMessages().putAll(infosetImporter.getErrorMessages());
+							}
 						}
+					} else {
+						throw new BusinessException("該員工前續異動發生錯誤，本次異動被系統忽略。");
 					}
 				} catch (BusinessException e) {
 					this.getErrorMessages().put(s.split(":")[0], e.getMessage());
+
+					// MOD by ssx for skip error happened person on 2019-06-14
+					if (!errPsns.contains(pk_psndoc)) {
+						errPsns.add(pk_psndoc);
+					}
+					// end
 				}
 			}
 		}
+	}
+
+	@SuppressWarnings("unchecked")
+	private void setupTeam(PsndocAggVO psndocAggVO) throws BusinessException {
+		PsnJobVO newPsnJob = psndocAggVO.getParentVO().getPsnJobVO();
+
+		Collection<TBMPsndocVO> tbmVOs = this.getBaseDao().retrieveByClause(TBMPsndocVO.class,
+				"pk_psnjob='" + newPsnJob.getPk_psnjob() + "' and isnull(pk_team, '~')='~'");
+		if (tbmVOs != null && tbmVOs.size() > 0) {
+			TBMPsndocVO psnvo = tbmVOs.toArray(new TBMPsndocVO[0])[0];
+
+			if (psnvo.getPk_team() == null && newPsnJob.getAttributeValue("jobglbdef7") != null) {
+				psnvo.setPk_team((String) newPsnJob.getAttributeValue("jobglbdef7"));
+				this.getBaseDao().updateVO(psnvo);
+
+				// 同步班次
+				((IPsnCalendarManageService) NCLocator.getInstance().lookup(IPsnCalendarManageService.class))
+						.sync2TeamCalendar(
+								this.getPk_org(),
+								(StringUtils.isEmpty(psnvo.getPk_team()) ? null : psnvo.getPk_team()),
+								new String[] { newPsnJob.getPk_psndoc() },
+								newPsnJob.getBegindate(),
+								findEndDate(psnvo.getPk_team(), newPsnJob.getEnddate() == null ? "9999-12-31"
+										: newPsnJob.getEnddate().toString()));
+			}
+		}
+	}
+
+	private UFLiteralDate findEndDate(String cteamid, String psnjobEnddate) throws BusinessException {
+		// 取班组已排班最后一日
+		// 取人员在职日最后一日
+		// 取日期较小的一个
+		String strSQL = "select calendar from tbm_psncalendar where pk_psndoc in (select pk_psndoc from hi_psnjob where pk_psnjob in (select pk_psnjob from bd_team_b where cteamid = '"
+				+ cteamid + "')) and calendar<='" + psnjobEnddate + "' order by calendar desc";
+		String maxDate = (String) this.getBaseDao().executeQuery(strSQL, new ColumnProcessor());
+		return new UFLiteralDate(StringUtils.isEmpty(maxDate) ? psnjobEnddate : maxDate);
 	}
 
 	IRdsManageService voSaveService = null;
@@ -403,5 +474,12 @@ public class PsnjobBPImportExecutor extends DataImportExecutor implements IDataE
 			}
 		}
 		return null;
+	}
+
+	public BaseDAO getBaseDao() {
+		if (baseDao == null) {
+			baseDao = new BaseDAO();
+		}
+		return baseDao;
 	}
 }

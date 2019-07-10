@@ -3,15 +3,18 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 
 import nc.bs.dao.BaseDAO;
 import nc.bs.dao.DAOException;
 import nc.bs.framework.common.NCLocator;
+import nc.bs.twhr.twhr_declaration.ace.bp.AceTwhr_declarationInsertBP;
 import nc.hr.utils.InSQLCreator;
 import nc.impl.pub.ace.AceTwhr_declarationPubServiceImpl;
 import nc.itf.twhr.ITwhr_declarationMaintain;
@@ -25,6 +28,7 @@ import nc.pubitf.twhr.utils.LegalOrgUtilsEX;
 import nc.ui.querytemplate.querytree.IQueryScheme;
 import nc.vo.hi.psndoc.PTCostVO;
 import nc.vo.logging.Debug;
+import nc.vo.org.OrgVO;
 import nc.vo.pub.BusinessException;
 import nc.vo.pub.ISuperVO;
 import nc.vo.pub.SuperVO;
@@ -958,4 +962,68 @@ public class Twhr_declarationMaintainImpl extends AceTwhr_declarationPubServiceI
 		return new UFDouble(f1);
 	}
 
+
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public Object getPkByCode(String code,String flag) throws BusinessException {
+		if(flag==null){
+			return null;
+		}
+		String pk = null;
+		switch (flag) {
+		case "psn":
+			List<Map<String,String>> psn_ret = (List<Map<String, String>>) 
+				this.getBaseDAO().executeQuery("select name,pk_psndoc,id from bd_psndoc where dr = 0", new MapListProcessor());
+			Map<String,String> psnmap = new HashMap<String,String>();
+			for (Map<String,String> map: psn_ret) {
+				psnmap.put(map.get("id"), map.get("pk_psndoc")+"&"+map.get("name"));
+			}
+			return psnmap;
+		case "corp":
+			Collection<OrgVO> vos = (List<OrgVO>) this.getBaseDAO().retrieveByClause(OrgVO.class, " code = '"+code+"'");
+			if(vos==null || vos.size()==0){
+				return null;
+			}
+			return vos.toArray(new OrgVO[0])[0];
+		case "dept":
+			List<Map<String,String>> dept_ret = (List<Map<String, String>>) 
+				this.getBaseDAO().executeQuery("select pk_dept from org_dept where code ='"+code+"'", new MapListProcessor());
+			if(dept_ret == null || dept_ret.size()==0){
+				return null;
+			} else if(dept_ret.get(0)!=null && dept_ret.get(0).get("pk_dept")!=null){
+				pk = dept_ret.get(0).get("pk_dept");
+			}
+			return pk;
+		case "waclass":
+			List<Map<String,String>> wa_ret = (List<Map<String, String>>) 
+				this.getBaseDAO().executeQuery("select pk_wa_class from wa_waclass where code = '"+code+"'", new MapListProcessor());
+			if(wa_ret==null || wa_ret.size()==0){
+				return null;
+			}else if(wa_ret.get(0)!=null && wa_ret.get(0).get("pk_wa_class")!=null){
+				pk = wa_ret.get(0).get("pk_wa_class");
+			}
+			break;
+		case "period":
+			StringBuffer sb = new StringBuffer();
+			sb.append("select pk_wa_period from wa_period per ")
+			  .append(" left join wa_waclass wa on wa.PK_PERIODSCHEME = per.PK_PERIODSCHEME ")
+			  .append(" where per.cyear = '").append(code.substring(0, 4))
+			  .append("' and per.cperiod = '").append(code.substring(4, 6))
+			  .append("' and wa.code = '").append(code.substring(6))
+			  .append("'");
+			List<Map<String,String>> period_ret = (List<Map<String, String>>) 
+					this.getBaseDAO().executeQuery(sb.toString(), new MapListProcessor());
+			if(period_ret==null || period_ret.size()==0){
+				return null;
+			}else if(period_ret.get(0)!=null && period_ret.get(0).get("pk_wa_period")!=null){
+				pk = period_ret.get(0).get("pk_wa_period");
+			}
+			break;
+		default:
+			break;
+		}
+		return pk;
+	}
+	
 }

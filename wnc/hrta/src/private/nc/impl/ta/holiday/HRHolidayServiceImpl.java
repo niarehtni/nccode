@@ -999,8 +999,12 @@ public class HRHolidayServiceImpl implements IHRHolidayManageService,
 								// copyMap.putAll(mapForReturn.get(entry.getKey()));
 								// 将班组工作日历节点修改过的日期类型存入
 								// mapForReturn.put(entry.getKey(), copyMap);
-								mapForReturn.get(entry.getKey()).put(entryInside.getKey(),
-										resultPackage.get(entryInside.getKey()).get(entry.getKey()));
+								//如果是假日，那麼按假日算   wangywt  20190625 begin
+//								if(entryInside.getValue()!=2){
+									mapForReturn.get(entry.getKey()).put(entryInside.getKey(),
+											resultPackage.get(entryInside.getKey()).get(entry.getKey()));
+//								}
+								//如果是假日，那麼按假日算   wangywt  20190625 end
 							}
 						}
 					}

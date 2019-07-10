@@ -129,10 +129,10 @@ public class LeaveLeaveFeeParse extends AbstractPreExcutorFormulaParse {
 		// 获取休假(请假)时长 假设每人每天每个休假类别 一条数据 此处后期完善 mark
 		InSQLCreator isc = new InSQLCreator();
 		String inSql = isc.getInSQL(psndocArr);
-		String queryHourSql = "select tbm_leavereg.pk_psndoc as pcsndoc,tbm_leavereg.leavebegindate as begindate,sum(tbm_leavereg.leavehour) as leavehour from tbm_leavereg,tbm_period where tbm_period.accyear='"
-				+ caccyear
-				+ "' and tbm_period.accmonth='"
-				+ cperiod
+		String queryHourSql = "select tbm_leavereg.pk_psndoc as pcsndoc,tbm_leavereg.leavebegindate as begindate,sum(tbm_leavereg.leavehour) as leavehour from tbm_leavereg,tbm_period where tbm_leavereg.leavebegindate >='"
+				+ startDate
+				+ "' and tbm_leavereg.leavebegindate <='"
+				+ endDate
 				+ "' and tbm_period.pk_org='"
 				+ pk_org
 				+ "' "

@@ -108,17 +108,19 @@ public class CheckVersionErrorAction extends HrAction {
 	}
 
 	private boolean checkVList(List<DeptVersionVO> vlist, Map<String, String> errorDept) {
+		boolean notCoverted = true;
 		if (vlist != null && vlist.size() > 0) {
 			for (int i = 0; i < vlist.size() - 1; i++) {
 				for (int j = i + 1; j < vlist.size(); j++) {
 					if (timeCovered(vlist.get(i), vlist.get(j))) {
 						errorDept.put(vlist.get(i).getPk_dept(), "°æ±¾ [" + vlist.get(i).getVno() + "] - °æ±¾ ["
 								+ vlist.get(j).getVno() + "]");
+						notCoverted = false;
 					}
 				}
 			}
 		}
-		return true;
+		return notCoverted;
 	}
 
 	private boolean timeCovered(DeptVersionVO dv1, DeptVersionVO dv2) {

@@ -1,16 +1,10 @@
 package nc.bs.hrjf.deptadj.ace.bp;
 
-import nc.bs.framework.common.NCLocator;
 import nc.bs.hrjf.deptadj.plugin.bpplugin.DeptadjPluginPoint;
 import nc.impl.pubapp.pattern.data.bill.template.UpdateBPTemplate;
-import nc.impl.pubapp.pattern.rule.processer.CompareAroundProcesser;
 import nc.impl.pubapp.pattern.rule.IRule;
-import nc.itf.om.IDeptAdjustService;
-import nc.vo.logging.Debug;
+import nc.impl.pubapp.pattern.rule.processer.CompareAroundProcesser;
 import nc.vo.om.hrdept.AggHRDeptAdjustVO;
-import nc.vo.om.hrdept.HRDeptAdjustVO;
-import nc.vo.pub.BusinessException;
-import nc.vo.pub.lang.UFLiteralDate;
 
 /**
  * 修改保存的BP
@@ -18,31 +12,32 @@ import nc.vo.pub.lang.UFLiteralDate;
  */
 public class AceDeptadjUpdateBP {
 
-	public AggHRDeptAdjustVO[] update(AggHRDeptAdjustVO[] bills,
-			AggHRDeptAdjustVO[] originBills) {
+	public AggHRDeptAdjustVO[] update(AggHRDeptAdjustVO[] bills, AggHRDeptAdjustVO[] originBills) {
 		// 调用修改模板
-		UpdateBPTemplate<AggHRDeptAdjustVO> bp = new UpdateBPTemplate<AggHRDeptAdjustVO>(
-				DeptadjPluginPoint.UPDATE);
+		UpdateBPTemplate<AggHRDeptAdjustVO> bp = new UpdateBPTemplate<AggHRDeptAdjustVO>(DeptadjPluginPoint.UPDATE);
 		// 执行前规则
 		this.addBeforeRule(bp.getAroundProcesser());
 		// 执行后规则
 		this.addAfterRule(bp.getAroundProcesser());
 		AggHRDeptAdjustVO[] results = bp.update(bills, originBills);
-		HRDeptAdjustVO[] vos = new HRDeptAdjustVO[results.length];
-		for (int i = 0;i<results.length;i++) {
-			if(results[i]==null){
-				continue;
-			}
-			vos[i]= results[i].getParentVO();
-		}
-		// 如果生效日期为当前日期,则立即生效
-		try {
-			NCLocator.getInstance().lookup(IDeptAdjustService.class)
-					.executeDeptVersion(vos,new UFLiteralDate());
-		} catch (BusinessException e) {
-			Debug.debug(e.getMessage());
-			e.printStackTrace();
-		}
+
+		// MOD by ssx for cancel auto execute after save on 2019-07-04
+		// HRDeptAdjustVO[] vos = new HRDeptAdjustVO[results.length];
+		// for (int i = 0;i<results.length;i++) {
+		// if(results[i]==null){
+		// continue;
+		// }
+		// vos[i]= results[i].getParentVO();
+		// }
+		// // 如果生效日期为当前日期,则立即生效
+		// try {
+		// NCLocator.getInstance().lookup(IDeptAdjustService.class)
+		// .executeDeptVersion(vos,new UFLiteralDate());
+		// } catch (BusinessException e) {
+		// Debug.debug(e.getMessage());
+		// e.printStackTrace();
+		// }
+		// end
 		return results;
 	}
 

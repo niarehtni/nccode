@@ -1,6 +1,5 @@
 package nc.ui.hrjf.deptadj.ace.handler;
 
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -28,6 +27,8 @@ import nc.vo.pub.lang.MultiLangText;
 import nc.vo.pub.lang.UFBoolean;
 import nc.vo.pub.lang.UFLiteralDate;
 
+import org.apache.commons.lang.StringUtils;
+
 public class BillFormEditor extends ShowUpableBillForm implements BillCardBeforeEditListener {
 	private int selectedRow = 0;
 
@@ -35,7 +36,7 @@ public class BillFormEditor extends ShowUpableBillForm implements BillCardBefore
 	public void initUI() {
 		super.initUI();
 		if (isShowOrgPanel()) {
-			//this.getBillOrgPanel().setPkOrg("0001A110000000000XBZ");
+			// this.getBillOrgPanel().setPkOrg("0001A110000000000XBZ");
 			add(getBillOrgPanel(), "North");
 
 			setRequestFocus(false);
@@ -104,6 +105,7 @@ public class BillFormEditor extends ShowUpableBillForm implements BillCardBefore
 		return true;
 	}
 
+	@SuppressWarnings("unchecked")
 	private void afterHeadChange(BillEditEvent evt) {
 		// TODO Auto-generated method stub
 		String message = null;
@@ -112,292 +114,390 @@ public class BillFormEditor extends ShowUpableBillForm implements BillCardBefore
 		if ("effectivedate".equals(evt.getKey())) {
 			String pk_dept = (String) getHeadItemValue("pk_dept");
 			if (null != pk_dept) {/*
-				HRDeptAdjustVO deptadjvo = new HRDeptAdjustVO();
-				deptadjvo.setPk_dept(pk_dept);
-				deptadjvo.setEffectivedate(new UFLiteralDate((String.valueOf(evt.getValue()))));
-				deptadjvo.setPk_deptadj((String) getHeadItemValue("pk_deptadj"));
-				// 调用接口
-				IUAPQueryBS iUAPQueryBS = (IUAPQueryBS) NCLocator.getInstance().lookup(IUAPQueryBS.class.getName());
-				IDeptAdjustService managequery = NCLocator.getInstance().lookup(IDeptAdjustService.class);
-				try {
-					UFBoolean deptflag = managequery.validateDept(deptadjvo);
-					UFBoolean psnflag = managequery.validatePsn(deptadjvo);
-				} catch (BusinessException e) {
-					message = e.getMessage();
-					try {
-						throw new BusinessException(e.getMessage());
-					} catch (BusinessException e1) {
-
-						e1.printStackTrace();
-					}
-					setHeadItemValue("effectivedate",null);
-				}
-				IDeptAdjustService managedept = NCLocator.getInstance().lookup(IDeptAdjustService.class);
-				String pk_dept_v = managedept.queryLastDeptByPk(pk_dept);
-				if (null == message) {
-					try {
-						List<Map<String, String>> deptlists = (List<Map<String, String>>) iUAPQueryBS
-								.executeQuery(
-										"select islastversion, address,memo, orgtype17,tel, dataoriginflag,orgtype13, displayorder, enablestate, deptcanceldate, hrcanceled, deptduty,createdate, deptlevel, "
-												+ "pk_group, pk_org,depttype, innercode, code,name,name2,name3,pk_fatherorg,mnecode,"
-												+ "displayorder,principal, pk_vid from "
-												+ "org_dept_v where pk_dept='"
-												+ pk_dept + "' and dr=0", new MapListProcessor());
-						String pk_org = null;
-						for (Map<String, String> map : deptlists) {
-							if (map.get("pk_vid").equals(pk_dept_v)) {
-								//多语处理完善 王永文 20190501 begin
-								MultiLangText multiLangText = new MultiLangText();
-								multiLangText.setText(map.get("name"));
-								multiLangText.setText2(map.get("name2"));
-								multiLangText.setText3(map.get("name3"));
-								//多语处理完善 王永文 20190501 begin
-								pk_org = map.get("pk_org");
-								setHeadItemValue("code", map.get("code"));
-								setHeadItemValue("name", multiLangText);
-								setHeadItemValue("pk_fatherorg", map.get("pk_fatherorg"));
-								setHeadItemValue("shortname", map.get("shortname"));
-								setHeadItemValue("mnecode", map.get("mnecode"));
-								setHeadItemValue("displayorder", map.get("displayorder"));
-								setHeadItemValue("principal", map.get("principal"));
-								setHeadItemValue("pk_dept_v", String.valueOf(map.get("pk_vid")));
-								setHeadItemValue("iseffective", UFBoolean.FALSE);
-								setHeadItemValue("innercode", map.get("innercode"));
-								setHeadItemValue("pk_dept_v", map.get("pk_vid"));
-								setHeadItemValue("pk_group", map.get("pk_group"));
-								setHeadItemValue("pk_org", map.get("pk_org"));
-								setHeadItemValue("depttype", map.get("depttype"));
-								setHeadItemValue("deptlevel", map.get("deptlevel"));
-								setHeadItemValue("deptduty", map.get("deptduty"));
-								setHeadItemValue("createdate", map.get("createdate"));
-								setHeadItemValue("hrcanceled", UFBoolean.FALSE);
-								setHeadItemValue("deptcanceldate", map.get("deptcanceldate"));
-								setHeadItemValue("enablestate", map.get("enablestate"));
-								setHeadItemValue("displayorder", map.get("displayorder"));
-								setHeadItemValue("dataoriginflag", map.get("dataoriginflag"));
-								setHeadItemValue("orgtype13", map.get("orgtype13"));
-								setHeadItemValue("orgtype17", map.get("orgtype17"));
-								setHeadItemValue("tel", map.get("tel"));
-								setHeadItemValue("address", map.get("address"));
-								setHeadItemValue("memo", map.get("memo"));
-								setHeadItemValue("islastversion", UFBoolean.TRUE);
-								//查询上级部门的编码
-								//修改后部门
-								setHeadItemValue("pk_fatherorg.code", getDeptCodeByPkDept(getHeadItemValue("pk_fatherorg")));
-								//修改前部门
-								setHeadItemValue("pk_dept.pk_fatherorg.code", getDeptCodeByPkDept(getHeadItemValue("pk_dept.pk_fatherorg")));
-								// setHeadItemValue("pk_org_v",
-								// map.get("pk_org_v"));
-							}
-						}
-						if (null != pk_org) {
-							List<Map<String, String>> deptlist = null;
-
-							deptlist = (List<Map<String, String>>) iUAPQueryBS.executeQuery(
-									"select pk_vid from org_orgs where pk_org='" + pk_org + "' and dr=0",
-									new MapListProcessor());
-							if (deptlist != null) {
-								for (Map<String, String> map : deptlist) {
-									map.get("pk_vid");
-									setHeadItemValue("pk_org_v", map.get("pk_vid"));
-								}
-							}
-						}
-					} catch (BusinessException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-				} else {
-					setItemValueAndEnable("code", getHeadItemValue("code"), false);
-					setItemValueAndEnable("name", getHeadItemValue("name"), false);
-					setItemValueAndEnable("pk_fatherorg", getHeadItemValue("pk_fatherorg"), false);
-					setItemValueAndEnable("shortname", getHeadItemValue("shortname"), false);
-					setItemValueAndEnable("mnecode", getHeadItemValue("mnecode"), false);
-					setItemValueAndEnable("displayorder", getHeadItemValue("displayorder"), false);
-					setItemValueAndEnable("principal", getHeadItemValue("principal"), false);
-					setItemValueAndEnable("depttype", getHeadItemValue("depttype"), false);
-					setItemValueAndEnable("deptlevel", getHeadItemValue("deptlevel"), false);
-					setItemValueAndEnable("deptduty", getHeadItemValue("deptduty"), false);
-					setItemValueAndEnable("createdate", getHeadItemValue("createdate"), false);
-					setItemValueAndEnable("hrcanceled", getHeadItemValue("hrcanceled"), false);
-					setItemValueAndEnable("deptcanceldate", getHeadItemValue("deptcanceldate"), false);
-					setItemValueAndEnable("orgtype13", getHeadItemValue("orgtype13"), false);
-					setItemValueAndEnable("orgtype17", getHeadItemValue("orgtype17"), false);
-					setItemValueAndEnable("tel", getHeadItemValue("tel"), false);
-					setItemValueAndEnable("address", getHeadItemValue("address"), false);
-					setItemValueAndEnable("memo", getHeadItemValue("memo"), false);
-					//查询上级部门的编码
-					//修改后部门
-					setHeadItemValue("pk_fatherorg.code", getDeptCodeByPkDept(getHeadItemValue("pk_fatherorg")));
-					//修改前部门
-					setHeadItemValue("pk_dept.pk_fatherorg.code", getDeptCodeByPkDept(getHeadItemValue("pk_dept.pk_fatherorg")));
-					
-					MessageDialog.showErrorDlg(getParent(), "报错信息", message);
-					return;
-				}
-			*/}
+								 * HRDeptAdjustVO deptadjvo = new
+								 * HRDeptAdjustVO();
+								 * deptadjvo.setPk_dept(pk_dept);
+								 * deptadjvo.setEffectivedate(new
+								 * UFLiteralDate((
+								 * String.valueOf(evt.getValue()))));
+								 * deptadjvo.setPk_deptadj((String)
+								 * getHeadItemValue("pk_deptadj")); // 调用接口
+								 * IUAPQueryBS iUAPQueryBS = (IUAPQueryBS)
+								 * NCLocator
+								 * .getInstance().lookup(IUAPQueryBS.class
+								 * .getName()); IDeptAdjustService managequery =
+								 * NCLocator
+								 * .getInstance().lookup(IDeptAdjustService
+								 * .class); try { UFBoolean deptflag =
+								 * managequery.validateDept(deptadjvo);
+								 * UFBoolean psnflag =
+								 * managequery.validatePsn(deptadjvo); } catch
+								 * (BusinessException e) { message =
+								 * e.getMessage(); try { throw new
+								 * BusinessException(e.getMessage()); } catch
+								 * (BusinessException e1) {
+								 * 
+								 * e1.printStackTrace(); }
+								 * setHeadItemValue("effectivedate",null); }
+								 * IDeptAdjustService managedept =
+								 * NCLocator.getInstance
+								 * ().lookup(IDeptAdjustService.class); String
+								 * pk_dept_v =
+								 * managedept.queryLastDeptByPk(pk_dept); if
+								 * (null == message) { try { List<Map<String,
+								 * String>> deptlists = (List<Map<String,
+								 * String>>) iUAPQueryBS .executeQuery(
+								 * "select islastversion, address,memo, orgtype17,tel, dataoriginflag,orgtype13, displayorder, enablestate, deptcanceldate, hrcanceled, deptduty,createdate, deptlevel, "
+								 * +
+								 * "pk_group, pk_org,depttype, innercode, code,name,name2,name3,pk_fatherorg,mnecode,"
+								 * + "displayorder,principal, pk_vid from " +
+								 * "org_dept_v where pk_dept='" + pk_dept +
+								 * "' and dr=0", new MapListProcessor()); String
+								 * pk_org = null; for (Map<String, String> map :
+								 * deptlists) { if
+								 * (map.get("pk_vid").equals(pk_dept_v)) {
+								 * //多语处理完善 王永文 20190501 begin MultiLangText
+								 * multiLangText = new MultiLangText();
+								 * multiLangText.setText(map.get("name"));
+								 * multiLangText.setText2(map.get("name2"));
+								 * multiLangText.setText3(map.get("name3"));
+								 * //多语处理完善 王永文 20190501 begin pk_org =
+								 * map.get("pk_org"); setHeadItemValue("code",
+								 * map.get("code")); setHeadItemValue("name",
+								 * multiLangText);
+								 * setHeadItemValue("pk_fatherorg",
+								 * map.get("pk_fatherorg"));
+								 * setHeadItemValue("shortname",
+								 * map.get("shortname"));
+								 * setHeadItemValue("mnecode",
+								 * map.get("mnecode"));
+								 * setHeadItemValue("displayorder",
+								 * map.get("displayorder"));
+								 * setHeadItemValue("principal",
+								 * map.get("principal"));
+								 * setHeadItemValue("pk_dept_v",
+								 * String.valueOf(map.get("pk_vid")));
+								 * setHeadItemValue("iseffective",
+								 * UFBoolean.FALSE);
+								 * setHeadItemValue("innercode",
+								 * map.get("innercode"));
+								 * setHeadItemValue("pk_dept_v",
+								 * map.get("pk_vid"));
+								 * setHeadItemValue("pk_group",
+								 * map.get("pk_group"));
+								 * setHeadItemValue("pk_org",
+								 * map.get("pk_org"));
+								 * setHeadItemValue("depttype",
+								 * map.get("depttype"));
+								 * setHeadItemValue("deptlevel",
+								 * map.get("deptlevel"));
+								 * setHeadItemValue("deptduty",
+								 * map.get("deptduty"));
+								 * setHeadItemValue("createdate",
+								 * map.get("createdate"));
+								 * setHeadItemValue("hrcanceled",
+								 * UFBoolean.FALSE);
+								 * setHeadItemValue("deptcanceldate",
+								 * map.get("deptcanceldate"));
+								 * setHeadItemValue("enablestate",
+								 * map.get("enablestate"));
+								 * setHeadItemValue("displayorder",
+								 * map.get("displayorder"));
+								 * setHeadItemValue("dataoriginflag",
+								 * map.get("dataoriginflag"));
+								 * setHeadItemValue("orgtype13",
+								 * map.get("orgtype13"));
+								 * setHeadItemValue("orgtype17",
+								 * map.get("orgtype17"));
+								 * setHeadItemValue("tel", map.get("tel"));
+								 * setHeadItemValue("address",
+								 * map.get("address")); setHeadItemValue("memo",
+								 * map.get("memo"));
+								 * setHeadItemValue("islastversion",
+								 * UFBoolean.TRUE); //查询上级部门的编码 //修改后部门
+								 * setHeadItemValue("pk_fatherorg.code",
+								 * getDeptCodeByPkDept
+								 * (getHeadItemValue("pk_fatherorg"))); //修改前部门
+								 * setHeadItemValue("pk_dept.pk_fatherorg.code",
+								 * getDeptCodeByPkDept
+								 * (getHeadItemValue("pk_dept.pk_fatherorg")));
+								 * // setHeadItemValue("pk_org_v", //
+								 * map.get("pk_org_v")); } } if (null != pk_org)
+								 * { List<Map<String, String>> deptlist = null;
+								 * 
+								 * deptlist = (List<Map<String, String>>)
+								 * iUAPQueryBS.executeQuery(
+								 * "select pk_vid from org_orgs where pk_org='"
+								 * + pk_org + "' and dr=0", new
+								 * MapListProcessor()); if (deptlist != null) {
+								 * for (Map<String, String> map : deptlist) {
+								 * map.get("pk_vid");
+								 * setHeadItemValue("pk_org_v",
+								 * map.get("pk_vid")); } } } } catch
+								 * (BusinessException e) { // TODO
+								 * Auto-generated catch block
+								 * e.printStackTrace(); } } else {
+								 * setItemValueAndEnable("code",
+								 * getHeadItemValue("code"), false);
+								 * setItemValueAndEnable("name",
+								 * getHeadItemValue("name"), false);
+								 * setItemValueAndEnable("pk_fatherorg",
+								 * getHeadItemValue("pk_fatherorg"), false);
+								 * setItemValueAndEnable("shortname",
+								 * getHeadItemValue("shortname"), false);
+								 * setItemValueAndEnable("mnecode",
+								 * getHeadItemValue("mnecode"), false);
+								 * setItemValueAndEnable("displayorder",
+								 * getHeadItemValue("displayorder"), false);
+								 * setItemValueAndEnable("principal",
+								 * getHeadItemValue("principal"), false);
+								 * setItemValueAndEnable("depttype",
+								 * getHeadItemValue("depttype"), false);
+								 * setItemValueAndEnable("deptlevel",
+								 * getHeadItemValue("deptlevel"), false);
+								 * setItemValueAndEnable("deptduty",
+								 * getHeadItemValue("deptduty"), false);
+								 * setItemValueAndEnable("createdate",
+								 * getHeadItemValue("createdate"), false);
+								 * setItemValueAndEnable("hrcanceled",
+								 * getHeadItemValue("hrcanceled"), false);
+								 * setItemValueAndEnable("deptcanceldate",
+								 * getHeadItemValue("deptcanceldate"), false);
+								 * setItemValueAndEnable("orgtype13",
+								 * getHeadItemValue("orgtype13"), false);
+								 * setItemValueAndEnable("orgtype17",
+								 * getHeadItemValue("orgtype17"), false);
+								 * setItemValueAndEnable("tel",
+								 * getHeadItemValue("tel"), false);
+								 * setItemValueAndEnable("address",
+								 * getHeadItemValue("address"), false);
+								 * setItemValueAndEnable("memo",
+								 * getHeadItemValue("memo"), false); //查询上级部门的编码
+								 * //修改后部门 setHeadItemValue("pk_fatherorg.code",
+								 * getDeptCodeByPkDept
+								 * (getHeadItemValue("pk_fatherorg"))); //修改前部门
+								 * setHeadItemValue("pk_dept.pk_fatherorg.code",
+								 * getDeptCodeByPkDept
+								 * (getHeadItemValue("pk_dept.pk_fatherorg")));
+								 * 
+								 * MessageDialog.showErrorDlg(getParent(),
+								 * "报错信息", message); return; }
+								 */
+			}
 		} else if ("pk_dept".equals(evt.getKey())) {
 			IUAPQueryBS iUAPQueryBS = (IUAPQueryBS) NCLocator.getInstance().lookup(IUAPQueryBS.class.getName());
-			String effectivedate = getHeadItemValue("effectivedate")==null?null:String.valueOf(getHeadItemValue("effectivedate"));
-//			if (null != effectivedate) {
-				String pk_dept = String.valueOf(getStrValue(evt.getValue()));
-				HRDeptAdjustVO deptadjvo = new HRDeptAdjustVO();
-				deptadjvo.setPk_dept(pk_dept);
-				deptadjvo.setPk_deptadj((String) getHeadItemValue("pk_deptadj"));
-				if(effectivedate == null){
-					effectivedate = new UFLiteralDate().toString();
-				}
-				deptadjvo.setEffectivedate(new UFLiteralDate(String.valueOf(effectivedate)));
-				// 调用接口
-				IDeptAdjustService managequery = NCLocator.getInstance().lookup(IDeptAdjustService.class);
-				String messages = null;
+			String effectivedate = getHeadItemValue("effectivedate") == null ? null : String
+					.valueOf(getHeadItemValue("effectivedate"));
+			// if (null != effectivedate) {
+			String pk_dept = String.valueOf(getStrValue(evt.getValue()));
+			HRDeptAdjustVO deptadjvo = new HRDeptAdjustVO();
+			deptadjvo.setPk_dept(pk_dept);
+			deptadjvo.setPk_deptadj((String) getHeadItemValue("pk_deptadj"));
+			if (effectivedate == null) {
+				effectivedate = new UFLiteralDate().toString();
+			}
+			deptadjvo.setEffectivedate(new UFLiteralDate(String.valueOf(effectivedate)));
+			// 调用接口
+			IDeptAdjustService managequery = NCLocator.getInstance().lookup(IDeptAdjustService.class);
+			String messages = null;
+			try {
+				managequery.validateDept(deptadjvo);
+				managequery.validatePsn(deptadjvo);
+			} catch (BusinessException e) {
+				messages = e.getMessage();
+				setHeadItemValue("pk_dept", null);
 				try {
-					UFBoolean deptflag = managequery.validateDept(deptadjvo);
-					UFBoolean psnflag = managequery.validatePsn(deptadjvo);
-				} catch (BusinessException e) {
-					messages = e.getMessage();
-					setHeadItemValue("pk_dept",null);
-					try {
-						throw new BusinessException(e.getMessage());
-					} catch (BusinessException e1) {
-						// TODO Auto-generated catch block
-						e1.printStackTrace();
-					}
+					throw new BusinessException(e.getMessage());
+				} catch (BusinessException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
 				}
-				if (null == messages) {
-					List<Map<String, String>> deptlists = null;
-					try {
-						IDeptAdjustService managedept = NCLocator.getInstance().lookup(IDeptAdjustService.class);
-						String pk_dept_v = managedept.queryLastDeptByPk(pk_dept);
-						deptlists = (List<Map<String, String>>) iUAPQueryBS
-								.executeQuery(
-										"select islastversion, address,memo, orgtype17,tel, dataoriginflag,orgtype13, displayorder,"
-												+" enablestate, deptcanceldate, hrcanceled, deptduty,createdate, deptlevel, "
-												+ "pk_group, pk_org,depttype, innercode, code,name,name2,name3,pk_fatherorg,mnecode,"
-												+ "glbdef11,glbdef3,displayorder,principal, pk_vid from "
-												+ "org_dept_v where pk_vid='"
-												+ pk_dept_v + "' and dr=0", new MapListProcessor());
-						String pk_org = null;
-						if (deptlists == null) {
-							return;
-						}
-						for (Map<String, String> map : deptlists) {
-							if (map.get("pk_vid").equals(pk_dept_v)) {
-								//多语处理完善 王永文 20190501 begin
-								MultiLangText multiLangText = new MultiLangText();
-								multiLangText.setText(map.get("name"));
-								multiLangText.setText2(map.get("name2"));
-								multiLangText.setText3(map.get("name3"));
-								//多语处理完善 王永文 20190501 end
-								pk_org = map.get("pk_org");
-								setHeadItemValue("pk_dept_v.code", map.get("code"));
-								setHeadItemValue("code", map.get("code"));
-								setHeadItemValue("pk_dept_v.name", multiLangText);
-								setHeadItemValue("name", multiLangText);
-								setHeadItemValue("name3", map.get("name3"));
-								setHeadItemValue("deptname3", map.get("name3"));
-								setHeadItemValue("pk_dept_v.pk_fatherorg", map.get("pk_fatherorg"));
-								setHeadItemValue("pk_fatherorg", map.get("pk_fatherorg"));
-								setHeadItemValue("pk_dept_v.shortname", map.get("shortname"));
-								setHeadItemValue("pk_dept_v.mnecode", map.get("mnecode"));
-								setHeadItemValue("pk_dept_v.glbdef11", map.get("glbdef11"));
-								setHeadItemValue("glbdef11", map.get("glbdef11"));
-								setHeadItemValue("pk_dept_v.glbdef3", map.get("glbdef3"));
-								setHeadItemValue("glbdef3", map.get("glbdef3"));
-								setHeadItemValue("pk_dept_v.principal", map.get("principal"));
-								setHeadItemValue("principal", map.get("principal"));
-								setHeadItemValue("pk_dept_v", String.valueOf(map.get("pk_vid")));
-								setHeadItemValue("iseffective", UFBoolean.FALSE);
-								setHeadItemValue("innercode", map.get("innercode"));
-								setHeadItemValue("pk_dept_v", map.get("pk_vid"));
-								setHeadItemValue("pk_group", map.get("pk_group"));
-								setHeadItemValue("pk_org", map.get("pk_org"));
-								setHeadItemValue("depttype", map.get("depttype"));
-								setHeadItemValue("deptlevel", map.get("deptlevel"));
-								setHeadItemValue("deptduty", map.get("deptduty"));
-								setHeadItemValue("createdate", map.get("createdate"));
-								setHeadItemValue("hrcanceled", UFBoolean.FALSE);
-								setHeadItemValue("deptcanceldate", map.get("deptcanceldate"));
-								setHeadItemValue("enablestate", map.get("enablestate"));
-								setHeadItemValue("displayorder", map.get("displayorder"));
-								setHeadItemValue("dataoriginflag", map.get("dataoriginflag"));
-								setHeadItemValue("orgtype13", map.get("orgtype13"));
-								setHeadItemValue("orgtype17", map.get("orgtype17"));
-								setHeadItemValue("tel", map.get("tel"));
-								setHeadItemValue("address", map.get("address"));
-								setHeadItemValue("memo", map.get("memo"));
-								setHeadItemValue("islastversion", UFBoolean.TRUE);
-								//查询上级部门的编码
-								//修改后部门
-								setHeadItemValue("pk_fatherorg.code", getDeptCodeByPkDept(getHeadItemValue("pk_fatherorg")));
-								//修改前部门
-								setHeadItemValue("pk_dept_v.pk_fatherorg.code", getDeptCodeByPkDept(getHeadItemValue("pk_dept_v.pk_fatherorg")));
-								
-							}
-						}
-						if (null != pk_org) {
-							List<Map<String, String>> deptlist;
-							deptlist = (List<Map<String, String>>) iUAPQueryBS.executeQuery(
-									"select pk_vid from org_orgs where pk_org='" + pk_org + "' and dr=0",
+			}
+			if (StringUtils.isEmpty(messages)) {
+				List<Map<String, String>> deptlists = null;
+				try {
+					IDeptAdjustService managedept = NCLocator.getInstance().lookup(IDeptAdjustService.class);
+					String pk_dept_v = managedept.queryLastDeptByPk(pk_dept);
+					deptlists = (List<Map<String, String>>) iUAPQueryBS
+							.executeQuery(
+									"select islastversion, address,memo, orgtype17,tel, dataoriginflag,orgtype13, displayorder,"
+											+ " enablestate, deptcanceldate, hrcanceled, deptduty,createdate, deptlevel, "
+											+ "pk_group, pk_org,depttype, innercode, code,name,name2,name3,pk_fatherorg,mnecode,"
+											+ "glbdef11,glbdef3,displayorder,principal, pk_vid from "
+											+ "org_dept_v where pk_vid='" + pk_dept_v + "' and dr=0",
 									new MapListProcessor());
-							for (Map<String, String> map : deptlist) {
-								map.get("pk_vid");
-								setHeadItemValue("pk_org_v", map.get("pk_vid"));
-							}
-						}
-					} catch (BusinessException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
+					String pk_org = null;
+					if (deptlists == null || deptlists.size() == 0) {
+						// 多语处理完善 王永文 20190501 begin
+						MultiLangText multiLangText = new MultiLangText();
+						multiLangText.setText(null);
+						multiLangText.setText2(null);
+						multiLangText.setText3(null);
+						// 多语处理完善 王永文 20190501 end
+						setHeadItemValue("pk_dept_v.code", null);
+						setHeadItemValue("code", null);
+						setHeadItemValue("pk_dept_v.name", multiLangText);
+						setHeadItemValue("name", multiLangText);
+						setHeadItemValue("name3", null);
+						setHeadItemValue("deptname3", null);
+						setHeadItemValue("pk_dept_v.pk_fatherorg", null);
+						setHeadItemValue("pk_fatherorg", null);
+						setHeadItemValue("pk_dept_v.shortname", null);
+						setHeadItemValue("pk_dept_v.mnecode", null);
+						setHeadItemValue("pk_dept_v.glbdef11", null);
+						setHeadItemValue("glbdef11", null);
+						setHeadItemValue("pk_dept_v.glbdef3", null);
+						setHeadItemValue("glbdef3", null);
+						setHeadItemValue("pk_dept_v.principal", null);
+						setHeadItemValue("principal", null);
+						setHeadItemValue("pk_dept_v", null);
+						setHeadItemValue("iseffective", UFBoolean.FALSE);
+						setHeadItemValue("innercode", null);
+						setHeadItemValue("pk_dept_v", null);
+						setHeadItemValue("pk_group", null);
+						setHeadItemValue("pk_org", null);
+						setHeadItemValue("depttype", null);
+						setHeadItemValue("deptlevel", null);
+						setHeadItemValue("deptduty", null);
+						setHeadItemValue("createdate", null);
+						setHeadItemValue("hrcanceled", UFBoolean.FALSE);
+						setHeadItemValue("deptcanceldate", null);
+						setHeadItemValue("enablestate", null);
+						setHeadItemValue("displayorder", null);
+						setHeadItemValue("dataoriginflag", null);
+						setHeadItemValue("orgtype13", null);
+						setHeadItemValue("orgtype17", null);
+						setHeadItemValue("tel", null);
+						setHeadItemValue("address", null);
+						setHeadItemValue("memo", null);
+						setHeadItemValue("islastversion", UFBoolean.TRUE);
+						// 查询上级部门的编码
+						// 修改后部门
+						setHeadItemValue("pk_fatherorg.code", getDeptCodeByPkDept(getHeadItemValue("pk_fatherorg")));
+						// 修改前部门
+						setHeadItemValue("pk_dept_v.pk_fatherorg.code",
+								getDeptCodeByPkDept(getHeadItemValue("pk_dept_v.pk_fatherorg")));
+						return;
 					}
-				} else {
-					setItemValueAndEnable("code", getHeadItemValue("code"), false);
-					setItemValueAndEnable("name", getHeadItemValue("name"), false);
-					setItemValueAndEnable("pk_fatherorg", getHeadItemValue("pk_fatherorg"), false);
-					setItemValueAndEnable("shortname", getHeadItemValue("shortname"), false);
-					setItemValueAndEnable("mnecode", getHeadItemValue("mnecode"), false);
-					setItemValueAndEnable("displayorder", getHeadItemValue("displayorder"), false);
-					setItemValueAndEnable("principal", getHeadItemValue("principal"), false);
-					setItemValueAndEnable("depttype", getHeadItemValue("depttype"), false);
-					setItemValueAndEnable("deptlevel", getHeadItemValue("deptlevel"), false);
-					setItemValueAndEnable("deptduty", getHeadItemValue("deptduty"), false);
-					setItemValueAndEnable("createdate", getHeadItemValue("createdate"), false);
-					setItemValueAndEnable("hrcanceled", getHeadItemValue("hrcanceled"), false);
-					setItemValueAndEnable("deptcanceldate", getHeadItemValue("deptcanceldate"), false);
-					setItemValueAndEnable("orgtype13", getHeadItemValue("orgtype13"), false);
-					setItemValueAndEnable("orgtype17", getHeadItemValue("orgtype17"), false);
-					setItemValueAndEnable("tel", getHeadItemValue("tel"), false);
-					setItemValueAndEnable("address", getHeadItemValue("address"), false);
-					setItemValueAndEnable("memo", getHeadItemValue("memo"), false);
-					//查询上级部门的编码
-					//修改后部门
-					setHeadItemValue("pk_fatherorg.code", getDeptCodeByPkDept(getHeadItemValue("pk_fatherorg")));
-					//修改前部门
-					setHeadItemValue("pk_dept.pk_fatherorg.code", getDeptCodeByPkDept(getHeadItemValue("pk_dept.pk_fatherorg")));
-					MessageDialog.showErrorDlg(getParent(), "报错信息", messages);
-					return;
+					for (Map<String, String> map : deptlists) {
+						if (map.get("pk_vid").equals(pk_dept_v)) {
+							// 多语处理完善 王永文 20190501 begin
+							MultiLangText multiLangText = new MultiLangText();
+							multiLangText.setText(map.get("name"));
+							multiLangText.setText2(map.get("name2"));
+							multiLangText.setText3(map.get("name3"));
+							// 多语处理完善 王永文 20190501 end
+							pk_org = map.get("pk_org");
+							setHeadItemValue("pk_dept_v.code", map.get("code"));
+							setHeadItemValue("code", map.get("code"));
+							setHeadItemValue("pk_dept_v.name", multiLangText);
+							setHeadItemValue("name", multiLangText);
+							setHeadItemValue("name3", map.get("name3"));
+							setHeadItemValue("deptname3", map.get("name3"));
+							setHeadItemValue("pk_dept_v.pk_fatherorg", map.get("pk_fatherorg"));
+							setHeadItemValue("pk_fatherorg", map.get("pk_fatherorg"));
+							setHeadItemValue("pk_dept_v.shortname", map.get("shortname"));
+							setHeadItemValue("pk_dept_v.mnecode", map.get("mnecode"));
+							setHeadItemValue("pk_dept_v.glbdef11", map.get("glbdef11"));
+							setHeadItemValue("glbdef11", map.get("glbdef11"));
+							setHeadItemValue("pk_dept_v.glbdef3", map.get("glbdef3"));
+							setHeadItemValue("glbdef3", map.get("glbdef3"));
+							setHeadItemValue("pk_dept_v.principal", map.get("principal"));
+							setHeadItemValue("principal", map.get("principal"));
+							setHeadItemValue("pk_dept_v", String.valueOf(map.get("pk_vid")));
+							setHeadItemValue("iseffective", UFBoolean.FALSE);
+							setHeadItemValue("innercode", map.get("innercode"));
+							setHeadItemValue("pk_dept_v", map.get("pk_vid"));
+							setHeadItemValue("pk_group", map.get("pk_group"));
+							setHeadItemValue("pk_org", map.get("pk_org"));
+							setHeadItemValue("depttype", map.get("depttype"));
+							setHeadItemValue("deptlevel", map.get("deptlevel"));
+							setHeadItemValue("deptduty", map.get("deptduty"));
+							setHeadItemValue("createdate", map.get("createdate"));
+							setHeadItemValue("hrcanceled", UFBoolean.FALSE);
+							setHeadItemValue("deptcanceldate", map.get("deptcanceldate"));
+							setHeadItemValue("enablestate", map.get("enablestate"));
+							setHeadItemValue("displayorder", map.get("displayorder"));
+							setHeadItemValue("dataoriginflag", map.get("dataoriginflag"));
+							setHeadItemValue("orgtype13", map.get("orgtype13"));
+							setHeadItemValue("orgtype17", map.get("orgtype17"));
+							setHeadItemValue("tel", map.get("tel"));
+							setHeadItemValue("address", map.get("address"));
+							setHeadItemValue("memo", map.get("memo"));
+							setHeadItemValue("islastversion", UFBoolean.TRUE);
+							// 查询上级部门的编码
+							// 修改后部门
+							setHeadItemValue("pk_fatherorg.code", getDeptCodeByPkDept(getHeadItemValue("pk_fatherorg")));
+							// 修改前部门
+							setHeadItemValue("pk_dept_v.pk_fatherorg.code",
+									getDeptCodeByPkDept(getHeadItemValue("pk_dept_v.pk_fatherorg")));
+
+						}
+					}
+					if (null != pk_org) {
+						List<Map<String, String>> deptlist;
+						deptlist = (List<Map<String, String>>) iUAPQueryBS.executeQuery(
+								"select pk_vid from org_orgs where pk_org='" + pk_org + "' and dr=0",
+								new MapListProcessor());
+						for (Map<String, String> map : deptlist) {
+							map.get("pk_vid");
+							setHeadItemValue("pk_org_v", map.get("pk_vid"));
+						}
+					}
+				} catch (BusinessException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
 				}
-//			}
-		}else if ("code".equals(evt.getKey())) {
+			} else {
+				setItemValueAndEnable("code", getHeadItemValue("code"), false);
+				setItemValueAndEnable("name", getHeadItemValue("name"), false);
+				setItemValueAndEnable("pk_fatherorg", getHeadItemValue("pk_fatherorg"), false);
+				setItemValueAndEnable("shortname", getHeadItemValue("shortname"), false);
+				setItemValueAndEnable("mnecode", getHeadItemValue("mnecode"), false);
+				setItemValueAndEnable("displayorder", getHeadItemValue("displayorder"), false);
+				setItemValueAndEnable("principal", getHeadItemValue("principal"), false);
+				setItemValueAndEnable("depttype", getHeadItemValue("depttype"), false);
+				setItemValueAndEnable("deptlevel", getHeadItemValue("deptlevel"), false);
+				setItemValueAndEnable("deptduty", getHeadItemValue("deptduty"), false);
+				setItemValueAndEnable("createdate", getHeadItemValue("createdate"), false);
+				setItemValueAndEnable("hrcanceled", getHeadItemValue("hrcanceled"), false);
+				setItemValueAndEnable("deptcanceldate", getHeadItemValue("deptcanceldate"), false);
+				setItemValueAndEnable("orgtype13", getHeadItemValue("orgtype13"), false);
+				setItemValueAndEnable("orgtype17", getHeadItemValue("orgtype17"), false);
+				setItemValueAndEnable("tel", getHeadItemValue("tel"), false);
+				setItemValueAndEnable("address", getHeadItemValue("address"), false);
+				setItemValueAndEnable("memo", getHeadItemValue("memo"), false);
+				// 查询上级部门的编码
+				// 修改后部门
+				setHeadItemValue("pk_fatherorg.code", getDeptCodeByPkDept(getHeadItemValue("pk_fatherorg")));
+				// 修改前部门
+				setHeadItemValue("pk_dept.pk_fatherorg.code",
+						getDeptCodeByPkDept(getHeadItemValue("pk_dept.pk_fatherorg")));
+				MessageDialog.showErrorDlg(getParent(), "报错信息", messages);
+				return;
+			}
+			// }
+		} else if ("code".equals(evt.getKey())) {
 			IUAPQueryBS iUAPQueryBS = (IUAPQueryBS) NCLocator.getInstance().lookup(IUAPQueryBS.class.getName());
 			String code = String.valueOf(getHeadItemValue("code"));
 			if (null != code && !code.equals("null")) {
-				//自己的pk
+				// 自己的pk
 				String pkDept = String.valueOf(getHeadItemValue("pk_dept"));
-				//code 除了自己之外,不能重复
+				// code 除了自己之外,不能重复
 				String PkExist = getPkDeptByCode(code);
-				if(null != PkExist && !PkExist.equals(pkDept)){
-					MessageDialog.showErrorDlg(getParent(), "報錯信息", "已存在編碼:"+code);
+				if (null != PkExist && !PkExist.equals(pkDept)) {
+					MessageDialog.showErrorDlg(getParent(), "報錯信息", "已存在編碼:" + code);
 				}
-				
+
 			}
-		}else if ("code".equals(evt.getKey())) {
+		} else if ("code".equals(evt.getKey())) {
 			IUAPQueryBS iUAPQueryBS = (IUAPQueryBS) NCLocator.getInstance().lookup(IUAPQueryBS.class.getName());
 			String pk_fatherorg = String.valueOf(getHeadItemValue("pk_fatherorg"));
 			if (null != pk_fatherorg && !pk_fatherorg.equals("null")) {
-				//上級部門修改
-				//修改后部门
+				// 上級部門修改
+				// 修改后部门
 				setHeadItemValue("pk_fatherorg.code", getDeptCodeByPkDept(pk_fatherorg));
-				
+
 			}
 		}
 		/*
@@ -405,36 +505,38 @@ public class BillFormEditor extends ShowUpableBillForm implements BillCardBefore
 		 * ex.getMessage(); }
 		 */
 	}
-	//獲取當前
+
+	// 獲取當前
 	private Object getHRCanceled(String pk_deptadj) {
 		// TODO 自动生成的方法存根
 		return null;
 	}
 
 	private String getDeptCodeByPkDept(Object pk_dept) {
-		if(null == pk_dept || pk_dept.equals("null")){
+		if (null == pk_dept || pk_dept.equals("null")) {
 			return null;
 		}
 		String pk_deptStr = String.valueOf(pk_dept);
 		IUAPQueryBS iUAPQueryBS = (IUAPQueryBS) NCLocator.getInstance().lookup(IUAPQueryBS.class.getName());
-		String sqlStr= "select code from org_dept where pk_dept = '"+pk_deptStr+"'";
+		String sqlStr = "select code from org_dept where pk_dept = '" + pk_deptStr + "'";
 		String rtn = null;
 		try {
-			rtn = (String)iUAPQueryBS.executeQuery(sqlStr,new ColumnProcessor());
+			rtn = (String) iUAPQueryBS.executeQuery(sqlStr, new ColumnProcessor());
 		} catch (BusinessException e) {
 			Debug.debug(e.getMessage());
 		}
 		return rtn;
 	}
+
 	private String getPkDeptByCode(String code) {
-		if(null == code || code.equals("null")){
+		if (null == code || code.equals("null")) {
 			return null;
 		}
 		IUAPQueryBS iUAPQueryBS = (IUAPQueryBS) NCLocator.getInstance().lookup(IUAPQueryBS.class.getName());
-		String sqlStr= "select pk_dept from org_dept where code = '"+code+"'";
+		String sqlStr = "select pk_dept from org_dept where code = '" + code + "'";
 		String rtn = null;
 		try {
-			rtn = (String)iUAPQueryBS.executeQuery(sqlStr,new ColumnProcessor());
+			rtn = (String) iUAPQueryBS.executeQuery(sqlStr, new ColumnProcessor());
 		} catch (BusinessException e) {
 			Debug.debug(e.getMessage());
 		}

@@ -32,42 +32,48 @@ public interface ITwhr_declarationMaintain {
 	public AggDeclarationVO[] unapprove(AggDeclarationVO[] clientFullVOs,
 			AggDeclarationVO[] originBills) throws BusinessException;
 	/**
-	 * äºŒä»£å¥ä¿å›å†™é€»è¾‘--è–ªèµ„å‘æ”¾
+	 * ¶ş´ú½¡±£»ØĞ´Âß¼­--Ğ½×Ê·¢·Å
 	 * @param clientFullVOs
 	 * @param originBills
 	 * @return
 	 * @throws BusinessException
 	 * @author Ares.Tank 
-	 * @date 2018å¹´9æœˆ25æ—¥ ä¸‹åˆ3:30:17
+	 * @date 2018Äê9ÔÂ25ÈÕ ÏÂÎç3:30:17
 	 * @description
 	 */
 	public void writeBack4HealthCaculate(AggDeclarationVO originBills) throws BusinessException;
 	/**
-	 * ç”Ÿæˆé‚è¼¯
+	 * Éú³Éß‰İ‹
 	 * @param clientFullVOs
 	 * @param originBills
 	 * @return
 	 * @throws BusinessException
 	 * @author Ares.Tank 
-	 * @date 2018å¹´9æœˆ25æ—¥ ä¸‹åˆ3:30:17
+	 * @date 2018Äê9ÔÂ25ÈÕ ÏÂÎç3:30:17
 	 * @description
 	 */
 	public void generatCompanyBVO(UFDate Date,String pk_org,String pkGroup) throws BusinessException;
 	
 	/**
-	 * äºŒä»£å¥ä¿å›å†™é€»è¾‘--å‹å‹™è²»ç”¨
+	 * ¶ş´ú½¡±£»ØĞ´Âß¼­--„Ú„ÕÙMÓÃ
 	 * @param clientFullVOs
 	 * @param originBills
 	 * @return
 	 * @throws BusinessException
 	 * @author Ares.Tank 
-	 * @date 2018å¹´9æœˆ26æ—¥22:59:53
+	 * @date 2018Äê9ÔÂ26ÈÕ22:59:53
 	 * @description
 	 */
 	public void writeBack4PTCost(PTCostVO ptvo,String pk_org,String pk_group) throws BusinessException;
 	
-	
-	
+	/**
+	 * ¸ù¾İcode²éÑ¯pk
+	 * @param code ±àÂë
+	 * @param flag ±êÊ¶
+	 * @return
+	 * @throws BusinessException
+	 */
+	public Object getPkByCode(String code,String flag) throws BusinessException;
 	
 	
 }

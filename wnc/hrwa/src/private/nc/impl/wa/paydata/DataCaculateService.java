@@ -231,7 +231,7 @@ public class DataCaculateService extends AbstractCaculateService {
 
 	private void initOTFeeCalculateTable() throws BusinessException {
 		if (!this.getBaseDao().isTableExisted("wa_cacu_overtimefee")) {
-			executeSQLs("CREATE TABLE wa_cacu_overtimefee  ( amounttaxable NUMBER(28,8),"
+			executeSQLs("CREATE TABLE wa_cacu_overtimefee  ( intcomp int, amounttaxable NUMBER(28,8),"
 					+ " amounttaxfree NUMBER(28,8)," + " pk_wa_class VARCHAR2(20)," + " creator VARCHAR2(20),"
 					+ " pk_psndoc VARCHAR2(20), TS CHAR(19) DEFAULT TO_CHAR(SYSDATE,'yyyy-mm-dd hh24:mi:ss'),"
 					+ " DR NUMBER(10) DEFAULT 0, PRIMARY KEY (pk_psndoc, creator, pk_wa_class)" + ")");

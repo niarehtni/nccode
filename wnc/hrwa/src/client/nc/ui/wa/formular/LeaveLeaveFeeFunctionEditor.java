@@ -266,7 +266,7 @@ public class LeaveLeaveFeeFunctionEditor extends WaAbstractFunctionEditor {
 
 		LeaveTypeVO itemVO = (LeaveTypeVO) getItemCBox().getSelectdItemValue();
 		// 考勤月报项目主键
-		paras[0] = "\"" + "A" + itemVO.getPk_timeitem().trim() + "\"";
+		paras[0] = "\"" + itemVO.getPk_timeitem().trim() + "\"";
 
 		// 是否免税 0否 1是
 		paras[1] = "\"" + getYOrnCBox().getSelectdItemValue().toString() + "\"";

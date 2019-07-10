@@ -430,7 +430,8 @@ public class LeaveExtraRestServiceImpl implements ILeaveExtraRestService {
 				calculator.setTotalcount(pk_psndocs.length);
 
 				Logger.error("---WNC-MULTIPUL-THREADS-LEAVEEXT-THREAD-POOL-SIZE: ["
-						+ String.valueOf(threadPoolExecutor.getPoolSize()) + "]---");
+						+ String.valueOf(threadPoolExecutor.getPoolSize()) + "]-SERIALS ["
+						+ calculator.getCurrentcount() + "/" + pk_psndocs.length + "]--");
 
 				// 提交服務，註冊返回值池
 				futureDatas.add(threadPoolExecutor.submit(calculator));
@@ -484,7 +485,7 @@ public class LeaveExtraRestServiceImpl implements ILeaveExtraRestService {
 
 			try {
 				Logger.error("---WNC-MULTIPUL-THREADS-LEAVEEXT-THREAD-[" + Thread.currentThread().getName()
-						+ "]-COUNT [" + String.valueOf(currentcount) + " / " + String.valueOf(totalcount) + "]---");
+						+ "]-COUNT [" + String.valueOf(currentcount) + " / " + String.valueOf(totalcount) + "]-START--");
 				LeaveExtraRestServiceImpl newImpl = new LeaveExtraRestServiceImpl();
 				newImpl.setBaseDao(this.getBaseDao());
 				ret = newImpl.getLeaveExtHoursByType(this.getPk_org(), new String[] { this.getPk_psndoc() },
@@ -495,6 +496,9 @@ public class LeaveExtraRestServiceImpl implements ILeaveExtraRestService {
 				Logger.error("---WNC-MULTIPUL-THREADS-LEAVEEXT-THREAD-[" + Thread.currentThread().getName()
 						+ "]-ERROR---");
 				Logger.error(e.toString());
+			} finally {
+				Logger.error("---WNC-MULTIPUL-THREADS-LEAVEEXT-THREAD-[" + Thread.currentThread().getName()
+						+ "]-COUNT [" + String.valueOf(currentcount) + " / " + String.valueOf(totalcount) + "]-END--");
 			}
 
 			if (ret == null || ret.length == 0) {

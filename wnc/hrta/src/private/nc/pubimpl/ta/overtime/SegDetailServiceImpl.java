@@ -2,6 +2,7 @@ package nc.pubimpl.ta.overtime;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,9 +26,9 @@ import nc.hr.utils.InSQLCreator;
 import nc.impl.pub.OTLeaveBalanceUtils;
 import nc.itf.ta.IPeriodQueryService;
 import nc.itf.ta.overtime.ISegdetailMaintain;
-import nc.jdbc.framework.processor.ColumnListProcessor;
 import nc.jdbc.framework.processor.ColumnProcessor;
 import nc.jdbc.framework.processor.MapListProcessor;
+import nc.pub.encryption.util.SalaryDecryptUtil;
 import nc.pubitf.para.SysInitQuery;
 import nc.pubitf.ta.overtime.ISegDetailService;
 import nc.vo.bd.shift.ShiftVO;
@@ -69,8 +70,11 @@ import nc.vo.ta.psndoc.TBMPsndocVO;
 import nc.vo.ta.timeitem.LeaveTypeCopyVO;
 import nc.vo.ta.timeitem.OverTimeTypeCopyVO;
 import nc.vo.ta.timerule.TimeRuleVO;
+import nc.vo.wa.itemgroup.DayScopeEnum;
+import nc.vo.wa.itemgroup.ItemGroupVO;
 
 import org.apache.commons.lang.StringUtils;
+import org.mozilla.javascript.edu.emory.mathcs.backport.java.util.Collections;
 
 public class SegDetailServiceImpl implements ISegDetailService {
 	private Map<String, OTSChainNode> allNode = null;
@@ -79,11 +83,11 @@ public class SegDetailServiceImpl implements ISegDetailService {
 	private ISegdetailMaintain segMaintain = null;
 
 	@Override
-	public void regOvertimeSegDetail(OvertimeRegVO[] overtimeRegVOs) throws BusinessException {
-		if (overtimeRegVOs != null && overtimeRegVOs.length > 0) {
+	public void regOvertimeSegDetail(OvertimeRegVO[] sortedOvertimeRegVOs) throws BusinessException {
+		if (sortedOvertimeRegVOs != null && sortedOvertimeRegVOs.length > 0) {
 			this.getAllNode().clear();
 
-			for (OvertimeRegVO otRegVo : overtimeRegVOs) {
+			for (OvertimeRegVO otRegVo : sortedOvertimeRegVOs) {
 				UFBoolean isEnabled = new UFBoolean(SysInitQuery.getParaString(otRegVo.getPk_org(), "TBMOTSEG"));
 				if (isEnabled == null || !isEnabled.booleanValue()) {
 					return;
@@ -221,7 +225,7 @@ public class SegDetailServiceImpl implements ISegDetailService {
 		UFDouble othours = otRegVO.getOvertimehour();
 		UFDouble totalSegHours = UFDouble.ZERO_DBL; // 纍計生成分段時長
 		OTSChainNode parentNode = null;
-		UFLiteralDate realDate = getShiftRegDate(otRegVO); // 獲取實際加班日期（刷卡開始時間段所屬工作日）
+		UFLiteralDate realDate = getShiftRegDateByOvertime(otRegVO); // 獲取實際加班日期（刷卡開始時間段所屬工作日）
 		UFLiteralDate maxLeaveDate = (otRegVO.getIstorest() == null || !otRegVO.getIstorest().booleanValue()) ? null
 				: getMaxLeaveDate(otRegVO, realDate); // 獲取最長可休日期
 
@@ -279,7 +283,7 @@ public class SegDetailServiceImpl implements ISegDetailService {
 					// 計入加班上限統計，檢查當日截止當日前一日的應稅加班時數
 					Map<String, UFDouble[]> psnSeghours = this.calculateTaxableByDate(otRegVO.getPk_org(),
 							new String[] { otRegVO.getPk_psndoc() }, realDate, realDate, curSegTotalHours, parentNode,
-							null);
+							null, false);
 					curSegTaxfreeHours = psnSeghours.get(otRegVO.getPk_psndoc())[0];
 					curSegTaxableHours = psnSeghours.get(otRegVO.getPk_psndoc())[1];
 				}
@@ -511,8 +515,12 @@ public class SegDetailServiceImpl implements ISegDetailService {
 	 * @throws BusinessException
 	 */
 	@SuppressWarnings("unchecked")
-	private UFLiteralDate getShiftRegDate(OvertimeRegVO vo) throws BusinessException {
+	private UFLiteralDate getShiftRegDateByOvertime(OvertimeRegVO vo) throws BusinessException {
 		UFLiteralDate rtnDate = vo.getBegindate();
+		UFLiteralDate vestDate = vo.getVestdate();
+		if (vestDate != null) {
+			return vestDate;
+		}
 		Collection<PsnCalendarVO> psncals = this.getBaseDao().retrieveByClause(
 				PsnCalendarVO.class,
 				"pk_psndoc='" + vo.getPk_psndoc() + "' and calendar between '"
@@ -549,13 +557,52 @@ public class SegDetailServiceImpl implements ISegDetailService {
 		return rtnDate;
 	}
 
+	@SuppressWarnings("unchecked")
+	private UFLiteralDate getShiftRegDateByLeave(LeaveRegVO vo) throws BusinessException {
+		UFLiteralDate rtnDate = vo.getBegindate();
+		Collection<PsnCalendarVO> psncals = this.getBaseDao().retrieveByClause(
+				PsnCalendarVO.class,
+				"pk_psndoc='" + vo.getPk_psndoc() + "' and calendar between '"
+						+ vo.getLeavebegindate().getDateBefore(3) + "' and '" + vo.getLeavebegindate().getDateAfter(3)
+						+ "'");
+		if (psncals != null && psncals.size() > 0) {
+			for (PsnCalendarVO psncal : psncals) {
+				if (psncal.getPk_shift() != null) {
+					ShiftVO shiftvo = (ShiftVO) this.getBaseDao().retrieveByPK(ShiftVO.class, psncal.getPk_shift());
+					if (shiftvo != null) {
+						UFDateTime startDT = null;
+						if (shiftvo.getTimebeginday() == 0) {
+							startDT = new UFDateTime(psncal.getCalendar().toString() + " " + shiftvo.getTimebegintime());
+						} else {
+							startDT = new UFDateTime(psncal.getCalendar().getDateAfter(1).toString() + " "
+									+ shiftvo.getTimebegintime());
+						}
+
+						UFDateTime endDT = null;
+						if (shiftvo.getTimeendday() == 0) {
+							endDT = new UFDateTime(psncal.getCalendar().toString() + " " + shiftvo.getTimeendtime());
+						} else {
+							endDT = new UFDateTime(psncal.getCalendar().getDateAfter(1).toString() + " "
+									+ shiftvo.getTimeendtime());
+						}
+
+						if (vo.getLeavebegintime().before(endDT) && vo.getLeavebegintime().after(startDT)) {
+							rtnDate = psncal.getCalendar();
+						}
+					}
+				}
+			}
+		}
+		return rtnDate;
+	}
+
 	private UFDouble getOTAmount(UFDouble otRate, UFDouble hourlypay, UFDouble hours, SegDetailVO detailVO,
 			int daySalType, String pk_item_group) throws BusinessException {
 		otRate = otRate == null ? UFDouble.ZERO_DBL : otRate;
 		hourlypay = hourlypay == null ? UFDouble.ZERO_DBL : hourlypay;
 		hours = hours == null ? UFDouble.ZERO_DBL : hours;
 		if (detailVO != null) {
-			hourlypay = getPsnHourPay(detailVO.getPk_org(), detailVO.getPk_psndoc(), detailVO.getRegdate(), daySalType,
+			hourlypay = getPsnHourPay(detailVO.getPk_org(), detailVO.getPk_psndoc(), detailVO.getRegdate(),
 					pk_item_group);
 			detailVO.setHourlypay(hourlypay.setScale(1, UFDouble.ROUND_HALF_UP));
 		}
@@ -564,24 +611,35 @@ public class SegDetailServiceImpl implements ISegDetailService {
 		return amount;
 	}
 
-	private UFDouble getPsnHourPay(String pk_hrorg, String pk_psndoc, UFLiteralDate overtimebegindate, int daySalType,
+	private UFDouble getPsnHourPay(String pk_hrorg, String pk_psndoc, UFLiteralDate overtimebegindate,
 			String pk_item_group) throws BusinessException {
-		String strSQL = "select sum(isnull(nmoney,0)) from hi_psndoc_wadoc where pk_psndoc = '"
+		String strSQL = "select isnull(nmoney,0) nmoney, pk_wa_data from hi_psndoc_wadoc "
+				+ " LEFT JOIN wa_cacu_decryptedpk wd on wd.pk_wa_data = hi_psndoc_wadoc.pk_psndoc_sub "
+				+ " where pk_psndoc = '"
 				+ pk_psndoc
 				+ "' and '"
 				+ overtimebegindate.toString()
 				+ "' between begindate and isnull(enddate, '9999-12-31') and pk_wa_item in (select pk_wa_item from wa_itemgroupmember where pk_itemgroup = '"
 				+ pk_item_group + "' and dr=0) and waflag='Y'";
 
-		Object pay = this.getBaseDao().executeQuery(strSQL, new ColumnProcessor());
-		String monthPay = (pay == null ? "" : String.valueOf(pay));
+		List<Map> payList = (List<Map>) this.getBaseDao().executeQuery(strSQL, new MapListProcessor());
+		ItemGroupVO igvo = (ItemGroupVO) this.getBaseDao().retrieveByPK(ItemGroupVO.class, pk_item_group);
 
-		if (!StringUtils.isEmpty(monthPay)) {
-			double days = getTbmSalaryNum(pk_hrorg, overtimebegindate, adaptDayType(daySalType));
-			return new UFDouble(monthPay).div(days);
-		} else {
-			return UFDouble.ZERO_DBL;
+		UFDouble totalPay = UFDouble.ZERO_DBL;
+		if (payList != null && payList.size() > 0) {
+			for (Map pay : payList) {
+				UFDouble monthPay = new UFDouble(String.valueOf(pay.get("nmoney")));
+				String pk_wa_data = (String) pay.get("pk_wa_data");
+				if (StringUtils.isEmpty(pk_wa_data)) {
+					monthPay = SalaryDecryptUtil.decrypt(monthPay);
+				}
+
+				totalPay = totalPay.add(monthPay == null ? UFDouble.ZERO_DBL : monthPay);
+			}
 		}
+
+		double days = getTbmSalaryNum(pk_hrorg, overtimebegindate, igvo.getDaysource());
+		return totalPay.div(days * 8);
 		//
 		//
 		// IWadaysalaryQueryService dayPaySvc =
@@ -610,13 +668,13 @@ public class SegDetailServiceImpl implements ISegDetailService {
 	 * @throws BusinessException
 	 */
 	private double getTbmSalaryNum(String pk_hrorg, UFLiteralDate calculDate, int tbmnumtype) throws BusinessException {
-		if (tbmnumtype == DaySalaryEnum.TBMNUMTYPE1) {
+		if (tbmnumtype == DayScopeEnum.FIX30.toIntValue()) {
 			return DaySalaryEnum.TBMSALARYNUM01;// //固定值30天
 		}
-		if (tbmnumtype == DaySalaryEnum.TBMNUMTYPE2) {
+		if (tbmnumtype == DayScopeEnum.FIX22.toIntValue()) {
 			return DaySalaryEnum.TBMSALARYNUM02;// 固定21.75天
 		}
-		if (tbmnumtype == DaySalaryEnum.TBMNUMTYPE3) {
+		if (tbmnumtype == DayScopeEnum.TPDAYS.toIntValue()) {
 			// 查询考勤期间
 			String sqlsys = "SELECT\n" + "	begindate,\n" + "	enddate\n" + "FROM\n" + "	tbm_period\n" + "WHERE\n"
 					+ "	begindate <= '" + calculDate + "'\n" + "AND enddate >= '" + calculDate + "'\n"
@@ -642,36 +700,6 @@ public class SegDetailServiceImpl implements ISegDetailService {
 		return DaySalaryEnum.TBMSALARYNUM01;// 固定值30天;
 	}
 
-	/**
-	 * 适配考勤日薪的天数取值类型
-	 * 
-	 * @param daysource
-	 * @return
-	 * @throws BusinessException
-	 */
-	private int adaptDayType(Integer daysource) throws BusinessException {
-		if (daysource == null) {
-			return 0;
-		}
-		switch (daysource) {
-		case 0:
-			throw new BusinessException("薪資項目分組中日薪天數來源設置錯誤");
-		case 1:
-			return DaySalaryEnum.TBMNUMTYPE1;
-		case 2:
-			return DaySalaryEnum.TBMNUMTYPE2;
-		case 3:
-			throw new BusinessException("薪資項目分組中日薪天數來源設置錯誤");
-		case 4:
-			throw new BusinessException("薪資項目分組中日薪天數來源設置錯誤");
-		case 5:
-			return DaySalaryEnum.TBMNUMTYPE3;
-		default:
-			throw new BusinessException("薪資項目分組中日薪天數來源設置錯誤");
-		}
-
-	}
-
 	@SuppressWarnings("unchecked")
 	private AggSegRuleVO getSegRuleAggVO(String pk_segrule) throws BusinessException {
 		SegRuleVO ruleVO = (SegRuleVO) this.getBaseDao().retrieveByPK(SegRuleVO.class, pk_segrule);
@@ -694,10 +722,10 @@ public class SegDetailServiceImpl implements ISegDetailService {
 	}
 
 	@Override
-	public void regOvertimeSegDetailConsume(LeaveRegVO[] leaveRegVOs) throws BusinessException {
-		if (leaveRegVOs != null && leaveRegVOs.length > 0) {
+	public void regOvertimeSegDetailConsume(LeaveRegVO[] sortedLeaveRefVOs) throws BusinessException {
+		if (sortedLeaveRefVOs != null && sortedLeaveRefVOs.length > 0) {
 
-			for (LeaveRegVO vo : leaveRegVOs) {
+			for (LeaveRegVO vo : sortedLeaveRefVOs) {
 				UFBoolean isEnabled = SysInitQuery.getParaBoolean(vo.getPk_org(), "TBMOTSEG");
 				if (isEnabled == null || !isEnabled.booleanValue()) {
 					return;
@@ -791,6 +819,13 @@ public class SegDetailServiceImpl implements ISegDetailService {
 		List<AggSegDetailVO> aggvos = new ArrayList<AggSegDetailVO>();
 		UFDouble unConsumedLeaveHours = vo.getLeavehour();
 		for (SegDetailVO segDetail : segDetailVOs) {
+			// ssx added on 2019-07-08
+			// 已超過最長可休日期的加班分段不能參與消耗
+			if (vo.getLeavebegindate().after(segDetail.getExpirydate())) {
+				continue;
+			}
+			//
+
 			// 先進先出匹配
 			if (!unConsumedLeaveHours.equals(UFDouble.ZERO_DBL)) {
 				// 本筆核銷時數
@@ -1084,17 +1119,61 @@ public class SegDetailServiceImpl implements ISegDetailService {
 				}
 				// end MOD
 
-				String strSQL = "SELECT  regdate, sum(remainhourstaxfree * taxfreerate)  dayhourstaxfree,"
-						+ " sum(remainhourstaxable * taxablerate + extrahourstaxable * extrataxablerate)  dayhourstaxable  FROM  hrta_segdetail"
-						+ " WHERE  ((iscompensation='N' AND regdate BETWEEN '" + sumStartDate + "' AND '" + sumEndDate
-						+ "')  OR  ( iscompensation='Y'" + (isLeave ? "" : "AND issettled = 'Y' ")
-						+ " AND expirydate BETWEEN '" + sumStartDate + "' AND '" + sumEndDate + "')) AND pk_psndoc = '"
-						+ pk_psndoc + "'" + " group by pk_psndoc, regdate order by pk_psndoc, regdate";
+				String strSQL = "SELECT  regdate, " + " case when (" + "( iscompensation='Y'"
+						+ (isLeave ? "" : "AND issettled = 'Y' ")
+						+ " AND expirydate BETWEEN '"
+						+ sumStartDate
+						+ "' AND '"
+						+ sumEndDate
+						+ "')"
+						+ ") then sum(remainhourstaxfree * taxfreerate) else 0 end  dayhourstaxfree_comp,"
+						+ " case when ("
+						+ "(iscompensation='N' AND regdate BETWEEN '"
+						+ sumStartDate
+						+ "' AND '"
+						+ sumEndDate
+						+ "')"
+						+ ") then sum(remainhourstaxfree * taxfreerate) else 0 end  dayhourstaxfree_nocomp,"
+						+ " case when ("
+						+ "( iscompensation='Y'"
+						+ (isLeave ? "" : "AND issettled = 'Y' ")
+						+ " AND expirydate BETWEEN '"
+						+ sumStartDate
+						+ "' AND '"
+						+ sumEndDate
+						+ "')"
+						+ ") then sum(remainhourstaxable * taxablerate + extrahourstaxable * extrataxablerate) else 0 end  dayhourstaxable_comp, "
+						+ " case when ("
+						+ "(iscompensation='N' AND regdate BETWEEN '"
+						+ sumStartDate
+						+ "' AND '"
+						+ sumEndDate
+						+ "')"
+						+ ") then sum(remainhourstaxable * taxablerate + extrahourstaxable * extrataxablerate) else 0 end  dayhourstaxable_nocomp  "
+						+ " FROM  hrta_segdetail"
+						+ " WHERE "
+						+ "((iscompensation='N' AND regdate BETWEEN '"
+						+ sumStartDate
+						+ "' AND '"
+						+ sumEndDate
+						+ "')  OR  ( iscompensation='Y'"
+						+ (isLeave ? "" : "AND issettled = 'Y' ")
+						+ " AND expirydate BETWEEN '"
+						+ sumStartDate
+						+ "' AND '"
+						+ sumEndDate
+						+ "'))"
+						+ " and pk_psndoc = '"
+						+ pk_psndoc
+						+ "'"
+						+ " group by pk_psndoc, regdate,iscompensation, issettled, expirydate order by pk_psndoc, regdate";
 				List<Map<String, Object>> dayHoursMapList = (List<Map<String, Object>>) this.getBaseDao().executeQuery(
 						strSQL, new MapListProcessor());
 
-				UFDouble amountTaxfree = UFDouble.ZERO_DBL;
-				UFDouble amountTaxable = UFDouble.ZERO_DBL;
+				UFDouble amountTaxfree_comp = UFDouble.ZERO_DBL;
+				UFDouble amountTaxfree_nocomp = UFDouble.ZERO_DBL;
+				UFDouble amountTaxable_comp = UFDouble.ZERO_DBL;
+				UFDouble amountTaxable_nocomp = UFDouble.ZERO_DBL;
 				if (dayHoursMapList != null && dayHoursMapList.size() > 0) {
 					strSQL = "select salarydate, sum(hoursalary) hoursalary from wa_daysalary where pk_psndoc = '"
 							+ pk_psndoc + "' and pk_group_item = '" + pk_item_group + "' and salarydate between '"
@@ -1112,23 +1191,32 @@ public class SegDetailServiceImpl implements ISegDetailService {
 						}
 
 						if (hourPay.equals(UFDouble.ZERO_DBL)) {
-							hourPay = this.getPsnHourPay(pk_org, pk_psndoc, regDate, DaySalaryEnum.TBMHOURSALARY,
-									pk_item_group);
+							hourPay = this.getPsnHourPay(pk_org, pk_psndoc, regDate, pk_item_group);
 						}
-						UFDouble otAmountTaxfree = hourPay.setScale(1, UFDouble.ROUND_HALF_UP)
-								.multiply(new UFDouble(String.valueOf(dayHoursMap.get("dayhourstaxfree"))))
+						UFDouble otAmountTaxfree_comp = hourPay.setScale(1, UFDouble.ROUND_HALF_UP)
+								.multiply(new UFDouble(String.valueOf(dayHoursMap.get("dayhourstaxfree_comp"))))
 								.setScale(1, UFDouble.ROUND_HALF_UP);
-						UFDouble otAmountTaxable = hourPay.setScale(1, UFDouble.ROUND_HALF_UP)
-								.multiply(new UFDouble(String.valueOf(dayHoursMap.get("dayhourstaxable"))))
+						UFDouble otAmountTaxfree_nocomp = hourPay.setScale(1, UFDouble.ROUND_HALF_UP)
+								.multiply(new UFDouble(String.valueOf(dayHoursMap.get("dayhourstaxfree_nocomp"))))
 								.setScale(1, UFDouble.ROUND_HALF_UP);
-						amountTaxfree = otAmountTaxfree.add(amountTaxfree);
-						amountTaxable = otAmountTaxable.add(amountTaxable);
+						UFDouble otAmountTaxable_comp = hourPay.setScale(1, UFDouble.ROUND_HALF_UP)
+								.multiply(new UFDouble(String.valueOf(dayHoursMap.get("dayhourstaxable_comp"))))
+								.setScale(1, UFDouble.ROUND_HALF_UP);
+						UFDouble otAmountTaxable_nocomp = hourPay.setScale(1, UFDouble.ROUND_HALF_UP)
+								.multiply(new UFDouble(String.valueOf(dayHoursMap.get("dayhourstaxable_nocomp"))))
+								.setScale(1, UFDouble.ROUND_HALF_UP);
+						amountTaxfree_comp = otAmountTaxfree_comp.add(amountTaxfree_comp);
+						amountTaxfree_nocomp = otAmountTaxfree_nocomp.add(amountTaxfree_nocomp);
+						amountTaxable_comp = otAmountTaxable_comp.add(amountTaxable_comp);
+						amountTaxable_nocomp = otAmountTaxable_nocomp.add(amountTaxable_nocomp);
 					}
 				}
 
 				ret.put(pk_psndoc,
-						new UFDouble[] { amountTaxfree.setScale(0, UFDouble.ROUND_HALF_UP),
-								amountTaxable.setScale(0, UFDouble.ROUND_HALF_UP) });
+						new UFDouble[] { amountTaxfree_comp.setScale(0, UFDouble.ROUND_HALF_UP),
+								amountTaxfree_nocomp.setScale(0, UFDouble.ROUND_HALF_UP),
+								amountTaxable_comp.setScale(0, UFDouble.ROUND_HALF_UP),
+								amountTaxable_nocomp.setScale(0, UFDouble.ROUND_HALF_UP) });
 
 				long end = System.currentTimeMillis();
 				// Logger.error(" --- OvertimeFee PSN (" + counter + "/" +
@@ -1147,8 +1235,8 @@ public class SegDetailServiceImpl implements ISegDetailService {
 
 	@Override
 	public Map<String, UFDouble[]> calculateTaxableByDate(String pk_org, String[] pk_psndocs, UFLiteralDate startDate,
-			UFLiteralDate endDate, UFDouble curNodeHours, OTSChainNode unSavedNodes, String pk_item_group)
-			throws BusinessException {
+			UFLiteralDate endDate, UFDouble curNodeHours, OTSChainNode unSavedNodes, String pk_item_group,
+			boolean isToRest) throws BusinessException {
 		Map<String, UFDouble[]> ret = new HashMap<String, UFDouble[]>();
 		if (pk_psndocs != null && pk_psndocs.length > 0) {
 
@@ -1158,8 +1246,8 @@ public class SegDetailServiceImpl implements ISegDetailService {
 																	// added on
 																	// 2019-02-01
 
-			Map<String, OTSChainNode> psnNodeMap = OTSChainUtils.buildChainPsnNodeMap(pk_psndocs, endDate, null, false,
-					true, true, true, false);
+			Map<String, OTSChainNode> psnNodeMap = OTSChainUtils.buildChainPsnNodeMap(pk_psndocs, endDate, null,
+					isToRest, false, true, true, false);
 
 			for (String pk_psndoc : pk_psndocs) {
 				long start = System.currentTimeMillis();
@@ -1434,33 +1522,32 @@ public class SegDetailServiceImpl implements ISegDetailService {
 					totalTaxableAmount = totalTaxableAmount.setScale(1, UFDouble.ROUND_HALF_UP);
 					totalTaxFreeAmount = totalTaxFreeAmount.setScale(1, UFDouble.ROUND_HALF_UP);
 
-					if (curNodeHours != null) {
-						retValues[0] = totalTaxFreeHours;
-						retValues[1] = totalTaxableHours;
-					} else {
+					if (curNodeHours == null) {
 						retValues[0] = totalTaxFreeAmount.setScale(0, UFDouble.ROUND_HALF_UP);
 						retValues[1] = totalTaxableAmount.setScale(0, UFDouble.ROUND_HALF_UP);
 					}
-				} else {
-					if (curNodeHours != null) {
-						if (!isTaxFree) {
-							// 已進入應稅範圍
-							totalTaxableHours = totalTaxableHours.add(curNodeHours);
-						} else {
-							if (totalHours.add(curNodeHours).doubleValue() <= totalTaxFreeLimitHours.doubleValue()) {
-								// 加總後仍在免稅時數範圍內
-								totalTaxFreeHours = totalTaxFreeHours.add(curNodeHours);
-								totalTaxableHours = UFDouble.ZERO_DBL;
-							} else {
-								// 正好超過免稅時數
-								totalTaxableHours = totalHours.add(curNodeHours).sub(totalTaxFreeLimitHours);
-								totalTaxFreeHours = totalTaxFreeHours.add(curNodeHours.sub(totalTaxableHours));
-							}
-						}
-						retValues[0] = totalTaxFreeHours;
-						retValues[1] = totalTaxableHours;
-					}
 				}
+
+				if (curNodeHours != null) {
+					if (!isTaxFree) {
+						// 已進入應稅範圍
+						totalTaxFreeHours = UFDouble.ZERO_DBL;
+						totalTaxableHours = curNodeHours;
+					} else {
+						if (totalHours.add(curNodeHours).doubleValue() <= totalTaxFreeLimitHours.doubleValue()) {
+							// 加總後仍在免稅時數範圍內
+							totalTaxFreeHours = curNodeHours;
+							totalTaxableHours = UFDouble.ZERO_DBL;
+						} else {
+							// 正好超過免稅時數
+							totalTaxableHours = totalHours.add(curNodeHours).sub(totalTaxFreeLimitHours);
+							totalTaxFreeHours = curNodeHours.sub(totalTaxableHours);
+						}
+					}
+					retValues[0] = totalTaxFreeHours;
+					retValues[1] = totalTaxableHours;
+				}
+
 				ret.put(pk_psndoc, retValues);
 
 				long end = System.currentTimeMillis();
@@ -1603,7 +1690,7 @@ public class SegDetailServiceImpl implements ISegDetailService {
 		PeriodVO period = getPeriodService().queryByYearMonth(pk_org, cyear, cperiod);
 
 		Map<String, UFDouble[]> taxAmounts = calculateTaxableByDate(pk_org, pk_psndocs, period.getBegindate(),
-				period.getEnddate(), null, null, pk_item_group);
+				period.getEnddate(), null, null, pk_item_group, true);
 
 		Map<String, UFDouble> ret = new HashMap<String, UFDouble>();
 		if (taxAmounts != null && taxAmounts.size() > 0) {
@@ -1620,7 +1707,7 @@ public class SegDetailServiceImpl implements ISegDetailService {
 		PeriodVO period = getPeriodService().queryByYearMonth(pk_org, cyear, cperiod);
 
 		Map<String, UFDouble[]> taxAmounts = calculateTaxableByDate(pk_org, pk_psndocs, period.getBegindate(),
-				period.getEnddate(), null, null, pk_item_group);
+				period.getEnddate(), null, null, pk_item_group, true);
 
 		Map<String, UFDouble> ret = new HashMap<String, UFDouble>();
 		if (taxAmounts != null && taxAmounts.size() > 0) {
@@ -2278,7 +2365,7 @@ public class SegDetailServiceImpl implements ISegDetailService {
 								consumedHoursMap.put(
 										leaveRegVO.getPk_leavereg(),
 										consumedHoursMap.get(leaveRegVO.getPk_leavereg()).add(
-												segDetailVO.getConsumedhours()));
+												consumeVO.getConsumedhours()));
 							}
 						}
 					}
@@ -2483,54 +2570,147 @@ public class SegDetailServiceImpl implements ISegDetailService {
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public void rebuildSegDetailByPsn(String pk_psndoc) throws BusinessException {
-		String strSQL = "";
+	public void rebuildSegDetailByPsn(String pk_psndoc, String cyear) throws BusinessException {
 		// 取人員重建未結算起點
-		strSQL = "select sg.pk_overtimereg from hrta_segdetail sg where sg.pk_psndoc='"
+		String strSQL = "select sg.pk_overtimereg from hrta_segdetail sg where sg.pk_psndoc='"
 				+ pk_psndoc
 				+ "' and sg.nodecode = (select min(nodecode) from hrta_segdetail where pk_psndoc=sg.pk_psndoc and issettled = 'N')";
 		String pk_overtimereg = (String) this.getBaseDao().executeQuery(strSQL, new ColumnProcessor());
-
+		Collection<OvertimeRegVO> otList = null;
+		Collection<LeaveRegVO> lvList = null;
 		if (StringUtils.isEmpty(pk_overtimereg)) {
-			// 沒找到未結算起點，退出當前重建
-			return;
+			// 沒找到未結算起點，重建所有分段
+			strSQL = "SELECT DISTINCT og.workagestartdate FROM tbm_psndoc psn "
+					+ " INNER JOIN hi_psnorg og ON  psn.pk_psnorg = og.pk_psnorg " + " WHERE psn.enddate >= '" + cyear
+					+ "' || RIGHT(og.workagestartdate, 6) AND psn.begindate < '"
+					+ String.valueOf(Integer.valueOf(cyear) + 1) + "' || RIGHT(og.workagestartdate, 6) "
+					+ " AND og.workagestartdate IS NOT NULL AND psn.pk_psndoc = '" + pk_psndoc + "' AND ( "
+					+ " SELECT  COUNT(pk_segdetail)  FROM hrta_segdetail  WHERE  pk_psndoc = psn.pk_psndoc "
+					+ " AND expirydate >= '" + cyear + "' || RIGHT(og.workagestartdate, 6) AND expirydate < '"
+					+ String.valueOf(Integer.valueOf(cyear) + 1) + "' || RIGHT(og.workagestartdate, 6)) > 0";
+
+			String psnWorkStartDate = (String) this.getBaseDao().executeQuery(strSQL, new ColumnProcessor());
+			UFLiteralDate beginDate = OTLeaveBalanceUtils.getBeginDateByWorkAgeStartDate(cyear, new UFLiteralDate(
+					psnWorkStartDate));
+			UFLiteralDate endDate = OTLeaveBalanceUtils.getEndDateByWorkAgeStartDate(cyear, new UFLiteralDate(
+					psnWorkStartDate));
+
+			// 清理數據
+			strSQL = "delete from hrta_segdetailconsume where pk_segdetail in (select pk_segdetail from hrta_segdetail where pk_psndoc = '"
+					+ pk_psndoc
+					+ "' and regdate between '"
+					+ beginDate.toString()
+					+ "' and '"
+					+ endDate.toString()
+					+ "')";
+			this.getBaseDao().executeUpdate(strSQL);
+
+			strSQL = "delete from hrta_segdetail where pk_psndoc = '" + pk_psndoc + "' and regdate between '"
+					+ beginDate.toString() + "' and '" + endDate.toString() + "')";
+			this.getBaseDao().executeUpdate(strSQL);
+			//
+
+			strSQL = "pk_psndoc = '" + pk_psndoc + "' and dr=0 and overtimebegindate between '" + beginDate.toString()
+					+ "' and '" + endDate.getDateAfter(1).toString() + "'";
+			otList = this.getBaseDao().retrieveByClause(OvertimeRegVO.class, strSQL);
+			if (otList != null && otList.size() > 0) {
+				OvertimeRegVO[] vos = otList.toArray(new OvertimeRegVO[0]);
+				for (int i = 0; i < otList.size(); i++) {
+					// 只看前後三天內的單據，以免耗時過長
+					if (UFLiteralDate.getDaysBetween(vos[i].getOvertimebegindate(), beginDate) <= 3
+							|| UFLiteralDate.getDaysBetween(vos[i].getOvertimebegindate(), endDate) <= 3) {
+						UFLiteralDate realDate = getShiftRegDateByOvertime(vos[i]);
+						if (realDate.before(beginDate) || realDate.after(endDate)) {
+							otList.remove(vos[i]);
+						}
+					}
+				}
+			}
+
+			// 取人員區間休假單
+			strSQL = "pk_psndoc = '" + pk_psndoc + "' and dr=0 and leavebegindate  between '" + beginDate.toString()
+					+ "' and '" + endDate.getDateAfter(1).toString() + "'";
+			lvList = this.getBaseDao().retrieveByClause(LeaveRegVO.class, strSQL);
+			lvList = this.getBaseDao().retrieveByClause(OvertimeRegVO.class, strSQL);
+			if (lvList != null && lvList.size() > 0) {
+				LeaveRegVO[] vos = lvList.toArray(new LeaveRegVO[0]);
+				for (int i = 0; i < lvList.size(); i++) {
+					// 只看前後三天內的單據，以免耗時過長
+					if (UFLiteralDate.getDaysBetween(vos[i].getLeavebegindate(), beginDate) <= 3
+							|| UFLiteralDate.getDaysBetween(vos[i].getLeavebegindate(), endDate) <= 3) {
+						UFLiteralDate realDate = getShiftRegDateByLeave(vos[i]);
+						if (realDate.before(beginDate) || realDate.after(endDate)) {
+							otList.remove(vos[i]);
+						}
+					}
+				}
+			}
+
+		} else {
+			// 清理未結算數據
+			strSQL = "delete from hrta_segdetailconsume where pk_segdetail in (select pk_segdetail from hrta_segdetail where pk_psndoc = '"
+					+ pk_psndoc + "' and issettled = 'N');";
+			this.getBaseDao().executeUpdate(strSQL);
+
+			strSQL = "delete from hrta_segdetail where pk_psndoc = '" + pk_psndoc + "' and issettled = 'N'";
+			this.getBaseDao().executeUpdate(strSQL);
+
+			// 取人員未結算區間加班單
+			strSQL = " overtimebegintime >= (select overtimebegintime from tbm_overtimereg ot where pk_overtimereg = '"
+					+ pk_overtimereg + "')  and pk_psndoc = '" + pk_psndoc + "' ";
+			otList = this.getBaseDao().retrieveByClause(OvertimeRegVO.class, strSQL);
+
+			// 取人員未結算區間休假單
+			strSQL = " pk_leavereg not in (select pk_leavereg from hrta_segdetailconsume sc inner join hrta_segdetail sd on sc.pk_segdetail = sd.pk_segdetail where sd.pk_psndoc =  '"
+					+ pk_psndoc
+					+ "')  and leavebegintime > (select overtimebegintime from tbm_overtimereg where pk_overtimereg = '"
+					+ pk_overtimereg + "') " + " and pk_psndoc = '" + pk_psndoc + "'";
+			lvList = this.getBaseDao().retrieveByClause(LeaveRegVO.class, strSQL);
 		}
 
-		// 取人員未結算區間加班單
-		strSQL = "select pk_overtimereg from tbm_overtimereg ot where overtimebegintime >= (select overtimebegintime from tbm_overtimereg where pk_overtimereg = '"
-				+ pk_overtimereg + "' and pk_psndoc = ot.pk_psndoc) order by overtimebegintime ";
-		List<String> otList = (List<String>) this.getBaseDao().executeQuery(strSQL, new ColumnListProcessor());
-
-		// 清理未結算數據
-		strSQL = "delete from hrta_segdetailconsume where pk_segdetail in (select pk_segdetail from hrta_segdetail where pk_psndoc = '"
-				+ pk_psndoc + "' and issettled = 'N');";
-		this.getBaseDao().executeUpdate(strSQL);
-
-		strSQL = "delete from hrta_segdetail where pk_psndoc = '" + pk_psndoc + "' and issettled = 'N'";
-		this.getBaseDao().executeUpdate(strSQL);
-
-		// 取人員未結算區間休假單
-		strSQL = "select pk_leavereg from tbm_leavereg lv where "
-				+ " pk_leavereg not in (select pk_leavereg from hrta_segdetailconsume sc inner join hrta_segdetail sd on sc.pk_segdetail = sd.pk_segdetail where sd.pk_psndoc = lv.pk_psndoc) "
-				+ " and leavebegintime > (select overtimebegintime from tbm_overtimereg where pk_overtimereg = '"
-				+ pk_overtimereg + "' and pk_psndoc = lv.pk_psndoc) " + " and pk_psndoc = '" + pk_psndoc + "'";
-		List<String> lvList = (List<String>) this.getBaseDao().executeQuery(strSQL, new ColumnListProcessor());
-
-		// 重建已結算鏈表索引
-
-		// TODO 重建加班數據
+		// 重建加班數據
 		if (otList != null && otList.size() > 0) {
-			for (String otPK : otList) {
-				this.regOvertimeSegDetail(new OvertimeRegVO[] { (OvertimeRegVO) this.getBaseDao().retrieveByPK(
-						OvertimeRegVO.class, otPK) });
+			List<OvertimeRegVO> list = new ArrayList<OvertimeRegVO>();
+			list.addAll(otList);
+			Collections.sort(list, new Comparator<OvertimeRegVO>() {
+
+				@Override
+				public int compare(OvertimeRegVO ot1, OvertimeRegVO ot2) {
+					if (ot1.getOvertimebegintime().before(ot2.getOvertimebegintime())) {
+						return -1;
+					} else if (ot1.getOvertimebegintime().after(ot2.getOvertimebegintime())) {
+						return 1;
+					} else {
+						return 0;
+					}
+				}
+			});
+
+			for (OvertimeRegVO vo : list.toArray(new OvertimeRegVO[0])) {
+				this.regOvertimeSegDetail(new OvertimeRegVO[] { vo });
 			}
 		}
 
-		// TODO 重建休假數據
+		// 重建休假數據
 		if (lvList != null && lvList.size() > 0) {
-			for (String lvPK : lvList) {
-				this.regOvertimeSegDetailConsume(new LeaveRegVO[] { (LeaveRegVO) this.getBaseDao().retrieveByPK(
-						LeaveRegVO.class, lvPK) });
+			List<LeaveRegVO> list = new ArrayList<LeaveRegVO>();
+			list.addAll(lvList);
+			Collections.sort(list, new Comparator<LeaveRegVO>() {
+
+				@Override
+				public int compare(LeaveRegVO ot1, LeaveRegVO ot2) {
+					if (ot1.getLeavebegintime().before(ot2.getLeavebegintime())) {
+						return -1;
+					} else if (ot1.getLeavebegintime().after(ot2.getLeavebegintime())) {
+						return 1;
+					} else {
+						return 0;
+					}
+				}
+			});
+
+			for (LeaveRegVO vo : list.toArray(new LeaveRegVO[0])) {
+				this.regOvertimeSegDetailConsume(new LeaveRegVO[] { vo });
 			}
 		}
 	}
@@ -2571,7 +2751,8 @@ public class SegDetailServiceImpl implements ISegDetailService {
 				calculator.setTotalcount(pk_psndocs.length);
 
 				Logger.error("---WNC-MULTIPUL-THREADS-OVERTIME-FEE-THREAD-POOL-SIZE: ["
-						+ String.valueOf(threadPoolExecutor.getPoolSize()) + "]---");
+						+ String.valueOf(threadPoolExecutor.getPoolSize()) + "]-SERIELS["
+						+ calculator.getCurrentcount() + "/" + pk_psndocs.length + "]--");
 
 				// 提交服務，註冊返回值池
 				futureDatas.add(threadPoolExecutor.submit(calculator));
@@ -2620,7 +2801,7 @@ public class SegDetailServiceImpl implements ISegDetailService {
 			Map<String, UFDouble[]> ret = new HashMap<String, UFDouble[]>();
 			try {
 				Logger.error("---WNC-MULTIPUL-THREADS-OVERTIME-FEE-THREAD-[" + Thread.currentThread().getName()
-						+ "]-COUNT [" + String.valueOf(currentcount) + " / " + String.valueOf(totalcount) + "]---");
+						+ "]-COUNT [" + String.valueOf(currentcount) + " / " + String.valueOf(totalcount) + "]-START--");
 				SegDetailServiceImpl newImpl = new SegDetailServiceImpl();
 				newImpl.setBaseDao(this.getBaseDao());
 				ret = newImpl.calculateOvertimeFeeByDate(this.getPk_org(), new String[] { this.getPk_psndoc() },
@@ -2630,6 +2811,9 @@ public class SegDetailServiceImpl implements ISegDetailService {
 				Logger.error("---WNC-MULTIPUL-THREADS-OVERTIME-FEE-THREAD-[" + Thread.currentThread().getName()
 						+ "]-ERROR---");
 				Logger.error(e.toString());
+			} finally {
+				Logger.error("---WNC-MULTIPUL-THREADS-OVERTIME-FEE-THREAD-[" + Thread.currentThread().getName()
+						+ "]-COUNT [" + String.valueOf(currentcount) + " / " + String.valueOf(totalcount) + "]-END--");
 			}
 
 			if (ret == null || ret.size() == 0) {

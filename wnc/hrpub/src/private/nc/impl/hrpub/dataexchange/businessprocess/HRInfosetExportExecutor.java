@@ -12,8 +12,7 @@ import nc.jdbc.framework.processor.ColumnListProcessor;
 import nc.jdbc.framework.processor.ColumnProcessor;
 import nc.vo.pub.BusinessException;
 
-public class HRInfosetExportExecutor extends DataExportExecutor implements
-		IDataExchangeExternalExecutor {
+public class HRInfosetExportExecutor extends DataExportExecutor implements IDataExchangeExternalExecutor {
 	private List<String> extendBizEntity = new ArrayList<String>();
 
 	public HRInfosetExportExecutor() throws BusinessException {
@@ -24,11 +23,11 @@ public class HRInfosetExportExecutor extends DataExportExecutor implements
 
 	@Override
 	public void beforeConvert() throws BusinessException {
-		if (this.getNcValueObjects() != null
-				&& this.getNcValueObjects().size() > 0) {
+		if (this.getNcValueObjects() != null && this.getNcValueObjects().size() > 0) {
 			for (Map<String, Object> ncobj : this.getNcValueObjects()) {
 				for (Entry<String, Object> entry : ncobj.entrySet()) {
-					if (entry.getKey().contains("pk_psndoc")) {
+					if (((List) getBizEntityID()).contains(this.getBizEntityID())
+							&& entry.getKey().contains("pk_psndoc")) {
 						String pk_psndoc = (String) entry.getValue();
 						String code = getCodeByPK(pk_psndoc);
 						entry.setValue(code);
@@ -43,10 +42,8 @@ public class HRInfosetExportExecutor extends DataExportExecutor implements
 		if (psnPKCodeMap.containsKey(pk_psndoc)) {
 			code = psnPKCodeMap.get(pk_psndoc);
 		} else {
-			String strSQL = "select code from bd_psndoc where pk_psndoc = '"
-					+ pk_psndoc + "'";
-			code = (String) this.getBaseDAO().executeQuery(strSQL,
-					new ColumnProcessor());
+			String strSQL = "select code from bd_psndoc where pk_psndoc = '" + pk_psndoc + "'";
+			code = (String) this.getBaseDAO().executeQuery(strSQL, new ColumnProcessor());
 			psnPKCodeMap.put(pk_psndoc, code);
 		}
 		return code;
@@ -72,8 +69,7 @@ public class HRInfosetExportExecutor extends DataExportExecutor implements
 					+ "select id from md_class where fullclassname in ("
 					+ "select vo_class_name from hr_infoset where pk_infoset in ("
 					+ "select pk_infoset from hr_infoset_item where item_code ='pk_psndoc'))) and datatype != '218971f0-e5dc-408b-9a32-56529dddd4db'";
-			List<String> valueList = (List<String>) this.getBaseDAO()
-					.executeQuery(strSQL, new ColumnListProcessor());
+			List<String> valueList = (List<String>) this.getBaseDAO().executeQuery(strSQL, new ColumnListProcessor());
 			if (valueList != null && valueList.size() > 0) {
 				for (String value : valueList) {
 					this.extendBizEntity.add(value);
@@ -99,15 +95,13 @@ public class HRInfosetExportExecutor extends DataExportExecutor implements
 	}
 
 	@Override
-	public void beforeInsertOperation(Map<String, Object> rowMap)
-			throws BusinessException {
+	public void beforeInsertOperation(Map<String, Object> rowMap) throws BusinessException {
 		// TODO 自动生成的方法存根
 
 	}
 
 	@Override
-	public void beforeUpdateOperation(Map<String, Object> rowMap)
-			throws BusinessException {
+	public void beforeUpdateOperation(Map<String, Object> rowMap) throws BusinessException {
 		// TODO 自动生成的方法存根
 
 	}

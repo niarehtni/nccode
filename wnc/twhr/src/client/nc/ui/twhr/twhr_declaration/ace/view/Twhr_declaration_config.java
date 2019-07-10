@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import nc.ui.twhr.twhr_declaration.action.DecImportAction;
 import nc.ui.uif2.factory.AbstractJavaBeanDefinition;
 
 public class Twhr_declaration_config extends AbstractJavaBeanDefinition{
@@ -281,7 +282,18 @@ invokeInitializingBean(bean);
 return bean;
 }
 
-private List getManagedList3(){  List list = new ArrayList();  list.add(getDefaultQueryAction());  list.add(getSeparatorAction());  list.add(getGeneratAction());  list.add(getSeparatorAction());  list.add(getDefaultExportAction());  list.add(getDefaultRefreshAction());  return list;}
+private List getManagedList3(){  
+	List list = new ArrayList();  
+	list.add(getDefaultQueryAction());  
+	list.add(getSeparatorAction());  
+	list.add(getGeneratAction());  
+	list.add(getSeparatorAction());  
+	list.add(getDefaultExportAction());  
+	list.add(getDefaultRefreshAction());
+	//二代健保导入按钮
+	list.add(getDefaultImportAction());
+return list;
+}
 
 private List getManagedList4(){  List list = new ArrayList();  list.add(getSaveScriptAction());  list.add(getCancelAction());  return list;}
 
@@ -504,121 +516,140 @@ invokeInitializingBean(bean);
 return bean;
 }
 
-public nc.ui.twhr.twhr_declaration.ace.action.GeneratAction getGeneratAction(){
- if(context.get("generatAction")!=null)
- return (nc.ui.twhr.twhr_declaration.ace.action.GeneratAction)context.get("generatAction");
-  nc.ui.twhr.twhr_declaration.ace.action.GeneratAction bean = new nc.ui.twhr.twhr_declaration.ace.action.GeneratAction();
-  context.put("generatAction",bean);
-  bean.setModel(getBmModel());
-  bean.setPrimaryOrgPanel(getPrimaryOrgPanel());
-  bean.setBtnName("生成");
-  bean.setExceptionHandler(getExceptionHandler());
-setBeanFacotryIfBeanFacatoryAware(bean);
-invokeInitializingBean(bean);
-return bean;
-}
+	public nc.ui.twhr.twhr_declaration.ace.action.GeneratAction getGeneratAction(){
+	 if(context.get("generatAction")!=null)
+	 return (nc.ui.twhr.twhr_declaration.ace.action.GeneratAction)context.get("generatAction");
+	  nc.ui.twhr.twhr_declaration.ace.action.GeneratAction bean = new nc.ui.twhr.twhr_declaration.ace.action.GeneratAction();
+	  context.put("generatAction",bean);
+	  bean.setModel(getBmModel());
+	  bean.setPrimaryOrgPanel(getPrimaryOrgPanel());
+	  bean.setBtnName("生成");
+	  bean.setExceptionHandler(getExceptionHandler());
+	setBeanFacotryIfBeanFacatoryAware(bean);
+	invokeInitializingBean(bean);
+	return bean;
+	}
 
-public nc.ui.pubapp.uif2app.actions.pflow.DeleteScriptAction getDeleteScriptAction(){
- if(context.get("deleteScriptAction")!=null)
- return (nc.ui.pubapp.uif2app.actions.pflow.DeleteScriptAction)context.get("deleteScriptAction");
-  nc.ui.pubapp.uif2app.actions.pflow.DeleteScriptAction bean = new nc.ui.pubapp.uif2app.actions.pflow.DeleteScriptAction();
-  context.put("deleteScriptAction",bean);
-  bean.setModel(getBmModel());
-  bean.setBillType("NHI1");
-  bean.setFilledUpInFlow(true);
-  bean.setActionName("DELETE");
-  bean.setExceptionHandler(getExceptionHandler());
-setBeanFacotryIfBeanFacatoryAware(bean);
-invokeInitializingBean(bean);
-return bean;
-}
+	public nc.ui.pubapp.uif2app.actions.pflow.DeleteScriptAction getDeleteScriptAction(){
+	 if(context.get("deleteScriptAction")!=null)
+	 return (nc.ui.pubapp.uif2app.actions.pflow.DeleteScriptAction)context.get("deleteScriptAction");
+	  nc.ui.pubapp.uif2app.actions.pflow.DeleteScriptAction bean = new nc.ui.pubapp.uif2app.actions.pflow.DeleteScriptAction();
+	  context.put("deleteScriptAction",bean);
+	  bean.setModel(getBmModel());
+	  bean.setBillType("NHI1");
+	  bean.setFilledUpInFlow(true);
+	  bean.setActionName("DELETE");
+	  bean.setExceptionHandler(getExceptionHandler());
+	setBeanFacotryIfBeanFacatoryAware(bean);
+	invokeInitializingBean(bean);
+	return bean;
+	}
 
-public nc.ui.uif2.editor.QueryTemplateContainer getDefaultQueryActionQueryTemplateContainer(){
- if(context.get("defaultQueryActionQueryTemplateContainer")!=null)
- return (nc.ui.uif2.editor.QueryTemplateContainer)context.get("defaultQueryActionQueryTemplateContainer");
-  nc.ui.uif2.editor.QueryTemplateContainer bean = new nc.ui.uif2.editor.QueryTemplateContainer();
-  context.put("defaultQueryActionQueryTemplateContainer",bean);
-  bean.setNodeKey("qt");
-  bean.setContext(getContext());
-setBeanFacotryIfBeanFacatoryAware(bean);
-invokeInitializingBean(bean);
-return bean;
-}
+	public nc.ui.uif2.editor.QueryTemplateContainer getDefaultQueryActionQueryTemplateContainer(){
+	 if(context.get("defaultQueryActionQueryTemplateContainer")!=null)
+	 return (nc.ui.uif2.editor.QueryTemplateContainer)context.get("defaultQueryActionQueryTemplateContainer");
+	  nc.ui.uif2.editor.QueryTemplateContainer bean = new nc.ui.uif2.editor.QueryTemplateContainer();
+	  context.put("defaultQueryActionQueryTemplateContainer",bean);
+	  bean.setNodeKey("qt");
+	  bean.setContext(getContext());
+	setBeanFacotryIfBeanFacatoryAware(bean);
+	invokeInitializingBean(bean);
+	return bean;
+	}
 
-public nc.ui.twhr.twhr_declaration.action.DeclarationQueryAction getDefaultQueryAction(){
- if(context.get("defaultQueryAction")!=null)
- return (nc.ui.twhr.twhr_declaration.action.DeclarationQueryAction)context.get("defaultQueryAction");
-  nc.ui.twhr.twhr_declaration.action.DeclarationQueryAction bean = new nc.ui.twhr.twhr_declaration.action.DeclarationQueryAction();
-  context.put("defaultQueryAction",bean);
-  bean.setModel(getBmModel());
-  bean.setPrimaryOrgPanel(getPrimaryOrgPanel());
-  bean.setTemplateContainer(getDefaultQueryActionQueryTemplateContainer());
-  bean.setNodeKey("qt");
-  bean.setDataManager(getBmModelModelDataManager());
-  bean.setExceptionHandler(getExceptionHandler());
-  bean.setBtnName("查询");
-setBeanFacotryIfBeanFacatoryAware(bean);
-invokeInitializingBean(bean);
-return bean;
-}
+	public nc.ui.twhr.twhr_declaration.action.DeclarationQueryAction getDefaultQueryAction(){
+	 if(context.get("defaultQueryAction")!=null)
+	 return (nc.ui.twhr.twhr_declaration.action.DeclarationQueryAction)context.get("defaultQueryAction");
+	  nc.ui.twhr.twhr_declaration.action.DeclarationQueryAction bean = new nc.ui.twhr.twhr_declaration.action.DeclarationQueryAction();
+	  context.put("defaultQueryAction",bean);
+	  bean.setModel(getBmModel());
+	  bean.setPrimaryOrgPanel(getPrimaryOrgPanel());
+	  bean.setTemplateContainer(getDefaultQueryActionQueryTemplateContainer());
+	  bean.setNodeKey("qt");
+	  bean.setDataManager(getBmModelModelDataManager());
+	  bean.setExceptionHandler(getExceptionHandler());
+	  bean.setBtnName("查询");
+	setBeanFacotryIfBeanFacatoryAware(bean);
+	invokeInitializingBean(bean);
+	return bean;
+	}
 
-public nc.ui.twhr.twhr_declaration.action.DefaultExportAction getDefaultExportAction(){
- if(context.get("defaultExportAction")!=null)
- return (nc.ui.twhr.twhr_declaration.action.DefaultExportAction)context.get("defaultExportAction");
-  nc.ui.twhr.twhr_declaration.action.DefaultExportAction bean = new nc.ui.twhr.twhr_declaration.action.DefaultExportAction();
-  context.put("defaultExportAction",bean);
-  bean.setModel(getBmModel());
-  bean.setDataManager(getBmModelModelDataManager());
-  bean.setPrimaryOrgPanel(getPrimaryOrgPanel());
-  bean.setBillForm(getBillForm());
-  bean.setExceptionHandler(getExceptionHandler());
-  bean.setBtnName("二代健保申报");
-setBeanFacotryIfBeanFacatoryAware(bean);
-invokeInitializingBean(bean);
-return bean;
-}
+	public nc.ui.twhr.twhr_declaration.action.DefaultExportAction getDefaultExportAction(){
+	 if(context.get("defaultExportAction")!=null)
+	 return (nc.ui.twhr.twhr_declaration.action.DefaultExportAction)context.get("defaultExportAction");
+	  nc.ui.twhr.twhr_declaration.action.DefaultExportAction bean = new nc.ui.twhr.twhr_declaration.action.DefaultExportAction();
+	  context.put("defaultExportAction",bean);
+	  bean.setModel(getBmModel());
+	  bean.setDataManager(getBmModelModelDataManager());
+	  bean.setPrimaryOrgPanel(getPrimaryOrgPanel());
+	  bean.setBillForm(getBillForm());
+	  bean.setExceptionHandler(getExceptionHandler());
+	  bean.setBtnName("二代健保申报");
+	setBeanFacotryIfBeanFacatoryAware(bean);
+	invokeInitializingBean(bean);
+	return bean;
+	}
+	/**
+	 * 二代健保导入数据按钮
+	 * @author wangywt
+	 * @since 20190620
+	 * @return
+	 */
+	public DecImportAction getDefaultImportAction(){
+		if(context.get("defaultImportAction")!=null){
+			return (DecImportAction)context.get("defaultImportAction");
+		}
+		DecImportAction bean = new DecImportAction();
+		context.put("defaultImportAction",bean);
+		bean.setModel(getBmModel());
+		bean.setExceptionHandler(getExceptionHandler());
+		bean.setBtnName("導入");
+		setBeanFacotryIfBeanFacatoryAware(bean);
+		invokeInitializingBean(bean);
+		return bean;
+	}
+	public nc.ui.pubapp.uif2app.actions.CopyAction getCopyAction(){
+		if(context.get("copyAction")!=null){
+			return (nc.ui.pubapp.uif2app.actions.CopyAction)context.get("copyAction");
+		}
+		nc.ui.pubapp.uif2app.actions.CopyAction bean = new nc.ui.pubapp.uif2app.actions.CopyAction();
+		context.put("copyAction",bean);
+		bean.setModel(getBmModel());
+		bean.setEditor(getBillForm());
+		bean.setExceptionHandler(getExceptionHandler());
+		setBeanFacotryIfBeanFacatoryAware(bean);
+		invokeInitializingBean(bean);
+		return bean;
+	}
 
-public nc.ui.pubapp.uif2app.actions.CopyAction getCopyAction(){
- if(context.get("copyAction")!=null)
- return (nc.ui.pubapp.uif2app.actions.CopyAction)context.get("copyAction");
-  nc.ui.pubapp.uif2app.actions.CopyAction bean = new nc.ui.pubapp.uif2app.actions.CopyAction();
-  context.put("copyAction",bean);
-  bean.setModel(getBmModel());
-  bean.setEditor(getBillForm());
-  bean.setExceptionHandler(getExceptionHandler());
-setBeanFacotryIfBeanFacatoryAware(bean);
-invokeInitializingBean(bean);
-return bean;
-}
+	public nc.ui.pubapp.uif2app.query2.action.DefaultRefreshAction getDefaultRefreshAction(){
+		 if(context.get("defaultRefreshAction")!=null)
+		 return (nc.ui.pubapp.uif2app.query2.action.DefaultRefreshAction)context.get("defaultRefreshAction");
+		  nc.ui.pubapp.uif2app.query2.action.DefaultRefreshAction bean = new nc.ui.pubapp.uif2app.query2.action.DefaultRefreshAction();
+		  context.put("defaultRefreshAction",bean);
+		  bean.setModel(getBmModel());
+		  bean.setDataManager(getBmModelModelDataManager());
+		  bean.setExceptionHandler(getExceptionHandler());
+		setBeanFacotryIfBeanFacatoryAware(bean);
+		invokeInitializingBean(bean);
+		return bean;
+	}
 
-public nc.ui.pubapp.uif2app.query2.action.DefaultRefreshAction getDefaultRefreshAction(){
- if(context.get("defaultRefreshAction")!=null)
- return (nc.ui.pubapp.uif2app.query2.action.DefaultRefreshAction)context.get("defaultRefreshAction");
-  nc.ui.pubapp.uif2app.query2.action.DefaultRefreshAction bean = new nc.ui.pubapp.uif2app.query2.action.DefaultRefreshAction();
-  context.put("defaultRefreshAction",bean);
-  bean.setModel(getBmModel());
-  bean.setDataManager(getBmModelModelDataManager());
-  bean.setExceptionHandler(getExceptionHandler());
-setBeanFacotryIfBeanFacatoryAware(bean);
-invokeInitializingBean(bean);
-return bean;
-}
-
-public nc.ui.pubapp.uif2app.actions.pflow.CommitScriptAction getCommitScriptAction(){
- if(context.get("commitScriptAction")!=null)
- return (nc.ui.pubapp.uif2app.actions.pflow.CommitScriptAction)context.get("commitScriptAction");
-  nc.ui.pubapp.uif2app.actions.pflow.CommitScriptAction bean = new nc.ui.pubapp.uif2app.actions.pflow.CommitScriptAction();
-  context.put("commitScriptAction",bean);
-  bean.setModel(getBmModel());
-  bean.setEditor(getBillForm());
-  bean.setBillType("NHI1");
-  bean.setFilledUpInFlow(true);
-  bean.setActionName("SAVE");
-  bean.setExceptionHandler(getExceptionHandler());
-setBeanFacotryIfBeanFacatoryAware(bean);
-invokeInitializingBean(bean);
-return bean;
-}
+	public nc.ui.pubapp.uif2app.actions.pflow.CommitScriptAction getCommitScriptAction(){
+		 if(context.get("commitScriptAction")!=null)
+		 return (nc.ui.pubapp.uif2app.actions.pflow.CommitScriptAction)context.get("commitScriptAction");
+		  nc.ui.pubapp.uif2app.actions.pflow.CommitScriptAction bean = new nc.ui.pubapp.uif2app.actions.pflow.CommitScriptAction();
+		  context.put("commitScriptAction",bean);
+		  bean.setModel(getBmModel());
+		  bean.setEditor(getBillForm());
+		  bean.setBillType("NHI1");
+		  bean.setFilledUpInFlow(true);
+		  bean.setActionName("SAVE");
+		  bean.setExceptionHandler(getExceptionHandler());
+		setBeanFacotryIfBeanFacatoryAware(bean);
+		invokeInitializingBean(bean);
+		return bean;
+	}
 
 public nc.ui.pubapp.uif2app.actions.pflow.UnCommitScriptAction getUnCommitScriptAction(){
  if(context.get("unCommitScriptAction")!=null)

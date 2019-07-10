@@ -642,19 +642,26 @@ public class DataItfFileReader {
 							errMsg.append(ResHelper.getString("6013dataitf_01", "dataitf-01-0025"));
 						} else if (StringUtils.isNotBlank(deptCode)) {
 							vo = codeDeptPsnVOMap.get(psnCode + deptCode);
-							pk_psndoc = vo.getPk_psndoc();
-							psnName = MultiLangHelper.getName(vo);
-							PsnJobVO jobvo = vo.getPsnJobVO();
-							if (null == jobvo) {
+							if (vo == null) {
 								// 人员[" + psnCode + "]
 								// 在部门[" + deptCode + "]下的任职记录在系统中找不到!
 								errMsg.append(ResHelper.getString("6013dataitf_01", "dataitf-01-0026", null,
 										new String[] { psnCode, deptCode }));
 							} else {
-								pk_psnjob = jobvo.getPk_psnjob();
-								pk_psnorg = jobvo.getPk_psnorg();
-								pk_workdept = jobvo.getPk_dept();
-								pk_workorg = jobvo.getPk_org();
+								pk_psndoc = vo.getPk_psndoc();
+								psnName = MultiLangHelper.getName(vo);
+								PsnJobVO jobvo = vo.getPsnJobVO();
+								if (null == jobvo) {
+									// 人员[" + psnCode + "]
+									// 在部门[" + deptCode + "]下的任职记录在系统中找不到!
+									errMsg.append(ResHelper.getString("6013dataitf_01", "dataitf-01-0026", null,
+											new String[] { psnCode, deptCode }));
+								} else {
+									pk_psnjob = jobvo.getPk_psnjob();
+									pk_psnorg = jobvo.getPk_psnorg();
+									pk_workdept = jobvo.getPk_dept();
+									pk_workorg = jobvo.getPk_org();
+								}
 							}
 						}
 					}

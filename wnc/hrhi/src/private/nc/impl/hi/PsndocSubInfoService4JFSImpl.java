@@ -362,11 +362,14 @@ public class PsndocSubInfoService4JFSImpl implements IPsndocSubInfoService4JFS {
 							famemplist.add(famempvo);
 
 						} else {
-							throw new BusinessException(nc.vo.ml.NCLangRes4VoTransl.getNCLangRes().getStrByID(
-									"twhr_personalmgt", "068J61035-0013")/*
-																		 * @res
-																		 * 未找到團保險種檔案
-																		 */);
+							throw new BusinessException("員工 ["
+									+ psnSet.getValue().getsName()
+									+ "] 未找到團保投保費率組合: \r\n投保險種 ["
+									+ ((DefdocVO) this.getBaseDao().retrieveByPK(DefdocVO.class,
+											psnSet.getValue().getPk_GroupInsurance())).getName()
+									+ "], \r\n投保身份 ["
+									+ ((DefdocVO) this.getBaseDao().retrieveByPK(DefdocVO.class,
+											psnSet.getValue().getPk_RelationType())).getName() + "] ");
 						}// 按團保險種計算end
 					}// 計算全月end
 				}

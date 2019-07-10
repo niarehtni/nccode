@@ -706,10 +706,11 @@ public class DeptServiceImpl extends TreeBaseServiceAggVOAdapter<AggHRDeptVO> im
 																	 * @res
 																	 * "初始版本"
 																	 */);
-		UFDate time = PubEnv.getServerDate();
-		vo.setVno(time.getYear() + "01");
+		// UFDate time = PubEnv.getServerDate();
+
+		vo.setVno(vo.getCreatedate().getYear() + "01");
 		vo.setPk_vid(OidGenerator.getInstance().nextOid());
-		vo.setVstartdate(time);
+		vo.setVstartdate(new UFDate(vo.getCreatedate().toString(), true));
 		vo.setOrgtype13(UFBoolean.TRUE);
 		// 是否预算组织 zhangqiano 2015-11-21
 		// vo.setOrgtype17(UFBoolean.TRUE);
@@ -1309,7 +1310,8 @@ public class DeptServiceImpl extends TreeBaseServiceAggVOAdapter<AggHRDeptVO> im
 		HRDeptVO deptVO = (HRDeptVO) aggVO.getParentVO();
 		// UFDate vstartdate = deptVO.getVstartdate();// 新版本时间
 
-		UFDate vstartdate = new UFDate(new Date());// 新版本生效时间
+		UFDate vstartdate = new UFDate(((UFLiteralDate) aggVO.getParentVO().getAttributeValue("CREATEDATE")).toString()
+				+ " 00:00:00");// 新版本生效时间
 
 		String pk_deptvid = OidGenerator.getInstance().nextOid();// 新版本主键
 
@@ -1324,7 +1326,8 @@ public class DeptServiceImpl extends TreeBaseServiceAggVOAdapter<AggHRDeptVO> im
 		// 查询出需要生成新版本的deptVO的旧版本数据，更新旧版本的venddate字段为新版本生效日期-1
 		HRDeptVersionVO oldDeptVersionVO = deptVersionVOs[0];
 		BDPKLockUtil.lockSuperVO(oldDeptVersionVO);
-		oldDeptVersionVO.setVenddate(vstartdate.getDateBefore(1));
+		oldDeptVersionVO.setVenddate(new UFDate(((UFLiteralDate) aggVO.getParentVO().getAttributeValue("CREATEDATE"))
+				.getDateBefore(1).toString() + " 23:59:59"));
 		// 审计信息
 		AuditInfoUtil.updateData(oldDeptVersionVO);
 		// 数据库操作
@@ -4443,7 +4446,7 @@ public class DeptServiceImpl extends TreeBaseServiceAggVOAdapter<AggHRDeptVO> im
 		String strDate = date.toString();
 
 		String querySql = " select pk_vid from org_dept_v where pk_dept ='" + pk_dept + "' and '" + strDate
-				+ "' < venddate and '" + strDate + "'>= vstartdate; ";
+				+ "' < isnull(venddate,'9999-12-31 23:59:59') and '" + strDate + "'>= vstartdate; ";
 
 		String pk_vid = (String) new BaseDAO().executeQuery(querySql, new ColumnProcessor());
 
@@ -4897,8 +4900,8 @@ public class DeptServiceImpl extends TreeBaseServiceAggVOAdapter<AggHRDeptVO> im
 	}
 
 	@Override
-	public AggHRDeptVO renameAndPrincipalChange(AggHRDeptVO aggdeptVO, DeptHistoryVO historyVO, boolean updateCareer,int changeType)
-			throws BusinessException {
+	public AggHRDeptVO renameAndPrincipalChange(AggHRDeptVO aggdeptVO, DeptHistoryVO historyVO, boolean updateCareer,
+			int changeType) throws BusinessException {
 		// HRDeptVO deptVO = aggdeptVO.getParentVO();
 		// 因为前台已经上锁，所以在更新前要先去掉后台的锁
 		ILocker locker = getServiceTemplate().getLocker();
@@ -4928,21 +4931,20 @@ public class DeptServiceImpl extends TreeBaseServiceAggVOAdapter<AggHRDeptVO> im
 		renameInfoVO.setUpdateCareer(updateCareer);
 		renameInfoVO.setEffectDate(historyVO.getEffectdate());
 		renameInfoVO.setDeptVO((HRDeptVO) updatedVO.getParentVO());
-		if(changeType != 2){
+		if (changeType != 2) {
 			// 发送业务事件
 			BusinessEvent afterEvent = new BusinessEvent(docName, IOMEventType.DEPT_RENAME_AFTER, renameInfoVO);
-			EventDispatcher.fireEvent(afterEvent);	
-		}else{
+			EventDispatcher.fireEvent(afterEvent);
+		} else {
 			// 发送业务事件--只進行負責人變更
 			BusinessEvent afterEvent = new BusinessEvent(docName, IOMEventType.DEPT_PRINCIPALCHANGE_AFTER, renameInfoVO);
-			EventDispatcher.fireEvent(afterEvent);	
+			EventDispatcher.fireEvent(afterEvent);
 		}
 		return updatedVO;
 	}
 
 	@Override
-	public AggHRDeptVO createDeptVersion(AggHRDeptVO aggVO, UFDate startdate)
-			throws BusinessException {
+	public AggHRDeptVO createDeptVersion(AggHRDeptVO aggVO, UFDate startdate) throws BusinessException {
 
 		HRDeptVO deptVO = (HRDeptVO) aggVO.getParentVO();
 		// UFDate vstartdate = deptVO.getVstartdate();// 新版本时间
@@ -5041,6 +5043,7 @@ public class DeptServiceImpl extends TreeBaseServiceAggVOAdapter<AggHRDeptVO> im
 		}
 		return aggVO;
 	}
+
 	@Override
 	public AggHRDeptVO[] createDeptVersion(AggHRDeptVO[] deptVOs, UFDate startdate) throws BusinessException {
 		if (ArrayUtils.isEmpty(deptVOs)) {
@@ -5048,7 +5051,7 @@ public class DeptServiceImpl extends TreeBaseServiceAggVOAdapter<AggHRDeptVO> im
 		}
 		AggHRDeptVO[] resultVOs = new AggHRDeptVO[deptVOs.length];
 		for (int i = 0; i < deptVOs.length; i++) {
-			resultVOs[i] = createDeptVersion(deptVOs[i],startdate);
+			resultVOs[i] = createDeptVersion(deptVOs[i], startdate);
 		}
 		return resultVOs;
 	}

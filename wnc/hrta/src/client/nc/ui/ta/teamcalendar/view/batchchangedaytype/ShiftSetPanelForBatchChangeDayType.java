@@ -10,12 +10,14 @@ import java.awt.event.ActionListener;
 import java.text.DecimalFormat;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Vector;
 
 import nc.bs.framework.common.NCLocator;
 import nc.hr.utils.PairFactory;
 import nc.hr.utils.ResHelper;
 import nc.itf.uap.IUAPQueryBS;
 import nc.jdbc.framework.processor.MapProcessor;
+import nc.jdbc.framework.processor.VectorProcessor;
 import nc.ui.bd.ref.IRefConst;
 import nc.ui.bd.shift.ref.model.ShiftRefModelLeftType;
 import nc.ui.pub.beans.UICheckBox;
@@ -26,6 +28,7 @@ import nc.ui.pub.beans.UIRefPane;
 import nc.ui.pub.beans.ValueChangedEvent;
 import nc.ui.pub.beans.ValueChangedListener;
 import nc.ui.pub.beans.border.UITitledBorder;
+import nc.ui.pub.beans.wizard.WizardStep;
 import nc.ui.pub.bill.BillItem;
 import nc.ui.pub.bill.BillModel;
 import nc.ui.pub.bill.IBillItem;
@@ -36,6 +39,7 @@ import nc.ui.uif2.AppEvent;
 import nc.ui.uif2.AppEventListener;
 import nc.ui.uif2.model.AbstractUIAppModel;
 import nc.ui.uif2.model.IAppModel;
+import nc.vo.bd.team.team01.entity.TeamHeadVO;
 import nc.vo.bd.workcalendar.CalendarDateType;
 import nc.vo.bd.workcalendar.WorkCalendarDateVO;
 import nc.vo.pub.BusinessException;
@@ -54,7 +58,8 @@ public class ShiftSetPanelForBatchChangeDayType extends UIPanel  implements Valu
 	private static final long serialVersionUID = 749514391008736111L;
 
 	IAppModel model = null;
-
+	//将步骤2的班组给注入进来  20190701 wangywt
+	private WizardStep step;
 	//ConditionSelPsnDateScopePanel selPsnPanel;
 	UIPanel dateTypePanel;// 原班次新班次的panel
 	UIRefPane firstDateRefPane;// 第一个日期参照
@@ -109,6 +114,14 @@ public class ShiftSetPanelForBatchChangeDayType extends UIPanel  implements Valu
 			buPanel.getBuRef().addValueChangedListener(this);
 		}
 		return buPanel;
+	}
+
+	public WizardStep getStep() {
+		return step;
+	}
+
+	public void setStep(WizardStep step) {
+		this.step = step;
 	}
 
 	public IAppModel getModel() {
@@ -336,7 +349,7 @@ public class ShiftSetPanelForBatchChangeDayType extends UIPanel  implements Valu
 		}finally{
 			switch(dayType){
 			case 0:return 0;
-			case 1:return 99;//公休日暂未定义
+			case 1:return 1;//公休日暂未定义
 			case 2:return 2;
 			case 3:return 4;
 			case 4:return 1;
@@ -552,31 +565,47 @@ public class ShiftSetPanelForBatchChangeDayType extends UIPanel  implements Valu
 	 */
 	@SuppressWarnings("unchecked")
 	public String getCalendarType(UFLiteralDate date) {
+		//显示的日历天为班组工作日历类型    wangywt  20190701   begin
+		ConfirmTeamStepForBatchChangeDayType step2=(ConfirmTeamStepForBatchChangeDayType) this.getStep();
+		ConfirmTeamPanelForBatchChangeDayType panel2 = step2.getTeamPanelForBatchChangeDayType();
+		//获取在步骤二中选择的所有班组
+		TeamHeadVO[] teamVOs = panel2.getSelTeamVOs();
+		int len = teamVOs.length;
 		String returnResult = "";
+		//如果日期是空的话，不异动
 		if (null == date) {
 			return returnResult;
 		}
-		String sqlPuls = "SELECT bd_workcalendardate.datetype" + " FROM bd_workcalendardate"
-				+ " WHERE bd_workcalendardate.pk_workcalendar =" + " (SELECT bd_workcalendar.pk_workcalendar"
-				+ " FROM bd_workcalendar" + " WHERE bd_workcalendar.isdefaultcalendar = 'Y'" + " AND dr = 0)"
-				+ " and bd_workcalendardate.calendardate  = '" + date.toPersisted() + "'";
+		//从班组工作日历中去取日历天类型
+		StringBuffer sql = new StringBuffer("select distinct DATE_DAYTYPE from bd_teamcalendar where calendar = '"
+		+date.toPersisted() + "' and PK_TEAM  in (");
+		//班组不多，不用临时表
+		for (int i = 0;i<len;i++) {
+			if(i==len-1){
+				sql.append("'"+teamVOs[i].getCteamid()+"')");
+			}else{
+				sql.append("'"+teamVOs[i].getCteamid()+"',");
+			}
+		}
+		//根据日期和班组查询日历天类型
 		IUAPQueryBS iUAPQueryBS = (IUAPQueryBS) NCLocator.getInstance().lookup(IUAPQueryBS.class.getName());
-		Map<String, Object> result = null;
+		Vector<Object> result = null;
 		try {
-			result = (HashMap<String, Object>) iUAPQueryBS.executeQuery(sqlPuls, new MapProcessor());
+			result =  (Vector<Object>) iUAPQueryBS.executeQuery(sql.toString(), new VectorProcessor());
 		} catch (BusinessException e) {
 			return returnResult;
 		}
-		if (null != result && result.size() > 0) {
-			if (null != result.get(WorkCalendarDateVO.DATETYPE)) {
-				try {
-					String index = result.get(WorkCalendarDateVO.DATETYPE).toString();
-					returnResult = CalendarDateType.getName(Integer.parseInt(index));
-				} catch (Exception e) {
-					return returnResult;
-				}
+		//当且仅当查询出来一个结果时显示当日的假期类型，其他情况下都不显示，例如：查询出来多个的话就不显示当前日历天类型
+		if (null != result && result.size() == 1) {
+			try {
+				Vector object = (Vector) result.get(0);
+				String index = object.get(0).toString();
+				returnResult = CalendarDateType.getName(Integer.parseInt(index));
+			} catch (Exception e) {
+				return returnResult;
 			}
 		}
+		//显示的日历天为班组工作日历类型    wangywt  20190701   end
 		return returnResult;
 	}
 }

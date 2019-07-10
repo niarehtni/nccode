@@ -2,6 +2,7 @@ package nc.itf.om;
 
 import java.util.List;
 
+import nc.bs.dao.DAOException;
 import nc.vo.om.hrdept.AggHRDeptVO;
 import nc.vo.om.hrdept.HRDeptAdjustVO;
 import nc.vo.om.hrdept.HRDeptVO;
@@ -10,124 +11,136 @@ import nc.vo.pub.lang.UFBoolean;
 import nc.vo.pub.lang.UFLiteralDate;
 
 public interface IDeptAdjustService {
-	
+
 	/**
 	 * 部门的pk_dept_v不能为空,此标记表示此部门为新增,无版本的部门
+	 * 
 	 * @return
 	 */
 	String getNewDeptVerPK();
-	
+
 	/**
 	 * 根据部门查询当前部门的版本PK
-	 * @param pk_dept 
-	 * @return 当前部门的版本PK
-	 * 业务逻辑:查询当前部门的版本PK
+	 * 
+	 * @param pk_dept
+	 * @return 当前部门的版本PK 业务逻辑:查询当前部门的版本PK
 	 */
 	String queryLastDeptByPk(String pk_dept);
-	
+
 	/**
 	 * 执行部门版本化（後台任務：先新增再修改）
+	 * 
 	 * @param date
+	 * @return
 	 * @throws BusinessException
-	 * 业务逻辑:执行生效日期为此日期的所有部门版本化单据,
-	 * 1.将此日期的单据vo上存储的字段信息,存储到org_dept,org_dept_v,org_orgs,org_orgs_v,org_reportorg.并且更新关联的十几张表(参考新增和修改逻辑).
-	 * 2.部门编码和部门名称更改时, 新增人員任職記錄( 已經結束的任職記錄不更新)((参考新增和修改逻辑))
-	 * 3.人员履历记录都要增加(参考新增和修改逻辑)4.islastversion打上最新标志,该部门其它记录改为false(参考新增和修改逻辑) 
-	 * 4.iseffective打上执行标记.iseffective为false的不执行.
-	 * (5.其它参考新增和修改逻辑)
+	 *             业务逻辑:执行生效日期为此日期的所有部门版本化单据,
+	 *             1.将此日期的单据vo上存储的字段信息,存储到org_dept,org_dept_v
+	 *             ,org_orgs,org_orgs_v,org_reportorg.并且更新关联的十几张表(参考新增和修改逻辑).
+	 *             2.部门编码和部门名称更改时, 新增人員任職記錄( 已經結束的任職記錄不更新)((参考新增和修改逻辑))
+	 *             3.人员履历记录都要增加
+	 *             (参考新增和修改逻辑)4.islastversion打上最新标志,该部门其它记录改为false(参考新增和修改逻辑)
+	 *             4.iseffective打上执行标记.iseffective为false的不执行. (5.其它参考新增和修改逻辑)
 	 */
-	void executeDeptVersion (UFLiteralDate date) throws BusinessException;
+	String executeDeptVersion(UFLiteralDate date) throws BusinessException;
+
 	/**
 	 * 执行部门版本化（後台任務：先新增再修改）
+	 * 
 	 * @param date
 	 * @throws BusinessException
-	 * 业务逻辑:执行生效日期为此日期的所有部门版本化单据,
-	 * 1.将此日期的单据vo上存储的字段信息,存储到org_dept,org_dept_v,org_orgs,org_orgs_v,org_reportorg.并且更新关联的十几张表(参考新增和修改逻辑).
-	 * 2.部门编码和部门名称更改时, 新增人員任職記錄( 已經結束的任職記錄不更新)((参考新增和修改逻辑))
-	 * 3.人员履历记录都要增加(参考新增和修改逻辑)4.islastversion打上最新标志,该部门其它记录改为false(参考新增和修改逻辑) 
-	 * 4.iseffective打上执行标记.iseffective为false的不执行.
-	 * (5.其它参考新增和修改逻辑)
+	 *             业务逻辑:执行生效日期为此日期的所有部门版本化单据,
+	 *             1.将此日期的单据vo上存储的字段信息,存储到org_dept,org_dept_v
+	 *             ,org_orgs,org_orgs_v,org_reportorg.并且更新关联的十几张表(参考新增和修改逻辑).
+	 *             2.部门编码和部门名称更改时, 新增人員任職記錄( 已經結束的任職記錄不更新)((参考新增和修改逻辑))
+	 *             3.人员履历记录都要增加
+	 *             (参考新增和修改逻辑)4.islastversion打上最新标志,该部门其它记录改为false(参考新增和修改逻辑)
+	 *             4.iseffective打上执行标记.iseffective为false的不执行. (5.其它参考新增和修改逻辑)
 	 */
-	void executeDeptVersion(HRDeptAdjustVO[] results,UFLiteralDate date) throws BusinessException;
+	String executeDeptVersion(HRDeptAdjustVO[] results, UFLiteralDate date) throws BusinessException;
+
 	/*
-	 * 查询是否已存在指定部門未生效的調整申請單					
-	* pk_dept					
-	* 返回UFBoolean True存在，False不存在
-	* 业务逻辑:查询是否已存在指定部門未生效的調整申請單即存在生效日期大于当前日期的此部门的调整单.	
-	*/
-	UFBoolean isExistDeptAdj(String pk_dept,String pk_adjdept)  throws BusinessException ;					
-	
+	 * 查询是否已存在指定部門未生效的調整申請單 pk_dept 返回UFBoolean True存在，False不存在
+	 * 业务逻辑:查询是否已存在指定部門未生效的調整申請單即存在生效日期大于当前日期的此部门的调整单.
+	 */
+	UFBoolean isExistDeptAdj(String pk_dept, String pk_adjdept) throws BusinessException;
+
 	/**
 	 * 单据校验服務1--部门单据唯一性(nc.impl.pubapp.pattern.rule.IRule<BatchOperateVO>)
+	 * 
 	 * @param vo
 	 * @throws BusinessException
-	 * 业务逻辑:
-	 * 1. 同一部門只能有一張生效日期大于当前日期單據(后台服务)
+	 *             业务逻辑: 1. 同一部門只能有一張生效日期大于当前日期單據(后台服务)
 	 */
 	UFBoolean validateDept(HRDeptAdjustVO vo) throws BusinessException;
-	
+
 	/**
 	 * 部门信息新增回写
+	 * 
 	 * @param deptVO
 	 * @throws BusinessException
-	 * 业务逻辑:部门新增时,如果成立日期大于当前日期,
-	 * 那么回写一笔单据到本节点,
-	 * 将deptVO赋值到HRDeptAdjustVO上的字段,申请人填写当前用户,
-	 * 申请日期填写当前日期,生效日期为部门的成立日期,调整部门为vo上的部门.
-	 * 如果该部门pk已经存在,那么不能在进行回写,同时在保存部门的时候抛出异常.
+	 *             业务逻辑:部门新增时,如果成立日期大于当前日期, 那么回写一笔单据到本节点,
+	 *             将deptVO赋值到HRDeptAdjustVO上的字段,申请人填写当前用户,
+	 *             申请日期填写当前日期,生效日期为部门的成立日期,调整部门为vo上的部门.
+	 *             如果该部门pk已经存在,那么不能在进行回写,同时在保存部门的时候抛出异常.
 	 * 
 	 */
-	AggHRDeptVO writeBack4DeptAdd(AggHRDeptVO deptVO)  throws BusinessException ;
+	AggHRDeptVO writeBack4DeptAdd(AggHRDeptVO deptVO) throws BusinessException;
+
 	/**
 	 * 部门信息取消撤销回写
+	 * 
 	 * @param deptVO
 	 * @throws BusinessException
-	 * 业务逻辑:部门取消撤销时,如果成立日期大于当前日期,
-	 * 那么回写一笔单据到本节点,
-	 * 将deptVO赋值到HRDeptAdjustVO上的字段,申请人填写当前用户,
-	 * 申请日期填写当前日期,生效日期为部门的成立日期,调整部门为vo上的部门.
+	 *             业务逻辑:部门取消撤销时,如果成立日期大于当前日期, 那么回写一笔单据到本节点,
+	 *             将deptVO赋值到HRDeptAdjustVO上的字段,申请人填写当前用户,
+	 *             申请日期填写当前日期,生效日期为部门的成立日期,调整部门为vo上的部门.
 	 */
-	AggHRDeptVO writeBack4DeptUnCancel(AggHRDeptVO deptVO,UFLiteralDate effective)  throws BusinessException ;
-	
+	AggHRDeptVO writeBack4DeptUnCancel(AggHRDeptVO deptVO, UFLiteralDate effective) throws BusinessException;
+
 	/**
 	 * pk_org 人力资源组织pk
+	 * 
 	 * @param pk_org
 	 * @wheresql 前端查詢條件
 	 * @returnList<HRDeptVO>
 	 * @throws BusinessException
 	 * 
-	 * 在部门信息节点,需要过滤出还未生效的部门,在此节点查询出此人力资源组织下,
-	 * 所有生效日期在当前日期之后的新增并且未生效的部门,,
-	 * 封装成HRDeptVO的list返回,供部门信息节点查询未生效部门使用
+	 *             在部门信息节点,需要过滤出还未生效的部门,在此节点查询出此人力资源组织下,
+	 *             所有生效日期在当前日期之后的新增并且未生效的部门,,
+	 *             封装成HRDeptVO的list返回,供部门信息节点查询未生效部门使用
 	 */
-	List<HRDeptVO> queryOFutureDept(String pk_org,String whereSql)  throws BusinessException ;
+	List<HRDeptVO> queryOFutureDept(String pk_org, String whereSql) throws BusinessException;
+
 	/**
 	 * 
 	 * @param HRDeptVO
 	 * @return
 	 * @throws BusinessException
-	 * 业务逻辑:在部门节点查询未生效的部门,以及在进行后台任务回写时
-	 * ,需要将单据VO转换成部门VO
+	 *             业务逻辑:在部门节点查询未生效的部门,以及在进行后台任务回写时 ,需要将单据VO转换成部门VO
 	 */
-	HRDeptVO HRDeptAdjust2HRDeptVO(HRDeptAdjustVO hRDeptAdjustVO)  throws BusinessException;
+	HRDeptVO HRDeptAdjust2HRDeptVO(HRDeptAdjustVO hRDeptAdjustVO) throws BusinessException;
+
 	/**
 	 * 检查校验规则2,才能进行删除,,删除时联动删除部门信息的主档
+	 * 
 	 * @param date
 	 * @throws BusinessException
 	 */
 	void executeDeptCancel(UFLiteralDate date) throws BusinessException;
+
 	/**
 	 * void validatePsn(HRDeptAdjustVO vo) throws BusinessException;
+	 * 
 	 * @param vo
 	 * @throws BusinessException
-	 * 业务逻辑:
-	 * 2. 校验人员调配申请生效日期是否在部门生效日期之后
+	 *             业务逻辑: 2. 校验人员调配申请生效日期是否在部门生效日期之后
 	 */
 	UFBoolean validatePsn(HRDeptAdjustVO vo) throws BusinessException;
+
 	/**
-	 * 只允许删除执行标志未打勾的,并且生效日期在当前日期之后的单据.
-	 * 删除时,'调配申请'中存在已引用未来新增部门的记录时，删除该新增部门时报错;
+	 * 只允许删除执行标志未打勾的,并且生效日期在当前日期之后的单据. 删除时,'调配申请'中存在已引用未来新增部门的记录时，删除该新增部门时报错;
 	 * 已经有下级部门时,删除报错
+	 * 
 	 * @param vo
 	 * @return
 	 * @throws BusinessException
@@ -135,44 +148,21 @@ public interface IDeptAdjustService {
 	UFBoolean validateDel(HRDeptAdjustVO vo) throws BusinessException;
 
 	/**
-	 * 立即執行执行部门版本化--导入用,同一个部门的修改记录需要按时间先后顺序调用
-	 * 1.不处理撤销逻辑
-	 * @param aggDeptVO 需要执行版本化的AggVO
-	 * @param date 此版本的生效日期
+	 * 立即執行执行部门版本化--导入用,同一个部门的修改记录需要按时间先后顺序调用 1.不处理撤销逻辑
+	 * 
+	 * @param aggDeptVO
+	 *            需要执行版本化的AggVO
+	 * @param date
+	 *            此版本的生效日期
 	 * @throws BusinessException
 	 */
-	void executeDeptVersion (AggHRDeptVO aggDeptVO,UFLiteralDate date) throws BusinessException;
+	void executeDeptVersion(AggHRDeptVO aggDeptVO, UFLiteralDate date) throws BusinessException;
 	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-}
+	/**
+	 * 更新当前部门以下所有innercode
+	 * @param innercode 当前部门的innercode
+	 * @param pk_fatherorg 需要更新下级部门innercode的部门pk
+	 */
+	void updateDeptInnercode(String innercode,String pk_fatherorg) throws DAOException;
 
+}

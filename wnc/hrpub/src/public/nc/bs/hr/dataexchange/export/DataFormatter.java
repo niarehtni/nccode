@@ -198,11 +198,11 @@ public class DataFormatter {
 
 		try {
 			if (!StringUtils.isEmpty(prefix)) {
-				prefixLen = prefix.getBytes("BIG5").length;
+				prefixLen = prefix.getBytes("Big5-HKSCS").length;
 			}
 
 			if (!StringUtils.isEmpty(suffix)) {
-				suffixLen = suffix.getBytes("BIG5").length;
+				suffixLen = suffix.getBytes("Big5-HKSCS").length;
 			}
 		} catch (Exception e) {
 			throw new BusinessException(e.getMessage());

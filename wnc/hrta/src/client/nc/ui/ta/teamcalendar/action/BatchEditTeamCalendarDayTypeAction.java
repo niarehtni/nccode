@@ -78,6 +78,8 @@ public class BatchEditTeamCalendarDayTypeAction extends HrAction {
 
 			ShiftSetStepForBatchChangeDayType shiftSetStep = new ShiftSetStepForBatchChangeDayType();
 			shiftSetStep.setAppModel(getModel());
+			//将step2注入到step3中，便于处理      wangywt   20190701
+			shiftSetStep.setStep(confirmTeamStep);
 			shiftSetStep.init();
 			stepList.add(shiftSetStep);
 

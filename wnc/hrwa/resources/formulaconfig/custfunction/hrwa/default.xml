@@ -48,6 +48,17 @@
   <functionName>RegisterDate</functionName>
   <functionClass>nc.ui.wa.formular.func.RegisterDate</functionClass>
 </formula>
+<!-- mod by Connie.ZH-->
+<formula>
+  <customType>9</customType>
+  <functionName>CalPaidWelfare</functionName>
+  <functionClass>nc.ui.wa.formular.func.CalPaidWelfare</functionClass>
+</formula>
+<formula>
+  <customType>9</customType>
+  <functionName>CalAccumulatePaid</functionName>
+  <functionClass>nc.ui.wa.formular.func.CalAccumulatePaid</functionClass>
+</formula>
 
 <formula>
   <customType>9</customType>

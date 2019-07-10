@@ -87,11 +87,17 @@ public class PsnjobSynWorkAgeBusinessListener implements IBusinessListener {
 
 				lastPsnJob.setEnddate(newPsnJob.getBegindate().getDateBefore(1));
 				lastPsnJob.setPoststat(UFBoolean.FALSE);
-				lastPsnJob.setRecordnum(lastPsnJob.getRecordnum() + 1);
 				lastPsnJob.setEndflag(UFBoolean.TRUE);
 				lastPsnJob.setLastflag(UFBoolean.FALSE);
-				newPsnJob.setRecordnum(0);
 				newPsnJob.setLastflag(UFBoolean.TRUE);
+
+				// MOD by ssx for update old data without modify recordnum
+				// on 2019-06-14
+				if (lastPsnJob.getRecordnum() == 0) {
+					lastPsnJob.setRecordnum(lastPsnJob.getRecordnum() + 1);
+					newPsnJob.setRecordnum(0);
+				}
+				// end
 
 				calculateWorkAgeDate(lastPsnJob, refTransType, refReturnType, false);
 				calculateWorkAgeDate(newPsnJob, refTransType, refReturnType, false);
@@ -104,8 +110,9 @@ public class PsnjobSynWorkAgeBusinessListener implements IBusinessListener {
 		// 是否計算纍計留停
 		boolean isCalculateLeaveDays = false;
 		// 是否需要更新 "是否留停" 欄位
-		boolean needUpdateLoaflag = (refTransType.equals(psnjob.getTrnstype()) != refReturnType.equals(psnjob.getTrnstype()));
-		
+		boolean needUpdateLoaflag = (refTransType.equals(psnjob.getTrnstype()) != refReturnType.equals(psnjob
+				.getTrnstype()));
+
 		if (refTransType.equals(psnjob.getTrnstype())) {
 			// 異動類型為留停的，計算纍計留停
 			isCalculateLeaveDays = true;
@@ -115,16 +122,17 @@ public class PsnjobSynWorkAgeBusinessListener implements IBusinessListener {
 				isCalculateLeaveDays = true;
 			}
 		}
-		
-		//20180907, 異動類型不是留停也不是復職就不更新此欄位
+
+		// 20180907, 異動類型不是留停也不是復職就不更新此欄位
 		if (needUpdateLoaflag) {
-			 updateIsLeaveOfAbsence(psnjob, refTransType.equals(psnjob.getTrnstype()));
+			updateIsLeaveOfAbsence(psnjob, refTransType.equals(psnjob.getTrnstype()));
 		}
 
 		if (isCalculateLeaveDays || isSyn) {
 			// 計算纍計留停
 			int days = calculateLeaveDaysOnPsnJob(psnjob, isCalculateLeaveDays);
-			calculateWorkAgeStartDateOnPsnOrg(psnjob, days, needUpdateLoaflag, refTransType.equals(psnjob.getTrnstype()));
+			calculateWorkAgeStartDateOnPsnOrg(psnjob, days, needUpdateLoaflag,
+					refTransType.equals(psnjob.getTrnstype()));
 		} else {
 			// 留停日置為0
 			psnjob.setAttributeValue("leavedays", null);
@@ -169,7 +177,7 @@ public class PsnjobSynWorkAgeBusinessListener implements IBusinessListener {
 	private int calculateLeaveDaysOnPsnJob(PsnJobVO psnjob, boolean isCalculateLeaveDays) throws DAOException {
 		// 留停結束時，計算留停天數，存儲位置：人員工作記錄.留停天數
 		if (psnjob.getBegindate() == null || psnjob.getEnddate() == null || !isCalculateLeaveDays) {
-			psnjob.setAttributeValue("leavedays", null); //留停天數
+			psnjob.setAttributeValue("leavedays", null); // 留停天數
 		} else {
 			psnjob.setAttributeValue("leavedays",
 					UFLiteralDate.getDaysBetween(psnjob.getBegindate(), psnjob.getEnddate()) + 1);
@@ -192,43 +200,49 @@ public class PsnjobSynWorkAgeBusinessListener implements IBusinessListener {
 		return days;
 	}
 
-	private void calculateWorkAgeStartDateOnPsnOrg(PsnJobVO psnjob, int days, boolean needUpdateLoaflag, boolean isloa) throws DAOException {
+	private void calculateWorkAgeStartDateOnPsnOrg(PsnJobVO psnjob, int days, boolean needUpdateLoaflag, boolean isloa)
+			throws DAOException {
 		// 計算年資起算日
 		// 組織關係.年資起算日=(在職員工|留停天數=null).進入集團日期
 		// 組織關係.年資起算日=(在職員工|留停天數<>null).進入集團日期+纍計留停天數-年資保留天數
 		PsnOrgVO psnorgVO = (PsnOrgVO) this.getBaseDao().retrieveByPK(PsnOrgVO.class, psnjob.getPk_psnorg());
 		int remaindays = (int) (psnorgVO.getAttributeValue("workageremaindays") == null ? 0 : psnorgVO
 				.getAttributeValue("workageremaindays"));
-		psnorgVO.setAttributeValue("totalleavedays", days);//累計留停天數
-//		psnorgVO.setAttributeValue("workagestartdate",	//年資起算日
-//				psnorgVO.getBegindate().getDateAfter(days).getDateBefore(remaindays));
-		//如果TWHR13为Y，TWHR10为Y，则开始日期+累计留停天数-年资保留天数=年资起算日
+		psnorgVO.setAttributeValue("totalleavedays", days);// 累計留停天數
+		// psnorgVO.setAttributeValue("workagestartdate", //年資起算日
+		// psnorgVO.getBegindate().getDateAfter(days).getDateBefore(remaindays));
+		// 如果TWHR13为Y，TWHR10为Y，则开始日期+累计留停天数-年资保留天数=年资起算日
 		// 承认年资是否影响年资起算日TWHR13 , by he
 		try {
 			UFBoolean refEnableWorkAge = SysInitQuery.getParaBoolean(psnorgVO.getPk_hrorg(), "TWHR13");
-			if(null != refEnableWorkAge && refEnableWorkAge.booleanValue()){
-				if(null == psnorgVO.getAttributeValue("workageremaindays")){
-					psnorgVO.setAttributeValue("workagestartdate",psnorgVO.getBegindate().getDateAfter(days).getDateBefore(0));
-				}else{
-					psnorgVO.setAttributeValue("workagestartdate",psnorgVO.getBegindate().getDateAfter(days).getDateBefore((int)psnorgVO.getAttributeValue("workageremaindays")));
+			if (null != refEnableWorkAge && refEnableWorkAge.booleanValue()) {
+				if (null == psnorgVO.getAttributeValue("workageremaindays")) {
+					psnorgVO.setAttributeValue("workagestartdate", psnorgVO.getBegindate().getDateAfter(days)
+							.getDateBefore(0));
+				} else {
+					psnorgVO.setAttributeValue("workagestartdate", psnorgVO.getBegindate().getDateAfter(days)
+							.getDateBefore((int) psnorgVO.getAttributeValue("workageremaindays")));
 				}
 			}
 		} catch (BusinessException e) {
 			e.printStackTrace();
 		}
-			
-		////是否留停
-		//if (needUpdateLoaflag)
-		//	psnorgVO.setAttributeValue("loaflag", (isloa) ? UFBoolean.TRUE : UFBoolean.FALSE);
-		//else
-		//	psnorgVO.setAttributeValue("loaflag", psnorgVO.getAttributeValue("loaflag"));
-			
-		//this.getBaseDao().updateVO(psnorgVO);
-		
-		String sql = "update HI_PSNORG set TOTALLEAVEDAYS=" + Integer.toString(days) + ",WORKAGESTARTDATE='" + psnorgVO.getBegindate().getDateAfter(days).getDateBefore(remaindays).toString() + "'"; 
+
+		// //是否留停
+		// if (needUpdateLoaflag)
+		// psnorgVO.setAttributeValue("loaflag", (isloa) ? UFBoolean.TRUE :
+		// UFBoolean.FALSE);
+		// else
+		// psnorgVO.setAttributeValue("loaflag",
+		// psnorgVO.getAttributeValue("loaflag"));
+
+		// this.getBaseDao().updateVO(psnorgVO);
+
+		String sql = "update HI_PSNORG set TOTALLEAVEDAYS=" + Integer.toString(days) + ",WORKAGESTARTDATE='"
+				+ psnorgVO.getBegindate().getDateAfter(days).getDateBefore(remaindays).toString() + "'";
 		if (needUpdateLoaflag)
 			sql += ",LOAFLAG='" + ((isloa) ? UFBoolean.TRUE.toString() : UFBoolean.FALSE.toString()) + "'";
-		
+
 		sql += " where PK_PSNORG='" + psnjob.getPk_psnorg() + "'";
 		this.getBaseDao().executeUpdate(sql);
 	}

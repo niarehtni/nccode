@@ -8,6 +8,9 @@ import nc.ui.uif2.model.IAppModel;
 
 public class ShiftSetStepForBatchChangeDayType extends WizardStep {
 
+	//将step2注入进来，便于处理      wangywt   20190701
+	private WizardStep step;
+	
 	private ShiftSetPanelForBatchChangeDayType shiftSetPanel = null;
 
 	private IAppModel appModel;
@@ -24,6 +27,7 @@ public class ShiftSetStepForBatchChangeDayType extends WizardStep {
 		if(shiftSetPanel==null){
 			shiftSetPanel = new ShiftSetPanelForBatchChangeDayType();
 			shiftSetPanel.setModel(getAppModel());
+			shiftSetPanel.setStep(getStep());
 			shiftSetPanel.init();
 		}
 		return shiftSetPanel;
@@ -35,6 +39,22 @@ public class ShiftSetStepForBatchChangeDayType extends WizardStep {
 
 	public void setAppModel(IAppModel appModel) {
 		this.appModel = appModel;
+	}
+
+	public WizardStep getStep() {
+		return step;
+	}
+
+	public void setStep(WizardStep step) {
+		this.step = step;
+	}
+
+	public ShiftSetPanelForBatchChangeDayType getShiftSetPanel() {
+		return shiftSetPanel;
+	}
+
+	public void setShiftSetPanel(ShiftSetPanelForBatchChangeDayType shiftSetPanel) {
+		this.shiftSetPanel = shiftSetPanel;
 	}
 
 }

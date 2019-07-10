@@ -702,7 +702,6 @@ public class PsnCalendarMaintainImpl implements IPsnCalendarQueryMaintain, IPsnC
 		// 假日的享有情况,key是人员主键，value的key是假日主键，value是是否享有
 		Map<String, Map<String, Boolean>> psnEnjoyHolidayMap = HRHolidayServiceFacade.queryHolidayEnjoyInfo2(pk_org,
 				pk_psndocs, holidayInfo.getHolidayVOs());
-		// 与假日切割的班次的map，key是人员，value的key是日期，value是psncalendar的聚合vo.只有假日对排班产生了影响，例如切割了，或者导致弹性班固化了，才存到此map里去，正常的天，或者被完全切割成公休的不会存
 		Map<String, Map<String, AggPsnCalendar>> holidayCutMap = new HashMap<String, Map<String, AggPsnCalendar>>();
 		// 记录对调前班次的map，key是人员，value的key是日期，value是对调前的班次
 		Map<String, Map<String, String>> psnBeforeExgPkShiftMap = new HashMap<String, Map<String, String>>();
@@ -715,6 +714,15 @@ public class PsnCalendarMaintainImpl implements IPsnCalendarQueryMaintain, IPsnC
 		holidayDateSet.addAll(holidayInfo.getSwitchMap().keySet());
 		String[] allDates = holidayDateSet.toArray(new String[0]);// 对假日、对调日排序
 		Arrays.sort(allDates);
+		//将假日当天的排班排为公休  wangywt 20190624 begin
+		if(holidayInfo.getHolidayMap()!=null){
+			for(String holiday: holidayInfo.getHolidayMap().keySet()){
+				if(originalExpandedDatePkShiftMap.keySet().contains(holiday)){
+					originalExpandedDatePkShiftMap.put(holiday, ShiftVO.PK_GX);
+				}
+			}
+		}
+		//将假日当天的排班排为公休  wangywt 20190624 end
 		// 查询工作日历的最大日期范围
 		UFLiteralDate calendarQueryBeginDate = allDates[0].compareTo(beginDate.toString()) < 0 ? UFLiteralDate.getDate(
 				allDates[0]).getDateBefore(1) : beginDate.getDateBefore(1);

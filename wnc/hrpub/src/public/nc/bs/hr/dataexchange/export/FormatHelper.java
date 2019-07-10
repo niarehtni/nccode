@@ -32,7 +32,7 @@ public class FormatHelper {
 				String strTmp = strRtn;
 				strRtn += str.substring(i, i + 1).trim();
 				i++;
-				realLenB = strRtn.getBytes("BIG5").length;
+				realLenB = strRtn.getBytes("Big5-HKSCS").length;
 				if (realLenB > lengthB) {
 					strRtn = strTmp;
 					break;
@@ -40,7 +40,7 @@ public class FormatHelper {
 			}
 
 			if (strRtn.length() * 2 < lengthB) {
-				strRtn = strRtn + StringUtils.rightPad("", lengthB - strRtn.getBytes("BIG5").length, " ");
+				strRtn = strRtn + StringUtils.rightPad("", lengthB - strRtn.getBytes("Big5-HKSCS").length, " ");
 			}
 		} catch (Exception e) {
 			throw new BusinessException(e.getMessage());
@@ -103,8 +103,8 @@ public class FormatHelper {
 		convertMap.put(String.valueOf((char) 63), "£ß");
 
 		try {
-			byte[] bytStr = str.getBytes("BIG5_HKSCS");
-			String v = new String(bytStr, "BIG5_HKSCS");
+			byte[] bytStr = str.getBytes("Big5-HKSCS");
+			String v = new String(bytStr, "Big5-HKSCS");
 			v = v.replaceAll(" ", "¡¡").toUpperCase();
 			for (int i = 0; i < v.length(); i++) {
 				String s = String.valueOf(v.charAt(i));
@@ -143,18 +143,20 @@ public class FormatHelper {
 
 	public static String getTWDate(UFDate date) {
 		String v = "xxxxxxx";
-		v = getTWYear(String.valueOf(date.getYear())) + StringUtils.leftPad(String.valueOf(date.getMonth()), 2, "0") + StringUtils.leftPad(String.valueOf(date.getDay()), 2, "0");
+		v = getTWYear(String.valueOf(date.getYear())) + StringUtils.leftPad(String.valueOf(date.getMonth()), 2, "0")
+				+ StringUtils.leftPad(String.valueOf(date.getDay()), 2, "0");
 		return v;
 	}
 
-	public static String getLengthString(String str, int length, String appchar, String left_right, boolean forceChinese) throws BusinessException {
+	public static String getLengthString(String str, int length, String appchar, String left_right, boolean forceChinese)
+			throws BusinessException {
 
 		try {
 			String v = StringUtils.left(str, length);
 			if (v == null) {
 				v = "";
 			} else {
-				if (v.getBytes("BIG5").length != v.length() || forceChinese) {
+				if (v.getBytes("Big5-HKSCS").length != v.length() || forceChinese) {
 					v = getLengthNameEx(v, length);
 				} else {
 					if (v.length() < length) {

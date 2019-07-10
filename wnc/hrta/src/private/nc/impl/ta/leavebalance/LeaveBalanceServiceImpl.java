@@ -652,14 +652,14 @@ public class LeaveBalanceServiceImpl implements ILeaveBalanceQueryService, ILeav
 		if (MapUtils.isEmpty(hourMap))
 			return;
 		String outErrMsg = StringUtils.isEmpty(month) ? ResHelper.getString("6017leave", "06017leave0257")/*
-																											* @
-																											* res
-																											* "转入年度超出考勤档案时间范围！"
-																											*/
+																										 * @
+																										 * res
+																										 * "转入年度超出考勤档案时间范围！"
+																										 */
 		: ResHelper.getString("6017leave", "06017leave0235")/*
-															* @res
-															* "转入期间超出考勤档案时间范围！"
-															*/;
+															 * @res
+															 * "转入期间超出考勤档案时间范围！"
+															 */;
 		String[] pk_psnorgs = hourMap.keySet().toArray(new String[0]);
 		LeaveTypeCopyVO typeVO = (LeaveTypeCopyVO) NCLocator.getInstance().lookup(ITimeItemQueryService.class)
 				.queryCopyTypesByDefPK(pk_org, LeaveBalanceVO.TIMETOLEAVETYPE, TimeItemCopyVO.LEAVE_TYPE);
@@ -682,10 +682,10 @@ public class LeaveBalanceServiceImpl implements ILeaveBalanceQueryService, ILeav
 				throw new BusinessException(outErrMsg);
 			if (vo.isSettlement() || vo.isUse())
 				throw new BusinessException(ResHelper.getString("6017leave", "06017leave0236")/*
-																								* @
-																								* res
-																								* "期间的结余数据已结算或已被薪酬使用,不能操作！"
-																								*/);
+																							 * @
+																							 * res
+																							 * "期间的结余数据已结算或已被薪酬使用,不能操作！"
+																							 */);
 			// 加入到结果集中
 			resultList.add(vo);
 			// 转调休
@@ -698,10 +698,10 @@ public class LeaveBalanceServiceImpl implements ILeaveBalanceQueryService, ILeav
 			// 反转调休
 			if (vo.getRestdayorhour().compareTo(torestHour) < 0)
 				throw new BusinessException(ResHelper.getString("6017leave", "06017leave0237")/*
-																								* @
-																								* res
-																								* "转调休期间的结余时长小于反转调休时长！"
-																								*/);
+																							 * @
+																							 * res
+																							 * "转调休期间的结余时长小于反转调休时长！"
+																							 */);
 			vo.setCurdayorhour(vo.getCurdayorhour().sub(torestHour));
 			vo.setRealdayorhour(vo.getRealdayorhour().sub(torestHour));
 			vo.setRestdayorhour(vo.getRestdayorhour().sub(torestHour));
@@ -820,9 +820,16 @@ public class LeaveBalanceServiceImpl implements ILeaveBalanceQueryService, ILeav
 				String[] crossYears = null;// 与休假日期范围有交集的所有考勤/入职年度，需要考虑有效期延长
 				// 休假类别为按年结算
 				if (typeVO.getLeavesetperiod() == TimeItemCopyVO.LEAVESETPERIOD_YEAR) // typeCopyVO.getLeavesetperiod()==TimeItemCopyVO.LEAVESETPERIOD_YEAR
-					crossYears = PreHolidayLeaveBalanceUtils.queryRelatedYearsWithExtendCount(
-							typeVO.getExtendDaysCount(), periodVOs, leaveCommonVO.getLeavebegindate(),
-							leaveCommonVO.getLeaveenddate());
+					// ssx MOD 增加啟碁指定休假年份判定，如指定，不自己計算，直接引用
+					// on 2019-06-27
+					if (StringUtils.isEmpty(leaveCommonVO.getLeaveyear())) {
+						crossYears = PreHolidayLeaveBalanceUtils.queryRelatedYearsWithExtendCount(
+								typeVO.getExtendDaysCount(), periodVOs, leaveCommonVO.getLeavebegindate(),
+								leaveCommonVO.getLeaveenddate());
+					} else {
+						crossYears = new String[] { leaveCommonVO.getLeaveyear() };
+					}
+				// end
 				else
 					crossYears = PreHolidayLeaveBalanceUtils.queryRelatedHireYearsWithExtendCount(
 							typeVO.getExtendDaysCount(), leaveCommonVO.getPk_psndoc(), hireDate,

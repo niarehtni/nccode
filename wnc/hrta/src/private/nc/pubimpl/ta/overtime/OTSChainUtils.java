@@ -679,14 +679,14 @@ public class OTSChainUtils {
 	@SuppressWarnings("unchecked")
 	public static void save(OTSChainNode node) throws BusinessException {
 		SegDetailVO vo = node.getNodeData();
-		if (vo.getPk_segdetail() == null || VOStatus.NEW == vo.getStatus()) {
+		if (VOStatus.NEW == vo.getStatus()) {
 			// 新增
 			AggSegDetailVO aggvo = new AggSegDetailVO();
 
 			aggvo.setParent(vo);
 			AggSegDetailVO[] ret = new SegdetailMaintainImpl().insert(new AggSegDetailVO[] { aggvo });
 			vo.setPk_segdetail(ret[0].getPrimaryKey());
-		} else if (vo.getPk_segdetail() != null && VOStatus.UPDATED == vo.getStatus()) {
+		} else if (VOStatus.UPDATED == vo.getStatus()) {
 			// 修改
 			AggSegDetailVO aggvo = new AggSegDetailVO();
 			aggvo.setParent(vo);
@@ -885,6 +885,7 @@ public class OTSChainUtils {
 						if (end.sub(start).sub(lastNode.getRemainhours()).doubleValue() < nextHours.doubleValue()) {
 							throw new BusinessException("創建新後續節點失敗：加班分段規則不足加班時數");
 						}
+						nextTerm = lastTerm;
 					}
 				} else {
 					throw new BusinessException("創建新後續節點失敗：未找到可用的分段規則明細");

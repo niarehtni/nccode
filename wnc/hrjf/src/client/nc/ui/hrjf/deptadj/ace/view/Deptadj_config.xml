@@ -154,14 +154,11 @@
 			<!--	<ref bean="copyAction" />  -->
 				<ref bean="separatorAction" />
 				<ref bean="defaultRefreshAction" />
-				<ref bean="separatorAction" />
-				<ref bean="separatorAction" />
-				<ref bean="separatorAction" />
 			<!--	<ref bean="metaDataBasedPrintAction" />
 				<ref bean="metaDataBasedPrintActiona" /> -->
 			<!--	<ref bean="outputAction" />-->
 				<ref bean="separatorAction" />
-
+				<ref bean="executeAction" />
 			</list>
 		</property>
 		
@@ -339,6 +336,11 @@
 		<property name="exceptionHandler"><ref bean="exceptionHandler" /></property>
 	</bean>
 
+	<!--======= 动作：[newActions] [删除] ===========-->
+	<bean id="executeAction" class="nc.ui.hrjf.deptadj.action.DeptadjExecuteAction">
+		<property name="model"><ref bean="bmModel"/></property>
+	</bean>
+	
 	<!--分隔按钮-->
 	<bean id="separatorAction" class="nc.funcnode.ui.action.SeparatorAction" />
     

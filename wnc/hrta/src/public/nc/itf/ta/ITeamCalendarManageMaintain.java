@@ -52,6 +52,21 @@ public interface ITeamCalendarManageMaintain {
 	TeamInfoCalendarVO[]   
 	save(String pk_org,TeamInfoCalendarVO[] vos,boolean busilog) throws BusinessException;
 
+	
+	/**
+	 * 保存工作日历，用于班组工作日历设置节点的修改保存
+	 * ,TeamInfoCalendarVO[]中只存储变化了的班组
+	 * TeamInfoCalendarVO的map中只存储变化了的日历</br>
+	 * 在班组工作日历设置节点，需求是点击修改按钮，只修改班组排版，不修改日历天类型</br>
+	 * 此方法仿造Save方法，不同的是此方法把班组工作日历里原来的日历天类型重新插入了表里，
+	 * 相当于不更新日历天类型
+	 * @param pk_org,HR组织主键
+	 * @param busilog,是否记录业务日志
+	 */
+	TeamInfoCalendarVO[]   
+			saveNODateype(String pk_org,TeamInfoCalendarVO[] vos,boolean busilog) throws BusinessException;
+	
+	
 	/**
 	 * 保存工作日历，用于按日历排班
 	 * @param pk_org,HR组织主键

@@ -513,9 +513,17 @@ public class NaviQueryImpl implements INaviQueryService {
 		do {
 			for (Object vo : myList) {
 				if (vo instanceof HRDeptVO) {
-					pkdept.add(((HRDeptVO) vo).getPk_dept());
-					if (((HRDeptVO) vo).getPk_fatherorg() != null)
-						pkfatherorg.add(((HRDeptVO) vo).getPk_fatherorg());
+					// MOD by ssx for optimization on 2019-06-14
+					if (!pkdept.contains(((HRDeptVO) vo).getPk_dept())) {
+						pkdept.add(((HRDeptVO) vo).getPk_dept());
+					}
+
+					if (((HRDeptVO) vo).getPk_fatherorg() != null) {
+						if (!pkfatherorg.contains(((HRDeptVO) vo).getPk_fatherorg())) {
+							pkfatherorg.add(((HRDeptVO) vo).getPk_fatherorg());
+						}
+					}
+					// end
 				}
 			}
 

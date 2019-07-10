@@ -107,7 +107,9 @@ public interface ISegDetailService {
 	 *            薪資項目分組
 	 * @param isLeave
 	 *            是否統計離職人員期間外加班費
-	 * @return Map.Key=員工PK，Map.Value=UFDoube[0]:免稅加班費合計金額，UFDouble[1]:應稅加班費合計金額
+	 * @return 
+	 *         Map.Key=員工PK，Map.Value=UFDoube[0]:免稅加班費合計金額(轉調休)，UFDoube[1]:免稅加班費合計金額
+	 *         (非轉調休)，UFDouble[2]:應稅加班費合計金額(轉調休), UFDouble[3]:應稅加班費合計金額(非轉調休)
 	 * @throws BusinessException
 	 */
 	public Map<String, UFDouble[]> calculateOvertimeFeeByDate(String pk_org, String[] pk_psndocs,
@@ -135,6 +137,8 @@ public interface ISegDetailService {
 	 *            薪資項目分組
 	 * @param isLeave
 	 *            是否統計離職人員期間外加班費
+	 * @param intComp
+	 *            轉調休狀態（0: 轉調休, 1:非轉調休, 2:全部）
 	 * @return Map.Key=員工PK，Map.Value=UFDoube[0]:免稅加班費合計金額，UFDouble[1]:應稅加班費合計金額
 	 * @throws BusinessException
 	 */
@@ -166,8 +170,8 @@ public interface ISegDetailService {
 	 * @throws BusinessException
 	 */
 	Map<String, UFDouble[]> calculateTaxableByDate(String pk_org, String[] pk_psndocs, UFLiteralDate startDate,
-			UFLiteralDate endDate, UFDouble curNodeHours, OTSChainNode checkedNodes, String pk_item_group)
-			throws BusinessException;
+			UFLiteralDate endDate, UFDouble curNodeHours, OTSChainNode checkedNodes, String pk_item_group,
+			boolean isToRest) throws BusinessException;
 
 	/**
 	 * 按給定固定時薪及起迄時間結算（批量）
@@ -461,7 +465,9 @@ public interface ISegDetailService {
 	 * 
 	 * @param pk_psndoc
 	 *            重建人PK
+	 * @param cyear
+	 *            重建年度
 	 * @throws BusinessException
 	 */
-	public void rebuildSegDetailByPsn(String pk_psndoc) throws BusinessException;
+	public void rebuildSegDetailByPsn(String pk_psndoc, String cyear) throws BusinessException;
 }

@@ -1029,10 +1029,15 @@ public class WadaysalaryServiceImpl implements IWadaysalaryService {
 	}
 
 	private void checkDaySalaryAndCalculSalary_Batch(String pk_wa_class, String[] pk_psndocs, UFLiteralDate begindate,
-			UFLiteralDate enddate, String pk_wa_item, String pk_group_item) throws BusinessException {
-		String deletesql = "delete from wa_daysalary where (pk_wa_class is null or pk_wa_class='" + pk_wa_class
-				+ "')  and pk_wa_item='" + pk_wa_item + "' and pk_group_item = '" + pk_group_item
-				+ "' and pk_psndoc in (" + new InSQLCreator().getInSQL(pk_psndocs) + ")";
+			UFLiteralDate enddate, String pk_group_item) throws BusinessException {
+		String deletesql = "delete from wa_daysalary where (pk_wa_class is null or pk_wa_class='"
+				+ pk_wa_class
+				+ "')  and "
+				+
+				// 一次計算一個分組
+				// "pk_wa_item='" + pk_wa_item + "' and"+
+				" pk_group_item = '" + pk_group_item + "' and pk_psndoc in (" + new InSQLCreator().getInSQL(pk_psndocs)
+				+ ")";
 		getDao().executeUpdate(deletesql);
 		// 获取薪资项目分组信息
 		ItemGroupVO groupVO = getGroupItem(pk_group_item);
@@ -1045,7 +1050,8 @@ public class WadaysalaryServiceImpl implements IWadaysalaryService {
 		String checkSql = "SELECT DISTINCT\n" + "	waclass.pk_org,\n" + "	calendar.calendardate,\n"
 				+ "	wadoc.pk_psndoc,\n" + "	wadoc.pk_psnjob,\n" + "	wadoc.pk_psndoc_sub,\n" + "	wadoc.ts AS wadocts,\n"
 				+ "	wadoc.pk_wa_item,\n" + "	wadoc.nmoney,\n" + "	salary.pk_daysalary,\n"
-				+ " salary.pk_group_item, itemgroup.ts as groupitemts" + " FROM\n" + "	hi_psndoc_wadoc wadoc\n"
+				+ " itemgroup.pk_itemgroup pk_group_item, itemgroup.ts as groupitemts" + " FROM\n"
+				+ "	hi_psndoc_wadoc wadoc\n"
 				+ "LEFT JOIN bd_workcalendardate calendar ON calendar.calendardate >= wadoc.begindate\n" + "AND (\n"
 				+ "	calendar.calendardate <= wadoc.enddate\n" + "	OR wadoc.enddate IS NULL\n" + ")\n"
 				+ " LEFT JOIN wa_waclass waclass on waclass.pk_wa_class = '"
@@ -1063,10 +1069,11 @@ public class WadaysalaryServiceImpl implements IWadaysalaryService {
 				+ ")\n"
 				+ "WHERE\n"
 				+ "	wadoc.waflag = 'Y'\n "
+				// 一次計算一個分組
 				// 一次只计算一个薪资项目 ares.Tank 2019年1月21日22:46:26
-				+ " and wadoc.pk_wa_item = '"
-				+ pk_wa_item
-				+ "' "
+				// + " and wadoc.pk_wa_item = '"
+				// + pk_wa_item
+				// + "' "
 				+ "AND calendar.calendardate <= '"
 				+ enddate.toStdString()
 				+ "'\n"
@@ -1077,7 +1084,7 @@ public class WadaysalaryServiceImpl implements IWadaysalaryService {
 				+ "AND (\n"
 				+ "	wadoc.ts <> salary.wadocts\n"
 				+ "	OR salary.wadocts IS NULL\n"
-				+ " or itemgroup.ts <> salary.groupitemts or salary.groupitemts is null )  and wadoc.pk_org = waclass.pk_org ";
+				+ " or itemgroup.ts <> salary.groupitemts or salary.groupitemts is null )  and wadoc.pk_org = waclass.pk_org and wadoc.pk_wa_item in (select wa_itemgroupmember.pk_waitem from wa_itemgroupmember where wa_itemgroupmember.pk_itemgroup = itemgroup.pk_itemgroup and wa_itemgroupmember.dr=0);";
 		store2PsndocWadoc(checkSql, pk_psndocs, psndocWadocMapAll);
 
 		// 考勤日薪计算结果
@@ -1103,7 +1110,7 @@ public class WadaysalaryServiceImpl implements IWadaysalaryService {
 				salaryVO.setPk_psnjob(generalVO.getAttributeValue("pk_psnjob").toString());
 				salaryVO.setPk_wa_item(generalVO.getAttributeValue("pk_wa_item").toString());
 				salaryVO.setPk_wa_class(pk_wa_class);
-				salaryVO.setPk_group_item(pk_group_item);
+				salaryVO.setPk_group_item(generalVO.getAttributeValue("pk_group_item").toString());
 				salaryVO.setGroupitemts(new UFDateTime(generalVO.getAttributeValue("groupitemts").toString()));
 				UFDouble nmoney = generalVO.getAttributeValue("nmoney") != null ? new UFDouble(generalVO
 						.getAttributeValue("nmoney").toString()) : UFDouble.ZERO_DBL;
@@ -1142,14 +1149,14 @@ public class WadaysalaryServiceImpl implements IWadaysalaryService {
 			// 返回值池
 			List<Future<Object>> futureDatas = new ArrayList<Future<Object>>();
 
-			List<String[]> splittedPsndocs = WadaysalaryQueryServiceImpl.splitPsns(pk_psndocs, 91);
+			List<String[]> splittedPsndocs = WadaysalaryQueryServiceImpl.splitPsns(pk_psndocs, 15);
 
 			int count = 1;
 			for (String[] psns : splittedPsndocs) {
 				RunnableDaySalaryCalculator calculator = new RunnableDaySalaryCalculator();
 				calculator.setPk_wa_class(pk_wa_class);
 				calculator.setPk_psndocs(psns);
-				calculator.setPk_wa_item(pk_wa_item);
+				// calculator.setPk_wa_item(pk_wa_item);
 				calculator.setPk_group_item(pk_group_item);
 				calculator.setBeginDate(begindate);
 				calculator.setEndDate(enddate);
@@ -1192,7 +1199,7 @@ public class WadaysalaryServiceImpl implements IWadaysalaryService {
 		private String[] pk_psndocs;
 		private UFLiteralDate beginDate;
 		private UFLiteralDate endDate;
-		private String pk_wa_item;
+		// private String pk_wa_item;
 		private String pk_group_item;
 		private BaseDAO baseDao;
 		private int currentcount;
@@ -1206,7 +1213,7 @@ public class WadaysalaryServiceImpl implements IWadaysalaryService {
 				WadaysalaryServiceImpl newImpl = new WadaysalaryServiceImpl();
 				newImpl.setDao(this.getBaseDao());
 				newImpl.checkDaySalaryAndCalculSalary_Batch(this.getPk_wa_class(), this.getPk_psndocs(),
-						this.getBeginDate(), this.getEndDate(), this.getPk_wa_item(), this.getPk_group_item());
+						this.getBeginDate(), this.getEndDate(), this.getPk_group_item());
 			} catch (BusinessException e) {
 				Logger.error("---WNC-MULTIPUL-THREADS-DAY-SALARY-THREAD-[" + Thread.currentThread().getName()
 						+ "]-ERROR---");
@@ -1256,13 +1263,13 @@ public class WadaysalaryServiceImpl implements IWadaysalaryService {
 			this.endDate = endDate;
 		}
 
-		public String getPk_wa_item() {
-			return pk_wa_item;
-		}
-
-		public void setPk_wa_item(String pk_wa_item) {
-			this.pk_wa_item = pk_wa_item;
-		}
+		// public String getPk_wa_item() {
+		// return pk_wa_item;
+		// }
+		//
+		// public void setPk_wa_item(String pk_wa_item) {
+		// this.pk_wa_item = pk_wa_item;
+		// }
 
 		public String getPk_group_item() {
 			return pk_group_item;

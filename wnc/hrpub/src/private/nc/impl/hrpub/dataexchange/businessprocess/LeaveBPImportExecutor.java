@@ -215,7 +215,7 @@ public class LeaveBPImportExecutor extends DataImportExecutor implements IDataEx
 	@Override
 	public void afterQuery() throws BusinessException {
 		// TODO 自动生成的方法存根
-
+ 
 	}
 
 	@Override

@@ -160,7 +160,7 @@ insert into md_db_relation ( id, createtime, creator, description, displayname, 
 
 drop table wa_itemgroup;
 create table wa_itemgroup (
-pk_itemgroup char(50) NOT NULL,
+pk_itemgroup varchar(20) NOT NULL,
 pk_group varchar(20) NOT NULL,
 pk_org varchar(20) default '~' NULL,
 pk_org_v varchar(20) default '~' NULL,
@@ -181,7 +181,7 @@ dr smallint default 0
 
 drop table wa_itemgroupmember;
 create table wa_itemgroupmember (
-pk_itemgroupmember char(50) NOT NULL,
+pk_itemgroupmember varchar(20) NOT NULL,
 pk_group varchar(20) NOT NULL,
 pk_org varchar(20) default '~' NULL,
 pk_org_v varchar(20) default '~' NULL,

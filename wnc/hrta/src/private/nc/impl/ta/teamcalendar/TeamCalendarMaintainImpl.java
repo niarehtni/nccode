@@ -11,6 +11,7 @@ import java.util.Set;
 import java.util.TimeZone;
 
 import nc.bs.dao.BaseDAO;
+import nc.bs.dao.DAOException;
 import nc.bs.framework.common.NCLocator;
 import nc.bs.logging.Logger;
 import nc.hr.frame.persistence.SimpleDocServiceTemplate;
@@ -38,6 +39,7 @@ import nc.itf.ta.ITimeRuleQueryService;
 import nc.jdbc.framework.SQLParameter;
 import nc.jdbc.framework.exception.DbException;
 import nc.jdbc.framework.processor.BeanListProcessor;
+import nc.jdbc.framework.processor.MapListProcessor;
 import nc.md.model.MetaDataException;
 import nc.md.persist.framework.IMDPersistenceService;
 import nc.md.persist.framework.MDPersistenceService;
@@ -332,6 +334,10 @@ public class TeamCalendarMaintainImpl implements ITeamCalendarManageMaintain, IT
 		holidayDateSet.addAll(holidayInfo.getHolidayMap().keySet());
 		holidayDateSet.addAll(holidayInfo.getSwitchMap().keySet());
 		String[] allDates = holidayDateSet.toArray(new String[0]);//对假日、对调日排序
+		//班组工作日历循环排班遇假日取消问题   wangywt 20190701
+		for(String date:allDates){
+			originalExpandedDatePkShiftMap.put(date, ShiftVO.PK_GX);
+		}
 		Arrays.sort(allDates);
 		//查询工作日历的最大日期范围
 		UFLiteralDate calendarQueryBeginDate = allDates[0].compareTo(beginDate.toString())<0?UFLiteralDate.getDate(allDates[0]).getDateBefore(1):beginDate.getDateBefore(1);
@@ -868,7 +874,99 @@ public class TeamCalendarMaintainImpl implements ITeamCalendarManageMaintain, IT
 		}
 		return vos;
 	}
-
+	/**
+	 * 在班组工作日历设置节点，需求是点击修改按钮，只修改班组排版，不修改日历天类型</br>
+	 * 此方法仿造Save方法，不同的是此方法把班组工作日历里原来的日历天类型重新插入了表里，
+	 * 相当于不更新日历天类型
+	 */
+	@Override
+	public TeamInfoCalendarVO[] saveNODateype(String pk_hrorg, TeamInfoCalendarVO[] vos,boolean busilog)
+			throws BusinessException {
+		if(ArrayUtils.isEmpty(vos))
+			return vos;
+		checkCalendarWhenSave(pk_hrorg, vos);//校验
+		Map<String,Integer> dtypeMap = getDTypeMap(vos);
+		//先刪除记录再新插入记录
+		TeamCalendarDAO dao = new TeamCalendarDAO();
+		try {
+			dao.deleteExistsCalendarWhenSave(vos);//删除已有记录
+		} catch (DbException e) {
+			Logger.error(e.getMessage(),e);
+			throw new BusinessException(e.getMessage(),e);
+		}
+		String pk_group = PubEnv.getPk_group();
+		// 人员工作日历同步
+		NCLocator.getInstance().lookup(IPsnCalendarManageService.class).sync2TeamCalendarAfterSave(pk_hrorg, vos);
+		List<AggTeamCalendarVO> insertList = new ArrayList<AggTeamCalendarVO>();
+		Map<String, TeamHeadVO> teamMap = CommonUtils.toMap(TeamHeadVO.CTEAMID, NCLocator.getInstance().lookup(ITeamQueryServiceForHR.class).queryBZbyPK(StringPiecer.getStrArray(vos, TeamHeadVO.CTEAMID)));
+		//HR组织内所有班次
+		Map<String, AggShiftVO> shiftMap = ShiftServiceFacade.queryShiftAggVOMapByHROrg(pk_hrorg);
+		for(TeamInfoCalendarVO vo:vos){
+			if(vo.getModifiedCalendarMap()==null||vo.getModifiedCalendarMap().size()==0)
+				continue;
+			for(String date:vo.getModifiedCalendarMap().keySet()){
+				String pk_shift = vo.getModifiedCalendarMap().get(date);
+				vo.getCalendarMap().put(date, pk_shift);
+				if(StringUtils.isEmpty(pk_shift))
+					continue;
+				AggTeamCalendarVO calendarVO = TeamCalendarUtils.createAggVOByShiftVO(teamMap.get(vo.getCteamid()), pk_group, vo.getPk_org(), date,pk_shift, shiftMap, false);
+				TeamCalendarVO pvo = (TeamCalendarVO) calendarVO.getParentVO();
+				pvo.setDate_daytype(dtypeMap.get(pvo.getPk_team()+pvo.getCalendar().toString()));
+				insertList.add(calendarVO);
+			}
+			vo.getModifiedCalendarMap().clear();//清空存储修改数据的map
+		}
+		if(insertList.size()>0){
+			AggTeamCalendarVO[] aggvos = insertList.toArray(new AggTeamCalendarVO[0]);
+			TeamCalendarVO[] teamcalvos = new TeamCalendarVO[aggvos.length];
+			for(int i = 0;i<aggvos.length;i++){
+				teamcalvos[i] = aggvos[i].getTeamCalendarVO();
+			}
+			dao.insert(aggvos);
+			//业务日志
+			if(busilog)
+				TaBusilogUtil.writeEditTeamCalendarBusiLog(teamcalvos, null);
+		}
+		return vos;
+	}
+	
+	/**
+	 * 根据pk_team和calendar查询班组工作日历中的date_type
+	 * @param vos
+	 * @return
+	 * @throws DAOException
+	 */
+	private Map<String, Integer> getDTypeMap(TeamInfoCalendarVO[] vos) throws DAOException {
+		BaseDAO dao = new BaseDAO();
+		Map<String, Integer> map = new HashMap<String,Integer>();
+		for (TeamInfoCalendarVO vo : vos) {
+			String[] set = vo.getCalendarMap().keySet().toArray(new String[0]);
+			String pk_team = vo.getCteamid();
+			int size = set.length;
+			if(set==null||size==0||pk_team==null||pk_team.trim().length()==0){
+				continue;
+			}
+			StringBuffer sql = new StringBuffer("select CALENDAR,PK_TEAM,DATE_DAYTYPE as dtype from bd_teamcalendar where PK_TEAM =  '");
+			sql.append(pk_team).append("' and calendar in(");
+			//因为日期最多也就180个，有限制的，所以不用使用临时表
+			for (int i=0; i<size ; i++) {
+				if(i<size-1){
+					sql.append("'").append(set[i]).append("',");
+				}else{
+					sql.append("'").append(set[i]).append("')");
+				}
+			}
+			//执行查询
+			List<Map<String,Object>> rets = (List<Map<String, Object>>) dao.executeQuery(sql.toString(), new MapListProcessor());
+			for (Map<String, Object> ret : rets) {
+				String key = ret.get("pk_team").toString()+ret.get("calendar").toString();
+				String val = ret.get("dtype").toString();
+				Integer value = Integer.valueOf(val);
+				map.put(key,value);
+			}
+		}
+		return map;
+	}
 	@Override
 	public TeamInfoCalendarVO save(String pk_org, TeamInfoCalendarVO vo)
 			throws BusinessException {

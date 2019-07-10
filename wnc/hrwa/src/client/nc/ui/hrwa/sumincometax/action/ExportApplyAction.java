@@ -24,7 +24,7 @@ import nc.vo.pub.lang.UFBoolean;
 import org.apache.commons.io.FileUtils;
 
 public class ExportApplyAction extends HrAction {
-	/** 
+	/**
 	 * serial no
 	 */
 	private static final long serialVersionUID = 5099334079859001851L;
@@ -53,14 +53,11 @@ public class ExportApplyAction extends HrAction {
 	public void doAction(ActionEvent arg0) throws Exception {
 		JComponent parentUi = getModel().getContext().getEntranceUI();
 		checkData();
-		String twYear = String
-				.valueOf(Integer.valueOf(this.getApplyYear()) - 1911);
+		String twYear = String.valueOf(Integer.valueOf(this.getApplyYear()) - 1911);
 
-		String[] textArr = getService().getIITXTextReport(
-				dataPKs.toArray(new String[0]),
-				Integer.valueOf(this.getApplyYear()), this.getApplyFormat(),
-				this.getApplyCount(), this.getApplyReason(),
-				this.getVatNumber(), this.getGrantType(), this.getComLinkMan(),
+		String[] textArr = getService().getIITXTextReport(dataPKs.toArray(new String[0]),
+				Integer.valueOf(this.getApplyYear()), this.getApplyFormat(), this.getApplyCount(),
+				this.getApplyReason(), this.getVatNumber(), this.getGrantType(), this.getComLinkMan(),
 				this.getComLinkTel(), this.getComLineEmail());
 
 		if (textArr != null && textArr.length > 2) {
@@ -70,19 +67,15 @@ public class ExportApplyAction extends HrAction {
 			filter.setFilterString("*." + twYear);
 			filter.setDescription("生成綜所稅申報檔");
 			fileChooser.addChoosableFileFilter(filter);
-			fileChooser.setSelectedFile(new File(fileChooser
-					.getCurrentDirectory().getAbsolutePath()
-					+ "\\"
+			fileChooser.setSelectedFile(new File(fileChooser.getCurrentDirectory().getAbsolutePath() + "\\"
 					+ this.getVatNumber() + "." + twYear));
 			int userSelection = fileChooser.showSaveDialog(parentUi);
 
 			String filename = "";
 			File fileToSave = null;
 			if (userSelection == JFileChooser.APPROVE_OPTION) {
-				if (!fileChooser.getSelectedFile().getAbsoluteFile().toString()
-						.toUpperCase().endsWith("." + twYear)) {
-					filename = fileChooser.getSelectedFile().getAbsolutePath()
-							+ "." + twYear;
+				if (!fileChooser.getSelectedFile().getAbsoluteFile().toString().toUpperCase().endsWith("." + twYear)) {
+					filename = fileChooser.getSelectedFile().getAbsolutePath() + "." + twYear;
 				} else {
 					filename = fileChooser.getSelectedFile().getAbsolutePath();
 				}
@@ -102,7 +95,7 @@ public class ExportApplyAction extends HrAction {
 
 			if (fileToSave != null) {
 				// 讀取報表文本
-				FileUtils.writeStringToFile(fileToSave, sb.toString(), "Big5");
+				FileUtils.writeStringToFile(fileToSave, sb.toString(), "Big5-HKSCS");
 			}
 
 			// 暫不回寫注記標記
@@ -187,8 +180,7 @@ public class ExportApplyAction extends HrAction {
 	}
 
 	private boolean checkData() throws BusinessException {
-		Object[] data = ((BillManageModel) this.getModel())
-				.getSelectedOperaDatas();
+		Object[] data = ((BillManageModel) this.getModel()).getSelectedOperaDatas();
 		if (data != null && data.length > 0) {
 			AggSumIncomeTaxVO firstData = (AggSumIncomeTaxVO) data[0];
 			// 憑單格式
@@ -208,72 +200,54 @@ public class ExportApplyAction extends HrAction {
 			// 統一編號
 			String strVatNo = firstData.getParentVO().getUnifiednumber();
 
-			String strYear = firstData.getParentVO().getBeginperiod()
-					.substring(0, 4);
+			String strYear = firstData.getParentVO().getBeginperiod().substring(0, 4);
 
 			dataPKs.clear();
 			for (Object line : data) {
 				AggSumIncomeTaxVO aggvo = (AggSumIncomeTaxVO) line;
 				if (UFBoolean.TRUE.equals(aggvo.getParentVO().getIsdeclare())) {
-					throw new BusinessException("員工 ["
-							+ aggvo.getParentVO().getCode()
-							+ "] 綜所稅資料已申報，不能重複申報。");
+					throw new BusinessException("員工 [" + aggvo.getParentVO().getCode() + "] 綜所稅資料已申報，不能重複申報。");
 				}
 
-				/*if (!isSame(strFormat, aggvo.getParentVO().getDeclaretype())) {
-					throw new BusinessException("員工 ["
-							+ aggvo.getParentVO().getCode()
-							+ "] 的申報資料憑單格式不唯一，不能進行申報。");
-				}*/
+				/*
+				 * if (!isSame(strFormat, aggvo.getParentVO().getDeclaretype()))
+				 * { throw new BusinessException("員工 [" +
+				 * aggvo.getParentVO().getCode() + "] 的申報資料憑單格式不唯一，不能進行申報。"); }
+				 */
 
 				if (!isSame(strGranttype, aggvo.getParentVO().getGranttype())) {
-					throw new BusinessException("員工 ["
-							+ aggvo.getParentVO().getCode()
-							+ "] 的申報資料憑單填發格式不唯一，不能進行申報。");
+					throw new BusinessException("員工 [" + aggvo.getParentVO().getCode() + "] 的申報資料憑單填發格式不唯一，不能進行申報。");
 				}
 
 				if (!isSame(strCount, aggvo.getParentVO().getDeclarenum())) {
-					throw new BusinessException("員工 ["
-							+ aggvo.getParentVO().getCode()
-							+ "] 的申報資料申報次數不唯一，不能進行申報。");
+					throw new BusinessException("員工 [" + aggvo.getParentVO().getCode() + "] 的申報資料申報次數不唯一，不能進行申報。");
 				}
 
 				if (!isSame(strReason, aggvo.getParentVO().getReason())) {
-					throw new BusinessException("員工 ["
-							+ aggvo.getParentVO().getCode()
-							+ "] 的申報資料重複申報原因不唯一，不能進行申報。");
+					throw new BusinessException("員工 [" + aggvo.getParentVO().getCode() + "] 的申報資料重複申報原因不唯一，不能進行申報。");
 				}
 
 				if (!isSame(strName, aggvo.getParentVO().getContactname())) {
-					throw new BusinessException("員工 ["
-							+ aggvo.getParentVO().getCode()
-							+ "] 的申報資料聯繫人姓名不唯一，不能進行申報。");
+					throw new BusinessException("員工 [" + aggvo.getParentVO().getCode() + "] 的申報資料聯繫人姓名不唯一，不能進行申報。");
 				}
 
 				if (!isSame(strPhone, aggvo.getParentVO().getContacttel())) {
-					throw new BusinessException("員工 ["
-							+ aggvo.getParentVO().getCode()
-							+ "] 的申報資料聯繫人電話不唯一，不能進行申報。");
+					throw new BusinessException("員工 [" + aggvo.getParentVO().getCode() + "] 的申報資料聯繫人電話不唯一，不能進行申報。");
 				}
 
 				if (!isSame(strEmail, aggvo.getParentVO().getContactemail())) {
-					throw new BusinessException("員工 ["
-							+ aggvo.getParentVO().getCode()
-							+ "] 的申報資料聯繫人電話不唯一，不能進行申報。");
+					throw new BusinessException("員工 [" + aggvo.getParentVO().getCode() + "] 的申報資料聯繫人電話不唯一，不能進行申報。");
 				}
 
 				if (!isSame(strVatNo, aggvo.getParentVO().getUnifiednumber())) {
-					throw new BusinessException("員工 ["
-							+ aggvo.getParentVO().getCode()
-							+ "] 的申報資料統一編號不唯一，不能進行申報。");
+					throw new BusinessException("員工 [" + aggvo.getParentVO().getCode() + "] 的申報資料統一編號不唯一，不能進行申報。");
 				}
 
 				dataPKs.add(aggvo.getPrimaryKey());
 			}
 
 			// [統一編號，申報類型Code，填發類型Code，重複申報原因Code]
-			String[] rtn = this.getService().getIITXTInfo(strVatNo, strFormat,
-					strGranttype, strReason);
+			String[] rtn = this.getService().getIITXTInfo(strVatNo, strFormat, strGranttype, strReason);
 			this.setVatNumber(rtn[0]);
 			this.setApplyFormat(rtn[1]);
 			this.setGrantType(rtn[2]);
@@ -290,8 +264,7 @@ public class ExportApplyAction extends HrAction {
 	}
 
 	private boolean isSame(String value1, String value2) {
-		if ((value1 == null && value2 == null)
-				|| (value1 != null && value1.equals(value2))
+		if ((value1 == null && value2 == null) || (value1 != null && value1.equals(value2))
 				|| (value2 != null && value2.equals(value1))) {
 			return true;
 		}
@@ -301,15 +274,13 @@ public class ExportApplyAction extends HrAction {
 
 	private IReportExportService getService() {
 		if (service == null) {
-			service = (IReportExportService) NCLocator.getInstance().lookup(
-					IReportExportService.class);
+			service = (IReportExportService) NCLocator.getInstance().lookup(IReportExportService.class);
 		}
 		return service;
 	}
 
 	protected boolean isActionEnable() {
-		Object[] data = ((BillManageModel) this.getModel())
-				.getSelectedOperaDatas();
+		Object[] data = ((BillManageModel) this.getModel()).getSelectedOperaDatas();
 		return data != null && data.length > 0;
 	}
 

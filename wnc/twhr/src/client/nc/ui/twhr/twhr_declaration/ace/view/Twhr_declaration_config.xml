@@ -162,6 +162,8 @@
 				<!-- by he 二代健保申报导出 按钮-->
 				<ref bean="defaultExportAction" />
 				<ref bean="defaultRefreshAction" />
+				<ref bean="separatorAction" />
+				<ref bean="defaultImportAction" />
 				<!-- <ref bean="separatorAction" />
 				<ref bean="commitScriptAction" />
 				<ref bean="unCommitScriptAction" />
@@ -342,6 +344,11 @@
 		<property name="billForm"><ref bean="billForm"/></property>
 		<property name="exceptionHandler"><ref bean="exceptionHandler" /></property>
 		<property name="btnName" value="二代健保申报" />
+	</bean>
+	<!--======= 动作：[newActions] [导入] ===========by wangywt 20190620-->
+	<bean id="defaultImportAction" class="nc.ui.twhr.twhr_declaration.action.DecImportAction">
+		<property name="model"><ref bean="bmModel"/></property>
+		<property name="btnName" value="導入" />
 	</bean>
 	<!--======= 动作：[newActions] [复制] ===========-->
 	<bean id="copyAction" class="nc.ui.pubapp.uif2app.actions.CopyAction">
