@@ -85,7 +85,7 @@ public class LeaveLeaveFeeParse extends AbstractPreExcutorFormulaParse {
 		// flag 是否免税 0否 1是 formulaArg[1].trim().substring(0,1)
 		int flag = Integer.valueOf(String.valueOf(arguments[1]).replaceAll("\'", ""));
 		// 分组参数
-		String pk_group_item = String.valueOf(arguments[2]).replaceAll("\'", "");
+		String pk_group_item = String.valueOf(arguments[3]).replaceAll("\'", "");
 		/* 获取计算人员集合 start */
 		String psndocsSql = "select wa_cacu_data.pk_psndoc from wa_cacu_data where wa_cacu_data.pk_wa_class = '"
 				+ pk_wa_class + "'";
@@ -167,12 +167,20 @@ public class LeaveLeaveFeeParse extends AbstractPreExcutorFormulaParse {
 				HashMap<UFLiteralDate, UFDouble> curPsnPeriodDateDailyFee = daySalaryResult.get(psndoc);
 				// MOD 增加判空处理 James
 				if (null != curPsnPeriodDateDailyFee && curPsnPeriodDateDailyFee.size() > 0) {
-					for (UFLiteralDate dateKey : curPsnPeriodDateDailyFee.keySet()) {
-						// 取时薪 即日薪的 1/8
-						double hourSalary = curPsnPeriodDateDailyFee.get(dateKey).getDouble() / 8;
-						double hour = psnDateHourMap.get(psndoc + dateKey) == null ? 0.00 : psnDateHourMap.get(
-								psndoc + dateKey).getDouble();
-						sum += (hour * hourSalary);
+					if(arguments[2].equals("'1'")){
+						for (UFLiteralDate dateKey : curPsnPeriodDateDailyFee.keySet()) {
+							double hour = psnDateHourMap.get(psndoc + dateKey) == null ? 0.00 : psnDateHourMap.get(
+									psndoc + dateKey).getDouble();
+							sum += hour;
+						}
+					}else{
+						for (UFLiteralDate dateKey : curPsnPeriodDateDailyFee.keySet()) {
+							// 取时薪 即日薪的 1/8
+							double hourSalary = curPsnPeriodDateDailyFee.get(dateKey).getDouble() / 8;
+							double hour = psnDateHourMap.get(psndoc + dateKey) == null ? 0.00 : psnDateHourMap.get(
+									psndoc + dateKey).getDouble();
+							sum += (hour * hourSalary);
+						}
 					}
 				}
 				String updateSql = "update wa_cacu_data set cacu_value = ? where pk_wa_class = ? and pk_psndoc = ?";

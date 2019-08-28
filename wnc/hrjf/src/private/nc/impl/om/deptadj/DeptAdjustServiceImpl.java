@@ -12,6 +12,7 @@ import nc.itf.om.IDeptAdjustService;
 import nc.itf.om.IDeptManageService;
 import nc.itf.om.IDeptQueryService;
 import nc.itf.org.IOrgVersionManageService;
+import nc.jdbc.framework.processor.ArrayListProcessor;
 import nc.jdbc.framework.processor.BeanListProcessor;
 import nc.jdbc.framework.processor.BeanProcessor;
 import nc.jdbc.framework.processor.ColumnProcessor;
@@ -45,7 +46,7 @@ public class DeptAdjustServiceImpl implements IDeptAdjustService {
 
 	/** baseDao **/
 	private BaseDAO baseDAO = null;
-
+	
 	/**
 	 * 为新版本部门
 	 */
@@ -205,6 +206,7 @@ public class DeptAdjustServiceImpl implements IDeptAdjustService {
 							hrdeptvo.setApprovenum(parentVO.getApprovenum());
 							hrdeptvo.setDeptduty(parentVO.getDeptduty());
 							hrdeptvo.setManagescope(parentVO.isManagescope());
+							hrdeptvo.setDept_charge(parentVO.getDept_charge());
 							newVO.setParentVO(hrdeptvo);
 							saveVO = getDeptManageService().update(newVO, false);
 						}
@@ -290,13 +292,31 @@ public class DeptAdjustServiceImpl implements IDeptAdjustService {
 							renameAndPrincipalChangeFlag = 3;
 						}
 					}
-					// if (renameAndPrincipalChangeFlag != 0) {
-					/*
-					 * getDeptManageService().renameAndPrincipalChange(newVO,
-					 * historyVO, true, renameAndPrincipalChangeFlag);
-					 */
+					//判断是不是修改了上级部门，如果修改了，要修改innercode wangywt 20190711
+					String deptIncodesql = "";
+					String randcode = "";
+					if(vo.getPk_fatherorg()==null && curVO.getPk_fatherorg()!=null){
+						randcode = get4RandomCode();
+						deptIncodesql = "update org_dept set innercode ='"+randcode+"',pk_fatherorg='~',dept_charge = '"+vo.getDept_charge()+"' where pk_dept = '"+vo.getPk_dept()+"'";
+						getBaseDAO().executeUpdate(deptIncodesql);
+						this.updateDeptInnercode(randcode, vo.getPk_dept());
+					}else if(vo.getPk_fatherorg()!=null  && !vo.getPk_fatherorg().equals(curVO.getPk_fatherorg())){
+						randcode = get4RandomCode();
+						deptIncodesql = "select innercode from org_dept where pk_dept = '"+vo.getPk_fatherorg()+"'";
+						List<Object> list = (List<Object>) getBaseDAO().executeQuery(deptIncodesql, new ArrayListProcessor());
+						Object[] obj = (Object[]) list.get(0);
+						deptIncodesql = "update org_dept set innercode ='"+obj[0].toString()+randcode+"',pk_fatherorg='"+vo.getPk_fatherorg()+"' where pk_dept = '"+vo.getPk_dept()+"'";
+						getBaseDAO().executeUpdate(deptIncodesql);
+						this.updateDeptInnercode(obj[0].toString()+randcode, vo.getPk_dept());
+					}
+					//更新dept_charge  wangywt 20190711
+					if(vo.getDept_charge()==null && curVO.getDept_charge()!=null){
+						getBaseDAO().executeUpdate("update org_dept set dept_charge = '~'  where pk_dept = '"+vo.getPk_dept()+"'");
+					}else if(vo.getDept_charge() != null && !vo.getDept_charge().equals(curVO.getDept_charge())){
+						getBaseDAO().executeUpdate("update org_dept set dept_charge = '"+vo.getDept_charge()+"' where pk_dept = '"+vo.getPk_dept()+"'");
+					}
+					
 					newPkdeptV = ((HRDeptVO) newVO.getParentVO()).getPk_vid();
-					// }
 					// 部门版本化操作完善 王永文 20190502 end
 				}
 				// 回写标志:
@@ -314,6 +334,7 @@ public class DeptAdjustServiceImpl implements IDeptAdjustService {
 
 		return errMsg.toString();
 	}
+
 
 	private String queryNextVersionNO(String table, String pkField, String pkValue, String cyear)
 			throws BusinessException {
@@ -384,17 +405,19 @@ public class DeptAdjustServiceImpl implements IDeptAdjustService {
 		String name4 = vo.getName4();
 		String name5 = vo.getName5();
 		String name6 = vo.getName6();
-		// 更新部门表,更新负责人、副主管、所在地点
+		// 更新部门表,更新负责人、副主管、所在地点,上级管理负责人
 		String sql_dept = "update org_dept set code='" + vo.getCode() + "',name = " + getNmF(name) + ", name2 = "
 				+ getNmF(name2) + ",name3=" + getNmF(name3) + ",name4=" + getNmF(name4) + ",name5=" + getNmF(name5)
 				+ ",name6=" + getNmF(name6) + ",PRINCIPAL = '" + vo.getPrincipal() + "',GLBDEF11 = '"
-				+ vo.getGlbdef11() + "', GLBDEF3 = '" + vo.getGlbdef3() + "' where pk_dept = '" + vo.getPk_dept() + "'";
+				+ vo.getGlbdef11() + "', GLBDEF3 = '" + vo.getGlbdef3() + "',dept_charge = '" +vo.getDept_charge()+
+						"' where pk_dept = '" + vo.getPk_dept() + "'";
 		getBaseDAO().executeUpdate(sql_dept);
-		// 更新部门版本表,更新负责人、副主管、所在地点
+		// 更新部门版本表,更新负责人、副主管、所在地点,上级管理负责人
 		String sql_dept_v = "update org_dept_v set code='" + vo.getCode() + "', name=" + getNmF(name) + ", name2 = "
 				+ getNmF(name2) + ",name3=" + getNmF(name3) + ",name4=" + getNmF(name4) + ",name5=" + getNmF(name5)
 				+ ",name6=" + getNmF(name6) + ",PRINCIPAL = '" + vo.getPrincipal() + "',GLBDEF11 = '"
-				+ vo.getGlbdef11() + "', GLBDEF3 = '" + vo.getGlbdef3() + "' where pk_vid = '" + vidPK + "'";
+				+ vo.getGlbdef11() + "', GLBDEF3 = '" + vo.getGlbdef3() + "',dept_charge = '" +vo.getDept_charge()
+				+ "' where pk_vid = '" + vidPK + "'";
 		getBaseDAO().executeUpdate(sql_dept_v);
 		// 更新报表组织表
 		String sql_report = "update org_reportorg set name=" + getNmF(name) + ", name2 = " + getNmF(name2) + ",name3="

@@ -625,6 +625,11 @@ public class PsndocSubInfoService4JFSImpl implements IPsndocSubInfoService4JFS {
 		}
 		// end
 
+		// ssx added on 2019-08-22
+		// 每项算完四舍五入
+		psn_sub_amount = psn_sub_amount.setScale(0, UFDouble.ROUND_HALF_UP);
+		// end
+
 		if (setting.getBselfpay().booleanValue()) {
 			calcRst.get(pk_psndoc).setiStuffPay(calcRst.get(pk_psndoc).getiStuffPay().add(psn_sub_amount)); // 個人負擔
 		} else {
@@ -1436,12 +1441,28 @@ public class PsndocSubInfoService4JFSImpl implements IPsndocSubInfoService4JFS {
 		// 检查人员是否有劳健保设定
 		SimpleDocServiceTemplate service = new SimpleDocServiceTemplate("TWHRGLBDEF");
 		for (String pk_psndoc : pk_psndocs) {
+			Collection<PsnOrgVO> psnorgs = this.getBaseDao().retrieveByClause(PsnOrgVO.class,
+					"pk_psndoc='" + pk_psndoc + "' and endflag='N' and lastflag='Y'");
+			if (psnorgs != null && psnorgs.size() == 0) {
+				continue;
+			}
+
+			UFLiteralDate orgBeginDate = psnorgs.toArray(new PsnOrgVO[0])[0].getBegindate();
 			// Ares.Tank 2018-9-14 15:59:03
 			// 若目前最新投保紀錄投保型態(非退保)與本次定薪的法人公司不同，則可使用此按鈕同步級距
 			PsndocDefVO[] vos = service.queryByCondition(PsndocDefUtil.getPsnLaborVO().getClass(), " pk_psndoc='"
 					+ pk_psndoc + "' ");
 			if (vos != null && vos.length > 0) {
 				for (PsndocDefVO vo : vos) {
+					// ssx added on 2019-08-15
+					// 離職回任時，應保證可加保
+					UFLiteralDate nhiEndDate = vo.getEnddate() == null ? new UFLiteralDate("9999-12-31") : vo
+							.getEnddate();
+					if (nhiEndDate.before(orgBeginDate)) {
+						continue;
+					}
+					// end
+
 					if (vo == null || !vo.getLastflag().booleanValue()) {
 						continue;// 寻找最新的投保记录
 					}
@@ -1461,6 +1482,15 @@ public class PsndocSubInfoService4JFSImpl implements IPsndocSubInfoService4JFS {
 					.queryByCondition(PsndocDefUtil.getPsnHealthVO().getClass(), " pk_psndoc='" + pk_psndoc + "' ");
 			if (vos != null && vos.length > 0) {
 				for (PsndocDefVO vo : vos) {
+					// ssx added on 2019-08-15
+					// 離職回任時，應保證可加保
+					UFLiteralDate nhiEndDate = vo.getEnddate() == null ? new UFLiteralDate("9999-12-31") : vo
+							.getEnddate();
+					if (nhiEndDate.before(orgBeginDate)) {
+						continue;
+					}
+					// end
+
 					if (vo == null || !vo.getLastflag().booleanValue()) {
 						continue;// 寻找最新的投保记录
 					}
@@ -1611,6 +1641,26 @@ public class PsndocSubInfoService4JFSImpl implements IPsndocSubInfoService4JFS {
 
 					service2.insert(vo);
 				}
+
+				reRangeOrderByPsn(pk_psndoc, PsndocDefTableUtil.getPsnLaborTablename());
+				reRangeOrderByPsn(pk_psndoc, PsndocDefTableUtil.getPsnHealthTablename());
+			}
+		}
+	}
+
+	@SuppressWarnings("unchecked")
+	private void reRangeOrderByPsn(String pk_psndoc, String tableName) throws BusinessException {
+		List<String> pk_psndoc_subs = (List<String>) this.getBaseDao().executeQuery(
+				"select pk_psndoc_sub from " + tableName + " where pk_psndoc='" + pk_psndoc
+						+ "' order by begindate, ts", new ColumnListProcessor());
+
+		if (pk_psndoc_subs != null && pk_psndoc_subs.size() > 0) {
+			int size = pk_psndoc_subs.size() - 1;
+			for (String pk_psndoc_sub : pk_psndoc_subs) {
+				this.getBaseDao().executeUpdate(
+						"update " + tableName + " set recordnum=" + size + " where pk_psndoc_sub='" + pk_psndoc_sub
+								+ "'");
+				size -= 1;
 			}
 		}
 	}
@@ -1689,6 +1739,15 @@ public class PsndocSubInfoService4JFSImpl implements IPsndocSubInfoService4JFS {
 			for (String pk_psndoc : pk_psndoclist.toArray(new String[0])) {
 				PsndocDefVO[] vos = service.queryByCondition(PsndocDefUtil.getGroupInsuranceVO().getClass(),
 						" pk_psndoc='" + pk_psndoc + "' ");
+
+				Collection<PsnOrgVO> psnorgs = this.getBaseDao().retrieveByClause(PsnOrgVO.class,
+						"pk_psndoc='" + pk_psndoc + "' and endflag='N' and lastflag='Y'");
+				if (psnorgs != null && psnorgs.size() == 0) {
+					continue;
+				}
+
+				UFLiteralDate orgBeginDate = psnorgs.toArray(new PsnOrgVO[0])[0].getBegindate();
+
 				if (vos != null && vos.length > 0) {
 					// 到這裡,說明已經存在了
 					// 检查是否需要保薪调整及进行保薪调整
@@ -1696,7 +1755,19 @@ public class PsndocSubInfoService4JFSImpl implements IPsndocSubInfoService4JFS {
 						count++;
 						continue;
 					}
-					throw new BusinessException("已存在團保投保設定或已進行保薪調整");
+
+					for (PsndocDefVO vo : vos) {
+						// ssx added on 2019-08-15
+						// 離職回任時，應保證可加保
+						UFLiteralDate nhiEndDate = vo.getEnddate() == null ? new UFLiteralDate("9999-12-31") : vo
+								.getEnddate();
+						if (nhiEndDate.before(orgBeginDate)) {
+							continue;
+						} else {
+							throw new BusinessException("已存在團保投保設定或已進行保薪調整");
+						}
+						// end
+					}
 				}
 			}
 		}
@@ -1735,6 +1806,8 @@ public class PsndocSubInfoService4JFSImpl implements IPsndocSubInfoService4JFS {
 					vo.setEnddate(null);
 					service.insert(vo);
 				}
+
+				reRangeOrderByPsn(pk_psndoc, PsndocDefTableUtil.getGroupInsuranceTablename());
 			}
 		}
 	}

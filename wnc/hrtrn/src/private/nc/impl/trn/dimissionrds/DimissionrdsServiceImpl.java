@@ -679,6 +679,19 @@ public class DimissionrdsServiceImpl extends SingleBaseService<PsndocVO> impleme
 					blPoststate = lastvo.getPoststat();
 				}
 			}
+			// wanglqh 离职带出工作信息
+		} else {
+			psnjob.setPk_post(bill.getOldpk_post());
+			psnjob.setPk_postseries(bill.getOldpk_postseries());
+			psnjob.setPk_job(bill.getOldpk_job());
+			psnjob.setSeries(bill.getOldseries());
+			psnjob.setWorktype(bill.getOldworktype());
+			psnjob.setMemo(bill.getNewmemo());
+			psnjob.setDeposemode(bill.getNewdeposemode());
+			psnjob.setPk_jobgrade(bill.getOldpk_jobgrade());
+			psnjob.setPk_jobrank(bill.getOldpk_jobrank());
+			psnjob.setWorktype(bill.getOldworktype());
+			psnjob.setOccupation(bill.getOldoccupation());
 		}
 		psnjob.setPoststat(blPoststate);
 
@@ -1065,12 +1078,15 @@ public class DimissionrdsServiceImpl extends SingleBaseService<PsndocVO> impleme
 		{
 			if ((billvo.getIsend() != null && billvo.getIsend().booleanValue())
 					|| (billvo.getIsrelease() != null && billvo.getIsrelease().booleanValue())) {
-				message = ResHelper.getString("6009tran", "06009tran0215")/*
+				message = ResHelper.getString("6009tran", "X6009tran0062")/*
 																		 * *
 																		 * 
 																		 * @res
 																		 * *
-																		 * "存在未生效的合同记录，不能执行，请处理完后再手动执行单据！"
+																		 * 存在未生效的合同记录
+																		 * ，
+																		 * 请及时查看处理
+																		 * ！
 																		 */;
 			}
 		} else {// 手动执行时可以去查询
@@ -1264,16 +1280,21 @@ public class DimissionrdsServiceImpl extends SingleBaseService<PsndocVO> impleme
 
 		if (ctrtVOs != null && !ArrayUtils.isEmpty(ctrtVOs)) {
 			AggStapply[] bills = { bill };
-			HiSendMsgHelper.sendMessage1(msg_code, bills, (String) billvo.getAttributeValue(StapplyVO.PK_HI_ORG));
+			// 离职申请发送重复消息wanglqh
+			// HiSendMsgHelper.sendMessage1(msg_code, bills, (String)
+			// billvo.getAttributeValue(StapplyVO.PK_HI_ORG));
 			// throw new BusinessException(ResHelper.getString("6009tran",
 			// "06009tran0215")/*
 			// * @res
 			// * "存在未生效的合同记录，不能执行，请处理完后再手动执行单据！"
 			// */);
-			message = ResHelper.getString("6009tran", "06009tran0215")/*
+			message = ResHelper.getString("6009tran", "X6009tran0062")/*
 																	 * * @res *
-																	 * "存在未生效的合同记录，不能执行，请处理完后再手动执行单据！"
+																	 * 存在未生效的合同记录
+																	 * ，请及时查看处理！
 																	 */;
+			throw new ValidationException(message);
+
 		}
 		return message;
 	}
@@ -1312,9 +1333,10 @@ public class DimissionrdsServiceImpl extends SingleBaseService<PsndocVO> impleme
 		CtrtVO[] ctrtVOs = (CtrtVO[]) NCLocator.getInstance().lookup(IPersistenceRetrieve.class)
 				.retrieveByClause(null, CtrtVO.class, cond);
 		if (ctrtVOs != null && !ArrayUtils.isEmpty(ctrtVOs)) {
-			message = ResHelper.getString("6009tran", "06009tran0215")/*
+			message = ResHelper.getString("6009tran", "X6009tran0062")/*
 																	 * * @res *
-																	 * "存在未生效的合同记录，不能执行，请处理完后再手动执行单据！"
+																	 * 存在未生效的合同记录
+																	 * ，请及时查看处理！
 																	 */;
 		}
 
@@ -1332,12 +1354,15 @@ public class DimissionrdsServiceImpl extends SingleBaseService<PsndocVO> impleme
 		{
 			if ((billvo.getIsend() != null && billvo.getIsend().booleanValue())
 					|| (billvo.getIsrelease() != null && billvo.getIsrelease().booleanValue())) {
-				message = ResHelper.getString("6009tran", "06009tran0215")/*
+				message = ResHelper.getString("6009tran", "X6009tran0062")/*
 																		 * *
 																		 * 
 																		 * @res
 																		 * *
-																		 * "存在未生效的合同记录，不能执行，请处理完后再手动执行单据！"
+																		 * 存在未生效的合同记录
+																		 * ，
+																		 * 请及时查看处理
+																		 * ！
 																		 */;
 			}
 		} else {// 手动执行时可以去查询
@@ -1366,8 +1391,12 @@ public class DimissionrdsServiceImpl extends SingleBaseService<PsndocVO> impleme
 		// 3-3)加入黑名单
 		if (((StapplyVO) bill.getParentVO()).getIfaddblack() != null
 				&& ((StapplyVO) bill.getParentVO()).getIfaddblack().booleanValue()) {
+			// addToBlacklist(psndoc, ((StapplyVO)
+			// bill.getParentVO()).getAddreason(), ((StapplyVO)
+			// bill.getParentVO()).getPk_org());
+			// 加入集团黑名单
 			addToBlacklist(psndoc, ((StapplyVO) bill.getParentVO()).getAddreason(),
-					((StapplyVO) bill.getParentVO()).getPk_org());
+					((StapplyVO) bill.getParentVO()).getPk_group());
 		}
 
 		// 3-4)结束所在人员组

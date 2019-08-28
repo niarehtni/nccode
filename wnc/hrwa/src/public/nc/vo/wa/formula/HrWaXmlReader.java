@@ -106,14 +106,13 @@ public class HrWaXmlReader implements IHrXmlReader {
 		HrWaXmlReader reader = getInstance();
 		String zoncode = "CN";
 		CountryZoneVO zonvoe = null;
-		// try {
-		// zonvoe = ((IGlobalCountryQueryService) NCLocator.getInstance()
-		// .lookup(IGlobalCountryQueryService.class))
-		// .getCountryZoneByPK(pk_country);
-		// } catch (Exception e) {
-		// Logger.error(e.getMessage(), e);
-		// zoncode = "CN";
-		// }
+		try {
+			zonvoe = ((IGlobalCountryQueryService) NCLocator.getInstance().lookup(IGlobalCountryQueryService.class))
+					.getCountryZoneByPK(pk_country);
+		} catch (Exception e) {
+			Logger.error(e.getMessage(), e);
+			zoncode = "CN";
+		}
 
 		if (zonvoe != null) {
 			zoncode = zonvoe.getCode();

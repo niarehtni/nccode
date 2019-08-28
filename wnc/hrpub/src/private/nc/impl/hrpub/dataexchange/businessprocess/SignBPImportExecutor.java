@@ -4,8 +4,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import nc.bs.framework.common.NCLocator;
 import nc.impl.hrpub.dataexchange.DataImportExecutor;
-import nc.impl.ta.signcard.SignCardRegisterMaintainImpl;
 import nc.itf.hrpub.IDataExchangeExternalExecutor;
 import nc.itf.ta.ISignCardRegisterManageMaintain;
 import nc.vo.pub.BusinessException;
@@ -67,6 +67,9 @@ public class SignBPImportExecutor extends DataImportExecutor implements IDataExc
 					} else {
 						vo.setSigndate(new UFLiteralDate((String) rowNCMap.get(rowNo + ":signdate")));
 					}
+
+					PsndocDismissedValidator dismChecker = new PsndocDismissedValidator();
+					dismChecker.validate(vo.getPk_psndoc(), vo.getSigndate());
 
 					Map<String, Object> psnjob = this.getPsnjob(vo.getPk_psndoc(), vo.getSigndate().toString());
 					if (psnjob != null && psnjob.size() > 0 && !StringUtils.isEmpty((String) psnjob.get("pk_psnjob"))) {
@@ -157,7 +160,7 @@ public class SignBPImportExecutor extends DataImportExecutor implements IDataExc
 
 	private ISignCardRegisterManageMaintain getVOSaveService() {
 		if (saveService == null) {
-			saveService = new SignCardRegisterMaintainImpl();
+			saveService = NCLocator.getInstance().lookup(ISignCardRegisterManageMaintain.class);
 		}
 
 		return saveService;

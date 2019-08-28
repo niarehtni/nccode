@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 
 import nc.bs.dao.BaseDAO;
+import nc.bs.dao.DAOException;
 import nc.bs.uap.oid.OidGenerator;
 import nc.hr.utils.InSQLCreator;
 import nc.impl.ta.overtime.SegdetailMaintainImpl;
@@ -586,6 +587,15 @@ public class OTSChainUtils {
 
 		if (targetNode.getNextNode() != null) {
 			targetNode.getNextNode().setPriorNode(targetNode.getPriorNode());
+			if (targetNode.getPriorNode() != null) {
+				targetNode.getNextNode().getNodeData()
+						.setPk_parentsegdetail(targetNode.getPriorNode().getNodeData().getPk_segdetail());
+			} else {
+				targetNode.getNextNode().getNodeData().setPk_parentsegdetail(null);
+			}
+			if (removeFromDB) {
+				targetNode.getNextNode().getNodeData().setStatus(VOStatus.UPDATED);
+			}
 		}
 
 		if (removeFromDB) {
@@ -598,6 +608,10 @@ public class OTSChainUtils {
 					"pk_segdetail='" + vo.getPk_segdetail() + "'");
 			aggvo.setChildrenVO(lstChildVOs.toArray(new SegDetailConsumeVO[0]));
 			new SegdetailMaintainImpl().delete(new AggSegDetailVO[] { aggvo });
+
+			// ssx added on 2019-08-08 for 刪除後保存防止斷鏈
+			saveAll(targetNode);
+			// end
 		}
 	}
 
@@ -679,14 +693,14 @@ public class OTSChainUtils {
 	@SuppressWarnings("unchecked")
 	public static void save(OTSChainNode node) throws BusinessException {
 		SegDetailVO vo = node.getNodeData();
-		if (VOStatus.NEW == vo.getStatus()) {
+		if (vo.getPk_segdetail() == null || VOStatus.NEW == vo.getStatus()) {
 			// 新增
 			AggSegDetailVO aggvo = new AggSegDetailVO();
 
 			aggvo.setParent(vo);
 			AggSegDetailVO[] ret = new SegdetailMaintainImpl().insert(new AggSegDetailVO[] { aggvo });
 			vo.setPk_segdetail(ret[0].getPrimaryKey());
-		} else if (VOStatus.UPDATED == vo.getStatus()) {
+		} else if (vo.getPk_segdetail() != null && VOStatus.UPDATED == vo.getStatus()) {
 			// 修改
 			AggSegDetailVO aggvo = new AggSegDetailVO();
 			aggvo.setParent(vo);
@@ -993,5 +1007,9 @@ public class OTSChainUtils {
 
 	public static void setCachedPsnChainNodes(OTSChainNode cachedData) {
 		cachedPsnChainNodes = cachedData;
+	}
+
+	public static SegRuleTermVO getSegRuleTerm(String pk_segRuleTerm) throws DAOException {
+		return (SegRuleTermVO) getBaseDAO().retrieveByPK(SegRuleTermVO.class, pk_segRuleTerm);
 	}
 }

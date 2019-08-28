@@ -161,7 +161,6 @@ public class SegDetailServiceImpl implements ISegDetailService {
 	@Override
 	public void deleteOvertimeSegDetail(OvertimeRegVO[] overtimeRegVOs) throws BusinessException {
 		if (overtimeRegVOs != null && overtimeRegVOs.length > 0) {
-			List<AggSegDetailVO> aggvos = new ArrayList<AggSegDetailVO>();
 
 			for (OvertimeRegVO vo : overtimeRegVOs) {
 				UFBoolean isEnabled = new UFBoolean(SysInitQuery.getParaString(vo.getPk_org(), "TBMOTSEG"));
@@ -169,7 +168,7 @@ public class SegDetailServiceImpl implements ISegDetailService {
 					continue;
 				}
 
-				OTSChainNode curNode = OTSChainUtils.buildChainNodes(vo.getPk_psndoc(), null, vo.getPk_overtimereg(),
+				OTSChainNode curNode = OTSChainUtils.buildChainNodes(vo.getPk_psndoc(), null, null,
 						false, false, false, false, false);
 
 				if (curNode == null) {
@@ -178,17 +177,22 @@ public class SegDetailServiceImpl implements ISegDetailService {
 
 				boolean canDel = true;
 				while (curNode != null) {
+					if(!vo.getPk_overtimereg().equals(curNode.getNodeData().getPk_overtimereg())){
+						curNode = curNode.getNextNode();
+						continue;
+					}
 					if (curNode.getNodeData().getConsumedhours().doubleValue() > 0
 							|| containsChild(curNode.getNodeData().getPk_segdetail())) {
 						canDel = false;
 						break;
 					}
-
-					AggSegDetailVO aggvo = new AggSegDetailVO();
-					aggvo.setParent(curNode.getNodeData());
-					aggvos.add(aggvo);
-
+					
+					OTSChainNode delete = curNode;
 					curNode = curNode.getNextNode();
+					// ssx modified on 2019-08-08
+					// for 刪除當前節點並防止斷鏈
+					OTSChainUtils.removeCurrentNode(delete, true);
+					// end
 				}
 
 				if (!canDel) {
@@ -196,11 +200,6 @@ public class SegDetailServiceImpl implements ISegDetailService {
 				}
 
 			}
-
-			if (aggvos.size() > 0) {
-				getSegMaintain().delete(aggvos.toArray(new AggSegDetailVO[0]));
-			}
-
 		}
 	}
 
@@ -531,22 +530,13 @@ public class SegDetailServiceImpl implements ISegDetailService {
 				if (psncal.getPk_shift() != null) {
 					ShiftVO shiftvo = (ShiftVO) this.getBaseDao().retrieveByPK(ShiftVO.class, psncal.getPk_shift());
 					if (shiftvo != null) {
-						UFDateTime startDT = null;
-						if (shiftvo.getTimebeginday() == 0) {
-							startDT = new UFDateTime(psncal.getCalendar().toString() + " " + shiftvo.getTimebegintime());
-						} else {
-							startDT = new UFDateTime(psncal.getCalendar().getDateAfter(1).toString() + " "
-									+ shiftvo.getTimebegintime());
-						}
-
-						UFDateTime endDT = null;
-						if (shiftvo.getTimeendday() == 0) {
-							endDT = new UFDateTime(psncal.getCalendar().toString() + " " + shiftvo.getTimeendtime());
-						} else {
-							endDT = new UFDateTime(psncal.getCalendar().getDateAfter(1).toString() + " "
-									+ shiftvo.getTimeendtime());
-						}
-
+						//mod start tank 2019年8月21日17:04:24 前一日,後一日修復
+						UFDateTime startDT = new UFDateTime(psncal.getCalendar().getDateAfter(shiftvo.getTimebeginday()).toString() + " "
+								+ shiftvo.getTimebegintime());
+						
+						UFDateTime endDT = new UFDateTime(psncal.getCalendar().getDateAfter(shiftvo.getTimeendday()).toString() + " "
+								+ shiftvo.getTimeendtime());
+						//end mod
 						if (vo.getOvertimebegintime().before(endDT) && vo.getOvertimebegintime().after(startDT)) {
 							rtnDate = psncal.getCalendar();
 						}

@@ -662,12 +662,10 @@ public class WaTbmdaysalaryServiceImpl implements IWaTbmdaysalaryService {
 				salaryVO.setHoursalary(hoursalary);
 				salaryVO.setPk_group_item(pk_item_group);
 				listTbmDaySalaryVOs.add(salaryVO);
-				if (pk_item_group.equals(generalVO.getAttributeValue("pk_group_item"))) {
-					String pk_tbm_salary = generalVO.getAttributeValue("pk_daysalary") == null ? "" : generalVO
-							.getAttributeValue("pk_daysalary").toString();
-					if (StringUtils.isNotBlank(pk_tbm_salary)) {
-						deletePks.add(pk_tbm_salary);
-					}
+				String pk_tbm_salary = generalVO.getAttributeValue("pk_daysalary") == null ? "" : generalVO
+						.getAttributeValue("pk_daysalary").toString();
+				if (StringUtils.isNotBlank(pk_tbm_salary)) {
+					deletePks.add(pk_tbm_salary);
 				}
 			}
 		}

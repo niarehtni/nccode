@@ -28,6 +28,9 @@ public class DeptadjSaveAction extends DifferentVOSaveAction {
 		ClientBillToServer tool = new ClientBillToServer();
 		String pk_org = getModel().getContext().getPk_org();
 		IBill[] lightVOs = tool.constructInsert(clientVOs);
+
+		setDeptEnglishName(lightVOs, clientVOs);
+
 		AggHRDeptAdjustVO aggvo = (AggHRDeptAdjustVO) lightVOs[0];
 		aggvo.getParentVO().setBilldate(new UFDate());
 		if (null == aggvo.getParentVO().getPk_dept()) {
@@ -100,10 +103,12 @@ public class DeptadjSaveAction extends DifferentVOSaveAction {
 		IBill[] oldVO = { (IBill) getModel().getSelectedData() };
 
 		IBill[] lightVOs = tool.construct(oldVO, clientVOs);
+
+		setDeptEnglishName(lightVOs, clientVOs);
+
 		AggHRDeptAdjustVO aggvo = (AggHRDeptAdjustVO) lightVOs[0];
 		// 给org赋值
-		String pk_org_v = getorgs(aggvo.getParentVO().getPk_org() == null ? pk_org
-				: aggvo.getParentVO().getPk_org());
+		String pk_org_v = getorgs(aggvo.getParentVO().getPk_org() == null ? pk_org : aggvo.getParentVO().getPk_org());
 		aggvo.getParentVO().setPk_org_v(pk_org_v);
 		String message = null;
 		try {
@@ -131,17 +136,17 @@ public class DeptadjSaveAction extends DifferentVOSaveAction {
 		if (null == aggvo.getParentVO().getPk_group()) {
 			aggvo.getParentVO().setPk_group(getModel().getContext().getPk_group());
 		}
-		// 必填判空 
-		if(null == aggvo.getParentVO().getCode()){
+		// 必填判空
+		if (null == aggvo.getParentVO().getCode()) {
 			throw new BusinessException("部门编码不能为空。");
 		}
-		if(null == aggvo.getParentVO().getName()){
+		if (null == aggvo.getParentVO().getName()) {
 			throw new BusinessException("部门名称不能为空。");
 		}
-		if(null == aggvo.getParentVO().getDepttype()){
+		if (null == aggvo.getParentVO().getDepttype()) {
 			throw new BusinessException("部門类型不能为空。");
 		}
-		if(null == aggvo.getParentVO().getCreatedate()){
+		if (null == aggvo.getParentVO().getCreatedate()) {
 			throw new BusinessException("成立時間不能为空。");
 		}
 		IBill[] afterUpdateVOs = null;
@@ -156,6 +161,14 @@ public class DeptadjSaveAction extends DifferentVOSaveAction {
 		getModel().directlyUpdate(clientVOs[0]);
 		getModel().setUiState(UIState.NOT_EDIT);
 	}
+
+	private void setDeptEnglishName(IBill[] lightVOs, IBill[] clientVOs) {
+		IBill lightvo = lightVOs[0];
+		IBill clientvo = clientVOs[0];
+
+		lightvo.getParent().setAttributeValue("name3", clientvo.getParent().getAttributeValue("deptname3"));
+	}
+
 	private String getorgs(String pk_org) {
 		IUAPQueryBS iUAPQueryBS = (IUAPQueryBS) NCLocator.getInstance().lookup(IUAPQueryBS.class.getName());
 		List<Map<String, String>> orgvs = null;

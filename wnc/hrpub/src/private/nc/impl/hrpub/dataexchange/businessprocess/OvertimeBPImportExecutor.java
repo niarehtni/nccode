@@ -17,15 +17,13 @@ import nc.itf.hrpub.IDataExchangeExternalExecutor;
 import nc.itf.ta.IOvertimeApplyQueryMaintain;
 import nc.itf.ta.IOvertimeRegisterManageMaintain;
 import nc.itf.ta.IOvertimeRegisterQueryMaintain;
-import nc.itf.ta.algorithm.ITimeScopeWithBillInfo;
-import nc.ui.pub.beans.MessageDialog;
+import nc.jdbc.framework.processor.ColumnProcessor;
 import nc.vo.pub.BusinessException;
 import nc.vo.pub.SuperVO;
 import nc.vo.pub.lang.UFBoolean;
 import nc.vo.pub.lang.UFDateTime;
 import nc.vo.pub.lang.UFDouble;
 import nc.vo.pub.lang.UFLiteralDate;
-import nc.vo.ta.PublicLangRes;
 import nc.vo.ta.bill.BillMutexException;
 import nc.vo.ta.overtime.OvertimeCommonVO;
 import nc.vo.ta.overtime.OvertimeRegVO;
@@ -89,6 +87,9 @@ public class OvertimeBPImportExecutor extends DataImportExecutor implements IDat
 					vo.setOvertimeendtime(new UFDateTime((String) rowNCMap.get(rowNo + ":overtimeendtime")));
 					vo.setOvertimeenddate(new UFLiteralDate((String) rowNCMap.get(rowNo + ":overtimeendtime")));
 					vo.setOvertimehour(new UFDouble((String) rowNCMap.get(rowNo + ":overtimehour")));
+
+					PsndocDismissedValidator dismChecker = new PsndocDismissedValidator();
+					dismChecker.validate(vo.getPk_psndoc(), vo.getOvertimebegindate());
 
 					vo.setPk_org(this.getPk_org());
 					vo.setPk_org_v(this.getPk_org_v());
@@ -167,14 +168,14 @@ public class OvertimeBPImportExecutor extends DataImportExecutor implements IDat
 	public void beforeQuery() throws BusinessException {
 		// TODO 自动生成的方法存根
 
-	}  
+	}
 
 	@Override
 	public void afterQuery() throws BusinessException {
 		// TODO 自动生成的方法存根
- 
-	} 
- 
+
+	}
+
 	@Override
 	public void doUpdateByBP() throws BusinessException {
 		if (rowNCVO != null && rowNCVO.size() > 0) {
@@ -185,20 +186,35 @@ public class OvertimeBPImportExecutor extends DataImportExecutor implements IDat
 			// 通过日期进行排序
 			ListSort(arraylist);
 			for (String s : arraylist) {
-				//校验单据，解决相同单据仍然能导入数据库的bug   wangywt  20190603  begin
+				// 校验单据，解决相同单据仍然能导入数据库的bug wangywt 20190603 begin
 				try {
-					//check(rowNCVO.get(s));
-				}catch (Exception bme) {
-					this.getErrorMessages().put(s.split(":")[0], "單據編碼為"+rowNCVO.get(s).getBill_code()+"的單據報錯："+bme.getMessage());
+					// check(rowNCVO.get(s));
+					duplicateCheck(rowNCVO.get(s));
+				} catch (Exception bme) {
+					this.getErrorMessages().put(s.split(":")[0],
+							"單據編碼為" + rowNCVO.get(s).getBill_code() + "的單據報錯：" + bme.getMessage());
 					continue;
 				}
-				//校验单据，解决相同单据仍然能导入数据库的bug   wangywt  20190603  end
+				// 校验单据，解决相同单据仍然能导入数据库的bug wangywt 20190603 end
 				try {
 					this.getVOSaveService().insertData(rowNCVO.get(s));
 				} catch (Exception e) {
 					this.getErrorMessages().put(s.split(":")[0], e == null ? "未知錯誤" : e.getMessage());
 				}
 			}
+		}
+	}
+
+	private void duplicateCheck(OvertimeRegVO overtimeRegVO) throws BusinessException {
+		Integer totalHour = (Integer) this.getBaseDAO().executeQuery(
+				"select sum(isnull(overtimehour,0)) overtimehour  from tbm_overtimereg where pk_psndoc = '"
+						+ overtimeRegVO.getPk_psndoc() + "' and overtimebegintime = '"
+						+ overtimeRegVO.getOvertimebegintime().toString() + "' and overtimeendtime ='"
+						+ overtimeRegVO.getOvertimeendtime().toString()
+						+ "' group by pk_psndoc, overtimebegintime, overtimeendtime", new ColumnProcessor());
+
+		if (totalHour != null && totalHour > 0 && overtimeRegVO.getOvertimehour().intValue() > 0) {
+			throw new BusinessException("加班時段發生重疊。");
 		}
 	}
 
@@ -256,71 +272,69 @@ public class OvertimeBPImportExecutor extends DataImportExecutor implements IDat
 			}
 		});
 	}
-	
+
 	/**
 	 * 校验单据的方法
+	 * 
 	 * @param regvo
 	 * @return
 	 * @throws BusinessException
 	 * @throws BillMutexException
 	 */
-	protected Object check(OvertimeRegVO regvo)
-			     throws BusinessException, BillMutexException{
-	   
-	     if (regvo.getActhour().doubleValue() < 0.001D) {
-	       throw new BusinessException(ResHelper.getString("6017overtime", "06017overtime0062"));
-	     }
-	    List<RemoteCallInfo> remoteList = new ArrayList<RemoteCallInfo>();
-	     
-	     RemoteCallInfo checkRemote = new RemoteCallInfo();
-	     checkRemote.setClassName(IOvertimeRegisterQueryMaintain.class.getName());
-	     checkRemote.setMethodName("check");
-	     checkRemote.setParamTypes(new Class[] { SuperVO.class });
-	     checkRemote.setParams(new Object[] { regvo });
-	     remoteList.add(checkRemote);
-	     
-	 
-	     RemoteCallInfo checkLengthRemote = new RemoteCallInfo();
-	     checkLengthRemote.setClassName(IOvertimeApplyQueryMaintain.class.getName());
-	     checkLengthRemote.setMethodName("checkOvertimeLength");
-	     checkLengthRemote.setParamTypes(new Class[] { String.class, OvertimeCommonVO[].class });
-	    checkLengthRemote.setParams(new Object[] { regvo.getPk_org(),  regvo  });
-	     remoteList.add(checkLengthRemote);
-	     
-	 
-	    RemoteCallInfo checkFlag = new RemoteCallInfo();
-	     checkFlag.setClassName(IOvertimeApplyQueryMaintain.class.getName());
-	    checkFlag.setMethodName("checkIsNeed");
-	    checkFlag.setParamTypes(new Class[] { String.class, OvertimeCommonVO[].class });
-	    checkFlag.setParams(new Object[] { regvo.getPk_org(),  regvo  });
-	    remoteList.add(checkFlag);
-	     
-	 
-	    RemoteCallInfo checkHolidayRemote = new RemoteCallInfo();
-	    checkHolidayRemote.setClassName(IOvertimeApplyQueryMaintain.class.getName());
-	    checkHolidayRemote.setMethodName("checkOverTimeHoliday");
-	    checkHolidayRemote.setParamTypes(new Class[] { String.class, OvertimeCommonVO[].class });
-	    checkHolidayRemote.setParams(new Object[] { regvo.getPk_org(),  regvo  });
-	     remoteList.add(checkHolidayRemote);
-	     
-	 
-	     List<RemoteCallResult> returnList = ((IRemoteCallCombinatorService)NCLocator.getInstance().lookup(IRemoteCallCombinatorService.class)).doRemoteCall(remoteList);
-	    if (returnList.isEmpty())
-	       return null;
-	      RemoteCallResult[] returns = (RemoteCallResult[])returnList.toArray(new RemoteCallResult[0]);
-	      String checkLength = (String)returns[1].getResult();
-	      Map<String, String[]> holidayMap = (Map)returns[3].getResult();
-	    if (!StringUtils.isBlank(checkLength)) {
-	     }
-	    String checkFlagReslut = (String)returns[2].getResult();
-	     if (!StringUtils.isBlank(checkFlagReslut)) {
-	     }
-	     if (holidayMap != null) {
-	       String psnNames = ((String[])holidayMap.keySet().toArray(new String[0]))[0];
-	       String msg = ResHelper.getString("6017overtime", "06017overtime0053") + psnNames;
-	     }
-	    return returns[0].getResult();
-	   }
+	protected Object check(OvertimeRegVO regvo) throws BusinessException, BillMutexException {
+
+		if (regvo.getActhour().doubleValue() < 0.001D) {
+			throw new BusinessException(ResHelper.getString("6017overtime", "06017overtime0062"));
+		}
+		List<RemoteCallInfo> remoteList = new ArrayList<RemoteCallInfo>();
+
+		RemoteCallInfo checkRemote = new RemoteCallInfo();
+		checkRemote.setClassName(IOvertimeRegisterQueryMaintain.class.getName());
+		checkRemote.setMethodName("check");
+		checkRemote.setParamTypes(new Class[] { SuperVO.class });
+		checkRemote.setParams(new Object[] { regvo });
+		remoteList.add(checkRemote);
+
+		RemoteCallInfo checkLengthRemote = new RemoteCallInfo();
+		checkLengthRemote.setClassName(IOvertimeApplyQueryMaintain.class.getName());
+		checkLengthRemote.setMethodName("checkOvertimeLength");
+		checkLengthRemote.setParamTypes(new Class[] { String.class, OvertimeCommonVO[].class });
+		checkLengthRemote.setParams(new Object[] { regvo.getPk_org(), regvo });
+		remoteList.add(checkLengthRemote);
+
+		RemoteCallInfo checkFlag = new RemoteCallInfo();
+		checkFlag.setClassName(IOvertimeApplyQueryMaintain.class.getName());
+		checkFlag.setMethodName("checkIsNeed");
+		checkFlag.setParamTypes(new Class[] { String.class, OvertimeCommonVO[].class });
+		checkFlag.setParams(new Object[] { regvo.getPk_org(), regvo });
+		remoteList.add(checkFlag);
+
+		RemoteCallInfo checkHolidayRemote = new RemoteCallInfo();
+		checkHolidayRemote.setClassName(IOvertimeApplyQueryMaintain.class.getName());
+		checkHolidayRemote.setMethodName("checkOverTimeHoliday");
+		checkHolidayRemote.setParamTypes(new Class[] { String.class, OvertimeCommonVO[].class });
+		checkHolidayRemote.setParams(new Object[] { regvo.getPk_org(), regvo });
+		remoteList.add(checkHolidayRemote);
+
+		List<RemoteCallResult> returnList = ((IRemoteCallCombinatorService) NCLocator.getInstance().lookup(
+				IRemoteCallCombinatorService.class)).doRemoteCall(remoteList);
+		if (returnList.isEmpty())
+			return null;
+		RemoteCallResult[] returns = (RemoteCallResult[]) returnList.toArray(new RemoteCallResult[0]);
+		String checkLength = (String) returns[1].getResult();
+		Map<String, String[]> holidayMap = (Map) returns[3].getResult();
+		if (!StringUtils.isBlank(checkLength)) {
+		}
+		String checkFlagReslut = (String) returns[2].getResult();
+		if (!StringUtils.isBlank(checkFlagReslut)) {
+		}
+		if (holidayMap != null) {
+			String psnNames = ((String[]) holidayMap.keySet().toArray(new String[0]))[0];
+			String msg = ResHelper.getString("6017overtime", "06017overtime0053") + psnNames;
+		}
+		return returns[0].getResult();
+	}
+
 	public static String replaceBlank(String str) {
 		if (str != null) {
 			str = str.replaceAll("\\\\r|\\\\n", "");

@@ -74,6 +74,19 @@ public class HRDeptAdjustVO extends SuperVO {
 	 */
 	public String glbdef11;
 	
+	/**
+	 * 上级部门主管人员
+	 */
+	public String dept_charge;
+	
+	public String getDept_charge() {
+		return dept_charge;
+	}
+
+	public void setDept_charge(String dept_charge) {
+		this.dept_charge = dept_charge;
+	}
+
 	public String getGlbdef3() {
 		return glbdef3;
 	}

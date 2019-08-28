@@ -211,7 +211,16 @@
 						</bean>
 					</property>
 				</bean>
-				
+				<!--  -->
+				<bean class="nc.ui.pubapp.uif2app.event.EventHandlerGroup">
+					<property name="event" value="nc.ui.pubapp.uif2app.event.card.CardHeadTailBeforeEditEvent" />
+					<property name="handler">
+						<bean class="nc.ui.hrjf.deptadj.ace.handler.AceDeptChargeHandler" >
+						<!-- 	<property name="billForm" ref="billForm" /> -->
+						<constructor-arg><ref bean="billForm"/></constructor-arg> 
+						</bean>
+					</property>
+				</bean>
 			</list>
 		</property>
 	</bean>

@@ -13,6 +13,7 @@ import java.util.Map.Entry;
 import java.util.UUID;
 
 import nc.bs.bd.cache.CacheProxy;
+import nc.bs.dao.BaseDAO;
 import nc.bs.framework.common.NCLocator;
 import nc.hr.utils.ResHelper;
 import nc.hr.utils.StringPiecer;
@@ -26,6 +27,7 @@ import nc.itf.ta.ITBMPsndocQueryService;
 import nc.itf.ta.algorithm.DateScopeUtils;
 import nc.itf.ta.algorithm.IDateScope;
 import nc.pubitf.ta.overtime.ISegDetailService;
+import nc.vo.bd.shift.ShiftVO;
 import nc.vo.pub.BusinessException;
 import nc.vo.pub.lang.UFBoolean;
 import nc.vo.pub.lang.UFDateTime;
@@ -36,6 +38,7 @@ import nc.vo.ta.leave.LeaveRegVO;
 import nc.vo.ta.leave.SplitBillResult;
 import nc.vo.ta.leaveoff.AggLeaveoffVO;
 import nc.vo.ta.leaveoff.LeaveoffVO;
+import nc.vo.ta.psncalendar.PsnCalendarVO;
 import nc.vo.ta.psndoc.TBMPsndocVO;
 import nc.vo.ta.timeitem.LeaveTypeCopyVO;
 
@@ -86,6 +89,9 @@ public class LeaveBPImportExecutor extends DataImportExecutor implements IDataEx
 					vo.setFreezedayorhour(UFDouble.ZERO_DBL);
 					vo.setRealdayorhour(UFDouble.ZERO_DBL);
 					vo.setRestdayorhour(UFDouble.ZERO_DBL);
+
+					PsndocDismissedValidator dismChecker = new PsndocDismissedValidator();
+					dismChecker.validate(vo.getPk_psndoc(), vo.getLeavebegindate());
 
 					/*
 					 * Collection<PeriodVO> periods =
@@ -215,7 +221,7 @@ public class LeaveBPImportExecutor extends DataImportExecutor implements IDataEx
 	@Override
 	public void afterQuery() throws BusinessException {
 		// TODO 自动生成的方法存根
- 
+
 	}
 
 	@Override
@@ -362,8 +368,8 @@ public class LeaveBPImportExecutor extends DataImportExecutor implements IDataEx
 							if (vo.getIsleaveoff() == null)
 								vo.setIsleaveoff(UFBoolean.FALSE);
 
-							TBMPsndocVO psndocVO = TBMPsndocVO.findIntersectionVO(psndocMap.get(vo.getPk_psndoc()), vo
-									.getEnddate().toStdString());
+							TBMPsndocVO psndocVO = TBMPsndocVO.findIntersectionVO(psndocMap.get(vo.getPk_psndoc()),
+									getShiftRegDateByLeaveReg(vo).toString());
 							if (psndocVO == null)
 								throw new BusinessException(ResHelper.getString("6017psndoc", "06017psndoc0131",
 										psndocService.getPsnName(vo.getPk_psndoc())));
@@ -393,6 +399,46 @@ public class LeaveBPImportExecutor extends DataImportExecutor implements IDataEx
 			}
 		}
 		// }
+	}
+
+	/**
+	 * 根據休假核定開始日期查詢休假實際歸屬班次的所屬日期
+	 * 
+	 * @param vo
+	 *            加班登記單
+	 * @return
+	 * @throws BusinessException
+	 */
+	@SuppressWarnings("unchecked")
+	private UFLiteralDate getShiftRegDateByLeaveReg(LeaveRegVO vo) throws BusinessException {
+		UFLiteralDate rtnDate = vo.getBegindate();
+
+		Collection<PsnCalendarVO> psncals = new BaseDAO().retrieveByClause(PsnCalendarVO.class,
+				"pk_psndoc='" + vo.getPk_psndoc() + "' and calendar between '"
+						+ vo.getLeavebegindate().getDateBefore(3) + "' and '" + vo.getLeavebegindate().getDateAfter(3)
+						+ "'");
+		if (psncals != null && psncals.size() > 0) {
+			for (PsnCalendarVO psncal : psncals) {
+				if (psncal.getPk_shift() != null) {
+					ShiftVO shiftvo = (ShiftVO) new BaseDAO().retrieveByPK(ShiftVO.class, psncal.getPk_shift());
+					if (shiftvo != null) {
+						// mod start tank 2019年8月21日17:04:24 前一日,後一日修復
+						UFDateTime startDT = new UFDateTime(psncal.getCalendar()
+								.getDateAfter(shiftvo.getTimebeginday()).toString()
+								+ " " + shiftvo.getTimebegintime());
+
+						UFDateTime endDT = new UFDateTime(psncal.getCalendar().getDateAfter(shiftvo.getTimeendday())
+								.toString()
+								+ " " + shiftvo.getTimeendtime());
+						// end mod
+						if (vo.getLeavebegintime().before(endDT) && vo.getLeavebegintime().after(startDT)) {
+							rtnDate = psncal.getCalendar();
+						}
+					}
+				}
+			}
+		}
+		return rtnDate;
 	}
 
 	/**

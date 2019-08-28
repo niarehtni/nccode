@@ -954,7 +954,7 @@ public class WadaysalaryServiceImpl implements IWadaysalaryService {
 		HashMap<String, Object> hashMap = listMaptemp.get(0);
 		String begindate = hashMap.get("cstartdate").toString();
 		String enddate = hashMap.get("cenddate").toString();
-		qrySql = "select igm.pk_waitem, ig.pk_itemgroup from wa_itemgroupmember igm inner join wa_itemgroup ig on ig.pk_itemgroup = igm.pk_itemgroup";
+		qrySql = "select pk_itemgroup from wa_itemgroup where dr=0";
 		listMaptemp = (ArrayList<HashMap<String, Object>>) getDao().executeQuery(qrySql, new MapListProcessor());
 		List<String> pk_itemgroup_list = new ArrayList<String>();
 		// mod by Connie
@@ -964,8 +964,7 @@ public class WadaysalaryServiceImpl implements IWadaysalaryService {
 		execDBSplit(deletesql, pk_psndocs);
 		for (Map vls : listMaptemp) {
 			checkDaySalaryAndCalculSalary_MT(pk_wa_class, pk_psndocs, (new UFLiteralDate(begindate)).getDateBefore(7),
-					new UFLiteralDate(enddate).getDateAfter(7), (String) vls.get("pk_waitem"),
-					(String) vls.get("pk_itemgroup"));
+					new UFLiteralDate(enddate).getDateAfter(7), null, (String) vls.get("pk_itemgroup"));
 		}
 	}
 
@@ -1149,13 +1148,14 @@ public class WadaysalaryServiceImpl implements IWadaysalaryService {
 			// ·µ»ØÖµ³Ø
 			List<Future<Object>> futureDatas = new ArrayList<Future<Object>>();
 
-			List<String[]> splittedPsndocs = WadaysalaryQueryServiceImpl.splitPsns(pk_psndocs, 15);
+			// List<String[]> splittedPsndocs =
+			// WadaysalaryQueryServiceImpl.splitPsns(pk_psndocs, 15);
 
 			int count = 1;
-			for (String[] psns : splittedPsndocs) {
+			for (String psn : pk_psndocs) {
 				RunnableDaySalaryCalculator calculator = new RunnableDaySalaryCalculator();
 				calculator.setPk_wa_class(pk_wa_class);
-				calculator.setPk_psndocs(psns);
+				calculator.setPk_psndocs(new String[] { psn });
 				// calculator.setPk_wa_item(pk_wa_item);
 				calculator.setPk_group_item(pk_group_item);
 				calculator.setBeginDate(begindate);

@@ -55,6 +55,7 @@ import nc.pubitf.rbac.IDataPermissionPubService;
 import nc.ui.querytemplate.querytree.FromWhereSQL;
 import nc.vo.hi.psndoc.PsnJobVO;
 import nc.vo.hi.psndoc.PsnOrgVO;
+import nc.vo.hr.temptable.TempTableVO;
 import nc.vo.hr.tools.dbtool.util.db.DBUtil;
 import nc.vo.hr.tools.pub.GeneralVO;
 import nc.vo.hr.tools.pub.GeneralVOProcessor;
@@ -131,6 +132,12 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain, IL
 		if (canCalList.size() == 0)
 			return vos;
 
+		// 生成 部分工时特休年假计算 临时表 数据 需在调用 calculate()方法之前生成 yejk 2018-9-19 #21390
+		try {
+			generatePartWhLeaveTemp(pk_org, pk_leavetype, year, month, vos);
+		} catch (Exception e) {
+			Logger.error(e.getMessage(), e);
+		}
 		// begin-双百支持-zhaozhaob-数据量过大假期计算问题-20161117（20170111NC67合并补丁）
 		List<LeaveBalanceVO> tempCalList = new ArrayList<LeaveBalanceVO>();
 		for (int i = 0; i < canCalList.size(); i++) {
@@ -140,12 +147,6 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain, IL
 				tempCalList = new ArrayList<LeaveBalanceVO>();
 			}
 
-		}
-		// 生成 部分工时特休年假计算 临时表 数据 需在调用 calculate()方法之前生成 yejk 2018-9-19 #21390
-		try {
-			generatePartWhLeaveTemp(pk_org, pk_leavetype, year, month, vos);
-		} catch (Exception e) {
-			e.printStackTrace();
 		}
 		calculate(pk_org, typeVO, year, month, tempCalList.toArray(new LeaveBalanceVO[0]), calTime);
 
@@ -511,7 +512,7 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain, IL
 				return vos;
 			InSQLCreator isc = new InSQLCreator();
 			try {
-				String inSQL = isc.getInSQL(pks);
+				String inSQL = "(select " + TempTableVO.IN_PK + " from " + isc.createTempTable(pks) + ")";
 				// 如果是否加班转调休，则需要计算享有和实际享有（加班转调休的享有和实际享有都是在转调休、反转调休时生成）
 				if (!typeVO.getTimeitemcode().equals(TimeItemCopyVO.OVERTIMETOLEAVETYPE))
 					calCurRealDayOrHour(pk_org, typeVO, year, month, periodBeginDate, periodEndDate, filteredVOs,
@@ -895,8 +896,14 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain, IL
 				continue;
 			// 查询出此期间内的所有审批通过的单据和登记单据，
 			String[] pk_psnorgs = StringPiecer.getStrArray(indexvos, LeaveBalanceVO.PK_PSNORG);
-			LeaveRegVO[] regVOs = LeaveServiceFacade.queryByPsnsLeaveTypePeriod(pk_org, pk_psnorgs, typeVO, year,
-					month, leaveindex);
+			LeaveRegVO[] regVOs = null;
+			try {
+				regVOs = LeaveServiceFacade.queryByPsnsLeaveTypePeriod(pk_org, pk_psnorgs, typeVO, year, month,
+						leaveindex);
+			} catch (Exception e) {
+				Logger.error(e.getMessage(), e);
+				throw new BusinessException("假期計算報錯wangywt：" + e.getMessage(), e);
+			}
 			// 查询出此期间内的自由态，审批中的申请单
 			LeavebVO[] leavebVOs = LeaveServiceFacade.queryBeforePassWithoutNoPassByPsnsLeaveTypePeriod(pk_org,
 					pk_psnorgs, typeVO, year, month, leaveindex);
@@ -1203,9 +1210,10 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain, IL
 		PsnOrgVO[] psnorgVOs = null;
 		InSQLCreator isc = new InSQLCreator();
 		try {
-			String psnorgInSQL = isc.getInSQL(pk_psnorgs);
+			String psnorgInSQL = isc.createTempTable(pk_psnorgs);
 			// 人员的组织关系vo，用来取入职日期。
-			psnorgVOs = CommonUtils.retrieveByClause(PsnOrgVO.class, PsnOrgVO.PK_PSNORG + " in(" + psnorgInSQL + ")");
+			psnorgVOs = CommonUtils.retrieveByClause(PsnOrgVO.class, PsnOrgVO.PK_PSNORG + " in(select "
+					+ TempTableVO.IN_PK + " from " + psnorgInSQL + ")");
 		} finally {
 			isc.clear();
 		}
@@ -3118,8 +3126,8 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain, IL
 		// 使用pk_psndocs对离职再入职人员会出现一个Pk_psndoc对应两条数据的情况，修改为使用pk_psnorg
 		// FromWhereSQL createPsndocArrayQuerySQL =
 		// TBMPsndocSqlPiecer.createPsndocArrayQuerySQL(pk_psndocs);
-		FromWhereSQL fromWhereSql = TBMPsndocSqlPiecer.addTBMPsndocCond2QuerySQL(
-				" pk_psnorg in(" + new InSQLCreator().getInSQL(pk_psnOrgs) + ") ", null);
+		FromWhereSQL fromWhereSql = TBMPsndocSqlPiecer.addTBMPsndocCond2QuerySQL(" pk_psnorg in(select "
+				+ TempTableVO.IN_PK + " from " + new InSQLCreator().createTempTable(pk_psnOrgs) + ") ", null);
 		return queryByCondition(context, pk_leavetype, year, month, fromWhereSql);
 	}
 

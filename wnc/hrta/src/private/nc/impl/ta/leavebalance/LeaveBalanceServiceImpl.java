@@ -574,11 +574,8 @@ public class LeaveBalanceServiceImpl implements ILeaveBalanceQueryService, ILeav
 			// 看此类别是否可以在calDate进行结算
 			String[] settlementYearMonth = canSettlementTypeAndYearMonthMap.get(typeVO.getPk_timeitem());
 			if (ArrayUtils.isEmpty(settlementYearMonth)) {
-				sb.append((ResHelper.getString("6017basedoc", "06017basedoc1852"/*
-																				 * @
-																				 * ress
-																				 * "{0}下的{1}类别的结算日期不符合结算条件不予结算!"
-																				 */, orgname, typename)) + "<br>");
+				sb.append((ResHelper.getString("6017basedoc", "06017basedoc1852"/* "{0}下的{1}类别的结算日期不符合结算条件不予结算!" */,
+						orgname, typename)) + "<br>");
 				continue;
 			}
 			// 如果有某个年度/期间的可以在calDate进行结算了，则结算之

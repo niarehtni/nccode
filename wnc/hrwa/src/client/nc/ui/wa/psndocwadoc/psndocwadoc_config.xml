@@ -265,9 +265,19 @@
 				<ref bean="GenerateNHISettingAction" />
 				<ref bean="GenerateGroupInsSettingAction" />
 				<ref bean="NewGroupInsSettingAction" />
+				<ref bean="AdjustBOLIAction"/>
 			</list>
 		</property>
 	</bean>
+	
+	<!-- mod by Connie.ZH started -->
+	<bean id="AdjustBOLIAction" class="nc.ui.wa.psndocwadoc.action.AdjustBOLIAction">
+		<property name="model" ref="ManageAppModel" />
+		<property name="component" ref="bodypanel" />
+		<property name="mainComponent" ref="mainpanel" />
+	</bean>
+	<!-- end -->
+	<!-- 数据导入按钮组 end -->
 	
 	<bean id="GenerateNHISettingAction" class="nc.ui.wa.psndocwadoc.action.GenerateNHISettingAction">
 		<property name="model" ref="ManageAppModel" />

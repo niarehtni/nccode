@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="nc.itf.hr.hi.IPsndocBOISGenerateService"> 
+  <public>
+   <component priority="0" singleton="true" remote="true"  tx="CMT" supportAlias="false">
+      <interface>nc.itf.wa.psndocwadoc.IPsndocBOISGenerateService</interface>
+      <implementation> nc.impl.wa.psndocwadoc.PsndocBOISGenerateImpl</implementation>	 
+    </component>
+
+  </public>
+</module>
+

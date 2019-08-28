@@ -29,8 +29,7 @@ public class TaxFormulaPreExcutor4TW extends AbstractFormulaExecutor {
 	int convMode = 0;
 
 	@Override
-	public void excute(Object inTaxFormulaVO, WaLoginContext context)
-			throws BusinessException {
+	public void excute(Object inTaxFormulaVO, WaLoginContext context) throws BusinessException {
 		if (inTaxFormulaVO instanceof TaxFormulaVO) {
 			// 传递扣税信息到中间表
 			TaxFormulaVO taxFormulaVO = (TaxFormulaVO) inTaxFormulaVO;
@@ -47,16 +46,13 @@ public class TaxFormulaPreExcutor4TW extends AbstractFormulaExecutor {
 			// 进行税率转换 ：由发薪币种，转换为计税币种
 			currencyrateBeforeCaculate(pk_wa_class, useid);
 
-			IWaPeriodQuery periodQry = (IWaPeriodQuery) NCLocator.getInstance()
-					.lookup(IWaPeriodQuery.class.getName());
-			PeriodVO[] prds = periodQry.getPeriodsByScheme(WaLoginVOHelper
-					.getParentClass(context.getWaLoginVO())
+			IWaPeriodQuery periodQry = (IWaPeriodQuery) NCLocator.getInstance().lookup(IWaPeriodQuery.class.getName());
+			PeriodVO[] prds = periodQry.getPeriodsByScheme(WaLoginVOHelper.getParentClass(context.getWaLoginVO())
 					.getPk_periodscheme());
 			String strBeginDate = "";
 			String strEndDate = "";
 			for (PeriodVO prd : prds) {
-				if (prd.getCyear().equals(context.getCyear())
-						&& prd.getCperiod().equals(context.getCperiod())) {
+				if (prd.getCyear().equals(context.getCyear()) && prd.getCperiod().equals(context.getCperiod())) {
 					strBeginDate = prd.getCstartdate().toStdString();
 					strEndDate = prd.getCenddate().toStdString();
 					break;
@@ -67,37 +63,30 @@ public class TaxFormulaPreExcutor4TW extends AbstractFormulaExecutor {
 			try {
 				sessionManager = PersistenceManager.getInstance();
 				JdbcSession session = sessionManager.getJdbcSession();
-				UFDouble minTaxAmount = getBaseDocUFDoubleValue(
-						context.getPk_org(), "TWSP0014"); // 代扣所得稅最小扣除額
-				UFDouble taxFreeAmount = getBaseDocUFDoubleValue(
-						context.getPk_org(), "TWSP0001"); // 免稅額(標準)
-				UFDouble stdDeductAmount = getBaseDocUFDoubleValue(
-						context.getPk_org(), "TWSP0004"); // 標準扣除額（夫妻合併）
-				UFDouble spcDeductAmount = getBaseDocUFDoubleValue(
-						context.getPk_org(), "TWSP0005"); // 特別扣除額
+				UFDouble minTaxAmount = getBaseDocUFDoubleValue(context.getPk_org(), "TWSP0014"); // 代扣所得稅最小扣除額
+				UFDouble taxFreeAmount = getBaseDocUFDoubleValue(context.getPk_org(), "TWSP0001"); // 免稅額(標準)
+				UFDouble stdDeductAmount = getBaseDocUFDoubleValue(context.getPk_org(), "TWSP0004"); // 標準扣除額（夫妻合併）
+				UFDouble spcDeductAmount = getBaseDocUFDoubleValue(context.getPk_org(), "TWSP0005"); // 特別扣除額
 				// String step =
 				// "(case when wa_cacu_data.tax_base<110000 then 500 when wa_cacu_data.tax_base<120000 then 1000 when wa_cacu_data.tax_base<150000 then 1500 else 2000 end)";
 				String sql = "";
 				// sql += "UPDATE wa_cacu_data ";
-				sql += " SELECT wa_cacu_data.PK_CACU_DATA, CASE WHEN Final.Tax <= "
-						+ minTaxAmount.toString()
+				sql += " SELECT wa_cacu_data.PK_CACU_DATA, CASE WHEN Final.Tax <= " + minTaxAmount.toString()
 						+ " THEN 0 ELSE Final.Tax END WAVALUE ";
 				sql += "FROM     wa_cacu_data INNER JOIN ";
 				sql += "     (SELECT FLOOR((Temp.AnnualSalary * wa_taxtable.ntaxrate / 100 - wa_taxtable.nquickdebuct) / 120)  ";
 				sql += "        * 10 Tax, Temp.pk_cacu_data ";
 				sql += "       FROM      (SELECT (FLOOR((ISNULL(wa_cacu_data.tax_base, 0) - 1) / 500) * 500 + 1)  ";
 				sql += "          * 12 - (" + taxFreeAmount.toString() + " * ";
-				sql += "             (1+ (select count(pk_psndoc_sub) from hi_psndoc_family where dr= 0 and pk_psndoc = wa_cacu_data.pk_psndoc and glbdef1 = 'Y')) + "
+				sql += "             (1+ (select count(pk_psndoc_sub) from hi_psndoc_family where dr= 0 and pk_psndoc = wa_cacu_data.pk_psndoc and isnhifeed = 'Y')) + "
 						+ stdDeductAmount.toString() + "  ";
-				sql += "          + " + spcDeductAmount.toString()
-						+ ") AnnualSalary, wa_data.taxtableid,  ";
+				sql += "          + " + spcDeductAmount.toString() + ") AnnualSalary, wa_data.taxtableid,  ";
 				sql += "           wa_cacu_data.pk_cacu_data ";
 				sql += "         FROM      wa_cacu_data INNER JOIN ";
 				sql += "          wa_data ON wa_data.pk_wa_data = wa_cacu_data.pk_wa_data INNER JOIN ";
 				sql += "          org_hrorg ON org_hrorg.pk_hrorg = wa_data.pk_org ";
-				sql += "         WHERE  (wa_cacu_data.pk_wa_class = '"
-						+ pk_wa_class + "') AND (wa_cacu_data.creator = '"
-						+ useid + "')) Temp INNER JOIN ";
+				sql += "         WHERE  (wa_cacu_data.pk_wa_class = '" + pk_wa_class
+						+ "') AND (wa_cacu_data.creator = '" + useid + "')) Temp INNER JOIN ";
 				sql += "        wa_taxtable ON wa_taxtable.pk_wa_taxbase = Temp.taxtableid AND  ";
 				sql += "        Temp.AnnualSalary > wa_taxtable.nminamount ";
 				sql += "       WHERE  (wa_taxtable.nmaxamount IS NULL) OR ";
@@ -108,8 +97,7 @@ public class TaxFormulaPreExcutor4TW extends AbstractFormulaExecutor {
 				// sql += " where " + getPsnFilter(strBeginDate);
 				sql += " where wa_data.taxtype <> 2 ";
 				// sql += " and bd_psndoc.idtype=5";
-				List<Map> taxResult = (List<Map>) session.executeQuery(sql,
-						new MapListProcessor());
+				List<Map> taxResult = (List<Map>) session.executeQuery(sql, new MapListProcessor());
 
 				sql = " select wa_cacu_data.PK_CACU_DATA, ROUND((case when (wa_cacu_data.tax_base >= wa_taxtable.nminamount and (wa_taxtable.nmaxamount is null or wa_cacu_data.tax_base <= wa_taxtable.nmaxamount)) then  ";
 				sql += " 	wa_cacu_data.tax_base * ISNULL(wa_taxtable.ntaxrate, 0) / 100 - wa_taxtable.nquickdebuct else 0 end), 0) WAVALUE ";
@@ -120,12 +108,9 @@ public class TaxFormulaPreExcutor4TW extends AbstractFormulaExecutor {
 				sql += "  inner join wa_taxbase on wa_taxbase.pk_wa_taxbase = wa_taxtable.pk_wa_taxbase ";
 				sql += "  inner join bd_countryzone on wa_taxbase.pk_country = bd_countryzone.pk_country ";
 				sql += "  inner join bd_psndoc on bd_psndoc.pk_psndoc = wa_cacu_data.pk_psndoc  ";
-				sql += "  where wa_data.taxtype <> 2 and wa_cacu_data.pk_wa_class = '"
-						+ pk_wa_class
-						+ "' and wa_cacu_data.creator = '"
-						+ useid + "' and wa_taxbase.itbltype=1";
-				List<Map> fixTaxResult = (List<Map>) session.executeQuery(sql,
-						new MapListProcessor());
+				sql += "  where wa_data.taxtype <> 2 and wa_cacu_data.pk_wa_class = '" + pk_wa_class
+						+ "' and wa_cacu_data.creator = '" + useid + "' and wa_taxbase.itbltype=1";
+				List<Map> fixTaxResult = (List<Map>) session.executeQuery(sql, new MapListProcessor());
 
 				List<String> strUpdate = new ArrayList<String>();
 				if (taxResult != null && taxResult.size() > 0) {
@@ -133,36 +118,25 @@ public class TaxFormulaPreExcutor4TW extends AbstractFormulaExecutor {
 						boolean isrep = false;
 						if (fixTaxResult != null && fixTaxResult.size() > 0) {
 							for (Map fixrst : fixTaxResult) {
-								if (rst.get("pk_cacu_data").equals(
-										fixrst.get("pk_cacu_data"))) {
-									strUpdate
-											.add("UPDATE WA_CACU_DATA SET CACU_VALUE="
-													+ String.valueOf(fixrst
-															.get("wavalue"))
-													+ " WHERE PK_CACU_DATA='"
-													+ String.valueOf(fixrst
-															.get("pk_cacu_data"))
-													+ "';");
+								if (rst.get("pk_cacu_data").equals(fixrst.get("pk_cacu_data"))) {
+									strUpdate.add("UPDATE WA_CACU_DATA SET CACU_VALUE="
+											+ String.valueOf(fixrst.get("wavalue")) + " WHERE PK_CACU_DATA='"
+											+ String.valueOf(fixrst.get("pk_cacu_data")) + "';");
 									isrep = true;
 								}
 							}
 						}
 
 						if (!isrep) {
-							strUpdate.add("UPDATE WA_CACU_DATA SET CACU_VALUE="
-									+ String.valueOf(rst.get("wavalue"))
-									+ " WHERE PK_CACU_DATA='"
-									+ String.valueOf(rst.get("pk_cacu_data")
-											+ "';"));
+							strUpdate.add("UPDATE WA_CACU_DATA SET CACU_VALUE=" + String.valueOf(rst.get("wavalue"))
+									+ " WHERE PK_CACU_DATA='" + String.valueOf(rst.get("pk_cacu_data") + "';"));
 						}
 					}
 				} else {
 					if (fixTaxResult != null && fixTaxResult.size() > 0) {
 						for (Map fixResult : fixTaxResult) {
-							strUpdate.add("UPDATE WA_CACU_DATA SET CACU_VALUE="
-									+ fixResult.get("wavalue")
-									+ " WHERE PK_CACU_DATA='"
-									+ fixResult.get("pk_cacu_data") + "';");
+							strUpdate.add("UPDATE WA_CACU_DATA SET CACU_VALUE=" + fixResult.get("wavalue")
+									+ " WHERE PK_CACU_DATA='" + fixResult.get("pk_cacu_data") + "';");
 						}
 					}
 				}
@@ -184,10 +158,8 @@ public class TaxFormulaPreExcutor4TW extends AbstractFormulaExecutor {
 		}
 	}
 
-	private UFDouble getBaseDocUFDoubleValue(String pk_org, String paramCode)
-			throws BusinessException {
-		IBasedocPubQuery baseQry = NCLocator.getInstance().lookup(
-				IBasedocPubQuery.class);
+	private UFDouble getBaseDocUFDoubleValue(String pk_org, String paramCode) throws BusinessException {
+		IBasedocPubQuery baseQry = NCLocator.getInstance().lookup(IBasedocPubQuery.class);
 		BaseDocVO baseDoc = baseQry.queryBaseDocByCode(pk_org, paramCode);
 		if (baseDoc == null) {
 			throw new BusinessException("未定義薪資參數：" + paramCode);
@@ -231,8 +203,7 @@ public class TaxFormulaPreExcutor4TW extends AbstractFormulaExecutor {
 	 * @return
 	 * @throws BusinessException
 	 */
-	public void setCurrenyConvmode(WaLoginContext context)
-			throws BusinessException {
+	public void setCurrenyConvmode(WaLoginContext context) throws BusinessException {
 
 		String src_currency_pk = context.getWaLoginVO().getCurrid();
 		String dest_currency_pk = context.getWaLoginVO().getTaxcurrid();
@@ -240,15 +211,12 @@ public class TaxFormulaPreExcutor4TW extends AbstractFormulaExecutor {
 			convMode = 0;
 			return;
 		}
-		CurrencyRateUtil currencyRateUtil = CurrencyRateUtil
-				.getInstanceByOrg(context.getPk_org());
-		CurrinfoVO currinfoVO = currencyRateUtil.getCurrinfoVO(src_currency_pk,
-				dest_currency_pk);
+		CurrencyRateUtil currencyRateUtil = CurrencyRateUtil.getInstanceByOrg(context.getPk_org());
+		CurrinfoVO currinfoVO = currencyRateUtil.getCurrinfoVO(src_currency_pk, dest_currency_pk);
 		convMode = currinfoVO.getConvmode();
 	}
 
-	private void currencyrateBeforeCaculate(String pk_wa_class, String userid)
-			throws BusinessException {
+	private void currencyrateBeforeCaculate(String pk_wa_class, String userid) throws BusinessException {
 
 		// 注意转换模式。
 		int convmode = getConvMode();
@@ -261,17 +229,14 @@ public class TaxFormulaPreExcutor4TW extends AbstractFormulaExecutor {
 
 		StringBuilder sbd = new StringBuilder();
 
-		sbd.append("  update  wa_cacu_data set  tax_base = tax_base" + convSign
-				+ "currencyrate, ");
+		sbd.append("  update  wa_cacu_data set  tax_base = tax_base" + convSign + "currencyrate, ");
 		sbd.append(" taxed = taxed" + convSign + "currencyrate, ");
 		sbd.append("  taxedBase = taxedBase" + convSign + "currencyrate, ");
 		sbd.append(" retaxed = retaxed" + convSign + "currencyrate, ");
 		sbd.append(" redata = redata" + convSign + "currencyrate, ");
-		sbd.append(" redataLasttaxBase = redataLasttaxBase" + convSign
-				+ "currencyrate, ");
+		sbd.append(" redataLasttaxBase = redataLasttaxBase" + convSign + "currencyrate, ");
 		sbd.append(" redataLasttax =redataLasttax" + convSign + "currencyrate ");
-		sbd.append(" where pk_wa_class = '" + pk_wa_class + "' and creator = '"
-				+ userid + "' ");
+		sbd.append(" where pk_wa_class = '" + pk_wa_class + "' and creator = '" + userid + "' ");
 		executeSQLs(sbd.toString());
 	}
 
@@ -279,8 +244,7 @@ public class TaxFormulaPreExcutor4TW extends AbstractFormulaExecutor {
 		return convMode;
 	}
 
-	private void currencyrateAfterCaculate(String pk_wa_class, String userid)
-			throws BusinessException {
+	private void currencyrateAfterCaculate(String pk_wa_class, String userid) throws BusinessException {
 
 		// 注意转换模式。
 		int convmode = getConvMode();
@@ -292,20 +256,16 @@ public class TaxFormulaPreExcutor4TW extends AbstractFormulaExecutor {
 		}
 
 		StringBuilder sbd = new StringBuilder();
-		sbd.append("  update  wa_cacu_data set  tax_base = tax_base" + convSign
-				+ "currencyrate, ");
+		sbd.append("  update  wa_cacu_data set  tax_base = tax_base" + convSign + "currencyrate, ");
 		sbd.append(" taxed = taxed" + convSign + "currencyrate, ");
 		sbd.append("  taxedBase = taxedBase" + convSign + "currencyrate, ");
 		sbd.append(" retaxed = retaxed" + convSign + "currencyrate, ");
 		sbd.append(" redata = redata" + convSign + "currencyrate, ");
-		sbd.append(" redataLasttaxBase = redataLasttaxBase" + convSign
-				+ "currencyrate, ");
-		sbd.append(" redataLasttax =redataLasttax" + convSign
-				+ "currencyrate, ");
+		sbd.append(" redataLasttaxBase = redataLasttaxBase" + convSign + "currencyrate, ");
+		sbd.append(" redataLasttax =redataLasttax" + convSign + "currencyrate, ");
 		// 扣税要折算回来
 		sbd.append(" cacu_value =cacu_value" + convSign + "currencyrate ");
-		sbd.append(" where pk_wa_class = '" + pk_wa_class + "' and creator = '"
-				+ userid + "' ");
+		sbd.append(" where pk_wa_class = '" + pk_wa_class + "' and creator = '" + userid + "' ");
 		executeSQLs(sbd.toString());
 	}
 }

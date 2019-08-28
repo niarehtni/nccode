@@ -1175,8 +1175,8 @@
       <displayName>leaveLeaveFee</displayName>
       <hintMsgRes>6013commonbasic;06013commonbasic0277</hintMsgRes>
       <inputSigRes>6013commonbasic;06013commonbasic0276</inputSigRes>
-      <pattern>leaveLeaveFee\(.*,.*,.*\)</pattern>
-      <arguments>leaveLeaveFee({0},{1},{2})</arguments>
+      <pattern>leaveLeaveFee\(.*,.*,.*,.*\)</pattern>
+      <arguments>leaveLeaveFee({0},{1},{2},{3})</arguments>
        <returntype>0</returntype>
       <parapanel>nc.ui.wa.formular.LeaveLeaveFeeFunctionEditor</parapanel>
       <group>WA</group>

@@ -59,7 +59,16 @@ public class SaveDeptAction extends SaveAction {
 		((HRDeptVO)objValue.getParentVO()).setApprovedept(approvedept);
         
         validate(objValue);
-        
+        //已经存在的部门编码不让保存  wangywt 20190805 begin
+        IUAPQueryBS iUAPQueryBS = (IUAPQueryBS)NCLocator.getInstance().lookup(IUAPQueryBS.class.getName());   
+		String sqlStr = "select count(*) from org_dept where code = '"+((HRDeptVO)objValue.getParentVO()).getCode()+"' ";
+		Integer num = (Integer) iUAPQueryBS.executeQuery(sqlStr,new ColumnProcessor());
+		if (getModel().getUiState() == UIState.ADD){
+			if(num != null && num.intValue() != 0){
+				throw new BusinessException("部門編碼已經存在！");
+			}
+		}
+		//已经存在的部门编码不让保存  wangywt 20190805 end
         boolean validateResult = true;
         if (getEditor() instanceof BillForm)
         {

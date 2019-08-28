@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import nc.bs.businessevent.BusinessEvent;
 import nc.bs.businessevent.IBusinessEvent;
@@ -22,6 +23,7 @@ import nc.vo.bd.team.team01.entity.TeamHeadVO;
 import nc.vo.bd.team.team01.entity.TeamItemVO;
 import nc.vo.hi.psndoc.PsnJobVO;
 import nc.vo.hi.psndoc.PsnOrgVO;
+import nc.vo.hi.psndoc.PsndocVO;
 import nc.vo.hi.pub.HiBatchEventValueObject;
 import nc.vo.hi.pub.HiEventValueObject;
 import nc.vo.hi.wadoc.PsndocWadocVO;
@@ -63,8 +65,8 @@ public class PsnjobShiftChangeBusinessListener implements IBusinessListener {
 
 		HiEventValueObject[] hiEventValueObjectArray = handleEventParamters(eventParams);
 
-		dealPsnShift(hiEventValueObjectArray);
-		dealPsnWaDoc(hiEventValueObjectArray);
+		dealPsnShift(hiEventValueObjectArray, eventObject);
+		dealPsnWaDoc(hiEventValueObjectArray, eventObject);
 	}
 
 	private HiEventValueObject[] handleEventParamters(Object eventParams) {
@@ -94,13 +96,15 @@ public class PsnjobShiftChangeBusinessListener implements IBusinessListener {
 	}
 
 	@SuppressWarnings("unchecked")
-	private void dealPsnWaDoc(HiEventValueObject[] eventVOs) throws BusinessException {
+	private void dealPsnWaDoc(HiEventValueObject[] eventVOs, IBusinessEvent eventObject) throws BusinessException {
 		for (HiEventValueObject vo : eventVOs) {
 			PsnJobVO newPsnJob = vo.getPsnjob_after();
 
 			if (newPsnJob == null) {
 				continue;
 			}
+
+			PsndocVO psnVO = (PsndocVO) getBaseDao().retrieveByPK(PsndocVO.class, newPsnJob.getPk_psndoc());
 
 			// 離職情況不處理
 			if (newPsnJob.getTrnsevent() == 4) {
@@ -141,37 +145,50 @@ public class PsnjobShiftChangeBusinessListener implements IBusinessListener {
 				loadWaGradeInfo(newPsnJob, aggvos, gradeCriterions, gradePsnhiBs);
 
 				for (AggWaGradeVO aggvo : aggvos) {
-					String classPsnValue = "";// 級別對應工作記錄取值
-					String levelPsnValue = "";// 檔別對應工作記錄取值
-					String psnhiClassPK = ""; // 級別PK
-					String psnhiLevelPK = ""; // 檔別PK
+					Map<String, String> psnClassValues = new HashMap<String, String>();// 人員級別取值
+					Map<String, String> psnLevelValues = new HashMap<String, String>();// 人員檔別取值
 					for (CircularlyAccessibleValueObject psnhiVO : aggvo.getTableVO(IWaGradeCommonDef.WA_PSNHI)) {
 						((WaPsnhiVO) psnhiVO).getVfldcode();
+						String value = null;
+
+						if (getSourceMeta(((WaPsnhiVO) psnhiVO).getPk_flddict()).contains("hrhi.bd_psndoc")) {
+							value = String.valueOf(psnVO.getAttributeValue(((WaPsnhiVO) psnhiVO).getVfldcode()));
+						} else {
+							value = String.valueOf(newPsnJob.getAttributeValue(((WaPsnhiVO) psnhiVO).getVfldcode()));
+						}
 						if (((WaPsnhiVO) psnhiVO).getClasstype() == 1) {
 							// 級別
-							psnhiClassPK = ((WaPsnhiVO) psnhiVO).getPk_wa_psnhi();
-							classPsnValue = String.valueOf(newPsnJob.getAttributeValue(((WaPsnhiVO) psnhiVO)
-									.getVfldcode()));
+							psnClassValues.put(((WaPsnhiVO) psnhiVO).getPk_wa_psnhi(), value);
 						} else {
 							// 檔別
-							psnhiLevelPK = ((WaPsnhiVO) psnhiVO).getPk_wa_psnhi();
-							levelPsnValue = String.valueOf(newPsnJob.getAttributeValue(((WaPsnhiVO) psnhiVO)
-									.getVfldcode()));
+							psnLevelValues.put(((WaPsnhiVO) psnhiVO).getPk_wa_psnhi(), value);
 						}
 					}
 					String pk_wa_item = aggvo.getParentVO().getPk_wa_item(); // 薪資級別對應薪資項目
 
 					// 查找對應實際級別、檔別取值對應的級別PK、檔別PK
-					String pkFoundClass = "";
-					String pkFoundLevel = "";
+					String pkFoundClass = null;
+					String pkFoundLevel = null;
 					if (gradePsnhiBs.containsKey((aggvo.getParentVO().getPk_wa_grd()))) {
-						for (WaPsnhiBVO bvo : gradePsnhiBs.get(aggvo.getParentVO().getPk_wa_grd())) {
-							if (bvo.getPk_wa_psnhi().equals(psnhiClassPK) && bvo.getVfldvalue().equals(classPsnValue)) {
-								pkFoundClass = bvo.getPk_wa_grdlv();
-							} else if (bvo.getPk_wa_psnhi().equals(psnhiLevelPK)
-									&& bvo.getVfldvalue().equals(levelPsnValue)) {
-								pkFoundLevel = bvo.getPk_wa_grdlv();
+						for (Entry<String, List<WaPsnhiBVO>> bvo : getClassGroup(
+								gradePsnhiBs.get(aggvo.getParentVO().getPk_wa_grd())).entrySet()) {
+							// ssx modified on 2019-08-21
+							// 修復匹配規則問題
+							String[] matchedValues = groupMatched(bvo.getValue(), psnClassValues);
+
+							if (matchedValues != null) {
+								if (psnClassValues.containsKey(matchedValues[0])) {
+									pkFoundClass = matchedValues[1];
+								}
 							}
+
+							matchedValues = groupMatched(bvo.getValue(), psnLevelValues);
+							if (matchedValues != null) {
+								if (psnLevelValues.containsKey(matchedValues[0])) {
+									pkFoundLevel = matchedValues[1];
+								}
+							}
+							// end
 						}
 					} else {
 						continue;
@@ -182,19 +199,11 @@ public class PsnjobShiftChangeBusinessListener implements IBusinessListener {
 					// 找到薪資級：級別人員屬性設置=級別實際值
 					if (gradeCriterions.containsKey(aggvo.getParentVO().getPk_wa_grd())) {
 						for (WaCriterionVO vlvo : gradeCriterions.get(aggvo.getParentVO().getPk_wa_grd())) {
-							if (StringUtils.isEmpty(psnhiLevelPK)) {
-								if (vlvo.getPk_wa_prmlv().equals(pkFoundClass)) {
-									pk_wa_crt = vlvo.getPk_wa_crt();
-									gradeSalary = new UFDouble(SalaryDecryptUtil.decrypt(vlvo.getCriterionvalue()
-											.doubleValue()));
-								}
-							} else {
-								if (vlvo.getPk_wa_prmlv().equals(pkFoundClass)
-										&& vlvo.getPk_wa_seclv().equals(pkFoundLevel)) {
-									pk_wa_crt = vlvo.getPk_wa_crt();
-									gradeSalary = new UFDouble(SalaryDecryptUtil.decrypt(vlvo.getCriterionvalue()
-											.doubleValue()));
-								}
+							if (vlvo.getPk_wa_prmlv().equals(pkFoundClass)
+									&& (vlvo.getPk_wa_seclv() == null || vlvo.getPk_wa_seclv().equals(pkFoundLevel))) {
+								pk_wa_crt = vlvo.getPk_wa_crt();
+								gradeSalary = new UFDouble(SalaryDecryptUtil.decrypt(vlvo.getCriterionvalue()
+										.doubleValue()));
 							}
 						}
 					} else {
@@ -219,8 +228,10 @@ public class PsnjobShiftChangeBusinessListener implements IBusinessListener {
 						}
 					} else {
 						// 當前工作記錄不存在定調資項目，按規則停用舊項目，創建新項目
-						Collection<PsndocWadocVO> wadocs = this.getBaseDao().retrieveByClause(PsndocWadocVO.class,
-								"pk_psndoc = '" + newPsnJob.getPk_psndoc() + "' and pk_wa_item='" + pk_wa_item + "'");
+						Collection<PsndocWadocVO> wadocs = this.getBaseDao().retrieveByClause(
+								PsndocWadocVO.class,
+								"pk_psndoc = '" + newPsnJob.getPk_psndoc() + "' and pk_wa_item='" + pk_wa_item
+										+ "' and isnull(dr,0)=0");
 						for (PsndocWadocVO wadoc : wadocs) {
 							if (wadoc.getPk_wa_item().equals(pk_wa_item) // 同一薪資項目
 									&& (wadoc.getEnddate() == null || wadoc.getEnddate()
@@ -250,6 +261,55 @@ public class PsnjobShiftChangeBusinessListener implements IBusinessListener {
 				}
 			}
 		}
+	}
+
+	private String getSourceMeta(String pk_flddict) throws BusinessException {
+		String metadata = (String) this.getBaseDao().executeQuery(
+				"select meta_data from hr_infoset_item where pk_infoset_item = '" + pk_flddict + "'",
+				new ColumnProcessor());
+		return metadata;
+	}
+
+	private String[] groupMatched(List<WaPsnhiBVO> groupGrade, Map<String, String> psnClassValues) {
+		boolean rtn = true;
+		boolean found = false;
+		String foundKey = "";
+		String foundValue = "";
+		if (groupGrade != null && psnClassValues != null) {
+			for (WaPsnhiBVO bvo : groupGrade) {
+				if (psnClassValues.containsKey(bvo.getPk_wa_psnhi())) {
+					if ((bvo.getVfldvalue() == null && psnClassValues.get(bvo.getPk_wa_psnhi()) == null)
+							|| (bvo.getVfldvalue() != null && bvo.getVfldvalue().equals(
+									psnClassValues.get(bvo.getPk_wa_psnhi())))) {
+						rtn &= true;
+						found = true;
+						foundKey = bvo.getPk_wa_psnhi();
+						foundValue = bvo.getPk_wa_grdlv();
+					} else {
+						return null;
+					}
+				} else {
+					found = found | false;
+				}
+			}
+		}
+		if (rtn & found) {
+			return new String[] { foundKey, foundValue };
+		} else {
+			return null;
+		}
+	}
+
+	private Map<String, List<WaPsnhiBVO>> getClassGroup(Collection<WaPsnhiBVO> bvos) {
+		Map<String, List<WaPsnhiBVO>> groupMap = new HashMap<String, List<WaPsnhiBVO>>();
+		for (WaPsnhiBVO bvo : bvos) {
+			if (!groupMap.containsKey(bvo.getSortgroup())) {
+				groupMap.put(bvo.getSortgroup(), new ArrayList<WaPsnhiBVO>());
+			}
+
+			groupMap.get(bvo.getSortgroup()).add(bvo);
+		}
+		return groupMap;
 	}
 
 	@SuppressWarnings("unchecked")
@@ -292,8 +352,8 @@ public class PsnjobShiftChangeBusinessListener implements IBusinessListener {
 					PsndocWadocVO.class,
 					"pk_psndoc = '" + newPsnJob.getPk_psndoc()
 							+ "' and lastflag='Y' and isnull(dr, 0)=0 and pk_wa_item not in ("
-							+ "select pk_wa_item from wa_grade where pk_org='" + newPsnJob.getPk_org() + "' and dr=0 "
-							+ strWhere + ")");
+							+ "select pk_wa_item from wa_grade where pk_org='" + newPsnJob.getPk_org()
+							+ "' and isnull(dr,0)=0" + strWhere + ")");
 
 			for (PsndocWadocVO wadoc : wadocs) {
 				if (wadoc.getEnddate() != null
@@ -339,8 +399,10 @@ public class PsnjobShiftChangeBusinessListener implements IBusinessListener {
 			String pk_psndoc) throws BusinessException {
 		int minDays = Integer.MAX_VALUE;
 		PsnJobVO retvo = null;
-		Collection<PsnJobVO> psnjobs = this.getBaseDao().retrieveByClause(PsnJobVO.class,
-				"trnstype='" + refTransType + "' and pk_psndoc='" + pk_psndoc + "' and pk_org='" + pk_org + "'");
+		Collection<PsnJobVO> psnjobs = this.getBaseDao().retrieveByClause(
+				PsnJobVO.class,
+				"trnstype='" + refTransType + "' and pk_psndoc='" + pk_psndoc + "' and pk_org='" + pk_org
+						+ "' and isnull(dr,0)=0");
 		for (PsnJobVO psnjob : psnjobs) {
 			int days = UFLiteralDate.getDaysBetween(psnjob.getBegindate().getDateBefore(1), begindate);
 			if (minDays > days) {
@@ -399,11 +461,11 @@ public class PsnjobShiftChangeBusinessListener implements IBusinessListener {
 		String strWhere = getGradeWhereFilter(newPsnJob);
 
 		Collection<WaGradeVO> gradevos = this.getBaseDao().retrieveByClause(WaGradeVO.class,
-				"pk_org='" + newPsnJob.getPk_org() + "' and dr=0 " + strWhere);
+				"pk_org='" + newPsnJob.getPk_org() + "' and isnull(dr,0)=0 " + strWhere);
 
 		for (WaGradeVO gradevo : gradevos) {
 			Collection<WaPsnhiVO> psnhis = this.getBaseDao().retrieveByClause(WaPsnhiVO.class,
-					" pk_wa_grd = '" + gradevo.getPk_wa_grd() + "' ");
+					" pk_wa_grd = '" + gradevo.getPk_wa_grd() + "' and isnull(dr,0)=0");
 
 			// 組織薪資級別相關數據
 			if (psnhis != null && psnhis.size() > 0) {
@@ -419,14 +481,14 @@ public class PsnjobShiftChangeBusinessListener implements IBusinessListener {
 
 				// 級別
 				Collection<WaPrmlvVO> prmlvs = this.getBaseDao().retrieveByClause(WaPrmlvVO.class,
-						"pk_wa_grd='" + gradevo.getPk_wa_grd() + "'");
+						"pk_wa_grd='" + gradevo.getPk_wa_grd() + "'  and isnull(dr,0)=0 ");
 				if (prmlvs != null && prmlvs.size() > 0) {
 					aggvo.setTableVO(IWaGradeCommonDef.WA_PRMLV, prmlvs.toArray(new WaPrmlvVO[0]));
 				}
 
 				// 檔別
 				Collection<WaSeclvVO> seclvs = this.getBaseDao().retrieveByClause(WaSeclvVO.class,
-						"pk_wa_grd='" + gradevo.getPk_wa_grd() + "'");
+						"pk_wa_grd='" + gradevo.getPk_wa_grd() + "' and isnull(dr,0)=0");
 				if (seclvs != null && seclvs.size() > 0) {
 					aggvo.setTableVO(IWaGradeCommonDef.WA_SECLV, seclvs.toArray(new WaSeclvVO[0]));
 				}
@@ -436,7 +498,7 @@ public class PsnjobShiftChangeBusinessListener implements IBusinessListener {
 
 				// 薪資標準表
 				Collection<WaCriterionVO> criterionvos = this.getBaseDao().retrieveByClause(WaCriterionVO.class,
-						"pk_wa_grd='" + gradevo.getPk_wa_grd() + "'");
+						"pk_wa_grd='" + gradevo.getPk_wa_grd() + "' and isnull(dr,0)=0");
 				if (criterionvos != null && criterionvos.size() > 0) {
 					gradeCriterions.put(gradevo.getPk_wa_grd(), criterionvos.toArray(new WaCriterionVO[0]));
 				}
@@ -445,7 +507,7 @@ public class PsnjobShiftChangeBusinessListener implements IBusinessListener {
 				for (WaPsnhiVO psnhi : psnhis) {
 					// 級別人員屬性設置，檔別人員屬性設置
 					Collection<WaPsnhiBVO> psnhibvos = this.getBaseDao().retrieveByClause(WaPsnhiBVO.class,
-							"pk_wa_psnhi='" + psnhi.getPk_wa_psnhi() + "'");
+							"pk_wa_psnhi='" + psnhi.getPk_wa_psnhi() + "' and isnull(dr,0)=0");
 					if (psnhibvos != null && psnhibvos.size() > 0) {
 						if (!gradePsnhiBs.containsKey(gradevo.getPk_wa_grd())) {
 							gradePsnhiBs.put(gradevo.getPk_wa_grd(), psnhibvos);
@@ -479,7 +541,7 @@ public class PsnjobShiftChangeBusinessListener implements IBusinessListener {
 		return strWhere;
 	}
 
-	private void dealPsnShift(HiEventValueObject[] eventVOs) throws BusinessException {
+	private void dealPsnShift(HiEventValueObject[] eventVOs, IBusinessEvent eventObject) throws BusinessException {
 		for (HiEventValueObject vo : eventVOs) {
 			PsnJobVO oldPsnJob = vo.getPsnjob_before();
 			PsnJobVO newPsnJob = vo.getPsnjob_after();
@@ -491,8 +553,7 @@ public class PsnjobShiftChangeBusinessListener implements IBusinessListener {
 
 			String pk_hrorg = vo.getPk_hrorg();
 
-			String oldShift = (oldPsnJob == null || oldPsnJob.getAttributeValue("jobglbdef7") == null) ? ""
-					: (String) oldPsnJob.getAttributeValue("jobglbdef7");
+			String oldShift = getOldShift(eventObject, oldPsnJob);
 			String newShift = newPsnJob.getAttributeValue("jobglbdef7") == null ? "" : (String) newPsnJob
 					.getAttributeValue("jobglbdef7");
 
@@ -507,7 +568,7 @@ public class PsnjobShiftChangeBusinessListener implements IBusinessListener {
 			}
 			// oldShift和newShift不相同，即為發生班組異動
 			if (!oldShift.equals(newShift)) {
-				changeShiftGroup(pk_hrorg, oldPsnJob, newPsnJob); // 修改班组
+				changeShiftGroup(pk_hrorg, oldPsnJob, newPsnJob, eventObject); // 修改班组
 
 				if (StringUtils.isEmpty(newShift) && oldPsnJob != null) {
 					// 同步班次
@@ -534,6 +595,12 @@ public class PsnjobShiftChangeBusinessListener implements IBusinessListener {
 		}
 	}
 
+	public String getOldShift(IBusinessEvent eventObject, PsnJobVO oldPsnJob) {
+		return (oldPsnJob == null || oldPsnJob.getAttributeValue("jobglbdef7") == null || (eventObject.getEventType()
+				.equals("600702") && eventObject.getSourceID().equals("218971f0-e5dc-408b-9a32-56529dddd4db"))) ? ""
+				: (String) oldPsnJob.getAttributeValue("jobglbdef7");
+	}
+
 	private UFLiteralDate findEndDate(String cteamid, String psnjobEnddate) throws BusinessException {
 		// 取班组已排班最后一日
 		// 取人员在职日最后一日
@@ -544,28 +611,34 @@ public class PsnjobShiftChangeBusinessListener implements IBusinessListener {
 		return new UFLiteralDate(StringUtils.isEmpty(maxDate) ? psnjobEnddate : maxDate);
 	}
 
-	private void changeShiftGroup(String pk_hrorg, PsnJobVO oldPsnJob, PsnJobVO newPsnJob) throws BusinessException {
+	private void changeShiftGroup(String pk_hrorg, PsnJobVO oldPsnJob, PsnJobVO newPsnJob, IBusinessEvent eventObject)
+			throws BusinessException {
 		// 結束舊班組
 		if (oldPsnJob != null) {
-			finishOldShift(oldPsnJob, newPsnJob);
+			finishOldShift(oldPsnJob, newPsnJob, eventObject);
 		}
 		// 開始新班組
 		startNewShift(newPsnJob);
 	}
 
 	@SuppressWarnings("unchecked")
-	private void finishOldShift(PsnJobVO oldPsnJob, PsnJobVO newPsnJob) throws BusinessException {
-		String oldShift = ((String) oldPsnJob.getAttributeValue("jobglbdef7"));
+	private void finishOldShift(PsnJobVO oldPsnJob, PsnJobVO newPsnJob, IBusinessEvent eventObject)
+			throws BusinessException {
+		String oldShift = getOldShift(eventObject, oldPsnJob);
 		// 舊班組為空時，不做結束動作
 		if (!StringUtils.isEmpty(oldShift)) {
-			TeamHeadVO headVO = (TeamHeadVO) this.getBaseDao().retrieveByPK(TeamHeadVO.class, oldShift);
 			Collection<TeamItemVO> itemVOs = this.getBaseDao().retrieveByClause(TeamItemVO.class,
-					"cteamid='" + oldShift + "'");
+					"cteamid='" + oldShift + "' and isnull(dr,0)=0");
 
 			Collection<TeamItemVO> updateItemVOs = new ArrayList<TeamItemVO>();
 
 			for (TeamItemVO vo : itemVOs) {
-				if (vo.getPk_psnjob().equals(oldPsnJob.getPk_psnjob())) {
+				// ssx added on 2019-08-18
+				// 在班組同一個人有多條記錄時，不能所有都設定結束日期
+				UFLiteralDate originEnddate = vo.getDenddate() == null ? new UFLiteralDate("9999-12-31") : vo
+						.getDenddate();
+				if (vo.getPk_psnjob().equals(oldPsnJob.getPk_psnjob())
+						&& originEnddate.after(newPsnJob.getBegindate().getDateBefore(1))) {
 					vo.setDenddate(newPsnJob.getBegindate().getDateBefore(1));
 					vo.setStatus(VOStatus.UPDATED);
 					updateItemVOs.add(vo);
@@ -573,6 +646,7 @@ public class PsnjobShiftChangeBusinessListener implements IBusinessListener {
 			}
 
 			if (updateItemVOs.size() > 0) {
+				TeamHeadVO headVO = (TeamHeadVO) this.getBaseDao().retrieveByPK(TeamHeadVO.class, oldShift);
 				updateShiftGroup(headVO, updateItemVOs);
 			}
 		}

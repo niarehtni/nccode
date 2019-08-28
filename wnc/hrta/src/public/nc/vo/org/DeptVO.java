@@ -97,6 +97,8 @@ public class DeptVO extends SuperVO {
 	private java.lang.String chargeleader;
 	private java.lang.Integer weekform;
 	private java.lang.Integer overtimecontrol;
+	private String dept_charge;//上级部门管理人员 wangywt 20190709
+	public static final String DEPT_CHARGE = "DEPT_CHARGE";
 	public static final String PK_DEPT = "pk_dept";
 	public static final String CODE = "code";
 	public static final String NAME = "name";
@@ -170,6 +172,14 @@ public class DeptVO extends SuperVO {
 	public static final String CHARGELEADER="chargeleader";
 	public static final String WEEKFORM="weekform";
 	public static final String OVERTIMECONTROL="overtimecontrol";
+
+	public String getDept_charge() {
+		return dept_charge;
+	}
+
+	public void setDept_charge(String dept_charge) {
+		this.dept_charge = dept_charge;
+	}
 
 	/**
 	 * 属性pk_dept的Getter方法. 创建日期:2008-02-26 16:44:24

@@ -30,7 +30,7 @@ import nc.vo.pub.lang.UFLiteralDate;
 import org.apache.commons.lang.StringUtils;
 
 public class WadaysalaryQueryServiceImpl implements IWadaysalaryQueryService {
-	public static int PSNDOC_SPLIT_CAPACITY = 800;
+	public static int PSNDOC_SPLIT_CAPACITY = 150;
 
 	@Override
 	public Map<String, HashMap<UFLiteralDate, UFDouble>> getTotalTbmDaySalaryMap(String[] pk_psndocs,
@@ -110,12 +110,13 @@ public class WadaysalaryQueryServiceImpl implements IWadaysalaryQueryService {
 			qrySql.append("	pk_psndoc IN (" + inpsndocsql + ")\n");
 			qrySql.append("AND salarydate >= '" + begindate.toStdString() + "'\n");
 			qrySql.append("AND salarydate <= '" + enddate.toStdString() + "'\n");
-			if (daySalaryEnum == DaySalaryEnum.TAXABLEDAYSALARY || daySalaryEnum == DaySalaryEnum.TAXABLEHOURSALARY) {
-				qrySql.append("AND taxflag = 'Y'\n");
-			} else if (daySalaryEnum == DaySalaryEnum.TAXFREEDAYSALARY
-					|| daySalaryEnum == DaySalaryEnum.TAXFREEHOURSALARY) {
-				qrySql.append("AND taxflag = 'N'\n");
-			}
+			// if (daySalaryEnum == DaySalaryEnum.TAXABLEDAYSALARY ||
+			// daySalaryEnum == DaySalaryEnum.TAXABLEHOURSALARY) {
+			// qrySql.append("AND taxflag = 'Y'\n");
+			// } else if (daySalaryEnum == DaySalaryEnum.TAXFREEDAYSALARY
+			// || daySalaryEnum == DaySalaryEnum.TAXFREEHOURSALARY) {
+			// qrySql.append("AND taxflag = 'N'\n");
+			// }
 			qrySql.append("AND pk_group_item='" + pk_item_group + "'\n");
 			qrySql.append("GROUP BY\n");
 			qrySql.append("	pk_psndoc,\n");

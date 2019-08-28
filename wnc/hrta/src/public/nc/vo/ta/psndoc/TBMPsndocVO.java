@@ -10,14 +10,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
 
+import nc.hr.utils.CommonUtils;
+import nc.itf.ta.algorithm.IDateScope;
+import nc.vo.pub.SuperVO;
+import nc.vo.pub.lang.UFLiteralDate;
+
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.util.CollectionUtils;
-import nc.hr.utils.CommonUtils;
-import nc.itf.ta.algorithm.IDateScope;
-import nc.vo.pub.*;
-import nc.vo.pub.lang.UFLiteralDate;
-
 
 /**
  * <b> 在此处简要描述此类的功能 </b>
@@ -67,14 +67,11 @@ public class TBMPsndocVO extends SuperVO implements IDateScope, Comparable<TBMPs
 
 	// MOD (台灣一例一休)
 	// ssx added on 2018-06-09
-	private java.lang.Integer weekform; 
-
-
-
+	private java.lang.Integer weekform;
 
 	public static final String TABLE_NAME = "tbm_psndoc";
-	private String specialrest;//特休结算
-	private java.lang.Integer overtimecontrol; 
+	private String specialrest;// 特休结算
+	private java.lang.Integer overtimecontrol;
 
 	public static final String SPECIALREST = "specialrest";
 	public static final String PK_TBM_PSNDOC = "pk_tbm_psndoc";
@@ -103,8 +100,8 @@ public class TBMPsndocVO extends SuperVO implements IDateScope, Comparable<TBMPs
 	public static final String ISLATEST = "islatest";
 	public static final String PK_REGION = "pk_region";
 	public static final String SIGNTYPE = "signtype";
-	public static final String WEEKFORM="weekform";
-	public static final String OVERTIMECONTROL="overtimecontrol";
+	public static final String WEEKFORM = "weekform";
+	public static final String OVERTIMECONTROL = "overtimecontrol";
 
 	/**
 	 * 属性pk_tbm_psndoc的Getter方法. 创建日期:2009-11-18 20:27:22
@@ -265,17 +262,20 @@ public class TBMPsndocVO extends SuperVO implements IDateScope, Comparable<TBMPs
 	public void setTbm_prop(java.lang.Integer newTbm_prop) {
 		this.tbm_prop = newTbm_prop;
 	}
-	public java.lang.Integer getOvertimecontrol () {
+
+	public java.lang.Integer getOvertimecontrol() {
 		return overtimecontrol;
-	}   
+	}
+
 	/**
 	 * 属性timecardid的Getter方法. 创建日期:2009-11-18 20:27:22
 	 * 
 	 */
-	public void setOvertimecontrol (java.lang.Integer newOvertimecontrol) {
-	 	this.overtimecontrol = newOvertimecontrol;
-	} 	  
-/**
+	public void setOvertimecontrol(java.lang.Integer newOvertimecontrol) {
+		this.overtimecontrol = newOvertimecontrol;
+	}
+
+	/**
 	 * @return java.lang.String
 	 */
 	public java.lang.String getTimecardid() {
@@ -616,8 +616,8 @@ public class TBMPsndocVO extends SuperVO implements IDateScope, Comparable<TBMPs
 	public boolean equals(Object obj) {
 		if (obj == null || (!(obj instanceof TBMPsndocVO)))
 			return false;
-		if(((TBMPsndocVO)obj).getPk_tbm_psndoc() != null && getPk_tbm_psndoc() != null &&
-				((TBMPsndocVO)obj).getPk_tbm_psndoc().equals(getPk_tbm_psndoc()))
+		if (((TBMPsndocVO) obj).getPk_tbm_psndoc() != null && getPk_tbm_psndoc() != null
+				&& ((TBMPsndocVO) obj).getPk_tbm_psndoc().equals(getPk_tbm_psndoc()))
 			return true;
 		return super.equals(obj);
 	}
@@ -676,9 +676,8 @@ public class TBMPsndocVO extends SuperVO implements IDateScope, Comparable<TBMPs
 	 * @param endDate
 	 * @return
 	 */
-	public static  Map<String, Map<UFLiteralDate, String>> createDateOrgMapByTbmPsndocVOMap(Map<String, List<TBMPsndocVO>> tbmPsndocVOListMap, 
-			UFLiteralDate beginDate,
-			UFLiteralDate endDate){
+	public static Map<String, Map<UFLiteralDate, String>> createDateOrgMapByTbmPsndocVOMap(
+			Map<String, List<TBMPsndocVO>> tbmPsndocVOListMap, UFLiteralDate beginDate, UFLiteralDate endDate) {
 		if (MapUtils.isEmpty(tbmPsndocVOListMap))
 			return null;
 		Map<String, Map<UFLiteralDate, String>> retMap = new HashMap<String, Map<UFLiteralDate, String>>();
@@ -736,16 +735,20 @@ public class TBMPsndocVO extends SuperVO implements IDateScope, Comparable<TBMPs
 	public void setSigntype(java.lang.String signtype) {
 		this.signtype = signtype;
 	}
-	public java.lang.Integer getWeekform () {
+
+	public java.lang.Integer getWeekform() {
 		return weekform;
-}
-	public void setWeekform (java.lang.Integer newWeekform ) {
+	}
+
+	public void setWeekform(java.lang.Integer newWeekform) {
 		this.weekform = newWeekform;
-	} 
+	}
+
 	public String getSpecialrest() {
 		return specialrest;
 	}
+
 	public void setSpecialrest(String specialrest) {
 		this.specialrest = specialrest;
 	}
-} 
+}

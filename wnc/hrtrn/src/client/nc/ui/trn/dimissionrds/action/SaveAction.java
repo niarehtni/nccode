@@ -563,9 +563,16 @@ public class SaveAction extends RdsBaseAction {
 		SuperVO[] saveData = aggVO.getTableVO(curTabCode);
 
 		for (SuperVO pjv : saveData) {
-			PsnJobVO temp = (PsnJobVO) pjv;
-			if (temp.getLastflag().booleanValue()) {
-				newPkOrg = temp.getPk_org();
+			if(pjv instanceof PsnJobVO){
+				PsnJobVO temp = (PsnJobVO) pjv;
+				if (temp.getLastflag().booleanValue()) {
+					newPkOrg = temp.getPk_org();
+				} 
+			}else if(pjv instanceof TrialVO) {
+				TrialVO temp = (TrialVO) pjv;
+				if (temp.getLastflag().booleanValue()) {
+					newPkOrg = temp.getPk_org();
+				} 
 			}
 		}
 		if (null == newPkOrg) {
@@ -684,9 +691,16 @@ public class SaveAction extends RdsBaseAction {
 			// UFDate delLarbolDate = dlg.getdEffectiveDate();
 			UFLiteralDate delLarbolDate = null;
 			for (SuperVO pjv : saveData) {
-				PsnJobVO temp = (PsnJobVO) pjv;
-				if (temp.getLastflag().booleanValue()) {
-					delLarbolDate = temp.getEnddate() == null ? null : temp.getEnddate().getDateBefore(1);
+				if(pjv instanceof PsnJobVO){
+					PsnJobVO temp = (PsnJobVO) pjv;
+					if (temp.getLastflag().booleanValue()) {
+						newPkOrg = temp.getPk_org();
+					} 
+				}else if(pjv instanceof TrialVO) {
+					TrialVO temp = (TrialVO) pjv;
+					if (temp.getLastflag().booleanValue()) {
+						newPkOrg = temp.getPk_org();
+					} 
 				}
 			}
 
@@ -827,6 +841,7 @@ public class SaveAction extends RdsBaseAction {
 				if (temp.getLastflag().booleanValue()) {
 					newtemp = temp;
 				}
+				
 			}
 			UFLiteralDate beginDate = (UFLiteralDate) newtemp.getAttributeValue("begindate");
 			IPsndocSubInfoService4JFS nhiService = NCLocator.getInstance().lookup(IPsndocSubInfoService4JFS.class);

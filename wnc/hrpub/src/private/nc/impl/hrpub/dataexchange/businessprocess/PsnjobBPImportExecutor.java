@@ -83,6 +83,9 @@ public class PsnjobBPImportExecutor extends DataImportExecutor implements IDataE
 					psnjobVO.setAssgid(psndocVO.getPsnJobVO().getAssgid());
 					psnjobVO.setBegindate(new UFLiteralDate((String) rowNCMap.get(rowNo + ":begindate")));
 
+					PsndocDismissedValidator dismChecker = new PsndocDismissedValidator();
+					dismChecker.validate(pk_psndoc, psnjobVO.getBegindate());
+
 					psnjobVO.setClerkcode((String) rowNCMap.get(rowNo + ":clerkcode"));
 					if (StringUtils.isEmpty(psnjobVO.getClerkcode())) {
 						throw new BusinessException("员工号不能为空。");

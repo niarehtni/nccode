@@ -5,11 +5,14 @@ import java.util.Map;
 
 import nc.bs.framework.common.NCLocator;
 import nc.bs.logging.Logger;
+import nc.cmp.utils.FireEvent;
 import nc.itf.om.IDeptAdjustService;
 import nc.itf.uap.IUAPQueryBS;
 import nc.jdbc.framework.processor.ColumnProcessor;
 import nc.jdbc.framework.processor.MapListProcessor;
+import nc.ui.om.ref.DeptPrincipalRefModel;
 import nc.ui.pub.beans.MessageDialog;
+import nc.ui.pub.beans.UIRefPane;
 import nc.ui.pub.bill.BillCardBeforeEditListener;
 import nc.ui.pub.bill.BillEditEvent;
 import nc.ui.pub.bill.BillItem;
@@ -17,6 +20,7 @@ import nc.ui.pub.bill.BillItemEvent;
 import nc.ui.pub.bill.IBillItem;
 import nc.ui.pubapp.bill.BillCardPanel;
 import nc.ui.pubapp.bill.BillCardPanelWithoutScale;
+import nc.ui.pubapp.uif2app.event.card.CardHeadTailBeforeEditEvent;
 import nc.ui.pubapp.uif2app.view.BillForm;
 import nc.ui.pubapp.uif2app.view.ShowUpableBillForm;
 import nc.vo.logging.Debug;
@@ -32,6 +36,7 @@ import org.apache.commons.lang.StringUtils;
 public class BillFormEditor extends ShowUpableBillForm implements BillCardBeforeEditListener {
 	private int selectedRow = 0;
 
+	
 	@Override
 	public void initUI() {
 		super.initUI();
@@ -71,7 +76,12 @@ public class BillFormEditor extends ShowUpableBillForm implements BillCardBefore
 		try {
 			UFBoolean deptflag = null;
 			UFBoolean psnflag = null;
-			String pk_dept = (String) getHeadItemValue("pk_dept");
+			String pk_dept = (String) getHeadItemValue("pk_fatherorg");
+			UIRefPane prinpan = ((UIRefPane)(getBillCardPanel().getHeadItem("dept_charge").getComponent()));
+			DeptPrincipalRefModel dpinmodel = (DeptPrincipalRefModel) prinpan.getRefModel();
+			dpinmodel.setPk_dept(pk_dept);
+			dpinmodel.reset();
+//			dpinmodel.reloadData();
 			String effectivedate = String.valueOf(getHeadItemValue("effectivedate"));
 
 			if (("code").equals(evt.getItem().getKey()) || ("name").equals(evt.getItem().getKey())
@@ -102,6 +112,8 @@ public class BillFormEditor extends ShowUpableBillForm implements BillCardBefore
 			MessageDialog.showErrorDlg(getModel().getContext().getEntranceUI(), "報錯信息", message);
 			return false;
 		}
+		CardHeadTailBeforeEditEvent chtE = new CardHeadTailBeforeEditEvent(this.billCardPanel,evt);
+		this.handleEvent(chtE);
 		return true;
 	}
 
@@ -323,7 +335,7 @@ public class BillFormEditor extends ShowUpableBillForm implements BillCardBefore
 									"select islastversion, address,memo, orgtype17,tel, dataoriginflag,orgtype13, displayorder,"
 											+ " enablestate, deptcanceldate, hrcanceled, deptduty,createdate, deptlevel, "
 											+ "pk_group, pk_org,depttype, innercode, code,name,name2,name3,pk_fatherorg,mnecode,"
-											+ "glbdef11,glbdef3,displayorder,principal, pk_vid from "
+											+ "glbdef11,glbdef3,displayorder,principal, pk_vid, dept_charge from "
 											+ "org_dept_v where pk_vid='" + pk_dept_v + "' and dr=0",
 									new MapListProcessor());
 					String pk_org = null;
@@ -431,7 +443,8 @@ public class BillFormEditor extends ShowUpableBillForm implements BillCardBefore
 							// 修改前部门
 							setHeadItemValue("pk_dept_v.pk_fatherorg.code",
 									getDeptCodeByPkDept(getHeadItemValue("pk_dept_v.pk_fatherorg")));
-
+							//带出上级部门管理人员  20190805 wangywt
+							setHeadItemValue("dept_charge",map.get("dept_charge"));
 						}
 					}
 					if (null != pk_org) {

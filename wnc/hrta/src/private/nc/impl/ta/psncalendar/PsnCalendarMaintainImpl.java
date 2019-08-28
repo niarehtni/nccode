@@ -49,6 +49,7 @@ import nc.itf.ta.algorithm.IDateScope;
 import nc.itf.ta.algorithm.impl.DefaultDateScope;
 import nc.jdbc.framework.SQLParameter;
 import nc.jdbc.framework.processor.BeanListProcessor;
+import nc.jdbc.framework.processor.ColumnProcessor;
 import nc.jdbc.framework.processor.MapListProcessor;
 import nc.jdbc.framework.processor.MapProcessor;
 import nc.md.model.MetaDataException;
@@ -229,7 +230,6 @@ public class PsnCalendarMaintainImpl implements IPsnCalendarQueryMaintain, IPsnC
 						vo.getCalendarMap().put(calVO.getCalendar().toString(), calVO.getPk_shift());
 			}
 			// 装入工作日类型
-			// TODO ?
 			Map<String, Integer> dayType = holidayInfo != null ? holidayInfo.get(vo.getPk_psndoc()) : null;
 			if (dayType != null)
 				vo.getDayTypeMap().putAll(holidayInfo.get(vo.getPk_psndoc()));
@@ -241,8 +241,8 @@ public class PsnCalendarMaintainImpl implements IPsnCalendarQueryMaintain, IPsnC
 	 * 2011.9.28已完成班次业务单元化和假日业务单元化处理 (non-Javadoc)
 	 * 
 	 * @see
-	 * nc.itf.ta.IPsnCalendarQueryMaintain#queryCalendarVOByCondition(java.lang.
-	 * String, nc.ui.querytemplate.querytree.FromWhereSQL,
+	 * nc.itf.ta.IPsnCalendarQueryMaintain#queryCalendarVOByCondition(java.lang
+	 * .String, nc.ui.querytemplate.querytree.FromWhereSQL,
 	 * nc.vo.pub.lang.UFLiteralDate, nc.vo.pub.lang.UFLiteralDate)
 	 */
 	@Override
@@ -333,8 +333,8 @@ public class PsnCalendarMaintainImpl implements IPsnCalendarQueryMaintain, IPsnC
 	 * 2011.9.23已完成班次业务单元化和假日业务单元化处理 (non-Javadoc)
 	 * 
 	 * @see
-	 * nc.itf.ta.IPsnCalendarQueryMaintain#queryCalendarVOByCondition(java.lang.
-	 * String, nc.ui.querytemplate.querytree.FromWhereSQL,
+	 * nc.itf.ta.IPsnCalendarQueryMaintain#queryCalendarVOByCondition(java.lang
+	 * .String, nc.ui.querytemplate.querytree.FromWhereSQL,
 	 * nc.vo.pub.lang.UFLiteralDate, nc.vo.pub.lang.UFLiteralDate,
 	 * nc.vo.ta.psncalendar.QueryScopeEnum)
 	 */
@@ -416,7 +416,28 @@ public class PsnCalendarMaintainImpl implements IPsnCalendarQueryMaintain, IPsnC
 					continue;
 				}
 				UFLiteralDate leavebegindate = regVO.getLeavebegindate();
-				UFLiteralDate leaveenddate = regVO.getLeaveenddate();
+				// modify 如果结束时间为某一天00:00:00，则取前一天为休假结束时间 xw 2018-03-13 start
+				// UFLiteralDate leaveenddate = regVO.getLeaveenddate();
+				UFLiteralDate leaveenddate = regVO.getLeaveendtime().toString().contains(" 00:00:00") ? regVO
+						.getLeaveenddate().getDateBefore(1) : regVO.getLeaveenddate();
+				// modify 如果结束时间为某一天00:00:00，则取前一天为休假结束时间 xw 2018-03-13 end
+				// modify 如果某天班次跨越了当天的12点，那么请了当天的假就会导致后一天也显示为请假，此处修正 2019-02-15
+				if (leavebegindate.compareTo(leaveenddate) != 0) {
+					String pk_psndoc = regVO.getPk_psndoc();
+					String date = leaveenddate.toString();
+					BaseDAO dao = new BaseDAO();
+					String sql = "select begintime from bd_shift where pk_shift in (select pk_shift from tbm_psncalendar where pk_psndoc='"
+							+ pk_psndoc + "' and calendar='" + date + "')";
+					String value = (String) dao.executeQuery(sql, new ColumnProcessor());
+					UFDateTime nextBegin = new UFDateTime(leaveenddate + " " + value);
+					UFDateTime endTime = regVO.getLeaveendtime();
+					if (nextBegin.after(endTime)) {
+						leaveenddate = leaveenddate.getDateBefore(1);
+					}
+				}
+
+				// modify 如果某天班次跨越了当天的12点，那么请了当天的假就会导致后一天也显示为请假，此处修正
+				// 2019-02-15-- end
 				UFLiteralDate[] dates = CommonUtils.createDateArray(leavebegindate, leaveenddate);
 				for (UFLiteralDate date : dates) {
 					if (!ShiftVO.PK_GX.equalsIgnoreCase(vo.getCalendarMap().get(date.toString()))) {
@@ -702,6 +723,7 @@ public class PsnCalendarMaintainImpl implements IPsnCalendarQueryMaintain, IPsnC
 		// 假日的享有情况,key是人员主键，value的key是假日主键，value是是否享有
 		Map<String, Map<String, Boolean>> psnEnjoyHolidayMap = HRHolidayServiceFacade.queryHolidayEnjoyInfo2(pk_org,
 				pk_psndocs, holidayInfo.getHolidayVOs());
+		// 与假日切割的班次的map，key是人员，value的key是日期，value是psncalendar的聚合vo.只有假日对排班产生了影响，例如切割了，或者导致弹性班固化了，才存到此map里去，正常的天，或者被完全切割成公休的不会存
 		Map<String, Map<String, AggPsnCalendar>> holidayCutMap = new HashMap<String, Map<String, AggPsnCalendar>>();
 		// 记录对调前班次的map，key是人员，value的key是日期，value是对调前的班次
 		Map<String, Map<String, String>> psnBeforeExgPkShiftMap = new HashMap<String, Map<String, String>>();
@@ -714,15 +736,15 @@ public class PsnCalendarMaintainImpl implements IPsnCalendarQueryMaintain, IPsnC
 		holidayDateSet.addAll(holidayInfo.getSwitchMap().keySet());
 		String[] allDates = holidayDateSet.toArray(new String[0]);// 对假日、对调日排序
 		Arrays.sort(allDates);
-		//将假日当天的排班排为公休  wangywt 20190624 begin
-		if(holidayInfo.getHolidayMap()!=null){
-			for(String holiday: holidayInfo.getHolidayMap().keySet()){
-				if(originalExpandedDatePkShiftMap.keySet().contains(holiday)){
+		// 将假日当天的排班排为公休 wangywt 20190624 begin
+		if (holidayInfo.getHolidayMap() != null) {
+			for (String holiday : holidayInfo.getHolidayMap().keySet()) {
+				if (originalExpandedDatePkShiftMap.keySet().contains(holiday)) {
 					originalExpandedDatePkShiftMap.put(holiday, ShiftVO.PK_GX);
 				}
 			}
 		}
-		//将假日当天的排班排为公休  wangywt 20190624 end
+		// 将假日当天的排班排为公休 wangywt 20190624 end
 		// 查询工作日历的最大日期范围
 		UFLiteralDate calendarQueryBeginDate = allDates[0].compareTo(beginDate.toString()) < 0 ? UFLiteralDate.getDate(
 				allDates[0]).getDateBefore(1) : beginDate.getDateBefore(1);
@@ -850,16 +872,16 @@ public class PsnCalendarMaintainImpl implements IPsnCalendarQueryMaintain, IPsnC
 					circularArrangeWithHolidayGX(pk_psndocs[i], psndocList, beginDate, endDate, cloneDatePkShiftMap,
 							originalExpandedDatePkShiftMap, beforeExgPkShiftMap, psnExistsCalendarMap == null ? null
 									: psnExistsCalendarMap.get(pk_psndocs[i]), shiftMap,
-							psnEnjoyHolidayMap.get(pk_psndocs[i]), holidayCutMap, processedDateSet, holidayInfo,
-							defaultShift, date, timeZone);
+							psnEnjoyHolidayMap == null ? null : psnEnjoyHolidayMap.get(pk_psndocs[i]), holidayCutMap,
+							processedDateSet, holidayInfo, defaultShift, date, timeZone);
 					continue;
 				}
 				// 如果不是公休，直接调用非公休的排班方法
 				circularArrangeWithHolidayNonGX(pk_psndocs[i], psndocList, calendarQueryBeginDate,
 						calendarQueryEndDate, cloneDatePkShiftMap, originalExpandedDatePkShiftMap, beforeExgPkShiftMap,
 						psnExistsCalendarMap == null ? null : psnExistsCalendarMap.get(pk_psndocs[i]), shiftMap,
-						psnEnjoyHolidayMap.get(pk_psndocs[i]), holidayCutMap, processedDateSet, holidayInfo,
-						defaultShift, date, timeZone);
+						psnEnjoyHolidayMap == null ? null : psnEnjoyHolidayMap.get(pk_psndocs[i]), holidayCutMap,
+						processedDateSet, holidayInfo, defaultShift, date, timeZone);
 			}
 			// 容错处理：cloneDatePkShiftMap里面不应该存储考勤档案无效的天，因此需要在此处去掉
 			String[] dates = cloneDatePkShiftMap.keySet().toArray(new String[0]);
@@ -1219,8 +1241,11 @@ public class PsnCalendarMaintainImpl implements IPsnCalendarQueryMaintain, IPsnC
 		}
 		// 对调日班次非公休，则要看对调日的班次的工作时间段（对于弹性班，是最大工作时间段）与假日是否有交集（对于弹性班，最大工作时间段与假日有交集会导致固化，但不一定会导致工作时间段被切割）
 		AggShiftVO switchShiftAggVO = ShiftServiceFacade.getAggShiftVOFromMap(shiftMap, switchPkShift);
+		// processHolidayCut(pk_psndoc, cloneDatePkShiftMap, switchShiftAggVO,
+		// holidayInfo.getHolidayVOs(), enjoyHolidayMap, holidayCutMap,
+		// switchDate, timeZone);
 		processHolidayCut(pk_psndoc, cloneDatePkShiftMap, switchShiftAggVO, holidayInfo.getHolidayVOs(),
-				enjoyHolidayMap, holidayCutMap, switchDate, timeZone);
+				enjoyHolidayMap, holidayCutMap, date, timeZone);
 	}
 
 	/**
@@ -2970,6 +2995,10 @@ public class PsnCalendarMaintainImpl implements IPsnCalendarQueryMaintain, IPsnC
 						fromWhereSQL);
 			}
 			TBMPsndocVO[] tbmpsndocvos = null;
+			// 过滤掉已结束的考勤档案 xw 1707130 start
+			fromWhereSQL = TBMPsndocSqlPiecer.addTBMPsndocCond2QuerySQL(TBMPsndocVO.ENDDATE + "='9999-12-01'",
+					fromWhereSQL);
+			// end
 			if (businessUnitFlag) {
 				tbmpsndocvos = psndocService.queryLatestByConditionWithUnit(pk_hrorg, fromWhereSQL, beginDate, endDate,
 						businessUnitFlag);

@@ -176,11 +176,12 @@ public class PsnjobSynWorkAgeBusinessListener implements IBusinessListener {
 	@SuppressWarnings("unchecked")
 	private int calculateLeaveDaysOnPsnJob(PsnJobVO psnjob, boolean isCalculateLeaveDays) throws DAOException {
 		// 留停結束時，計算留停天數，存儲位置：人員工作記錄.留停天數
-		if (psnjob.getBegindate() == null || psnjob.getEnddate() == null || !isCalculateLeaveDays) {
+		if (psnjob.getBegindate() == null || !isCalculateLeaveDays) {
 			psnjob.setAttributeValue("leavedays", null); // 留停天數
 		} else {
-			psnjob.setAttributeValue("leavedays",
-					UFLiteralDate.getDaysBetween(psnjob.getBegindate(), psnjob.getEnddate()) + 1);
+			UFLiteralDate endDate = psnjob.getEnddate() == null || new UFLiteralDate().before(psnjob.getEnddate()) ? new UFLiteralDate()
+					: psnjob.getEnddate();
+			psnjob.setAttributeValue("leavedays", UFLiteralDate.getDaysBetween(psnjob.getBegindate(), endDate) + 1);
 		}
 		this.getBaseDao().updateVO(psnjob);
 

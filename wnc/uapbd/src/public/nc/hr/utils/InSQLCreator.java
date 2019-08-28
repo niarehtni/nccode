@@ -152,6 +152,27 @@ public class InSQLCreator {
 		return createTempTable(createTempTableName(strTempTableName), strTempTableColumn, TempTableVO.IN_PK);
 	}
 
+	public String recreateTempTable(String... strPks) throws BusinessException {
+		String strTableName = createTempTableName(strTempTableName);
+		strTableName = createTempTable(strTableName, TempTableVO.IN_PK
+				+ " varchar(200) not null,ts char(19) null,dr smallint null ", TempTableVO.IN_PK);
+		Connection connection = null;
+
+		try {
+			connection = ConnectionFactory.getConnection();
+			Statement stmt = connection.createStatement();
+			stmt.execute("drop table " + strTableName);
+		} catch (SQLException e) {
+			Logger.error(e.getMessage());
+		} finally {
+			DBUtil.closeConnection(connection);
+		}
+		String s = createTempTable(strTableName, TempTableVO.IN_PK
+				+ " varchar(200) not null,ts char(19) null,dr smallint null ", TempTableVO.IN_PK);
+		insertPks(strTableName, TempTableVO.IN_PK, false, strPks);
+		return s;
+	}
+
 	public String recreateTempTable() throws BusinessException {
 		String strTableName = createTempTableName(strTempTableName);
 
@@ -185,9 +206,10 @@ public class InSQLCreator {
 	 * @author Rocex Wang
 	 **************************************************************/
 	public String createTempTable(String... strPks) throws BusinessException {
+		// ¡Ÿ ±±ÌÕÍ…∆ wangywt 21090812
 		String strTempTable = createTempTable(createTempTableName(strTempTableName), TempTableVO.IN_PK
 				+ " varchar(200) not null,ts char(19) null,dr smallint null", TempTableVO.IN_PK);
-
+		// String strTempTable = this.recreateTempTable();
 		insertPks(strTempTable, TempTableVO.IN_PK, false, strPks);
 
 		return strTempTable;
@@ -393,6 +415,35 @@ public class InSQLCreator {
 		}
 
 		String strTableName = createTempTable(strPks);
+
+		// insertPks(strTableName, TempTableVO.IN_PK, false, strPks);
+
+		String strInSQL = "select " + (blNeedTrim ? "rtrim({0})" : "{0}") + " from {1}";
+
+		strInSQL = MessageFormat.format(strInSQL, TempTableVO.IN_PK, strTableName);
+
+		return strInSQL;
+	}
+
+	/**************************************************************
+	 * <br>
+	 * Created on 2012-3-23 9:30:24<br>
+	 * 
+	 * @param strPks
+	 * @param blNeedTrim
+	 * @return String
+	 * @throws BusinessException
+	 **************************************************************/
+	public String getreInSQL(String[] strPks, boolean blNeedTrim) throws BusinessException {
+		if (ArrayUtils.isEmpty(strPks)) {
+			return null;
+		}
+
+		if (strPks.length < iCount) {
+			return SQLHelper.joinToInSql(strPks, -1);
+		}
+
+		String strTableName = recreateTempTable(strPks);
 
 		// insertPks(strTableName, TempTableVO.IN_PK, false, strPks);
 

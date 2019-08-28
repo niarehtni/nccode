@@ -423,6 +423,8 @@ public class TBMPsndocMaintainImpl implements ITBMPsndocQueryMaintain, ITBMPsndo
 	@SuppressWarnings("rawtypes")
 	protected TBMPsndocVO insert(PsndocVO[] psndocvos, TBMPsndocVO vo, PsnJobVO psnjobVO, boolean isUpdatePsnCalendar,
 			boolean checkPeriod, boolean processMonthstat, boolean isNew) throws BusinessException {
+		BaseDAO baseDAO = new BaseDAO();
+
 		if (!isNew)
 			check(vo);
 		else {
@@ -431,8 +433,15 @@ public class TBMPsndocMaintainImpl implements ITBMPsndocQueryMaintain, ITBMPsndo
 			// 考勤卡号校验
 			TBMCardIDValidator idValidator = new TBMCardIDValidator();
 			vService.addValidator(idValidator);
-
 			vService.validate(vo);
+
+			// ssx added on 2019-08-20
+			// 轉入人員檔案時，有班組的不再自動生成考勤檔案
+			// 因為PsndocDAO: HiBatchEventValueObject.fireEvent會生成檔案（非同步事務）
+			if (psnjobVO.getAttributeValue("jobglbdef7") != null) {
+				return null;
+			}
+			// end
 		}
 		// 校验考勤期间，主要是校验新增的考勤档案：
 		// 1.开始日期不能落在组织的第一个考勤期间的前面
@@ -446,7 +455,6 @@ public class TBMPsndocMaintainImpl implements ITBMPsndocQueryMaintain, ITBMPsndo
 			else
 				regionSql = " select pk_region from tbm_regionorg rog inner join hi_psnjob pjob on rog.pk_org = pjob.pk_org where pk_psnjob = '"
 						+ vo.getPk_psnjob() + "'";
-			BaseDAO baseDAO = new BaseDAO();
 			List pkList = (List) baseDAO.executeQuery(regionSql, new ArrayListProcessor());
 			String pk_region = null;
 			if (!CollectionUtils.isEmpty(pkList)) {
