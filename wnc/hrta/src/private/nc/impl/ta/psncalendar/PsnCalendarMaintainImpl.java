@@ -429,10 +429,12 @@ public class PsnCalendarMaintainImpl implements IPsnCalendarQueryMaintain, IPsnC
 					String sql = "select begintime from bd_shift where pk_shift in (select pk_shift from tbm_psncalendar where pk_psndoc='"
 							+ pk_psndoc + "' and calendar='" + date + "')";
 					String value = (String) dao.executeQuery(sql, new ColumnProcessor());
-					UFDateTime nextBegin = new UFDateTime(leaveenddate + " " + value);
-					UFDateTime endTime = regVO.getLeaveendtime();
-					if (nextBegin.after(endTime)) {
-						leaveenddate = leaveenddate.getDateBefore(1);
+					if (value != null) {
+						UFDateTime nextBegin = new UFDateTime(leaveenddate + " " + value);
+						UFDateTime endTime = regVO.getLeaveendtime();
+						if (nextBegin.after(endTime)) {
+							leaveenddate = leaveenddate.getDateBefore(1);
+						}
 					}
 				}
 

@@ -8,15 +8,10 @@ import java.util.Map;
 import nc.bs.dao.BaseDAO;
 import nc.bs.dao.DAOException;
 import nc.bs.framework.common.InvocationInfoProxy;
-import nc.bs.framework.common.NCLocator;
 import nc.hr.utils.InSQLCreator;
-import nc.itf.bd.psn.psndoc.IPsndocQueryService;
-import nc.itf.uap.IUAPQueryBS;
 import nc.jdbc.framework.processor.ColumnListProcessor;
 import nc.jdbc.framework.processor.MapListProcessor;
 import nc.pubitf.para.SysInitQuery;
-import nc.vo.bd.psn.PsnjobVO;
-import nc.vo.hi.psndoc.PsnJobVO;
 import nc.vo.hi.psndoc.PsnOrgVO;
 import nc.vo.pub.BusinessException;
 import nc.vo.pub.lang.UFDouble;
@@ -63,18 +58,12 @@ public class OTLeaveBalanceUtils {
 
 	public static LeaveRegVO[] getLeaveRegByPsnYear(String pk_org, String pk_psndoc, String queryYear,
 			String pk_leavetypecopy) throws BusinessException {
-		IPsndocQueryService psnQuery = NCLocator.getInstance().lookup(IPsndocQueryService.class);
-		PsnjobVO psnjobvo = psnQuery.queryPsnJobVOByPsnDocPK(pk_psndoc);
-		if (psnjobvo == null) {
-			return null;
-		}
-		IUAPQueryBS query = NCLocator.getInstance().lookup(IUAPQueryBS.class);
-		PsnJobVO jobvo = (PsnJobVO) query.retrieveByPK(PsnJobVO.class, psnjobvo.getPk_psnjob());
-		PsnOrgVO psnOrgVO = (PsnOrgVO) query.retrieveByPK(PsnOrgVO.class, jobvo.getPk_psnorg());
-		UFLiteralDate workAgeStartDate = (UFLiteralDate) psnOrgVO.getAttributeValue("workagestartdate"); // 年资起算日
+		Map<String, UFLiteralDate> psnWorkStartDate = OTLeaveBalanceUtils.getPsnWorkStartDateMap(pk_org,
+				new String[] { pk_psndoc }, queryYear, pk_leavetypecopy);
 
-		return getLeaveRegByPsnDate(pk_org, pk_psndoc, getBeginDateByWorkAgeStartDate(queryYear, workAgeStartDate),
-				getEndDateByWorkAgeStartDate(queryYear, workAgeStartDate), pk_leavetypecopy);
+		return getLeaveRegByPsnDate(pk_org, pk_psndoc,
+				getBeginDateByWorkAgeStartDate(queryYear, psnWorkStartDate.get(pk_psndoc)),
+				getEndDateByWorkAgeStartDate(queryYear, psnWorkStartDate.get(pk_psndoc)), pk_leavetypecopy);
 	}
 
 	public static LeaveRegVO[] getLeaveRegByPsnDate(String pk_org, String pk_psndoc, UFLiteralDate beginDate,

@@ -512,7 +512,7 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain, IL
 				return vos;
 			InSQLCreator isc = new InSQLCreator();
 			try {
-				String inSQL = "(select " + TempTableVO.IN_PK + " from " + isc.createTempTable(pks) + ")";
+				String inSQL = isc.getInSQL(pks);
 				// 如果是否加班转调休，则需要计算享有和实际享有（加班转调休的享有和实际享有都是在转调休、反转调休时生成）
 				if (!typeVO.getTimeitemcode().equals(TimeItemCopyVO.OVERTIMETOLEAVETYPE))
 					calCurRealDayOrHour(pk_org, typeVO, year, month, periodBeginDate, periodEndDate, filteredVOs,
@@ -527,6 +527,8 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain, IL
 					new BaseDAO().updateVOArray(filteredVOs, new String[] { LeaveBalanceVO.HIREBEGINDATE,
 							LeaveBalanceVO.HIREENDDATE });
 				}
+			} catch (BusinessException ex) {
+				Logger.error(ex.getMessage());
 			} finally {
 				isc.clear();
 			}

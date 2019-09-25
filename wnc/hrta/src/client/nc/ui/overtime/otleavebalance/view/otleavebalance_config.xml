@@ -238,7 +238,7 @@
 				<ref bean="separatorAction" />
 				<ref bean="settleActionGroup" />
 				<ref bean="separatorAction" />
-				<ref bean="rebuildSegAction" />
+				<ref bean="rebuildActionGroup" />
 				<ref bean="separatorAction" />
 				<ref bean="outputAction" />
 			</list>
@@ -307,6 +307,18 @@
 		</property>
 	</bean>
 	
+	<!-- 结算按钮组 -->
+	<bean id="rebuildActionGroup" class="nc.funcnode.ui.action.MenuAction">
+		<property name="code" value="rebuildActions" />
+		<property name="name"  value="重建"/>
+		<property name="actions">
+			<list>
+				<ref bean="rebuildSegAction" />
+				<ref bean="forceRebuildSegAction" />
+			</list>
+		</property>
+	</bean>
+	
 	<!--======= 动作：[newActions] [打印] ===========-->
 	<bean id="metaDataBasedPrintAction" class="nc.ui.hr.uif2.action.print.TemplatePrintAction">
 		<property name="model"><ref bean="headModel"/></property>
@@ -323,6 +335,13 @@
 	
 	<!--======= 动作：[rebuildSegAction] [输出...] ===========-->
 	<bean id="rebuildSegAction" class="nc.ui.overtime.otleavebalance.action.RebuildPsnSegDetailAction">
+		<property name="model"><ref bean="headModel"/></property>
+		<property name="listView"><ref bean="billListView" /></property>
+		<property name="orgpanel"><ref bean="orgpanel" /></property>
+	</bean>
+	
+		<!--======= 动作：[rebuildSegAction] [输出...] ===========-->
+	<bean id="forceRebuildSegAction" class="nc.ui.overtime.otleavebalance.action.ForceRebuildPsnSegDetailAction">
 		<property name="model"><ref bean="headModel"/></property>
 		<property name="listView"><ref bean="billListView" /></property>
 		<property name="orgpanel"><ref bean="orgpanel" /></property>

@@ -1198,7 +1198,7 @@ public class PsnInfoDataIOHookPrivate extends DefaultHookPrivate {
 			StringBuilder sb = new StringBuilder();
 			for (String key : unionKeys) {
 				Object obj = superVO.getAttributeValue(key);
-				sb.append(obj.toString());
+				sb.append(String.valueOf(obj));
 			}
 			String key = sb.toString();
 			superVO.setStatus(voStatus);
@@ -1225,13 +1225,13 @@ public class PsnInfoDataIOHookPrivate extends DefaultHookPrivate {
 			// orgs[i].setPk_hrorg(pk_hrorg);
 			orgs[i].setPk_psndoc(pk_psndoc);
 			orgs[i].setOrgrelaid(orgrelaid);
-			//王永文 20180426 人员类型导入时增加相关人员的判断 begin
-			if(orgs[i].getPsntype()!=null&&orgs[i].getPsntype()==1){
-				orgs[i].setPsntype(1);//相关人员
-			}else{
+			// 王永文 20180426 人员类型导入时增加相关人员的判断 begin
+			if (orgs[i].getPsntype() != null && orgs[i].getPsntype() == 1) {
+				orgs[i].setPsntype(1);// 相关人员
+			} else {
 				orgs[i].setPsntype(0);
 			}
-			//王永文 20180426 人员类型导入时增加相关人员的判断 end
+			// 王永文 20180426 人员类型导入时增加相关人员的判断 end
 			if (i != (orgs.length - 1)) {
 				orgs[i].setLastflag(UFBoolean.FALSE);
 			}
@@ -1261,13 +1261,13 @@ public class PsnInfoDataIOHookPrivate extends DefaultHookPrivate {
 				jobs[i].setShoworder(9999999);
 			}
 			jobs[i].setPk_psndoc(pk_psndoc);
-			//王永文 20180426 人员类型导入时增加相关人员的判断 begin
-			if(jobs[i].getPsntype()!=null&&jobs[i].getPsntype()==1){
-				jobs[i].setPsntype(1);//相关人员
-			}else {
+			// 王永文 20180426 人员类型导入时增加相关人员的判断 begin
+			if (jobs[i].getPsntype() != null && jobs[i].getPsntype() == 1) {
+				jobs[i].setPsntype(1);// 相关人员
+			} else {
 				jobs[i].setPsntype(0);
 			}
-			//王永文 20180426 人员类型导入时增加相关人员的判断 end
+			// 王永文 20180426 人员类型导入时增加相关人员的判断 end
 			jobs[i].setPk_hrgroup(jobs[i].getPk_group());
 			if (jobs[i].getPoststat() == null) {
 				jobs[i].setPoststat(UFBoolean.TRUE);

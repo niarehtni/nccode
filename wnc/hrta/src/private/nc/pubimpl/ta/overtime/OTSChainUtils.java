@@ -608,10 +608,6 @@ public class OTSChainUtils {
 					"pk_segdetail='" + vo.getPk_segdetail() + "'");
 			aggvo.setChildrenVO(lstChildVOs.toArray(new SegDetailConsumeVO[0]));
 			new SegdetailMaintainImpl().delete(new AggSegDetailVO[] { aggvo });
-
-			// ssx added on 2019-08-08 for 刪除後保存防止斷鏈
-			saveAll(targetNode);
-			// end
 		}
 	}
 
@@ -975,7 +971,8 @@ public class OTSChainUtils {
 
 			// 上一節點
 			curNode = curNode.getPriorNode();
-		} while (curNode != null && curNode.getPriorNode() != null);
+			// 边界条件修改 tank 最上层的条件 2019年8月12日15:44:26
+		} while (curNode != null);
 		return retNode;
 	}
 

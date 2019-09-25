@@ -88,7 +88,7 @@ public class OvertimeBPImportExecutor extends DataImportExecutor implements IDat
 					vo.setOvertimeenddate(new UFLiteralDate((String) rowNCMap.get(rowNo + ":overtimeendtime")));
 					vo.setOvertimehour(new UFDouble((String) rowNCMap.get(rowNo + ":overtimehour")));
 
-					PsndocDismissedValidator dismChecker = new PsndocDismissedValidator();
+					PsndocDismissedValidator dismChecker = new PsndocDismissedValidator(vo.getOvertimebegintime());
 					dismChecker.validate(vo.getPk_psndoc(), vo.getOvertimebegindate());
 
 					vo.setPk_org(this.getPk_org());
@@ -191,8 +191,7 @@ public class OvertimeBPImportExecutor extends DataImportExecutor implements IDat
 					// check(rowNCVO.get(s));
 					duplicateCheck(rowNCVO.get(s));
 				} catch (Exception bme) {
-					this.getErrorMessages().put(s.split(":")[0],
-							"單據編碼為" + rowNCVO.get(s).getBill_code() + "的單據報錯：" + bme.getMessage());
+					this.getErrorMessages().put(s.split(":")[0], bme.getMessage().replace("\"", "'"));
 					continue;
 				}
 				// 校验单据，解决相同单据仍然能导入数据库的bug wangywt 20190603 end
@@ -206,14 +205,16 @@ public class OvertimeBPImportExecutor extends DataImportExecutor implements IDat
 	}
 
 	private void duplicateCheck(OvertimeRegVO overtimeRegVO) throws BusinessException {
-		Integer totalHour = (Integer) this.getBaseDAO().executeQuery(
-				"select sum(isnull(overtimehour,0)) overtimehour  from tbm_overtimereg where pk_psndoc = '"
+		Object result = this.getBaseDAO().executeQuery(
+				"select cast(sum(isnull(overtimehour,0)) as float) overtimehour  from tbm_overtimereg where pk_psndoc = '"
 						+ overtimeRegVO.getPk_psndoc() + "' and overtimebegintime = '"
 						+ overtimeRegVO.getOvertimebegintime().toString() + "' and overtimeendtime ='"
 						+ overtimeRegVO.getOvertimeendtime().toString()
 						+ "' group by pk_psndoc, overtimebegintime, overtimeendtime", new ColumnProcessor());
 
-		if (totalHour != null && totalHour > 0 && overtimeRegVO.getOvertimehour().intValue() > 0) {
+		UFDouble totalHour = result == null ? UFDouble.ZERO_DBL : new UFDouble(String.valueOf(result));
+
+		if (totalHour != null && totalHour.floatValue() > 0.0 && overtimeRegVO.getOvertimehour().floatValue() > 0.0) {
 			throw new BusinessException("加班時段發生重疊。");
 		}
 	}

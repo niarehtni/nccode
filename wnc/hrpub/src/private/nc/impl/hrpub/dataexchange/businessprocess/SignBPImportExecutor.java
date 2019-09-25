@@ -68,7 +68,7 @@ public class SignBPImportExecutor extends DataImportExecutor implements IDataExc
 						vo.setSigndate(new UFLiteralDate((String) rowNCMap.get(rowNo + ":signdate")));
 					}
 
-					PsndocDismissedValidator dismChecker = new PsndocDismissedValidator();
+					PsndocDismissedValidator dismChecker = new PsndocDismissedValidator(vo.getSigntime());
 					dismChecker.validate(vo.getPk_psndoc(), vo.getSigndate());
 
 					Map<String, Object> psnjob = this.getPsnjob(vo.getPk_psndoc(), vo.getSigndate().toString());

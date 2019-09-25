@@ -7,11 +7,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
+import java.util.Vector;
 
 import javax.naming.NamingException;
 
 import nc.bs.framework.common.NCLocator;
+import nc.bs.logging.Logger;
 import nc.hr.utils.CommonUtils;
+import nc.hr.utils.InSQLCreator;
 import nc.hr.utils.StringPiecer;
 import nc.impl.ta.timebill.BillMethods;
 import nc.itf.bd.shift.ShiftServiceFacade;
@@ -39,6 +42,7 @@ import nc.itf.ta.algorithm.ITimeScopeWithBillType;
 import nc.itf.ta.algorithm.SolidifyUtils;
 import nc.itf.ta.algorithm.TimeScopeUtils;
 import nc.itf.ta.algorithm.impl.DefaultDateScope;
+import nc.pubitf.para.SysInitQuery;
 import nc.vo.bd.holiday.HolidayInfo;
 import nc.vo.bd.shift.AggShiftVO;
 import nc.vo.bd.shift.ShiftVO;
@@ -717,8 +721,25 @@ public class BillProcessHelperAtServer {
 	private static void calLeaveLength4OnePerson(String pk_org, String pk_psndoc, LeaveCommonVO[] vos,
 			Map<String, LeaveTypeCopyVO> timeItemVOMap, TimeRuleVO timeRuleVO, BillMutexRule billMutexRule,
 			CalParam4OnePerson calParam) throws BusinessException {
+		// ssx added on 2018-08-21
+		String initdate = SysInitQuery.getParaString(pk_org, "TBMEXPDATE");
+
 		// 按单据循环处理
 		for (LeaveCommonVO vo : vos) {
+			// MOD(系統啟用前的休假單據時數認定以單據上記錄的為準)
+			// ssx added on 2018-08-21
+			if (!StringUtils.isEmpty(initdate)) {
+				UFLiteralDate expDate = new UFLiteralDate(initdate);
+				if (vo instanceof LeaveRegVO) {
+					LeaveRegVO lrVO = (LeaveRegVO) vo;
+					if (lrVO.getLeavebegindate().isSameDate(expDate) || lrVO.getLeavebegindate().before(expDate)) {
+						vo.setLeavehour(lrVO.getLeavehour());
+						continue;
+					}
+				}
+			}
+			// end
+
 			ITimeScopeWithBillType[] filterdArray = null;
 			// 将加班单出差单停工单和休假单进行交切处理
 			ITimeScopeWithBillType[] crossArray = BillProcessHelper.crossAllBills(new LeaveCommonVO[] { vo },
@@ -830,16 +851,54 @@ public class BillProcessHelperAtServer {
 			CalParam4OnePerson calParam, ITimeScopeWithBillType[] bills, int billType) throws BusinessException {
 		if (bills == null || bills.length == 0)
 			return 0;
-		if (calParam.calendarMap == null/* ||psnCalendarMap.size()<dayCount */) {
-			return 0;
+
+		UFDouble leaveHours = UFDouble.ZERO_DBL;
+
+		// MOD (历史休假单据的处理) ssx added for WNC on 2018-06-01
+		// 导入的历史休假单据，由于没有历史排班，导致假期计算的时候无法正确取得休假时长
+		// 处理办法：增加系统参数，标识导入单据的时间点，在此时间点之前的单据，不检查排班，直接返回单据上记录的时长
+		List<ITimeScopeWithBillType> newBillList = new Vector(5);
+		if (BillMutexRule.BILL_LEAVE == billType) {
+			String initdate = SysInitQuery.getParaString(pk_org, "TBMEXPDATE");
+			if (!StringUtils.isEmpty(initdate)) {
+				UFLiteralDate expDate = new UFLiteralDate(initdate);
+				for (ITimeScopeWithBillType vo : bills) {
+					if (vo instanceof LeaveRegVO) {
+						LeaveRegVO lrVO = (LeaveRegVO) vo;
+						if (lrVO.getLeavebegindate().isSameDate(expDate) || lrVO.getLeavebegindate().before(expDate)) {
+							leaveHours = leaveHours.add(lrVO.getLeavehour());
+						} else {
+							newBillList.add(lrVO);
+						}
+					}
+				}
+			}
+
+			if (newBillList.size() > 0) {
+				// 只校验日期点之后有排班的单据
+				bills = newBillList.toArray(new ITimeScopeWithBillType[0]);
+			}
 		}
+
+		if (newBillList.size() == 0) {
+			return leaveHours.doubleValue();
+		} else {
+			leaveHours = UFDouble.ZERO_DBL;
+		}
+		// end
+
 		// 找出休假单的开始日和结束日
 		UFLiteralDate earliestDate = calParam.earliestDate;
 		UFLiteralDate latestDate = calParam.latestDate;
 		// 此人员的工作日历map,要求往前往后都推2天，也就是说，一般情况下，map里面的天数会比休假天数多4天
 		int dayCount = latestDate.getDaysAfter(earliestDate) + 5;// 加5的原因是要往前后都推两天
 
-		double result = 0;
+		// MOD(历史休假单据的处理) ssx modified for WNC on 2018-06-01
+		// 此处原为 result = 0，改为leaveHours的原因是因为上面已经计算了参数时间点之前的单据时长
+		// 后面计算时间点以后的单据
+		double result = leaveHours.doubleValue();
+		// end
+
 		// 从前两天开始处理
 		for (int i = 0; i < dayCount; i++) {
 			UFLiteralDate curDate = earliestDate.getDateAfter(i - 2);
@@ -1172,67 +1231,182 @@ public class BillProcessHelperAtServer {
 
 		Map<String, Map<UFLiteralDate, String>> psnDateOrgMap = null;
 		Map<String, Map<UFLiteralDate, AggPsnCalendar>> psnCalendarMap = null;
-		// InSQLCreator isc = new InSQLCreator();
+		InSQLCreator isc = new InSQLCreator();
 
 		Map<String, List<SuperVO>> billMap = CommonUtils.group2ListByField("pk_psndoc", (SuperVO[]) bills);
+
+		List<List<String>> psndocGroups = new ArrayList<List<String>>();
+		List<String> psndocs = null;
+		int i = 0;
+		for (String pk_psndoc : pk_psndocs) {
+			i++;
+			if (i == 1) {
+				psndocs = new ArrayList<String>();
+			}
+
+			psndocs.add(pk_psndoc);
+
+			if (i == 50) {
+				i = 0;
+				psndocGroups.add(psndocs);
+			}
+		}
+
+		if (psndocs.size() > 0) {
+			psndocGroups.add(psndocs);
+		}
+
 		/** 构造返回值 */
 		Map<String, CalParam4OnePerson> resultMap = new HashMap<String, CalParam4OnePerson>();
-		for (String pk_psndoc : pk_psndocs) {
-			Map<String, LeaveRegVO[]> allLeaveBills = BillMethods.queryAllSuperVOIncEffectiveByPsnsDateScope(
-					LeaveRegVO.class, pk_org, new String[] { pk_psndoc }, maxDateScope, null);
-			Map<String, OvertimeRegVO[]> allOvertimeBills = BillMethods.queryAllSuperVOIncEffectiveByPsnsDateScope(
-					OvertimeRegVO.class, pk_org, new String[] { pk_psndoc }, maxDateScope, null);
+		Map<String, ICheckTime[]> allCheckBills = null;
+		Map<String, LeaveRegVO[]> allLeaveBills = null;
+		Map<String, OvertimeRegVO[]> allOvertimeBills = null;
+		int psnindex = 1;
+		for (List<String> psndocGroup : psndocGroups) {
+			try {
+				long startTime = System.currentTimeMillis();
+				// allLeaveBills =
+				// BillMethods.queryAllSuperVOIncEffectiveByPsnsDateScope(LeaveRegVO.class,
+				// pk_org,
+				// psndocGroup.toArray(new String[0]), maxDateScope, null);
+				long endTime = System.currentTimeMillis();
+				// Thread.sleep(endTime - startTime);
+				// Logger.error("--------LEAVEBALANCE-SLEEP-TIME-[LEAVE]-" +
+				// String.valueOf(endTime - startTime)
+				// + "-------");
 
-			Map<String, ICheckTime[]> allCheckBills = BillMethods.queryCheckTimeMapByPsndocInSQLAndDateScope(pk_org,
-					new String[] { pk_psndoc }, maxDateScope);
+				// startTime = System.currentTimeMillis();
+				// allOvertimeBills =
+				// BillMethods.queryAllSuperVOIncEffectiveByPsnsDateScope(OvertimeRegVO.class,
+				// pk_org,
+				// psndocGroup.toArray(new String[0]), maxDateScope, null);
+				// endTime = System.currentTimeMillis();
+				// Thread.sleep(endTime - startTime);
+				// Logger.error("--------LEAVEBALANCE-SLEEP-TIME-[OVERTIME]-" +
+				// String.valueOf(endTime - startTime)
+				// + "-------");
 
-			// try {
-			String psndocInSQL = "('" + pk_psndoc + "')";// isc.getInSQL(pk_psndocs);
-			psnDateOrgMap = NCLocator.getInstance().lookup(ITBMPsndocQueryService.class)
-					.queryDateJobOrgMapByPsndocInSQL(psndocInSQL, maxDateScope);
-			psnCalendarMap = NCLocator.getInstance().lookup(IPsnCalendarQueryService.class)
-					.queryCalendarVOByPsnInSQL(pk_org, maxDateScope, psndocInSQL);
-			// } finally {
-			// isc.clear();
-			// }
+				// startTime = System.currentTimeMillis();
+				// allCheckBills =
+				// BillMethods.queryCheckTimeMapByPsndocInSQLAndDateScope(pk_org,
+				// psndocGroup.toArray(new String[0]), maxDateScope);
+				// endTime = System.currentTimeMillis();
+				// Thread.sleep(endTime - startTime);
+				// Logger.error("--------LEAVEBALANCE-SLEEP-TIME-[CHECK]-" +
+				// String.valueOf(endTime - startTime)
+				// + "-------");
 
-			List<SuperVO> psnBills = billMap.get(pk_psndoc);
-			CalParam4OnePerson calParam = new CalParam4OnePerson();
-			calParam.timeruleVO = timeruleVO;
-			calParam.mutexRule = mutexRule;
-			calParam.aggShiftMap = aggShiftMap;
-			calParam.shiftMap = shiftMap;
-			calParam.earliestDate = earliestDate;
-			calParam.latestDate = latestDate;
-			calParam.calendarMap = psnCalendarMap == null ? null : psnCalendarMap.get(pk_psndoc); // 工作日历
-			calParam.dateOrgMap = psnDateOrgMap == null ? null : psnDateOrgMap.get(pk_psndoc); // 所有天任职所属业务单元
-			calParam.lactationBills = allLactationBills == null ? null : allLactationBills.get(pk_psndoc); // 哺乳假
-			calParam.checkTimes = allCheckBills == null ? null : allCheckBills.get(pk_psndoc); // 刷签卡
-			calParam.leaveBills = allLeaveBills == null ? null : allLeaveBills.get(pk_psndoc); // 休假
-			calParam.overtimeBills = allOvertimeBills == null ? null : allOvertimeBills.get(pk_psndoc); // 加班
-			calParam.awayBills = allAwayBills == null ? null : allAwayBills.get(pk_psndoc); // 出差
-			calParam.shutdownBills = allShutdownBills == null ? null : allShutdownBills.get(pk_psndoc); // 停工待料
-			// 根据单据类型，将当前单据合并
-			switch (billType) {
-			case BillMutexRule.BILL_LEAVE:
-				calParam.leaveBills = CommonUtils.merge2Array(calParam.leaveBills,
-						psnBills.toArray(new LeaveCommonVO[0]));
-				break;
-			case BillMutexRule.BILL_OVERTIME:
-				calParam.overtimeBills = CommonUtils.merge2Array(calParam.overtimeBills,
-						psnBills.toArray(new OvertimeCommonVO[0]));
-				break;
-			case BillMutexRule.BILL_AWAY:
-				calParam.awayBills = CommonUtils.merge2Array(calParam.awayBills, psnBills.toArray(new AwayCommonVO[0]));
-				break;
-			case BillMutexRule.BILL_SHUTDOWN:
-				calParam.shutdownBills = CommonUtils.merge2Array(calParam.shutdownBills,
-						psnBills.toArray(new ShutdownRegVO[0]));
-				break;
-			default:
-				break;
+				startTime = System.currentTimeMillis();
+				String psndocInSQL = isc.getInSQL(psndocGroup.toArray(new String[0]));
+				endTime = System.currentTimeMillis();
+				Thread.sleep(endTime - startTime);
+				Logger.error("--------LEAVEBALANCE-SLEEP-TIME-[PSNINSQL]-" + String.valueOf(endTime - startTime)
+						+ "-------");
+
+				startTime = System.currentTimeMillis();
+				psnDateOrgMap = NCLocator.getInstance().lookup(ITBMPsndocQueryService.class)
+						.queryDateJobOrgMapByPsndocInSQL(psndocInSQL, maxDateScope);
+				endTime = System.currentTimeMillis();
+				Thread.sleep(endTime - startTime);
+				Logger.error("--------LEAVEBALANCE-SLEEP-TIME-[PSNDATEORG]-" + String.valueOf(endTime - startTime)
+						+ "-------");
+
+				// startTime = System.currentTimeMillis();
+				// psnCalendarMap =
+				// NCLocator.getInstance().lookup(IPsnCalendarQueryService.class)
+				// .queryCalendarVOByPsnInSQL(pk_org, maxDateScope,
+				// psndocInSQL);
+				// endTime = System.currentTimeMillis();
+				// Thread.sleep(endTime - startTime);
+				// Logger.error("--------LEAVEBALANCE-SLEEP-TIME-[PSNCALENDAR]-"
+				// + String.valueOf(endTime - startTime)
+				// + "-------");
+
+				startTime = System.currentTimeMillis();
+				for (String pk_psndoc : psndocGroup) {
+					Logger.error("--------LEAVEBALANCE-LOAD-PSN-[" + pk_psndoc + "]-[" + String.valueOf(psnindex)
+							+ "]-");
+					long innerstartTime = System.currentTimeMillis();
+					allLeaveBills = BillMethods.queryAllSuperVOIncEffectiveByPsnsDateScope(LeaveRegVO.class, pk_org,
+							new String[] { pk_psndoc }, maxDateScope, null);
+					long innerendTime = System.currentTimeMillis();
+					Logger.error("--------[LEAVE]-" + String.valueOf(innerendTime - innerstartTime) + "-------");
+					Thread.sleep((innerendTime - innerstartTime) % 5);
+
+					innerstartTime = System.currentTimeMillis();
+					allOvertimeBills = BillMethods.queryAllSuperVOIncEffectiveByPsnsDateScope(OvertimeRegVO.class,
+							pk_org, new String[] { pk_psndoc }, maxDateScope, null);
+					innerendTime = System.currentTimeMillis();
+					Logger.error("--------[OVERTIME]-" + String.valueOf(innerendTime - innerstartTime) + "-------");
+					Thread.sleep((innerendTime - innerstartTime) % 5);
+
+					innerstartTime = System.currentTimeMillis();
+					psnCalendarMap = NCLocator.getInstance().lookup(IPsnCalendarQueryService.class)
+							.queryCalendarVOByPsnInSQL(pk_org, maxDateScope, "'+pk_psndoc+'");
+					innerendTime = System.currentTimeMillis();
+					Logger.error("--------[PSNCALENDAR]-" + String.valueOf(innerendTime - innerstartTime) + "-------");
+					Thread.sleep((innerendTime - innerstartTime) % 5);
+
+					innerstartTime = System.currentTimeMillis();
+					allCheckBills = BillMethods.queryCheckTimeMapByPsndocInSQLAndDateScope(pk_org,
+							new String[] { pk_psndoc }, maxDateScope);
+					innerendTime = System.currentTimeMillis();
+					Logger.error("--------[CHECK]-" + String.valueOf(innerendTime - innerstartTime) + "-------");
+					Thread.sleep((innerendTime - innerstartTime) % 5);
+
+					List<SuperVO> psnBills = billMap.get(pk_psndoc);
+					CalParam4OnePerson calParam = new CalParam4OnePerson();
+					calParam.timeruleVO = timeruleVO;
+					calParam.mutexRule = mutexRule;
+					calParam.aggShiftMap = aggShiftMap;
+					calParam.shiftMap = shiftMap;
+					calParam.earliestDate = earliestDate;
+					calParam.latestDate = latestDate;
+					calParam.calendarMap = psnCalendarMap == null ? null : psnCalendarMap.get(pk_psndoc); // 工作日历
+					calParam.dateOrgMap = psnDateOrgMap == null ? null : psnDateOrgMap.get(pk_psndoc); // 所有天任职所属业务单元
+					calParam.lactationBills = allLactationBills == null ? null : allLactationBills.get(pk_psndoc); // 哺乳假
+					calParam.checkTimes = allCheckBills == null ? null : allCheckBills.get(pk_psndoc); // 刷签卡
+					calParam.leaveBills = allLeaveBills == null ? null : allLeaveBills.get(pk_psndoc); // 休假
+					calParam.overtimeBills = allOvertimeBills == null ? null : allOvertimeBills.get(pk_psndoc); // 加班
+					calParam.awayBills = allAwayBills == null ? null : allAwayBills.get(pk_psndoc); // 出差
+					calParam.shutdownBills = allShutdownBills == null ? null : allShutdownBills.get(pk_psndoc); // 停工待料
+					// 根据单据类型，将当前单据合并
+					switch (billType) {
+					case BillMutexRule.BILL_LEAVE:
+						calParam.leaveBills = CommonUtils.merge2Array(calParam.leaveBills,
+								psnBills.toArray(new LeaveCommonVO[0]));
+						break;
+					case BillMutexRule.BILL_OVERTIME:
+						calParam.overtimeBills = CommonUtils.merge2Array(calParam.overtimeBills,
+								psnBills.toArray(new OvertimeCommonVO[0]));
+						break;
+					case BillMutexRule.BILL_AWAY:
+						calParam.awayBills = CommonUtils.merge2Array(calParam.awayBills,
+								psnBills.toArray(new AwayCommonVO[0]));
+						break;
+					case BillMutexRule.BILL_SHUTDOWN:
+						calParam.shutdownBills = CommonUtils.merge2Array(calParam.shutdownBills,
+								psnBills.toArray(new ShutdownRegVO[0]));
+						break;
+					default:
+						break;
+					}
+					resultMap.put(pk_psndoc, calParam);
+					allLeaveBills = null;
+					allOvertimeBills = null;
+					psnCalendarMap = null;
+					allCheckBills = null;
+					psnindex++;
+				}
+				endTime = System.currentTimeMillis();
+				Thread.sleep(endTime - startTime);
+				Logger.error("--------LEAVEBALANCE-SLEEP-TIME-[COMBINE]-" + String.valueOf(endTime - startTime)
+						+ "-------");
+			} catch (BusinessException | InterruptedException ex) {
+				Logger.error(ex.getMessage());
 			}
-			resultMap.put(pk_psndoc, calParam);
+
+			System.gc();
 		}
 		return resultMap;
 	}

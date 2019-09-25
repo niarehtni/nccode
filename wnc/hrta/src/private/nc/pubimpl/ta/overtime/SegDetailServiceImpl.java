@@ -18,6 +18,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import nc.bs.dao.BaseDAO;
+import nc.bs.dao.DAOException;
 import nc.bs.framework.common.InvocationInfoProxy;
 import nc.bs.framework.common.NCLocator;
 import nc.bs.logging.Logger;
@@ -28,6 +29,7 @@ import nc.itf.ta.IPeriodQueryService;
 import nc.itf.ta.overtime.ISegdetailMaintain;
 import nc.jdbc.framework.processor.ColumnProcessor;
 import nc.jdbc.framework.processor.MapListProcessor;
+import nc.jdbc.framework.processor.MapProcessor;
 import nc.pub.encryption.util.SalaryDecryptUtil;
 import nc.pubitf.para.SysInitQuery;
 import nc.pubitf.ta.overtime.ISegDetailService;
@@ -93,6 +95,13 @@ public class SegDetailServiceImpl implements ISegDetailService {
 					return;
 				}
 
+				// ssx added on 2019-08-28
+				// 傳入負數單據時刪除對應正時數的加班單分段
+				if (unRegByNagetiveOvertime(otRegVo)) {
+					continue;
+				}
+				// end
+
 				String pk_psndoc = otRegVo.getPk_psndoc();
 
 				// 取加班類別
@@ -144,6 +153,34 @@ public class SegDetailServiceImpl implements ISegDetailService {
 		}
 	}
 
+	private boolean unRegByNagetiveOvertime(OvertimeRegVO otRegVo) throws BusinessException {
+		if (otRegVo != null && otRegVo.getOvertimehour().intValue() < 0) {
+			Map oldRegs = (Map) this.getBaseDao().executeQuery(
+					"select sum(overtimehour) othour, max(pk_overtimereg) maxpk from tbm_overtimereg where pk_psndoc = '"
+							+ otRegVo.getPk_psndoc() + "' and overtimebegintime = '"
+							+ otRegVo.getOvertimebegintime().toString() + "' and overtimeendtime = '"
+							+ otRegVo.getOvertimeendtime() + "' and pk_overtimetype='" + otRegVo.getPk_overtimetype()
+							+ "' and pk_overtimereg<>'" + otRegVo.getPk_overtimereg() + "'"
+							+ " group by pk_psndoc, overtimebegintime, overtimeendtime ", new MapProcessor());
+
+			// 無返回值或返回時數與當前時數不同的，均認為與源單不匹配
+			if (oldRegs == null
+					|| !oldRegs.containsKey("othour")
+					|| !otRegVo.getOvertimehour().multiply(-1)
+							.equals(new UFDouble(String.valueOf(oldRegs.get("othour"))))) {
+				throw new BusinessException("未找到對應的加班登記單。");
+			} else {
+				OvertimeRegVO otDel = (OvertimeRegVO) this.getBaseDao().retrieveByPK(OvertimeRegVO.class,
+						(String) oldRegs.get("maxpk"));
+				if (otDel.getOvertimehour().equals(otRegVo.getOvertimehour().multiply(-1))) {
+					this.deleteOvertimeSegDetail(new OvertimeRegVO[] { otDel });
+				}
+			}
+			return true;
+		}
+		return false;
+	}
+
 	private boolean isEventDayRule(String pk_segrule) throws BusinessException {
 		SegRuleVO ruleVO = (SegRuleVO) this.getBaseDao().retrieveByPK(SegRuleVO.class, pk_segrule);
 		return ruleVO.getDatetype() == 5;
@@ -168,16 +205,18 @@ public class SegDetailServiceImpl implements ISegDetailService {
 					continue;
 				}
 
-				OTSChainNode curNode = OTSChainUtils.buildChainNodes(vo.getPk_psndoc(), null, null,
-						false, false, false, false, false);
+				OTSChainNode curNode = OTSChainUtils.buildChainNodes(vo.getPk_psndoc(), null, null, false, false,
+						false, false, false);
 
 				if (curNode == null) {
 					throw new BusinessException("未找到加班登記單對應的未結算分段明細。");
 				}
 
 				boolean canDel = true;
+				OTSChainNode nodeToSave = null;
 				while (curNode != null) {
-					if(!vo.getPk_overtimereg().equals(curNode.getNodeData().getPk_overtimereg())){
+					if (!vo.getPk_overtimereg().equals(curNode.getNodeData().getPk_overtimereg())) {
+						nodeToSave = curNode;
 						curNode = curNode.getNextNode();
 						continue;
 					}
@@ -186,13 +225,17 @@ public class SegDetailServiceImpl implements ISegDetailService {
 						canDel = false;
 						break;
 					}
-					
+
 					OTSChainNode delete = curNode;
 					curNode = curNode.getNextNode();
 					// ssx modified on 2019-08-08
 					// for 刪除當前節點並防止斷鏈
 					OTSChainUtils.removeCurrentNode(delete, true);
 					// end
+				}
+
+				if (nodeToSave != null) {
+					OTSChainUtils.saveAll(nodeToSave);
 				}
 
 				if (!canDel) {
@@ -398,29 +441,37 @@ public class SegDetailServiceImpl implements ISegDetailService {
 				throw new BusinessException("加班可休日期按固定周期计算错误，请检查考勤规则起算年月设定（格式：YYYYMM）。");
 			}
 		} else if (settleType == 3) {
+			String pk_psnorg = otRegVO.getPk_psnorg();
 			// 按年资起算日（比对加班日期）
-			PsnOrgVO psnOrgVO = (PsnOrgVO) this.getBaseDao().retrieveByPK(PsnOrgVO.class, otRegVO.getPk_psnorg());
-			UFLiteralDate workAgeStartDate = (UFLiteralDate) psnOrgVO.getAttributeValue("workagestartdate"); // 年资起算日
-			if (workAgeStartDate != null) {
-				if (workAgeStartDate.toString().substring(4).equals("-02-29")) {
-					maxLeaveDate = new UFLiteralDate(String.valueOf(otRealDate.getYear()) + "-03-01").getDateBefore(1);
-					if (maxLeaveDate.before(otRealDate)) {
-						maxLeaveDate = new UFLiteralDate(String.valueOf(otRealDate.getYear() + 1) + "-03-01")
-								.getDateBefore(1);
-					}
-				} else {
-					maxLeaveDate = new UFLiteralDate(String.valueOf(otRealDate.getYear())
-							+ workAgeStartDate.toString().substring(4)).getDateBefore(1);
-					if (maxLeaveDate.before(otRealDate)) {
-						maxLeaveDate = new UFLiteralDate(String.valueOf(otRealDate.getYear() + 1)
-								+ workAgeStartDate.toString().substring(4)).getDateBefore(1);
-					}
-				}
-			} else {
-				throw new BusinessException("加班可休日期按年资起算日计算错误，请检查员工组织关系年资起算日设定。");
-			}
+			maxLeaveDate = getMaxLeaveDateByWorkAgeDay(otRealDate, pk_psnorg);
 		} else {
 			throw new BusinessException("加班可休日期计算错误，请检查组织参数（TWHRT09）的设定。");
+		}
+		return maxLeaveDate;
+	}
+
+	public UFLiteralDate getMaxLeaveDateByWorkAgeDay(UFLiteralDate realDate, String pk_psnorg) throws DAOException,
+			BusinessException {
+		PsnOrgVO psnOrgVO = (PsnOrgVO) this.getBaseDao().retrieveByPK(PsnOrgVO.class, pk_psnorg);
+		UFLiteralDate workAgeStartDate = (UFLiteralDate) psnOrgVO.getAttributeValue("workagestartdate"); // 年资起算日
+		UFLiteralDate maxLeaveDate = null;
+		if (workAgeStartDate != null) {
+			if (workAgeStartDate.toString().substring(4).equals("-02-29")) {
+				maxLeaveDate = new UFLiteralDate(String.valueOf(realDate.getYear()) + "-03-01").getDateBefore(1);
+				if (maxLeaveDate.before(realDate)) {
+					maxLeaveDate = new UFLiteralDate(String.valueOf(realDate.getYear() + 1) + "-03-01")
+							.getDateBefore(1);
+				}
+			} else {
+				maxLeaveDate = new UFLiteralDate(String.valueOf(realDate.getYear())
+						+ workAgeStartDate.toString().substring(4)).getDateBefore(1);
+				if (maxLeaveDate.before(realDate)) {
+					maxLeaveDate = new UFLiteralDate(String.valueOf(realDate.getYear() + 1)
+							+ workAgeStartDate.toString().substring(4)).getDateBefore(1);
+				}
+			}
+		} else {
+			throw new BusinessException("加班可休日期按年资起算日计算错误，请检查员工组织关系年资起算日设定。");
 		}
 		return maxLeaveDate;
 	}
@@ -530,13 +581,15 @@ public class SegDetailServiceImpl implements ISegDetailService {
 				if (psncal.getPk_shift() != null) {
 					ShiftVO shiftvo = (ShiftVO) this.getBaseDao().retrieveByPK(ShiftVO.class, psncal.getPk_shift());
 					if (shiftvo != null) {
-						//mod start tank 2019年8月21日17:04:24 前一日,後一日修復
-						UFDateTime startDT = new UFDateTime(psncal.getCalendar().getDateAfter(shiftvo.getTimebeginday()).toString() + " "
-								+ shiftvo.getTimebegintime());
-						
-						UFDateTime endDT = new UFDateTime(psncal.getCalendar().getDateAfter(shiftvo.getTimeendday()).toString() + " "
-								+ shiftvo.getTimeendtime());
-						//end mod
+						// mod start tank 2019年8月21日17:04:24 前一日,後一日修復
+						UFDateTime startDT = new UFDateTime(psncal.getCalendar()
+								.getDateAfter(shiftvo.getTimebeginday()).toString()
+								+ " " + shiftvo.getTimebegintime());
+
+						UFDateTime endDT = new UFDateTime(psncal.getCalendar().getDateAfter(shiftvo.getTimeendday())
+								.toString()
+								+ " " + shiftvo.getTimeendtime());
+						// end mod
 						if (vo.getOvertimebegintime().before(endDT) && vo.getOvertimebegintime().after(startDT)) {
 							rtnDate = psncal.getCalendar();
 						}
@@ -560,22 +613,15 @@ public class SegDetailServiceImpl implements ISegDetailService {
 				if (psncal.getPk_shift() != null) {
 					ShiftVO shiftvo = (ShiftVO) this.getBaseDao().retrieveByPK(ShiftVO.class, psncal.getPk_shift());
 					if (shiftvo != null) {
-						UFDateTime startDT = null;
-						if (shiftvo.getTimebeginday() == 0) {
-							startDT = new UFDateTime(psncal.getCalendar().toString() + " " + shiftvo.getTimebegintime());
-						} else {
-							startDT = new UFDateTime(psncal.getCalendar().getDateAfter(1).toString() + " "
-									+ shiftvo.getTimebegintime());
-						}
+						// mod start tank 2019年8月21日17:04:24 前一日,後一日修復
+						UFDateTime startDT = new UFDateTime(psncal.getCalendar()
+								.getDateAfter(shiftvo.getTimebeginday()).toString()
+								+ " " + shiftvo.getTimebegintime());
 
-						UFDateTime endDT = null;
-						if (shiftvo.getTimeendday() == 0) {
-							endDT = new UFDateTime(psncal.getCalendar().toString() + " " + shiftvo.getTimeendtime());
-						} else {
-							endDT = new UFDateTime(psncal.getCalendar().getDateAfter(1).toString() + " "
-									+ shiftvo.getTimeendtime());
-						}
-
+						UFDateTime endDT = new UFDateTime(psncal.getCalendar().getDateAfter(shiftvo.getTimeendday())
+								.toString()
+								+ " " + shiftvo.getTimeendtime());
+						// end mod
 						if (vo.getLeavebegintime().before(endDT) && vo.getLeavebegintime().after(startDT)) {
 							rtnDate = psncal.getCalendar();
 						}
@@ -714,7 +760,6 @@ public class SegDetailServiceImpl implements ISegDetailService {
 	@Override
 	public void regOvertimeSegDetailConsume(LeaveRegVO[] sortedLeaveRefVOs) throws BusinessException {
 		if (sortedLeaveRefVOs != null && sortedLeaveRefVOs.length > 0) {
-
 			for (LeaveRegVO vo : sortedLeaveRefVOs) {
 				UFBoolean isEnabled = SysInitQuery.getParaBoolean(vo.getPk_org(), "TBMOTSEG");
 				if (isEnabled == null || !isEnabled.booleanValue()) {
@@ -732,8 +777,8 @@ public class SegDetailServiceImpl implements ISegDetailService {
 				if (lvTypeVO.getPk_timeitemcopy().equals(vo.getPk_leavetypecopy())) {
 					// 取已註冊未消耗的加班分段明細
 					// 取當前人員過濾節點（邏輯鏈表：轉補休，未作廢，未核消完畢，未結算）
-					OTSChainNode psnNode = OTSChainUtils.buildChainNodes(vo.getPk_psndoc(), null, null, true, false,
-							true, true, true);
+					OTSChainNode psnNode = OTSChainUtils.buildChainNodes(vo.getPk_psndoc(), null, null, false, false,
+							false, false, false);
 					SegDetailVO[] segDetailBeConsumed = OTSChainUtils.getAllNodeData(psnNode);
 
 					if (segDetailBeConsumed == null || segDetailBeConsumed.length == 0) {
@@ -808,10 +853,35 @@ public class SegDetailServiceImpl implements ISegDetailService {
 	private void consumeSegDetailHours(SegDetailVO[] segDetailVOs, LeaveRegVO vo) throws BusinessException {
 		List<AggSegDetailVO> aggvos = new ArrayList<AggSegDetailVO>();
 		UFDouble unConsumedLeaveHours = vo.getLeavehour();
+		UFLiteralDate realLeaveDate = this.getShiftRegDateByLeave(vo);
+		UFLiteralDate maxLeaveDate = this.getMaxLeaveDateByWorkAgeDay(realLeaveDate, vo.getPk_psnorg());
 		for (SegDetailVO segDetail : segDetailVOs) {
+			// ssx added on 2019-08-29
+			// 為了避免髒寫，手工判斷是否消耗完畢，消耗完畢的跳過
+			if (segDetail.getRemainhours().doubleValue() == 0) {
+				continue;
+			}
+
+			// 為了避免髒寫，手工判斷是否轉調休，非轉調休的跳過
+			if (!segDetail.getIscompensation().booleanValue()) {
+				continue;
+			}
+
+			// 為了避免髒寫，手工判斷是否結算，已結算的跳過
+			if (segDetail.getIssettled().booleanValue()) {
+				continue;
+			}
+
+			// 為了避免髒寫，手工判斷是否作廢，已作廢的跳過
+			if (segDetail.getIscanceled().booleanValue()) {
+				continue;
+			}
+			// end
+
 			// ssx added on 2019-07-08
 			// 已超過最長可休日期的加班分段不能參與消耗
-			if (vo.getLeavebegindate().after(segDetail.getExpirydate())) {
+			if (!maxLeaveDate.isSameDate(segDetail.getExpirydate())
+					|| vo.getLeavebegindate().after(segDetail.getExpirydate())) {
 				continue;
 			}
 			//
@@ -843,6 +913,8 @@ public class SegDetailServiceImpl implements ISegDetailService {
 				aggvo.setChildrenVO(lstChildVOs.toArray(new SegDetailConsumeVO[0]));
 				segDetail.setPk_segdetailconsume(lstChildVOs.toArray(new SegDetailConsumeVO[0]));
 				aggvos.add(aggvo);
+			} else {
+				break;
 			}
 		}
 
@@ -853,14 +925,6 @@ public class SegDetailServiceImpl implements ISegDetailService {
 
 		if (aggvos.size() > 0) {
 			getSegMaintain().update(aggvos.toArray(new AggSegDetailVO[0]));
-			// for (AggSegDetailVO aggvo : aggvos) {
-			// updateHead((SegDetailVO) aggvo.getParentVO());
-			//
-			// for (CircularlyAccessibleValueObject childvo :
-			// aggvo.getAllChildrenVO()) {
-			// insertChild((SegDetailConsumeVO) childvo);
-			// }
-			// }
 		}
 	}
 
@@ -2560,6 +2624,85 @@ public class SegDetailServiceImpl implements ISegDetailService {
 
 	@SuppressWarnings("unchecked")
 	@Override
+	public void forceRebuildSegDetailByPsn(String pk_psndoc) throws BusinessException {
+		String strSQL = "delete from hrta_segdetailconsume where pk_segdetail in (select pk_segdetail from hrta_segdetail where pk_psndoc = '"
+				+ pk_psndoc + "')";
+		this.getBaseDao().executeUpdate(strSQL);
+
+		strSQL = "delete from hrta_segdetail where  pk_psndoc = '" + pk_psndoc + "'";
+		this.getBaseDao().executeUpdate(strSQL);
+
+		Collection<OvertimeRegVO> otList = null;
+		Collection<LeaveRegVO> lvList = null;
+
+		otList = this.getBaseDao().retrieveByClause(OvertimeRegVO.class, "pk_psndoc='" + pk_psndoc + "'");
+		lvList = this.getBaseDao().retrieveByClause(LeaveRegVO.class, "pk_psndoc='" + pk_psndoc + "'");
+
+		// 重建加班數據
+		rebuildOvertimeRecords(otList);
+
+		// 重建休假數據
+		rebuildLeaveRecords(lvList);
+	}
+
+	public void rebuildOvertimeRecords(Collection<OvertimeRegVO> otList) {
+		if (otList != null && otList.size() > 0) {
+			List<OvertimeRegVO> list = new ArrayList<OvertimeRegVO>();
+			list.addAll(otList);
+			Collections.sort(list, new Comparator<OvertimeRegVO>() {
+
+				@Override
+				public int compare(OvertimeRegVO ot1, OvertimeRegVO ot2) {
+					if (ot1.getOvertimebegintime().before(ot2.getOvertimebegintime())) {
+						return -1;
+					} else if (ot1.getOvertimebegintime().after(ot2.getOvertimebegintime())) {
+						return 1;
+					} else {
+						return 0;
+					}
+				}
+			});
+
+			for (OvertimeRegVO vo : list.toArray(new OvertimeRegVO[0])) {
+				try {
+					this.regOvertimeSegDetail(new OvertimeRegVO[] { vo });
+				} catch (BusinessException ex) {
+					Logger.error("加班單 [" + vo.getOvertimebegintime().toString() + "] " + ex.getMessage());
+				}
+			}
+		}
+	}
+
+	public void rebuildLeaveRecords(Collection<LeaveRegVO> lvList) {
+		if (lvList != null && lvList.size() > 0) {
+			List<LeaveRegVO> list = new ArrayList<LeaveRegVO>();
+			list.addAll(lvList);
+			Collections.sort(list, new Comparator<LeaveRegVO>() {
+
+				@Override
+				public int compare(LeaveRegVO ot1, LeaveRegVO ot2) {
+					if (ot1.getLeavebegintime().before(ot2.getLeavebegintime())) {
+						return -1;
+					} else if (ot1.getLeavebegintime().after(ot2.getLeavebegintime())) {
+						return 1;
+					} else {
+						return 0;
+					}
+				}
+			});
+
+			for (LeaveRegVO vo : list.toArray(new LeaveRegVO[0])) {
+				try {
+					this.regOvertimeSegDetailConsume(new LeaveRegVO[] { vo });
+				} catch (BusinessException ex) {
+					Logger.error("休假單 [" + vo.getLeavebegintime().toString() + "] " + ex.getMessage());
+				}
+			}
+		}
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
 	public void rebuildSegDetailByPsn(String pk_psndoc, String cyear) throws BusinessException {
 		// 取人員重建未結算起點
 		String strSQL = "select sg.pk_overtimereg from hrta_segdetail sg where sg.pk_psndoc='"
@@ -2574,10 +2717,14 @@ public class SegDetailServiceImpl implements ISegDetailService {
 					+ " INNER JOIN hi_psnorg og ON  psn.pk_psnorg = og.pk_psnorg " + " WHERE psn.enddate >= '" + cyear
 					+ "' || RIGHT(og.workagestartdate, 6) AND psn.begindate < '"
 					+ String.valueOf(Integer.valueOf(cyear) + 1) + "' || RIGHT(og.workagestartdate, 6) "
-					+ " AND og.workagestartdate IS NOT NULL AND psn.pk_psndoc = '" + pk_psndoc + "' AND ( "
-					+ " SELECT  COUNT(pk_segdetail)  FROM hrta_segdetail  WHERE  pk_psndoc = psn.pk_psndoc "
-					+ " AND expirydate >= '" + cyear + "' || RIGHT(og.workagestartdate, 6) AND expirydate < '"
-					+ String.valueOf(Integer.valueOf(cyear) + 1) + "' || RIGHT(og.workagestartdate, 6)) > 0";
+					+ " AND og.workagestartdate IS NOT NULL AND psn.pk_psndoc = '" + pk_psndoc + "'";
+			// AND ( "
+			// +
+			// " SELECT  COUNT(pk_segdetail)  FROM hrta_segdetail  WHERE  pk_psndoc = psn.pk_psndoc "
+			// + " AND expirydate >= '" + cyear +
+			// "' || RIGHT(og.workagestartdate, 6) AND expirydate < '"
+			// + String.valueOf(Integer.valueOf(cyear) + 1) +
+			// "' || RIGHT(og.workagestartdate, 6)) > 0"
 
 			String psnWorkStartDate = (String) this.getBaseDao().executeQuery(strSQL, new ColumnProcessor());
 			UFLiteralDate beginDate = OTLeaveBalanceUtils.getBeginDateByWorkAgeStartDate(cyear, new UFLiteralDate(
@@ -2596,7 +2743,7 @@ public class SegDetailServiceImpl implements ISegDetailService {
 			this.getBaseDao().executeUpdate(strSQL);
 
 			strSQL = "delete from hrta_segdetail where pk_psndoc = '" + pk_psndoc + "' and regdate between '"
-					+ beginDate.toString() + "' and '" + endDate.toString() + "')";
+					+ beginDate.toString() + "' and '" + endDate.toString() + "'";
 			this.getBaseDao().executeUpdate(strSQL);
 			//
 
@@ -2621,7 +2768,6 @@ public class SegDetailServiceImpl implements ISegDetailService {
 			strSQL = "pk_psndoc = '" + pk_psndoc + "' and dr=0 and leavebegindate  between '" + beginDate.toString()
 					+ "' and '" + endDate.getDateAfter(1).toString() + "'";
 			lvList = this.getBaseDao().retrieveByClause(LeaveRegVO.class, strSQL);
-			lvList = this.getBaseDao().retrieveByClause(OvertimeRegVO.class, strSQL);
 			if (lvList != null && lvList.size() > 0) {
 				LeaveRegVO[] vos = lvList.toArray(new LeaveRegVO[0]);
 				for (int i = 0; i < lvList.size(); i++) {
@@ -2630,7 +2776,7 @@ public class SegDetailServiceImpl implements ISegDetailService {
 							|| UFLiteralDate.getDaysBetween(vos[i].getLeavebegindate(), endDate) <= 3) {
 						UFLiteralDate realDate = getShiftRegDateByLeave(vos[i]);
 						if (realDate.before(beginDate) || realDate.after(endDate)) {
-							otList.remove(vos[i]);
+							lvList.remove(vos[i]);
 						}
 					}
 				}
@@ -2659,50 +2805,10 @@ public class SegDetailServiceImpl implements ISegDetailService {
 		}
 
 		// 重建加班數據
-		if (otList != null && otList.size() > 0) {
-			List<OvertimeRegVO> list = new ArrayList<OvertimeRegVO>();
-			list.addAll(otList);
-			Collections.sort(list, new Comparator<OvertimeRegVO>() {
-
-				@Override
-				public int compare(OvertimeRegVO ot1, OvertimeRegVO ot2) {
-					if (ot1.getOvertimebegintime().before(ot2.getOvertimebegintime())) {
-						return -1;
-					} else if (ot1.getOvertimebegintime().after(ot2.getOvertimebegintime())) {
-						return 1;
-					} else {
-						return 0;
-					}
-				}
-			});
-
-			for (OvertimeRegVO vo : list.toArray(new OvertimeRegVO[0])) {
-				this.regOvertimeSegDetail(new OvertimeRegVO[] { vo });
-			}
-		}
+		rebuildOvertimeRecords(otList);
 
 		// 重建休假數據
-		if (lvList != null && lvList.size() > 0) {
-			List<LeaveRegVO> list = new ArrayList<LeaveRegVO>();
-			list.addAll(lvList);
-			Collections.sort(list, new Comparator<LeaveRegVO>() {
-
-				@Override
-				public int compare(LeaveRegVO ot1, LeaveRegVO ot2) {
-					if (ot1.getLeavebegintime().before(ot2.getLeavebegintime())) {
-						return -1;
-					} else if (ot1.getLeavebegintime().after(ot2.getLeavebegintime())) {
-						return 1;
-					} else {
-						return 0;
-					}
-				}
-			});
-
-			for (LeaveRegVO vo : list.toArray(new LeaveRegVO[0])) {
-				this.regOvertimeSegDetailConsume(new LeaveRegVO[] { vo });
-			}
-		}
+		rebuildLeaveRecords(lvList);
 	}
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })

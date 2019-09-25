@@ -90,7 +90,7 @@ public class LeaveBPImportExecutor extends DataImportExecutor implements IDataEx
 					vo.setRealdayorhour(UFDouble.ZERO_DBL);
 					vo.setRestdayorhour(UFDouble.ZERO_DBL);
 
-					PsndocDismissedValidator dismChecker = new PsndocDismissedValidator();
+					PsndocDismissedValidator dismChecker = new PsndocDismissedValidator(vo.getLeavebegintime());
 					dismChecker.validate(vo.getPk_psndoc(), vo.getLeavebegindate());
 
 					/*

@@ -4,6 +4,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.channels.FileChannel;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
@@ -171,6 +172,13 @@ public class ExcelHelper {
 			Font fontSuccess = createFonts(workbook, Font.BOLDWEIGHT_BOLD, HSSFColor.BLUE.index, "ËÎÌו", false,
 					(short) 200);
 
+			String[] strSheetNames = importVO.getImportData().keySet().toArray(new String[0]);
+
+			Map<String, Integer> errorRowMap = new HashMap<String, Integer>();
+			for (String strSheetName : strSheetNames) {
+				errorRowMap.put(strSheetName, iWriteFromRowIndex);
+			}
+
 			for (DataIOResult dataIOResult : resultVOs) {
 				if (dataIOResult == null) {
 					continue;
@@ -180,14 +188,18 @@ public class ExcelHelper {
 						.getValidationFailure();
 
 				if (mapValidation.isEmpty()) {
-					Row writeRow = mainSheet.getRow(iWriteFromRowIndex + IDataIOHookClient.START_INDEX_ROW);
+					Row writeRow = mainSheet.getRow(errorRowMap.get(strSheetNames[0])
+							+ IDataIOHookClient.START_INDEX_ROW);
+
+					if (writeRow == null) {
+						writeRow = mainSheet.createRow(errorRowMap.get(strSheetNames[0])
+								+ IDataIOHookClient.START_INDEX_ROW);
+					}
 
 					createCell(workbook, writeRow, 0, DataIORes.getPass(), fontSuccess);
 
-					iWriteFromRowIndex++;
+					errorRowMap.put(strSheetNames[0], errorRowMap.get(strSheetNames[0]) + 1);
 				} else {
-					String[] strSheetNames = importVO.getImportData().keySet().toArray(new String[0]);
-
 					for (String strSheetName : strSheetNames) {
 						String[][] dataValue = importVO.getImportData().get(strSheetName);
 
@@ -226,16 +238,16 @@ public class ExcelHelper {
 								Row writeRow = null;
 								if (!isMainSheet) {
 									writeRow = workbook.getSheet(strSheetName).getRow(
-											IDataIOHookClient.START_INDEX_ROW + iRowIndex);
+											errorRowMap.get(strSheetName) + iRowIndex);
+									errorRowMap.put(strSheetNames[0], errorRowMap.get(strSheetNames[0]) + 1);
+								} else {
+									writeRow = mainSheet.getRow(errorRowMap.get(strSheetNames[0]) + iRowIndex);
+									errorRowMap.put(strSheetNames[0], errorRowMap.get(strSheetNames[0]) + 1);
 								}
 
 								createCell(workbook, writeRow, 0, strErrorInfo, fontError);
 
-								// mainSheet
-								writeRow = mainSheet.getRow(IDataIOHookClient.START_INDEX_ROW + iRowIndex);
-								createCell(workbook, writeRow, 0, strErrorInfo, fontError);
-
-								iWriteFromRowIndex++;
+								// iWriteFromRowIndex++;
 							}
 						}
 					}

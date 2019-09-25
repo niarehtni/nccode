@@ -470,4 +470,13 @@ public interface ISegDetailService {
 	 * @throws BusinessException
 	 */
 	public void rebuildSegDetailByPsn(String pk_psndoc, String cyear) throws BusinessException;
+
+	/**
+	 * 強制重建加班分段及消耗
+	 * 
+	 * @param pk_psndoc
+	 *            重建人PK
+	 * @throws BusinessException
+	 */
+	public void forceRebuildSegDetailByPsn(String pk_psndoc) throws BusinessException;
 }

@@ -96,7 +96,8 @@ public class ImportDataImportExecutor extends DataImportExecutor implements IDat
 						rowNCMap.put(rowNo + ":pk_psndoc", pk_psndoc);
 					}
 
-					PsndocDismissedValidator dismChecker = new PsndocDismissedValidator();
+					PsndocDismissedValidator dismChecker = new PsndocDismissedValidator(new UFDateTime(
+							(String) rowNCMap.get(rowNo + ":calendartime")));
 					dismChecker.validate(pk_psndoc, new UFLiteralDate(signDate));
 
 					// DR

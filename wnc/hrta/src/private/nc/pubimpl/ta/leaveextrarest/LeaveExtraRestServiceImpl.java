@@ -256,7 +256,7 @@ public class LeaveExtraRestServiceImpl implements ILeaveExtraRestService {
 				detailVo.setBillhours(vo.getChangedayorhour());
 				if (spentAmount.doubleValue() >= vo.getChangedayorhour().doubleValue()) {
 					detailVo.setConsumedhours(vo.getChangedayorhour());
-					spentAmount.sub(vo.getChangedayorhour());
+					spentAmount = spentAmount.sub(vo.getChangedayorhour());
 				} else {
 					detailVo.setConsumedhours(spentAmount);
 					spentAmount = UFDouble.ZERO_DBL;
@@ -325,8 +325,8 @@ public class LeaveExtraRestServiceImpl implements ILeaveExtraRestService {
 
 					LeaveExtraRestVO[] extvos = getLeaveExtraRestVOsByPsnDate(pk_org, pk_psndoc, beginDate, endDate,
 							isSettled, false);
-					LeaveRegVO[] leaveRegVOs = OTLeaveBalanceUtils.getLeaveRegByPsnYear(pk_org, pk_psndoc, queryYear,
-							pk_leavetypecopy);
+					LeaveRegVO[] leaveRegVOs = OTLeaveBalanceUtils.getLeaveRegByPsnDate(pk_org, pk_psndoc, beginDate,
+							endDate, pk_leavetypecopy);
 					// Яэга
 					for (LeaveExtraRestVO vo : extvos) {
 						UFDouble curAmount = OTLeaveBalanceUtils.getUFDouble(vo.getChangedayorhour()).multiply(

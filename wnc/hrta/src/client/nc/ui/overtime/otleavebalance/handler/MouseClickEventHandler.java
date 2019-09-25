@@ -74,6 +74,7 @@ public class MouseClickEventHandler implements AppEventListener {
 								null, beginDate, endDate, pk_exleavetype, false);
 					}
 					this.getOtListView().getBillListPanel().setBodyValueVO(detailVos);
+					this.getLeaveListView().getBillListPanel().setBodyValueVO(null);
 				} else if (e instanceof ListBodyRowChangedEvent) {
 					// ±íÌåµã»÷
 					String pk_sourceBill = (String) ((BillTable) e.getSource()).getModel().getValueAt(
