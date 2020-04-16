@@ -670,6 +670,62 @@
     </function>
   </entry>
   
+  <!-- ssx added on 2019-10-27, 休假計薪時數統計-->
+  <entry>
+    <string>valueOfLeaveSalaryHour</string>
+    <function>
+      <defaultName>6013commonbasic;06013commonbasic0278</defaultName>
+      <displayName>valueOfLeaveSalaryHour()</displayName>
+      <hintMsgRes>6013commonbasic;06013commonbasic0279</hintMsgRes>
+      <inputSigRes>6013commonbasic;06013commonbasic0278</inputSigRes>
+      <pattern>valueOfLeaveSalaryHour\(\w+\)</pattern>
+       <arguments>valueOfLeaveSalaryHour({0})</arguments>
+      <parapanel>nc.ui.hr.func.TbmLeaveParaPanel</parapanel>
+      <convertor>nc.ui.hr.func.TbmLeaveParaConvertor</convertor>
+      <group>TA</group>
+      <process>nc.impl.wa.func.LeaveTypeSalaryHourParse</process>
+      <productCode>UPP6013func</productCode>
+    </function>
+  </entry>
+  <!--end -->
+
+  <!-- ssx added on 2020-03-14, 離職人員休假計薪時數統計-->
+  <entry>
+    <string>valueOfLeaveLeaveSalaryHour</string>
+    <function>
+      <defaultName>6013commonbasic;06013commonbasic0287</defaultName>
+      <displayName>valueOfLeaveLeaveSalaryHour()</displayName>
+      <hintMsgRes>6013commonbasic;06013commonbasic0288</hintMsgRes>
+      <inputSigRes>6013commonbasic;06013commonbasic0287</inputSigRes>
+      <pattern>valueOfLeaveLeaveSalaryHour\(\w+\)</pattern>
+       <arguments>valueOfLeaveLeaveSalaryHour({0})</arguments>
+      <parapanel>nc.ui.hr.func.TbmLeaveParaPanel</parapanel>
+      <convertor>nc.ui.hr.func.TbmLeaveParaConvertor</convertor>
+      <group>TA</group>
+      <process>nc.impl.wa.func.LeaveLeaveTypeSalaryHourParse</process>
+      <productCode>UPP6013func</productCode>
+    </function>
+  </entry>
+  <!--end -->
+
+    <!-- ssx added on 2019-12-23, 按日統計休假時數-->
+  <entry>
+    <string>valueOfLeaveSalaryTermHour</string>
+    <function>
+      <defaultName>6013commonbasic;06013commonbasic0282</defaultName>
+      <displayName>valueOfLeaveSalaryTermHour</displayName>
+      <hintMsgRes>6013commonbasic;06013commonbasic0283</hintMsgRes>
+      <inputSigRes>6013commonbasic;06013commonbasic0282</inputSigRes>
+      <pattern>valueOfLeaveSalaryTermHour\(.*,.*,.*?\)</pattern>
+       <arguments>valueOfLeaveSalaryTermHour({0},{1},{2})</arguments>
+      <parapanel>nc.ui.wa.formular.TermLeaveHourFunctionEditor</parapanel>
+      <group>WA</group>
+      <process>nc.impl.wa.func.LeaveTypeSalaryTermHourParse</process>
+      <productCode>UPP6013func</productCode>
+    </function>
+  </entry>
+  <!--end -->
+  
   <entry>
     <string>valueOfOvertime</string>
     <function>
@@ -830,6 +886,23 @@
       <parapanel>nc.ui.wa.formular.WageDaysFunctionEditor</parapanel>
       <group>WA</group>
       <process>nc.impl.wa.func.WageDaysParse</process>
+      <productCode>UPP6013func</productCode>
+    </function>
+  </entry>
+  
+  <entry>
+    <string>TERMWAGEDAYS</string>
+    <function>
+      <defaultName>6013commonbasic;06013commonbasic0284</defaultName>
+      <displayName>termWageDays</displayName>
+      <hintMsgRes>6013commonbasic;06013commonbasic0284</hintMsgRes>
+      <inputSigRes>6013commonbasic;06013commonbasic0284</inputSigRes>
+      <pattern>termWageDays\(.*,.*\)</pattern>
+      <arguments>termWageDays({0},{1})</arguments>
+      <returntype>0</returntype>
+      <parapanel>nc.ui.wa.formular.TermWageDaysFunctionEditor</parapanel>
+      <group>WA</group>
+      <process>nc.impl.wa.func.TermWageDaysParse</process>
       <productCode>UPP6013func</productCode>
     </function>
   </entry>
@@ -1120,7 +1193,7 @@
       <displayName>overTimeFee</displayName>
       <hintMsgRes>6013commonbasic;06013commonbasic0268</hintMsgRes>
       <inputSigRes>6013commonbasic;06013commonbasic0268</inputSigRes>
-      <pattern>overTimeFee\(.*,.*,.*\)</pattern>
+      <pattern>overTimeFee\([ ,\d]*[ ]*,[ ,\d]*[ ]*,[ ]*[\',\"]{1}\w{20}[\',\"]{1}[ ]*\)</pattern>
       <arguments>overTimeFee({0},{1},{2})</arguments>
        <returntype>0</returntype>
       <parapanel>nc.ui.wa.formular.OverTimeFeeFunctionEditor</parapanel>
@@ -1138,7 +1211,7 @@
       <displayName>leaveFee</displayName>
       <hintMsgRes>6013commonbasic;06013commonbasic0272</hintMsgRes>
       <inputSigRes>6013commonbasic;06013commonbasic0272</inputSigRes>
-      <pattern>leaveFee\(.*,.*,.*\)</pattern>
+      <pattern>leaveFee\([ ]*[\'\"]{1}\w{20}[\'\"]{1}[ ]*,[ ]*[\'\"]{1}\d{1}[\'\"]{1}[ ]*,[ ]*[\'\"]{1}\w{20}[\'\"]{1}[ ]*\)</pattern>
       <arguments>leaveFee({0},{1},{2})</arguments>
        <returntype>0</returntype>
       <parapanel>nc.ui.wa.formular.LeaveFeeFunctionEditor</parapanel>
@@ -1149,6 +1222,43 @@
   </entry>
   <!-- attendanceSalary func yejk 201800905 end \(\d\) -->
 
+  <!-- ssx added on 2019-12-08, 上期期末獎金基數-->
+  <entry>
+    <string>BONUSBASEOFLASTTERM</string>
+    <function>
+      <defaultName>6013commonbasic;06013commonbasic0280</defaultName>
+      <displayName>bonusBaseOfLastTerm</displayName>
+      <hintMsgRes>6013commonbasic;06013commonbasic0281</hintMsgRes>
+      <inputSigRes>6013commonbasic;06013commonbasic0280</inputSigRes>
+      <pattern>bonusBaseOfLastTerm\(.*?\)</pattern>
+      <arguments>bonusBaseOfLastTerm({0})</arguments>
+      <returntype>0</returntype>
+      <parapanel>nc.ui.wa.formular.BonusBaseFunctionEditor</parapanel>
+      <group>WA</group>
+      <process>nc.impl.wa.func.BonusBaseOfLastTermParse</process>
+      <productCode>UPP6013func</productCode>
+    </function>
+  </entry>
+  <!--end -->  
+
+  <!-- ssx added on 2020-03-03, 最新定薪函数-->
+  <entry>
+    <string>LASTWADOCAMOUNT</string>
+    <function>
+      <defaultName>6013commonbasic;06013commonbasic0285</defaultName>
+      <displayName>lastWadocAmount</displayName>
+      <hintMsgRes>6013commonbasic;06013commonbasic0286</hintMsgRes>
+      <inputSigRes>6013commonbasic;06013commonbasic0285</inputSigRes>
+      <pattern>lastWadocAmount\(.*?\)</pattern>
+      <arguments>lastWadocAmount({0})</arguments>
+      <returntype>0</returntype>
+      <parapanel>nc.ui.wa.formular.LastWadocAmountFunctionEditor</parapanel>
+      <group>WA</group>
+      <process>nc.impl.wa.func.LastWadocAmountParse</process>
+      <productCode>UPP6013func</productCode>
+    </function>
+  </entry>
+  <!--end -->  
   
   <!--按日计算期间外离职人员加班、考勤扣款 add by ssx 2019-04-05 15:27:00 begin -->
   <entry>
@@ -1158,8 +1268,8 @@
       <displayName>leaveOverTimeFee</displayName>
       <hintMsgRes>6013commonbasic;06013commonbasic0275</hintMsgRes>
       <inputSigRes>6013commonbasic;06013commonbasic0274</inputSigRes>
-      <pattern>leaveOverTimeFee\(.*,.*\)</pattern>
-      <arguments>leaveOverTimeFee({0},{1})</arguments>
+      <pattern>leaveOverTimeFee\([ ,\d]*[ ]*,[ ,\d]*[ ]*,[ ]*[\',\"]{1}\w{20}[\',\"]{1}[ ]*\)</pattern>
+      <arguments>leaveOverTimeFee({0},{1},{2})</arguments>
        <returntype>0</returntype>
       <parapanel>nc.ui.wa.formular.LeaveOverTimeFeeFunctionEditor</parapanel>
       <group>WA</group>
@@ -1175,7 +1285,7 @@
       <displayName>leaveLeaveFee</displayName>
       <hintMsgRes>6013commonbasic;06013commonbasic0277</hintMsgRes>
       <inputSigRes>6013commonbasic;06013commonbasic0276</inputSigRes>
-      <pattern>leaveLeaveFee\(.*,.*,.*,.*\)</pattern>
+      <pattern>leaveLeaveFee\([ ]*[\'\"]{1}\w{20}[\'\"]{1}[ ]*,[ ]*[\'\"]{1}\d{1}[\'\"]{1}[ ]*,[ ]*[\'\"]{1}\d{1}[\'\"]{1}[ ]*,[ ]*[\'\"]{1}\w{20}[\'\"]{1}[ ]*\)</pattern>
       <arguments>leaveLeaveFee({0},{1},{2},{3})</arguments>
        <returntype>0</returntype>
       <parapanel>nc.ui.wa.formular.LeaveLeaveFeeFunctionEditor</parapanel>
@@ -1286,4 +1396,61 @@
       <productCode>UPP6013func</productCode>
     </function>
   </entry>
+  
+  <!--新增假期計算取數函數 add by ssx 2020年3月29日 begin -->
+  <entry>
+    <string>valueOfLeaveBalance</string>
+    <function>
+      <defaultName>6013commonbasic;06013commonbasic0289</defaultName>
+      <displayName>valueOfLeaveBalance()</displayName>
+      <hintMsgRes>6013commonbasic;06013commonbasic0290</hintMsgRes>
+      <inputSigRes>6013commonbasic;06013commonbasic0289</inputSigRes>
+      <pattern>valueOfLeaveBalance\(\w+,\w+\)</pattern>
+      <arguments>valueOfLeaveBalance({0},{1})</arguments>
+      <parapanel>nc.ui.hr.func.TbmLeaveBalanceParaPanel</parapanel>
+      <convertor>nc.ui.hr.func.TbmValueOfLeaveBalanceHoursParaConvertor</convertor>
+      <group>TA</group>
+      <process>nc.impl.wa.func.ValueOfLeaveBalanceParse</process>
+      <productCode>UPP6013func</productCode>
+    </function>
+  </entry>
+  <!--新增假期計算取數函數 add by ssx 2020年3月29日 end -->
+  
+    <!--新增補休假勤明細取數函數 add by ssx 2020年3月29日 begin -->
+  <entry>
+    <string>valueOfOTLeaveBalance</string>
+    <function>
+      <defaultName>6013commonbasic;06013commonbasic0291</defaultName>
+      <displayName>valueOfOTLeaveBalance()</displayName>
+      <hintMsgRes>6013commonbasic;06013commonbasic0292</hintMsgRes>
+      <inputSigRes>6013commonbasic;06013commonbasic0291</inputSigRes>
+      <pattern>valueOfOTLeaveBalance\(\w+,\w+\)</pattern>
+      <arguments>valueOfOTLeaveBalance({0},{1})</arguments>
+      <parapanel>nc.ui.hr.func.TbmOTLeaveBalanceParaPanel</parapanel>
+      <convertor>nc.ui.hr.func.TbmValueOfOTLeaveBalanceHoursParaConvertor</convertor>
+      <group>TA</group>
+      <process>nc.impl.wa.func.ValueOfOTLeaveBalanceParse</process>
+      <productCode>UPP6013func</productCode>
+    </function>
+  </entry>
+    <!--新增補休假勤明細取數函數 add by ssx 2020年3月29日 end -->
+    
+    <!--新增補休假勤明細取數函數 add by ssx 2020年3月29日 begin -->
+  <entry>
+    <string>valueOfOTSalaryHour</string>
+    <function>
+      <defaultName>6013commonbasic;06013commonbasic0293</defaultName>
+      <displayName>valueOfOTSalaryHour()</displayName>
+      <hintMsgRes>6013commonbasic;06013commonbasic0294</hintMsgRes>
+      <inputSigRes>6013commonbasic;06013commonbasic0293</inputSigRes>
+      <pattern>valueOfOTSalaryHour\(\w+\)</pattern>
+      <arguments>valueOfOTSalaryHour({0})</arguments>
+      <parapanel>nc.ui.hr.func.TbmOTSalaryHourParaPanel</parapanel>
+      <convertor>nc.ui.hr.func.TbmValueOfOTHoursParaConvertor</convertor>
+      <group>TA</group>
+      <process>nc.impl.wa.func.ValueOfOTSalaryHourParse</process>
+      <productCode>UPP6013func</productCode>
+    </function>
+  </entry>
+    <!--新增補休假勤明細取數函數 add by ssx 2020年3月29日 end -->
 </linked-hash-map>

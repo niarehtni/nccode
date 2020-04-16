@@ -288,6 +288,13 @@ public class BatchEditWizardThirdStep extends WizardStep implements IWizardStepL
 			} else {
 				getRefPane(PayfileVO.PK_FINANACEDEPT).setPK(null);
 			}
+		}else if (e.getKey().equals("taxorgedit")) {
+			if (((UICheckBox) e.getSource()).isSelected()) {
+				getHeadItem(PayfileVO.TAXORG).setEnabled(true);
+			} else {
+				getHeadItem(PayfileVO.TAXORG).setEnabled(false);
+				getRefPane(PayfileVO.TAXORG).setPK(null);
+			}									  
 		}
 
 	}
@@ -311,8 +318,9 @@ public class BatchEditWizardThirdStep extends WizardStep implements IWizardStepL
 		String feetype = (String)getHeadItem(PayfileVO.FEETYPE).getValueObject();
 		String pj = (String)getHeadItem(PayfileVO.PROJECTCODE).getValueObject();
 		String biz = (String)getHeadItem(PayfileVO.BIZTYPE).getValueObject();
+		Boolean taxorgedit = (Boolean) getHeadItem(PayfileVO.TAXORGEDIT).getValueObject();
 		WizardStepValidateException e = new WizardStepValidateException();
-		if (!taxedit && !taxfreeedit && !stopedit&&!fipedit&&!libedit && feetype==null && pj==null && biz==null) {
+		if (!taxedit && !taxfreeedit && !stopedit&&!fipedit&&!libedit && feetype==null && pj==null && biz==null && !taxorgedit) {
 			e.addMsg(ResHelper.getString("60130payfile","060130payfile0256")/*@res "错误"*/, ResHelper.getString("60130payfile","060130payfile0297")/*@res "没有要修改的薪资项目！"*/);
 		}
 		if (taxedit) {
@@ -335,6 +343,12 @@ public class BatchEditWizardThirdStep extends WizardStep implements IWizardStepL
 				}
 			}
 		}
+		if (taxorgedit) {
+			Object taxorg = getHeadItem(PayfileVO.TAXORG).getValueObject();
+			if (taxorg == null) {
+				e.addMsg(ResHelper.getString("60130payfile","060130payfile0245")/*@res "提示"*/,"请选择纳税申报组织");
+			}
+        }
 		if (e.getMsgs().size() > 0) {
 			throw e;
 		}

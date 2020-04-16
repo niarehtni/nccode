@@ -60,6 +60,15 @@ public class TaxBindCaculateService extends DataCaculateService {
 	@Override
 	public void doCaculate() throws BusinessException {
 		try {
+			// ssx add on 2019-05-26 doEncrypt() only on this time:
+			// The extremely unexpected phenomenon that some exception
+			// happened on unknown reason within the calculation interrupted
+			// without rolled back the transactions, cause the encrypted data
+			// cannot be decrypted before interrupt, and those would be the
+			// error on next calculation.
+			doEncrypt();
+			// end
+
 			// ssx add on 20181105
 			// for Decrypt before payment calculation.
 			// 初始化人員子集解密信息
@@ -72,11 +81,19 @@ public class TaxBindCaculateService extends DataCaculateService {
 			doDecryptWaData();
 			// end
 
+			// ssx init overtime fee calculate table
+			initFeeCalculateTable();
+			// end
+
 			WaClassItemVO[] classItemVOs = getClassItemVOs();
 			doCaculate(classItemVOs);
 			doPsnTax();
 			// guoqt审核的时候计算完毕后，清空中间表数据
 			clearMidData();
+
+			// ssx clear overtime fee calculate table
+			clearFeeCalculateTable();
+			// end
 		} finally {
 			// ssx add on 20181105
 			// for Encrypt after payment calculation.

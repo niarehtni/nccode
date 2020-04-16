@@ -178,4 +178,10 @@ public class SignBPImportExecutor extends DataImportExecutor implements IDataExc
 
 	}
 
+	@Override
+	public void doQueryByBP() throws BusinessException {
+		// TODO 自動產生的方法 Stub
+
+	}
+
 }

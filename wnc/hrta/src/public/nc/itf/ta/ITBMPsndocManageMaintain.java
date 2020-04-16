@@ -4,14 +4,14 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 import nc.vo.bd.team.team01.entity.TeamItemVO;
+import nc.vo.hi.psndoc.PsnJobVO;
+import nc.vo.hi.psndoc.PsndocVO;
 import nc.vo.hr.tools.pub.GeneralVO;
 import nc.vo.pub.BusinessException;
 import nc.vo.pub.lang.UFLiteralDate;
 import nc.vo.ta.psndoc.AssignCardDescriptor;
 import nc.vo.ta.psndoc.TBMPsndocVO;
 import nc.vo.uif2.LoginContext;
-import nc.vo.hi.psndoc.PsnJobVO;
-import nc.vo.hi.psndoc.PsndocVO;
 
 public interface ITBMPsndocManageMaintain {
 
@@ -43,12 +43,16 @@ public interface ITBMPsndocManageMaintain {
 	 * @throws BusinessException
 	 */
 	TBMPsndocVO[] batchInsert(LoginContext context, TBMPsndocVO[] vos, int tbm_prop, UFLiteralDate beginDate,
-			String pk_place,boolean isUpdatePsnCalendar)
+			String pk_place, boolean isUpdatePsnCalendar) throws BusinessException;
+
+	/**
+	 * 考勤增加不同步班次標識 by George 20200326 特性 #33851 批量新增考勤档案，新增邏輯參數為
+	 * 不同步班組工作日曆(isNotsyncal)
+	 */
+	TBMPsndocVO[] batchInsert(LoginContext context, TBMPsndocVO[] vos, int tbm_prop, UFLiteralDate beginDate,
+			String pk_place, int tbm_weekform, int tbm_otcontrol, boolean isUpdatePsnCalendar, boolean isNotsyncal)
 			throws BusinessException;
 
-	TBMPsndocVO[] batchInsert(LoginContext context,TBMPsndocVO[] vos, int tbm_prop, UFLiteralDate beginDate,
-			String pk_place, int tbm_weekform,int tbm_otcontrol,boolean isUpdatePsnCalendar)
-			throws BusinessException;
 	/**
 	 * 批量更新考勤档案
 	 * 
@@ -82,6 +86,18 @@ public interface ITBMPsndocManageMaintain {
 	 *            :是否更新工作日历
 	 */
 	TBMPsndocVO insert(TBMPsndocVO vo, boolean isUpdatePsnCalendar) throws BusinessException;
+
+	/**
+	 * 新增考勤档案（同步班组）
+	 * 
+	 * @param vo
+	 * @param isUpdatePsnCalendar
+	 * @param isCreateTeamMember
+	 * @return
+	 * @throws BusinessException
+	 */
+	TBMPsndocVO insert(TBMPsndocVO vo, boolean isUpdatePsnCalendar, boolean isCreateTeamMember)
+			throws BusinessException;
 
 	/**
 	 * 批量新增考勤档案
@@ -136,7 +152,8 @@ public interface ITBMPsndocManageMaintain {
 
 	String checkTBMPsndocDate(TBMPsndocVO vo) throws BusinessException;
 
-	 TBMPsndocVO insert(PsndocVO[] psndocvos,TBMPsndocVO vos,PsnJobVO vo,boolean isUpdatePsnCalendar,boolean isNew) throws BusinessException;
+	TBMPsndocVO insert(PsndocVO[] psndocvos, TBMPsndocVO vos, PsnJobVO vo, boolean isUpdatePsnCalendar, boolean isNew)
+			throws BusinessException;
 
 	/**
 	 * 更新員工工作日曆屬性date_daytype
@@ -158,5 +175,5 @@ public interface ITBMPsndocManageMaintain {
 	 * @param isCheck
 	 * @throws BusinessException
 	 */
-	 int update(String date,String pk_psndoc,int type,String pk_org) throws BusinessException;
+	int update(String date, String pk_psndoc, int type, String pk_org) throws BusinessException;
 }

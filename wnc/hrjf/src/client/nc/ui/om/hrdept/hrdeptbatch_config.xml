@@ -188,6 +188,11 @@
 		<property name="dataManager" ref="modelDataManager"></property>
 	</bean>
 
+<!-- 
+	<bean id="flashInnercodeAction" class="nc.ui.om.hrdept.action.FlashInnercodeAction">
+		<property name="model" ref="manageAppModel" />
+	</bean>
+ -->
 	<bean id="RenameDeptAction" class="nc.ui.om.hrdept.action.RenameDeptAction">
 		<property name="model" ref="manageAppModel" />
 		<property name="validationService" ref="modificationValidator" />

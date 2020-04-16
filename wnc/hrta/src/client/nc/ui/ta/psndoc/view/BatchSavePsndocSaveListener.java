@@ -74,6 +74,11 @@ public class BatchSavePsndocSaveListener implements IWizardDialogListener {
 		int tbm_otcontrol = (Integer)(cardPanel.getTbmOtControComboBox()).getSelectdItemValue();
 		//开始日期是否按到职日期计算
 		boolean isInduty = cardPanel.getPostDateChcBx().isSelected();
+		
+		// 考勤增加不同步班次標識  by George 20200326 特性 #33851
+		// 取得是否 不同步班組工作日曆
+		boolean isNotsyncal = cardPanel.getNotsyncalDateChcBx().isSelected();
+		
 		//取得开始日期
 		UFLiteralDate beginDate = cardPanel.getBeginDate();
 		//取得考勤地点
@@ -90,8 +95,10 @@ public class BatchSavePsndocSaveListener implements IWizardDialogListener {
 		}
 		try {
 			//批量新增
+			// 考勤增加不同步班次標識  by George 20200326 特性 #33851
+			// 批量新增考勤档案，新增邏輯參數為 不同步班組工作日曆(isNotsyncal) 
 			vos = NCLocator.getInstance().lookup(ITBMPsndocManageMaintain.class).batchInsert(getModel().getContext(),
-					vos, tbm_prop, beginDate,pk_place,tbm_weekform,tbm_otcontrol,isArrangeClass);
+					vos, tbm_prop, beginDate,pk_place,tbm_weekform,tbm_otcontrol,isArrangeClass,isNotsyncal);
 		} catch(BusinessException e) {
 			Logger.error(e.getMessage(), e);
 			throw e;

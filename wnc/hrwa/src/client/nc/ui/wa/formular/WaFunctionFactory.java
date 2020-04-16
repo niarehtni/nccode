@@ -17,12 +17,12 @@ import nc.vo.wa.formula.WaFormulaXmlHelper;
 /**
  * 
  * @author: xuanlt
- * @date: 2010-4-1 ä¸Šåˆ11:10:33
+ * @date: 2010-4-1 ÉÏÎç11:10:33
  * @since: eHR V6.0
- * @èµ°æŸ¥äºº:
- * @èµ°æŸ¥æ—¥æœŸ:
- * @ä¿®æ”¹äºº:
- * @ä¿®æ”¹æ—¥æœŸ:
+ * @×ß²éÈË:
+ * @×ß²éÈÕÆÚ:
+ * @ĞŞ¸ÄÈË:
+ * @ĞŞ¸ÄÈÕÆÚ:
  */
 @SuppressWarnings("restriction")
 public class WaFunctionFactory implements IFunctionFactory {
@@ -131,13 +131,13 @@ public class WaFunctionFactory implements IFunctionFactory {
 		// 2019-05-29 ended
 
 		try {
-			// v61 å†çœ‹çœ‹å¦‚ä½•å®ç°.å¦‚æœä¹ˆæœ‰å®‰è£…æ—¶é—´ç®¡ç†æ¨¡å—ï¼Œç¦æ­¢ä½¿ç”¨è¿™è¿ä¸ªå‡½æ•°
+			// v61 ÔÙ¿´¿´ÈçºÎÊµÏÖ.Èç¹ûÃ´ÓĞ°²×°Ê±¼ä¹ÜÀíÄ£¿é£¬½ûÖ¹Ê¹ÓÃÕâÁ¬¸öº¯Êı
 			// if (PubEnv.isModuleStarted(null, PubEnv.MODULE_HRTA)) {
 			fvo = WaFormulaXmlHelper.getFunctionVO(FunctionKey.WAGEDAYS);
 			HRFormulaItem wagesDays = new HRFormulaItem(fvo.getDisplayName(), fvo.getDefaultName(), fvo.getInputSig(),
 					fvo.getHintMsg(), fvo.getReturntype());
 
-			// ä¸ºtaxRateæ·»åŠ ç¼–è¾‘å™¨
+			// ÎªtaxRateÌí¼Ó±à¼­Æ÷
 			editor = null;
 			try {
 				editor = (Component) Class.forName(fvo.getParapanel()).newInstance();
@@ -152,7 +152,7 @@ public class WaFunctionFactory implements IFunctionFactory {
 			wagesDays.setEditor(editor);
 			items.add(wagesDays);
 
-			// å€é–“ç•™åœå¤©æ•¸
+			// …^égÁôÍ£Ìì”µ
 			fvo = WaFormulaXmlHelper.getFunctionVO(FunctionKey.INTERVALDURATION);
 			HRFormulaItem intervalDuration = new HRFormulaItem(fvo.getDisplayName(), fvo.getDefaultName(),
 					fvo.getInputSig(), fvo.getHintMsg(), fvo.getReturntype());
@@ -163,7 +163,7 @@ public class WaFunctionFactory implements IFunctionFactory {
 			fvo = WaFormulaXmlHelper.getFunctionVO(FunctionKey.OVERTIMEPAY);
 			HRFormulaItem overtimePays = new HRFormulaItem(fvo.getDisplayName(), fvo.getDefaultName(),
 					fvo.getInputSig(), fvo.getHintMsg(), fvo.getReturntype());
-			// ä¸ºtaxRateæ·»åŠ ç¼–è¾‘å™¨
+			// ÎªtaxRateÌí¼Ó±à¼­Æ÷
 			editor = null;
 			try {
 				editor = (Component) Class.forName(fvo.getParapanel()).newInstance();
@@ -180,7 +180,7 @@ public class WaFunctionFactory implements IFunctionFactory {
 			fvo = WaFormulaXmlHelper.getFunctionVO(FunctionKey.TAXABLEOVERTIMEPAY);
 			HRFormulaItem taxableOvertimePays = new HRFormulaItem(fvo.getDisplayName(), fvo.getDefaultName(),
 					fvo.getInputSig(), fvo.getHintMsg(), fvo.getReturntype());
-			// ä¸ºtaxRateæ·»åŠ ç¼–è¾‘å™¨
+			// ÎªtaxRateÌí¼Ó±à¼­Æ÷
 			editor = null;
 			try {
 				editor = (Component) Class.forName(fvo.getParapanel()).newInstance();
@@ -204,14 +204,14 @@ public class WaFunctionFactory implements IFunctionFactory {
 					fvo.getInputSig(), fvo.getHintMsg(), fvo.getReturntype());
 			items.add(lastMonWorkDays);
 
-			// æ·»åŠ è«‹å‡æ‰£æ¬¾å‡½æ•¸ add by ward 20180511 begin
+			// Ìí¼ÓÕˆ¼Ù¿Û¿îº¯”µ add by ward 20180511 begin
 			fvo = WaFormulaXmlHelper.getFunctionVO(FunctionKey.STATISTICLEAVECHARGE);
 			HRFormulaItem statisticLeaveCharge = new HRFormulaItem(fvo.getDisplayName(), fvo.getDefaultName(),
 					fvo.getInputSig(), fvo.getHintMsg(), fvo.getReturntype());
 			items.add(statisticLeaveCharge);
-			// æ·»åŠ è«‹å‡æ‰£æ¬¾å‡½æ•¸ add by ward 20180511 end
+			// Ìí¼ÓÕˆ¼Ù¿Û¿îº¯”µ add by ward 20180511 end
 
-			// æ·»åŠ å¤–åŠ è£œä¼‘å‰©é¤˜æ™‚æ•¸å‡½æ•¸
+			// Ìí¼ÓÍâ¼ÓÑaĞİÊ£ğN•r”µº¯”µ
 			// MOD by ssx on 2019-01-25
 			fvo = WaFormulaXmlHelper.getFunctionVO(FunctionKey.YEARLYRESTHOURS);
 			HRFormulaItem yearlyresthours = new HRFormulaItem(fvo.getDisplayName(), fvo.getDefaultName(),
@@ -234,7 +234,7 @@ public class WaFunctionFactory implements IFunctionFactory {
 			HRFormulaItem taxRate = new HRFormulaItem(fvo.getDisplayName(), fvo.getDefaultName(), fvo.getInputSig(),
 					fvo.getHintMsg(), fvo.getReturntype());
 
-			// ä¸ºtaxRateæ·»åŠ ç¼–è¾‘å™¨
+			// ÎªtaxRateÌí¼Ó±à¼­Æ÷
 			editor = null;
 			try {
 				editor = (Component) Class.forName(fvo.getParapanel()).newInstance();
@@ -249,8 +249,8 @@ public class WaFunctionFactory implements IFunctionFactory {
 			items.add(taxRate);
 		}
 
-		// #21266 å¢åŠ è€ƒå‹¤é¡è–ªè³‡å‡½æ•¸
-		// æŒ‰æ—¥åˆè®¡åŠ ç­è´¹ OVERTIMEFEE yejk 18-09-07
+		// #21266 Ôö¼Ó¿¼ÇÚîĞ½ÙYº¯”µ
+		// °´ÈÕºÏ¼Æ¼Ó°à·Ñ OVERTIMEFEE yejk 18-09-07
 		fvo = WaFormulaXmlHelper.getFunctionVO("OVERTIMEFEE");
 		HRFormulaItem overTimeFeeItem = new HRFormulaItem(fvo.getDisplayName(), fvo.getDefaultName(),
 				fvo.getInputSig(), fvo.getHintMsg(), fvo.getReturntype());
@@ -268,7 +268,7 @@ public class WaFunctionFactory implements IFunctionFactory {
 
 		overTimeFeeItem.setEditor(editor);
 		items.add(overTimeFeeItem);
-		// æŒ‰æ—¥åˆè®¡è€ƒå‹¤æ‰£æ¬¾é¡¹ LEAVEFEE yejk 18-09-11
+		// °´ÈÕºÏ¼Æ¿¼ÇÚ¿Û¿îÏî LEAVEFEE yejk 18-09-11
 		fvo = WaFormulaXmlHelper.getFunctionVO("LEAVEFEE");
 		HRFormulaItem leaveFeeItem = new HRFormulaItem(fvo.getDisplayName(), fvo.getDefaultName(), fvo.getInputSig(),
 				fvo.getHintMsg(), fvo.getReturntype());
@@ -287,7 +287,67 @@ public class WaFunctionFactory implements IFunctionFactory {
 		leaveFeeItem.setEditor(editor);
 		items.add(leaveFeeItem);
 
-		// æ·»åŠ æ—¥è–ªå‡½æ•° add by ward 2018å¹´9æœˆ18æ—¥14:48:41 begin
+		// °´ÈÕºÏ¼ÆĞİ¼Ù•r”µ by ssx on 2019-12-23
+		fvo = WaFormulaXmlHelper.getFunctionVO("valueOfLeaveSalaryTermHour");
+		HRFormulaItem valueOfLeaveSalaryTermHourItem = new HRFormulaItem(fvo.getDisplayName(), fvo.getDefaultName(),
+				fvo.getInputSig(), fvo.getHintMsg(), fvo.getReturntype());
+
+		editor = null;
+		try {
+			editor = (Component) Class.forName(fvo.getParapanel()).newInstance();
+		} catch (InstantiationException e) {
+			Logger.error(e.getMessage(), e);
+		} catch (IllegalAccessException e) {
+			Logger.error(e.getMessage(), e);
+		} catch (ClassNotFoundException e) {
+			Logger.error(e.getMessage(), e);
+		}
+
+		valueOfLeaveSalaryTermHourItem.setEditor(editor);
+		items.add(valueOfLeaveSalaryTermHourItem);
+		// end
+
+		// ssx added on 2019-12-11
+		// ÉÏÆÚÆÚÄ©ª„½ğ»ù”µ
+		fvo = WaFormulaXmlHelper.getFunctionVO(FunctionKey.BONUSBASEOFLASTTERM);
+		HRFormulaItem bonusBaseOfLastTerm = new HRFormulaItem(fvo.getDisplayName(), fvo.getDefaultName(),
+				fvo.getInputSig(), fvo.getHintMsg(), fvo.getReturntype());
+
+		editor = null;
+		try {
+			editor = (Component) Class.forName(fvo.getParapanel()).newInstance();
+		} catch (InstantiationException e) {
+			Logger.error(e.getMessage(), e);
+		} catch (IllegalAccessException e) {
+			Logger.error(e.getMessage(), e);
+		} catch (ClassNotFoundException e) {
+			Logger.error(e.getMessage(), e);
+		}
+		bonusBaseOfLastTerm.setEditor(editor);
+		items.add(bonusBaseOfLastTerm);
+		// end
+
+		// ssx added on 2019-12-11
+		// ×îĞÂ¶¨Ğ½º¯”µ
+		fvo = WaFormulaXmlHelper.getFunctionVO(FunctionKey.LASTWADOCAMOUNT);
+		HRFormulaItem lastWadocAmount = new HRFormulaItem(fvo.getDisplayName(), fvo.getDefaultName(),
+				fvo.getInputSig(), fvo.getHintMsg(), fvo.getReturntype());
+
+		editor = null;
+		try {
+			editor = (Component) Class.forName(fvo.getParapanel()).newInstance();
+		} catch (InstantiationException e) {
+			Logger.error(e.getMessage(), e);
+		} catch (IllegalAccessException e) {
+			Logger.error(e.getMessage(), e);
+		} catch (ClassNotFoundException e) {
+			Logger.error(e.getMessage(), e);
+		}
+		lastWadocAmount.setEditor(editor);
+		items.add(lastWadocAmount);
+		// end
+
+		// Ìí¼ÓÈÕĞ½º¯Êı add by ward 2018Äê9ÔÂ18ÈÕ14:48:41 begin
 		fvo = WaFormulaXmlHelper.getFunctionVO("DAYSALARY");
 		if (null != fvo) {
 			HRFormulaItem daySalary = new HRFormulaItem(fvo.getDisplayName(), fvo.getDefaultName(), fvo.getInputSig(),
@@ -305,8 +365,8 @@ public class WaFunctionFactory implements IFunctionFactory {
 			daySalary.setEditor(editor);
 			items.add(daySalary);
 		}
-		// æ·»åŠ æ—¥è–ªå‡½æ•° add by ward 2018å¹´9æœˆ18æ—¥14:48:45 end
-		// æ·»åŠ  æ·»åŠ å¹´å‡ç»“è–ªæ—¶é•¿ add by he 2018å¹´10æœˆ11æ—¥14:48:45 begin
+		// Ìí¼ÓÈÕĞ½º¯Êı add by ward 2018Äê9ÔÂ18ÈÕ14:48:45 end
+		// Ìí¼Ó Ìí¼ÓÄê¼Ù½áĞ½Ê±³¤ add by he 2018Äê10ÔÂ11ÈÕ14:48:45 begin
 
 		fvo = WaFormulaXmlHelper.getFunctionVO("ALPAIDHOURS");
 		if (null != fvo) {
@@ -325,9 +385,9 @@ public class WaFunctionFactory implements IFunctionFactory {
 			alPaidHours.setEditor(editor);
 			items.add(alPaidHours);
 		}
-		// æ·»åŠ æ·»åŠ å¹´å‡ç»“è–ªæ—¶é•¿ add by he 2018å¹´10æœˆ11æ—¥14:48:45 end
+		// Ìí¼ÓÌí¼ÓÄê¼Ù½áĞ½Ê±³¤ add by he 2018Äê10ÔÂ11ÈÕ14:48:45 end
 
-		// MOD æŒ‰æ—¥åˆè®¡ç¦»èŒåŠ ç­è´¹ LEAVEOVERTIMEFEE
+		// MOD °´ÈÕºÏ¼ÆÀëÖ°¼Ó°à·Ñ LEAVEOVERTIMEFEE
 		// add by ssx on 2019-04-05
 		fvo = WaFormulaXmlHelper.getFunctionVO("LEAVEOVERTIMEFEE");
 		HRFormulaItem leaveOverTimeFeeItem = new HRFormulaItem(fvo.getDisplayName(), fvo.getDefaultName(),
@@ -348,7 +408,7 @@ public class WaFunctionFactory implements IFunctionFactory {
 		items.add(leaveOverTimeFeeItem);
 		// end MOD
 
-		// æŒ‰æ—¥åˆè®¡ç¦»èŒè€ƒå‹¤æ‰£æ¬¾é¡¹ LEAVEFEE yejk 18-09-11
+		// °´ÈÕºÏ¼ÆÀëÖ°¿¼ÇÚ¿Û¿îÏî LEAVEFEE yejk 18-09-11
 		fvo = WaFormulaXmlHelper.getFunctionVO("LEAVELEAVEFEE");
 		HRFormulaItem leaveLeaveFeeItem = new HRFormulaItem(fvo.getDisplayName(), fvo.getDefaultName(),
 				fvo.getInputSig(), fvo.getHintMsg(), fvo.getReturntype());
@@ -368,13 +428,13 @@ public class WaFunctionFactory implements IFunctionFactory {
 		items.add(leaveLeaveFeeItem);
 		//
 
-		// æ³•é™¢å¼ºåˆ¶æ‰£æ¬¾ by he
+		// ·¨ÔºÇ¿ÖÆ¿Û¿î by he
 		fvo = WaFormulaXmlHelper.getFunctionVO(FunctionKey.COURTDEDUCT);
 		HRFormulaItem courtdeduct = new HRFormulaItem(fvo.getDisplayName(), fvo.getDefaultName(), fvo.getInputSig(),
 				fvo.getHintMsg(), fvo.getReturntype());
 
 		items.add(courtdeduct);
-		// èµ„é£è´¹åŸºæ•° by he
+		// ×ÊÇ²·Ñ»ùÊı by he
 		fvo = WaFormulaXmlHelper.getFunctionVO("SCENARIOFEEBASE");
 		if (null != fvo) {
 			HRFormulaItem scenarioFeeBase = new HRFormulaItem(fvo.getDisplayName(), fvo.getDefaultName(),
@@ -392,6 +452,27 @@ public class WaFunctionFactory implements IFunctionFactory {
 			scenarioFeeBase.setEditor(editor);
 			items.add(scenarioFeeBase);
 		}
+
+		// ssx add on 2020-02-21
+		fvo = WaFormulaXmlHelper.getFunctionVO(FunctionKey.TERMWAGEDAYS);
+		HRFormulaItem termwagesDays = new HRFormulaItem(fvo.getDisplayName(), fvo.getDefaultName(), fvo.getInputSig(),
+				fvo.getHintMsg(), fvo.getReturntype());
+
+		// ÎªtaxRateÌí¼Ó±à¼­Æ÷
+		editor = null;
+		try {
+			editor = (Component) Class.forName(fvo.getParapanel()).newInstance();
+		} catch (InstantiationException e) {
+			Logger.error(e.getMessage(), e);
+		} catch (IllegalAccessException e) {
+			Logger.error(e.getMessage(), e);
+		} catch (ClassNotFoundException e) {
+			Logger.error(e.getMessage(), e);
+		}
+
+		termwagesDays.setEditor(editor);
+		items.add(termwagesDays);
+
 		return items;
 	}
 

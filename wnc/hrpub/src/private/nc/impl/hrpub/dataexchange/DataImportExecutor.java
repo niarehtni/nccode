@@ -131,6 +131,7 @@ public class DataImportExecutor extends AbstractExecutor {
 			Logger.error("Biz handler Class: syn handler 2 public.");
 			synClassProperties(this.extendBizClass, this);
 		}
+
 		if (isSaveByBP()) {
 			if (extendClassLoaded) {
 				Logger.error("Biz handler Class: doUpdateByBP");
@@ -189,7 +190,7 @@ public class DataImportExecutor extends AbstractExecutor {
 		return false;
 	}
 
-	private void synClassProperties(DataImportExecutor source, IDataExchangeExternalExecutor target) {
+	private void synClassProperties(AbstractExecutor source, IDataExchangeExternalExecutor target) {
 		if (target != null) {
 			Method[] methods = target.getClass().getMethods();
 			for (Method setMethod : methods) {
@@ -212,7 +213,7 @@ public class DataImportExecutor extends AbstractExecutor {
 		}
 	}
 
-	private void synClassProperties(IDataExchangeExternalExecutor source, DataImportExecutor target) {
+	private void synClassProperties(IDataExchangeExternalExecutor source, AbstractExecutor target) {
 		if (target != null) {
 			Method[] methods = target.getClass().getMethods();
 			for (Method setMethod : methods) {
@@ -776,42 +777,6 @@ public class DataImportExecutor extends AbstractExecutor {
 		}
 	}
 
-	private Object getValueByEntity(String propID, Object value) throws BusinessException {
-		if (this.getBizTableMap().containsKey(propID)) {
-			String strSQL = "select "
-					+ this.getBizKeyMap().get(propID)
-					+ " from "
-					+ this.getBizTableMap().get(propID)
-					+ " where "
-					+ this.getBizCodeMap().get(propID)
-					+ ((value == null || value.toString().toLowerCase().equals("null")) ? " is null " : "='"
-							+ String.valueOf(value).trim() + "'");
-
-			if (this.getBizTableMap().get(propID).equals("bd_defdoc")) {
-				strSQL += " and pk_defdoclist = (select pk_defdoclist from bd_defdoclist where code = (select replace(name, 'Defdoc-', '') from md_class where id = (select datatype from md_property where id='"
-						+ propID + "')))";
-			} else if (this.getBizOrgMap().containsKey(propID)) {
-				strSQL += " and ("
-						+ this.getBizOrgMap().get(propID)
-						+ " is null or "
-						+ this.getBizOrgMap().get(propID)
-						+ "='~' or "
-						+ this.getBizOrgMap().get(propID)
-						+ "='"
-						+ (this.getBizOrgMap().get(propID).equals("pk_group") ? this.getPk_group() : this.getPk_org())
-						+ (StringUtils.isEmpty(this.getPk_group()) ? "" : ("' or " + this.getBizOrgMap().get(propID)
-								+ "='" + this.getPk_group() + "'")) + " or " + this.getBizOrgMap().get(propID)
-						+ "='GLOBLE00000000000000')";
-			}
-
-			Object refValue = this.getBaseDAO().executeQuery(strSQL, new ColumnProcessor());
-			return refValue;
-		}
-
-		return (value == null || value.toString().toLowerCase().equals("null")) ? null : value;
-
-	}
-
 	private String findPropertyName(String propertyid) throws BusinessException {
 		if (!propertyIDNameMap.containsKey(propertyid)) {
 			List<IAttribute> attribs = this.getBusinessEntity().getAttributes();
@@ -852,6 +817,42 @@ public class DataImportExecutor extends AbstractExecutor {
 		} else {
 			return "$RESERVED_PROPERTY$" + mapName;
 		}
+	}
+
+	private Object getValueByEntity(String propID, Object value) throws BusinessException {
+		if (this.getBizTableMap().containsKey(propID)) {
+			String strSQL = "select "
+					+ this.getBizKeyMap().get(propID)
+					+ " from "
+					+ this.getBizTableMap().get(propID)
+					+ " where "
+					+ this.getBizCodeMap().get(propID)
+					+ ((value == null || value.toString().toLowerCase().equals("null")) ? " is null " : "='"
+							+ String.valueOf(value).trim() + "'");
+
+			if (this.getBizTableMap().get(propID).equals("bd_defdoc")) {
+				strSQL += " and pk_defdoclist = (select pk_defdoclist from bd_defdoclist where code = (select replace(name, 'Defdoc-', '') from md_class where id = (select datatype from md_property where id='"
+						+ propID + "')))";
+			} else if (this.getBizOrgMap().containsKey(propID)) {
+				strSQL += " and ("
+						+ this.getBizOrgMap().get(propID)
+						+ " is null or "
+						+ this.getBizOrgMap().get(propID)
+						+ "='~' or "
+						+ this.getBizOrgMap().get(propID)
+						+ "='"
+						+ (this.getBizOrgMap().get(propID).equals("pk_group") ? this.getPk_group() : this.getPk_org())
+						+ (StringUtils.isEmpty(this.getPk_group()) ? "" : ("' or " + this.getBizOrgMap().get(propID)
+								+ "='" + this.getPk_group() + "'")) + " or " + this.getBizOrgMap().get(propID)
+						+ "='GLOBLE00000000000000')";
+			}
+
+			Object refValue = this.getBaseDAO().executeQuery(strSQL, new ColumnProcessor());
+			return refValue;
+		}
+
+		return (value == null || value.toString().toLowerCase().equals("null")) ? null : value;
+
 	}
 
 	protected String getPk_org_v() throws BusinessException {
@@ -991,7 +992,7 @@ public class DataImportExecutor extends AbstractExecutor {
 	protected Map<String, Object> getPsnjob(String pk_psndoc, String startdate) throws BusinessException {
 		String strSQL = "select pk_psnjob, pk_psnorg, pk_dept_v from hi_psnjob where pk_psndoc="
 				+ getStringValue(pk_psndoc) + " and " + getStringValue(startdate)
-				+ " between begindate and isnull(enddate, '9999-12-31') and (endflag='N' or nvl(enddate,'~')<>'~')";
+				+ " between begindate and isnull(enddate, '9999-12-31') and trnsevent<>4";
 		Map<String, Object> psnjob = (Map<String, Object>) this.getBaseDAO().executeQuery(strSQL, new MapProcessor());
 
 		return psnjob;

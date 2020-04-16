@@ -73,7 +73,7 @@ public class OverTimeTypeCardPanel extends TimeItemCardPanel {
 	@Override
 	public UIPanel getUpPanel() {
 		UIPanel upPanel = new UIPanel();
-	FormLayout layout = new FormLayout(colwidth, "p,3dlu,p,3dlu,p,3dlu,p,3dlu,p,3dlu,p,3dlu,p,3dlu,p,3dlu,p");
+		FormLayout layout = new FormLayout(colwidth, "p,3dlu,p,3dlu,p,3dlu,p,3dlu,p,3dlu,p,3dlu,p,3dlu,p,3dlu,p");
 		DefaultFormBuilder builder = new DefaultFormBuilder(layout, upPanel);
 
 		builder.append(PublicLangRes.CODE());
@@ -134,11 +134,11 @@ public class OverTimeTypeCardPanel extends TimeItemCardPanel {
 		builder.nextLine();
 		builder.nextLine();
 
-	builder.append(new UILabel());
-	// 是否纳入月加班上限统计
-	builder.append(getIsIncludeLimitCheckBox());
-	// 加班开始前?小时后开始计入上限统计
-	UILabel lblFirstOTHours = new UILabel("納入統計前時數");
+		builder.append(new UILabel());
+		// 是否纳入月加班上限统计
+		builder.append(getIsIncludeLimitCheckBox());
+		// 加班开始前?小时后开始计入上限统计
+		UILabel lblFirstOTHours = new UILabel("納入統計前時數");
 		builder.append(lblFirstOTHours);
 		builder.append(getTxtFirstOTHours());
 		builder.nextLine();
@@ -153,79 +153,84 @@ public class OverTimeTypeCardPanel extends TimeItemCardPanel {
 		builder.append(getTxtDeductHous());
 		builder.nextLine();
 		builder.nextLine();
-	UILabel lblDateType = new UILabel("日曆天類型");
-	builder.append(lblDateType);
-	builder.append(getCboDateType());
-	builder.append(getDateTypeDefault());
-	builder.nextLine();
-	builder.nextLine();
-    }
-    private UICheckBox chkDateTypeDef = null;
-    public UICheckBox getDateTypeDefault() {
-	if (chkDateTypeDef == null) {
-	    chkDateTypeDef = new UICheckBox();
-	    chkDateTypeDef.setName("ISDATETYPEDEF");
-	    chkDateTypeDef.setText("是否默認");
-	    getComponentList().add(chkDateTypeDef);
+		UILabel lblDateType = new UILabel("日曆天類型");
+		builder.append(lblDateType);
+		builder.append(getCboDateType());
+		builder.append(getDateTypeDefault());
+		builder.nextLine();
+		builder.nextLine();
 	}
-	return chkDateTypeDef;
-    }
 
-    UIComboBox cboDateType = null;
-    @SuppressWarnings("unchecked")
-    public UIComboBox getCboDateType() {
-	if (cboDateType == null) {
-	    cboDateType = new UIComboBox();
-	    cboDateType.addItem(new DefaultConstEnum(CalendarDateTypeEnum.NORMAL, "平日"));
-	    cboDateType.addItem(new DefaultConstEnum(CalendarDateTypeEnum.OFFDAY, "休息日"));
-	    cboDateType.addItem(new DefaultConstEnum(CalendarDateTypeEnum.HOLIDAY, "例假日"));
-	    cboDateType.addItem(new DefaultConstEnum(CalendarDateTypeEnum.NATIONALDAY, "國定假日"));
-	    cboDateType.addActionListener(new ActionListener() {
-		@Override
-		public void actionPerformed(ActionEvent e) {
-		    if (e.getSource() != null) {
-			UIComboBox dateType = (UIComboBox) e.getSource();
-			if (dateType.getSelectedItem() != null && cboDateType.isEnabled()) {
-			    CalendarDateTypeEnum value = (CalendarDateTypeEnum) dateType.getSelectdItemValue();
-			    IUAPQueryBS query = NCLocator.getInstance().lookup(IUAPQueryBS.class);
-			    Collection rule;
-			    try {
-				rule = query.retrieveByClause(SegRuleVO.class,
-					"isnull(dr,0)=0 and isdefault='Y' and datetype=" + value.toIntValue());
-				if (rule != null && rule.size() > 0) {
-				    getRefSegRule().setPK(
-					    ((SegRuleVO) rule.toArray(new SegRuleVO[0])[0]).getPk_segrule());
-				} else {
-				    getRefSegRule().setPK(null);
-				}
-			    } catch (BusinessException ex) {
-				ExceptionUtils.wrappBusinessException(ex.getMessage());
-			    }
-			}
-		    }
+	private UICheckBox chkDateTypeDef = null;
+
+	public UICheckBox getDateTypeDefault() {
+		if (chkDateTypeDef == null) {
+			chkDateTypeDef = new UICheckBox();
+			chkDateTypeDef.setName("ISDATETYPEDEF");
+			chkDateTypeDef.setText("是否默認");
+			getComponentList().add(chkDateTypeDef);
 		}
-	    });
-	    getComponentList().add(cboDateType);
+		return chkDateTypeDef;
 	}
-	return cboDateType;
-    }
+
+	UIComboBox cboDateType = null;
+
+	@SuppressWarnings("unchecked")
+	public UIComboBox getCboDateType() {
+		if (cboDateType == null) {
+			cboDateType = new UIComboBox();
+			cboDateType.addItem(new DefaultConstEnum(CalendarDateTypeEnum.NORMAL, "平日"));
+			cboDateType.addItem(new DefaultConstEnum(CalendarDateTypeEnum.OFFDAY, "休息日"));
+			cboDateType.addItem(new DefaultConstEnum(CalendarDateTypeEnum.HOLIDAY, "例假日"));
+			cboDateType.addItem(new DefaultConstEnum(CalendarDateTypeEnum.NATIONALDAY, "國定假日"));
+			cboDateType.addItem(new DefaultConstEnum(CalendarDateTypeEnum.EVENTDAY, "事件"));
+			cboDateType.addActionListener(new ActionListener() {
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					if (e.getSource() != null) {
+						UIComboBox dateType = (UIComboBox) e.getSource();
+						if (dateType.getSelectedItem() != null && cboDateType.isEnabled()) {
+							CalendarDateTypeEnum value = (CalendarDateTypeEnum) dateType.getSelectdItemValue();
+							IUAPQueryBS query = NCLocator.getInstance().lookup(IUAPQueryBS.class);
+							Collection rule;
+							try {
+								rule = query.retrieveByClause(SegRuleVO.class,
+										"isnull(dr,0)=0 and isdefault='Y' and datetype=" + value.toIntValue());
+								if (rule != null && rule.size() > 0) {
+									getRefSegRule().setPK(
+											((SegRuleVO) rule.toArray(new SegRuleVO[0])[0]).getPk_segrule());
+								} else {
+									getRefSegRule().setPK(null);
+								}
+							} catch (BusinessException ex) {
+								ExceptionUtils.wrappBusinessException(ex.getMessage());
+							}
+						}
+					}
+				}
+			});
+			getComponentList().add(cboDateType);
+		}
+		return cboDateType;
+	}
+
 	UIRefPane refSegRule = null;
 
 	public UIRefPane getRefSegRule() {
 		if (refSegRule == null) {
 			refSegRule = new UIRefPane();
 			refSegRule.setRefModel(new SegruleRefModel());
-	    refSegRule.addRefEditListener(new RefEditListener() {
-		@Override
-		public boolean beforeEdit(RefEditEvent e) {
-		    ((SegruleRefModel) refSegRule.getRefModel()).setDateType(((CalendarDateTypeEnum) cboDateType
-			    .getSelectdItemValue()).toIntValue());
-		    return true;
-		}
-	    });
+			refSegRule.addRefEditListener(new RefEditListener() {
+				@Override
+				public boolean beforeEdit(RefEditEvent e) {
+					((SegruleRefModel) refSegRule.getRefModel()).setDateType(((CalendarDateTypeEnum) cboDateType
+							.getSelectdItemValue()).toIntValue());
+					return true;
+				}
+			});
 			refSegRule.setName("SEGRULE");
 			refSegRule.setMultiSelectedEnabled(false);
-	    refSegRule.getUITextField().setShowMustInputHint(true);
+			refSegRule.getUITextField().setShowMustInputHint(true);
 			refSegRule.getRefModel().setMutilLangNameRef(false);
 			getComponentList().add(refSegRule);
 		}
@@ -352,8 +357,8 @@ public class OverTimeTypeCardPanel extends TimeItemCardPanel {
 			try {
 				UFBoolean isTWEnabled = SysInitQuery.getParaBoolean(pk_org, "TWHR01");
 				UFBoolean isOTSegEnabled = SysInitQuery.getParaBoolean(pk_org, "TBMOTSEG");
-		if (isTWEnabled != null && isTWEnabled.booleanValue() && isOTSegEnabled != null
-			&& isOTSegEnabled.booleanValue()) {
+				if (isTWEnabled != null && isTWEnabled.booleanValue() && isOTSegEnabled != null
+						&& isOTSegEnabled.booleanValue()) {
 					getRefSegRule().setRefEditable(true);
 					getSelfDecideCheckBox().setEnabled(true);
 					getTxtDayHours().setEditable(true);

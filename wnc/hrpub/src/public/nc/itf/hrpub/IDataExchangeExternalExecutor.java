@@ -57,14 +57,20 @@ public interface IDataExchangeExternalExecutor {
 	public abstract void doUpdateByBP() throws BusinessException;
 
 	/**
+	 * 实现BP查询
+	 * 
+	 * @throws BusinessException
+	 */
+	public abstract void doQueryByBP() throws BusinessException;
+
+	/**
 	 * 插入前业务校验
 	 * 
 	 * @param rowMap
 	 * 
 	 * @throws BusinessException
 	 */
-	public abstract void beforeInsertOperation(Map<String, Object> rowMap)
-			throws BusinessException;
+	public abstract void beforeInsertOperation(Map<String, Object> rowMap) throws BusinessException;
 
 	/**
 	 * 更新前业务校验
@@ -73,7 +79,6 @@ public interface IDataExchangeExternalExecutor {
 	 * 
 	 * @throws BusinessException
 	 */
-	public abstract void beforeUpdateOperation(Map<String, Object> rowMap)
-			throws BusinessException;
+	public abstract void beforeUpdateOperation(Map<String, Object> rowMap) throws BusinessException;
 
 }

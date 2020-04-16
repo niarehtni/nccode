@@ -29,6 +29,8 @@ public class WaConstant {
 	public static String SHARE_FULL_COSTCENTER = "D";
 	public static String SHARE_NOT_SHARED = "Z";
 	public static String SHARE_NOT_SYS__SHARED = "X";
+	//tank 2019年9月22日22:31:50 假况扣款方案
+	public static String SHARE_LEAVE_SHARED = "E";
 
 	public static String VENDER_SIFI = "SIFILE";
 	public static String VENDER_EMPL = "EMPLOYEECODE";

@@ -4,7 +4,6 @@ import java.util.Map;
 
 import nc.vo.pub.BusinessException;
 import nc.vo.pub.lang.UFDouble;
-import nc.vo.pub.lang.UFLiteralDate;
 
 public interface IWadaysalaryService {
 	/**
@@ -14,8 +13,9 @@ public interface IWadaysalaryService {
 	 * @param calculDate
 	 * @return
 	 * @throws BusinessException
+	 * <a> 后台任务方法暂不使用 tank 2019年10月15日21:35:19 </a>
 	 */
-	public void calculSalaryByHrorg(String pk_hrorg, UFLiteralDate calculDate) throws BusinessException;
+	//public void calculSalaryByHrorg(String pk_hrorg, UFLiteralDate calculDate) throws BusinessException;
 
 	/**
 	 * 重算部分人员的日薪
@@ -25,9 +25,10 @@ public interface IWadaysalaryService {
 	 * @param pk_psndoc
 	 * @param pk_wa_items
 	 * @throws BusinessException
+	 * <a> 后台任务方法暂不使用 tank 2019年10月15日21:35:19 </a>
 	 */
-	public void calculSalaryByWaItem(String pk_hrorg, String pk_wa_class, UFLiteralDate calculDate, String pk_psndoc,
-			String[] pk_wa_items) throws BusinessException;
+//	public void calculSalaryByWaItem(String pk_hrorg, String pk_wa_class, UFLiteralDate calculDate, String pk_psndoc,
+//			String[] pk_wa_items) throws BusinessException;
 
 	/**
 	 * 刪除指定日期的日薪數據
@@ -36,8 +37,9 @@ public interface IWadaysalaryService {
 	 * @param calculdate
 	 * @param continueTime
 	 * @throws BusinessException
+	 * <a> 后台任务方法暂不使用 tank 2019年10月15日21:35:19 </a>
 	 */
-	public void deleteDaySalary(String pk_hrorg, UFLiteralDate calculdate, int continueTime) throws BusinessException;
+	//public void deleteDaySalary(String pk_hrorg, UFLiteralDate calculdate, int continueTime) throws BusinessException;
 
 	/**
 	 * 檢驗指定範圍內的日薪是否計算成功，如未計算，則重新計算
@@ -46,9 +48,10 @@ public interface IWadaysalaryService {
 	 * @param calculdate
 	 * @param checkrange
 	 * @throws BusinessException
+	 * <a> 后台任务方法暂不使用 tank 2019年10月15日21:35:19 </a>
 	 */
-	public void checkDaySalaryAndCalculSalary(String pk_hrorg, UFLiteralDate calculdate, int checkrange)
-			throws BusinessException;
+//	public void checkDaySalaryAndCalculSalary(String pk_hrorg, UFLiteralDate calculdate, int checkrange)
+//			throws BusinessException;
 
 	/**
 	 * 檢驗指定範圍內的日薪是否計算成功，如未計算，則重新計算，如计算结果错误，也重新计算
@@ -62,37 +65,22 @@ public interface IWadaysalaryService {
 	 *            薪资项目分组
 	 * @throws BusinessException
 	 * @version 细化粒度,按照薪资项目进行计算
+	 * @ tank 2019年10月16日14:27:45 重构日薪
 	 */
-	public void checkDaySalaryAndCalculSalary(String pk_wa_class, String[] pk_psndocs, UFLiteralDate begindate,
-			UFLiteralDate enddate, String pk_wa_item, String pk_group_item) throws BusinessException;
+	/*public void checkDaySalaryAndCalculSalary(String pk_wa_class, String[] pk_psndocs, UFLiteralDate begindate,
+			UFLiteralDate enddate, String pk_wa_item, String pk_group_item) throws BusinessException;*/
 
 	/**
-	 * 多線程計算日薪
-	 * 
-	 * @param pk_psndocs
-	 * @param begindate
-	 * @param enddate
-	 * @param pk_wa_item
-	 *            薪资项目
-	 * @param pk_group_item
-	 *            薪资项目分组
-	 * @throws BusinessException
-	 * @version 细化粒度,按照薪资项目进行计算（多線程）
-	 */
-	public void checkDaySalaryAndCalculSalary_MT(String pk_wa_class, String[] pk_psndocs, UFLiteralDate begindate,
-			UFLiteralDate enddate, String pk_wa_item, String pk_group_item) throws BusinessException;
-
-	/**
-	 * 薪資計算前檢驗指定範圍內的日薪是否計算成功，如未計算，則重新計算，如计算结果错误，也重新计算
+	 * 按薪资方案和人员计算日薪
 	 * 
 	 * @param pk_wa_class
 	 * @param psnWhere
 	 * @throws BusinessException
-	 * @version 细化粒度,按照薪资项目进行计算
+	 * @version 细化粒度,按照薪资项目进行计算,目前用于薪资计算的预处理
 	 */
-	public void checkDaySalaryAndCalculSalary(String pk_wa_class, String[] pk_psndocs, String cyear, String cperiod)
+	void calculDaySalaryWithWaClass(String pk_wa_class, String[] pk_psndocs, String cyear, String cperiod)
 			throws BusinessException;
-
+	
 	/**
 	 * 統計某一月份所有人員的請假扣款
 	 * 

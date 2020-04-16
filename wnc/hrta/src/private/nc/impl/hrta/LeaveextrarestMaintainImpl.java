@@ -1,14 +1,14 @@
 package nc.impl.hrta;
 
-import nc.bs.framework.common.NCLocator;
+import java.util.Collection;
+
+import nc.bs.dao.BaseDAO;
 import nc.impl.pub.ace.AceLeaveextrarestPubServiceImpl;
-import nc.itf.bd.psn.psndoc.IPsndocQueryService;
 import nc.itf.hrta.ILeaveextrarestMaintain;
-import nc.itf.uap.IUAPQueryBS;
 import nc.ui.querytemplate.querytree.IQueryScheme;
-import nc.vo.bd.psn.PsnjobVO;
 import nc.vo.hi.psndoc.PsnJobVO;
 import nc.vo.hi.psndoc.PsnOrgVO;
+import nc.vo.hi.psndoc.PsndocVO;
 import nc.vo.pub.BusinessException;
 import nc.vo.pub.lang.UFLiteralDate;
 import nc.vo.ta.leaveextrarest.AggLeaveExtraRestVO;
@@ -39,12 +39,12 @@ public class LeaveextrarestMaintainImpl extends AceLeaveextrarestPubServiceImpl 
 	public UFLiteralDate calculateExpireDateByWorkAge(String pk_psndoc, UFLiteralDate dateBeforeChange,
 			UFLiteralDate billDate) throws BusinessException {
 		UFLiteralDate maxLeaveDate = null;
-		IPsndocQueryService psnQuery = NCLocator.getInstance().lookup(IPsndocQueryService.class);
-		PsnjobVO psnjobvo = psnQuery.queryPsnJobVOByPsnDocPK(pk_psndoc);
-		if (psnjobvo != null) {
-			IUAPQueryBS query = NCLocator.getInstance().lookup(IUAPQueryBS.class);
-			PsnJobVO jobvo = (PsnJobVO) query.retrieveByPK(PsnJobVO.class, psnjobvo.getPk_psnjob());
-			PsnOrgVO psnOrgVO = (PsnOrgVO) query.retrieveByPK(PsnOrgVO.class, jobvo.getPk_psnorg());
+		BaseDAO basedao = new BaseDAO();
+		Collection<PsnJobVO> jobvo = basedao.retrieveByClause(PsnJobVO.class, "pk_psndoc='" + pk_psndoc + "' and '"
+				+ dateBeforeChange + "' between begindate and isnull(enddate, '9999-12-31') and trnsevent<>4");
+		if (jobvo != null && jobvo.size() > 0) {
+			PsnOrgVO psnOrgVO = (PsnOrgVO) basedao.retrieveByPK(PsnOrgVO.class,
+					jobvo.toArray(new PsnJobVO[0])[0].getPk_psnorg());
 			UFLiteralDate workAgeStartDate = (UFLiteralDate) psnOrgVO.getAttributeValue("workagestartdate"); // 年资起算日
 
 			if (workAgeStartDate != null) {
@@ -64,7 +64,8 @@ public class LeaveextrarestMaintainImpl extends AceLeaveextrarestPubServiceImpl 
 			}
 			return maxLeaveDate;
 		} else {
-			throw new BusinessException("外加补休日期按年资起算日计算错误，请检查员工组织关系年资起算日设定。");
+			throw new BusinessException("员工 [" + ((PsndocVO) basedao.retrieveByPK(PsndocVO.class, pk_psndoc)).getCode()
+					+ "] 外加补休日期按年资起算日计算错误，请检查员工组织关系年资起算日设定。");
 		}
 
 	}

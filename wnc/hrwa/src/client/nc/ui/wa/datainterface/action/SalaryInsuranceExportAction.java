@@ -4,6 +4,7 @@ import java.awt.event.ActionEvent;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
+import java.math.BigDecimal;
 import java.text.DecimalFormat;
 import java.util.HashSet;
 import java.util.List;
@@ -14,11 +15,10 @@ import javax.swing.Action;
 
 import nc.bs.framework.common.NCLocator;
 import nc.bs.logging.Logger;
-import nc.bs.wa.util.LocalizationSysinitUtil;
 import nc.hr.utils.ResHelper;
 import nc.itf.uap.IUAPQueryBS;
 import nc.jdbc.framework.processor.MapListProcessor;
-import nc.pubitf.para.SysInitQuery;
+import nc.pub.encryption.util.SalaryDecryptUtil;
 import nc.pubitf.twhr.IBasedocPubQuery;
 import nc.pubitf.twhr.utils.LegalOrgUtilsEX;
 import nc.ui.hr.uif2.action.HrAction;
@@ -27,6 +27,7 @@ import nc.ui.pub.beans.UIDialog;
 import nc.ui.wa.datainterface.AddInsuranceExportTextDlg;
 import nc.vo.org.OrgVO;
 import nc.vo.pub.BusinessException;
+import nc.vo.pub.lang.UFDouble;
 import nc.vo.twhr.basedoc.BaseDocVO;
 import nc.vo.twhr.nhicalc.PsndocDefTableUtil;
 
@@ -50,11 +51,9 @@ public class SalaryInsuranceExportAction extends HrAction {
 
 	public SalaryInsuranceExportAction() {
 		super();
-		super.setBtnName(ResHelper.getString("twhr_datainterface",
-				"DataInterface-00081")); // 劳健退三合一薪调
+		super.setBtnName(ResHelper.getString("twhr_datainterface", "DataInterface-00081")); // 劳健退三合一薪调
 		super.setCode("AddInsuranceExportAction");
-		super.putValue(Action.SHORT_DESCRIPTION, ResHelper.getString(
-				"twhr_datainterface", "DataInterface-00081")); // 劳健退三合一薪调
+		super.putValue(Action.SHORT_DESCRIPTION, ResHelper.getString("twhr_datainterface", "DataInterface-00081")); // 劳健退三合一薪调
 	}
 
 	@Override
@@ -64,11 +63,9 @@ public class SalaryInsuranceExportAction extends HrAction {
 		if (isGen == UIDialog.ID_OK) {
 
 			if (dlg.getDateTime() == null && "".equals(dlg.getDateTime())) {
-				throw new BusinessException(ResHelper.getString(
-						"twhr_datainterface", "DataInterface-00082"));// 请选择日期
+				throw new BusinessException(ResHelper.getString("twhr_datainterface", "DataInterface-00082"));// 请选择日期
 			} else if (null == dlg.getLegalOrg() && null == dlg.getHrOrg()) {
-				throw new BusinessException(ResHelper.getString(
-						"twhr_datainterface", "DataInterface-00085"));// 请选择人力资源组织或法人组织
+				throw new BusinessException(ResHelper.getString("twhr_datainterface", "DataInterface-00085"));// 请选择人力资源组织或法人组织
 			}
 			startPeriod = dlg.getDateTime().substring(0, 10);
 			hrOrg = dlg.getHrOrg();
@@ -76,61 +73,68 @@ public class SalaryInsuranceExportAction extends HrAction {
 
 			Set<String> pkRealOrgSet = new HashSet<>();
 			if (null != hrOrg) {
-				pkRealOrgSet = LegalOrgUtilsEX.getOrgsByLegal(hrOrg, this
-						.getModel().getContext().getPk_group());
+				pkRealOrgSet = LegalOrgUtilsEX.getOrgsByLegal(hrOrg, this.getModel().getContext().getPk_group());
 			} else {
 				// legalOrg = dlg.getLegalOrg();
 				pkRealOrgSet.add(legalOrg);
 			}
 			baseFilePath = AddInsuranceExportAction.getExportFileBasePath();
-			StringBuilder errorMsgSb = new StringBuilder(); 
+			StringBuilder errorMsgSb = new StringBuilder();
 			// 查找组织信息
-			Map<String, OrgVO> orgMap = LegalOrgUtilsEX.getOrgInfo(pkRealOrgSet
-					.toArray(new String[0]));
+			Map<String, OrgVO> orgMap = LegalOrgUtilsEX.getOrgInfo(pkRealOrgSet.toArray(new String[0]));
 			for (String pk_legalOrg : pkRealOrgSet) {
 				OrgVO org = orgMap.get(pk_legalOrg);
 				if (null == org) {
 					continue;
 				}
-				String filepath = baseFilePath + java.io.File.separator
-						+ "三合一保薪調整_" + org.getCode() + ".xls";
+				String filepath = baseFilePath + java.io.File.separator + "三合一保薪調整_" + org.getCode() + ".xls";
 				if (null == filepath) {
 					return;
 				}
-				//查找相关参数:
-				//勞工保險證號(8位數字)
-				BaseDocVO TWNHHI01 = NCLocator.getInstance().lookup(IBasedocPubQuery.class).queryBaseDocByCode(pk_legalOrg, "TWNHHI01");
-				//勞工保險證號檢查碼(1位英文字母)
-				BaseDocVO TWNHHI02 = NCLocator.getInstance().lookup(IBasedocPubQuery.class).queryBaseDocByCode(pk_legalOrg, "TWNHHI02");
-				//健保投保單位代號
-				BaseDocVO TWNHHI03 = NCLocator.getInstance().lookup(IBasedocPubQuery.class).queryBaseDocByCode(pk_legalOrg, "TWNHHI03");
-				//健保業務組別
-				BaseDocVO TWNHHI04 = NCLocator.getInstance().lookup(IBasedocPubQuery.class).queryBaseDocByCode(pk_legalOrg, "TWNHHI04");
-				if(null == TWNHHI01 || null == TWNHHI01.getTextvalue()){
+				// 查找相关参数:
+				// 勞工保險證號(8位數字)
+				BaseDocVO TWNHHI01 = NCLocator.getInstance().lookup(IBasedocPubQuery.class)
+						.queryBaseDocByCode(pk_legalOrg, "TWNHHI01");
+				// 勞工保險證號檢查碼(1位英文字母)
+				BaseDocVO TWNHHI02 = NCLocator.getInstance().lookup(IBasedocPubQuery.class)
+						.queryBaseDocByCode(pk_legalOrg, "TWNHHI02");
+				// 健保投保單位代號
+				BaseDocVO TWNHHI03 = NCLocator.getInstance().lookup(IBasedocPubQuery.class)
+						.queryBaseDocByCode(pk_legalOrg, "TWNHHI03");
+				// 健保業務組別
+				BaseDocVO TWNHHI04 = NCLocator.getInstance().lookup(IBasedocPubQuery.class)
+						.queryBaseDocByCode(pk_legalOrg, "TWNHHI04");
+				if (null == TWNHHI01 || null == TWNHHI01.getTextvalue()) {
 					errorMsgSb.append(" 已跳過組織:").append(org.getName()).append(".原因,未設置參數TWNHHI01.\n");
 					continue;
-				}else if(null == TWNHHI02 || null == TWNHHI02.getTextvalue()){
+				} else if (null == TWNHHI02 || null == TWNHHI02.getTextvalue()) {
 					errorMsgSb.append(" 已跳過組織:").append(org.getName()).append(".原因,未設置參數TWNHHI02.\n");
 					continue;
-				}else if(null == TWNHHI03 || null == TWNHHI03.getTextvalue()){
+				} else if (null == TWNHHI03 || null == TWNHHI03.getTextvalue()) {
 					errorMsgSb.append(" 已跳過組織:").append(org.getName()).append(".原因,未設置參數TWNHHI03.\n");
 					continue;
-				}else if(null == TWNHHI04 || null == TWNHHI04.getRefvalue()){
+				} else if (null == TWNHHI04 || null == TWNHHI04.getRefvalue()) {
 					errorMsgSb.append(" 已跳過組織:").append(org.getName()).append(".原因,未設置參數TWNHHI04.\n");
 					continue;
 				}
 
-				IUAPQueryBS query = NCLocator.getInstance().lookup(
-						IUAPQueryBS.class);
-				String sql =  "select 3 as move, '" + TWNHHI01.getTextvalue() + "' as insnum,"
-						+ " '" + TWNHHI02.getTextvalue() + "' as checkcode," + " '"
-						+ TWNHHI03.getTextvalue() + "' as unitcode, doc1.code as business, "
+				IUAPQueryBS query = NCLocator.getInstance().lookup(IUAPQueryBS.class);
+				String sql = "select 3 as move, '"
+						+ TWNHHI01.getTextvalue()
+						+ "' as insnum,"
+						+ " '"
+						+ TWNHHI02.getTextvalue()
+						+ "' as checkcode,"
+						+ " '"
+						+ TWNHHI03.getTextvalue()
+						+ "' as unitcode, doc1.code as business, "
 						+ " case doc2.code  "
 						+ " when 'LT06' then 'Y' "
 						+ " when 'LT13' then '1'  "
 						+ " when 'LT14' then '2' "
 						+ " else '' end as insforeign, "
-						+ " ps.name2 as insname, ps.id as id, "
+						+ " ps.name2 as insname, "
+						+ " case when ps.glbdef7 = 'Y' then coalesce((select id from hi_psndoc_cert where idtype = (select pk_identitype from bd_psnidtype where code = 'FR01') and pk_psndoc = ps.pk_psndoc), ps.id) else ps.id end AS id, "
 						+ " case doc2.code  "
 						+ " when 'LT06' then ps.id "
 						+ " when 'LT13' then ps.id  "
@@ -139,40 +143,31 @@ public class SalaryInsuranceExportAction extends HrAction {
 						+ " ps.birthdate as birthdate, "
 						+ " case when g2.glbdef2 is null then g3.glbdef16 "
 						+ " else g2.glbdef2 end as salary, "
-						+ " (SELECT top 1 glbdef16 FROM "
+						+ " (SELECT glbdef16 FROM "
 						+ PsndocDefTableUtil.getPsnHealthTablename()
-						+ " WHERE pk_psndoc = ps.pk_psndoc and glbdef1 = ps.name2  and isnull(enddate,'9999-12-01') <> '9999-12-01'"
-						+ "   and creationtime = (select max(creationtime) from hi_psndoc_glbdef2 where pk_psndoc = ps.pk_psndoc  AND glbdef1 = ps.name2)) as oldsalary, " + " g3.glbdef16 as newsalary, "
-						+ " g3.glbdef16 as newsalary, "
-						+ " doc3.code as tssf "
-						+ " from bd_psndoc ps "
+						+ " WHERE pk_psndoc = ps.pk_psndoc and glbdef2 = '本人'  and isnull(enddate,'9999-12-01') <> '9999-12-01'"
+						+ "   and begindate = (select max(begindate) from hi_psndoc_glbdef2 where pk_psndoc = ps.pk_psndoc  AND glbdef2 = '本人' and begindate<'"
+						+ startPeriod + "' ) and rownum=1) as oldsalary, " + " g3.glbdef16 as newsalary, "
+						+ " doc3.code as tssf " + " from bd_psndoc ps "
 						+ " left join org_orgs org on org.pk_org = ps.pk_org "
 						+ " left join org_hrorg hr on org.code = hr.code "
-						+ " left join bd_defdoc doc1 on  doc1.pk_defdoc = '"+ TWNHHI04.getRefvalue() 
-						+"' left join "
-						+ PsndocDefTableUtil.getPsnLaborTablename()
-						+ " g2 on g2.pk_psndoc = ps.pk_psndoc  "
-						+ " left join bd_defdoc doc2 on g2.glbdef1= doc2.pk_defdoc "
-						+ " left join "
-						+ PsndocDefTableUtil.getPsnHealthTablename()
-						+ " g3 on g3.pk_psndoc = ps.pk_psndoc  "
+						+ " left join bd_defdoc doc1 on  doc1.pk_defdoc = '" + TWNHHI04.getRefvalue() + "' left join "
+						+ PsndocDefTableUtil.getPsnLaborTablename() + " g2 on g2.pk_psndoc = ps.pk_psndoc  "
+						+ " left join bd_defdoc doc2 on g2.glbdef1= doc2.pk_defdoc " + " left join "
+						+ PsndocDefTableUtil.getPsnHealthTablename() + " g3 on g3.pk_psndoc = ps.pk_psndoc  "
 						+ " LEFT JOIN bd_defdoc doc3 ON g2.glbdef16 = doc3.pk_defdoc "
 						+ " where  ps.name2 = g3.glbdef1  and g2.begindate = g3.begindate  "
 						+ " and g2.insuranceform = 3 and g3.insuranceform = 3 "
 						+ " and (g3.recordnum=0  or (select max(recordnum) from "
-						+ PsndocDefTableUtil.getPsnHealthTablename()
-						+ "  where pk_psndoc=ps.pk_psndoc) >0) "
-						+ " and (select count(1) from "
-						+ PsndocDefTableUtil.getPsnLaborTablename()
+						+ PsndocDefTableUtil.getPsnHealthTablename() + "  where pk_psndoc=ps.pk_psndoc) >0) "
+						+ " and (select count(1) from " + PsndocDefTableUtil.getPsnLaborTablename()
 						+ " where pk_psndoc = ps.pk_psndoc)>1 "
 						// + " and hr.pk_hrorg ='"+ pk_org
-						+ " and g2.legalpersonorg ='" + pk_legalOrg + "'"
-						+ " and g3.legalpersonorg ='" + pk_legalOrg
+						+ " and g2.legalpersonorg ='" + pk_legalOrg + "'" + " and g3.legalpersonorg ='" + pk_legalOrg
 						+ "' and  g2.begindate='" + startPeriod + "'";
-				List<Map<String, Object>> list = (List<Map<String, Object>>) query
-						.executeQuery(sql, new MapListProcessor());
-				InputStream instream = new FileInputStream(getPath()
-						+ "salary.xls");
+				List<Map<String, Object>> list = (List<Map<String, Object>>) query.executeQuery(sql,
+						new MapListProcessor());
+				InputStream instream = new FileInputStream(getPath() + "salary.xls");
 				HSSFWorkbook wb = new HSSFWorkbook(instream);
 				HSSFSheet sheet = wb.getSheetAt(0);
 				DecimalFormat dfInt = new DecimalFormat("0");
@@ -184,64 +179,52 @@ public class SalaryInsuranceExportAction extends HrAction {
 							HSSFCell cell = row.createCell(j);
 							switch (j) {
 							case 0:
-								cell.setCellValue(map.get("move") == null ? ""
-										: map.get("move").toString());
+								cell.setCellValue(map.get("move") == null ? "" : map.get("move").toString());
 								break;
 							case 1:
-								cell.setCellValue(map.get("insnum") == null ? ""
-										: map.get("insnum").toString());
+								cell.setCellValue(map.get("insnum") == null ? "" : map.get("insnum").toString());
 								break;
 							case 2:
-								cell.setCellValue(map.get("checkcode") == null ? ""
-										: map.get("checkcode").toString());
+								cell.setCellValue(map.get("checkcode") == null ? "" : map.get("checkcode").toString());
 								break;
 							case 3:
-								cell.setCellValue(map.get("unitcode") == null ? ""
-										: map.get("unitcode").toString());
+								cell.setCellValue(map.get("unitcode") == null ? "" : map.get("unitcode").toString());
 								break;
 							case 4:
-								cell.setCellValue(map.get("business") == null ? ""
-										: map.get("business").toString());
+								cell.setCellValue(map.get("business") == null ? "" : map.get("business").toString());
 								break;
 							case 5:
-								cell.setCellValue(map.get("insforeign") == null ? ""
-										: map.get("insforeign").toString());
+								cell.setCellValue(map.get("insforeign") == null ? "" : map.get("insforeign").toString());
 								break;
 							case 6:
-								cell.setCellValue(map.get("insname") == null ? ""
-										: map.get("insname").toString());
+								cell.setCellValue(map.get("insname") == null ? "" : map.get("insname").toString());
 								break;
 							case 7:
-								cell.setCellValue(map.get("id") == null ? ""
-										: map.get("id").toString());
+								cell.setCellValue(map.get("id") == null ? "" : map.get("id").toString());
 								break;
 							case 8:
-								cell.setCellValue(map.get("wjid") == null ? ""
-										: map.get("wjid").toString());
+								cell.setCellValue(map.get("wjid") == null ? "" : map.get("wjid").toString());
 								break;
 							case 9:
-								cell.setCellValue(AddInsuranceExportAction
-										.adYearToRepublicOfChina(map
-												.get("birthdate")));
+								cell.setCellValue(AddInsuranceExportAction.adYearToRepublicOfChina(map.get("birthdate")));
 								break;
 							case 10:
-								cell.setCellValue(map.get("salary") == null ? dfInt
-										.format(0) : dfInt.format(map
-										.get("salary")));
+								// ssx added on 2019-12-14 for salary decryption
+								// logic
+								cell.setCellValue(map.get("salary") == null ? dfInt.format(0) : dfInt
+										.format(getDecryptedDecimalValue(map.get("salary"))));
 								break;
 							case 11:
-								cell.setCellValue(map.get("oldsalary") == null ? dfInt
-										.format(0) : dfInt.format(map
-										.get("oldsalary")));
+								cell.setCellValue(map.get("oldsalary") == null ? dfInt.format(0) : dfInt
+										.format(getDecryptedDecimalValue(map.get("oldsalary"))));
 								break;
 							case 12:
-								cell.setCellValue(map.get("newsalary") == null ? dfInt
-										.format(0) : dfInt.format(map
-										.get("newsalary")));
+								cell.setCellValue(map.get("newsalary") == null ? dfInt.format(0) : dfInt
+										.format(getDecryptedDecimalValue(map.get("newsalary"))));
+								// end
 								break;
 							case 13:
-								cell.setCellValue(map.get("tssf") == null ? ""
-										: map.get("tssf").toString());
+								cell.setCellValue(map.get("tssf") == null ? "" : map.get("tssf").toString());
 								break;
 							default:
 								break;
@@ -263,23 +246,26 @@ public class SalaryInsuranceExportAction extends HrAction {
 					 */
 				} catch (Exception e) {
 					Logger.error(e.getMessage());
-					throw new BusinessException(nc.vo.ml.NCLangRes4VoTransl
-							.getNCLangRes().getStrByID("twhr_datainterface",
-									"DataInterface-00086")/* "發生錯誤，請檢查！" */);
+					throw new BusinessException(nc.vo.ml.NCLangRes4VoTransl.getNCLangRes().getStrByID(
+							"twhr_datainterface", "DataInterface-00086")/* "發生錯誤，請檢查！" */);
 				}
 			}
-			if(errorMsgSb!=null && errorMsgSb.length() > 0){
+			if (errorMsgSb != null && errorMsgSb.length() > 0) {
 				MessageDialog.showHintDlg(null, "提示", errorMsgSb.toString());
 			}
 		} else if (isGen == UIDialog.ID_CANCEL) {
-			this.putValue("message_after_action", ResHelper.getString(
-					"twhr_datainterface", "DataInterface-00083")); // 導出已取消
+			this.putValue("message_after_action", ResHelper.getString("twhr_datainterface", "DataInterface-00083")); // 導出已取消
 		}
 	}
 
 	@Override
 	protected boolean isActionEnable() {
 		return true;
+	}
+
+	private BigDecimal getDecryptedDecimalValue(Object number) {
+		return BigDecimal.valueOf((number == null) ? 0
+				: SalaryDecryptUtil.decrypt((new UFDouble(String.valueOf(number)).doubleValue())));
 	}
 
 	public String getPath() {

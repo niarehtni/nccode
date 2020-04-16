@@ -2,6 +2,7 @@ package nc.impl.wa.paydata;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.apache.commons.lang.StringUtils;
@@ -38,7 +39,7 @@ public class HealthRelationDataCaculateService extends DataCaculateService {
 		//需要重新计算的薪资itemKey(包含二代健保的itemkey)
 		Set<String> waClassKey4ReCaculate = new HashSet<>();
 		//需要重新计算的薪资项目pk(二代健保PK除外)
-		Map<String,WaClassItemVO> waClassItem4ReCacalateMap = new HashMap<>();
+		List<WaClassItemVO> waClassItem4ReCacalateList = new ArrayList<>();
 		//搜索二代健保回写的薪资项
 		// 查询薪資項目上補充保費項目(TWEX0000规定的)
 		String strSQL = "select itemkey from wa_classitem where pk_org='"
@@ -69,19 +70,30 @@ public class HealthRelationDataCaculateService extends DataCaculateService {
 			
 			//顺序查找二代健保需要的重新计算的薪资项目
 			waClassKey4ReCaculate.add(itemkey);
-			for(WaClassItemVO vo : classItemVOs){
-				//(补充保费本身不用再计算了)
-				if(null == vo || vo.getItemkey() == null || vo.getItemkey().equals(itemkey)){
-					continue;
+			int size = 1;
+			do{
+				size = waClassKey4ReCaculate.size();
+				for (WaClassItemVO vo : classItemVOs) {
+					// (如果已经包含了改项,再循环了)
+					if (null == vo || vo.getItemkey() == null || waClassKey4ReCaculate.contains(vo.getItemkey())) {
+						continue;
+					}
+					// 如果公式中包含了这些薪资项,则加入重新计算列表,加入新的薪资项,
+					if (isFormulaContain(vo, waClassKey4ReCaculate)) {
+						waClassItem4ReCacalateList.add(vo);
+						waClassKey4ReCaculate.add(vo.getItemkey());
+						// 数据集有更新,break掉,重新搜索,因为因为只有个薪资项目需要建立依赖集,所有用时间复杂度为n2,如果多个薪资项目则需要优化此段算法
+						// 2019年9月2日11:09:21 tank
+						break;
+					}
 				}
-				//如果公式中包含了这些薪资项,则加入重新计算列表,加入新的薪资项,
-				if(isFormulaContain(vo,waClassKey4ReCaculate)){
-					waClassItem4ReCacalateMap.put(vo.getPk_wa_classitem(), vo);
-					waClassKey4ReCaculate.add(vo.getItemkey());
-				}
-			}
+				
+			}while(waClassKey4ReCaculate.size() != size);
+			//薪资项目没有增加的时候,则可以结束搜索了
+			
 		}
-		classItemVOs = new ArrayList<>(waClassItem4ReCacalateMap.values()).toArray(new WaClassItemVO[0]);
+		//waClassItem4ReCacalateList一定要按顺序进行重新计算
+		classItemVOs = new ArrayList<>(waClassItem4ReCacalateList).toArray(new WaClassItemVO[0]);
 	}
 
 	/**

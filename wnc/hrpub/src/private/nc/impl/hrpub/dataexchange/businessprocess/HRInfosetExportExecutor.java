@@ -26,8 +26,7 @@ public class HRInfosetExportExecutor extends DataExportExecutor implements IData
 		if (this.getNcValueObjects() != null && this.getNcValueObjects().size() > 0) {
 			for (Map<String, Object> ncobj : this.getNcValueObjects()) {
 				for (Entry<String, Object> entry : ncobj.entrySet()) {
-					if (((List) getBizEntityID()).contains(this.getBizEntityID())
-							&& entry.getKey().contains("pk_psndoc")) {
+					if (((List) getBizEntityID()).contains(this.getClassid()) && entry.getKey().contains("pk_psndoc")) {
 						String pk_psndoc = (String) entry.getValue();
 						String code = getCodeByPK(pk_psndoc);
 						entry.setValue(code);
@@ -64,6 +63,10 @@ public class HRInfosetExportExecutor extends DataExportExecutor implements IData
 	public Object getBizEntityID() throws BusinessException {
 		// 必須賦值，否則不會加載本類型
 		// 實體ID為md_class的ID欄位
+		if (this.extendBizEntity == null) {
+			this.extendBizEntity = new ArrayList<String>();
+		}
+
 		if (this.extendBizEntity.size() == 0) {
 			String strSQL = "select distinct classid from md_property where name = 'pk_psndoc' and classid in ("
 					+ "select id from md_class where fullclassname in ("
@@ -79,7 +82,7 @@ public class HRInfosetExportExecutor extends DataExportExecutor implements IData
 			return this.extendBizEntity;
 		}
 
-		return new ArrayList<String>();
+		return this.extendBizEntity;
 	}
 
 	@Override
@@ -109,6 +112,12 @@ public class HRInfosetExportExecutor extends DataExportExecutor implements IData
 	@Override
 	public void doUpdateByBP() throws BusinessException {
 		// TODO 自动生成的方法存根
+
+	}
+
+	@Override
+	public void doQueryByBP() throws BusinessException {
+		// TODO 自動產生的方法 Stub
 
 	}
 }

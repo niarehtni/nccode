@@ -304,7 +304,9 @@ public class OverTimeApplyView extends TaApplyBaseView implements IController {
 		sql.append(" inner join bd_holiday on bd_workcalendar.pk_holidayrule=bd_holiday.pk_holidaysort ");
 		sql.append(" where org_orgs.pk_org=tbm_psncalendar.pk_org ");
 		sql.append(" and bd_holiday.starttime<='"+beiginTime.toString()+"' and endtime>='"+beiginTime.toString()+"' ");
-		sql.append(" ) then '1002Z710000000021ZLX' ");
+		// 【假日加班規則】國定假日排班又申請加班單無效  by George  20190712  缺陷Bug #27379
+		// 节日加班 改成 国定假日加班
+		sql.append(" ) then '1001A1100000000009PE' ");
 		sql.append("when tbm_psncalendar.if_rest='Y' and tbm_psncalholiday.pk_psncalhol is null then (select tbm_timeitem.pk_timeitem from tbm_timeitem");
 		sql.append(" inner join tbm_timeitemcopy on tbm_timeitem.pk_timeitem=tbm_timeitemcopy.pk_timeitem");
 		sql.append(" where  tbm_timeitem.itemtype=1 and tbm_timeitemcopy.pk_org=tbm_psncalendar.pk_org");

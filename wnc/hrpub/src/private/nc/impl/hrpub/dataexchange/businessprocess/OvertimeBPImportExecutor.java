@@ -70,8 +70,6 @@ public class OvertimeBPImportExecutor extends DataImportExecutor implements IDat
 					}
 					String otTypeCopy = this.getTimeItemCopyByOrg(otType, this.getPk_org());
 					vo.setPk_overtimetypecopy(otTypeCopy);
-					String startdate = getDateString((String) rowNCMap.get(rowNo + ":overtimebegintime")).substring(0,
-							10);
 
 					String pk_psndoc = (String) rowNCMap.get(rowNo + ":pk_psndoc");
 					vo.setPk_psndoc(pk_psndoc);
@@ -88,6 +86,12 @@ public class OvertimeBPImportExecutor extends DataImportExecutor implements IDat
 					vo.setOvertimeenddate(new UFLiteralDate((String) rowNCMap.get(rowNo + ":overtimeendtime")));
 					vo.setOvertimehour(new UFDouble((String) rowNCMap.get(rowNo + ":overtimehour")));
 
+					// ssx added on 2020-02-16
+					if (rowNCMap.get(rowNo + ":acthour") != null) {
+						vo.setActhour(new UFDouble((String) rowNCMap.get(rowNo + ":acthour")));
+					}
+					// end
+
 					PsndocDismissedValidator dismChecker = new PsndocDismissedValidator(vo.getOvertimebegintime());
 					dismChecker.validate(vo.getPk_psndoc(), vo.getOvertimebegindate());
 
@@ -96,6 +100,11 @@ public class OvertimeBPImportExecutor extends DataImportExecutor implements IDat
 					vo.setPk_group(this.getPk_group());
 
 					// 人员工作记录 PK_PSNJOB
+					String startdate = getDateString((String) rowNCMap.get(rowNo + ":overtimebegintime")).substring(0,
+							10);
+					startdate = dismChecker.getShiftRegDateByDateTime(pk_psndoc,
+							new UFDateTime((String) rowNCMap.get(rowNo + ":overtimebegintime")),
+							new UFLiteralDate(startdate)).toString();
 					Map<String, Object> psnjob = this.getPsnjob(pk_psndoc, startdate);
 					if (psnjob != null && psnjob.size() > 0 && !StringUtils.isEmpty((String) psnjob.get("pk_psnjob"))) {
 						vo.setPk_psnjob((String) psnjob.get("pk_psnjob"));
@@ -117,7 +126,7 @@ public class OvertimeBPImportExecutor extends DataImportExecutor implements IDat
 					}
 					// this.getRowNCVO().put(rowNo+":"+psnjobVO.getBegindate(),
 					// aggVO);
-					this.getRowNCVO().put(rowNo + ":" + startdate, vo);
+					this.getRowNCVO().put(rowNo + ":" + vo.getApprove_time().toString(), vo);
 				} catch (Exception e) {
 					this.getErrorMessages().put(rowNo, e.getMessage());
 				}
@@ -255,7 +264,7 @@ public class OvertimeBPImportExecutor extends DataImportExecutor implements IDat
 		Collections.sort(list, new Comparator<String>() {
 			@Override
 			public int compare(String o1, String o2) {
-				SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
+				SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 				try {
 					Date dt1 = format.parse(o1.split(":")[1]);
 					Date dt2 = format.parse(o2.split(":")[1]);
@@ -341,5 +350,11 @@ public class OvertimeBPImportExecutor extends DataImportExecutor implements IDat
 			str = str.replaceAll("\\\\r|\\\\n", "");
 		}
 		return str;
+	}
+
+	@Override
+	public void doQueryByBP() throws BusinessException {
+		// TODO 自動產生的方法 Stub
+
 	}
 }

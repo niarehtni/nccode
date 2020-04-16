@@ -1,6 +1,7 @@
 package nc.pubitf.ta.leaveextrarest;
 
 import nc.vo.pub.BusinessException;
+import nc.vo.pub.lang.UFBoolean;
 import nc.vo.pub.lang.UFLiteralDate;
 import nc.vo.ta.overtime.OTBalanceDetailVO;
 import nc.vo.ta.overtime.OTLeaveBalanceVO;
@@ -31,6 +32,10 @@ public interface ILeaveExtraRestService {
 	 *            組織PK
 	 * @param pk_psndocs
 	 *            人員PK數組
+	 * @param pk_depts
+	 *            部門PK數組
+	 * @param isTermLeave
+	 *            是否留停
 	 * @param beginDate
 	 *            起始日期
 	 * @param endDate
@@ -44,9 +49,9 @@ public interface ILeaveExtraRestService {
 	 * @return
 	 * @throws BusinessException
 	 */
-	OTLeaveBalanceVO[] getLeaveExtHoursByType(String pk_org, String[] pk_psndocs, UFLiteralDate beginDate,
-			UFLiteralDate endDate, String pk_leavetypecopy, boolean isSettled, boolean isLeave)
-			throws BusinessException;
+	OTLeaveBalanceVO[] getLeaveExtHoursByType(String pk_org, String[] pk_psndocs, String[] pk_depts,
+			UFBoolean isTermLeave, UFLiteralDate beginDate, UFLiteralDate endDate, String pk_leavetypecopy,
+			boolean isSettled, boolean isLeave) throws BusinessException;
 
 	/**
 	 * 多線程調用getLeaveExtHoursByType計算外加補休集合
@@ -55,6 +60,10 @@ public interface ILeaveExtraRestService {
 	 *            組織PK
 	 * @param pk_psndocs
 	 *            人員PK數組
+	 * @param pk_depts
+	 *            部門PK數組
+	 * @param isTermLeave
+	 *            是否留停
 	 * @param beginDate
 	 *            起始日期
 	 * @param endDate
@@ -68,9 +77,9 @@ public interface ILeaveExtraRestService {
 	 * @return
 	 * @throws BusinessException
 	 */
-	OTLeaveBalanceVO[] getLeaveExtHoursByType_MT(String pk_org, String[] pk_psndocs, UFLiteralDate beginDate,
-			UFLiteralDate endDate, String pk_leavetypecopy, boolean isSettled, boolean isLeave)
-			throws BusinessException;
+	OTLeaveBalanceVO[] getLeaveExtHoursByType_MT(String pk_org, String[] pk_psndocs, String[] pk_depts,
+			UFBoolean isTermLeave, UFLiteralDate beginDate, UFLiteralDate endDate, String pk_leavetypecopy,
+			boolean isSettled, boolean isLeave) throws BusinessException;
 
 	/**
 	 * 根據人員及年度取外加補休OTLeaveBalanceVO集合
@@ -79,6 +88,8 @@ public interface ILeaveExtraRestService {
 	 *            組織PK
 	 * @param pk_psndocs
 	 *            人員PK數組
+	 * @param isTermLeave
+	 *            是否留停
 	 * @param queryYear
 	 *            統計年度
 	 * @param pk_leavetypecopy
@@ -88,8 +99,9 @@ public interface ILeaveExtraRestService {
 	 * @return
 	 * @throws BusinessException
 	 */
-	OTLeaveBalanceVO[] getLeaveExtHoursByType(String pk_org, String[] pk_psndocs, String queryYear,
-			String pk_leavetypecopy, boolean isSettled) throws BusinessException;
+	OTLeaveBalanceVO[] getLeaveExtHoursByType(String pk_org, String[] pk_psndocs, String[] pk_depts,
+			UFBoolean isTermLeave, String queryYear, String pk_leavetypecopy, boolean isSettled)
+			throws BusinessException;
 
 	/**
 	 * 根據人員及起迄日期取外加補休OTBalanceDetailVO集合
@@ -116,4 +128,12 @@ public interface ILeaveExtraRestService {
 	 */
 	void unSettleByPsn(String pk_psndoc) throws BusinessException;
 
+	/**
+	 * 按指定組織和日期補充公休遇國假補休
+	 * 
+	 * @param pk_org
+	 * @param checkDate
+	 * @throws BusinessException
+	 */
+	void autoIncreaseExtraLeave(String pk_org, UFLiteralDate checkDate) throws BusinessException;
 }

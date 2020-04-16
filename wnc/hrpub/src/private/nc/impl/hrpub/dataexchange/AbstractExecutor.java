@@ -85,37 +85,29 @@ public abstract class AbstractExecutor {
 	}
 
 	private void initEntityBizAuditInfoMap() throws BusinessException {
-		String strSQL = "select name from md_property where classid='"
-				+ this.getClassid()
+		String strSQL = "select name from md_property where classid='" + this.getClassid()
 				+ "' and name like 'creat%' and datatype='f6f9a473-56c0-432f-8bc7-fbf8fde54fee'";
-		String propName = (String) this.getBaseDAO().executeQuery(strSQL,
-				new ColumnProcessor());
+		String propName = (String) this.getBaseDAO().executeQuery(strSQL, new ColumnProcessor());
 		if (!StringUtils.isEmpty(propName)) {
 			this.getBizAuditInfoMap().put(MD_CREATOR, propName);
 		}
-		strSQL = "select name from md_property where classid='"
-				+ this.getClassid()
+		strSQL = "select name from md_property where classid='" + this.getClassid()
 				+ "' and name like 'creat%' and datatype='BS000010000100001034'";
-		propName = (String) this.getBaseDAO().executeQuery(strSQL,
-				new ColumnProcessor());
+		propName = (String) this.getBaseDAO().executeQuery(strSQL, new ColumnProcessor());
 		if (!StringUtils.isEmpty(propName)) {
 			this.getBizAuditInfoMap().put(MD_CREATEDTIME, propName);
 		}
 
-		strSQL = "select name from md_property where classid='"
-				+ this.getClassid()
+		strSQL = "select name from md_property where classid='" + this.getClassid()
 				+ "' and name like 'modif%' and datatype='f6f9a473-56c0-432f-8bc7-fbf8fde54fee'";
-		propName = (String) this.getBaseDAO().executeQuery(strSQL,
-				new ColumnProcessor());
+		propName = (String) this.getBaseDAO().executeQuery(strSQL, new ColumnProcessor());
 		if (!StringUtils.isEmpty(propName)) {
 			this.getBizAuditInfoMap().put(MD_MODIFIER, propName);
 		}
 
-		strSQL = "select name from md_property where classid='"
-				+ this.getClassid()
+		strSQL = "select name from md_property where classid='" + this.getClassid()
 				+ "' and name like 'modif%' and datatype='BS000010000100001034'";
-		propName = (String) this.getBaseDAO().executeQuery(strSQL,
-				new ColumnProcessor());
+		propName = (String) this.getBaseDAO().executeQuery(strSQL, new ColumnProcessor());
 		if (!StringUtils.isEmpty(propName)) {
 			this.getBizAuditInfoMap().put(MD_MODIFIEDTIME, propName);
 		}
@@ -128,27 +120,23 @@ public abstract class AbstractExecutor {
 		String sql = "";
 		sql = "select bmap.intattrid, prop.name, cls.defaulttablename tablename from md_bizItfMap bmap "
 				+ "inner join md_property prop on bmap.classattrid = prop.id "
-				+ "inner join md_class cls on prop.classid = cls.id "
-				+ "where bmap.classid='"
-				+ entity.getPk_class()
+				+ "inner join md_class cls on prop.classid = cls.id " + "where bmap.classid='" + entity.getPk_class()
 				+ "' and bmap.bizinterfaceid='6c8722b9-911a-489b-8d0d-18bd3734fcf6'";
-		List<Map<String, Object>> bizIfcList = (List<Map<String, Object>>) this
-				.getBaseDAO().executeQuery(sql, new MapListProcessor());
+		List<Map<String, Object>> bizIfcList = (List<Map<String, Object>>) this.getBaseDAO().executeQuery(sql,
+				new MapListProcessor());
 		if (bizIfcList != null || bizIfcList.size() > 0) {
 			for (Map<String, Object> bizIfc : bizIfcList) {
 				if (bizIfc != null && bizIfc.size() > 0) {
-					if ("5dd3c721-22ad-42b1-9c10-4351c236bc77".equals(String
-							.valueOf(bizIfc.get("intattrid")).toLowerCase())) {
+					if ("5dd3c721-22ad-42b1-9c10-4351c236bc77".equals(String.valueOf(bizIfc.get("intattrid"))
+							.toLowerCase())) {
 						// PK
 						this.setEntityPK((String) bizIfc.get("name"));
-					} else if ("d32cc17b-f415-415a-923f-0764443eb102"
-							.equals(String.valueOf(bizIfc.get("intattrid"))
-									.toLowerCase())) {
+					} else if ("d32cc17b-f415-415a-923f-0764443eb102".equals(String.valueOf(bizIfc.get("intattrid"))
+							.toLowerCase())) {
 						// Code
 						this.setEntityCode((String) bizIfc.get("name"));
-					} else if ("ecf1b76a-6e44-42e2-a55e-87596504775b"
-							.equals(String.valueOf(bizIfc.get("intattrid"))
-									.toLowerCase())) {
+					} else if ("ecf1b76a-6e44-42e2-a55e-87596504775b".equals(String.valueOf(bizIfc.get("intattrid"))
+							.toLowerCase())) {
 						// pk_org
 						this.setEntityOrg((String) bizIfc.get("name"));
 					}
@@ -165,22 +153,19 @@ public abstract class AbstractExecutor {
 	}
 
 	private void initMultiLangMap() {
-		LanguageVO[] enableLangVOs = MultiLangContext.getInstance()
-				.getEnableLangVOs();
+		LanguageVO[] enableLangVOs = MultiLangContext.getInstance().getEnableLangVOs();
 		for (LanguageVO vo : enableLangVOs) {
 			if (vo.getLangseq() == 1) {
 				this.getMultiLangMap().put(vo.getLangcode().toLowerCase(), "");
 			} else {
-				this.getMultiLangMap().put(vo.getLangcode().toLowerCase(),
-						String.valueOf(vo.getLangseq()));
+				this.getMultiLangMap().put(vo.getLangcode().toLowerCase(), String.valueOf(vo.getLangseq()));
 			}
 		}
 	}
 
 	private void initPropertyBizMap() throws BusinessException {
 		AggMDClassVO mapping = this.getMdmappingVO();
-		MDPropertyVO[] props = (MDPropertyVO[]) mapping
-				.getChildren(MDPropertyVO.class);
+		MDPropertyVO[] props = (MDPropertyVO[]) mapping.getChildren(MDPropertyVO.class);
 
 		String sql = "";
 		for (MDPropertyVO prop : props) {
@@ -191,49 +176,34 @@ public abstract class AbstractExecutor {
 						+ "inner join md_class cls on prop.classid = cls.id "
 						+ "inner join md_ormap orm on orm.attributeid = bmap.classattrid "
 						+ "inner join md_column clm on clm.id = orm.columnid "
-						+ "where bmap.classid=(select datatype from md_property where id='"
-						+ prop.getPk_property()
+						+ "where bmap.classid=(select datatype from md_property where id='" + prop.getPk_property()
 						+ "') and bmap.bizinterfaceid='6c8722b9-911a-489b-8d0d-18bd3734fcf6'";
-				List<Map<String, Object>> bizIfcList = (List<Map<String, Object>>) this
-						.getBaseDAO().executeQuery(sql, new MapListProcessor());
+				List<Map<String, Object>> bizIfcList = (List<Map<String, Object>>) this.getBaseDAO().executeQuery(sql,
+						new MapListProcessor());
 				if (bizIfcList == null || bizIfcList.size() == 0) {
 					// 未實現IBDObject的屬性按一般類型處理
 					continue;
 				} else {
 					for (Map<String, Object> bizIfc : bizIfcList) {
 						if (bizIfc != null && bizIfc.size() > 0) {
-							if ("5dd3c721-22ad-42b1-9c10-4351c236bc77"
-									.equals(String.valueOf(
-											bizIfc.get("intattrid"))
-											.toLowerCase())) {
+							if ("5dd3c721-22ad-42b1-9c10-4351c236bc77".equals(String.valueOf(bizIfc.get("intattrid"))
+									.toLowerCase())) {
 								// PK
-								this.getBizKeyMap().put(prop.getPk_property(),
-										(String) bizIfc.get("name"));
-							} else if ("d32cc17b-f415-415a-923f-0764443eb102"
-									.equals(String.valueOf(
-											bizIfc.get("intattrid"))
-											.toLowerCase())) {
+								this.getBizKeyMap().put(prop.getPk_property(), (String) bizIfc.get("name"));
+							} else if ("d32cc17b-f415-415a-923f-0764443eb102".equals(String.valueOf(
+									bizIfc.get("intattrid")).toLowerCase())) {
 								// Code
-								this.getBizCodeMap().put(prop.getPk_property(),
-										(String) bizIfc.get("name"));
-							} else if ("ecf1b76a-6e44-42e2-a55e-87596504775b"
-									.equals(String.valueOf(
-											bizIfc.get("intattrid"))
-											.toLowerCase())) {
+								this.getBizCodeMap().put(prop.getPk_property(), (String) bizIfc.get("name"));
+							} else if ("ecf1b76a-6e44-42e2-a55e-87596504775b".equals(String.valueOf(
+									bizIfc.get("intattrid")).toLowerCase())) {
 								// pk_org
-								this.getBizOrgMap().put(prop.getPk_property(),
-										(String) bizIfc.get("name"));
+								this.getBizOrgMap().put(prop.getPk_property(), (String) bizIfc.get("name"));
 							}
 
-							if (this.getBizCodeMap().containsKey(
-									prop.getPk_property())
-									&& this.getBizKeyMap().containsKey(
-											prop.getPk_property())
-									&& !this.getBizTableMap().containsKey(
-											prop.getPk_property())) {
-								this.getBizTableMap().put(
-										prop.getPk_property(),
-										(String) bizIfc.get("tablename"));
+							if (this.getBizCodeMap().containsKey(prop.getPk_property())
+									&& this.getBizKeyMap().containsKey(prop.getPk_property())
+									&& !this.getBizTableMap().containsKey(prop.getPk_property())) {
+								this.getBizTableMap().put(prop.getPk_property(), (String) bizIfc.get("tablename"));
 							}
 						}
 					}
@@ -242,13 +212,11 @@ public abstract class AbstractExecutor {
 		}
 	}
 
-	public List<Map<String, Object>> convertToNCValueObjects()
-			throws BusinessException {
+	public List<Map<String, Object>> convertToNCValueObjects() throws BusinessException {
 		return null;
 	};
 
-	public List<Map<String, Object>> convertToJsonValueObjects()
-			throws BusinessException {
+	public List<Map<String, Object>> convertToJsonValueObjects() throws BusinessException {
 		return null;
 	};
 
@@ -304,8 +272,7 @@ public abstract class AbstractExecutor {
 									+ this.getPk_ioschema()
 									+ "' and pk_org='"
 									+ this.getPk_org()
-									+ "' and isenabled='Y' and isnull(mapmd.dr, 0)=0)",
-							true, false);
+									+ "' and isenabled='Y' and isnull(mapmd.dr, 0)=0)", true, false);
 			if (objs != null && objs.size() > 0) {
 				mdmappingVO = (AggMDClassVO) objs.toArray()[0];
 			} else {
@@ -388,8 +355,7 @@ public abstract class AbstractExecutor {
 
 	public IMDExchangeLogService getLogService() {
 		if (logSrv == null) {
-			logSrv = NCLocator.getInstance()
-					.lookup(IMDExchangeLogService.class);
+			logSrv = NCLocator.getInstance().lookup(IMDExchangeLogService.class);
 		}
 		return logSrv;
 	}
@@ -538,8 +504,7 @@ public abstract class AbstractExecutor {
 
 	public IBusinessEntity getBusinessEntity() throws BusinessException {
 		if (businessEntity == null) {
-			businessEntity = MDQueryService.lookupMDInnerQueryService()
-					.getBusinessEntityByID(this.getClassid());
+			businessEntity = MDQueryService.lookupMDInnerQueryService().getBusinessEntityByID(this.getClassid());
 		}
 		return businessEntity;
 	}
@@ -550,18 +515,16 @@ public abstract class AbstractExecutor {
 				throw new BusinessException("[SESSIONKEY]已经存在，请使用新的进程ID重试");
 			}
 		}
-		this.getLogService().logging(this.getSessionid(), this.getClassid(),
-				this.getOperationType(), status, new UFDateTime());
+		this.getLogService().logging(this.getSessionid(), this.getClassid(), this.getOperationType(), status,
+				new UFDateTime());
 	}
 
 	protected String getCodeFromPKSQL(String pk_property, String pkStr) {
 		String subTable = this.getBizTableMap().get(pk_property);
-		String subAlias = subTable + "_"
-				+ String.valueOf((int) (Math.random() * (10001)));
-		String transPart = "(select " + subAlias + "."
-				+ this.getBizCodeMap().get(pk_property) + " from " + subTable
-				+ " " + subAlias + " where " + subAlias + "."
-				+ this.getBizKeyMap().get(pk_property) + " = " + pkStr + ")";
+		String subAlias = subTable + "_" + String.valueOf((int) (Math.random() * (10001)));
+		String transPart = "(select " + subAlias + "." + this.getBizCodeMap().get(pk_property) + " from " + subTable
+				+ " " + subAlias + " where " + subAlias + "." + this.getBizKeyMap().get(pk_property) + " = " + pkStr
+				+ ")";
 		return transPart;
 	}
 
@@ -575,4 +538,5 @@ public abstract class AbstractExecutor {
 	public void setErrorMessages(Map<String, String> errorMessages) {
 		this.errorMessages = errorMessages;
 	}
+
 }

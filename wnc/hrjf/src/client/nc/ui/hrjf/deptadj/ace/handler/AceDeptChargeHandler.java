@@ -6,8 +6,6 @@ import nc.ui.pub.bill.BillCardPanel;
 import nc.ui.pubapp.uif2app.event.IAppEventHandler;
 import nc.ui.pubapp.uif2app.event.card.CardHeadTailBeforeEditEvent;
 import nc.ui.pubapp.uif2app.view.BillForm;
-import nc.ui.pubapp.uif2app.view.util.BillPanelUtils;
-import nc.vo.uif2.LoginContext;
 
 /**
  * <b> </b>
@@ -18,7 +16,6 @@ import nc.vo.uif2.LoginContext;
 public class AceDeptChargeHandler implements IAppEventHandler<CardHeadTailBeforeEditEvent> {
 	private BillForm billForm;
 
-	
 	public AceDeptChargeHandler(BillForm billForm) {
 		super();
 		this.billForm = billForm;
@@ -29,9 +26,10 @@ public class AceDeptChargeHandler implements IAppEventHandler<CardHeadTailBefore
 		e.setReturnValue(Boolean.TRUE);
 		BillCardPanel panel = e.getBillCardPanel();
 		String key = e.getKey();
-		if("dept_charge".equals(key)){
+		if ("dept_charge".equals(key)) {
 			String pk_dept = panel.getHeadItem("pk_dept").getValueObject().toString();
-			DeptPrincipalRefModel refModel = (DeptPrincipalRefModel) ((UIRefPane) panel.getHeadItem(key).getComponent()).getRefModel();
+			DeptPrincipalRefModel refModel = (DeptPrincipalRefModel) ((UIRefPane) panel.getHeadItem(key).getComponent())
+					.getRefModel();
 			refModel.setPk_dept(pk_dept);
 		}
 	}
@@ -43,6 +41,5 @@ public class AceDeptChargeHandler implements IAppEventHandler<CardHeadTailBefore
 	public void setBillForm(BillForm billForm) {
 		this.billForm = billForm;
 	}
-
 
 }

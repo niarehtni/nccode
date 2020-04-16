@@ -10,6 +10,7 @@ import java.util.Map;
 
 import nc.bs.logging.Logger;
 import nc.bs.uif2.validation.ValidationFailure;
+import nc.hr.utils.ResHelper;
 import nc.itf.hr.dataio.IDataIOHookClient;
 import nc.vo.hr.dataio.DataIORes;
 import nc.vo.hr.dataio.DataIOResult;
@@ -237,12 +238,12 @@ public class ExcelHelper {
 							if (StringUtils.isNotEmpty(strErrorInfo)) {
 								Row writeRow = null;
 								if (!isMainSheet) {
-									writeRow = workbook.getSheet(strSheetName).getRow(
-											errorRowMap.get(strSheetName) + iRowIndex);
+									writeRow = workbook.getSheet(strSheetName).getRow(iRowIndex);
 									errorRowMap.put(strSheetNames[0], errorRowMap.get(strSheetNames[0]) + 1);
 								} else {
-									writeRow = mainSheet.getRow(errorRowMap.get(strSheetNames[0]) + iRowIndex);
-									errorRowMap.put(strSheetNames[0], errorRowMap.get(strSheetNames[0]) + 1);
+									writeRow = mainSheet.getRow(iRowIndex);
+									errorRowMap.put(ResHelper.getString("overtime", "2ovtm-000022"),
+											errorRowMap.get(ResHelper.getString("overtime", "2ovtm-000022")) + 1);
 								}
 
 								createCell(workbook, writeRow, 0, strErrorInfo, fontError);

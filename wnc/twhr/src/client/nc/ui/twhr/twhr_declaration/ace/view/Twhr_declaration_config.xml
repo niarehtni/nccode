@@ -12,11 +12,10 @@
 	<!-- 应用服务类，负责进行模型操作的处理 -->
 	<bean id="bmModelModelService" class="nc.ui.twhr.twhr_declaration.ace.serviceproxy.AceTwhr_declarationMaintainProxy"/>
 
-	<bean id="primaryOrgPanel" class="nc.ui.hr.uif2.view.PrimaryOrgPanel"
+	<bean id="primaryOrgPanel" class="nc.ui.twhr.glb.view.OrgPanel_Org"
 		init-method="initUI">
 		<property name="model" ref="bmModel" />
 		<property name="dataManager" ref="bmModelModelDataManager" />
-		<property name="pk_orgtype" value="HRORGTYPE00000000000" />
 	</bean>
 	
 	<!-- 对象转换器工厂，由此获取操作对象的特征信息 -->
@@ -309,6 +308,8 @@
 		<property name="model"><ref bean="bmModel"/></property>
 		<property name="primaryOrgPanel"><ref bean="primaryOrgPanel"/></property>
 		<property name="btnName" value="生成"/>
+		<property name="billForm"><ref bean="billForm"/></property>
+		<property name="billListView"><ref bean="billListView"/></property>
 		<property name="exceptionHandler"><ref bean="exceptionHandler" /></property>
 	</bean>
 

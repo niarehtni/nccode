@@ -34,14 +34,12 @@ import nc.jdbc.framework.JdbcPersistenceManager;
 import nc.jdbc.framework.SQLParameter;
 import nc.jdbc.framework.processor.ArrayListProcessor;
 import nc.jdbc.framework.processor.BeanListProcessor;
-import nc.jdbc.framework.processor.BeanProcessor;
 import nc.jdbc.framework.processor.ColumnProcessor;
 import nc.jdbc.framework.processor.MapListProcessor;
 import nc.jdbc.framework.processor.MapProcessor;
 import nc.jdbc.framework.processor.ResultSetProcessor;
 import nc.jdbc.framework.type.SQLParamType;
 import nc.jdbc.framework.type.SQLTypeFactory;
-import nc.pub.encryption.util.SalaryDecryptUtil;
 import nc.pub.encryption.util.SalaryEncryptionUtil;
 import nc.vo.dataitem.pub.DataVOUtils;
 import nc.vo.hi.psndoc.Attribute;
@@ -61,6 +59,7 @@ import nc.vo.pub.VOStatus;
 import nc.vo.pub.lang.UFBoolean;
 import nc.vo.pub.lang.UFDate;
 import nc.vo.pub.lang.UFDateTime;
+import nc.vo.pub.lang.UFLiteralDate;
 import nc.vo.pub.pf.IPfRetCheckInfo;
 import nc.vo.util.BDPKLockUtil;
 import nc.vo.util.BDVersionValidationUtil;
@@ -95,12 +94,101 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 	 * @return
 	 * @throws BusinessException
 	 */
-	public WaClassItemVO[] getUserClassItemVOs(WaLoginContext loginVO)
-			throws BusinessException {
-		WaClassItemVO[] classitems = testgetRoleClassItemVOs(
-				loginVO.getWaLoginVO(), null);
+	public WaClassItemVO[] getUserClassItemVOs(WaLoginContext loginVO) throws BusinessException {
+		WaClassItemVO[] classitems = testgetRoleClassItemVOs(loginVO.getWaLoginVO(), null);
 
 		return classitems;
+	}
+
+	public static String getLeavePsndocSQL(String pk_org, String pk_wa_class, String cyear, String cperiod,
+			UFLiteralDate leaveScopeBeginDate, UFLiteralDate leaveScopeEndDate, String creator) {
+		String strSQL = "select DISTINCT wa_cacu_data.pk_psndoc from wa_cacu_data "
+				+ " inner join hi_psnjob on wa_cacu_data.pk_psndoc = hi_psnjob.pk_psndoc "
+				+ " AND hi_psnjob.begindate = (SELECT CASE WHEN MAX(pj.begindate) BETWEEN '"
+				+ leaveScopeBeginDate.toString()
+				+ "' AND '"
+				+ leaveScopeEndDate.toString()
+				+ "'  THEN MAX(pj.begindate)  ELSE NULL END begindate FROM hi_psnjob pj WHERE  pj.pk_psndoc = hi_psnjob.pk_psndoc "
+				+ " AND (trnsevent = 4 or trnstype = '1001X110000000003O5G')  AND pj.begindate <= "
+				+ " (SELECT (substr(to_char((to_date(tbm_period.enddate, 'yyyy-MM-dd') + 15), 'yyyy-MM-dd'),0,8) || '01') FROM tbm_period "
+				+ " inner join wa_period on tbm_period.accyear = wa_period.caccyear and tbm_period.accmonth = wa_period.caccperiod"
+				+ " INNER JOIN wa_waclass ON wa_waclass.pk_periodscheme = wa_period.pk_periodscheme "
+				+ " WHERE tbm_period.pk_org = '"
+				+ pk_org
+				+ "' and wa_waclass.pk_wa_class = '"
+				+ pk_wa_class
+				+ "' AND wa_period.caccyear = '"
+				+ cyear
+				+ "' AND wa_period.caccperiod = '"
+				+ cperiod
+				+ "') "
+				+ " AND isnull(pj.enddate, '9999-12-31') >= (SELECT tbm_period.begindate FROM tbm_period "
+				+ " inner join wa_period on tbm_period.accyear = wa_period.caccyear and tbm_period.accmonth = wa_period.caccperiod"
+				+ " INNER JOIN wa_waclass ON wa_waclass.pk_periodscheme = wa_period.pk_periodscheme WHERE tbm_period.pk_org = '"
+				+ pk_org
+				+ "' and wa_waclass.pk_wa_class = '"
+				+ pk_wa_class
+				+ "' "
+				+ " AND wa_period.caccyear = '"
+				+ cyear
+				+ "' AND wa_period.caccperiod = '"
+				+ cperiod
+				+ "')) where wa_cacu_data.pk_wa_class= '"
+				+ pk_wa_class + "' and wa_cacu_data.creator = '" + creator + "'";
+
+		return strSQL;
+	}
+
+	public static String getLeaveHoursSQLByPeriodCondtions(String pk_leaveitem, Object[] periodDates,
+			String psndocCondition) throws BusinessException {
+		UFLiteralDate sumStartDate = new UFLiteralDate((String) periodDates[0]);
+		UFLiteralDate sumEndDate = new UFLiteralDate((String) periodDates[1]);
+		String sql = "select tbm_leavereg.pk_psndoc psndoc,effectivedate begindate , "
+				// ssx added on 2019-11-27
+				// 考慮未來期間已銷假，本期間時數被沖抵，下面還要取出本期銷假單用於抵銷本期假單
+				+ " sum(case when isleaveoff='Y' then (select sum(regleavehourcopy) from tbm_leaveoff where pk_leavereg = tbm_leavereg.pk_leavereg) else leavehour end) leavehour "
+				// end
+				+ " from tbm_leavereg inner join hi_psnjob on hi_psnjob.pk_psnjob = tbm_leavereg.pk_psnjob where pk_leavetype = '"
+				+ pk_leaveitem
+				// 派遣人員不參與時數計算
+				+ "'  AND hi_psnjob.jobglbdef8 <> (select pk_defdoc from bd_defdoc where pk_defdoclist = (select pk_defdoclist from bd_defdoclist where code = 'HR006_0xx') and code = 'C') and ("
+				// (( 歸屬日 BETWEEN 期間起 AND 期間迄 AND 核准日 <= 本期自然月最後一天)
+				// OR (歸屬日 < 期間起 AND 核准日 BETWEEN 本期自然月第一天 AND 本期自然月最後一天))
+				+ "(( effectivedate BETWEEN '" + sumStartDate + "' AND '" + sumEndDate + "' AND approve_time <= '"
+				+ sumEndDate.getDateAfter(sumEndDate.getDaysMonth() - sumEndDate.getDay()) + " 23:59:59')"
+				+ "OR (effectivedate < '" + sumStartDate + "' AND approve_time BETWEEN '"
+				+ sumStartDate.getDateAfter(sumStartDate.getDaysMonth() - sumStartDate.getDay() + 1)
+				+ " 00:00:00' AND '" + sumEndDate.getDateAfter(sumEndDate.getDaysMonth() - sumEndDate.getDay())
+				+ " 23:59:59'))" + ") and tbm_leavereg.pk_psndoc in (" + psndocCondition
+				+ ") group by tbm_leavereg.pk_psndoc, effectivedate";
+		sql += " union all ";
+		sql += "select tbm_leaveoff.pk_psndoc psndoc, tbm_leavereg.effectivedate begindate, sum(tbm_leaveoff.differencehour) leavehour from tbm_leaveoff "
+				+ " inner join tbm_leavereg on tbm_leavereg.pk_leavereg = tbm_leaveoff.pk_leavereg "
+				+ " inner join hi_psnjob on hi_psnjob.pk_psnjob = tbm_leavereg.pk_psnjob "
+				+ " where "
+				+ "         tbm_leavereg.pk_leavetype = '"
+				+ pk_leaveitem
+				// 派遣人員不參與時數計算
+				+ "'  AND hi_psnjob.jobglbdef8 <> (select pk_defdoc from bd_defdoc where pk_defdoclist = (select pk_defdoclist from bd_defdoclist where code = 'HR006_0xx') and code = 'C')"
+				+ "        AND tbm_leaveoff.pk_psndoc IN ( "
+				+ psndocCondition
+				+ ")"
+				+ " AND (( tbm_leavereg.effectivedate BETWEEN '"
+				+ sumStartDate
+				+ "' AND '"
+				+ sumEndDate
+				+ "' AND tbm_leaveoff.approve_time <= '"
+				+ sumEndDate.getDateAfter(sumEndDate.getDaysMonth() - sumEndDate.getDay())
+				+ " 23:59:59') OR (tbm_leavereg.effectivedate < '"
+				+ sumStartDate
+				+ "' AND tbm_leaveoff.approve_time BETWEEN '"
+				+ sumStartDate.getDateAfter(sumStartDate.getDaysMonth() - sumStartDate.getDay() + 1)
+				+ " 00:00:00' AND '"
+				+ sumEndDate.getDateAfter(sumEndDate.getDaysMonth() - sumEndDate.getDay())
+				+ " 23:59:59'))"
+				//
+				+ " group by tbm_leaveoff.pk_psndoc, tbm_leavereg.effectivedate";
+		return sql;
 	}
 
 	/**
@@ -113,39 +201,26 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 	 * @return
 	 * @throws BusinessException
 	 */
-	public WaClassItemVO[] getUserShowClassItemVOs(WaLoginContext loginVO)
-			throws BusinessException {
+	public WaClassItemVO[] getUserShowClassItemVOs(WaLoginContext loginVO) throws BusinessException {
 		String condition = " wa_classitem.pk_wa_classitem not in (select pk_wa_classitem from wa_classitemdsp "
-				+ "where pk_wa_class = '"
-				+ loginVO.getPk_wa_class()
-				+ "' and cyear = '"
-				+ loginVO.getWaYear()
-				+ "' and cperiod = '"
-				+ loginVO.getWaPeriod()
-				+ "' and pk_user = '"
-				+ PubEnv.getPk_user() + "' and bshow = 'N' )";
-		WaClassItemVO[] classitems = testgetRoleClassItemVOs(
-				loginVO.getWaLoginVO(), condition);
+				+ "where pk_wa_class = '" + loginVO.getPk_wa_class() + "' and cyear = '" + loginVO.getWaYear()
+				+ "' and cperiod = '" + loginVO.getWaPeriod() + "' and pk_user = '" + PubEnv.getPk_user()
+				+ "' and bshow = 'N' )";
+		WaClassItemVO[] classitems = testgetRoleClassItemVOs(loginVO.getWaLoginVO(), condition);
 		return classitems;
 	}
 
-	public WaClassItemVO[] getRepayUserShowClassItemVOs(
-			WaLoginContext waLoginContext) throws BusinessException {
+	public WaClassItemVO[] getRepayUserShowClassItemVOs(WaLoginContext waLoginContext) throws BusinessException {
 
 		WaLoginVO waLoginVO = waLoginContext.getWaLoginVO();
 		String condition = "";
-		if ((!StringUtils.isEmpty(waLoginVO.getReperiod()))
-				&& (!waLoginVO.getReperiod().equals("-1"))) {
+		if ((!StringUtils.isEmpty(waLoginVO.getReperiod())) && (!waLoginVO.getReperiod().equals("-1"))) {
 			condition = " wa_classitem.pk_wa_item in (select pk_wa_item from wa_classitem where pk_wa_class = '"
-					+ waLoginVO.getPk_prnt_class()
-					+ "' and cyear = '"
-					+ waLoginVO.getReyear()
-					+ "' and cperiod = '"
+					+ waLoginVO.getPk_prnt_class() + "' and cyear = '" + waLoginVO.getReyear() + "' and cperiod = '"
 					+ waLoginVO.getReperiod() + "' ) ";
 		}
 
-		WaClassItemVO[] classitems = testgetRoleClassItemVOs(waLoginVO,
-				condition);
+		WaClassItemVO[] classitems = testgetRoleClassItemVOs(waLoginVO, condition);
 		return classitems;
 	}
 
@@ -157,16 +232,13 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 	 * @return
 	 * @throws BusinessException
 	 */
-	public WaClassItemVO[] getApprovedClassItemVOs(WaLoginContext loginVO)
-			throws BusinessException {
+	public WaClassItemVO[] getApprovedClassItemVOs(WaLoginContext loginVO) throws BusinessException {
 		String condition = " wa_classitem.inapproveditem = 'Y'";
 		WaClassItemVO[] classitems = null;
 		if ("60130payslipaly".equals(loginVO.getNodeCode())) {
-			classitems = testgetRoleClassItemVOs(loginVO.getWaLoginVO(),
-					condition);
+			classitems = testgetRoleClassItemVOs(loginVO.getWaLoginVO(), condition);
 		} else {
-			classitems = getRoleClassItemVOsNoPower(loginVO.getWaLoginVO(),
-					condition);
+			classitems = getRoleClassItemVOsNoPower(loginVO.getWaLoginVO(), condition);
 		}
 		return classitems;
 	}
@@ -178,8 +250,7 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 	 * @return
 	 * @throws BusinessException
 	 */
-	public boolean isAnyTimesPayed(String pk_wa_class, String cyear,
-			String cperiod) throws BusinessException {
+	public boolean isAnyTimesPayed(String pk_wa_class, String cyear, String cperiod) throws BusinessException {
 		StringBuilder sbd = new StringBuilder();
 		sbd.append("  select top 1 wa_periodstate.pk_wa_period from wa_periodstate,wa_period ");
 		sbd.append("  	where wa_periodstate.pk_wa_period = wa_period.pk_wa_period  ");
@@ -209,22 +280,18 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 	 * @param isRangeAll
 	 * @throws nc.vo.pub.BusinessException
 	 */
-	public boolean onCheck(WaLoginVO waLoginVO, String whereCondition,
-			Boolean isRangeAll) throws nc.vo.pub.BusinessException {
+	public boolean onCheck(WaLoginVO waLoginVO, String whereCondition, Boolean isRangeAll)
+			throws nc.vo.pub.BusinessException {
 		StringBuffer sqlBuffer = new StringBuffer();
 		sqlBuffer.append("   wa_data.checkflag = 'N' "); // 3
-		sqlBuffer
-				.append("   and wa_data.stopflag = 'N' and wa_data.caculateflag='Y' "); // 5
-		sqlBuffer.append(WherePartUtil
-				.formatAddtionalWhere(getCommonWhereCondtion4Data(waLoginVO)));
+		sqlBuffer.append("   and wa_data.stopflag = 'N' and wa_data.caculateflag='Y' "); // 5
+		sqlBuffer.append(WherePartUtil.formatAddtionalWhere(getCommonWhereCondtion4Data(waLoginVO)));
 
 		if (!isRangeAll) {
-			sqlBuffer
-					.append(WherePartUtil.formatAddtionalWhere(whereCondition));
+			sqlBuffer.append(WherePartUtil.formatAddtionalWhere(whereCondition));
 		}
 		// 先设置wa_data的审核标志
-		updateTableByColKey("wa_data", PayfileVO.CHECKFLAG, UFBoolean.TRUE,
-				sqlBuffer.toString());
+		updateTableByColKey("wa_data", PayfileVO.CHECKFLAG, UFBoolean.TRUE, sqlBuffer.toString());
 
 		// 查看薪资数据是否全部审核
 		sqlBuffer = new StringBuffer();
@@ -234,37 +301,39 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 		sqlBuffer.append("   and wa_data.stopflag = 'N' ");
 		// 数据权限guoqt数据使用权
 		// sqlBuffer.append(WherePartUtil.formatAddtionalWhere(getCommonWhereCondtion4Data(waLoginVO)));
-		sqlBuffer.append("   and wa_data.pk_wa_class ='"
-				+ waLoginVO.getPk_wa_class() + "' ");
-		sqlBuffer.append("   and wa_data.cyear ='" + waLoginVO.getCyear()
-				+ "' ");
-		sqlBuffer.append("   and wa_data.cperiod ='" + waLoginVO.getCperiod()
-				+ "' ");
+		sqlBuffer.append("   and wa_data.pk_wa_class ='" + waLoginVO.getPk_wa_class() + "' ");
+		sqlBuffer.append("   and wa_data.cyear ='" + waLoginVO.getCyear() + "' ");
+		sqlBuffer.append("   and wa_data.cperiod ='" + waLoginVO.getCperiod() + "' ");
 
 		boolean isAllChecked = !isValueExist(sqlBuffer.toString());
 		if (isAllChecked) {
 			// 设置期间的审核标志
-			updatePeriodState(PeriodStateVO.CHECKFLAG, UFBoolean.TRUE,
-					waLoginVO);
+			updatePeriodState(PeriodStateVO.CHECKFLAG, UFBoolean.TRUE, waLoginVO);
 			return true;
 		}
 		return false;
 	}
 
-	public void onUnCheck(WaLoginVO waLoginVO, String whereCondition,
-			boolean isRangeAll) throws nc.vo.pub.BusinessException {
+	public void onUnCheck(WaLoginVO waLoginVO, String whereCondition, boolean isRangeAll)
+			throws nc.vo.pub.BusinessException {
 		// 审批流审批的类别，如果在审批中的单据则不能取消，//如不需要复审且已经增加到审批单据中的，则不能取消审核
 		PeriodStateVO period = waLoginVO.getPeriodVO();
 		if (period != null) {
 			if (period.getIsapproved().booleanValue()) {
-				throw new BusinessException(ResHelper.getString("60130paydata",
-						"060130paydata0447")/* @res "该薪资方案已经审批通过，无法取消审核！" */);// "该薪资类别已经审批通过，无法取消审核！"
+				throw new BusinessException(ResHelper.getString("60130paydata", "060130paydata0447")/*
+																									 * @
+																									 * res
+																									 * "该薪资方案已经审批通过，无法取消审核！"
+																									 */);// "该薪资类别已经审批通过，无法取消审核！"
 
 			}
 			Boolean isInApproveing = new WapubDAO().isInApproveing(waLoginVO);
 			if (isInApproveing) {
-				throw new BusinessException(ResHelper.getString("60130paydata",
-						"060130paydata0448")/* @res "该薪资方案已经加到审批单据中，无法取消审核！" */);// "该薪资类别已经加到审批单据中，无法取消审核！"
+				throw new BusinessException(ResHelper.getString("60130paydata", "060130paydata0448")/*
+																									 * @
+																									 * res
+																									 * "该薪资方案已经加到审批单据中，无法取消审核！"
+																									 */);// "该薪资类别已经加到审批单据中，无法取消审核！"
 			}
 		}
 		// 同一个会计期间下方案是否引用, 校验合并计税
@@ -289,44 +358,37 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 		StringBuffer sqlBuffer = new StringBuffer();
 		sqlBuffer.append("   wa_data.stopflag = 'N' "); // 5
 		sqlBuffer.append("   and wa_data.checkflag = 'Y' "); // 6
-		sqlBuffer.append(WherePartUtil
-				.formatAddtionalWhere(getCommonWhereCondtion4Data(waLoginVO)));
+		sqlBuffer.append(WherePartUtil.formatAddtionalWhere(getCommonWhereCondtion4Data(waLoginVO)));
 		if (!isRangeAll) {
-			sqlBuffer
-					.append(WherePartUtil.formatAddtionalWhere(whereCondition));
+			sqlBuffer.append(WherePartUtil.formatAddtionalWhere(whereCondition));
 		}
 		dealInPayLeavePsn(waLoginVO, whereCondition, isRangeAll);
 
 		// 先设置wa_data的prewadata
-		updateTableByColKey("wa_data", "prewadata",
-				SQLTypeFactory.getNullType(Types.CHAR), sqlBuffer.toString());
+		updateTableByColKey("wa_data", "prewadata", SQLTypeFactory.getNullType(Types.CHAR), sqlBuffer.toString());
 
 		// 再设置wa_data的审核标志
-		updateTableByColKey("wa_data", PayfileVO.CHECKFLAG, UFBoolean.FALSE,
-				sqlBuffer.toString());
+		updateTableByColKey("wa_data", PayfileVO.CHECKFLAG, UFBoolean.FALSE, sqlBuffer.toString());
 
 		// 先设置期间的审核标志
 		updatePeriodState(PeriodStateVO.CHECKFLAG, UFBoolean.FALSE, waLoginVO);
 
 		// 设置合并计税引用方案的计算状态
-		String sqlWhereAccPeriod = " cpreclassid = '"
-				+ waLoginVO.getPk_wa_class() + "'";
-		sqlWhereAccPeriod += " and pk_wa_period in(select pk_wa_period from wa_period where caccyear='"
-				+ caccyear + "' and caccperiod='" + caccperiod + "')";
+		String sqlWhereAccPeriod = " cpreclassid = '" + waLoginVO.getPk_wa_class() + "'";
+		sqlWhereAccPeriod += " and pk_wa_period in(select pk_wa_period from wa_period where caccyear='" + caccyear
+				+ "' and caccperiod='" + caccperiod + "')";
 		updateTableByColKey("wa_periodstate", "caculateflag", UFBoolean.FALSE,
 				WherePartUtil.addWhereKeyWord2Condition(sqlWhereAccPeriod));
 
 		// 取消审核时，wa_data的 prewadata 清空
 	}
 
-	private void checkTaxRelate(WaLoginVO waLoginVO, String whereCondition,
-			boolean isRangeAll) throws BusinessException {
+	private void checkTaxRelate(WaLoginVO waLoginVO, String whereCondition, boolean isRangeAll)
+			throws BusinessException {
 
 		String addSql = getCommonWhereCondtion4Data(waLoginVO);
-		if (!isRangeAll && whereCondition != null
-				&& whereCondition.length() > 0) {
-			addSql += " and wa_data.pk_wa_data in(select pk_wa_data from wa_data where "
-					+ whereCondition + ")";
+		if (!isRangeAll && whereCondition != null && whereCondition.length() > 0) {
+			addSql += " and wa_data.pk_wa_data in(select pk_wa_data from wa_data where " + whereCondition + ")";
 		}
 
 		String sql = "select "
@@ -338,11 +400,9 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 				+ "INNER JOIN wa_waclass w1 ON d2.pk_wa_class = w1.pk_wa_class "
 				+ "LEFT OUTER JOIN wa_inludeclass w2 	ON w2.pk_childclass = d2.pk_wa_class AND w2.cyear = d2.cyear AND w2.cperiod = d2.cperiod  "
 				+ "INNER JOIN bd_psndoc b1  ON b1.pk_psndoc = d2.pk_psndoc WHERE "
-				+ " d2.prewadata in(select pk_wa_data from wa_data where "
-				+ addSql + ") AND d2.checkflag = 'Y'  ";
+				+ " d2.prewadata in(select pk_wa_data from wa_data where " + addSql + ") AND d2.checkflag = 'Y'  ";
 
-		List result = (List) getBaseDao().executeQuery(sql,
-				new MapListProcessor());
+		List result = (List) getBaseDao().executeQuery(sql, new MapListProcessor());
 		if (result == null || result.size() == 0) {
 			return;
 		}
@@ -363,18 +423,18 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 			if (batch == null || batch == 0) {
 				// do nothing
 			} else if (batch > 100) {
-				msg.append(ResHelper.getString("60130paydata",
-						"060130paydata0470"))/* @res "-离职发薪" */;
+				msg.append(ResHelper.getString("60130paydata", "060130paydata0470"))/*
+																					 * @
+																					 * res
+																					 * "-离职发薪"
+																					 */;
 			} else {
-				msg.append(MessageFormat.format(
-						ResHelper
-								.getString("60130paydata", "060130paydata0471")/*
-																				 * @
-																				 * res
-																				 * "{0}次发薪"
-																				 */,
-						nc.vo.format.FormatGenerator.getIndexFormat().format(
-								batch)));
+				msg.append(MessageFormat.format(ResHelper.getString("60130paydata", "060130paydata0471")/*
+																										 * @
+																										 * res
+																										 * "{0}次发薪"
+																										 */,
+						nc.vo.format.FormatGenerator.getIndexFormat().format(batch)));
 			}
 			msg.append("]");
 		}
@@ -389,19 +449,14 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 	 * @param isRangeAll
 	 * @throws BusinessException
 	 */
-	private void dealInPayLeavePsn(WaLoginVO waLoginVO, String whereCondition,
-			boolean isRangeAll) throws BusinessException {
-		String sql = "select * FROM wa_data "
-				+ "WHERE wa_data.pk_wa_class IN( SELECT w2.pk_childclass "
-				+ "								   FROM wa_inludeclass w2 "
-				+ "								  WHERE w2.pk_parentclass = ? "
-				+ "									AND w2.cyear = ? "
-				+ "									AND w2.cperiod = ? )" + "	AND wa_data.cyear = ? "
+	private void dealInPayLeavePsn(WaLoginVO waLoginVO, String whereCondition, boolean isRangeAll)
+			throws BusinessException {
+		String sql = "select * FROM wa_data " + "WHERE wa_data.pk_wa_class IN( SELECT w2.pk_childclass "
+				+ "								   FROM wa_inludeclass w2 " + "								  WHERE w2.pk_parentclass = ? "
+				+ "									AND w2.cyear = ? " + "									AND w2.cperiod = ? )" + "	AND wa_data.cyear = ? "
 				+ "	AND wa_data.cperiod =? " + "	AND wa_data.checkflag = 'N' "
-				+ "	AND wa_data.pk_psndoc IN( SELECT pk_psndoc "
-				+ "								FROM wa_data w1 "
-				+ "							   WHERE w1.pk_wa_class = ? "
-				+ "								 AND w1.cyear = ? " + "								 AND w1.cperiod = ? "
+				+ "	AND wa_data.pk_psndoc IN( SELECT pk_psndoc " + "								FROM wa_data w1 "
+				+ "							   WHERE w1.pk_wa_class = ? " + "								 AND w1.cyear = ? " + "								 AND w1.cperiod = ? "
 				+ "								 AND w1.checkflag = 'Y')";
 		if (!isRangeAll) {
 			sql += WherePartUtil.formatAddtionalWhere(whereCondition);
@@ -415,11 +470,10 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 		parameter.addParam(waLoginVO.getPk_wa_class());
 		parameter.addParam(waLoginVO.getCyear());
 		parameter.addParam(waLoginVO.getCperiod());
-		List<PayfileVO> delVos = (List<PayfileVO>) getBaseDao().executeQuery(
-				sql, parameter, new BeanListProcessor(PayfileVO.class));
+		List<PayfileVO> delVos = (List<PayfileVO>) getBaseDao().executeQuery(sql, parameter,
+				new BeanListProcessor(PayfileVO.class));
 
-		NCLocator.getInstance().lookup(IPayfileManageService.class)
-				.delPsnVOs(delVos.toArray(new PayfileVO[0]));
+		NCLocator.getInstance().lookup(IPayfileManageService.class).delPsnVOs(delVos.toArray(new PayfileVO[0]));
 
 	}
 
@@ -432,28 +486,18 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 	 * @return
 	 * @throws DAOException
 	 */
-	public PayfileVO[] getInPayLeavePsn(WaLoginVO waLoginVO,
-			String whereCondition, boolean isRangeAll) throws DAOException {
-		String sql = "select bd_psndoc.code as psncode,"
-				+ SQLHelper.getMultiLangNameColumn("bd_psndoc.name")
-				+ " as psnname " + "from wa_data ,bd_psndoc "
-				+ "where wa_data.pk_psndoc = bd_psndoc.pk_psndoc "
-				+ " and wa_data.pk_wa_class = ? " + "	and wa_data.cyear = ? "
-				+ "	and wa_data.cperiod = ? " + " and wa_data.checkflag = 'Y' "
-				+ "	and wa_data.pk_psndoc in(select w1.pk_psndoc "
-				+ "						from wa_data w1 ,wa_inludeclass w2 "
-				+ "						where w1.pk_wa_class = w2.pk_childclass "
-				+ "							and w1.cyear = w2.cyear "
-				+ "							and w1.cperiod = w2.cperiod "
-				+ "							and w2.batch >100 "
-				+ "							and w1.checkflag = 'N' "
-				+ "							and w2.pk_parentclass = ? "
-				+ "							and w1.cyear = ? " + "							and w1.cperiod = ? "
-				+ "	)";
-		if (!isRangeAll && whereCondition != null
-				&& whereCondition.length() > 0) {
-			sql += " and wa_data.pk_wa_data in(select pk_wa_data from wa_data where "
-					+ whereCondition + ")";
+	public PayfileVO[] getInPayLeavePsn(WaLoginVO waLoginVO, String whereCondition, boolean isRangeAll)
+			throws DAOException {
+		String sql = "select bd_psndoc.code as psncode," + SQLHelper.getMultiLangNameColumn("bd_psndoc.name")
+				+ " as psnname " + "from wa_data ,bd_psndoc " + "where wa_data.pk_psndoc = bd_psndoc.pk_psndoc "
+				+ " and wa_data.pk_wa_class = ? " + "	and wa_data.cyear = ? " + "	and wa_data.cperiod = ? "
+				+ " and wa_data.checkflag = 'Y' " + "	and wa_data.pk_psndoc in(select w1.pk_psndoc "
+				+ "						from wa_data w1 ,wa_inludeclass w2 " + "						where w1.pk_wa_class = w2.pk_childclass "
+				+ "							and w1.cyear = w2.cyear " + "							and w1.cperiod = w2.cperiod "
+				+ "							and w2.batch >100 " + "							and w1.checkflag = 'N' " + "							and w2.pk_parentclass = ? "
+				+ "							and w1.cyear = ? " + "							and w1.cperiod = ? " + "	)";
+		if (!isRangeAll && whereCondition != null && whereCondition.length() > 0) {
+			sql += " and wa_data.pk_wa_data in(select pk_wa_data from wa_data where " + whereCondition + ")";
 		}
 		SQLParameter parameter = getCommonParameter(waLoginVO);
 		parameter.addParam(waLoginVO.getPk_prnt_class());
@@ -472,27 +516,19 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 	 */
 	public String getRelateClassName(WaLoginVO waLoginVO) throws DAOException {
 		String sql = "select w1.name,w2.batch from wa_periodstate p1,wa_waclass w1,wa_inludeclass w2 "
-				+ "where  p1.pk_wa_class = w1.pk_wa_class "
-				+ "and w1.pk_wa_class = w2.pk_childclass "
-				+ "and p1.cpreclassid = ? "
-				+ "and w2.cyear = ? "
-				+ "and w2.cperiod = ? ";
+				+ "where  p1.pk_wa_class = w1.pk_wa_class " + "and w1.pk_wa_class = w2.pk_childclass "
+				+ "and p1.cpreclassid = ? " + "and w2.cyear = ? " + "and w2.cperiod = ? ";
 		SQLParameter parameter = getCommonParameter(waLoginVO);
-		Map map = (Map) getBaseDao().executeQuery(sql, parameter,
-				new MapProcessor());
+		Map map = (Map) getBaseDao().executeQuery(sql, parameter, new MapProcessor());
 		String name = map.get("name").toString();
 		int batch = Integer.parseInt(map.get("batch").toString());
 		if (batch > 100) {
-			return name
-					+ ResHelper.getString("60130paydata", "060130paydata0470")
+			return name + ResHelper.getString("60130paydata", "060130paydata0470")
 			/* @res "-离职发薪" */;
 		}
 
-		return name
-				+ MessageFormat.format(ResHelper.getString("60130paydata",
-						"060130paydata0471")
-				/* @res "{0}次发薪" */, nc.vo.format.FormatGenerator
-						.getIndexFormat().format(batch));
+		return name + MessageFormat.format(ResHelper.getString("60130paydata", "060130paydata0471")
+		/* @res "{0}次发薪" */, nc.vo.format.FormatGenerator.getIndexFormat().format(batch));
 
 	}
 
@@ -511,24 +547,18 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 
 		StringBuffer sqlBuffer = new StringBuffer();
 		sqlBuffer.append(" select 1 from wa_periodstate ");
-		sqlBuffer
-				.append(" inner join wa_period on (wa_periodstate.pk_wa_period = ");
-		sqlBuffer
-				.append("  wa_period.pk_wa_period and wa_periodstate.enableflag = 'Y') ");
+		sqlBuffer.append(" inner join wa_period on (wa_periodstate.pk_wa_period = ");
+		sqlBuffer.append("  wa_period.pk_wa_period and wa_periodstate.enableflag = 'Y') ");
 		sqlBuffer.append("where wa_periodstate.isapproved != 'Y' ");
 		sqlBuffer.append("and exists (select 1 from wa_payroll  ");
-		sqlBuffer
-				.append("where wa_payroll.pk_wa_class = wa_periodstate.pk_wa_class ");
-		sqlBuffer.append(" and wa_payroll.billstate='").append(
-				IPfRetCheckInfo.COMMIT);
+		sqlBuffer.append("where wa_payroll.pk_wa_class = wa_periodstate.pk_wa_class ");
+		sqlBuffer.append(" and wa_payroll.billstate='").append(IPfRetCheckInfo.COMMIT);
 		sqlBuffer.append("' and wa_payroll.pk_wa_class = '").append(classid);
 		sqlBuffer.append("' and wa_payroll.cyear = '").append(cyear);
 		sqlBuffer.append("' and wa_payroll.cperiod = '").append(cperiod);
-		sqlBuffer.append("') and wa_periodstate.pk_wa_class = '").append(
-				classid);
+		sqlBuffer.append("') and wa_periodstate.pk_wa_class = '").append(classid);
 		sqlBuffer.append("' and wa_period.cyear = '").append(cyear);
-		sqlBuffer.append("' and wa_period.cperiod = '").append(cperiod)
-				.append("' ");
+		sqlBuffer.append("' and wa_period.cperiod = '").append(cperiod).append("' ");
 
 		return isValueExist(sqlBuffer.toString());
 	}
@@ -548,24 +578,18 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 
 		StringBuffer sqlBuffer = new StringBuffer();
 		sqlBuffer.append(" select 1 from wa_periodstate ");
-		sqlBuffer
-				.append(" inner join wa_period on (wa_periodstate.pk_wa_period = ");
-		sqlBuffer
-				.append(" wa_period.pk_wa_period and wa_periodstate.enableflag = 'Y') ");
+		sqlBuffer.append(" inner join wa_period on (wa_periodstate.pk_wa_period = ");
+		sqlBuffer.append(" wa_period.pk_wa_period and wa_periodstate.enableflag = 'Y') ");
 		sqlBuffer.append("where wa_periodstate.isapproved != 'Y' ");
 		sqlBuffer.append("and exists (select 1 from wa_payroll  ");
-		sqlBuffer
-				.append("where wa_payroll.pk_wa_class = wa_periodstate.pk_wa_class ");
-		sqlBuffer.append(" and wa_payroll.billstate='").append(
-				IPfRetCheckInfo.NOSTATE);
+		sqlBuffer.append("where wa_payroll.pk_wa_class = wa_periodstate.pk_wa_class ");
+		sqlBuffer.append(" and wa_payroll.billstate='").append(IPfRetCheckInfo.NOSTATE);
 		sqlBuffer.append("' and wa_payroll.pk_wa_class = '").append(classid);
 		sqlBuffer.append("' and wa_payroll.cyear = '").append(cyear);
 		sqlBuffer.append("' and wa_payroll.cperiod = '").append(cperiod);
-		sqlBuffer.append("') and wa_periodstate.pk_wa_class = '").append(
-				classid);
+		sqlBuffer.append("') and wa_periodstate.pk_wa_class = '").append(classid);
 		sqlBuffer.append("' and wa_period.cyear = '").append(cyear);
-		sqlBuffer.append("' and wa_period.cperiod = '").append(cperiod)
-				.append("' ");
+		sqlBuffer.append("' and wa_period.cperiod = '").append(cperiod).append("' ");
 
 		return isValueExist(sqlBuffer.toString());
 	}
@@ -578,12 +602,10 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 	 * @return
 	 * @throws BusinessException
 	 */
-	private WaClassItemVO[] testgetRoleClassItemVOs(WaLoginVO waLoginVO,
-			String condition) throws BusinessException {
+	private WaClassItemVO[] testgetRoleClassItemVOs(WaLoginVO waLoginVO, String condition) throws BusinessException {
 
 		StringBuffer sqlBuffer = new StringBuffer();
-		sqlBuffer
-				.append(" select wa_item.itemkey, wa_item.iitemtype,wa_item.defaultflag, ");
+		sqlBuffer.append(" select wa_item.itemkey, wa_item.iitemtype,wa_item.defaultflag, ");
 		sqlBuffer.append(" wa_item.ifldwidth,wa_item.category_id, ");
 		sqlBuffer.append(" wa_classitem.*, 'Y' editflag,");
 		sqlBuffer.append(" 'Y' as showflag,");
@@ -597,37 +619,29 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 		// .queryParentClass(waLoginVO.getPk_wa_class(),
 		// waLoginVO.getCyear(), waLoginVO.getCperiod());
 
-		sqlBuffer.append("  WHERE pk_wa_class = '"
-				+ waLoginVO.getPk_prnt_class() + "'");
+		sqlBuffer.append("  WHERE pk_wa_class = '" + waLoginVO.getPk_prnt_class() + "'");
 		sqlBuffer.append("    AND pk_group ='" + waLoginVO.getPk_group() + "'");
 
 		// 20160104 shenliangc NCdp205568081 已审批通过的发放申请通知消息，打开单据后，单据子表的审批项目丢失
 		// 历史遗留问题，通知消息双击打开发放申请节点，查询审批项目时waLoginVO.getPk_org()得到的是系统默认主组织，而不是正确的方案主组织。
-		sqlBuffer
-				.append("    AND pk_org = (select pk_org from wa_waclass where pk_wa_class = '"
-						+ waLoginVO.getPk_prnt_class() + "')");
+		sqlBuffer.append("    AND pk_org = (select pk_org from wa_waclass where pk_wa_class = '"
+				+ waLoginVO.getPk_prnt_class() + "')");
 		// sqlBuffer.append("    AND pk_org = '"+waLoginVO.getPk_org()+"'");
 
 		sqlBuffer.append("    AND ( pk_subject IN(SELECT pk_role ");
 		sqlBuffer.append("				       FROM sm_user_role ");
-		sqlBuffer.append("				      WHERE cuserid = '" + PubEnv.getPk_user()
-				+ "'");
-		sqlBuffer.append("                   ) or pk_subject = '"
-				+ PubEnv.getPk_user() + "') ");
+		sqlBuffer.append("				      WHERE cuserid = '" + PubEnv.getPk_user() + "'");
+		sqlBuffer.append("                   ) or pk_subject = '" + PubEnv.getPk_user() + "') ");
 		sqlBuffer.append("  GROUP BY pk_wa_item ) as itempower");
-		sqlBuffer
-				.append(" where wa_classitem.pk_wa_item = wa_item.pk_wa_item ");
-		sqlBuffer
-				.append(" and wa_classitem.pk_wa_item = itempower.pk_wa_item ");
+		sqlBuffer.append(" where wa_classitem.pk_wa_item = wa_item.pk_wa_item ");
+		sqlBuffer.append(" and wa_classitem.pk_wa_item = itempower.pk_wa_item ");
 		sqlBuffer.append(" and wa_classitem.pk_wa_class = ? ");
-		sqlBuffer
-				.append(" and wa_classitem.cyear = ?  and wa_classitem.cperiod = ? ");
+		sqlBuffer.append(" and wa_classitem.cyear = ?  and wa_classitem.cperiod = ? ");
 		sqlBuffer.append(WherePartUtil.formatAddtionalWhere(condition));
 		sqlBuffer.append(" order by wa_classitem.idisplayseq");
 
 		SQLParameter parameter = getCommonParameter(waLoginVO);
-		return executeQueryVOs(sqlBuffer.toString(), parameter,
-				WaClassItemVO.class);
+		return executeQueryVOs(sqlBuffer.toString(), parameter, WaClassItemVO.class);
 	}
 
 	/**
@@ -638,41 +652,32 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 	 * @return
 	 * @throws BusinessException
 	 */
-	private WaClassItemVO[] getRoleClassItemVOsNoPower(WaLoginVO waLoginVO,
-			String condition) throws BusinessException {
+	private WaClassItemVO[] getRoleClassItemVOsNoPower(WaLoginVO waLoginVO, String condition) throws BusinessException {
 
 		StringBuffer sqlBuffer = new StringBuffer();
-		sqlBuffer
-				.append(" select wa_item.itemkey, wa_item.iitemtype,wa_item.defaultflag, ");
+		sqlBuffer.append(" select wa_item.itemkey, wa_item.iitemtype,wa_item.defaultflag, ");
 		sqlBuffer.append(" wa_item.ifldwidth,wa_item.category_id, ");
 		sqlBuffer.append(" wa_classitem.*, 'Y' editflag,");
 		sqlBuffer.append("isnull(wa_classitemdsp.bshow,'Y') as showflag,");
-		sqlBuffer
-				.append("isnull(wa_classitemdsp.displayseq,wa_classitem.idisplayseq) as idisplayseq ");
+		sqlBuffer.append("isnull(wa_classitemdsp.displayseq,wa_classitem.idisplayseq) as idisplayseq ");
 		sqlBuffer.append("from wa_classitem LEFT OUTER JOIN wa_classitemdsp  ");
-		sqlBuffer
-				.append(" ON wa_classitem.pk_wa_class = wa_classitemdsp.pk_wa_class  ");
+		sqlBuffer.append(" ON wa_classitem.pk_wa_class = wa_classitemdsp.pk_wa_class  ");
 		sqlBuffer.append(" AND wa_classitem.cyear = wa_classitemdsp.cyear  ");
-		sqlBuffer
-				.append(" AND wa_classitem.cperiod = wa_classitemdsp.cperiod  ");
+		sqlBuffer.append(" AND wa_classitem.cperiod = wa_classitemdsp.cperiod  ");
 		sqlBuffer
 				.append(" AND wa_classitem.pk_wa_classitem = wa_classitemdsp.pk_wa_classitem and wa_classitemdsp.pk_user = '"
 						+ PubEnv.getPk_user() + "' , wa_item ");
-		sqlBuffer
-				.append(" where wa_classitem.pk_wa_item = wa_item.pk_wa_item ");
+		sqlBuffer.append(" where wa_classitem.pk_wa_item = wa_item.pk_wa_item ");
 		sqlBuffer.append(" and wa_classitem.pk_wa_class = ? ");
-		sqlBuffer
-				.append(" and wa_classitem.cyear = ?  and wa_classitem.cperiod = ? ");
+		sqlBuffer.append(" and wa_classitem.cyear = ?  and wa_classitem.cperiod = ? ");
 		sqlBuffer.append(WherePartUtil.formatAddtionalWhere(condition));
 		sqlBuffer.append(" order by wa_classitem.idisplayseq");
 
 		SQLParameter parameter = getCommonParameter(waLoginVO);
-		return executeQueryVOs(sqlBuffer.toString(), parameter,
-				WaClassItemVO.class);
+		return executeQueryVOs(sqlBuffer.toString(), parameter, WaClassItemVO.class);
 	}
 
-	public DataSVO[] getDataSVOs(WaLoginContext loginContext)
-			throws BusinessException {
+	public DataSVO[] getDataSVOs(WaLoginContext loginContext) throws BusinessException {
 		// TODO 增加人员权限
 		StringBuffer sqlBuffer = new StringBuffer();
 		sqlBuffer.append("select wa_datas.pk_wa_data, "); // 1
@@ -684,140 +689,92 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 		sqlBuffer.append("       wa_datas.caculatevalue, "); // 6
 		sqlBuffer.append("       wa_datas.notes, "); // 7
 		sqlBuffer.append("       wa_item.itemkey itemkey, "); // 8
-		sqlBuffer.append("        "
-				+ SQLHelper.getMultiLangNameColumn("wa_classitem.name")
-				+ "  itemname, "); // 8
-		sqlBuffer.append("        "
-				+ SQLHelper.getMultiLangNameColumn("bd_psndoc.name") + "  "
-				+ PSNNAME + ", "); // 9
+		sqlBuffer.append("        " + SQLHelper.getMultiLangNameColumn("wa_classitem.name") + "  itemname, "); // 8
+		sqlBuffer.append("        " + SQLHelper.getMultiLangNameColumn("bd_psndoc.name") + "  " + PSNNAME + ", "); // 9
 		sqlBuffer.append("       wa_classitem.iflddecimal, "); // 10
 		sqlBuffer.append("       bd_psndoc.code " + PSNCODE + ", "); // 11
 		sqlBuffer.append("       hi_psnjob.clerkcode, "); // 3
 		sqlBuffer.append("       wa_data.checkflag "); // 12
 		sqlBuffer.append("  from wa_datas ");
-		sqlBuffer
-				.append(" inner join wa_data on wa_datas.pk_wa_data = wa_data.pk_wa_data ");
-		sqlBuffer
-				.append(" inner join hi_psnjob on wa_data.pk_psnjob = hi_psnjob.pk_psnjob ");
-		sqlBuffer
-				.append(" inner join bd_psndoc on wa_data.pk_psndoc = bd_psndoc.pk_psndoc ");
-		sqlBuffer
-				.append(" inner join wa_classitem on wa_datas.pk_wa_classitem = wa_classitem.pk_wa_classitem ");
-		sqlBuffer
-				.append(" inner join wa_item on wa_classitem.pk_wa_item = wa_item.pk_wa_item ");
+		sqlBuffer.append(" inner join wa_data on wa_datas.pk_wa_data = wa_data.pk_wa_data ");
+		sqlBuffer.append(" inner join hi_psnjob on wa_data.pk_psnjob = hi_psnjob.pk_psnjob ");
+		sqlBuffer.append(" inner join bd_psndoc on wa_data.pk_psndoc = bd_psndoc.pk_psndoc ");
+		sqlBuffer.append(" inner join wa_classitem on wa_datas.pk_wa_classitem = wa_classitem.pk_wa_classitem ");
+		sqlBuffer.append(" inner join wa_item on wa_classitem.pk_wa_item = wa_item.pk_wa_item ");
 
-		sqlBuffer
-				.append(WherePartUtil
-						.addWhereKeyWord2Condition(getCommonWhereCondtion4Data(loginContext
-								.getWaLoginVO())));
-		String powerSql = WaPowerSqlHelper.getWaPowerSql(
-				loginContext.getPk_group(), IHRWADataResCode.WADATA,
+		sqlBuffer.append(WherePartUtil.addWhereKeyWord2Condition(getCommonWhereCondtion4Data(loginContext
+				.getWaLoginVO())));
+		String powerSql = WaPowerSqlHelper.getWaPowerSql(loginContext.getPk_group(), IHRWADataResCode.WADATA,
 				IHRWAActionCode.SpecialPsnAction, "hi_psnjob");
 		if (!StringUtils.isBlank(powerSql)) {
 			sqlBuffer.append(" and " + powerSql);
 		}
-		powerSql = WaPowerSqlHelper.getWaPowerSql(loginContext.getPk_group(),
-				HICommonValue.RESOUCECODE_6007PSNJOB,
+		powerSql = WaPowerSqlHelper.getWaPowerSql(loginContext.getPk_group(), HICommonValue.RESOUCECODE_6007PSNJOB,
 				IHRWADataResCode.WADEFAULT, "wa_data");
 		if (!StringUtil.isEmptyWithTrim(powerSql)) {
 			sqlBuffer.append(" and " + powerSql);
 		}
-		sqlBuffer.append("  and  wa_item.pk_wa_item in ("
-				+ ItemPowerUtil.getItemPower(loginContext) + ")");
-		sqlBuffer
-				.append(" order by wa_datas.pk_wa_data, wa_datas.pk_wa_classitem");
+		sqlBuffer.append("  and  wa_item.pk_wa_item in (" + ItemPowerUtil.getItemPower(loginContext) + ")");
+		sqlBuffer.append(" order by wa_datas.pk_wa_data, wa_datas.pk_wa_classitem");
 		return executeQueryVOs(sqlBuffer.toString(), DataSVO.class);
 	}
 
-	public DataVO[] queryByCondition(WaLoginContext context, String condition,
-			String orderCondtion) throws BusinessException {
+	public DataVO[] queryByCondition(WaLoginContext context, String condition, String orderCondtion)
+			throws BusinessException {
 
 		StringBuffer sqlBuffer = new StringBuffer();
-		sqlBuffer.append("select  "
-				+ SQLHelper.getMultiLangNameColumn("bd_psndoc.name") + "  "
-				+ PSNNAME + ", "); // 1
+		sqlBuffer.append("select  " + SQLHelper.getMultiLangNameColumn("bd_psndoc.name") + "  " + PSNNAME + ", "); // 1
 		// shenliangc 20140702 银行报盘增加户名
 		sqlBuffer.append("       bd_psndoc.code " + PSNCODE + ",  "); // 2
-		sqlBuffer.append("        "
-				+ SQLHelper.getMultiLangNameColumn("bd_psnidtype.name")
-				+ "  as idtype, "); // 4
+		sqlBuffer.append("        " + SQLHelper.getMultiLangNameColumn("bd_psnidtype.name") + "  as idtype, "); // 4
 		sqlBuffer.append("       hi_psnjob.clerkcode, bd_psndoc.id as id, "); // 3
-		sqlBuffer.append("        "
-				+ SQLHelper.getMultiLangNameColumn("org_dept_v.name") + "  "
-				+ DEPTNAME + ", "); // 4
-		sqlBuffer.append("        "
-				+ SQLHelper.getMultiLangNameColumn("org_orgs_v.name") + "  "
-				+ ORGNAME + ", "); // 3
-		sqlBuffer.append("        "
-				+ SQLHelper.getMultiLangNameColumn("bd_psncl.name") + "  "
-				+ PLSNAME + ", "); // 5
+		sqlBuffer.append("        " + SQLHelper.getMultiLangNameColumn("org_dept_v.name") + "  " + DEPTNAME + ", "); // 4
+		sqlBuffer.append("        " + SQLHelper.getMultiLangNameColumn("org_orgs_v.name") + "  " + ORGNAME + ", "); // 3
+		sqlBuffer.append("        " + SQLHelper.getMultiLangNameColumn("bd_psncl.name") + "  " + PLSNAME + ", "); // 5
 		// shenliangc 20140702 银行报盘增加户名
 		// guoqt套接字问题
 		// 2015-07-30 zhosuze NCdp205099799 薪资发放界面添加财务组织财务部门 begin
-		sqlBuffer.append("        "
-				+ SQLHelper.getMultiLangNameColumn("financeorg.name") + "  "
-				+ FINANCEORG + ", "); // 3
-		sqlBuffer.append("        "
-				+ SQLHelper.getMultiLangNameColumn("financedept.name") + "  "
-				+ FINANCEDEPT + ", "); // 3
-		sqlBuffer.append("        "
-				+ SQLHelper.getMultiLangNameColumn("liabilityorg.name") + "  "
-				+ LIABILITYORG + ", "); // 3
-		sqlBuffer.append("        "
-				+ SQLHelper.getMultiLangNameColumn("liabilitydept.name") + "  "
-				+ LIABILITYDEPT + ", "); // 3
+		sqlBuffer.append("        " + SQLHelper.getMultiLangNameColumn("financeorg.name") + "  " + FINANCEORG + ", "); // 3
+		sqlBuffer.append("        " + SQLHelper.getMultiLangNameColumn("financedept.name") + "  " + FINANCEDEPT + ", "); // 3
+		sqlBuffer.append("        " + SQLHelper.getMultiLangNameColumn("liabilityorg.name") + "  " + LIABILITYORG
+				+ ", "); // 3
+		sqlBuffer.append("        " + SQLHelper.getMultiLangNameColumn("liabilitydept.name") + "  " + LIABILITYDEPT
+				+ ", "); // 3
 		// end
 
 		sqlBuffer.append("       om_job.jobname, "); // 6
 		// guoqt岗位
-		sqlBuffer.append("        "
-				+ SQLHelper.getMultiLangNameColumn("om_post.postname") + "  "
-				+ POSTNAME + ", "); // 6
+		sqlBuffer.append("        " + SQLHelper.getMultiLangNameColumn("om_post.postname") + "  " + POSTNAME + ", "); // 6
 		sqlBuffer.append("       wa_data.* "); // 7
 		sqlBuffer.append("  from wa_data ");
-		sqlBuffer
-				.append(" inner join bd_psndoc on wa_data.pk_psndoc = bd_psndoc.pk_psndoc ");
-		sqlBuffer
-				.append(" inner join hi_psnjob on wa_data.pk_psnjob = hi_psnjob.pk_psnjob ");
-		sqlBuffer
-				.append(" left join org_orgs_v on org_orgs_v.pk_vid = wa_data.workorgvid ");
-		sqlBuffer
-				.append(" left join org_dept_v on org_dept_v.pk_vid = wa_data.workdeptvid ");
-		sqlBuffer
-				.append("  left outer join om_job on hi_psnjob.pk_job = om_job.pk_job ");
-		sqlBuffer
-				.append("  left outer join om_post on hi_psnjob.pk_post = om_post.pk_post ");
+		sqlBuffer.append(" inner join bd_psndoc on wa_data.pk_psndoc = bd_psndoc.pk_psndoc ");
+		sqlBuffer.append(" inner join hi_psnjob on wa_data.pk_psnjob = hi_psnjob.pk_psnjob ");
+		sqlBuffer.append(" left join org_orgs_v on org_orgs_v.pk_vid = wa_data.workorgvid ");
+		sqlBuffer.append(" left join org_dept_v on org_dept_v.pk_vid = wa_data.workdeptvid ");
+		sqlBuffer.append("  left outer join om_job on hi_psnjob.pk_job = om_job.pk_job ");
+		sqlBuffer.append("  left outer join om_post on hi_psnjob.pk_post = om_post.pk_post ");
 		// shenliangc 20140702 银行报盘增加户名
 		// 2015-07-30 zhosuze NCdp205099799 薪资发放界面添加财务组织财务部门 begin
-		sqlBuffer
-				.append("  left join org_orgs financeorg on wa_data.pk_financeorg = financeorg.pk_org ");
-		sqlBuffer
-				.append("  left join org_dept financedept on wa_data.pk_financedept = financedept.pk_dept ");
-		sqlBuffer
-				.append("  left join org_orgs liabilityorg on wa_data.pk_liabilityorg = liabilityorg.pk_org ");
-		sqlBuffer
-				.append("  left join org_dept liabilitydept on wa_data.pk_liabilitydept = liabilitydept.pk_dept ");
+		sqlBuffer.append("  left join org_orgs financeorg on wa_data.pk_financeorg = financeorg.pk_org ");
+		sqlBuffer.append("  left join org_dept financedept on wa_data.pk_financedept = financedept.pk_dept ");
+		sqlBuffer.append("  left join org_orgs liabilityorg on wa_data.pk_liabilityorg = liabilityorg.pk_org ");
+		sqlBuffer.append("  left join org_dept liabilitydept on wa_data.pk_liabilitydept = liabilitydept.pk_dept ");
 		// end
 
-		sqlBuffer
-				.append("  left outer join bd_psnidtype on bd_psndoc.idtype = bd_psnidtype.pk_identitype ");
-		sqlBuffer
-				.append("  left outer join bd_psncl on hi_psnjob.pk_psncl = bd_psncl.pk_psncl where ");
+		sqlBuffer.append("  left outer join bd_psnidtype on bd_psndoc.idtype = bd_psnidtype.pk_identitype ");
+		sqlBuffer.append("  left outer join bd_psncl on hi_psnjob.pk_psncl = bd_psncl.pk_psncl where ");
 
 		String sqlpart = getCommonWhereCondtion4Data(context.getWaLoginVO());
 		sqlBuffer.append(sqlpart);
 
 		// TODO 完善查询
 		if (!StringUtil.isEmpty(condition)) {
-			sqlBuffer
-					.append(" and wa_data.pk_wa_data in (select pk_wa_data from wa_data where ");
+			sqlBuffer.append(" and wa_data.pk_wa_data in (select pk_wa_data from wa_data where ");
 			sqlBuffer.append(sqlpart);
-			sqlBuffer.append(WherePartUtil.formatAddtionalWhere(condition))
-					.append(")");
+			sqlBuffer.append(WherePartUtil.formatAddtionalWhere(condition)).append(")");
 		}
 		// guoqt 薪资发放导出增加权限控制
-		String powerSql = WaPowerSqlHelper.getWaPowerSql(context.getPk_group(),
-				HICommonValue.RESOUCECODE_6007PSNJOB,
+		String powerSql = WaPowerSqlHelper.getWaPowerSql(context.getPk_group(), HICommonValue.RESOUCECODE_6007PSNJOB,
 				IHRWADataResCode.WADEFAULT, "wa_data");
 		if (!StringUtil.isEmptyWithTrim(powerSql)) {
 			sqlBuffer.append(" and " + powerSql);
@@ -831,25 +788,16 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 
 	}
 
-	public DataVO[] queryByConditionWithItem(WaLoginContext context,
-			String orderCondtion, WaClassItemVO[] classItemVOs)
+	public DataVO[] queryByConditionWithItem(WaLoginContext context, String orderCondtion, WaClassItemVO[] classItemVOs)
 			throws BusinessException {
 
 		StringBuffer sqlBuffer = new StringBuffer();
-		sqlBuffer.append("select  "
-				+ SQLHelper.getMultiLangNameColumn("bd_psndoc.name") + "  "
-				+ PSNNAME + ", "); // 1
+		sqlBuffer.append("select  " + SQLHelper.getMultiLangNameColumn("bd_psndoc.name") + "  " + PSNNAME + ", "); // 1
 		sqlBuffer.append("       bd_psndoc.code " + PSNCODE + ", "); // 2
 		sqlBuffer.append("       hi_psnjob.clerkcode, "); // 3
-		sqlBuffer.append("        "
-				+ SQLHelper.getMultiLangNameColumn("org_dept_v.name") + "  "
-				+ DEPTNAME + ", "); // 4
-		sqlBuffer.append("        "
-				+ SQLHelper.getMultiLangNameColumn("org_orgs_v.name") + "  "
-				+ ORGNAME + ", "); // 3
-		sqlBuffer.append("        "
-				+ SQLHelper.getMultiLangNameColumn("bd_psncl.name") + "  "
-				+ PLSNAME + ", "); // 5
+		sqlBuffer.append("        " + SQLHelper.getMultiLangNameColumn("org_dept_v.name") + "  " + DEPTNAME + ", "); // 4
+		sqlBuffer.append("        " + SQLHelper.getMultiLangNameColumn("org_orgs_v.name") + "  " + ORGNAME + ", "); // 3
+		sqlBuffer.append("        " + SQLHelper.getMultiLangNameColumn("bd_psncl.name") + "  " + PLSNAME + ", "); // 5
 		sqlBuffer.append("       om_job.jobname, "); // 6
 		sqlBuffer.append("       om_post.postname, "); // 6
 		sqlBuffer.append("       wa_data.f_1,wa_data.f_3 "); // 7
@@ -859,20 +807,13 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 			}
 		}
 		sqlBuffer.append("  from wa_data ");
-		sqlBuffer
-				.append(" inner join bd_psndoc on wa_data.pk_psndoc = bd_psndoc.pk_psndoc ");
-		sqlBuffer
-				.append(" inner join hi_psnjob on wa_data.pk_psnjob = hi_psnjob.pk_psnjob ");
-		sqlBuffer
-				.append(" left join org_orgs_v on org_orgs_v.pk_vid = wa_data.workorgvid ");
-		sqlBuffer
-				.append(" left join org_dept_v on org_dept_v.pk_vid = wa_data.workdeptvid ");
-		sqlBuffer
-				.append("  left outer join om_job on hi_psnjob.pk_job = om_job.pk_job ");
-		sqlBuffer
-				.append("  left outer join om_post on hi_psnjob.pk_post = om_post.pk_post ");
-		sqlBuffer
-				.append("  left outer join bd_psncl on hi_psnjob.pk_psncl = bd_psncl.pk_psncl where ");
+		sqlBuffer.append(" inner join bd_psndoc on wa_data.pk_psndoc = bd_psndoc.pk_psndoc ");
+		sqlBuffer.append(" inner join hi_psnjob on wa_data.pk_psnjob = hi_psnjob.pk_psnjob ");
+		sqlBuffer.append(" left join org_orgs_v on org_orgs_v.pk_vid = wa_data.workorgvid ");
+		sqlBuffer.append(" left join org_dept_v on org_dept_v.pk_vid = wa_data.workdeptvid ");
+		sqlBuffer.append("  left outer join om_job on hi_psnjob.pk_job = om_job.pk_job ");
+		sqlBuffer.append("  left outer join om_post on hi_psnjob.pk_post = om_post.pk_post ");
+		sqlBuffer.append("  left outer join bd_psncl on hi_psnjob.pk_psncl = bd_psncl.pk_psncl where ");
 
 		String sqlpart = getCommonWhereCondtion4Data(context.getWaLoginVO());
 		sqlBuffer.append(sqlpart);
@@ -894,37 +835,28 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 
 	}
 
-	public DataVO[] querySumDataByCondition(WaLoginContext context,
-			String orderCondtion, WaClassItemVO[] classItemVOs)
+	public DataVO[] querySumDataByCondition(WaLoginContext context, String orderCondtion, WaClassItemVO[] classItemVOs)
 			throws BusinessException {
 
 		StringBuffer sqlBuffer = new StringBuffer();
 		sqlBuffer.append("select  "); // 1
 		sqlBuffer.append("  org_orgs_v.code orgcode ,"); // 2
-		sqlBuffer.append("        "
-				+ SQLHelper.getMultiLangNameColumn("org_orgs_v.name") + "  "
-				+ ORGNAME + ", "); // 3
+		sqlBuffer.append("        " + SQLHelper.getMultiLangNameColumn("org_orgs_v.name") + "  " + ORGNAME + ", "); // 3
 		sqlBuffer.append("  org_dept_v.code deptcode ,"); // 2
-		sqlBuffer.append("        "
-				+ SQLHelper.getMultiLangNameColumn("org_dept_v.name") + "  "
-				+ DEPTNAME + ", "); // 4
+		sqlBuffer.append("        " + SQLHelper.getMultiLangNameColumn("org_dept_v.name") + "  " + DEPTNAME + ", "); // 4
 		sqlBuffer.append("   count(wa_data.pk_psnjob ) psnnum"); // 7
 		if (!ArrayUtils.isEmpty(classItemVOs)) {
 			for (WaClassItemVO classItemVO : classItemVOs) {
 				if (classItemVO.getIitemtype() != null
-						&& classItemVO.getIitemtype().intValue() == TypeEnumVO.FLOATTYPE
-								.value().intValue()) {
-					sqlBuffer.append("       ,sum(" + classItemVO.getItemkey()
-							+ ") " + classItemVO.getItemkey()); // 7
+						&& classItemVO.getIitemtype().intValue() == TypeEnumVO.FLOATTYPE.value().intValue()) {
+					sqlBuffer.append("       ,sum(" + classItemVO.getItemkey() + ") " + classItemVO.getItemkey()); // 7
 				}
 			}
 		}
 
 		sqlBuffer.append("  from wa_data ");
-		sqlBuffer
-				.append(" left join org_orgs_v on org_orgs_v.pk_vid = wa_data.workorgvid ");
-		sqlBuffer
-				.append(" left join org_dept_v on org_dept_v.pk_vid = wa_data.workdeptvid where ");
+		sqlBuffer.append(" left join org_orgs_v on org_orgs_v.pk_vid = wa_data.workorgvid ");
+		sqlBuffer.append(" left join org_dept_v on org_dept_v.pk_vid = wa_data.workdeptvid where ");
 
 		String sqlpart = getCommonWhereCondtion4Data(context.getWaLoginVO());
 		sqlBuffer.append(sqlpart);
@@ -937,10 +869,8 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 		// sqlBuffer.append(WherePartUtil.formatAddtionalWhere(condition))
 		// .append(")");
 		// }
-		sqlBuffer.append(" group by org_orgs_v.code,"
-				+ SQLHelper.getMultiLangNameColumn("org_orgs_v.name")
-				+ ",org_dept_v.code,"
-				+ SQLHelper.getMultiLangNameColumn("org_dept_v.name") + " ");
+		sqlBuffer.append(" group by org_orgs_v.code," + SQLHelper.getMultiLangNameColumn("org_orgs_v.name")
+				+ ",org_dept_v.code," + SQLHelper.getMultiLangNameColumn("org_dept_v.name") + " ");
 		if (!StringUtil.isEmpty(orderCondtion)) {
 			sqlBuffer.append(" order by ").append(orderCondtion);
 		} else {
@@ -950,71 +880,44 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 
 	}
 
-	public DataVO[] queryByPKSCondition(String condition, String orderCondtion)
-			throws BusinessException {
+	public DataVO[] queryByPKSCondition(String condition, String orderCondtion) throws BusinessException {
 
 		StringBuffer sqlBuffer = new StringBuffer();
 		sqlBuffer.append("select /*+ optimizer_features_enable('10.2.0.1') */ "
-				+ SQLHelper.getMultiLangNameColumn("bd_psndoc.name") + "  "
-				+ PSNNAME + ", "); // 1
+				+ SQLHelper.getMultiLangNameColumn("bd_psndoc.name") + "  " + PSNNAME + ", "); // 1
 		sqlBuffer.append("       bd_psndoc.code " + PSNCODE + ", "); // 2
 		sqlBuffer.append("       hi_psnjob.clerkcode, "); // 3
-		sqlBuffer.append("        "
-				+ SQLHelper.getMultiLangNameColumn("org_dept_v.name") + "  "
-				+ DEPTNAME + ", "); // 4
-		sqlBuffer.append("        "
-				+ SQLHelper.getMultiLangNameColumn("org_orgs_v.name") + "  "
-				+ ORGNAME + ", "); // 3
-		sqlBuffer.append("        "
-				+ SQLHelper.getMultiLangNameColumn("bd_psncl.name") + "  "
-				+ PLSNAME + ", "); // 5
+		sqlBuffer.append("        " + SQLHelper.getMultiLangNameColumn("org_dept_v.name") + "  " + DEPTNAME + ", "); // 4
+		sqlBuffer.append("        " + SQLHelper.getMultiLangNameColumn("org_orgs_v.name") + "  " + ORGNAME + ", "); // 3
+		sqlBuffer.append("        " + SQLHelper.getMultiLangNameColumn("bd_psncl.name") + "  " + PLSNAME + ", "); // 5
 		// shenliangc 20140702 银行报盘增加户名
 		// 2015-07-30 zhosuze NCdp205099799 薪资发放界面添加财务组织财务部门 begin
-		sqlBuffer.append("        "
-				+ SQLHelper.getMultiLangNameColumn("financeorg.name") + "  "
-				+ FINANCEORG + ", "); // 3
-		sqlBuffer.append("        "
-				+ SQLHelper.getMultiLangNameColumn("financedept.name") + "  "
-				+ FINANCEDEPT + ", "); // 3
-		sqlBuffer.append("        "
-				+ SQLHelper.getMultiLangNameColumn("liabilityorg.name") + "  "
-				+ LIABILITYORG + ", "); // 3
-		sqlBuffer.append("        "
-				+ SQLHelper.getMultiLangNameColumn("liabilitydept.name") + "  "
-				+ LIABILITYDEPT + ", "); // 3
+		sqlBuffer.append("        " + SQLHelper.getMultiLangNameColumn("financeorg.name") + "  " + FINANCEORG + ", "); // 3
+		sqlBuffer.append("        " + SQLHelper.getMultiLangNameColumn("financedept.name") + "  " + FINANCEDEPT + ", "); // 3
+		sqlBuffer.append("        " + SQLHelper.getMultiLangNameColumn("liabilityorg.name") + "  " + LIABILITYORG
+				+ ", "); // 3
+		sqlBuffer.append("        " + SQLHelper.getMultiLangNameColumn("liabilitydept.name") + "  " + LIABILITYDEPT
+				+ ", "); // 3
 		// end
 
 		sqlBuffer.append("       om_job.jobname, "); // 6
 		// guoqt岗位
-		sqlBuffer.append("        "
-				+ SQLHelper.getMultiLangNameColumn("om_post.postname") + "  "
-				+ POSTNAME + ", "); // 6
+		sqlBuffer.append("        " + SQLHelper.getMultiLangNameColumn("om_post.postname") + "  " + POSTNAME + ", "); // 6
 		sqlBuffer.append("       wa_data.*,datapower.operateflag "); // 7
 		sqlBuffer.append("  from wa_data ");
-		sqlBuffer
-				.append(" inner join bd_psndoc on wa_data.pk_psndoc = bd_psndoc.pk_psndoc ");
-		sqlBuffer
-				.append(" inner join hi_psnjob on wa_data.pk_psnjob = hi_psnjob.pk_psnjob ");
-		sqlBuffer
-				.append(" left join org_orgs_v on org_orgs_v.pk_vid = wa_data.workorgvid ");
-		sqlBuffer
-				.append(" left join org_dept_v on org_dept_v.pk_vid = wa_data.workdeptvid ");
-		sqlBuffer
-				.append(" left outer join om_job on hi_psnjob.pk_job = om_job.pk_job ");
-		sqlBuffer
-				.append("  left outer join om_post on hi_psnjob.pk_post = om_post.pk_post ");
-		sqlBuffer
-				.append("  left outer join bd_psncl on hi_psnjob.pk_psncl = bd_psncl.pk_psncl ");
+		sqlBuffer.append(" inner join bd_psndoc on wa_data.pk_psndoc = bd_psndoc.pk_psndoc ");
+		sqlBuffer.append(" inner join hi_psnjob on wa_data.pk_psnjob = hi_psnjob.pk_psnjob ");
+		sqlBuffer.append(" left join org_orgs_v on org_orgs_v.pk_vid = wa_data.workorgvid ");
+		sqlBuffer.append(" left join org_dept_v on org_dept_v.pk_vid = wa_data.workdeptvid ");
+		sqlBuffer.append(" left outer join om_job on hi_psnjob.pk_job = om_job.pk_job ");
+		sqlBuffer.append("  left outer join om_post on hi_psnjob.pk_post = om_post.pk_post ");
+		sqlBuffer.append("  left outer join bd_psncl on hi_psnjob.pk_psncl = bd_psncl.pk_psncl ");
 		// shenliangc 20140702 银行报盘增加户名
 		// 2015-07-30 zhosuze NCdp205099799 薪资发放界面添加财务组织财务部门 begin
-		sqlBuffer
-				.append("  left join org_orgs financeorg on wa_data.pk_financeorg = financeorg.pk_org ");
-		sqlBuffer
-				.append("  left join org_dept financedept on wa_data.pk_financedept = financedept.pk_dept ");
-		sqlBuffer
-				.append("  left join org_orgs liabilityorg on wa_data.pk_liabilityorg = liabilityorg.pk_org ");
-		sqlBuffer
-				.append("  left join org_dept liabilitydept on wa_data.pk_liabilitydept = liabilitydept.pk_dept ");
+		sqlBuffer.append("  left join org_orgs financeorg on wa_data.pk_financeorg = financeorg.pk_org ");
+		sqlBuffer.append("  left join org_dept financedept on wa_data.pk_financedept = financedept.pk_dept ");
+		sqlBuffer.append("  left join org_orgs liabilityorg on wa_data.pk_liabilityorg = liabilityorg.pk_org ");
+		sqlBuffer.append("  left join org_dept liabilitydept on wa_data.pk_liabilitydept = liabilitydept.pk_dept ");
 		// end
 
 		// String operateConditon = NCLocator
@@ -1028,24 +931,20 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 		String operateConditon = NCLocator
 				.getInstance()
 				.lookup(IHRDataPermissionPubService.class)
-				.getDataRefSQLWherePartByMDOperationCode(PubEnv.getPk_user(),
-						PubEnv.getPk_group(), IHRWADataResCode.WADATA,
-						IHRWAActionCode.EDIT, "wa_data");
+				.getDataRefSQLWherePartByMDOperationCode(PubEnv.getPk_user(), PubEnv.getPk_group(),
+						IHRWADataResCode.WADATA, IHRWAActionCode.EDIT, "wa_data");
 		if (StringUtils.isEmpty(operateConditon)) {
 			operateConditon = " 1 = 1 ";
 		}
 		// end
 
-		sqlBuffer
-				.append(" left outer join (select 'Y' as operateflag,pk_wa_data from wa_data  where ");
+		sqlBuffer.append(" left outer join (select 'Y' as operateflag,pk_wa_data from wa_data  where ");
 		sqlBuffer.append(operateConditon);
-		sqlBuffer
-				.append(") datapower on wa_data.pk_wa_data = datapower.pk_wa_data ");
+		sqlBuffer.append(") datapower on wa_data.pk_wa_data = datapower.pk_wa_data ");
 		// TODO 完善查询
 		if (!StringUtil.isEmpty(condition)) {
 
-			sqlBuffer.append(" where  wa_data.pk_wa_data in (" + condition
-					+ ")");
+			sqlBuffer.append(" where  wa_data.pk_wa_data in (" + condition + ")");
 
 		}
 		if (!StringUtil.isEmpty(orderCondtion)) {
@@ -1056,41 +955,31 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 
 	}
 
-	public String[] queryPKSByCondition(WaLoginContext context,
-			String condition, String orderCondtion) throws BusinessException {
+	public String[] queryPKSByCondition(WaLoginContext context, String condition, String orderCondtion)
+			throws BusinessException {
 
 		StringBuffer sqlBuffer = new StringBuffer();
 		sqlBuffer.append("select ");
 		sqlBuffer.append("       wa_data.pk_wa_data "); // 7
 		sqlBuffer.append("  from wa_data ");
-		sqlBuffer
-				.append(" inner join bd_psndoc on wa_data.pk_psndoc = bd_psndoc.pk_psndoc ");
-		sqlBuffer
-				.append(" inner join hi_psnjob on wa_data.pk_psnjob = hi_psnjob.pk_psnjob ");
-		sqlBuffer
-				.append(" left join org_orgs_v on wa_data.WORKORGVID = org_orgs_v.PK_VID ");
-		sqlBuffer
-				.append(" LEFT OUTER JOIN org_dept_v ON wa_data.WORKDEPTVID = org_dept_v.PK_VID  ");
-		sqlBuffer
-				.append("  left outer join om_job on hi_psnjob.pk_job = om_job.pk_job ");
-		sqlBuffer
-				.append("  left outer join om_post on hi_psnjob.pk_post = om_post.pk_post ");
-		sqlBuffer
-				.append("  left outer join bd_psncl on hi_psnjob.pk_psncl = bd_psncl.pk_psncl where ");
+		sqlBuffer.append(" inner join bd_psndoc on wa_data.pk_psndoc = bd_psndoc.pk_psndoc ");
+		sqlBuffer.append(" inner join hi_psnjob on wa_data.pk_psnjob = hi_psnjob.pk_psnjob ");
+		sqlBuffer.append(" left join org_orgs_v on wa_data.WORKORGVID = org_orgs_v.PK_VID ");
+		sqlBuffer.append(" LEFT OUTER JOIN org_dept_v ON wa_data.WORKDEPTVID = org_dept_v.PK_VID  ");
+		sqlBuffer.append("  left outer join om_job on hi_psnjob.pk_job = om_job.pk_job ");
+		sqlBuffer.append("  left outer join om_post on hi_psnjob.pk_post = om_post.pk_post ");
+		sqlBuffer.append("  left outer join bd_psncl on hi_psnjob.pk_psncl = bd_psncl.pk_psncl where ");
 
 		String sqlpart = getCommonWhereCondtion4Data(context.getWaLoginVO());
 		sqlBuffer.append(sqlpart);
 
 		// TODO 完善查询
 		if (!StringUtil.isEmpty(condition)) {
-			sqlBuffer
-					.append(" and wa_data.pk_wa_data in (select pk_wa_data from wa_data where ");
+			sqlBuffer.append(" and wa_data.pk_wa_data in (select pk_wa_data from wa_data where ");
 			sqlBuffer.append(sqlpart);
-			sqlBuffer.append(WherePartUtil.formatAddtionalWhere(condition))
-					.append(")");
+			sqlBuffer.append(WherePartUtil.formatAddtionalWhere(condition)).append(")");
 		}
-		String powerSql = WaPowerSqlHelper.getWaPowerSql(context.getPk_group(),
-				HICommonValue.RESOUCECODE_6007PSNJOB,
+		String powerSql = WaPowerSqlHelper.getWaPowerSql(context.getPk_group(), HICommonValue.RESOUCECODE_6007PSNJOB,
 				IHRWADataResCode.WADEFAULT, "wa_data");
 		if (!StringUtil.isEmptyWithTrim(powerSql)) {
 			sqlBuffer.append(" and " + powerSql);
@@ -1098,8 +987,7 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 		if (!StringUtil.isEmpty(orderCondtion)) {
 			sqlBuffer.append(" order by ").append(orderCondtion);
 		}
-		DataVO[] vos = executeQueryAppendableVOs(sqlBuffer.toString(),
-				DataVO.class);
+		DataVO[] vos = executeQueryAppendableVOs(sqlBuffer.toString(), DataVO.class);
 
 		String[] pks = new String[0];
 		if (vos != null) {
@@ -1122,14 +1010,12 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 	 * @return
 	 * @throws BusinessException
 	 */
-	public AggPayDataVO queryAggPayDataVOByCondition(
-			WaLoginContext loginContext, String condition, String orderCondtion)
+	public AggPayDataVO queryAggPayDataVOByCondition(WaLoginContext loginContext, String condition, String orderCondtion)
 			throws BusinessException {
 		AggPayDataVO aggPayDataVO = new AggPayDataVO();
 
 		// 薪资类别信息
-		WaLoginVO waLoginVO = WaClassStateHelper
-				.getWaclassVOWithState(loginContext.getWaLoginVO());
+		WaLoginVO waLoginVO = WaClassStateHelper.getWaclassVOWithState(loginContext.getWaLoginVO());
 		aggPayDataVO.setLoginVO(waLoginVO);
 
 		// 有权限的薪资项目
@@ -1140,11 +1026,9 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 		// orderCondtion);
 		// aggPayDataVO.setDataVOs(dataVOs);
 
-		String[] pks = queryPKSByCondition(loginContext, condition,
-				orderCondtion);
+		String[] pks = queryPKSByCondition(loginContext, condition, orderCondtion);
 		aggPayDataVO.setDataPKs(pks);
-		aggPayDataVO.setSumData(querySumData(loginContext, condition,
-				classItemVOs));
+		aggPayDataVO.setSumData(querySumData(loginContext, condition, classItemVOs));
 		DataSVO[] dsvos = getDataSVOs(loginContext);
 
 		aggPayDataVO.setDataSmallVO(dsvos);
@@ -1152,8 +1036,8 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 		return aggPayDataVO;
 	}
 
-	public DataVO querySumData(WaLoginContext context, String condition,
-			WaClassItemVO[] classItemVOs) throws DAOException {
+	public DataVO querySumData(WaLoginContext context, String condition, WaClassItemVO[] classItemVOs)
+			throws DAOException {
 		if (ArrayUtils.isEmpty(classItemVOs)) {
 			return new DataVO();
 		}
@@ -1161,48 +1045,38 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 
 		for (int i = 0; i < classItemVOs.length; i++) {
 			if (classItemVOs[i].getIitemtype() == 0) {
-				sumSql.append("sum(wa_data." + classItemVOs[i].getItemkey()
-						+ ") as " + classItemVOs[i].getItemkey() + ",");
+				sumSql.append("sum(SALARY_DECRYPT(wa_data." + classItemVOs[i].getItemkey() + ")) as "
+						+ classItemVOs[i].getItemkey() + ",");
 			}
 		}
 		StringBuffer sqlBuffer = new StringBuffer();
 		sqlBuffer.append("select ");
 		sqlBuffer.append(sumSql); // 7
 		sqlBuffer.append(" '1' as pk_wa_data from wa_data ");
-		sqlBuffer
-				.append(" inner join bd_psndoc on wa_data.pk_psndoc = bd_psndoc.pk_psndoc ");
-		sqlBuffer
-				.append(" inner join hi_psnjob on wa_data.pk_psnjob = hi_psnjob.pk_psnjob ");
-		sqlBuffer
-				.append(" left join org_orgs_v on wa_data.WORKORGVID = org_orgs_v.PK_VID ");
-		sqlBuffer
-				.append(" LEFT OUTER JOIN org_dept_v ON wa_data.WORKDEPTVID = org_dept_v.PK_VID  ");
-		sqlBuffer
-				.append("  left outer join om_job on hi_psnjob.pk_job = om_job.pk_job ");
-		sqlBuffer
-				.append("  left outer join om_post on hi_psnjob.pk_post = om_post.pk_post ");
-		sqlBuffer
-				.append("  left outer join bd_psncl on hi_psnjob.pk_psncl = bd_psncl.pk_psncl where ");
+		sqlBuffer.append(" inner join bd_psndoc on wa_data.pk_psndoc = bd_psndoc.pk_psndoc ");
+		sqlBuffer.append(" inner join hi_psnjob on wa_data.pk_psnjob = hi_psnjob.pk_psnjob ");
+		sqlBuffer.append(" left join org_orgs_v on wa_data.WORKORGVID = org_orgs_v.PK_VID ");
+		sqlBuffer.append(" LEFT OUTER JOIN org_dept_v ON wa_data.WORKDEPTVID = org_dept_v.PK_VID  ");
+		sqlBuffer.append("  left outer join om_job on hi_psnjob.pk_job = om_job.pk_job ");
+		sqlBuffer.append("  left outer join om_post on hi_psnjob.pk_post = om_post.pk_post ");
+		sqlBuffer.append("  left outer join bd_psncl on hi_psnjob.pk_psncl = bd_psncl.pk_psncl where ");
 
 		String sqlpart = getCommonWhereCondtion4Data(context.getWaLoginVO());
 		sqlBuffer.append(sqlpart);
 		if (!StringUtil.isEmpty(condition)) {
-			sqlBuffer
-					.append(" and wa_data.pk_wa_data in (select pk_wa_data from wa_data where ");
+			sqlBuffer.append(" and wa_data.pk_wa_data in (select pk_wa_data from wa_data where ");
 			sqlBuffer.append(sqlpart);
-			sqlBuffer.append(WherePartUtil.formatAddtionalWhere(condition))
-					.append(")");
+			sqlBuffer.append(WherePartUtil.formatAddtionalWhere(condition)).append(")");
 		}
-		String powerSql = WaPowerSqlHelper.getWaPowerSql(context.getPk_group(),
-				HICommonValue.RESOUCECODE_6007PSNJOB,
+		String powerSql = WaPowerSqlHelper.getWaPowerSql(context.getPk_group(), HICommonValue.RESOUCECODE_6007PSNJOB,
 				IHRWADataResCode.WADEFAULT, "wa_data");
 		if (!StringUtil.isEmptyWithTrim(powerSql)) {
 			sqlBuffer.append(" and " + powerSql);
 		}
 		DataVO vo = executeQueryAppendableVO(sqlBuffer.toString(), DataVO.class);
 		// 2016-11-23 zhousze 薪资加密：处理合计行合计数据解密 begin
-		DataVO[] vos = { vo };
-		vo = SalaryDecryptUtil.decrypt4Array(vos)[0];
+		// DataVO[] vos = { vo };
+		// vo = SalaryDecryptUtil.decrypt4Array(vos)[0];
 		// end
 		return vo;
 	}
@@ -1218,54 +1092,42 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 	 * @return
 	 * @throws DAOException
 	 */
-	public PeriodStateVO queryPeriodStateVOByPk(String pk_wa_class,
-			String pk_periodscheme, String cperiod, String cyear)
+	public PeriodStateVO queryPeriodStateVOByPk(String pk_wa_class, String pk_periodscheme, String cperiod, String cyear)
 			throws DAOException {
 		PeriodStateVO periodstateVO = new PeriodStateVO();
 		StringBuffer sqlA = new StringBuffer();
 		sqlA.append("select pk_periodstate from wa_periodstate where pk_wa_period = "
-				+ "(select pk_wa_period from wa_period where pk_periodscheme = '"
-				+ pk_periodscheme
-				+ "' and cyear = '"
-				+ cyear
-				+ "' and cperiod  = '"
-				+ cperiod
-				+ "') "
-				+ " and pk_wa_class = '" + pk_wa_class + "' ");
-		String pk_periodstate = (String) this.getBaseDao().executeQuery(
-				sqlA.toString(), new ResultSetProcessor() {
+				+ "(select pk_wa_period from wa_period where pk_periodscheme = '" + pk_periodscheme + "' and cyear = '"
+				+ cyear + "' and cperiod  = '" + cperiod + "') " + " and pk_wa_class = '" + pk_wa_class + "' ");
+		String pk_periodstate = (String) this.getBaseDao().executeQuery(sqlA.toString(), new ResultSetProcessor() {
 
-					@Override
-					public Object handleResultSet(ResultSet rs)
-							throws SQLException {
-						String result = null;
-						if (rs.next()) {
-							result = rs.getString(1);
-						}
-						return result;
-					}
-				});
+			@Override
+			public Object handleResultSet(ResultSet rs) throws SQLException {
+				String result = null;
+				if (rs.next()) {
+					result = rs.getString(1);
+				}
+				return result;
+			}
+		});
 		StringBuffer sqlB = new StringBuffer();
 		sqlB.append("select ts from wa_periodstate where pk_wa_period = "
-				+ "(select pk_wa_period from wa_period where pk_periodscheme = '"
-				+ pk_periodscheme + "' and cyear = '" + cyear
-				+ "' and cperiod  = '" + cperiod + "') "
-				+ " and pk_wa_class = '" + pk_wa_class + "' ");
+				+ "(select pk_wa_period from wa_period where pk_periodscheme = '" + pk_periodscheme + "' and cyear = '"
+				+ cyear + "' and cperiod  = '" + cperiod + "') " + " and pk_wa_class = '" + pk_wa_class + "' ");
 		String ts = (String) this.getBaseDao().executeQuery(
-//				sqlB.toString(), new BeanProcessor(UFDateTime.class));
+		// sqlB.toString(), new BeanProcessor(UFDateTime.class));
 				sqlB.toString(), new ColumnProcessor());
 		periodstateVO.setPk_periodstate(pk_periodstate);
 		periodstateVO.setTs(new UFDateTime(ts));
 		return periodstateVO;
 	}
 
-	public AggPayDataVO queryAggPayDataVOs(WaLoginContext loginContext,
-			String condition, String orderCondtion) throws BusinessException {
+	public AggPayDataVO queryAggPayDataVOs(WaLoginContext loginContext, String condition, String orderCondtion)
+			throws BusinessException {
 		AggPayDataVO aggPayDataVO = new AggPayDataVO();
 
 		// 薪资类别信息
-		WaLoginVO waLoginVO = WaClassStateHelper
-				.getWaclassVOWithState(loginContext.getWaLoginVO());
+		WaLoginVO waLoginVO = WaClassStateHelper.getWaclassVOWithState(loginContext.getWaLoginVO());
 		aggPayDataVO.setLoginVO(waLoginVO);
 
 		// 有权限的薪资项目
@@ -1273,8 +1135,7 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 		aggPayDataVO.setClassItemVOs(classItemVOs);
 
 		// 薪资发放数据。 应该不需要了
-		DataVO[] dataVOs = queryByCondition(loginContext, condition,
-				orderCondtion);
+		DataVO[] dataVOs = queryByCondition(loginContext, condition, orderCondtion);
 		aggPayDataVO.setDataVOs(dataVOs);
 
 		// String[] pks = queryPKSByCondition(loginContext, condition,
@@ -1297,8 +1158,7 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 	 * @return
 	 * @throws BusinessException
 	 */
-	public AggPayDataVO queryAggPayDataVOForroll(WaLoginContext loginContext)
-			throws BusinessException {
+	public AggPayDataVO queryAggPayDataVOForroll(WaLoginContext loginContext) throws BusinessException {
 		AggPayDataVO aggPayDataVO = new AggPayDataVO();
 
 		// 审批的薪资项目
@@ -1317,28 +1177,20 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 		String orderCondtion = "";
 		SortVO sortVOs[] = null;
 		SortconVO sortconVOs[] = null;
-		String strCondition = " func_code='" + "60130paydata" + "'"
-				+ " and group_code= 'TableCode' and ((pk_corp='"
-				+ PubEnv.getPk_group() + "' and pk_user='"
-				+ PubEnv.getPk_user()
+		String strCondition = " func_code='" + "60130paydata" + "'" + " and group_code= 'TableCode' and ((pk_corp='"
+				+ PubEnv.getPk_group() + "' and pk_user='" + PubEnv.getPk_user()
 				+ "') or pk_corp ='@@@@') order by pk_corp";
 
-		sortVOs = (SortVO[]) NCLocator.getInstance()
-				.lookup(IPersistenceRetrieve.class)
+		sortVOs = (SortVO[]) NCLocator.getInstance().lookup(IPersistenceRetrieve.class)
 				.retrieveByClause(null, SortVO.class, strCondition);
 		Vector<Attribute> vectSortField = new Vector<Attribute>();
 		if (sortVOs != null && sortVOs.length > 0) {
-			strCondition = "pk_hr_sort='" + sortVOs[0].getPrimaryKey()
-					+ "' order by field_seq ";
-			sortconVOs = (SortconVO[]) NCLocator.getInstance()
-					.lookup(IPersistenceRetrieve.class)
+			strCondition = "pk_hr_sort='" + sortVOs[0].getPrimaryKey() + "' order by field_seq ";
+			sortconVOs = (SortconVO[]) NCLocator.getInstance().lookup(IPersistenceRetrieve.class)
 					.retrieveByClause(null, SortconVO.class, strCondition);
 			for (int i = 0; sortconVOs != null && i < sortconVOs.length; i++) {
-				Pair<String> field = new Pair<String>(
-						sortconVOs[i].getField_name(),
-						sortconVOs[i].getField_code());
-				Attribute attribute = new Attribute(field, sortconVOs[i]
-						.getAscend_flag().booleanValue());
+				Pair<String> field = new Pair<String>(sortconVOs[i].getField_name(), sortconVOs[i].getField_code());
+				Attribute attribute = new Attribute(field, sortconVOs[i].getAscend_flag().booleanValue());
 				vectSortField.addElement(attribute);
 			}
 			orderCondtion = getOrderby(vectSortField);
@@ -1350,8 +1202,7 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 
 		// DataVO[] dataVOs = queryByConditionWithItem(loginContext,
 		// null, classItemVOs);
-		DataVO[] dataVOs = queryByConditionWithItem(loginContext,
-				orderCondtion, classItemVOs);
+		DataVO[] dataVOs = queryByConditionWithItem(loginContext, orderCondtion, classItemVOs);
 
 		aggPayDataVO.setDataVOs(dataVOs);
 		return aggPayDataVO;
@@ -1377,8 +1228,7 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 			if (strFullCode == null || strFullCode.isEmpty()) {
 				continue;
 			}
-			strOrderBy = strOrderBy + "," + strFullCode
-					+ (attr.isAscend() ? "" : " desc");
+			strOrderBy = strOrderBy + "," + strFullCode + (attr.isAscend() ? "" : " desc");
 		}
 		return strOrderBy.length() > 0 ? strOrderBy.substring(1) : "";
 	}
@@ -1394,8 +1244,7 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 	 * @return
 	 * @throws BusinessException
 	 */
-	public AggPayDataVO querySumDataVOForroll(WaLoginContext loginContext)
-			throws BusinessException {
+	public AggPayDataVO querySumDataVOForroll(WaLoginContext loginContext) throws BusinessException {
 		AggPayDataVO aggPayDataVO = new AggPayDataVO();
 
 		// 审批的薪资项目
@@ -1405,27 +1254,23 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 		// loginContext.getPk_group(),
 		// HICommonValue.RESOUCECODE_6007PSNJOB,
 		// IHRWADataResCode.WADEFAULT, "wa_data");
-		DataVO[] dataVOs = querySumDataByCondition(loginContext, null,
-				classItemVOs);
+		DataVO[] dataVOs = querySumDataByCondition(loginContext, null, classItemVOs);
 
 		aggPayDataVO.setDataVOs(dataVOs);
 		return aggPayDataVO;
 	}
 
 	// guoqt 薪资发放申请及审批增加合计行
-	public DataVO[] querySumDataByConditionAll(WaLoginContext context,
-			String condition, String orderCondtion, WaClassItemVO[] classItemVOs)
-			throws BusinessException {
+	public DataVO[] querySumDataByConditionAll(WaLoginContext context, String condition, String orderCondtion,
+			WaClassItemVO[] classItemVOs) throws BusinessException {
 		StringBuffer sqlBuffer = new StringBuffer();
 		sqlBuffer.append("select  COUNT(wa_data.pk_psnjob ) psnnum "); // 1
 		if (!ArrayUtils.isEmpty(classItemVOs)) {
 			for (WaClassItemVO classItemVO : classItemVOs) {
 				// 判断是否是数值型项目
 				if (classItemVO.getIitemtype() != null
-						&& classItemVO.getIitemtype().intValue() == TypeEnumVO.FLOATTYPE
-								.value().intValue()) {
-					sqlBuffer.append("       ,sum(" + classItemVO.getItemkey()
-							+ ") " + classItemVO.getItemkey()); // 7
+						&& classItemVO.getIitemtype().intValue() == TypeEnumVO.FLOATTYPE.value().intValue()) {
+					sqlBuffer.append("       ,sum(" + classItemVO.getItemkey() + ") " + classItemVO.getItemkey()); // 7
 				}
 			}
 		}
@@ -1437,11 +1282,9 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 
 		// TODO 完善查询
 		if (!StringUtil.isEmpty(condition)) {
-			sqlBuffer
-					.append(" and wa_data.pk_wa_data in (select pk_wa_data from wa_data where ");
+			sqlBuffer.append(" and wa_data.pk_wa_data in (select pk_wa_data from wa_data where ");
 			sqlBuffer.append(sqlpart);
-			sqlBuffer.append(WherePartUtil.formatAddtionalWhere(condition))
-					.append(")");
+			sqlBuffer.append(WherePartUtil.formatAddtionalWhere(condition)).append(")");
 		}
 		return executeQueryAppendableVOs(sqlBuffer.toString(), DataVO.class);
 
@@ -1456,42 +1299,32 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 	 * @return
 	 * @throws BusinessException
 	 */
-	public AggPayDataVO querySumDataVOForrollAll(WaLoginContext loginContext)
-			throws BusinessException {
+	public AggPayDataVO querySumDataVOForrollAll(WaLoginContext loginContext) throws BusinessException {
 		AggPayDataVO aggPayDataVO = new AggPayDataVO();
 
 		// 审批的薪资项目
 		WaClassItemVO[] classItemVOs = getApprovedClassItemVOs(loginContext);
 		// 薪资发放项目
-		String powerSql = WaPowerSqlHelper.getWaPowerSql(
-				loginContext.getPk_group(),
-				HICommonValue.RESOUCECODE_6007PSNJOB,
-				IHRWADataResCode.WADEFAULT, "wa_data");
-		DataVO[] dataVOs = querySumDataByConditionAll(loginContext, powerSql,
-				null, classItemVOs);
+		String powerSql = WaPowerSqlHelper.getWaPowerSql(loginContext.getPk_group(),
+				HICommonValue.RESOUCECODE_6007PSNJOB, IHRWADataResCode.WADEFAULT, "wa_data");
+		DataVO[] dataVOs = querySumDataByConditionAll(loginContext, powerSql, null, classItemVOs);
 
 		aggPayDataVO.setDataVOs(dataVOs);
 		return aggPayDataVO;
 	}
 
-	private void updatePeriodState(String[] colKeys, Object[] colValues,
-			WaLoginVO waLoginVO) throws BusinessException {
-		updateTableByColKey("wa_periodstate", colKeys, colValues,
-				getCommonWhereCondtion4PeriodState(waLoginVO));
+	private void updatePeriodState(String[] colKeys, Object[] colValues, WaLoginVO waLoginVO) throws BusinessException {
+		updateTableByColKey("wa_periodstate", colKeys, colValues, getCommonWhereCondtion4PeriodState(waLoginVO));
 	}
 
-	public void updatePeriodState(String colKey, Object colValue,
-			WaLoginVO waLoginVO) throws BusinessException {
-		updatePeriodState(new String[] { colKey }, new Object[] { colValue },
-				waLoginVO);
+	public void updatePeriodState(String colKey, Object colValue, WaLoginVO waLoginVO) throws BusinessException {
+		updatePeriodState(new String[] { colKey }, new Object[] { colValue }, waLoginVO);
 	}
 
 	// shenliangc 20140830 合并计税方案部分审核只计算界面上查询出来的人员数据，需要传入过滤条件。
-	public void reCaculate(WaLoginContext loginContext, String whereCondition)
-			throws nc.vo.pub.BusinessException {
+	public void reCaculate(WaLoginContext loginContext, String whereCondition) throws nc.vo.pub.BusinessException {
 		// 合并计税计算及限制移至审核
-		TaxBindCaculateService caculateService = new TaxBindCaculateService(
-				loginContext, whereCondition);
+		TaxBindCaculateService caculateService = new TaxBindCaculateService(loginContext, whereCondition);
 		caculateService.doCaculate();
 	}
 
@@ -1502,8 +1335,7 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 	 * @param waLoginVO
 	 * @throws nc.vo.pub.BusinessException
 	 */
-	public void onPay(WaLoginContext loginContext)
-			throws nc.vo.pub.BusinessException {
+	public void onPay(WaLoginContext loginContext) throws nc.vo.pub.BusinessException {
 		WaLoginVO waLoginVO = loginContext.getWaLoginVO();
 		// 合并计税计算及限制移至审核
 		// boolean isInTaxgroup =
@@ -1515,14 +1347,12 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 		// caculateService.doCaculate();
 		// }
 
-		String[] colKeys = new String[] { PeriodStateVO.PAYOFFFLAG,
-				PeriodStateVO.VPAYCOMMENT, PeriodStateVO.CPAYDATE };
+		String[] colKeys = new String[] { PeriodStateVO.PAYOFFFLAG, PeriodStateVO.VPAYCOMMENT, PeriodStateVO.CPAYDATE };
 		String comment = waLoginVO.getPeriodVO().getVpaycomment();
 		SQLParamType nullValue = SQLTypeFactory.getNullType(Types.VARCHAR);
 		UFDate paydate = waLoginVO.getPeriodVO().getCpaydate();
 
-		Object[] colValues = new Object[] { UFBoolean.TRUE,
-				comment == null ? nullValue : comment,
+		Object[] colValues = new Object[] { UFBoolean.TRUE, comment == null ? nullValue : comment,
 				paydate == null ? nullValue : paydate };
 		updatePeriodState(colKeys, colValues, waLoginVO);
 
@@ -1530,38 +1360,29 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 		if (!isChildPayoff(loginContext)) {
 			colKeys = new String[] { PeriodStateVO.PAYOFFFLAG };
 			colValues = new Object[] { UFBoolean.TRUE };
-			String cond = getPeriodstateCond(waLoginVO.getPk_prnt_class(),
-					waLoginVO.getCyear(), waLoginVO.getCperiod());
+			String cond = getPeriodstateCond(waLoginVO.getPk_prnt_class(), waLoginVO.getCyear(), waLoginVO.getCperiod());
 			updateTableByColKey("wa_periodstate", colKeys, colValues, cond);
 		}
-		colKeys = new String[] { PeriodStateVO.VPAYCOMMENT,
-				PeriodStateVO.CPAYDATE };
-		colValues = new Object[] { comment == null ? nullValue : comment,
-				paydate == null ? nullValue : paydate };
-		updateTableByColKey("wa_data", colKeys, colValues,
-				WherePartUtil.getCommonWhereCondtion4ChildData(waLoginVO) + " ");
+		colKeys = new String[] { PeriodStateVO.VPAYCOMMENT, PeriodStateVO.CPAYDATE };
+		colValues = new Object[] { comment == null ? nullValue : comment, paydate == null ? nullValue : paydate };
+		updateTableByColKey("wa_data", colKeys, colValues, WherePartUtil.getCommonWhereCondtion4ChildData(waLoginVO)
+				+ " ");
 		// guoqt NCdp205075407更新发放日期跟发放原因（无论原先是否有发放日期及发放原因）
 		// + " and wa_data.cpaydate is null and wa_data.vpaycomment is null");
 		// 更新单据状态为执行态
-		String updatePayrollSql = "update wa_payroll set billstate = '"
-				+ HRConstEnum.EXECUTED + "' where billstate = '"
-				+ IPfRetCheckInfo.PASSING + "' and pk_wa_class = '"
+		String updatePayrollSql = "update wa_payroll set billstate = '" + HRConstEnum.EXECUTED
+				+ "' where billstate = '" + IPfRetCheckInfo.PASSING + "' and pk_wa_class = '"
 				+ waLoginVO.getPk_wa_class() + "'";
 		getBaseDao().executeUpdate(updatePayrollSql);
 	}
 
-	public boolean isChildPayoff(WaLoginContext loginContext)
-			throws DAOException {
-		String sql = "SELECT wa_inludeclass.pk_childclass "
-				+ "FROM wa_inludeclass,wa_periodstate,wa_period "
+	public boolean isChildPayoff(WaLoginContext loginContext) throws DAOException {
+		String sql = "SELECT wa_inludeclass.pk_childclass " + "FROM wa_inludeclass,wa_periodstate,wa_period "
 				+ "WHERE wa_inludeclass.pk_childclass = wa_periodstate.pk_wa_class "
 				+ "	AND wa_periodstate.pk_wa_period = wa_period.pk_wa_period "
-				+ "	AND wa_inludeclass.cyear = wa_period.cyear "
-				+ "	AND wa_inludeclass.cperiod = wa_period.cperiod "
-				+ "	AND wa_inludeclass.pk_parentclass = ? "
-				+ "	AND wa_inludeclass.cyear = ? "
-				+ "	AND wa_inludeclass.cperiod = ? "
-				+ "	AND wa_periodstate.payoffflag = 'N' ";
+				+ "	AND wa_inludeclass.cyear = wa_period.cyear " + "	AND wa_inludeclass.cperiod = wa_period.cperiod "
+				+ "	AND wa_inludeclass.pk_parentclass = ? " + "	AND wa_inludeclass.cyear = ? "
+				+ "	AND wa_inludeclass.cperiod = ? " + "	AND wa_periodstate.payoffflag = 'N' ";
 		SQLParameter parameter = new SQLParameter();
 		parameter.addParam(loginContext.getPk_prnt_class());
 		parameter.addParam(loginContext.getWaYear());
@@ -1569,22 +1390,19 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 		return isValueExist(sql, parameter);
 	}
 
-	private String getPeriodstateCond(String pk_wa_class, String cyear,
-			String cperiod) {
+	private String getPeriodstateCond(String pk_wa_class, String cyear, String cperiod) {
 		String cond = " pk_wa_class = '" + pk_wa_class + "' and exists "
 				+ "(select wa_period.pk_wa_period  from wa_period  "
-				+ "where wa_period.pk_wa_period = wa_periodstate.pk_wa_period"
-				+ " and wa_period.cyear =  '" + cyear
-				+ "' and wa_period.cperiod =  '" + cperiod + "' and  "
-				+ "wa_periodstate.pk_wa_class =  '" + pk_wa_class + "')";
+				+ "where wa_period.pk_wa_period = wa_periodstate.pk_wa_period" + " and wa_period.cyear =  '" + cyear
+				+ "' and wa_period.cperiod =  '" + cperiod + "' and  " + "wa_periodstate.pk_wa_class =  '"
+				+ pk_wa_class + "')";
 		return cond;
 	}
 
-	public void update(Object object, WaLoginVO waLoginVO)
-			throws BusinessException {
+	public void update(Object object, WaLoginVO waLoginVO) throws BusinessException {
 		if (!object.getClass().isArray()) {
 			DataVO datavo = (DataVO) object;
-			//但强 薪资加密遗漏 2018年5月29日10:00:17
+			// 但强 薪资加密遗漏 2018年5月29日10:00:17
 			DataVO[] dataVos = new DataVO[1];
 			dataVos[0] = datavo;
 			dataVos = SalaryEncryptionUtil.encryption4Array(dataVos);
@@ -1615,8 +1433,7 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 	 * @throws BusinessException
 	 * @author daicy
 	 */
-	private void batchUpdate(String pk_wa_class, DataVO... objs)
-			throws BusinessException {
+	private void batchUpdate(String pk_wa_class, DataVO... objs) throws BusinessException {
 		// 加锁
 		BDPKLockUtil.lockSuperVO(objs);
 		// 版本校验（时间戳校验）
@@ -1639,11 +1456,8 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 			// 20160119 shenliangc 薪资接口导入9000人，耗时520秒，顾问反馈还是慢，请考虑是否可以优化。
 			// 这个查询逻辑查询出来所有vo之后没有别的处理，只是判断了数量，所以语句需要改成 select count(*)。
 			String sql = "select count(*) from wa_data inner join bd_psndoc on wa_data.PK_PSNDOC = bd_psndoc.pk_psndoc where "
-					+ DataVO.PK_WA_DATA
-					+ " in ("
-					+ inSQLCreator.getInSQL(objs, DataVO.PK_WA_DATA) + ")";
-			Integer count = (Integer) getBaseDao().executeQuery(sql,
-					new ColumnProcessor());
+					+ DataVO.PK_WA_DATA + " in (" + inSQLCreator.getInSQL(objs, DataVO.PK_WA_DATA) + ")";
+			Integer count = (Integer) getBaseDao().executeQuery(sql, new ColumnProcessor());
 			if (count == null || count == 0) {
 				return;
 			}
@@ -1661,14 +1475,9 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 					list_update.add(temp_datavo);
 				}
 			}
-			JdbcPersistenceManager.clearColumnTypes(DataVO
-					.getDefaultTableName());
-			DataVO[] updateVOs = list_update.toArray(new DataVO[list_update
-					.size()]);
-			getBaseDao().updateVOArray(
-					updateVOs,
-					needUpdateNamesList.toArray(new String[needUpdateNamesList
-							.size()]));
+			JdbcPersistenceManager.clearColumnTypes(DataVO.getDefaultTableName());
+			DataVO[] updateVOs = list_update.toArray(new DataVO[list_update.size()]);
+			getBaseDao().updateVOArray(updateVOs, needUpdateNamesList.toArray(new String[needUpdateNamesList.size()]));
 
 			if (list_update.size() > 0) {
 				// for (int i = 0; i < list_update.size(); i++){
@@ -1698,8 +1507,7 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 
 	}
 
-	private DataVO singleUpdate(String pk_wa_class, DataVO datavo)
-			throws BusinessException {
+	private DataVO singleUpdate(String pk_wa_class, DataVO datavo) throws BusinessException {
 		// 加锁
 		BDPKLockUtil.lockSuperVO(datavo);
 
@@ -1736,8 +1544,7 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 
 		// 记录日志。
 		JdbcPersistenceManager.clearColumnTypes(DataVO.getDefaultTableName());
-		getBaseDao().updateVO(datavo,
-				needUpdateNamesList.toArray(new String[0]));
+		getBaseDao().updateVO(datavo, needUpdateNamesList.toArray(new String[0]));
 
 		WaBusilogUtil.writeEditLog(pk_wa_class, new DataVO[] { datavo });
 
@@ -1753,24 +1560,21 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 	 */
 	public void onUnPay(WaLoginVO waLoginVO) throws nc.vo.pub.BusinessException {
 
-		String checkSql = "SELECT batch "
-				+ "FROM wa_inludeclass "
+		String checkSql = "SELECT batch " + "FROM wa_inludeclass "
 				+ "WHERE pk_parentclass=( select distinct pk_parentclass from wa_inludeclass where pk_childclass =  '"
-				+ waLoginVO.getPk_wa_class() + "') and cyear = '"
-				+ waLoginVO.getCyear() + "' and cperiod = '"
-				+ waLoginVO.getCperiod() + "' and batch > "
-				+ waLoginVO.getBatch() + " and batch<100 and pk_childclass <>'"
-				+ waLoginVO.getPk_wa_class() + "'";
+				+ waLoginVO.getPk_wa_class() + "') and cyear = '" + waLoginVO.getCyear() + "' and cperiod = '"
+				+ waLoginVO.getCperiod() + "' and batch > " + waLoginVO.getBatch()
+				+ " and batch<100 and pk_childclass <>'" + waLoginVO.getPk_wa_class() + "'";
 		if (isValueExist(checkSql)) {
-			throw new nc.vo.pub.BusinessException(ResHelper.getString(
-					"60130paydata", "060130paydata0451")/*
-														 * @res
-														 * "已经增加了新的子方案，该方案不能取消发放！"
-														 */);
+			throw new nc.vo.pub.BusinessException(ResHelper.getString("60130paydata", "060130paydata0451")/*
+																										 * @
+																										 * res
+																										 * "已经增加了新的子方案，该方案不能取消发放！"
+																										 */);
 		}
 
-		checkSql = "SELECT 1 " + "FROM wa_data " + "WHERE fipendflag = 'Y' "
-				+ "and pk_wa_class = ? " + "and cyear = ? " + "and cperiod = ?";
+		checkSql = "SELECT 1 " + "FROM wa_data " + "WHERE fipendflag = 'Y' " + "and pk_wa_class = ? "
+				+ "and cyear = ? " + "and cperiod = ?";
 		// 2016-1-19 NCdp205575005 zhousze
 		// 多次发薪或离职发薪方案，银企直连汇总传递后，其发薪次数应不不能取消发放。这里在对汇总方案判断 begin
 		SQLParameter param = new SQLParameter();
@@ -1778,22 +1582,23 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 		param.addParam(waLoginVO.getPeriodVO().getCyear());
 		param.addParam(waLoginVO.getPeriodVO().getCperiod());
 
-		if (isValueExist(checkSql, getCommonParameter(waLoginVO))
-				|| isValueExist(checkSql, param)) {
-			throw new nc.vo.pub.BusinessException(ResHelper.getString(
-					"60130paydata", "060130paydata0534")/*
-														 * @res
-														 * "该方案或者该方案的汇总方案已存在财务结算数据，不能取消发放！"
-														 */);
+		if (isValueExist(checkSql, getCommonParameter(waLoginVO)) || isValueExist(checkSql, param)) {
+			throw new nc.vo.pub.BusinessException(ResHelper.getString("60130paydata", "060130paydata0534")/*
+																										 * @
+																										 * res
+																										 * "该方案或者该方案的汇总方案已存在财务结算数据，不能取消发放！"
+																										 */);
 		}
 		// end
 		// 该方案是否制单
 		// if(waLoginVO.isMultiClass()){
-		boolean isbill = NCLocator.getInstance().lookup(IAmoSchemeQuery.class)
-				.isApportion(waLoginVO);
+		boolean isbill = NCLocator.getInstance().lookup(IAmoSchemeQuery.class).isApportion(waLoginVO);
 		if (isbill == true) {
-			throw new BusinessException(ResHelper.getString("60130paydata",
-					"060130paydata0452")/* @res "该薪资方案已经制单，不能取消发放！" */);// "该工资类别已经制单，不能取消发放！"
+			throw new BusinessException(ResHelper.getString("60130paydata", "060130paydata0452")/*
+																								 * @
+																								 * res
+																								 * "该薪资方案已经制单，不能取消发放！"
+																								 */);// "该工资类别已经制单，不能取消发放！"
 		}
 		// }
 		// 合并计税计算及限制移至审核
@@ -1821,8 +1626,7 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 		// 更新发放标志
 		// String[] colKeys = new String[] { "payoffflag", "vpaycomment",
 		// "cpaydate", "cpreclassid" };//合并计税计算及限制移至审核
-		String[] colKeys = new String[] { "payoffflag", "vpaycomment",
-				"cpaydate" };
+		String[] colKeys = new String[] { "payoffflag", "vpaycomment", "cpaydate" };
 		SQLParamType value = SQLTypeFactory.getNullType(Types.VARCHAR);
 		// Object[] colValues = new Object[] { UFBoolean.FALSE, value, value,
 		// value};//合并计税计算及限制移至审核
@@ -1859,17 +1663,13 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 		// if(waLoginVO.isMultiClass()){
 		colKeys = new String[] { PeriodStateVO.PAYOFFFLAG };
 		colValues = new Object[] { UFBoolean.FALSE };
-		String cond = getPeriodstateCond(waLoginVO.getPk_prnt_class(),
-				waLoginVO.getCyear(), waLoginVO.getCperiod());
+		String cond = getPeriodstateCond(waLoginVO.getPk_prnt_class(), waLoginVO.getCyear(), waLoginVO.getCperiod());
 		updateTableByColKey("wa_periodstate", colKeys, colValues, cond);
 		// }
 		// 更新单据状态为执行态
-		String updatePayrollSql = "update wa_payroll set billstate = '"
-				+ IPfRetCheckInfo.PASSING + "' where billstate = '"
-				+ HRConstEnum.EXECUTED + "' and pk_wa_class = '"
-				+ waLoginVO.getPk_wa_class() + "' and cyear = '"
-				+ waLoginVO.getCyear() + "' and cperiod = '"
-				+ waLoginVO.getCperiod() + "' ";
+		String updatePayrollSql = "update wa_payroll set billstate = '" + IPfRetCheckInfo.PASSING
+				+ "' where billstate = '" + HRConstEnum.EXECUTED + "' and pk_wa_class = '" + waLoginVO.getPk_wa_class()
+				+ "' and cyear = '" + waLoginVO.getCyear() + "' and cperiod = '" + waLoginVO.getCperiod() + "' ";
 		getBaseDao().executeUpdate(updatePayrollSql);
 
 	}
@@ -1885,15 +1685,14 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 	 * @throws BusinessException
 	 */
 
-	public void onReplace(WaLoginVO waLoginVO, String whereCondition,
-			WaClassItemVO replaceItem, String formula) throws BusinessException {
+	public void onReplace(WaLoginVO waLoginVO, String whereCondition, WaClassItemVO replaceItem, String formula)
+			throws BusinessException {
 
 		String sql = "update wa_data set ";
 
 		if (TypeEnumVO.FLOATTYPE.value().equals(replaceItem.getIitemtype())) {// 数字型
 			// 2016-11-22 zhousze 薪资加密：薪资发放-替换薪资数据加密 begin
-			double formula_d = SalaryEncryptionUtil.encryption(Double
-					.parseDouble(formula));
+			double formula_d = SalaryEncryptionUtil.encryption(Double.parseDouble(formula));
 			formula = Double.toString(formula_d);
 			// end
 			sql += replaceItem.getItemkey() + "= '" + formula + "',";
@@ -1914,14 +1713,16 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 		try {
 			getBaseDao().executeUpdate(sql, getCommonParameter(waLoginVO));
 		} catch (DAOException e) {
-			throw new BusinessException(ResHelper.getString("60130paydata",
-					"060130paydata0490")/* @res "公式设置错误" */);
+			throw new BusinessException(ResHelper.getString("60130paydata", "060130paydata0490")/*
+																								 * @
+																								 * res
+																								 * "公式设置错误"
+																								 */);
 		}
 		// end
 
 		// 写业务日志
-		WaBusilogUtil.writePaydataReplaceBusiLog(waLoginVO, replaceItem,
-				formula);
+		WaBusilogUtil.writePaydataReplaceBusiLog(waLoginVO, replaceItem, formula);
 
 		// 更新类别状态
 		updatePeriodState("caculateflag", UFBoolean.FALSE, waLoginVO);
@@ -1934,8 +1735,7 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 	 * @param dataSVOs
 	 * @throws BusinessException
 	 */
-	public void onSaveDataSVOs(WaLoginVO waLoginVO, DataSVO[] dataSVOs)
-			throws BusinessException {
+	public void onSaveDataSVOs(WaLoginVO waLoginVO, DataSVO[] dataSVOs) throws BusinessException {
 		if (dataSVOs == null) {
 			return;
 		}
@@ -1955,8 +1755,7 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 
 		InSQLCreator isc = new InSQLCreator();
 		String insql = isc.getInSQL(dataVOs, DataVO.PK_WA_DATA);
-		DataVO[] newdataVOs = retrieveByClause(DataVO.class, " pk_wa_data in ("
-				+ insql + ")");
+		DataVO[] newdataVOs = retrieveByClause(DataVO.class, " pk_wa_data in (" + insql + ")");
 		if (newdataVOs == null) {
 			return;
 		}
@@ -1970,18 +1769,22 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 				if (map.get(vo.getPk_wa_data()) != null) {
 					psnname = vo.getPsnname();
 				}
-				throw new BusinessException(psnname
-						+ ResHelper.getString("60130paydata",
-								"060130paydata0449")/* @res "在该方案的薪资档案中已经被删除!" */);
+				throw new BusinessException(psnname + ResHelper.getString("60130paydata", "060130paydata0449")/*
+																											 * @
+																											 * res
+																											 * "在该方案的薪资档案中已经被删除!"
+																											 */);
 			}
 			if (map.get(vo.getPk_wa_data()).getCheckflag().booleanValue()) {
 				String psnname = ""; // zhoumxc 修改错误提示，获取个别调整列表中的人员姓名 2014.08.09
 				if (map.get(vo.getPk_wa_data()) != null) {
 					psnname = vo.getPsnname();
 				}
-				throw new BusinessException(psnname
-						+ ResHelper.getString("60130paydata",
-								"060130paydata0450")/* @res "在该方案的中数据已经被审核!" */);
+				throw new BusinessException(psnname + ResHelper.getString("60130paydata", "060130paydata0450")/*
+																											 * @
+																											 * res
+																											 * "在该方案的中数据已经被审核!"
+																											 */);
 			}
 			if (vo.getStatus() == VOStatus.NEW) {
 				insertList.add(vo);
@@ -1998,11 +1801,9 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 		StringBuffer sqlB = new StringBuffer();
 
 		// 检查人员项目是否重复
-		DataSVO[] updatesvo = updateList
-				.toArray(new DataSVO[updateList.size()]);
+		DataSVO[] updatesvo = updateList.toArray(new DataSVO[updateList.size()]);
 		String[] field = HRWACommonConstants.DATASCOLUMN;
-		String tableName = isc.insertValues(HRWACommonConstants.WA_TEMP_DATAS,
-				field, field, updatesvo);
+		String tableName = isc.insertValues(HRWACommonConstants.WA_TEMP_DATAS, field, field, updatesvo);
 		if (tableName != null) {
 			sqlB.append("select wa_datas.pk_wa_datas, ");
 			sqlB.append(SQLHelper.getMultiLangNameColumn("bd_psndoc.name"));
@@ -2024,13 +1825,11 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 			sqlB.append(tableName);
 			sqlB.append(".pk_wa_datas )");
 
-			DataSVO[] resultvos = executeQueryVOs(sqlB.toString(),
-					DataSVO.class);
+			DataSVO[] resultvos = executeQueryVOs(sqlB.toString(), DataSVO.class);
 			if (resultvos != null && resultvos.length > 0) {
 				StringBuffer eMsg = new StringBuffer();
 				for (DataSVO resultvo : resultvos) {
-					eMsg.append(ResHelper.getString("60130paydata",
-							"060130paydata0454", resultvo.getPsnname(),
+					eMsg.append(ResHelper.getString("60130paydata", "060130paydata0454", resultvo.getPsnname(),
 							resultvo.getItemname())
 					/* @res "人员姓名为{0}的{1}发放项目已经存在！" */);
 					eMsg.append("/r/n");
@@ -2043,11 +1842,9 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 		// 最后插入
 
 		// 检查人员项目是否重复
-		DataSVO[] insertsvo = insertList
-				.toArray(new DataSVO[insertList.size()]);
+		DataSVO[] insertsvo = insertList.toArray(new DataSVO[insertList.size()]);
 		String[] field2 = HRWACommonConstants.DATAS2COLUMN;
-		String tableName2 = isc.insertValues(
-				HRWACommonConstants.WA_TEMP_DATAS2, field2, field2, insertsvo);
+		String tableName2 = isc.insertValues(HRWACommonConstants.WA_TEMP_DATAS2, field2, field2, insertsvo);
 		if (tableName2 != null) {
 			sqlB = new StringBuffer();
 			sqlB.append("select ");
@@ -2067,13 +1864,11 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 			sqlB.append(tableName2);
 			sqlB.append(".pk_wa_classitem )");
 
-			DataSVO[] iresultvos = executeQueryVOs(sqlB.toString(),
-					DataSVO.class);
+			DataSVO[] iresultvos = executeQueryVOs(sqlB.toString(), DataSVO.class);
 			if (iresultvos != null && iresultvos.length > 0) {
 				StringBuffer eMsg = new StringBuffer();
 				for (DataSVO iresultvo : iresultvos) {
-					eMsg.append(ResHelper.getString("60130paydata",
-							"060130paydata0454", iresultvo.getPsnname(),
+					eMsg.append(ResHelper.getString("60130paydata", "060130paydata0454", iresultvo.getPsnname(),
 							iresultvo.getItemname())
 					/* @res "人员姓名为{0}的{1}发放项目已经存在！" */);
 				}
@@ -2097,8 +1892,7 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 		}
 
 		// 更新薪资计算状态
-		getBaseDao().updateVOArray(dataVOs,
-				new String[] { DataVO.CACULATEFLAG });
+		getBaseDao().updateVOArray(dataVOs, new String[] { DataVO.CACULATEFLAG });
 	}
 
 	/**
@@ -2153,15 +1947,16 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 	 * @return
 	 * @throws BusinessException
 	 */
-	public void checkWaClassStateChange(WaLoginVO waLoginVO,
-			String whereCondition) throws BusinessException {
+	public void checkWaClassStateChange(WaLoginVO waLoginVO, String whereCondition) throws BusinessException {
 		WaState oldStates = waLoginVO.getState();
-		WaState newStates = WaClassStateHelper.getWaclassVOWithState(waLoginVO)
-				.getState();
+		WaState newStates = WaClassStateHelper.getWaclassVOWithState(waLoginVO).getState();
 
 		if (!(oldStates == newStates)) {
-			throw new BusinessException(ResHelper.getString("60130paydata",
-					"060130paydata0457")/* @res "选择的薪资方案状态发生变化, 请刷新后再试！" */);// 选择的薪资类别状态发生变化,
+			throw new BusinessException(ResHelper.getString("60130paydata", "060130paydata0457")/*
+																								 * @
+																								 * res
+																								 * "选择的薪资方案状态发生变化, 请刷新后再试！"
+																								 */);// 选择的薪资类别状态发生变化,
 			// 请刷新后再试！
 		}
 	}
@@ -2175,8 +1970,7 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 	 * @return
 	 * @throws BusinessException
 	 */
-	public WaLoginVO getNewWaclassVOWithState(WaLoginVO waLoginVO)
-			throws BusinessException {
+	public WaLoginVO getNewWaclassVOWithState(WaLoginVO waLoginVO) throws BusinessException {
 		return WaClassStateHelper.getWaclassVOWithState(waLoginVO);
 	}
 
@@ -2189,8 +1983,7 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 	 * @return
 	 * @throws BusinessException
 	 */
-	public DataVO[] getContractDataVOs(WaLoginContext context,
-			String whereCondition, String orderCondition)
+	public DataVO[] getContractDataVOs(WaLoginContext context, String whereCondition, String orderCondition)
 			throws BusinessException {
 		String pk_wa_class = context.getPk_wa_class();
 		WaLoginVO waLoginVO = context.getWaLoginVO();
@@ -2201,8 +1994,11 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 		if (!pk_wa_class.equals(waLoginVO.getPk_prnt_class())) {
 			pk_wa_class = waLoginVO.getPk_prnt_class();
 			if (checkFlag != null && !checkFlag.booleanValue()) {
-				throw new BusinessException(ResHelper.getString("60130paydata",
-						"060130paydata0548")/* @res "由于本次发放数据未审核，请点击汇总后再进行明细对比！" */);
+				throw new BusinessException(ResHelper.getString("60130paydata", "060130paydata0548")/*
+																									 * @
+																									 * res
+																									 * "由于本次发放数据未审核，请点击汇总后再进行明细对比！"
+																									 */);
 			}
 		}
 
@@ -2211,8 +2007,7 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 		classvo.setPk_wa_class(pk_wa_class);
 		classvo.setCyear(waYear);
 		classvo.setCperiod(waPeriod);
-		PeriodStateVO periodStateVO = new MonthEndDAO()
-				.getSubclassPrePeriodVO(classvo);
+		PeriodStateVO periodStateVO = new MonthEndDAO().getSubclassPrePeriodVO(classvo);
 
 		if (periodStateVO == null) {
 			return null;
@@ -2260,64 +2055,41 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 		sqlBuffer.append(" where wa_data.pk_psndoc in ");
 		sqlBuffer.append("       (select wa_data.pk_psndoc ");
 		sqlBuffer.append("          from wa_data ");
-		sqlBuffer.append("         where ((wa_data.pk_wa_class = '"
-				+ pk_wa_class + "' and wa_data.cyear = '" + waYear
-				+ "' and wa_data.cperiod = '" + waPeriod
-				+ "') or (wa_data.pk_wa_class = '" + pk_wa_class
-				+ "' and wa_data.cyear = '" + preYear
-				+ "' and wa_data.cperiod = '" + prePeriod + "')) ");
+		sqlBuffer.append("         where ((wa_data.pk_wa_class = '" + pk_wa_class + "' and wa_data.cyear = '" + waYear
+				+ "' and wa_data.cperiod = '" + waPeriod + "') or (wa_data.pk_wa_class = '" + pk_wa_class
+				+ "' and wa_data.cyear = '" + preYear + "' and wa_data.cperiod = '" + prePeriod + "')) ");
 		sqlBuffer.append("   ) ");
 		sqlBuffer.append("   and wa_data.pk_psndoc not in ");
 		sqlBuffer.append("       (select a.pk_psndoc ");
 		sqlBuffer.append("          from wa_data a, wa_data b ");
 		sqlBuffer.append("         where a.pk_wa_class = b.pk_wa_class ");
 		sqlBuffer.append("           and a.pk_psndoc = b.pk_psndoc ");
-		sqlBuffer.append("           and a.pk_wa_class = '" + pk_wa_class
-				+ "' ");
+		sqlBuffer.append("           and a.pk_wa_class = '" + pk_wa_class + "' ");
 		sqlBuffer.append("           and a.cyear = '" + waYear + "' ");
 		sqlBuffer.append("           and a.cperiod = '" + waPeriod + "' ");
-		sqlBuffer.append("           and b.pk_wa_class = '" + pk_wa_class
-				+ "' ");
+		sqlBuffer.append("           and b.pk_wa_class = '" + pk_wa_class + "' ");
 		sqlBuffer.append("           and b.cyear = '" + preYear + "' ");
 		sqlBuffer.append("           and b.cperiod = '" + prePeriod + "' ");
 		sqlBuffer.append(") ");
 
 		StringBuffer sqlB = new StringBuffer();
-		sqlB.append("select  "
-				+ SQLHelper.getMultiLangNameColumn("bd_psndoc.name") + "  "
-				+ PSNNAME + ", "); // 1
+		sqlB.append("select  " + SQLHelper.getMultiLangNameColumn("bd_psndoc.name") + "  " + PSNNAME + ", "); // 1
 		sqlB.append("       bd_psndoc.code " + PSNCODE + ", "); // 2
 		sqlB.append("       hi_psnjob.clerkcode, "); // 3
-		sqlB.append("        "
-				+ SQLHelper.getMultiLangNameColumn("org_dept_v.name") + "  "
-				+ DEPTNAME + ", "); // 4
-		sqlB.append("        "
-				+ SQLHelper.getMultiLangNameColumn("bd_psncl.name") + "  "
-				+ PLSNAME + ", "); // 5
+		sqlB.append("        " + SQLHelper.getMultiLangNameColumn("org_dept_v.name") + "  " + DEPTNAME + ", "); // 4
+		sqlB.append("        " + SQLHelper.getMultiLangNameColumn("bd_psncl.name") + "  " + PLSNAME + ", "); // 5
 		// 2015-09-20 xiejie3
 		// 2015-07-30 zhosuze NCdp205099799 薪资发放界面添加财务组织财务部门 begin
-		sqlB.append("        "
-				+ SQLHelper.getMultiLangNameColumn("financeorg.name") + "  "
-				+ FINANCEORG + ", "); // 3
-		sqlB.append("        "
-				+ SQLHelper.getMultiLangNameColumn("financedept.name") + "  "
-				+ FINANCEDEPT + ", "); // 3
-		sqlB.append("        "
-				+ SQLHelper.getMultiLangNameColumn("liabilityorg.name") + "  "
-				+ LIABILITYORG + ", "); // 3
-		sqlB.append("        "
-				+ SQLHelper.getMultiLangNameColumn("liabilitydept.name") + "  "
-				+ LIABILITYDEPT + ", "); // 3
+		sqlB.append("        " + SQLHelper.getMultiLangNameColumn("financeorg.name") + "  " + FINANCEORG + ", "); // 3
+		sqlB.append("        " + SQLHelper.getMultiLangNameColumn("financedept.name") + "  " + FINANCEDEPT + ", "); // 3
+		sqlB.append("        " + SQLHelper.getMultiLangNameColumn("liabilityorg.name") + "  " + LIABILITYORG + ", "); // 3
+		sqlB.append("        " + SQLHelper.getMultiLangNameColumn("liabilitydept.name") + "  " + LIABILITYDEPT + ", "); // 3
 		// end
 
 		sqlB.append("       om_job.jobname, "); // 6
 		// guoqt岗位多语
-		sqlB.append("        "
-				+ SQLHelper.getMultiLangNameColumn("om_post.postname") + "  "
-				+ POSTNAME + ", "); // 6
-		sqlB.append("        "
-				+ SQLHelper.getMultiLangNameColumn("org_orgs_v.name")
-				+ "  orgname, "); // 6
+		sqlB.append("        " + SQLHelper.getMultiLangNameColumn("om_post.postname") + "  " + POSTNAME + ", "); // 6
+		sqlB.append("        " + SQLHelper.getMultiLangNameColumn("org_orgs_v.name") + "  orgname, "); // 6
 		sqlB.append("       wa_data.* "); // 7
 		sqlB.append("  from wa_data ");
 		sqlB.append(" inner join bd_psndoc on wa_data.pk_psndoc = bd_psndoc.pk_psndoc ");
@@ -2336,26 +2108,22 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 
 		sqlB.append("  left outer join bd_psncl on hi_psnjob.pk_psncl = bd_psncl.pk_psncl ");
 
-		String condtion = " where wa_data.pk_wa_class = '" + pk_wa_class
-				+ "'  ";
-		condtion += " and ((wa_data.cyear = '" + waYear
-				+ "' and wa_data.cperiod = '" + waPeriod
-				+ "') or (wa_data.cyear = '" + preYear
-				+ "' and wa_data.cperiod = '" + prePeriod + "')) ";
+		String condtion = " where wa_data.pk_wa_class = '" + pk_wa_class + "'  ";
+		condtion += " and ((wa_data.cyear = '" + waYear + "' and wa_data.cperiod = '" + waPeriod
+				+ "') or (wa_data.cyear = '" + preYear + "' and wa_data.cperiod = '" + prePeriod + "')) ";
 
 		// 20140728 shenliangc 本期间停发人员在明细对比中不论发放数据有没有变化，都只显示上一期间的发放数据。
 		condtion += " and stopflag = 'N' ";
 
-		condtion += " and (wa_data.pk_psndoc in ( " + tempsql.toString()
-				+ ")or wa_data.pk_psndoc in (" + sqlBuffer.toString() + ")) ";
+		condtion += " and (wa_data.pk_psndoc in ( " + tempsql.toString() + ")or wa_data.pk_psndoc in ("
+				+ sqlBuffer.toString() + ")) ";
 		if (whereCondition != null && whereCondition.startsWith("pk_"))
 			whereCondition = " hi_psnjob." + whereCondition;
 		condtion += WherePartUtil.formatAddtionalWhere(whereCondition);
 
 		sqlB.append(condtion);
 		// 数据权限guoqt明细对比
-		String powerSql = WaPowerSqlHelper.getWaPowerSql(
-				waLoginVO.getPk_group(), HICommonValue.RESOUCECODE_6007PSNJOB,
+		String powerSql = WaPowerSqlHelper.getWaPowerSql(waLoginVO.getPk_group(), HICommonValue.RESOUCECODE_6007PSNJOB,
 				IHRWADataResCode.WADEFAULT, "wa_data");
 		if (!StringUtils.isBlank(powerSql)) {
 			sqlB.append(" and " + powerSql);
@@ -2363,8 +2131,7 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 		if (StringUtil.isEmpty(orderCondition)) {
 			orderCondition = " org_dept_v.code , hi_psnjob.clerkcode";
 		}
-		sqlB.append(" order by ").append(
-				orderCondition + ",wa_data.cyear,wa_data.cperiod");
+		sqlB.append(" order by ").append(orderCondition + ",wa_data.cyear,wa_data.cperiod");
 
 		return executeQueryAppendableVOs(sqlB.toString(), DataVO.class);
 	}
@@ -2388,12 +2155,9 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 		sqlBuffer.append("       (select wa_classitem.pk_wa_item ");
 		sqlBuffer.append("          from wa_classitem ");
 		sqlBuffer.append("         where wa_classitem.pk_wa_class in ");
-		sqlBuffer
-				.append("               (select wa_unitctg.classedid from wa_unitctg,wa_waclass ");
-		sqlBuffer
-				.append("				where wa_waclass.pk_wa_class = wa_unitctg.classedid ");
-		sqlBuffer
-				.append("				and wa_unitctg.pk_wa_class = ? and wa_waclass.stopflag='N') ");
+		sqlBuffer.append("               (select wa_unitctg.classedid from wa_unitctg,wa_waclass ");
+		sqlBuffer.append("				where wa_waclass.pk_wa_class = wa_unitctg.classedid ");
+		sqlBuffer.append("				and wa_unitctg.pk_wa_class = ? and wa_waclass.stopflag='N') ");
 		sqlBuffer.append("           and wa_classitem.cyear = ? ");
 		sqlBuffer.append("           and wa_classitem.cperiod = ?) ");
 		sqlBuffer.append("   and wa_item.pk_wa_item in ");
@@ -2415,8 +2179,7 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 
 	}
 
-	public WaItemVO[] getParentClassDigitItem(WaLoginVO waLoginVO)
-			throws DAOException {
+	public WaItemVO[] getParentClassDigitItem(WaLoginVO waLoginVO) throws DAOException {
 
 		// 得到需要汇总的薪资项目
 		// 规则： 在汇总类别中， 并且在被汇总的类别中的数值型项目手工输入的项目
@@ -2431,8 +2194,7 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 		sqlBuffer.append("           and wa_classitem.cperiod = ?) ");
 		sqlBuffer.append("   and wa_item.iitemtype = 0 ");
 
-		return executeQueryVOs(sqlBuffer.toString(),
-				getCommonParameter(waLoginVO), WaItemVO.class);
+		return executeQueryVOs(sqlBuffer.toString(), getCommonParameter(waLoginVO), WaItemVO.class);
 
 	}
 
@@ -2526,18 +2288,13 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 	public PayfileVO[] getUnitPsnVOs(WaLoginVO waLoginVO) throws DAOException {
 
 		StringBuffer sqlBuffer = new StringBuffer();
-		sqlBuffer.append("select pk_psnjob," + "pk_psndoc," + "pk_psnorg,"
-				+ "taxtype," + "taxtableid," + "isderate," + "isndebuct,"
-				+ "derateptg," + "pk_group," + "pk_org," + "pk_bankaccbas1,"
-				+ "pk_bankaccbas2," + "pk_bankaccbas3," + "partflag,"
-				+ "stopflag, wa_data.* from wa_data ");
+		sqlBuffer.append("select pk_psnjob," + "pk_psndoc," + "pk_psnorg," + "taxtype," + "taxtableid," + "isderate,"
+				+ "isndebuct," + "derateptg," + "pk_group," + "pk_org," + "pk_bankaccbas1," + "pk_bankaccbas2,"
+				+ "pk_bankaccbas3," + "partflag," + "stopflag, wa_data.* from wa_data ");
 		sqlBuffer.append("     where wa_data.pk_wa_class in  ");
-		sqlBuffer
-				.append("               (select wa_unitctg.classedid from wa_unitctg,wa_waclass ");
-		sqlBuffer
-				.append("				where wa_waclass.pk_wa_class = wa_unitctg.classedid ");
-		sqlBuffer
-				.append("				and wa_unitctg.pk_wa_class = ? and wa_waclass.stopflag='N') ");
+		sqlBuffer.append("               (select wa_unitctg.classedid from wa_unitctg,wa_waclass ");
+		sqlBuffer.append("				where wa_waclass.pk_wa_class = wa_unitctg.classedid ");
+		sqlBuffer.append("				and wa_unitctg.pk_wa_class = ? and wa_waclass.stopflag='N') ");
 		sqlBuffer.append("      and wa_data.cyear = ? ");
 		sqlBuffer.append("      and wa_data.cperiod = ? ");
 		sqlBuffer.append("      and wa_data.stopflag = 'N' ");
@@ -2560,8 +2317,7 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 
 	}
 
-	public void updateData(WaLoginVO waLoginVO, WaItemVO[] itemVOs)
-			throws DAOException {
+	public void updateData(WaLoginVO waLoginVO, WaItemVO[] itemVOs) throws DAOException {
 		if (itemVOs == null) {
 			return;
 		}
@@ -2582,16 +2338,14 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 	 * @param waLoginVO
 	 * @throws DAOException
 	 */
-	private void updateDataSQLDbs(WaItemVO[] itemVOs, WaLoginVO waLoginVO)
-			throws DAOException {
+	private void updateDataSQLDbs(WaItemVO[] itemVOs, WaLoginVO waLoginVO) throws DAOException {
 
 		String tableName = getDataTableName(waLoginVO);
 
 		// 需要更新的字段
 		List<String> list = new LinkedList<String>();
 		for (WaItemVO itemVO : itemVOs) {
-			list.add(tableName + "." + itemVO.getItemkey() + " = sum_data."
-					+ itemVO.getItemkey() + "");
+			list.add(tableName + "." + itemVO.getItemkey() + " = sum_data." + itemVO.getItemkey() + "");
 		}
 
 		String colNames = FormatVO.formatListToString(list, "");
@@ -2599,8 +2353,7 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 		// SUM的字段
 		List<String> sumList = new LinkedList<String>();
 		for (WaItemVO itemVO : itemVOs) {
-			sumList.add("sum(" + tableName + "." + itemVO.getItemkey() + ") "
-					+ itemVO.getItemkey());
+			sumList.add("sum(" + tableName + "." + itemVO.getItemkey() + ") " + itemVO.getItemkey());
 		}
 
 		String sumColNames = FormatVO.formatListToString(sumList, "");
@@ -2623,14 +2376,12 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 		StringBuffer sqlBuffer = new StringBuffer();
 		sqlBuffer.append("update " + tableName + " "); // 1
 		sqlBuffer.append("   set " + colNames + "  "); // 2
-		sqlBuffer.append("   from (select " + sumColNames + ", " + tableName
-				+ ".pk_psndoc ");
+		sqlBuffer.append("   from (select " + sumColNames + ", " + tableName + ".pk_psndoc ");
 		sqlBuffer.append("     from " + tableName + " ");
 		sqlBuffer.append("    where " + tableName + ".pk_wa_class in ");
 		sqlBuffer.append("               (select wa_waclass.pk_wa_class ");
 		sqlBuffer.append("				from wa_unitctg,wa_waclass  ");
-		sqlBuffer
-				.append("                where  wa_waclass.pk_wa_class = wa_unitctg.classedid  ");
+		sqlBuffer.append("                where  wa_waclass.pk_wa_class = wa_unitctg.classedid  ");
 		sqlBuffer.append("                and wa_unitctg.pk_wa_class =  ? ");
 		sqlBuffer.append("				and wa_waclass.stopflag='N' )");
 
@@ -2643,8 +2394,7 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 		sqlBuffer.append(" where " + tableName + ".pk_wa_class = ? ");
 		sqlBuffer.append(" and " + tableName + ".cyear = ?  ");
 		sqlBuffer.append(" and " + tableName + ".cperiod = ?  ");
-		sqlBuffer.append(" and " + tableName
-				+ ".pk_psndoc = sum_data.pk_psndoc ");
+		sqlBuffer.append(" and " + tableName + ".pk_psndoc = sum_data.pk_psndoc ");
 		SQLParameter parameter = new SQLParameter();
 
 		parameter.addParam(waLoginVO.getPk_wa_class());
@@ -2666,8 +2416,7 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 	 * @param waLoginVO
 	 * @throws DAOException
 	 */
-	private void updateDataOracleDbs(WaItemVO[] itemVOs, WaLoginVO waLoginVO)
-			throws DAOException {
+	private void updateDataOracleDbs(WaItemVO[] itemVOs, WaLoginVO waLoginVO) throws DAOException {
 
 		String tableName = getDataTableName(waLoginVO);
 
@@ -2682,8 +2431,7 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 		// SUM的字段
 		List<String> sumList = new LinkedList<String>();
 		for (WaItemVO itemVO : itemVOs) {
-			sumList.add(" nvl(sum(" + tableName + "." + itemVO.getItemkey()
-					+ "),0)");
+			sumList.add(" nvl(sum(" + tableName + "." + itemVO.getItemkey() + "),0)");
 		}
 
 		String sumColNames = FormatVO.formatListToString(sumList, "");
@@ -2706,25 +2454,20 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 		// 组织SQL语句
 		StringBuffer sqlBuffer = new StringBuffer();
 		sqlBuffer.append("update " + tableName + " unit "); // 1
-		sqlBuffer.append("   set (" + colNames + ") = (select  " + sumColNames
-				+ " "); // 2
-		sqlBuffer.append("                                  from " + tableName
-				+ " where " + tableName + ".pk_wa_class in ");
+		sqlBuffer.append("   set (" + colNames + ") = (select  " + sumColNames + " "); // 2
+		sqlBuffer.append("                                  from " + tableName + " where " + tableName
+				+ ".pk_wa_class in ");
 		sqlBuffer.append("               (select wa_waclass.pk_wa_class ");
 		sqlBuffer.append("				from wa_unitctg,wa_waclass  ");
-		sqlBuffer
-				.append("                where  wa_waclass.pk_wa_class = wa_unitctg.classedid  ");
+		sqlBuffer.append("                where  wa_waclass.pk_wa_class = wa_unitctg.classedid  ");
 		sqlBuffer.append("                and wa_unitctg.pk_wa_class =  ? ");
 		sqlBuffer.append("				and wa_waclass.stopflag='N' )");
 
-		sqlBuffer.append("                                       and "
-				+ tableName + ".cyear = ?  ");
-		sqlBuffer.append("                                       and "
-				+ tableName + ".cperiod = ?  ");
+		sqlBuffer.append("                                       and " + tableName + ".cyear = ?  ");
+		sqlBuffer.append("                                       and " + tableName + ".cperiod = ?  ");
 		sqlBuffer.append(extraConditon);
-		sqlBuffer.append("                                       and "
-				+ tableName + ".pk_psndoc = unit.pk_psndoc group by "
-				+ tableName + ".pk_psndoc) ");
+		sqlBuffer.append("                                       and " + tableName
+				+ ".pk_psndoc = unit.pk_psndoc group by " + tableName + ".pk_psndoc) ");
 		sqlBuffer.append(" where unit.pk_wa_class = ? ");
 		sqlBuffer.append("   and unit.cyear = ? ");
 		sqlBuffer.append("   and unit.cperiod = ? ");
@@ -2757,16 +2500,13 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 	 * @author liangxr on 2010-6-1
 	 * @throws BusinessException
 	 */
-	public void updateStateforTotal(WaLoginVO waLoginVO)
-			throws BusinessException {
+	public void updateStateforTotal(WaLoginVO waLoginVO) throws BusinessException {
 		// 重计算标志
 		StringBuffer sqlBuffer = new StringBuffer();
 		sqlBuffer.append("   wa_data.stopflag = 'N' ");
-		sqlBuffer.append(WherePartUtil
-				.formatAddtionalWhere(getCommonWhereCondtion4Data(waLoginVO)));
-		updateTableByColKey("wa_data", new String[] { PayfileVO.CACULATEFLAG,
-				PayfileVO.CHECKFLAG }, new Object[] { UFBoolean.TRUE,
-				UFBoolean.FALSE }, sqlBuffer.toString());
+		sqlBuffer.append(WherePartUtil.formatAddtionalWhere(getCommonWhereCondtion4Data(waLoginVO)));
+		updateTableByColKey("wa_data", new String[] { PayfileVO.CACULATEFLAG, PayfileVO.CHECKFLAG }, new Object[] {
+				UFBoolean.TRUE, UFBoolean.FALSE }, sqlBuffer.toString());
 
 		// 所有人员都已计算完毕（汇总）
 		updatePeriodState("caculateflag", UFBoolean.TRUE, waLoginVO);
@@ -2806,8 +2546,7 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 	 * @param cperiod
 	 * @throws DAOException
 	 */
-	public void updatePaydataFlag(String pk_wa_class, String cyear,
-			String cperiod) throws DAOException {
+	public void updatePaydataFlag(String pk_wa_class, String cyear, String cperiod) throws DAOException {
 		String sql = "update wa_data set checkflag ='N', caculateflag='N' where pk_wa_class =? and cyear=? and cperiod=?";
 		SQLParameter parameter = new SQLParameter();
 		parameter.addParam(pk_wa_class);
@@ -2815,12 +2554,10 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 		parameter.addParam(cperiod);
 		getBaseDao().executeUpdate(sql, parameter);
 
-		sql = "update wa_periodstate  set checkflag= 'N',caculateflag = 'N' "
-				+ "where pk_wa_class = ? and exists "
+		sql = "update wa_periodstate  set checkflag= 'N',caculateflag = 'N' " + "where pk_wa_class = ? and exists "
 				+ "(select wa_period.pk_wa_period  from wa_period  "
 				+ "where wa_period.pk_wa_period = wa_periodstate.pk_wa_period"
-				+ " and wa_period.cyear = ? and wa_period.cperiod = ? and  "
-				+ "wa_periodstate.pk_wa_class = ?)";
+				+ " and wa_period.cyear = ? and wa_period.cperiod = ? and  " + "wa_periodstate.pk_wa_class = ?)";
 		parameter = new SQLParameter();
 		parameter.addParam(pk_wa_class);
 		parameter.addParam(cyear);
@@ -2837,8 +2574,7 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 	 * @throws DAOException
 	 */
 	public void clearClassItemData(WaClassItemVO vo) throws DAOException {
-		String sql = " update wa_data set " + vo.getItemkey()
-				+ " = ? where pk_wa_class=? and cyear=? and cperiod=?";
+		String sql = " update wa_data set " + vo.getItemkey() + " = ? where pk_wa_class=? and cyear=? and cperiod=?";
 
 		SQLParameter parameter = new SQLParameter();
 		if (vo.getItemkey().startsWith("f_")) {
@@ -2863,8 +2599,7 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 	 * @return
 	 * @throws DAOException
 	 */
-	public BigDecimal getOrgTmSelected(String cacuItem, String whereStr)
-			throws DAOException {
+	public BigDecimal getOrgTmSelected(String cacuItem, String whereStr) throws DAOException {
 
 		StringBuffer strSql = new StringBuffer();
 		strSql.append("SELECT sum(");
@@ -2872,8 +2607,7 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 		strSql.append(")  FROM wa_data,wa_waclass where ");
 		strSql.append(whereStr);
 
-		return new BigDecimal(getBaseDao().executeQuery(strSql.toString(),
-				new ColumnProcessor()).toString());
+		return new BigDecimal(getBaseDao().executeQuery(strSql.toString(), new ColumnProcessor()).toString());
 
 	}
 
@@ -2891,9 +2625,8 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 	 * @return
 	 * @throws DAOException
 	 */
-	public BigDecimal getOrgTm(String cacuItem, String pk_org, String accYear,
-			String accPeriod, String pk_wa_class, int sumtype)
-			throws DAOException {
+	public BigDecimal getOrgTm(String cacuItem, String pk_org, String accYear, String accPeriod, String pk_wa_class,
+			int sumtype) throws DAOException {
 
 		StringBuffer strSql = new StringBuffer();
 		strSql.append("SELECT isnull(sum(");
@@ -2917,8 +2650,7 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 		// strSql.append("' and wa_data.checkflag = 'Y' and wa_data.pk_wa_class='");
 		// strSql.append(pk_wa_class).append("'");
 
-		return new BigDecimal(getBaseDao().executeQuery(strSql.toString(),
-				new ColumnProcessor()).toString());
+		return new BigDecimal(getBaseDao().executeQuery(strSql.toString(), new ColumnProcessor()).toString());
 	}
 
 	/**
@@ -2926,17 +2658,14 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 	 * 
 	 * @throws BusinessException
 	 */
-	public AppendableVO[] getOrgRealTm(String[] pk_orgs, AppendableVO[] items,
-			String accYear, String accPeriod, int sumtype)
-			throws BusinessException {
+	public AppendableVO[] getOrgRealTm(String[] pk_orgs, AppendableVO[] items, String accYear, String accPeriod,
+			int sumtype) throws BusinessException {
 		InSQLCreator inSQLCreator = new InSQLCreator();
 		HashMap<String, String> itemmap = new HashMap<String, String>();
 		String[] strItems = null;
 		for (AppendableVO item : items) {
-			String pk_budgetItem = item.getAttributeValue(
-					BudgetItemVO.PK_BUDGET_ITEM).toString();
-			String computerule = item.getAttributeValue("computerule")
-					.toString();
+			String pk_budgetItem = item.getAttributeValue(BudgetItemVO.PK_BUDGET_ITEM).toString();
+			String computerule = item.getAttributeValue("computerule").toString();
 			itemmap.put(pk_budgetItem, computerule);
 			strItems = (String[]) ArrayUtils.add(strItems, pk_budgetItem);
 		}
@@ -2950,8 +2679,7 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 				strSql.append(strItem);
 			}
 			strSql.append(" FROM wa_data,wa_periodstate,wa_period,wa_waclass WHERE  ");
-			strSql.append(" wa_data.workorg in ("
-					+ inSQLCreator.getInSQL(pk_orgs) + ") ");
+			strSql.append(" wa_data.workorg in (" + inSQLCreator.getInSQL(pk_orgs) + ") ");
 			strSql.append("  and wa_data.pk_wa_class=wa_waclass.pk_wa_class and wa_waclass.collectflag='N' and wa_waclass.mutipleflag = 'N' "
 					+ " and wa_data.pk_wa_class= wa_periodstate.pk_wa_class"
 					+ " and wa_periodstate.pk_wa_period = wa_period.pk_wa_period "
@@ -2969,8 +2697,7 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 
 			strSql.append(" group by wa_data.workorg ");
 
-			AppendableVO[] vos = executeQueryAppendableVOs(strSql.toString(),
-					AppendableVO.class);
+			AppendableVO[] vos = executeQueryAppendableVOs(strSql.toString(), AppendableVO.class);
 			AppendableVO[] itemvos = null;
 			if (ArrayUtils.isEmpty(vos)) {
 				return null;
@@ -2981,8 +2708,7 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 
 					AppendableVO tvo = new AppendableVO();
 					tvo.setAttributeValue("pk_org", pk_org);
-					tvo.setAttributeValue("realvalue",
-							vo.getAttributeValue("realvalue" + strItem));
+					tvo.setAttributeValue("realvalue", vo.getAttributeValue("realvalue" + strItem));
 					tvo.setAttributeValue("pk_budgetItem", strItem);
 					itemvos = (AppendableVO[]) ArrayUtils.add(itemvos, tvo);
 				}
@@ -3010,9 +2736,8 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 	 * @throws DAOException
 	 */
 	@SuppressWarnings("unchecked")
-	public Map<String, BigDecimal> getDeptTm(String cacuItem, String pk_org,
-			String accYear, String accPeriod, String pk_wa_class, int sumtype)
-			throws DAOException {
+	public Map<String, BigDecimal> getDeptTm(String cacuItem, String pk_org, String accYear, String accPeriod,
+			String pk_wa_class, int sumtype) throws DAOException {
 
 		StringBuffer strSql = new StringBuffer();
 		strSql.append("SELECT wa_data.workdept pk_dept,sum(");
@@ -3037,8 +2762,7 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 		// strSql.append(pk_wa_class).append("'");
 		strSql.append(" group by wa_data.workdept");
 
-		List<Object[]> list = (List<Object[]>) getBaseDao().executeQuery(
-				strSql.toString(), new ArrayListProcessor());
+		List<Object[]> list = (List<Object[]>) getBaseDao().executeQuery(strSql.toString(), new ArrayListProcessor());
 		Map<String, BigDecimal> resultMap = new HashMap<String, BigDecimal>();
 		for (Object[] obj : list) {
 			BigDecimal bigdecimal = new BigDecimal(0);
@@ -3062,18 +2786,15 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 	 * @return
 	 * @throws BusinessException
 	 */
-	public AppendableVO[] getRealDeptTm(String pk_org, String[] pk_depts,
-			AppendableVO[] items, String accYear, String accPeriod, int sumtype)
-			throws BusinessException {
+	public AppendableVO[] getRealDeptTm(String pk_org, String[] pk_depts, AppendableVO[] items, String accYear,
+			String accPeriod, int sumtype) throws BusinessException {
 
 		InSQLCreator inSQLCreator = new InSQLCreator();
 		HashMap<String, String> itemmap = new HashMap<String, String>();
 		String[] strItems = null;
 		for (AppendableVO item : items) {
-			String pk_budgetItem = item.getAttributeValue(
-					BudgetItemVO.PK_BUDGET_ITEM).toString();
-			String computerule = item.getAttributeValue("computerule")
-					.toString();
+			String pk_budgetItem = item.getAttributeValue(BudgetItemVO.PK_BUDGET_ITEM).toString();
+			String computerule = item.getAttributeValue("computerule").toString();
 			itemmap.put(computerule, pk_budgetItem);
 			// Logger.debug("pk_budgetItem=:"+pk_budgetItem);
 			// Logger.debug("computerule=:"+computerule);
@@ -3088,13 +2809,11 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 				strSql.append(",isnull(sum(");
 				strSql.append((String) item.getAttributeValue("computerule"));
 				strSql.append("),0) realvalue");
-				strSql.append((String) item
-						.getAttributeValue(BudgetItemVO.PK_BUDGET_ITEM));
+				strSql.append((String) item.getAttributeValue(BudgetItemVO.PK_BUDGET_ITEM));
 			}
 			strSql.append(" FROM wa_data,wa_periodstate,wa_period,wa_waclass WHERE  ");
 			strSql.append(" wa_data.workorg = '" + pk_org + "' ");
-			strSql.append(" and wa_data.workdept in ("
-					+ inSQLCreator.getInSQL(pk_depts) + ") ");
+			strSql.append(" and wa_data.workdept in (" + inSQLCreator.getInSQL(pk_depts) + ") ");
 
 			strSql.append(" and wa_data.pk_wa_class=wa_waclass.pk_wa_class and wa_waclass.collectflag='N' and wa_waclass.mutipleflag = 'N' "
 					+ " and wa_data.pk_wa_class= wa_periodstate.pk_wa_class"
@@ -3113,8 +2832,7 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 
 			strSql.append(" group by wa_data.workdept ");
 
-			AppendableVO[] vos = executeQueryAppendableVOs(strSql.toString(),
-					AppendableVO.class);
+			AppendableVO[] vos = executeQueryAppendableVOs(strSql.toString(), AppendableVO.class);
 			if (vos == null) {
 				return null;
 			}
@@ -3122,15 +2840,11 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 			for (AppendableVO vo : vos) {
 				// String pk_dept = vo.getAttributeValue("pk_dept").toString();
 				for (AppendableVO item : items) {
-					String pk_budgetItem = (String) item
-							.getAttributeValue(BudgetItemVO.PK_BUDGET_ITEM);
+					String pk_budgetItem = (String) item.getAttributeValue(BudgetItemVO.PK_BUDGET_ITEM);
 					AppendableVO tvo = new AppendableVO();
-					tvo.setAttributeValue("pk_dept",
-							vo.getAttributeValue("pk_dept").toString());
-					tvo.setAttributeValue("realvalue",
-							vo.getAttributeValue("realvalue" + pk_budgetItem));
-					tvo.setAttributeValue("pk_budgetItem",
-							item.getAttributeValue(BudgetItemVO.PK_BUDGET_ITEM));
+					tvo.setAttributeValue("pk_dept", vo.getAttributeValue("pk_dept").toString());
+					tvo.setAttributeValue("realvalue", vo.getAttributeValue("realvalue" + pk_budgetItem));
+					tvo.setAttributeValue("pk_budgetItem", item.getAttributeValue(BudgetItemVO.PK_BUDGET_ITEM));
 					itemvos = (AppendableVO[]) ArrayUtils.add(itemvos, tvo);
 				}
 			}
@@ -3152,8 +2866,7 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 	 * @throws DAOException
 	 */
 	@SuppressWarnings("unchecked")
-	public Map<String, BigDecimal> getDeptTmSelected(String cacuItem,
-			String whereStr) throws DAOException {
+	public Map<String, BigDecimal> getDeptTmSelected(String cacuItem, String whereStr) throws DAOException {
 
 		StringBuffer strSql = new StringBuffer();
 		strSql.append("SELECT sum(");
@@ -3161,8 +2874,7 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 		strSql.append("),wa_data.workdept  FROM wa_data,wa_waclass where ");
 		strSql.append(whereStr);
 		strSql.append(" group by wa_data.workdept");
-		List<Object[]> list = (List<Object[]>) getBaseDao().executeQuery(
-				strSql.toString(), new ArrayListProcessor());
+		List<Object[]> list = (List<Object[]>) getBaseDao().executeQuery(strSql.toString(), new ArrayListProcessor());
 		Map<String, BigDecimal> resultMap = new HashMap<String, BigDecimal>();
 		for (Object[] obj : list) {
 			BigDecimal bigdecimal = new BigDecimal(0);
@@ -3176,44 +2888,23 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 	}
 
 	// shenliangc 20140826 时点薪资计算保存之后清除主界面对应人员的发放数据计算标志
-	public void updateCalFlag4OnTime(String pk_wa_class, String cyear,
-			String cperiod, String[] pk_psndocs) throws BusinessException {
+	public void updateCalFlag4OnTime(String pk_wa_class, String cyear, String cperiod, String[] pk_psndocs)
+			throws BusinessException {
 		// 清除计算并保存时点薪资人员的薪资发放数据计算标志
-		String updateWaDataSql = "update wa_data set wa_data.caculateflag = 'N' where "
-				+ " wa_data.pk_wa_class = '"
-				+ pk_wa_class
-				+ "' and "
-				+ " wa_data.cyear = '"
-				+ cyear
-				+ "' and "
-				+ " wa_data.cperiod = '"
-				+ cperiod
-				+ "' and "
-				+ " wa_data.pk_psndoc in ("
-				+ SQLHelper.joinToInSql(pk_psndocs, -1)
-				+ ") and "
+		String updateWaDataSql = "update wa_data set wa_data.caculateflag = 'N' where " + " wa_data.pk_wa_class = '"
+				+ pk_wa_class + "' and " + " wa_data.cyear = '" + cyear + "' and " + " wa_data.cperiod = '" + cperiod
+				+ "' and " + " wa_data.pk_psndoc in (" + SQLHelper.joinToInSql(pk_psndocs, -1) + ") and "
 				+ " wa_data.checkflag = 'N' ";
 
 		this.executeSQLs(updateWaDataSql);
 
 		// 更新薪资方案期间状态计算标志
 		String updatePeriodStateSql = "update wa_periodstate set wa_periodstate.caculateflag = 'N' where "
-				+ " wa_periodstate.pk_wa_class = '"
-				+ pk_wa_class
-				+ "' and "
-				+ " wa_periodstate.pk_wa_period in "
-				+ " ( "
-				+ "	select pk_wa_period from wa_period where cyear = '"
-				+ cyear
-				+ "' and cperiod = '"
-				+ cperiod
+				+ " wa_periodstate.pk_wa_class = '" + pk_wa_class + "' and " + " wa_periodstate.pk_wa_period in "
+				+ " ( " + "	select pk_wa_period from wa_period where cyear = '" + cyear + "' and cperiod = '" + cperiod
 				+ "' and "
 				+ " 		pk_periodscheme in ( select pk_periodscheme from wa_waclass where wa_waclass.pk_wa_class = '"
-				+ pk_wa_class
-				+ "')"
-				+ " ) "
-				+ " and "
-				+ " wa_periodstate.checkflag = 'N' ";
+				+ pk_wa_class + "')" + " ) " + " and " + " wa_periodstate.checkflag = 'N' ";
 
 		this.executeSQLs(updatePeriodStateSql);
 	}
@@ -3229,21 +2920,13 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 			value = "0";
 		}
 		// 这里只考虑了普通方案的情况，可能还需要处理集团方案项目修改、多次方案发放项目修改的情况。
-		String updateSql = "update wa_data set wa_data."
-				+ vo.getItemkey()
-				+ " = "
-				+ value
-				+ " where "
-				+ " (wa_data.pk_wa_class = '"
-				+ vo.getPk_wa_class()
-				+ "' or "
+		String updateSql = "update wa_data set wa_data." + vo.getItemkey() + " = " + value + " where "
+				+ " (wa_data.pk_wa_class = '" + vo.getPk_wa_class() + "' or "
 				+ " wa_data.pk_wa_class in (select pk_parentclass from wa_inludeclass where pk_childclass = '"
-				+ vo.getPk_wa_class()
-				+ "') or "
+				+ vo.getPk_wa_class() + "') or "
 				+ " wa_data.pk_wa_class in (select pk_childclass from wa_inludeclass where pk_parentclass = '"
-				+ vo.getPk_wa_class() + "')) and " + " wa_data.cyear = '"
-				+ vo.getCyear() + "' and " + " wa_data.cperiod = '"
-				+ vo.getCperiod() + "' and " +
+				+ vo.getPk_wa_class() + "')) and " + " wa_data.cyear = '" + vo.getCyear() + "' and "
+				+ " wa_data.cperiod = '" + vo.getCperiod() + "' and " +
 				// 20151121 shenliangc NCdp205546984 薪资发放多次发放后，第一次的薪资项目变为了0值
 				" wa_data.checkflag = 'N' ";
 

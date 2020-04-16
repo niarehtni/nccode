@@ -372,6 +372,8 @@
 				<ref bean="nullaction" />
 				<ref bean="wadocInsGroupAction" />
 				<ref bean="batchOprAction" />
+				<ref bean="nullaction" />
+				<ref bean="grpInsExitGroupAction" />
 			</list>
 		</property>
 		
@@ -387,6 +389,8 @@
 				<ref bean="nullaction" />
 				<ref bean="wadocInsGroupAction" />
 				<ref bean="batchOprAction" />
+				<ref bean="nullaction" />
+				<ref bean="grpInsExitGroupAction" />
 			</list>
 		</property>
 		<property name="model" ref="ManageAppModel" />
@@ -396,6 +400,27 @@
 		<property name="model" ref="ManageAppModel"/>
 		<property name="dataIOGroupAction" ref="dataimportGroupAction"/>
 	</bean>
+	
+	<!-- BEGIN  團保批量退保  MOD ssx  {33189} 2020/02/19  -->
+	<bean id="grpInsExitGroupAction" class="nc.funcnode.ui.action.MenuAction">
+		<property name="code" value="grpinsex"></property>
+		<property name="name"  value="團保批量退保"></property>
+		<property name="actions">
+			<list>
+				<!--導出模板 -->
+				<ref bean="exportGrpInsExTmpAction" />
+				<!--導入退保資料 -->
+				<ref bean="importGrpInsExAction" />
+			</list>
+		</property>
+	</bean>
+	<bean id="exportGrpInsExTmpAction" class="nc.ui.wa.psndocwadoc.action.ExportGrpInsExTmpAction">
+		<property name="model" ref="ManageAppModel"/>
+	</bean>
+	<bean id="importGrpInsExAction" class="nc.ui.wa.psndocwadoc.action.ImportGrpInsExAction">
+		<property name="model" ref="ManageAppModel"/>
+	</bean>
+	<!-- END  團保批量退保  MOD ssx  {33189} 2020/02/19  -->
 	
 	<!-- BEGIN  劳健保批量加退  MOD 张恒  {21427} 2018/9/12  -->
 	<bean id="labourActionGroup" class="nc.funcnode.ui.action.MenuAction">

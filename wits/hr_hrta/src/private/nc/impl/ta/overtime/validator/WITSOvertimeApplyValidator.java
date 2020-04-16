@@ -301,7 +301,9 @@ public class WITSOvertimeApplyValidator implements Validator {
 		sql.append(" inner join bd_holiday on bd_workcalendar.pk_holidayrule=bd_holiday.pk_holidaysort ");
 		sql.append(" where org_orgs.pk_org=tbm_psncalendar.pk_org ");
 		sql.append(" and bd_holiday.starttime<='"+beiginTime.toString()+"' and endtime>='"+beiginTime.toString()+"' ");
-		sql.append(" ) then '1002Z710000000021ZLX' ");
+		// 【假日加班規則】國定假日排班又申請加班單無效  by George  20190712  缺陷Bug #27379
+		// 节日加班 改成 国定假日加班
+		sql.append(" ) then '1001A1100000000009PE' ");
 		sql.append("when tbm_psncalendar.if_rest='Y' and tbm_psncalholiday.pk_psncalhol is null then (select tbm_timeitem.pk_timeitem from tbm_timeitem");
 		sql.append(" inner join tbm_timeitemcopy on tbm_timeitem.pk_timeitem=tbm_timeitemcopy.pk_timeitem");
 		sql.append(" where  tbm_timeitem.itemtype=1 and tbm_timeitemcopy.pk_org=tbm_psncalendar.pk_org");
@@ -341,26 +343,74 @@ public class WITSOvertimeApplyValidator implements Validator {
 					{
 						continue;
 					}
+					// 【假日加班規則】國定假日排班又申請加班單無效  by George  20190712  缺陷Bug #27379
+					// 查詢員工工作日曆中，這位員工、組織、這一天日期的班次PK
+					String strSQL = "select pk_shift from tbm_psncalendar where pk_psndoc = '" + body.getPk_psndoc() + "' "
+						    + "and tbm_psncalendar.pk_org = '" + body.getPk_org() + "' "
+								    + "and tbm_psncalendar.calendar = '" + body.getOvertimeenddate() + "'";
+				
+				    String ispublicholiday = (String) new BaseDAO().executeQuery(strSQL, new ColumnProcessor());
+				    
 					// 加班時數為8小時者，加班起訖時間需為9小時(含1小時休息時間)
 					if (body.getActhour().toBigDecimal().compareTo(new BigDecimal(8)) == 0) {
-						if (UFDateTime.getMinutesBetween(body.getOvertimebegintime(), body.getOvertimeendtime()) != (8 * 60 + 60)) {
-							throw new BusinessException(nc.vo.ml.NCLangRes4VoTransl.getNCLangRes().getStrByID(
-									"6017wits_0", "06017wits-0006", null,
-									new String[] { body.getOvertimebegindate().toString() })
-							/*
-							 * @res [{0}] 加班时数为8小时 ， 加班起止时间需为9小时 （ 含60分钟休息时间）
-							 */);
+						// 是國定假日加班 且 非公休(有排班)
+						if (body.getPk_overtimetype().equals("1001A1100000000009PE") && !"0001Z7000000000000GX".equals(ispublicholiday)) {
+							if ((UFDateTime.getMinutesBetween(body.getOvertimebegintime(), body.getOvertimeendtime()) < (8 * 60 + 60) ||
+									UFDateTime.getMinutesBetween(body.getOvertimebegintime(), body.getOvertimeendtime()) >= (9 * 60 + 60))) {
+								throw new BusinessException(nc.vo.ml.NCLangRes4VoTransl.getNCLangRes().getStrByID(
+										"6017wits_0", "06017wits-0012", null,
+										new String[] { body.getOvertimebegindate().toString() })
+								/*
+								 * @res [{0}] 国定假日加班时数为8小时 ， 加班起止时间需为9小时 （ 含60分钟休息时间）
+								 * 
+								 */);
+							}
+						} else {
+							if ((UFDateTime.getMinutesBetween(body.getOvertimebegintime(), body.getOvertimeendtime()) < (8 * 60 + 30) ||
+									UFDateTime.getMinutesBetween(body.getOvertimebegintime(), body.getOvertimeendtime()) >= (9 * 60 + 60))) {
+								throw new BusinessException(nc.vo.ml.NCLangRes4VoTransl.getNCLangRes().getStrByID(
+										"6017wits_0", "06017wits-0006", null,
+										new String[] { body.getOvertimebegindate().toString() })
+								/*
+								 * @res [{0}] 加班时数为8小时 ， 加班起止时间需为8.5或9小时 （ 含30或60分钟休息时间）
+								 */);
+							}
 						}
 					}
 					// 加班時數為12小時者，加班起訖時間需為14小時(含2小時休息時間)
 					if (body.getActhour().toBigDecimal().compareTo(new BigDecimal(12)) == 0) {
-						if (UFDateTime.getMinutesBetween(body.getOvertimebegintime(), body.getOvertimeendtime()) != (12 * 60 + 90)) {
+						// 是國定假日加班 且 非公休(有排班)
+						if (body.getPk_overtimetype().equals("1001A1100000000009PE") && !"0001Z7000000000000GX".equals(ispublicholiday)) {
+							if (UFDateTime.getMinutesBetween(body.getOvertimebegintime(), body.getOvertimeendtime()) != (12 * 60 + 90)) {
+								throw new BusinessException(nc.vo.ml.NCLangRes4VoTransl.getNCLangRes().getStrByID(
+										"6017wits_0", "06017wits-0011", null,
+										new String[] { body.getOvertimebegindate().toString() })
+								/*
+								 * @res [{0}] 国定假日加班时数为12小时 ， 加班起止时间需为13.5小时 （
+								 * 含90分钟休息时间）
+								 */);
+							}
+						} else {
+							if (UFDateTime.getMinutesBetween(body.getOvertimebegintime(), body.getOvertimeendtime()) != (12 * 60 + 60)) {
+								throw new BusinessException(nc.vo.ml.NCLangRes4VoTransl.getNCLangRes().getStrByID(
+										"6017wits_0", "06017wits-0007", null,
+										new String[] { body.getOvertimebegindate().toString() })
+								/*
+								 * @res [{0}] 加班时数为12小时 ， 加班起止时间需为13小时 （
+								 * 含60分钟休息时间）
+								 */);
+							}
+						}
+					}
+					// 是國定假日加班 且 有排週休三日班
+					if (body.getPk_overtimetype().equals("1001A1100000000009PE") && "1001A1100000000CF6ZR".equals(ispublicholiday)) {
+						if (body.getActhour().toBigDecimal().compareTo(new BigDecimal(10)) < 0) {
 							throw new BusinessException(nc.vo.ml.NCLangRes4VoTransl.getNCLangRes().getStrByID(
-									"6017wits_0", "06017wits-0007", null,
+									"6017wits_0", "06017wits-0013", null,
 									new String[] { body.getOvertimebegindate().toString() })
 							/*
-							 * @res [{0}] 加班时数为12小时 ， 加班起止时间需为13.5小时 （
-							 * 含90分钟休息时间）
+							 * @res 国定假日加班且有排周休三日班最小单位时间为10小时
+							 * 
 							 */);
 						}
 					}
@@ -395,6 +445,17 @@ public class WITSOvertimeApplyValidator implements Validator {
 					String strSQL = "select gzsj from tbm_psncalendar where calendar = '" + calendar
 							+ "' and pk_psndoc='" + pk_psndoc + "' and dr=0";
 					Object rtn = getBaseDAO().executeQuery(strSQL, new ColumnProcessor());
+					
+					// 【假日加班規則】國定假日排班又申請加班單無效  by George  20190712  缺陷Bug #27379
+					// 查詢日期是否為国定假日加班
+					strSQL = "select name from bd_holiday where starttime <= '" + calendar+ " 00:00:00' "
+							+ "and endtime >= '" + calendar + " 00:00:00'";
+					Object isholiday = getBaseDAO().executeQuery(strSQL, new ColumnProcessor());
+					// 當日期是国定假日加班，员工当日排班时长應為0
+					if (!"".equals(isholiday)) {
+						rtn = null;
+					}
+					
 					UFDouble calendarHours = (rtn == null ? UFDouble.ZERO_DBL : new UFDouble((BigDecimal) rtn));
 					// 1.2 按加班起始时间取员工当日加班登记时长
 					strSQL = "select sum(acthour) acthour from tbm_overtimereg where overtimebegindate = '" + calendar

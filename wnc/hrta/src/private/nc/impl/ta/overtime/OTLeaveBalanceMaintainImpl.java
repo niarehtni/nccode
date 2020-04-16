@@ -24,6 +24,7 @@ public class OTLeaveBalanceMaintainImpl extends OTLeaveBalancePubServiceImpl imp
 			String[] pk_psndocs = null;
 			String[] pk_depts = null;
 			String maxdate = "";
+			UFBoolean isTermLeave = null;
 			if (conds != null && conds.size() > 0) {
 				for (Entry<String, QueryCondition> cond : conds.entrySet()) {
 					String strKey = cond.getKey();
@@ -48,11 +49,15 @@ public class OTLeaveBalanceMaintainImpl extends OTLeaveBalancePubServiceImpl imp
 						if (condition.getValues() != null && condition.getValues().length > 0) {
 							maxdate = condition.getValues()[0];
 						}
+					} else if (strKey.equals("istermleave")) {
+						if (condition.getValues() != null && condition.getValues().length > 0) {
+							isTermLeave = new UFBoolean(condition.getValues()[0]);
+						}
 					}
 				}
 
-				bills = queryOTLeaveAggvos(pk_org, pk_psndocs, pk_depts, pk_leavetypecopy, maxdate, queryYear,
-						beginDate, endDate);
+				bills = queryOTLeaveAggvos(pk_org, pk_psndocs, pk_depts, isTermLeave, pk_leavetypecopy, maxdate,
+						queryYear, beginDate, endDate);
 			}
 		} catch (Exception e) {
 			ExceptionUtils.wrappException(e);

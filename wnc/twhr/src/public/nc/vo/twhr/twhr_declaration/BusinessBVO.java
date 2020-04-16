@@ -18,6 +18,10 @@ public static final String BENEFICIARY_ID="beneficiary_id";
 */
 public static final String BENEFICIARY_NAME="beneficiary_name";
 /**
+*投保单位代号
+*/
+public static final String INSURANCE_UNIT_CODE="insurance_unit_code";
+/**
 *序号
 */
 public static final String NUM="num";
@@ -145,6 +149,23 @@ public static final String VBDEF8="vbdef8";
 *自定义项9
 */
 public static final String VBDEF9="vbdef9";
+/** 
+* 获取投保单位代号
+*
+* @return 投保单位代号
+*/
+public String getInsurance_unit_code () {
+return (String) this.getAttributeValue( BusinessBVO.INSURANCE_UNIT_CODE);
+ } 
+
+/** 
+* 设置投保单位代号
+*
+* @param insurance_unit_code 投保单位代号
+*/
+public void setInsurance_unit_code ( String insurance_unit_code) {
+this.setAttributeValue( BusinessBVO.INSURANCE_UNIT_CODE,insurance_unit_code);
+ } 
 /** 
 * 获取所得人身份证号
 *

@@ -60,6 +60,8 @@
 				<ref bean="nullAction" />
 				<!--MOD 銀行報盤 2018-07-23-->
 				<ref bean="bankExportAction" />
+				<!--MOD 銀行報盤 2020-02-16-->
+				<ref bean="bankDetailExportAction" />
 				<ref bean="nullAction" />
 				<!--MOD 薪资、奖金明细代扣项导入 kevin.nie 2018-01-29 start-->
 				<ref bean="importPayDataAction" />

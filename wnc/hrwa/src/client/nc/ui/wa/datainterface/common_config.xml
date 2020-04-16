@@ -290,6 +290,10 @@
         <property name="model" ref="dataIOAppModel"></property>  
      </bean>
      
+      <bean id="bankDetailExportAction" class="nc.ui.wa.datainterface.action.ExportBankDetailInfoAction">
+        <property name="model" ref="dataIOAppModel"></property>  
+     </bean>
+     
 	<bean id="queryDelegator" class="nc.ui.wa.pub.WaQueryDelegator">
 		<property name="nodeKey" value="dataio" />
 		<property name="model" ref="dataIOAppModel"/>

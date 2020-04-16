@@ -63,6 +63,10 @@ public class ItemGroupMemberVO extends SuperVO {
 	 */
 	public String pk_itemgroup;
 	/**
+	 * 显示次序
+	 */
+	public int orderno;
+	/**
 	 * 時間戳
 	 */
 	public UFDateTime ts;
@@ -255,6 +259,25 @@ public class ItemGroupMemberVO extends SuperVO {
 	 */
 	public void setPk_itemgroup(String pk_itemgroup) {
 		this.pk_itemgroup = pk_itemgroup;
+	}
+
+	/**
+	 * 屬性 生成上層主鍵的Getter方法.屬性名：顯示次序 創建日期:2020/2/29
+	 * 
+	 * @return int
+	 */
+	public int getOrderno() {
+		return orderno;
+	}
+
+	/**
+	 * 屬性生成上層主鍵的Setter方法.屬性名：顯示次序 創建日期:2020/2/29
+	 * 
+	 * @param orderno
+	 *            orderno int
+	 */
+	public void setOrderno(int orderno) {
+		this.orderno = orderno;
 	}
 
 	/**

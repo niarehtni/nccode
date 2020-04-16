@@ -168,42 +168,48 @@ public class SavePayfileAction extends PayfileBaseAction {
 		}
 	}
 
-	/**
-	 * 如果员工是外籍员工，根据参数设置，判断扣税核算日期/居留证到期日期是否填写
-	 * 
-	 * @param value
-	 * @author ward
-	 * @date 2018-01-15
-	 * @throws BusinessException
-	 */
-	protected void validateForeginData(Object value) throws BusinessException {
-		PayfileVO payfileVO = (PayfileVO) value;
-		PsndocVO psndocVo = getPsndocVo(payfileVO.getPk_psndoc());
-		String isForeign = psndocVo.getAttributeValue(LocalizationSysinitUtil
-				.getTwhrlPsn("TWHRLPSN01")) != null ? psndocVo
-				.getAttributeValue(
-						LocalizationSysinitUtil.getTwhrlPsn("TWHRLPSN01"))
-				.toString() : "N";
-		if ("Y".equals(isForeign)) {
-			String qrySql = "select value from pub_sysinit where initcode='TWHR08' and pk_org='"
-					+ psndocVo.getPk_org() + "' and isnull(dr,0)=0";
-			Object sysinitValue = getUAPQueryBS().executeQuery(qrySql,
-					new ColumnProcessor());
-			if ("1001ZZ1000000001NCMA".equals(String.valueOf(sysinitValue))) {// 参数如果选择a.扣税核算入境日期
-				if (psndocVo.getAttributeValue(LocalizationSysinitUtil
-						.getTwhrlPsn("TWHRLPSN03")) == null) {
-					throw new BusinessException(ResHelper.getString("notice",
-							"2notice-tw-000004")/* 保存失敗，该員工没有填写扣税核算入境日期 */);
-				}
-			} else if ("1001ZZ1000000001NCMB".equals(String
-					.valueOf(sysinitValue))) {// 参数如果选择b.居留证到期日期
-				if (psndocVo.getAttributeValue(LocalizationSysinitUtil
-						.getTwhrlPsn("TWHRLPSN04")) == null) {
-					throw new BusinessException(ResHelper.getString("notice",
-							"2notice-tw-000005")/* 保存失敗，该員工無填寫居留证到期日期 */);
-				}
-			}
+    /**
+     * 如果员工是外籍员工，根据参数设置，判断扣税核算日期/居留证到期日期是否填写
+     * 
+     * @param value
+     * @author ward
+     * @date 2018-01-15
+     * @throws BusinessException
+     */
+    protected void validateForeginData(Object value) throws BusinessException {
+	PayfileVO payfileVO = (PayfileVO) value;
+	String qrySql = "SELECT ITBLTYPE FROM  wa_taxbase wa_taxbase WHERE wa_taxbase.pk_wa_taxbase = '"
+		+ payfileVO.getTaxtableid() + "'";
+	Integer tableType = (Integer) getUAPQueryBS().executeQuery(qrySql, new ColumnProcessor());
+	//mod tank 只有外籍税率表才去校验这个 2020年3月12日 14:23:17
+	if (tableType != null && tableType == 3) {
+
+	    PsndocVO psndocVo = getPsndocVo(payfileVO.getPk_psndoc());
+	    String isForeign = psndocVo.getAttributeValue(LocalizationSysinitUtil.getTwhrlPsn("TWHRLPSN01")) != null ? psndocVo
+		    .getAttributeValue(LocalizationSysinitUtil.getTwhrlPsn("TWHRLPSN01")).toString() : "N";
+	    if ("Y".equals(isForeign)) {
+		qrySql = "select value from pub_sysinit where initcode='TWHR08' and pk_org='" + psndocVo.getPk_org()
+			+ "' and isnull(dr,0)=0";
+		Object sysinitValue = getUAPQueryBS().executeQuery(qrySql, new ColumnProcessor());
+		if ("1001ZZ1000000001NCMA".equals(String.valueOf(sysinitValue))) {// 参数如果选择a.扣税核算入境日期
+		    if (psndocVo.getAttributeValue(LocalizationSysinitUtil.getTwhrlPsn("TWHRLPSN03")) == null) {
+			throw new BusinessException(ResHelper.getString("notice", "2notice-tw-000004")/*
+												       * 保存失敗
+												       * ，
+												       * 该員工没有填写扣税核算入境日期
+												       */);
+		    }
+		} else if ("1001ZZ1000000001NCMB".equals(String.valueOf(sysinitValue))) {// 参数如果选择b.居留证到期日期
+		    if (psndocVo.getAttributeValue(LocalizationSysinitUtil.getTwhrlPsn("TWHRLPSN04")) == null) {
+			throw new BusinessException(ResHelper.getString("notice", "2notice-tw-000005")/*
+												       * 保存失敗
+												       * ，
+												       * 该員工無填寫居留证到期日期
+												       */);
+		    }
 		}
+	    }
+	}
 
 	}
 

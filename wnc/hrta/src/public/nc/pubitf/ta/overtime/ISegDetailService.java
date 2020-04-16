@@ -3,6 +3,7 @@ package nc.pubitf.ta.overtime;
 import java.util.Map;
 
 import nc.vo.pub.BusinessException;
+import nc.vo.pub.lang.UFBoolean;
 import nc.vo.pub.lang.UFDouble;
 import nc.vo.pub.lang.UFLiteralDate;
 import nc.vo.ta.leave.LeaveRegVO;
@@ -115,6 +116,25 @@ public interface ISegDetailService {
 	public Map<String, UFDouble[]> calculateOvertimeFeeByDate(String pk_org, String[] pk_psndocs,
 			UFLiteralDate startDate, UFLiteralDate endDate, UFDouble curNodeHours, OTSChainNode unSavedNodes,
 			String pk_item_group, boolean isLeave) throws BusinessException;
+
+	/**
+	 * 按起迄時間計算段內指定日曆天類型加班計薪時數（含離職人員期間結束日期至月末） only for WNC
+	 * 
+	 * @param pk_org
+	 *            組織PK
+	 * @param pk_psndocs
+	 *            計算員工數組
+	 * @param startDate
+	 *            開始日期
+	 * @param endDate
+	 *            結束日期
+	 * @param dateType
+	 *            日曆天類型
+	 * @return Map.Key = 員工PK，Map.Value=UFDouble = 加班計薪時數
+	 * @throws BusinessException
+	 */
+	public Map<String, UFDouble> calculateOvertimeHoursByType(String pk_org, String[] pk_psndocs,
+			UFLiteralDate startDate, UFLiteralDate endDate, CalendarDateTypeEnum dateType) throws BusinessException;
 
 	/**
 	 * 多線程調用calculateOvertimeFeeByDate
@@ -337,6 +357,10 @@ public interface ISegDetailService {
 	 *            組織PK
 	 * @param pk_psndocs
 	 *            人員PK數組
+	 * @param pk_depts
+	 *            部門PK數組
+	 * @param isTermLeave
+	 *            , 是否留停
 	 * @param overtimeDate
 	 *            加班日期
 	 * @param pk_overtimetype
@@ -345,8 +369,8 @@ public interface ISegDetailService {
 	 *         ，參數類型：人員PK，数值：加班時長
 	 * @throws BusinessException
 	 */
-	Map<String, UFDouble> getOvertimeHoursByType(String pk_org, String[] pk_psndocs, UFLiteralDate overtimeDate,
-			String pk_overtimetype) throws BusinessException;
+	Map<String, UFDouble> getOvertimeHoursByType(String pk_org, String[] pk_psndocs, String[] pk_depts,
+			UFBoolean isTermLeave, UFLiteralDate overtimeDate, String pk_overtimetype) throws BusinessException;
 
 	/**
 	 * 根據人員及加班日期、加班類別取加班轉調休時長
@@ -355,6 +379,10 @@ public interface ISegDetailService {
 	 *            組織PK
 	 * @param pk_psndocs
 	 *            人員PK數組
+	 * @param pk_depts
+	 *            部門PK數組
+	 * @param isTermLeave
+	 *            是否留停
 	 * @param overtimeDate
 	 *            加班日期
 	 * @param pk_overtimetype
@@ -363,8 +391,8 @@ public interface ISegDetailService {
 	 *         ，參數類型：人員PK，数值：加班時長
 	 * @throws BusinessException
 	 */
-	Map<String, UFDouble> getOvertimeToRestHoursByType(String pk_org, String[] pk_psndocs, UFLiteralDate overtimeDate,
-			String pk_overtimetype) throws BusinessException;
+	Map<String, UFDouble> getOvertimeToRestHoursByType(String pk_org, String[] pk_psndocs, String[] pk_depts,
+			UFBoolean isTermLeave, UFLiteralDate overtimeDate, String pk_overtimetype) throws BusinessException;
 
 	/**
 	 * 根據人員及加班起迄日期、加班類別取加班轉調休OTLeaveBalanceVO集合
@@ -373,6 +401,10 @@ public interface ISegDetailService {
 	 *            組織PK
 	 * @param pk_psndocs
 	 *            人員PK數組
+	 * @param pk_depts
+	 *            部門PK數組
+	 * @param isTermLeave
+	 *            是否留停
 	 * @param beginDate
 	 *            起始日期
 	 * @param endDate
@@ -382,8 +414,9 @@ public interface ISegDetailService {
 	 * @return
 	 * @throws BusinessException
 	 */
-	OTLeaveBalanceVO[] getOvertimeToRestHoursByType(String pk_org, String[] pk_psndocs, UFLiteralDate beginDate,
-			UFLiteralDate endDate, String pk_overtimetype) throws BusinessException;
+	OTLeaveBalanceVO[] getOvertimeToRestHoursByType(String pk_org, String[] pk_psndocs, String[] pk_depts,
+			UFBoolean isTermLeave, UFLiteralDate beginDate, UFLiteralDate endDate, String pk_overtimetype)
+			throws BusinessException;
 
 	/**
 	 * 根據人員及加班年度、加班類別取加班轉調休OTLeaveBalanceVO集合
@@ -392,6 +425,10 @@ public interface ISegDetailService {
 	 *            組織PK
 	 * @param pk_psndocs
 	 *            人員PK數組
+	 * @param pk_depts
+	 *            部門PK數組
+	 * @param isTermLeave
+	 *            是否留停
 	 * @param beginDate
 	 *            統計年度
 	 * @param pk_overtimetype
@@ -399,8 +436,8 @@ public interface ISegDetailService {
 	 * @return
 	 * @throws BusinessException
 	 */
-	OTLeaveBalanceVO[] getOvertimeToRestHoursByType(String pk_org, String[] pk_psndocs, String queryYear,
-			String pk_overtimetype) throws BusinessException;
+	OTLeaveBalanceVO[] getOvertimeToRestHoursByType(String pk_org, String[] pk_psndocs, String[] pk_depts,
+			UFBoolean isTermLeave, String queryYear, String pk_overtimetype) throws BusinessException;
 
 	/**
 	 * 根據人員加班起迄日期、加班類別取加班轉調休OTBalanceDetailVO集合
@@ -476,7 +513,9 @@ public interface ISegDetailService {
 	 * 
 	 * @param pk_psndoc
 	 *            重建人PK
+	 * @param startDate
+	 *            起始日期
 	 * @throws BusinessException
 	 */
-	public void forceRebuildSegDetailByPsn(String pk_psndoc) throws BusinessException;
+	public void forceRebuildSegDetailByPsn(String pk_psndoc, UFLiteralDate startDate) throws BusinessException;
 }

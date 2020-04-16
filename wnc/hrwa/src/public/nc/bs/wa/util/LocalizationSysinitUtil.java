@@ -20,6 +20,7 @@ import nc.vo.pub.BusinessException;
 public class LocalizationSysinitUtil {
 	private static Map<String, String> twhrlorg = null;
 	private static Map<String, String> twhrlpsn = null;
+	private static Map<String, String> twhrzzxx = null;
 	private static Map<String, String> twhrlwa = null;
 	private static IUAPQueryBS queryBS = null;
 
@@ -33,7 +34,7 @@ public class LocalizationSysinitUtil {
 	public static void reloadRefs() {
 		twhrlorg = getMap("TWHRLORG", twhrlorg);
 		twhrlpsn = getMap("TWHRLPSN", twhrlpsn);
-		twhrlpsn = getMap("TWHRZZXX", twhrlpsn);
+		twhrzzxx = getMap("TWHRZZXX", twhrzzxx);
 		twhrlwa = getMap("TWHRLWA", twhrlwa);
 	}
 
@@ -52,10 +53,10 @@ public class LocalizationSysinitUtil {
 	}
 
 	public static String getTwhrzzxx(String key) {
-		if (null == twhrlpsn) {
-			twhrlpsn = getMap("TWHRZZXX", twhrlpsn);
+		if (null == twhrzzxx) {
+			twhrzzxx = getMap("TWHRZZXX", twhrzzxx);
 		}
-		return twhrlpsn.get(key);
+		return twhrzzxx.get(key);
 	}
 
 	public static String getTwhrlWa(String key) {

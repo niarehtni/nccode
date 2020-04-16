@@ -64,7 +64,7 @@ public class SaveAction extends RdsBaseAction {
 	 * @param curRow
 	 * @return boolean
 	 */
-	public boolean checkBegindate(SuperVO saveData, int currow) throws BusinessException {
+	public boolean checkBegindate(int saveType, SuperVO saveData, int currow) throws BusinessException {
 
 		// 当前行的开始日期和终止日期
 		UFLiteralDate beginDate = (UFLiteralDate) saveData.getAttributeValue("begindate");
@@ -242,7 +242,71 @@ public class SaveAction extends RdsBaseAction {
 			checkPsnchg(saveData, editRow);
 			return;
 		}
-		checkBegindate(saveData, editRow);
+		// WNC客开,插入调配记录的情况
+		if (TRNConst.Table_NAME_DEPTCHG.equals(strTabCode) && saveType == RdsPsninfoModel.INSERT) {
+			checkBegindateForInsertChg(saveType, saveData, editRow);
+		} else {
+			checkBegindate(saveType, saveData, editRow);
+		}
+
+	}
+
+	private boolean checkBegindateForInsertChg(int saveType, SuperVO saveData, int currow) throws BusinessException {
+		// 当前行的开始日期和终止日期
+		UFLiteralDate beginDate = (UFLiteralDate) saveData.getAttributeValue("begindate");
+		UFLiteralDate endDate = (UFLiteralDate) saveData.getAttributeValue("enddate");
+		// 前一条记录的开始日期
+		UFLiteralDate preRowBegindate = null;
+		// 前一条记录的结束日期
+		UFLiteralDate preRowEnddate = null;
+		// 后一条记录的开始日期
+		UFLiteralDate nextRowBegindate = null;
+		// 总行数
+		int iRowCount = getCurBillModel().getRowCount() - 1;
+		if (currow != iRowCount) {
+			nextRowBegindate = (UFLiteralDate) getCurBillModel().getValueAt(currow + 1, "begindate");
+		}
+		if (currow != 0) {
+			preRowBegindate = (UFLiteralDate) getCurBillModel().getValueAt(currow - 1, "begindate");
+			preRowEnddate = (UFLiteralDate) getCurBillModel().getValueAt(currow - 1, "enddate");
+			if (preRowBegindate == null) {
+				throw new BusinessException(ResHelper.getString("6009tran", "06009tran0044")/*
+																							 * @
+																							 * res
+																							 * "前一条记录的开始日期不能为空！"
+																							 */);
+			}
+			if (preRowEnddate == null) {
+				// 為空則說明是新增而不是插入
+				throw new BusinessException("前一條記錄的結束日期不能為空!");
+			}
+			// 插入數據的校驗
+			if (preRowBegindate != null && (preRowBegindate.isSameDate(beginDate)) || preRowBegindate.after(beginDate)) {
+				throw new BusinessException(ResHelper.getString("6009tran", "06009tran0043")/*
+																							 * @
+																							 * res
+																							 * "开始日期不能早于等于上一记录的开始日期！"
+																							 */);
+			}
+			if (nextRowBegindate != null
+					&& (!nextRowBegindate.after(preRowBegindate) || !nextRowBegindate.after(preRowEnddate))) {
+				throw new BusinessException("資料錯誤,後一條的開始日期不能小於等於前一條記錄的開始或結束日期!");
+			}
+			if (nextRowBegindate == null) {
+				throw new BusinessException("後一條記錄的開始日期不能為空!");
+			}
+			if (nextRowBegindate != null && (nextRowBegindate.isSameDate(beginDate))
+					|| nextRowBegindate.before(beginDate)) {
+				throw new BusinessException("開始日期不能晚於等於下一記錄的開始日期！");
+			}
+			if (nextRowBegindate != null && (!nextRowBegindate.getDateBefore(1).isSameDate(endDate))) {
+				throw new BusinessException("結束日期須為下一記錄開始日期的前一天！");
+			}
+			return true;
+		} else {
+			throw new BusinessException("不能在入職前插入資料!");
+		}
+
 	}
 
 	private void checkPartchg(SuperVO saveData, int currow) throws BusinessException {
@@ -563,16 +627,16 @@ public class SaveAction extends RdsBaseAction {
 		SuperVO[] saveData = aggVO.getTableVO(curTabCode);
 
 		for (SuperVO pjv : saveData) {
-			if(pjv instanceof PsnJobVO){
+			if (pjv instanceof PsnJobVO) {
 				PsnJobVO temp = (PsnJobVO) pjv;
 				if (temp.getLastflag().booleanValue()) {
 					newPkOrg = temp.getPk_org();
-				} 
-			}else if(pjv instanceof TrialVO) {
+				}
+			} else if (pjv instanceof TrialVO) {
 				TrialVO temp = (TrialVO) pjv;
 				if (temp.getLastflag().booleanValue()) {
 					newPkOrg = temp.getPk_org();
-				} 
+				}
 			}
 		}
 		if (null == newPkOrg) {
@@ -627,9 +691,9 @@ public class SaveAction extends RdsBaseAction {
 		if (TRNConst.Table_NAME_DEPTCHG.equals(curTabCode)) {
 
 			// 留停異動類型
-			refTransType = SysInitQuery.getParaString(selData.getParentVO().getPk_hrorg(), "TWHR11").toString();
+			refTransType = SysInitQuery.getParaString(selData.getParentVO().getPk_org(), "TWHR11").toString();
 			// 複職異動類型
-			refReturnType = SysInitQuery.getParaString(selData.getParentVO().getPk_hrorg(), "TWHR12").toString();
+			refReturnType = SysInitQuery.getParaString(selData.getParentVO().getPk_org(), "TWHR12").toString();
 
 			if (refTransType == null || refTransType.equals("~")) {
 				throw new BusinessException("系統參數 [TWHR11] 未指定用於留停的異動類型。");
@@ -642,6 +706,25 @@ public class SaveAction extends RdsBaseAction {
 			// 是否同步履历
 			PsndocAggVO retVO = getIRdsService().addPsnjob_RequiresNew(aggVO, curTabCode, isSynWork,
 					getContext().getPk_org());
+
+			// WNC 客開 插入 調配記錄 tank 2020年3月26日11:08:27
+			if (TRNConst.Table_NAME_DEPTCHG.equals(curTabCode) && getModel().getEditType() == RdsPsninfoModel.ADD) {
+				if (retVO != null && retVO.getTableVO(curTabCode) != null && retVO.getTableVO(curTabCode).length > 0) {
+					// 插入數據的起止日期
+					UFLiteralDate begindate = ((PsnJobVO) aggVO.getTableVO(curTabCode)[0]).getBegindate();
+					UFLiteralDate enddate = ((PsnJobVO) aggVO.getTableVO(curTabCode)[0]).getEnddate();
+					// 返回值
+					SuperVO[] rtnVOs = retVO.getTableVO(curTabCode);
+					// 找到插入數據
+					PsnJobVO psnjob = findInsertRecord(rtnVOs, begindate, enddate, 0);
+					// 找到插入的前一條數據
+					PsnJobVO prejob = findInsertRecord(rtnVOs, begindate, enddate, -1);
+
+					getIRdsService().doAfterInsertPsnjob(prejob, psnjob);
+				}
+
+			}
+			// end WNC 客開 插入 調配記錄 tank
 
 			// 劳健保处理--法人组织不同的时候进入
 			//
@@ -691,16 +774,17 @@ public class SaveAction extends RdsBaseAction {
 			// UFDate delLarbolDate = dlg.getdEffectiveDate();
 			UFLiteralDate delLarbolDate = null;
 			for (SuperVO pjv : saveData) {
-				if(pjv instanceof PsnJobVO){
+				if (pjv instanceof PsnJobVO) {
 					PsnJobVO temp = (PsnJobVO) pjv;
 					if (temp.getLastflag().booleanValue()) {
 						newPkOrg = temp.getPk_org();
-					} 
-				}else if(pjv instanceof TrialVO) {
+						delLarbolDate = temp.getBegindate().getDateBefore(1);
+					}
+				} else if (pjv instanceof TrialVO) {
 					TrialVO temp = (TrialVO) pjv;
 					if (temp.getLastflag().booleanValue()) {
 						newPkOrg = temp.getPk_org();
-					} 
+					}
 				}
 			}
 
@@ -841,7 +925,7 @@ public class SaveAction extends RdsBaseAction {
 				if (temp.getLastflag().booleanValue()) {
 					newtemp = temp;
 				}
-				
+
 			}
 			UFLiteralDate beginDate = (UFLiteralDate) newtemp.getAttributeValue("begindate");
 			IPsndocSubInfoService4JFS nhiService = NCLocator.getInstance().lookup(IPsndocSubInfoService4JFS.class);
@@ -903,8 +987,59 @@ public class SaveAction extends RdsBaseAction {
 			aggVO.setTableVO(PartTimeVO.getDefaultTableName(), aggVO.getTableVO(curTabCode));
 		}
 		PsndocAggVO retVO = getIRdsService().insertSubRecord(aggVO, curTabCode);
+		// WNC 客開 插入 調配記錄 tank 2020年3月26日11:08:27
+		if (TRNConst.Table_NAME_DEPTCHG.equals(curTabCode) && getModel().getEditType() == RdsPsninfoModel.INSERT) {
+			if (retVO != null && retVO.getTableVO(curTabCode) != null && retVO.getTableVO(curTabCode).length > 0) {
+				// 插入數據的起止日期
+				UFLiteralDate begindate = ((PsnJobVO) aggVO.getTableVO(curTabCode)[0]).getBegindate();
+				UFLiteralDate enddate = ((PsnJobVO) aggVO.getTableVO(curTabCode)[0]).getEnddate();
+				// 返回值
+				SuperVO[] rtnVOs = retVO.getTableVO(curTabCode);
+				// 找到插入數據
+				PsnJobVO psnjob = findInsertRecord(rtnVOs, begindate, enddate, 0);
+				// 找到插入的前一條數據
+				PsnJobVO prejob = findInsertRecord(rtnVOs, begindate, enddate, -1);
+
+				getIRdsService().doAfterInsertPsnjob(prejob, psnjob);
+			}
+
+		}
+		// end WNC 客開 插入 調配記錄 tank
 		setRetData(retVO, curTabCode);
 		return true;
+	}
+
+	/**
+	 * 找到需要的工作記錄
+	 * 
+	 * @param rtnVOs
+	 * @param begindate
+	 * @param enddate
+	 * @param flag
+	 * @return
+	 */
+	private PsnJobVO findInsertRecord(SuperVO[] rtnVOs, UFLiteralDate begindate, UFLiteralDate enddate, int flag) {
+		PsnJobVO rtn = null;
+		int rtIndex = -1;
+		if (rtnVOs != null) {
+			for (int i = 0; i < rtnVOs.length; i++) {
+				if (rtnVOs[i] instanceof PsnJobVO) {
+					PsnJobVO jobvo = (PsnJobVO) rtnVOs[i];
+					UFLiteralDate tpBeginDate = jobvo.getBegindate();
+					UFLiteralDate tpEndDate = jobvo.getEnddate();
+					if (tpBeginDate != null
+							&& tpBeginDate.isSameDate(begindate)
+							&& (tpEndDate != null && tpEndDate.isSameDate(enddate) || (tpEndDate == null && enddate == null))) {
+						rtIndex = i;
+						break;
+					}
+				}
+			}
+			if (rtIndex >= 0 && (rtIndex + flag) >= 0 && (rtIndex + flag) < rtnVOs.length) {
+				rtn = (PsnJobVO) rtnVOs[(rtIndex + flag)];
+			}
+		}
+		return rtn;
 	}
 
 	private boolean savePartchg(PsndocAggVO aggVO) throws BusinessException {

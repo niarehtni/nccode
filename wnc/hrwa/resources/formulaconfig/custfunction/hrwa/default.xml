@@ -83,6 +83,11 @@
 </formula>
 <formula>
   <customType>9</customType>
+  <functionName>termWageDays</functionName>
+  <functionClass>nc.ui.wa.formular.func.TermWageDays</functionClass>
+</formula>
+<formula>
+  <customType>9</customType>
   <functionName>intervalDuration</functionName>
   <functionClass>nc.ui.wa.formular.func.IntervalDuration</functionClass>
 </formula>
@@ -146,6 +151,20 @@
   <functionClass>nc.ui.wa.formular.func.DaySalaryPays</functionClass>
 </formula>
 <!--新增日薪汇总函数 add by ward 2018年9月19日22:44:09 end -->
+<!--上期期末獎金基數 add by ssx 2019年12月09日 begin -->
+<formula>
+  <customType>9</customType>
+  <functionName>bonusBaseOfLastTerm</functionName>
+  <functionClass>nc.ui.wa.formular.func.BonusBaseOfLastTerm</functionClass>
+</formula>
+<!--上期期末獎金基數 added by ssx 2019年12月09日end -->
+<!--最新定薪函数 add by ssx 2020年03月03日 begin -->
+<formula>
+  <customType>9</customType>
+  <functionName>lastWadocAmount</functionName>
+  <functionClass>nc.ui.wa.formular.func.LastWadocAmount</functionClass>
+</formula>
+<!--最新定薪函数 added by ssx 2020年03月03日end -->
 <formula>
   <customType>9</customType>
   <functionName>ALPaidHours</functionName>
@@ -160,5 +179,11 @@
   <customType>9</customType>
   <functionName>scenarioFeeBase</functionName>
   <functionClass>nc.ui.wa.formular.func.ScenarioFeeBase</functionClass>
+</formula>
+<!-- 按日統計休假時數 added by ssx 2019-12-23 -->
+<formula>
+  <customType>9</customType>
+  <functionName>valueOfLeaveSalaryTermHour</functionName>
+  <functionClass>nc.ui.wa.formular.func.LeaveTypeSalaryTermHourParse</functionClass>
 </formula>
 </formula-array>

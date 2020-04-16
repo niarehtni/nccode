@@ -81,8 +81,7 @@ import org.apache.commons.lang.StringUtils;
  * @修改人:
  * @修改日期:
  */
-public class WaAdjustManageServiceImpl implements IWaAdjustManageService,
-		IWaAdjustQueryService, IWaPsnHiService {
+public class WaAdjustManageServiceImpl implements IWaAdjustManageService, IWaAdjustQueryService, IWaPsnHiService {
 	/**
 	 * 取得定调资信息维护 查询接口
 	 * 
@@ -90,8 +89,7 @@ public class WaAdjustManageServiceImpl implements IWaAdjustManageService,
 	 * @return
 	 */
 	private static IPsndocwadocQueryService lookupPsndocwadocQueryService() {
-		return (IPsndocwadocQueryService) NCLocator.getInstance().lookup(
-				IPsndocwadocQueryService.class.getName());
+		return (IPsndocwadocQueryService) NCLocator.getInstance().lookup(IPsndocwadocQueryService.class.getName());
 	}
 
 	private final String DOC_NAME = "Adjust";
@@ -106,8 +104,7 @@ public class WaAdjustManageServiceImpl implements IWaAdjustManageService,
 	 * 
 	 * */
 	public Object queryPsnPK(String PK_PSNJOB) throws BusinessException {
-		String sql = "select pk_psndoc,assgid from hi_psnjob where pk_psnjob = '"
-				+ PK_PSNJOB + "'";
+		String sql = "select pk_psndoc,assgid from hi_psnjob where pk_psnjob = '" + PK_PSNJOB + "'";
 		SQLParameter parameter = null;
 		return new BaseDAO().executeQuery(sql, parameter, /*
 														 * new
@@ -115,8 +112,7 @@ public class WaAdjustManageServiceImpl implements IWaAdjustManageService,
 														 */
 				new ResultSetProcessor() {
 					@Override
-					public Object handleResultSet(ResultSet arg0)
-							throws SQLException {
+					public Object handleResultSet(ResultSet arg0) throws SQLException {
 						Object[] objs = new Object[2];
 						while (arg0.next()) {
 							objs[0] = arg0.getString(1);
@@ -137,8 +133,7 @@ public class WaAdjustManageServiceImpl implements IWaAdjustManageService,
 		AggPsnappaproveVO aggVO = new AggPsnappaproveVO();
 		aggVO.setParentVO(vo.getParentVO());
 		aggVO.setChildrenVO(vo.getChildrenVO());
-		return noWorkflowApproveBill(aggVO, null, null, null,
-				IBillStatus.CHECKPASS);
+		return noWorkflowApproveBill(aggVO, null, null, null, IBillStatus.CHECKPASS);
 	}
 
 	/**
@@ -150,8 +145,7 @@ public class WaAdjustManageServiceImpl implements IWaAdjustManageService,
 	 * @return
 	 * @throws BusinessException
 	 */
-	private PsndocWadocVO[] covertBillVO(PsnappaproveVO pvo,
-			PsnappaproveBVO[] bvos) throws BusinessException {
+	private PsndocWadocVO[] covertBillVO(PsnappaproveVO pvo, PsnappaproveBVO[] bvos) throws BusinessException {
 		List<PsndocWadocVO> list = new ArrayList<PsndocWadocVO>();
 		HashMap<String, PsndocWadocVO> map = new HashMap<String, PsndocWadocVO>();
 		for (PsnappaproveBVO bvo : bvos) {
@@ -187,9 +181,7 @@ public class WaAdjustManageServiceImpl implements IWaAdjustManageService,
 				psndocWadocVO.setPk_org(pvo.getPk_org());
 				psndocWadocVO.setAssgid(bvo.getAssgid());
 				psndocWadocVO.setPartflag(bvo.getPartflag());
-				String key = psndocWadocVO.getPk_psndoc()
-						+ psndocWadocVO.getAssgid()
-						+ psndocWadocVO.getPk_wa_item();
+				String key = psndocWadocVO.getPk_psndoc() + psndocWadocVO.getAssgid() + psndocWadocVO.getPk_wa_item();
 				if (map.get(key) == null) {
 					// 自动设置发放标志
 					map.put(key, psndocWadocVO);
@@ -222,18 +214,13 @@ public class WaAdjustManageServiceImpl implements IWaAdjustManageService,
 	 * @return
 	 * @throws BusinessException
 	 */
-	public PfProcessBatchRetObject directApprove(
-			AggregatedValueObject[] billvos, String pk_user,
-			UFDateTime serverTime, String approveNote, int directApproveResult)
-			throws BusinessException {
+	public PfProcessBatchRetObject directApprove(AggregatedValueObject[] billvos, String pk_user,
+			UFDateTime serverTime, String approveNote, int directApproveResult) throws BusinessException {
 		PfProcessBatchRetObject retObj = NCLocator
 				.getInstance()
 				.lookup(IHrPf.class)
-				.directApprove(billvos, PubEnv.getPk_user(),
-						PubEnv.getServerTime(), approveNote,
-						directApproveResult,
-						IWaAdjustManageService.class.getName(), "doApprove",
-						AggPsnappaproveVO.class.getName());
+				.directApprove(billvos, PubEnv.getPk_user(), PubEnv.getServerTime(), approveNote, directApproveResult,
+						IWaAdjustManageService.class.getName(), "doApprove", AggPsnappaproveVO.class.getName());
 		// for(int i = 0;i<retObj.getRetObj().length;i++){
 		// doApprove((AggPsnappaproveVO)retObj.getRetObj()[i]);
 		// }
@@ -248,12 +235,10 @@ public class WaAdjustManageServiceImpl implements IWaAdjustManageService,
 	 * @return
 	 * @throws BusinessException
 	 */
-	public AggPsnappaproveVO doRecall(AggPsnappaproveVO vo)
-			throws BusinessException {
+	public AggPsnappaproveVO doRecall(AggPsnappaproveVO vo) throws BusinessException {
 		PsnappaproveVO psnappaproveVO = (PsnappaproveVO) vo.getParentVO();
 		// psnappaproveVO.setApplydate(null);
-		PsnappaproveBVO[] psnappaproveBVOs = (PsnappaproveBVO[]) vo
-				.getChildrenVO();
+		PsnappaproveBVO[] psnappaproveBVOs = (PsnappaproveBVO[]) vo.getChildrenVO();
 		for (PsnappaproveBVO psnappaproveBVO : psnappaproveBVOs) {
 			psnappaproveBVO.setWa_crt_cofm_money(null);
 			psnappaproveBVO.setPk_wa_crt_cofm_showname(null);
@@ -274,12 +259,11 @@ public class WaAdjustManageServiceImpl implements IWaAdjustManageService,
 	 * @param billPk
 	 *            java.lang.String
 	 */
-	public AggPsnappaproveVO doApprove(AggPsnappaproveVO aggVO)
-			throws BusinessException {
+	public AggPsnappaproveVO doApprove(AggPsnappaproveVO aggVO) throws BusinessException {
 
 		PsnappaproveVO mainvo = (PsnappaproveVO) aggVO.getParentVO();
-		return queryPsnappaproveVOByPk(noWorkflowApproveBill(aggVO, null, null,
-				null, mainvo.getConfirmstate().intValue()));
+		return queryPsnappaproveVOByPk(noWorkflowApproveBill(aggVO, null, null, null, mainvo.getConfirmstate()
+				.intValue()));
 	}
 
 	/**
@@ -291,8 +275,8 @@ public class WaAdjustManageServiceImpl implements IWaAdjustManageService,
 	 * @return
 	 * @throws BusinessException
 	 */
-	public AggPsnappaproveVO directApproveAndUpdate(AggPsnappaproveVO aggVO,
-			PsnappaproveVO psnappaproveVO) throws BusinessException {
+	public AggPsnappaproveVO directApproveAndUpdate(AggPsnappaproveVO aggVO, PsnappaproveVO psnappaproveVO)
+			throws BusinessException {
 		// if(psnappaproveVO.getConfirmstate() != -1){
 		// return directApprove(aggVO);
 		// }
@@ -307,11 +291,9 @@ public class WaAdjustManageServiceImpl implements IWaAdjustManageService,
 	 * @param psnappaproveAggVO
 	 * @throws BusinessException
 	 */
-	public AggPsnappaproveVO doSubmit(AggPsnappaproveVO psnappaproveAggVO)
-			throws BusinessException {
+	public AggPsnappaproveVO doSubmit(AggPsnappaproveVO psnappaproveAggVO) throws BusinessException {
 		// 生效日期校验
-		PsnappaproveVO psnappaproveVO = (PsnappaproveVO) psnappaproveAggVO
-				.getParentVO();
+		PsnappaproveVO psnappaproveVO = (PsnappaproveVO) psnappaproveAggVO.getParentVO();
 
 		// 由人员那边推过来的单据 的申请人和创建人都是NC系统用户，这里要处理为当前登陆用户
 		// 推出单据的申请人为“系统用户”，在业务申请节点查询时需查询登陆用户和系统
@@ -329,8 +311,7 @@ public class WaAdjustManageServiceImpl implements IWaAdjustManageService,
 		 * || psnappaproveVO.getOperator() == null) {
 		 * psnappaproveVO.setOperator(PubEnv.getPk_user()); }
 		 */
-		if (INCSystemUserConst.NC_USER_PK.equals(psnappaproveVO.getCreator())
-				|| psnappaproveVO.getCreator() == null) {
+		if (INCSystemUserConst.NC_USER_PK.equals(psnappaproveVO.getCreator()) || psnappaproveVO.getCreator() == null) {
 			psnappaproveVO.setCreator(PubEnv.getPk_user());
 		}
 
@@ -342,11 +323,9 @@ public class WaAdjustManageServiceImpl implements IWaAdjustManageService,
 		// AuditInfoUtil.updateData(psnappaproveVO);
 		getServiceTemplate().update(psnappaproveVO, false);
 
-		PsnappaproveBVO[] psnappaproveBVOs = (PsnappaproveBVO[]) psnappaproveAggVO
-				.getChildrenVO();
+		PsnappaproveBVO[] psnappaproveBVOs = (PsnappaproveBVO[]) psnappaproveAggVO.getChildrenVO();
 		// 针对那些驳回的单据，要重新更新审批标志，默认为勾选
-		UFBoolean partflagShow = WaAdjustParaTool
-				.getPartjob_Adjmgt(psnappaproveVO.getPk_group());
+		UFBoolean partflagShow = WaAdjustParaTool.getPartjob_Adjmgt(psnappaproveVO.getPk_group());
 		int rownum = 0;
 		for (PsnappaproveBVO psnappaproveBVO : psnappaproveBVOs) {
 			rownum++;
@@ -357,8 +336,7 @@ public class WaAdjustManageServiceImpl implements IWaAdjustManageService,
 		getAdjustDao().getBaseDao().updateVOArray(psnappaproveBVOs);
 		// List<AggPsnappaproveVO> list = new ArrayList<AggPsnappaproveVO>();
 
-		return queryPsnappaproveVOByPk(psnappaproveAggVO.getParentVO()
-				.getPrimaryKey());
+		return queryPsnappaproveVOByPk(psnappaproveAggVO.getParentVO().getPrimaryKey());
 	}
 
 	/**
@@ -366,14 +344,11 @@ public class WaAdjustManageServiceImpl implements IWaAdjustManageService,
 	 * 
 	 * @param billPk
 	 */
-	public AggPsnappaproveVO doUnapprove(AggPsnappaproveVO aggVO)
-			throws BusinessException {
+	public AggPsnappaproveVO doUnapprove(AggPsnappaproveVO aggVO) throws BusinessException {
 		PsnappaproveVO parentVO = (PsnappaproveVO) aggVO.getParentVO();
-		AggPsnappaproveVO oldaggvos = getServiceTemplate().queryByPk(
-				AggPsnappaproveVO.class, parentVO.getPk_psnapp());
+		AggPsnappaproveVO oldaggvos = getServiceTemplate().queryByPk(AggPsnappaproveVO.class, parentVO.getPk_psnapp());
 
-		checkPFPassingState(((PsnappaproveVO) oldaggvos.getParentVO())
-				.getConfirmstate());
+		checkPFPassingState(((PsnappaproveVO) oldaggvos.getParentVO()).getConfirmstate());
 		return update(aggVO);
 		// String strPKPsnapp = ((PsnappaproveVO)
 		// aggVO.getParentVO()).getPk_psnapp();
@@ -391,10 +366,8 @@ public class WaAdjustManageServiceImpl implements IWaAdjustManageService,
 
 	public void checkPFPassingState(int pfsate) throws BusinessException {
 		// guoqt在审批节点操作单据是走nc.ui.hr.pf.action.PFUnApproveAction的doAction()方法，但是在消息中心的工作任务中是走该方法，所以要同时判断单据审批通过还是弃审，两种情况都不能取消审批
-		if (IPfRetCheckInfo.PASSING == pfsate
-				|| IPfRetCheckInfo.NOPASS == pfsate) {
-			throw new BusinessException(ResHelper.getString("6001pf",
-					"06001pf0059")
+		if (IPfRetCheckInfo.PASSING == pfsate || IPfRetCheckInfo.NOPASS == pfsate) {
+			throw new BusinessException(ResHelper.getString("6001pf", "06001pf0059")
 			/* @res "单据审批通过或未通过,不能取消审批." */);
 		}
 	}
@@ -402,8 +375,7 @@ public class WaAdjustManageServiceImpl implements IWaAdjustManageService,
 	/**
 	 * 得到原有的和默认的薪资信息
 	 */
-	public PsnappaproveBVO[] findOldAndApplayInfo(
-			PsnappaproveBVO[] psnappaproveBVOs, boolean OldAndApplay)
+	public PsnappaproveBVO[] findOldAndApplayInfo(PsnappaproveBVO[] psnappaproveBVOs, boolean OldAndApplay)
 			throws BusinessException {
 
 		getOldInfos(psnappaproveBVOs, OldAndApplay);
@@ -438,14 +410,12 @@ public class WaAdjustManageServiceImpl implements IWaAdjustManageService,
 	}
 
 	@Override
-	public String getCriterion(String pk_wa_grd, String pk_psndoc)
-			throws BusinessException {
+	public String getCriterion(String pk_wa_grd, String pk_psndoc) throws BusinessException {
 		return new WaPsnHiDAO().getCriterion(pk_wa_grd, pk_psndoc);
 	}
 
 	@Override
-	public String getCriterionForCaculate(String pk_wa_grd)
-			throws BusinessException {
+	public String getCriterionForCaculate(String pk_wa_grd) throws BusinessException {
 		return new WaPsnHiDAO().getCriterionOnly4Caculate(pk_wa_grd);
 	}
 
@@ -498,8 +468,8 @@ public class WaAdjustManageServiceImpl implements IWaAdjustManageService,
 	 * @return
 	 * @throws BusinessException
 	 */
-	private PsnappaproveBVO[] getOldInfos(PsnappaproveBVO[] psnappaproveBVOs,
-			boolean OldAndApplay) throws BusinessException {
+	private PsnappaproveBVO[] getOldInfos(PsnappaproveBVO[] psnappaproveBVOs, boolean OldAndApplay)
+			throws BusinessException {
 		String pk_wa_item = psnappaproveBVOs[0].getPk_wa_item();
 		String pk_wa_grd = psnappaproveBVOs[0].getPk_wa_grd();
 		String[] pk_psndocs = new String[psnappaproveBVOs.length];
@@ -512,65 +482,53 @@ public class WaAdjustManageServiceImpl implements IWaAdjustManageService,
 			pk_psndocs[i++] = psnappaproveBVO.getPk_psndoc();
 		}
 
-		if (!ArrayUtils.isEmpty(pk_psndocs) && pk_wa_grd != null
-				&& pk_wa_item != null) {
+		if (!ArrayUtils.isEmpty(pk_psndocs) && pk_wa_grd != null && pk_wa_item != null) {
 			boolean negotiation_wage = false;
 			IPsndocwadocQueryService psndocwadocQueryService = lookupPsndocwadocQueryService();
-			PsndocWadocVO[] psndocWadocVOs = psndocwadocQueryService
-					.queryAllVOsByPsnPKs(pk_psndocs, pk_wa_grd, pk_wa_item);
+			PsndocWadocVO[] psndocWadocVOs = psndocwadocQueryService.queryAllVOsByPsnPKs(pk_psndocs, pk_wa_grd,
+					pk_wa_item);
 			HashMap<String, PsndocWadocVO> psndocWadocVOMap = new HashMap<String, PsndocWadocVO>();
 			if (ArrayUtils.isEmpty(psndocWadocVOs)) {
 				return psnappaproveBVOs;
 			}
 			for (PsnappaproveBVO psnappaproveBVO : psnappaproveBVOs) {
 				for (PsndocWadocVO psndocWadocVO : psndocWadocVOs) {
-					if (psnappaproveBVO.getPk_psndoc().equals(
-							psndocWadocVO.getPk_psndoc())
-							&& psnappaproveBVO.getAssgid().equals(
-									psndocWadocVO.getAssgid())) {
-						psndocWadocVOMap.put(psnappaproveBVO.getPk_psndoc()
-								+ psnappaproveBVO.getAssgid(), psndocWadocVO);
+					if (psnappaproveBVO.getPk_psndoc().equals(psndocWadocVO.getPk_psndoc())
+							&& psnappaproveBVO.getAssgid().equals(psndocWadocVO.getAssgid())) {
+						psndocWadocVOMap.put(psnappaproveBVO.getPk_psndoc() + psnappaproveBVO.getAssgid(),
+								psndocWadocVO);
 					}
 				}
 			}
 
 			HashMap<String, String> namemap = null;
-			namemap = getAdjustDao().getCrtName(psnappaproveBVOs,
-					psndocWadocVOs);// (psndocWadocVO.getPk_wa_prmlv(),psndocWadocVO.getPk_wa_seclv(),
-									// psndocWadocVO.getIsmultsec().booleanValue())
+			namemap = getAdjustDao().getCrtName(psnappaproveBVOs, psndocWadocVOs);// (psndocWadocVO.getPk_wa_prmlv(),psndocWadocVO.getPk_wa_seclv(),
+																					// psndocWadocVO.getIsmultsec().booleanValue())
 			for (PsnappaproveBVO psnappaproveBVO : psnappaproveBVOs) {
-				PsndocWadocVO psndocWadocVO = psndocWadocVOMap
-						.get(psnappaproveBVO.getPk_psndoc()
-								+ psnappaproveBVO.getAssgid());
+				PsndocWadocVO psndocWadocVO = psndocWadocVOMap.get(psnappaproveBVO.getPk_psndoc()
+						+ psnappaproveBVO.getAssgid());
 				if (psndocWadocVO == null) {
 					psnappaproveBVO.setNegotiation(UFBoolean.valueOf(false));
 					continue;
 				}
-				negotiation_wage = psndocWadocVO.getNegotiation_wage()
-						.booleanValue();
+				negotiation_wage = psndocWadocVO.getNegotiation_wage().booleanValue();
 				if (OldAndApplay) {
 					// 对于修改的时候， 有申请的级别
 					// 默认申请同原来的状态一致
-					psnappaproveBVO.setNegotiation(UFBoolean
-							.valueOf(negotiation_wage));
+					psnappaproveBVO.setNegotiation(UFBoolean.valueOf(negotiation_wage));
 				} else {
 					if (psnappaproveBVO.getNegotiation() == null) {
-						psnappaproveBVO
-								.setNegotiation(UFBoolean.valueOf(false));
+						psnappaproveBVO.setNegotiation(UFBoolean.valueOf(false));
 					}
 				}
 				psnappaproveBVO.setWa_old_money(psndocWadocVO.getNmoney());
 				if (!StringUtils.isEmpty(psndocWadocVO.getPk_wa_prmlv())) {
-					psnappaproveBVO.setWa_crt_old_money(psndocWadocVO
-							.getCriterionvalue());
-					psnappaproveBVO.setPk_wa_prmlv_old(psndocWadocVO
-							.getPk_wa_prmlv());
-					psnappaproveBVO.setPk_wa_seclv_old(psndocWadocVO
-							.getPk_wa_seclv());
+					psnappaproveBVO.setWa_crt_old_money(psndocWadocVO.getCriterionvalue());
+					psnappaproveBVO.setPk_wa_prmlv_old(psndocWadocVO.getPk_wa_prmlv());
+					psnappaproveBVO.setPk_wa_seclv_old(psndocWadocVO.getPk_wa_seclv());
 					String showname = null;
 					if (psndocWadocVO.getIsmultsec().booleanValue()) {
-						showname = namemap.get(psndocWadocVO.getPk_wa_prmlv()
-								+ psndocWadocVO.getPk_wa_seclv());
+						showname = namemap.get(psndocWadocVO.getPk_wa_prmlv() + psndocWadocVO.getPk_wa_seclv());
 					} else {
 						showname = namemap.get(psndocWadocVO.getPk_wa_prmlv());
 					}
@@ -592,19 +550,17 @@ public class WaAdjustManageServiceImpl implements IWaAdjustManageService,
 	}
 
 	@Override
-	public AggPsnappaproveVO insert(AggPsnappaproveVO vo)
-			throws BusinessException {
+	public AggPsnappaproveVO insert(AggPsnappaproveVO vo) throws BusinessException {
 		PsnappaproveVO ppprove = ((PsnappaproveVO) vo.getParentVO());
 		// 检查相同的组织和定调级类别下 有无重复的申请编码
-		boolean blnIsUse = this.getAdjustDao().checkBillCodeUseable(
-				ppprove.getBillcode(), ppprove.getPk_org());
+		boolean blnIsUse = this.getAdjustDao().checkBillCodeUseable(ppprove.getBillcode(), ppprove.getPk_org());
 		if (blnIsUse) {
 			Logger.debug("单据编码重复， 不能使用该编码！");
-			throw new BusinessException(ResHelper.getString("60130adjapprove",
-					"060130adjapprove0118", ppprove.getBillcode())/*
-																 * @res
-																 * "下列字段值已存在，不允许重复，请检查：\n[申请单编码：{0}]"
-																 */);
+			throw new BusinessException(ResHelper.getString("60130adjapprove", "060130adjapprove0118",
+					ppprove.getBillcode())/*
+										 * @res
+										 * "下列字段值已存在，不允许重复，请检查：\n[申请单编码：{0}]"
+										 */);
 		}
 		Object returnObj = getServiceTemplate().insert(clone(vo));
 		// String parentPk = getAdjustDao().getBaseDao().insertVO(ppprove);
@@ -633,20 +589,16 @@ public class WaAdjustManageServiceImpl implements IWaAdjustManageService,
 	 * @param psnappaproveAggVO
 	 * @throws BusinessException
 	 */
-	public String doSubmit4Psn(AggPsnappaproveVO[] psnappaproveAggVOsFPsn)
-			throws BusinessException {
-		AggPsnappaproveVO[] psnappaproveAggVOs = BTOBXVOConversionUtility
-				.retChangeBusiVO(psnappaproveAggVOsFPsn);
+	public String doSubmit4Psn(AggPsnappaproveVO[] psnappaproveAggVOsFPsn) throws BusinessException {
+		AggPsnappaproveVO[] psnappaproveAggVOs = BTOBXVOConversionUtility.retChangeBusiVO(psnappaproveAggVOsFPsn);
 		if (ArrayUtils.isEmpty(psnappaproveAggVOs))
 			return null;
-		PsnappaproveVO[] parentVOs = SuperVOHelper.getParentVOArrayFromAggVOs(
-				psnappaproveAggVOs, PsnappaproveVO.class);
+		PsnappaproveVO[] parentVOs = SuperVOHelper.getParentVOArrayFromAggVOs(psnappaproveAggVOs, PsnappaproveVO.class);
 		String[] pks = getAdjustDao().getBaseDao().insertVOArray(parentVOs);
 		List<PsnappaproveBVO> subVOList = new ArrayList<PsnappaproveBVO>();
 		List<HrBillRefSupVO> billRefList = new ArrayList<HrBillRefSupVO>();
 		for (int i = 0; i < psnappaproveAggVOs.length; i++) {
-			PsnappaproveBVO[] subVOs = (PsnappaproveBVO[]) psnappaproveAggVOs[i]
-					.getChildrenVO();
+			PsnappaproveBVO[] subVOs = (PsnappaproveBVO[]) psnappaproveAggVOs[i].getChildrenVO();
 			// 找到原始的级别档别， 和默认的申请级别档别(TODO 此处需要继续优化批量处理)
 			subVOs = findOldAndApplayInfo(subVOs, true);
 			if (ArrayUtils.isEmpty(subVOs))
@@ -668,11 +620,9 @@ public class WaAdjustManageServiceImpl implements IWaAdjustManageService,
 		}
 		// 保存
 		if (CollectionUtils.isNotEmpty(subVOList))
-			getAdjustDao().getBaseDao().insertVOArray(
-					subVOList.toArray(new PsnappaproveBVO[0]));
+			getAdjustDao().getBaseDao().insertVOArray(subVOList.toArray(new PsnappaproveBVO[0]));
 		if (CollectionUtils.isNotEmpty(billRefList))
-			getAdjustDao().getBaseDao().insertVOArray(
-					billRefList.toArray(new HrBillRefSupVO[0]));
+			getAdjustDao().getBaseDao().insertVOArray(billRefList.toArray(new HrBillRefSupVO[0]));
 		return null;
 	}
 
@@ -723,8 +673,7 @@ public class WaAdjustManageServiceImpl implements IWaAdjustManageService,
 	// }
 
 	@Override
-	public String noWorkflowApproveBill(AggPsnappaproveVO vo, String oper,
-			String opinion, UFDateTime dt, int blApproved)
+	public String noWorkflowApproveBill(AggPsnappaproveVO vo, String oper, String opinion, UFDateTime dt, int blApproved)
 			throws BusinessException {
 		// 设定默认值
 		saveDefaultConfirmValue(vo);
@@ -744,15 +693,13 @@ public class WaAdjustManageServiceImpl implements IWaAdjustManageService,
 			 */
 			// validateUsedate(psnappaproveVO.getUsedate());
 			PsnappaproveBVO[] bvos = (PsnappaproveBVO[]) vo.getChildrenVO();
-			UFBoolean partflagShow = WaAdjustParaTool
-					.getPartjob_Adjmgt(psnappaproveVO.getPk_group());
+			UFBoolean partflagShow = WaAdjustParaTool.getPartjob_Adjmgt(psnappaproveVO.getPk_group());
 			for (int i = 0; i < bvos.length; i++) {
 				if (bvos[i].getWa_cofm_money() == null) {
 					bvos[i].setWa_cofm_money(bvos[i].getWa_apply_money());
 				}
 				if (bvos[i].getWa_crt_cofm_money() == null) {
-					bvos[i].setWa_crt_cofm_money(bvos[i]
-							.getWa_crt_apply_money());
+					bvos[i].setWa_crt_cofm_money(bvos[i].getWa_crt_apply_money());
 				}
 				validateUsedate(bvos[i], partflagShow, i + 1);
 			}
@@ -769,14 +716,12 @@ public class WaAdjustManageServiceImpl implements IWaAdjustManageService,
 		return billpk;
 	}
 
-	private void saveDefaultConfirmValue(AggregatedValueObject hrAggVO)
-			throws BusinessException {
+	private void saveDefaultConfirmValue(AggregatedValueObject hrAggVO) throws BusinessException {
 
 		// 设定审批日期
 		PsnappaproveVO vo = (PsnappaproveVO) hrAggVO.getParentVO();
 		vo.setAttributeValue(PsnappaproveVO.CONFIRMDATE, PubEnv.getServerTime());
-		CircularlyAccessibleValueObject[] psnappaproveBVOs = hrAggVO
-				.getChildrenVO();
+		CircularlyAccessibleValueObject[] psnappaproveBVOs = hrAggVO.getChildrenVO();
 		vo.setStatus(VOStatus.UPDATED);
 
 		// 为审批记录设定
@@ -787,28 +732,15 @@ public class WaAdjustManageServiceImpl implements IWaAdjustManageService,
 			PsnappaproveBVO psnappaproveBVO = (PsnappaproveBVO) psnappaproveBVOs[i];
 			if (psnappaproveBVO.getWa_cofm_money() == null) {
 				// 默认申请通过
-				psnappaproveBVOs[i].setAttributeValue(PsnappaproveBVO.APPROVED,
-						UFBoolean.TRUE);
-				psnappaproveBVOs[i]
-						.setAttributeValue(
-								PsnappaproveBVO.PK_WA_PRMLV_COFM,
-								psnappaproveBVOs[i]
-										.getAttributeValue(PsnappaproveBVO.PK_WA_PRMLV_APPLY));
-				psnappaproveBVOs[i]
-						.setAttributeValue(
-								PsnappaproveBVO.PK_WA_SECLV_COFM,
-								psnappaproveBVOs[i]
-										.getAttributeValue(PsnappaproveBVO.PK_WA_SECLV_APPLY));
-				psnappaproveBVOs[i]
-						.setAttributeValue(
-								PsnappaproveBVO.WA_COFM_MONEY,
-								psnappaproveBVOs[i]
-										.getAttributeValue(PsnappaproveBVO.WA_APPLY_MONEY));
-				psnappaproveBVOs[i]
-						.setAttributeValue(
-								PsnappaproveBVO.WA_CRT_COFM_MONEY,
-								psnappaproveBVOs[i]
-										.getAttributeValue(PsnappaproveBVO.WA_CRT_APPLY_MONEY));
+				psnappaproveBVOs[i].setAttributeValue(PsnappaproveBVO.APPROVED, UFBoolean.TRUE);
+				psnappaproveBVOs[i].setAttributeValue(PsnappaproveBVO.PK_WA_PRMLV_COFM,
+						psnappaproveBVOs[i].getAttributeValue(PsnappaproveBVO.PK_WA_PRMLV_APPLY));
+				psnappaproveBVOs[i].setAttributeValue(PsnappaproveBVO.PK_WA_SECLV_COFM,
+						psnappaproveBVOs[i].getAttributeValue(PsnappaproveBVO.PK_WA_SECLV_APPLY));
+				psnappaproveBVOs[i].setAttributeValue(PsnappaproveBVO.WA_COFM_MONEY,
+						psnappaproveBVOs[i].getAttributeValue(PsnappaproveBVO.WA_APPLY_MONEY));
+				psnappaproveBVOs[i].setAttributeValue(PsnappaproveBVO.WA_CRT_COFM_MONEY,
+						psnappaproveBVOs[i].getAttributeValue(PsnappaproveBVO.WA_CRT_APPLY_MONEY));
 				psnappaproveBVOs[i].setStatus(VOStatus.UPDATED);
 			}
 
@@ -824,16 +756,14 @@ public class WaAdjustManageServiceImpl implements IWaAdjustManageService,
 	 * @param psnappaprovervo
 	 * @throws BusinessException
 	 */
-	public AggPsnappaproveVO updateApproveDate(PsnappaproveVO psnappaprovervo)
-			throws BusinessException {
+	public AggPsnappaproveVO updateApproveDate(PsnappaproveVO psnappaprovervo) throws BusinessException {
 		AuditInfoUtil.updateData(psnappaprovervo);
 		getAdjustDao().updateApproveDate(psnappaprovervo);
 		return queryPsnappaproveVOByPk(psnappaprovervo.getPk_psnapp());
 	}
 
-	public AggPsnappaproveVO[] queryPsnappsByCondition(LoginContext context,
-			String condition, PFQueryParams queryParams, Boolean isApprove)
-			throws BusinessException {
+	public AggPsnappaproveVO[] queryPsnappsByCondition(LoginContext context, String condition,
+			PFQueryParams queryParams, Boolean isApprove) throws BusinessException {
 		// if (queryParams == null) {
 		// return new AggPsnappaproveVO[0];
 		// }
@@ -843,38 +773,32 @@ public class WaAdjustManageServiceImpl implements IWaAdjustManageService,
 
 			IFlowBizItf itf = HrPfHelper.getFlowBizItf(AggPsnappaproveVO.class);
 
-			String strApproveDatePeriod = HrPfHelper.getApproveDatePeriod(itf,
-					"wa_psnappaprove", queryParams.getApproveDateParam(),
-					queryParams.getBillState());
+			String strApproveDatePeriod = HrPfHelper.getApproveDatePeriod(itf, "wa_psnappaprove",
+					queryParams.getApproveDateParam(), queryParams.getBillState());
 
 			if (StringUtils.isNotBlank(strApproveDatePeriod)) {
 				condition += " and " + strApproveDatePeriod;
 			}
 		}
 		if (null != condition) {
-			condition = condition
-					.replace("select pk_psnapp from wa_psnappaprove_b",
-							"select wa_psnappaprove_b.pk_psnapp from wa_psnappaprove_b");
+			condition = condition.replace("select pk_psnapp from wa_psnappaprove_b",
+					"select wa_psnappaprove_b.pk_psnapp from wa_psnappaprove_b");
 		}
 
 		return getAdjustDao().querySumApplyAndSumConfimMoney(
-				getServiceTemplate().queryByCondition(context,
-						AggPsnappaproveVO.class, condition, orderby));
+				getServiceTemplate().queryByCondition(context, AggPsnappaproveVO.class, condition, orderby));
 	}
 
 	@Override
-	public AggPsnappaproveVO queryPsnappaproveVOByPk(String pk)
-			throws BusinessException {
-		AggPsnappaproveVO vo = getServiceTemplate().queryByPk(
-				AggPsnappaproveVO.class, pk);
+	public AggPsnappaproveVO queryPsnappaproveVOByPk(String pk) throws BusinessException {
+		AggPsnappaproveVO vo = getServiceTemplate().queryByPk(AggPsnappaproveVO.class, pk);
 		AggPsnappaproveVO[] vos = new AggPsnappaproveVO[1];
 		vos[0] = vo;
 		vos = getAdjustDao().querySumApplyAndSumConfimMoney(vos);
 		return vos[0];
 	}
 
-	public AggPsnappaproveVO queryByPkWithName(String pk)
-			throws BusinessException {
+	public AggPsnappaproveVO queryByPkWithName(String pk) throws BusinessException {
 		// 查询表头
 		BaseDAOManager manager = new BaseDAOManager();
 		PsnappaproveVO headvo = manager.retrieveByPK(PsnappaproveVO.class, pk);
@@ -892,24 +816,21 @@ public class WaAdjustManageServiceImpl implements IWaAdjustManageService,
 	/**
 	 * 批量增加 第二种方式 人员 查询对话框
 	 */
-	public PsnappaproveBVO[] queryPsnappaproveBVOForAdd(String conditions,
-			LoginContext context) throws BusinessException {
-		return this.getAdjustDao().queryPsnappaproveBVOForadd(conditions,
-				context);
+	public PsnappaproveBVO[] queryPsnappaproveBVOForAdd(String conditions, LoginContext context)
+			throws BusinessException {
+		return this.getAdjustDao().queryPsnappaproveBVOForadd(conditions, context);
 	}
 
-	public PsnappaproveVO[] queryPsnappaproveByCon(String strWhere,
-			String strTable) throws BusinessException {
+	public PsnappaproveVO[] queryPsnappaproveByCon(String strWhere, String strTable) throws BusinessException {
 		return getAdjustDao().queryByCon(strWhere, strTable);
 	}
 
 	/**
 	 * 批量增加根据部门PK查询 第一种方式
 	 */
-	public PsnappaproveBVO[] queryPsnappaproveByDepts(String[] pk_deptdocs,
-			LoginContext context) throws BusinessException {
-		return this.getAdjustDao().queryPsnappaproveByDepts(pk_deptdocs,
-				context);
+	public PsnappaproveBVO[] queryPsnappaproveByDepts(String[] pk_deptdocs, LoginContext context)
+			throws BusinessException {
+		return this.getAdjustDao().queryPsnappaproveByDepts(pk_deptdocs, context);
 	}
 
 	/**
@@ -926,10 +847,9 @@ public class WaAdjustManageServiceImpl implements IWaAdjustManageService,
 	// context);
 	// }
 
-	public PsnappaproveBVO[] queryPsnappaproveByPsnjob(String[] strPKPsnjob,
-			LoginContext context) throws BusinessException {
-		return this.getAdjustDao().queryPsnappaproveByPKpsnjob(strPKPsnjob,
-				context);
+	public PsnappaproveBVO[] queryPsnappaproveByPsnjob(String[] strPKPsnjob, LoginContext context)
+			throws BusinessException {
+		return this.getAdjustDao().queryPsnappaproveByPKpsnjob(strPKPsnjob, context);
 	}
 
 	/**
@@ -939,8 +859,7 @@ public class WaAdjustManageServiceImpl implements IWaAdjustManageService,
 	 * @param strPK
 	 * @throws BusinessException
 	 */
-	public WaGradeVO queryWagradeVoByGradePk(String strPK)
-			throws BusinessException {
+	public WaGradeVO queryWagradeVoByGradePk(String strPK) throws BusinessException {
 		return this.getServiceTemplate().queryByPk(WaGradeVO.class, strPK);
 	}
 
@@ -948,151 +867,108 @@ public class WaAdjustManageServiceImpl implements IWaAdjustManageService,
 		getServiceTemplate().setValidatorFactory(docValidatorFactory);
 	}
 
-	public AggPsnappaproveVO update(AggPsnappaproveVO vo)
-			throws BusinessException {
+	public AggPsnappaproveVO update(AggPsnappaproveVO vo) throws BusinessException {
 		// 20151022 shenliangc NCdp205487551 定调资申请单修改保存编码唯一性校验。 begin
 		PsnappaproveVO ppprove = ((PsnappaproveVO) vo.getParentVO());
 		// 检查相同的组织和定调级类别下 有无重复的申请编码
-		boolean blnIsUse = this.getAdjustDao().checkBillCodeUseable(
-				ppprove.getPk_psnapp(), ppprove.getBillcode(),
+		boolean blnIsUse = this.getAdjustDao().checkBillCodeUseable(ppprove.getPk_psnapp(), ppprove.getBillcode(),
 				ppprove.getPk_org());
 		if (blnIsUse) {
 			Logger.debug("单据编码重复， 不能使用该编码！");
-			throw new BusinessException(ResHelper.getString("60130adjapprove",
-					"060130adjapprove0118", ppprove.getBillcode())/*
-																 * @res
-																 * "下列字段值已存在，不允许重复，请检查：\n[申请单编码：{0}]"
-																 */);
+			throw new BusinessException(ResHelper.getString("60130adjapprove", "060130adjapprove0118",
+					ppprove.getBillcode())/*
+										 * @res
+										 * "下列字段值已存在，不允许重复，请检查：\n[申请单编码：{0}]"
+										 */);
 		}
 		// 20151022 shenliangc NCdp205487551 定调资申请单修改保存编码唯一性校验。 end
 
 		UFDouble sum_confim_money = new UFDouble(0);
 		UFDouble sum_apply_money = new UFDouble(0);
 
-		for (int i = 0; null != vo.getChildrenVO()
-				&& i < vo.getChildrenVO().length; i++) {
-			PsnappaproveBVO psnappaproveBVO = ((PsnappaproveBVO) vo
-					.getChildrenVO()[i]);
+		for (int i = 0; null != vo.getChildrenVO() && i < vo.getChildrenVO().length; i++) {
+			PsnappaproveBVO psnappaproveBVO = ((PsnappaproveBVO) vo.getChildrenVO()[i]);
 
 			// 计算申请总金额
 			// 20151113 shenliangc NCdp205541307
 			// 定调资申请单，修改子表将一个人员替换另一个人员后，保存，再删除，保存报未知错误
 			if (psnappaproveBVO.getWa_apply_money() != null) {
-				sum_apply_money = sum_apply_money.add(psnappaproveBVO
-						.getWa_apply_money());
+				sum_apply_money = sum_apply_money.add(psnappaproveBVO.getWa_apply_money());
 			}
 			// 计算审批总金额
 			if (psnappaproveBVO.getApproved().toString().equalsIgnoreCase("Y")) {
 				if (psnappaproveBVO.getWa_cofm_money() != null) {
-					sum_confim_money = sum_confim_money.add(psnappaproveBVO
-							.getWa_cofm_money());
+					sum_confim_money = sum_confim_money.add(psnappaproveBVO.getWa_cofm_money());
 				}
 			}
 
 			// 2016-12-06 zhousze 薪资加密：这里处理定调资修改保存时，主表、字表数据加密 begin
+			psnappaproveBVO.setWa_old_money(psnappaproveBVO.getWa_old_money() == null ? null : new UFDouble(
+					SalaryEncryptionUtil.encryption(psnappaproveBVO.getWa_old_money().toDouble())));
+			psnappaproveBVO.setWa_cofm_money(psnappaproveBVO.getWa_cofm_money() == null ? null : new UFDouble(
+					SalaryEncryptionUtil.encryption(psnappaproveBVO.getWa_cofm_money().toDouble())));
+			psnappaproveBVO.setWa_apply_money(psnappaproveBVO.getWa_apply_money() == null ? null : new UFDouble(
+					SalaryEncryptionUtil.encryption(psnappaproveBVO.getWa_apply_money().toDouble())));
 			psnappaproveBVO
-					.setWa_old_money(psnappaproveBVO.getWa_old_money() == null ? null
-							: new UFDouble(SalaryEncryptionUtil
-									.encryption(psnappaproveBVO
-											.getWa_old_money().toDouble())));
-			psnappaproveBVO
-					.setWa_cofm_money(psnappaproveBVO.getWa_cofm_money() == null ? null
-							: new UFDouble(SalaryEncryptionUtil
-									.encryption(psnappaproveBVO
-											.getWa_cofm_money().toDouble())));
-			psnappaproveBVO.setWa_apply_money(psnappaproveBVO
-					.getWa_apply_money() == null ? null : new UFDouble(
-					SalaryEncryptionUtil.encryption(psnappaproveBVO
-							.getWa_apply_money().toDouble())));
-			psnappaproveBVO.setWa_crt_apply_money(psnappaproveBVO
-					.getWa_crt_apply_money() == null ? null : new UFDouble(
-					SalaryEncryptionUtil.encryption(psnappaproveBVO
-							.getWa_crt_apply_money().toDouble())));
-			psnappaproveBVO.setWa_crt_cofm_money(psnappaproveBVO
-					.getWa_crt_cofm_money() == null ? null : new UFDouble(
-					SalaryEncryptionUtil.encryption(psnappaproveBVO
-							.getWa_crt_cofm_money().toDouble())));
-			psnappaproveBVO.setWa_crt_old_money(psnappaproveBVO
-					.getWa_crt_old_money() == null ? null : new UFDouble(
-					SalaryEncryptionUtil.encryption(psnappaproveBVO
-							.getWa_crt_old_money().toDouble())));
+					.setWa_crt_apply_money(psnappaproveBVO.getWa_crt_apply_money() == null ? null : new UFDouble(
+							SalaryEncryptionUtil.encryption(psnappaproveBVO.getWa_crt_apply_money().toDouble())));
+			psnappaproveBVO.setWa_crt_cofm_money(psnappaproveBVO.getWa_crt_cofm_money() == null ? null : new UFDouble(
+					SalaryEncryptionUtil.encryption(psnappaproveBVO.getWa_crt_cofm_money().toDouble())));
+			psnappaproveBVO.setWa_crt_old_money(psnappaproveBVO.getWa_crt_old_money() == null ? null : new UFDouble(
+					SalaryEncryptionUtil.encryption(psnappaproveBVO.getWa_crt_old_money().toDouble())));
 			// end
 		}
 
 		// 2016-12-06 zhousze 薪资加密:这里处理定调资保存时父类VO中总数数据解加密 begin
-		sum_apply_money = new UFDouble(
-				SalaryEncryptionUtil.encryption(sum_apply_money.toDouble()));
-		sum_confim_money = new UFDouble(
-				SalaryEncryptionUtil.encryption(sum_confim_money.toDouble()));
+		sum_apply_money = new UFDouble(SalaryEncryptionUtil.encryption(sum_apply_money.toDouble()));
+		sum_confim_money = new UFDouble(SalaryEncryptionUtil.encryption(sum_confim_money.toDouble()));
 		// end
 
 		((PsnappaproveVO) vo.getParentVO()).setSum_apply_money(sum_apply_money);
-		((PsnappaproveVO) vo.getParentVO())
-				.setSum_confim_money(sum_confim_money);
+		((PsnappaproveVO) vo.getParentVO()).setSum_confim_money(sum_confim_money);
 		// return getServiceTemplate().update(vo,true);
 		// ----------------------------------------------------------------------------------
 		// 20151119 xiejie3 NCdp205545197 暂时这样处理。begin
 		getServiceTemplate().update(vo, true);
 
-		AggPsnappaproveVO voNew = queryPsnappaproveVOByPk(vo.getParentVO()
-				.getPrimaryKey());
+		AggPsnappaproveVO voNew = queryPsnappaproveVOByPk(vo.getParentVO().getPrimaryKey());
 
 		UFDouble sum_confim_moneyNew = new UFDouble(0);
 		UFDouble sum_apply_moneyNew = new UFDouble(0);
-		for (int i = 0; null != voNew.getChildrenVO()
-				&& i < voNew.getChildrenVO().length; i++) {
-			PsnappaproveBVO psnappaproveBVO = ((PsnappaproveBVO) voNew
-					.getChildrenVO()[i]);
+		for (int i = 0; null != voNew.getChildrenVO() && i < voNew.getChildrenVO().length; i++) {
+			PsnappaproveBVO psnappaproveBVO = ((PsnappaproveBVO) voNew.getChildrenVO()[i]);
 			// 计算申请总金额
 			// 20151113 shenliangc NCdp205541307
 			// 定调资申请单，修改子表将一个人员替换另一个人员后，保存，再删除，保存报未知错误
 
 			if (psnappaproveBVO.getWa_apply_money() != null) {
-				sum_apply_moneyNew = sum_apply_moneyNew.add(psnappaproveBVO
-						.getWa_apply_money());
+				sum_apply_moneyNew = sum_apply_moneyNew.add(psnappaproveBVO.getWa_apply_money());
 			}
 			if (psnappaproveBVO.getApproved().toString().equalsIgnoreCase("Y")) {
 				// 计算审批总金额
 				if (psnappaproveBVO.getWa_cofm_money() != null) {
-					sum_confim_moneyNew = sum_confim_moneyNew
-							.add(psnappaproveBVO.getWa_cofm_money());
+					sum_confim_moneyNew = sum_confim_moneyNew.add(psnappaproveBVO.getWa_cofm_money());
 				}
 			}
 		}
-		((PsnappaproveVO) voNew.getParentVO())
-				.setSum_apply_money(sum_apply_moneyNew);
-		((PsnappaproveVO) voNew.getParentVO())
-				.setSum_confim_money(sum_confim_moneyNew);
+		((PsnappaproveVO) voNew.getParentVO()).setSum_apply_money(sum_apply_moneyNew);
+		((PsnappaproveVO) voNew.getParentVO()).setSum_confim_money(sum_confim_moneyNew);
 		// 2016-12-08 zhousze 薪资加密：这里处理保存后返回的AGGVO数据解密 begin
 		AggPsnappaproveVO aggVO = getServiceTemplate().update(voNew, true);
 		PsnappaproveBVO[] bVOs = (PsnappaproveBVO[]) aggVO.getChildrenVO();
 		for (PsnappaproveBVO psnappaproveBVO : bVOs) {
-			psnappaproveBVO
-					.setWa_old_money(psnappaproveBVO.getWa_old_money() == null ? null
-							: new UFDouble(SalaryDecryptUtil
-									.decrypt(psnappaproveBVO.getWa_old_money()
-											.toDouble())));
-			psnappaproveBVO
-					.setWa_cofm_money(psnappaproveBVO.getWa_cofm_money() == null ? null
-							: new UFDouble(SalaryDecryptUtil
-									.decrypt(psnappaproveBVO.getWa_cofm_money()
-											.toDouble())));
-			psnappaproveBVO.setWa_apply_money(psnappaproveBVO
-					.getWa_apply_money() == null ? null : new UFDouble(
-					SalaryDecryptUtil.decrypt(psnappaproveBVO
-							.getWa_apply_money().toDouble())));
-			psnappaproveBVO.setWa_crt_apply_money(psnappaproveBVO
-					.getWa_crt_apply_money() == null ? null : new UFDouble(
-					SalaryDecryptUtil.decrypt(psnappaproveBVO
-							.getWa_crt_apply_money().toDouble())));
-			psnappaproveBVO.setWa_crt_cofm_money(psnappaproveBVO
-					.getWa_crt_cofm_money() == null ? null : new UFDouble(
-					SalaryDecryptUtil.decrypt(psnappaproveBVO
-							.getWa_crt_cofm_money().toDouble())));
-			psnappaproveBVO.setWa_crt_old_money(psnappaproveBVO
-					.getWa_crt_old_money() == null ? null : new UFDouble(
-					SalaryDecryptUtil.decrypt(psnappaproveBVO
-							.getWa_crt_old_money().toDouble())));
+			psnappaproveBVO.setWa_old_money(psnappaproveBVO.getWa_old_money() == null ? null : new UFDouble(
+					SalaryDecryptUtil.decrypt(psnappaproveBVO.getWa_old_money().toDouble())));
+			psnappaproveBVO.setWa_cofm_money(psnappaproveBVO.getWa_cofm_money() == null ? null : new UFDouble(
+					SalaryDecryptUtil.decrypt(psnappaproveBVO.getWa_cofm_money().toDouble())));
+			psnappaproveBVO.setWa_apply_money(psnappaproveBVO.getWa_apply_money() == null ? null : new UFDouble(
+					SalaryDecryptUtil.decrypt(psnappaproveBVO.getWa_apply_money().toDouble())));
+			psnappaproveBVO.setWa_crt_apply_money(psnappaproveBVO.getWa_crt_apply_money() == null ? null
+					: new UFDouble(SalaryDecryptUtil.decrypt(psnappaproveBVO.getWa_crt_apply_money().toDouble())));
+			psnappaproveBVO.setWa_crt_cofm_money(psnappaproveBVO.getWa_crt_cofm_money() == null ? null : new UFDouble(
+					SalaryDecryptUtil.decrypt(psnappaproveBVO.getWa_crt_cofm_money().toDouble())));
+			psnappaproveBVO.setWa_crt_old_money(psnappaproveBVO.getWa_crt_old_money() == null ? null : new UFDouble(
+					SalaryDecryptUtil.decrypt(psnappaproveBVO.getWa_crt_old_money().toDouble())));
 		}
 		// end
 		return aggVO;
@@ -1105,26 +981,22 @@ public class WaAdjustManageServiceImpl implements IWaAdjustManageService,
 	public Object copyTable(AggPsnappaproveVO vo) throws BusinessException {
 		PsnappaproveVO approve = (PsnappaproveVO) vo.getParentVO();
 		// 检查相同的组织和定调级类别下 有无重复的申请编码
-		boolean blnIsUse = this.getAdjustDao().checkBillCodeUseable(
-				approve.getBillcode(), approve.getPk_org());
+		boolean blnIsUse = this.getAdjustDao().checkBillCodeUseable(approve.getBillcode(), approve.getPk_org());
 		if (blnIsUse) {
 			Logger.debug("单据编码重复， 不能使用该编码！");
-			throw new BusinessException(ResHelper.getString("60130adjapprove",
-					"060130adjapprove0118", approve.getBillcode())/*
-																 * @res
-																 * "下列字段值已存在，不允许重复，请检查：\n[申请单编码：{0}]"
-																 */);
+			throw new BusinessException(ResHelper.getString("60130adjapprove", "060130adjapprove0118",
+					approve.getBillcode())/*
+										 * @res
+										 * "下列字段值已存在，不允许重复，请检查：\n[申请单编码：{0}]"
+										 */);
 		}
 		Object returnObj = getServiceTemplate().insert(clone(vo));
-		BillCodeContext billCodeContext = NCLocator
-				.getInstance()
-				.lookup(IBillcodeManage.class)
-				.getBillCodeContext("6301", approve.getPk_group(),
-						approve.getPk_org());
+		BillCodeContext billCodeContext = NCLocator.getInstance().lookup(IBillcodeManage.class)
+				.getBillCodeContext("6301", approve.getPk_group(), approve.getPk_org());
 		// 如果是自动生成编码，则需要提交
 		if (billCodeContext != null) {
-			getHrBillCode().commitPreBillCode("6301", approve.getPk_group(),
-					approve.getPk_org(), approve.getBillcode());
+			getHrBillCode()
+					.commitPreBillCode("6301", approve.getPk_group(), approve.getPk_org(), approve.getBillcode());
 		}
 		return returnObj;
 	}
@@ -1141,8 +1013,7 @@ public class WaAdjustManageServiceImpl implements IWaAdjustManageService,
 	 * 
 	 * @throws BusinessException
 	 */
-	private AggPsnappaproveVO clone(AggPsnappaproveVO billVO)
-			throws BusinessException {
+	private AggPsnappaproveVO clone(AggPsnappaproveVO billVO) throws BusinessException {
 
 		UFDouble sum_apply_money = new UFDouble(0);
 
@@ -1152,50 +1023,33 @@ public class WaAdjustManageServiceImpl implements IWaAdjustManageService,
 		billVO.getParentVO().setPrimaryKey(null);
 		// 重置子表主键
 		for (int i = 0; i < billVO.getChildrenVO().length; i++) {
-			PsnappaproveBVO psnappaproveBVO = ((PsnappaproveBVO) billVO
-					.getChildrenVO()[i]);
+			PsnappaproveBVO psnappaproveBVO = ((PsnappaproveBVO) billVO.getChildrenVO()[i]);
 			psnappaproveBVO.setPk_psnapp_b(null);
 			psnappaproveBVO.setPk_psnapp(null);
 			psnappaproveBVO.setStatus(VOStatus.NEW);
 			// 计算申请总金额
-			sum_apply_money = sum_apply_money.add(psnappaproveBVO
-					.getWa_apply_money());
+			sum_apply_money = sum_apply_money.add(psnappaproveBVO.getWa_apply_money());
 
 			// 2016-12-06 zhousze 薪资加密：这里处理定调资新增、复制保存时，数据加密 being
+			psnappaproveBVO.setWa_old_money(psnappaproveBVO.getWa_old_money() == null ? null : new UFDouble(
+					SalaryEncryptionUtil.encryption(psnappaproveBVO.getWa_old_money().toDouble())));
+			psnappaproveBVO.setWa_cofm_money(psnappaproveBVO.getWa_cofm_money() == null ? null : new UFDouble(
+					SalaryEncryptionUtil.encryption(psnappaproveBVO.getWa_cofm_money().toDouble())));
+			psnappaproveBVO.setWa_apply_money(psnappaproveBVO.getWa_apply_money() == null ? null : new UFDouble(
+					SalaryEncryptionUtil.encryption(psnappaproveBVO.getWa_apply_money().toDouble())));
 			psnappaproveBVO
-					.setWa_old_money(psnappaproveBVO.getWa_old_money() == null ? null
-							: new UFDouble(SalaryEncryptionUtil
-									.encryption(psnappaproveBVO
-											.getWa_old_money().toDouble())));
-			psnappaproveBVO
-					.setWa_cofm_money(psnappaproveBVO.getWa_cofm_money() == null ? null
-							: new UFDouble(SalaryEncryptionUtil
-									.encryption(psnappaproveBVO
-											.getWa_cofm_money().toDouble())));
-			psnappaproveBVO.setWa_apply_money(psnappaproveBVO
-					.getWa_apply_money() == null ? null : new UFDouble(
-					SalaryEncryptionUtil.encryption(psnappaproveBVO
-							.getWa_apply_money().toDouble())));
-			psnappaproveBVO.setWa_crt_apply_money(psnappaproveBVO
-					.getWa_crt_apply_money() == null ? null : new UFDouble(
-					SalaryEncryptionUtil.encryption(psnappaproveBVO
-							.getWa_crt_apply_money().toDouble())));
-			psnappaproveBVO.setWa_crt_cofm_money(psnappaproveBVO
-					.getWa_crt_cofm_money() == null ? null : new UFDouble(
-					SalaryEncryptionUtil.encryption(psnappaproveBVO
-							.getWa_crt_cofm_money().toDouble())));
-			psnappaproveBVO.setWa_crt_old_money(psnappaproveBVO
-					.getWa_crt_old_money() == null ? null : new UFDouble(
-					SalaryEncryptionUtil.encryption(psnappaproveBVO
-							.getWa_crt_old_money().toDouble())));
+					.setWa_crt_apply_money(psnappaproveBVO.getWa_crt_apply_money() == null ? null : new UFDouble(
+							SalaryEncryptionUtil.encryption(psnappaproveBVO.getWa_crt_apply_money().toDouble())));
+			psnappaproveBVO.setWa_crt_cofm_money(psnappaproveBVO.getWa_crt_cofm_money() == null ? null : new UFDouble(
+					SalaryEncryptionUtil.encryption(psnappaproveBVO.getWa_crt_cofm_money().toDouble())));
+			psnappaproveBVO.setWa_crt_old_money(psnappaproveBVO.getWa_crt_old_money() == null ? null : new UFDouble(
+					SalaryEncryptionUtil.encryption(psnappaproveBVO.getWa_crt_old_money().toDouble())));
 			// end
 		}
 		// 2016-12- 06 zhousze 薪资加密：这里处理审批金额合计值 begin
-		sum_apply_money = new UFDouble(
-				SalaryEncryptionUtil.encryption(sum_apply_money.toDouble()));
+		sum_apply_money = new UFDouble(SalaryEncryptionUtil.encryption(sum_apply_money.toDouble()));
 		// end
-		((PsnappaproveVO) billVO.getParentVO())
-				.setSum_apply_money(sum_apply_money);
+		((PsnappaproveVO) billVO.getParentVO()).setSum_apply_money(sum_apply_money);
 
 		// 重置审计信息
 		resetAudit((PsnappaproveVO) billVO.getParentVO());
@@ -1210,8 +1064,7 @@ public class WaAdjustManageServiceImpl implements IWaAdjustManageService,
 	 */
 	private void resetAudit(PsnappaproveVO vo) {
 		String user = InvocationInfoProxy.getInstance().getUserId();
-		UFDateTime dt = new UFDateTime(new Date(TimeService.getInstance()
-				.getTime()));
+		UFDateTime dt = new UFDateTime(new Date(TimeService.getInstance().getTime()));
 		// 创建人
 		vo.setAttributeValue(PsnappaproveVO.CREATOR, user);
 		// 创建时间
@@ -1230,13 +1083,11 @@ public class WaAdjustManageServiceImpl implements IWaAdjustManageService,
 	 * 
 	 * @author xuhw on 2009-12-29
 	 */
-	public void validateMoneyLimit(AggPsnappaproveVO aggVO, boolean isApprove)
-			throws BusinessException {
+	public void validateMoneyLimit(AggPsnappaproveVO aggVO, boolean isApprove) throws BusinessException {
 		if (aggVO == null) {
 			return;
 		}
-		PsnappaproveBVO[] psnappaproveVOs = (PsnappaproveBVO[]) aggVO
-				.getChildrenVO();
+		PsnappaproveBVO[] psnappaproveVOs = (PsnappaproveBVO[]) aggVO.getChildrenVO();
 		UFDoubleCompare doubleCompare = new UFDoubleCompare();
 		// 申请金额
 		UFDouble money = null;
@@ -1252,8 +1103,7 @@ public class WaAdjustManageServiceImpl implements IWaAdjustManageService,
 		// String strPsnname = null;
 		WaCriterionVO criterionVo = null;
 
-		HashMap<String, WaCriterionVO> criterionVoMap = ((NCLocator
-				.getInstance().lookup(IWaGradeService.class)))
+		HashMap<String, WaCriterionVO> criterionVoMap = ((NCLocator.getInstance().lookup(IWaGradeService.class)))
 				.getCrierionVOMapByPrmSec(psnappaproveVOs, isApprove);
 
 		int rowCnt = 0;
@@ -1287,11 +1137,12 @@ public class WaAdjustManageServiceImpl implements IWaAdjustManageService,
 			// }
 
 			if (doubleCompare.lessThan(money, new UFDouble(0))) {
-				String info = MessageFormat.format(ResHelper.getString(
-						"60130adjapprove", "060130adjapprove0121")/*
-																 * @res
-																 * "第 {0}行：金额不能为空, 请修改."
-																 */, rowCnt);
+				String info = MessageFormat.format(ResHelper.getString("60130adjapprove", "060130adjapprove0121")/*
+																												 * @
+																												 * res
+																												 * "第 {0}行：金额不能为空, 请修改."
+																												 */,
+						rowCnt);
 				Logger.debug(info);
 				throw new BusinessException(info);
 			}
@@ -1300,11 +1151,11 @@ public class WaAdjustManageServiceImpl implements IWaAdjustManageService,
 			// 定调资申请新增保存校验：现在有一种情况就是，对于薪资标准表调整金额时，如果没有选中“薪资标准”，
 			// 直接填写金额会报错。现在更改为保存校验一次，如果没有填写薪资标准就不能保存，会抛出如下信息 begin
 			if (StringUtils.isEmpty(strPrmlvPK)) {
-				throw new BusinessException(ResHelper.getString(
-						"60130adjapprove", "060130adjapprove0172")/*
-																 * @res
-																 * "薪资标准不能为空！"
-																 */);
+				throw new BusinessException(ResHelper.getString("60130adjapprove", "060130adjapprove0172")/*
+																										 * @
+																										 * res
+																										 * "薪资标准不能为空！"
+																										 */);
 			}
 			// end
 
@@ -1315,22 +1166,21 @@ public class WaAdjustManageServiceImpl implements IWaAdjustManageService,
 				if (doubleCompare.lessThan(money, criterionVo.getMin_value())) {
 					Logger.debug("宽带薪酬的情况，金额不能小于薪资标准的下限！");
 
-					throw new BusinessException(MessageFormat.format(ResHelper
-							.getString("60130adjapprove",
-									"060130adjapprove0122")/*
-															 * @res
-															 * "第 {0}行：宽带薪酬的情况，金额不能小于薪资标准的下限, 请修改."
-															 */, rowCnt));
-				} else if (doubleCompare.lessThan(criterionVo.getMax_value(),
-						money)) {
+					throw new BusinessException(MessageFormat.format(
+							ResHelper.getString("60130adjapprove", "060130adjapprove0122")/*
+																						 * @
+																						 * res
+																						 * "第 {0}行：宽带薪酬的情况，金额不能小于薪资标准的下限, 请修改."
+																						 */, rowCnt));
+				} else if (doubleCompare.lessThan(criterionVo.getMax_value(), money)) {
 					Logger.debug("宽带薪酬的情况，金额不能大于薪资标准的下限！");
 
-					throw new BusinessException(MessageFormat.format(ResHelper
-							.getString("60130adjapprove",
-									"060130adjapprove0123")/*
-															 * @res
-															 * "第 {0}行：宽带薪酬的情况，金额不能大于薪资标准的上限, 请修改."
-															 */, rowCnt));
+					throw new BusinessException(MessageFormat.format(
+							ResHelper.getString("60130adjapprove", "060130adjapprove0123")/*
+																						 * @
+																						 * res
+																						 * "第 {0}行：宽带薪酬的情况，金额不能大于薪资标准的上限, 请修改."
+																						 */, rowCnt));
 
 				}
 			}
@@ -1346,8 +1196,7 @@ public class WaAdjustManageServiceImpl implements IWaAdjustManageService,
 	 * @return
 	 * @throws BusinessException
 	 */
-	public Object[] queryAdjustVOByCondition(String condition)
-			throws BusinessException {
+	public Object[] queryAdjustVOByCondition(String condition) throws BusinessException {
 		return getAdjustDao().queryAdjustInfoWhenDeptOrPostChange(condition);
 	}
 
@@ -1359,19 +1208,13 @@ public class WaAdjustManageServiceImpl implements IWaAdjustManageService,
 	 * @return
 	 * @throws BusinessException
 	 */
-	public AggPsnappaproveVO doDelete(AggPsnappaproveVO vo)
-			throws BusinessException {
-		String billType = (String) vo.getParentVO().getAttributeValue(
-				PsnappaproveVO.BILLTYPE);
-		String pk_group = (String) vo.getParentVO().getAttributeValue(
-				PsnappaproveVO.PK_GROUP);
-		String pk_org = (String) vo.getParentVO().getAttributeValue(
-				PsnappaproveVO.PK_ORG);
-		String bill_code = (String) vo.getParentVO().getAttributeValue(
-				PsnappaproveVO.BILLCODE);
+	public AggPsnappaproveVO doDelete(AggPsnappaproveVO vo) throws BusinessException {
+		String billType = (String) vo.getParentVO().getAttributeValue(PsnappaproveVO.BILLTYPE);
+		String pk_group = (String) vo.getParentVO().getAttributeValue(PsnappaproveVO.PK_GROUP);
+		String pk_org = (String) vo.getParentVO().getAttributeValue(PsnappaproveVO.PK_ORG);
+		String bill_code = (String) vo.getParentVO().getAttributeValue(PsnappaproveVO.BILLCODE);
 		if (isAutoGenerateBillCode(billType, pk_group, pk_org)) {
-			getIBillcodeManage().returnBillCodeOnDelete(billType, pk_group,
-					pk_org, bill_code, null);
+			getIBillcodeManage().returnBillCodeOnDelete(billType, pk_group, pk_org, bill_code, null);
 		}
 		Logger.debug("doDelete(AggPsnappaproveVO vo)");
 		MDPersistenceService.lookupPersistenceService().deleteBillFromDB(vo);
@@ -1383,10 +1226,8 @@ public class WaAdjustManageServiceImpl implements IWaAdjustManageService,
 		return NCLocator.getInstance().lookup(IBillcodeManage.class);
 	}
 
-	private boolean isAutoGenerateBillCode(String billType, String pk_group,
-			String pk_org) throws BusinessException {
-		BillCodeContext billCodeContext = HiCacheUtils.getBillCodeContext(
-				billType, pk_group, pk_org);
+	private boolean isAutoGenerateBillCode(String billType, String pk_group, String pk_org) throws BusinessException {
+		BillCodeContext billCodeContext = HiCacheUtils.getBillCodeContext(billType, pk_group, pk_org);
 		return billCodeContext != null;
 	}
 
@@ -1395,8 +1236,7 @@ public class WaAdjustManageServiceImpl implements IWaAdjustManageService,
 	 * 需求中对此点有要求:在定调资申请提交时，系统自动校验生效日期的合法性，<BR>
 	 * 如果申请单据中的生效日期早于会计期间的时间范围则系统要给出提示，且不允许提交。<BR>
 	 */
-	private void validateUsedate(UFLiteralDate usedate)
-			throws BusinessException {
+	private void validateUsedate(UFLiteralDate usedate) throws BusinessException {
 		if (usedate != null && usedate.toString().length() > 0) {
 			// xiejie3 2015-1-7 11:25:01 由于IConfigFileService接口已不存在，并且
 			// aIConfigFileService.isValidDate（）的v633实现类直接返回的true，所以这段可以直接注掉
@@ -1423,8 +1263,11 @@ public class WaAdjustManageServiceImpl implements IWaAdjustManageService,
 			// }
 		} else {
 			Logger.debug("生效日期为空, 请修改.");
-			throw new BusinessException(ResHelper.getString("60130adjapprove",
-					"060130adjapprove0033")/* @res "生效日期为空, 请修改." */);
+			throw new BusinessException(ResHelper.getString("60130adjapprove", "060130adjapprove0033")/*
+																									 * @
+																									 * res
+																									 * "生效日期为空, 请修改."
+																									 */);
 		}
 	}
 
@@ -1435,11 +1278,10 @@ public class WaAdjustManageServiceImpl implements IWaAdjustManageService,
 	 * @return
 	 * @throws BusinessException
 	 */
-	public AdjustWadocVO[] getAdjustWadocVOs4Adjust(
-			BatchAdjustVO batchadjustVO, PsnappaproveBVO[] psnappaproveBVOs)
+	public AdjustWadocVO[] getAdjustWadocVOs4Adjust(BatchAdjustVO batchadjustVO, PsnappaproveBVO[] psnappaproveBVOs)
 			throws BusinessException {
-		WaGradeVO gradeVO = (WaGradeVO) getAdjustDao().getBaseDao()
-				.retrieveByPK(WaGradeVO.class, batchadjustVO.getPk_wa_grd());
+		WaGradeVO gradeVO = (WaGradeVO) getAdjustDao().getBaseDao().retrieveByPK(WaGradeVO.class,
+				batchadjustVO.getPk_wa_grd());
 		if (gradeVO != null) {
 			batchadjustVO.setPrmlv_money_sort(gradeVO.getPrmlv_money_sort());
 			batchadjustVO.setSeclv_money_sort(gradeVO.getSeclv_money_sort());
@@ -1449,10 +1291,8 @@ public class WaAdjustManageServiceImpl implements IWaAdjustManageService,
 
 		// // 带出原始的级别档别， 和默认的申请级别档别
 		// psnappaproveBVOs = AdjustUtil.getExtraInfo(psnappaproveBVOs, true);
-		AdjustWadocVO[] adjustWadocPsnInfoVOs = getAdjustTool().filterPsnInfo(
-				psnappaproveBVOs, batchadjustVO);
-		return getAdjustTool()
-				.batchAdjust(batchadjustVO, adjustWadocPsnInfoVOs);
+		AdjustWadocVO[] adjustWadocPsnInfoVOs = getAdjustTool().filterPsnInfo(psnappaproveBVOs, batchadjustVO);
+		return getAdjustTool().batchAdjust(batchadjustVO, adjustWadocPsnInfoVOs);
 	}
 
 	private PsndocWadocAdjustTool adjustTool;
@@ -1473,8 +1313,8 @@ public class WaAdjustManageServiceImpl implements IWaAdjustManageService,
 	 * 需求中对此点有要求:在定调资申请提交时，系统自动校验生效日期的合法性，<BR>
 	 * 如果申请单据中的生效日期早于会计期间的时间范围则系统要给出提示，且不允许提交。<BR>
 	 */
-	private void validateUsedate(PsnappaproveBVO psnappaproveBVO,
-			UFBoolean partflagShow, int rownum) throws BusinessException {
+	private void validateUsedate(PsnappaproveBVO psnappaproveBVO, UFBoolean partflagShow, int rownum)
+			throws BusinessException {
 		UFLiteralDate usedate = psnappaproveBVO.getUsedate();
 		if (usedate != null && usedate.toString().length() > 0) {
 			// xiejie3 2015-1-7 11:25:01 由于IConfigFileService接口已不存在，并且
@@ -1502,96 +1342,75 @@ public class WaAdjustManageServiceImpl implements IWaAdjustManageService,
 			// }
 		} else {
 			Logger.debug("生效日期为空, 请修改.");
-			throw new BusinessException(ResHelper.getString("60130adjapprove",
-					"060130adjapprove0033")/* @res "生效日期为空, 请修改." */);
+			throw new BusinessException(ResHelper.getString("60130adjapprove", "060130adjapprove0033")/*
+																									 * @
+																									 * res
+																									 * "生效日期为空, 请修改."
+																									 */);
 		}
 
 		if (getAdjustDao().validateUsedate(psnappaproveBVO)) {
 			Logger.error("起始日期不能早于上一条记录的截止日期/截止日期不能晚于下一条记录的开始日期, 请修改.");
-			throw new BusinessException(
-					MessageFormat.format(
-							ResHelper.getString("60130adjapply",
-									"060130adjapply0216")
-							/*
-							 * @res
-							 * "申请子记录中{0}{1} 生效日期不能早于其最新定调资记录的截止日期/开始日期, 请修改."
-							 */,
-							rownum,
-							StringUtils.isEmpty(psnappaproveBVO.getPsnname()) ? ""
-									: ResHelper.getString("60130adjapply",
-											"060130adjapply0217")
-											/* @res "人员：" */+ psnappaproveBVO
-													.getPsnname()
-											+ (partflagShow.booleanValue() ? " ["
-													+ (psnappaproveBVO
-															.getAssgid()
-															.equals(Integer
-																	.valueOf(1)) ? ResHelper
-															.getString(
-																	"60130adjapprove",
-																	"060130adjapprove0142")/*
-																							 * @
-																							 * res
-																							 * "主职  "
-																							 */
-															: ResHelper
-																	.getString(
-																			"60130adjapprove",
-																			"060130adjapprove0140")/*
+			throw new BusinessException(MessageFormat.format(
+					ResHelper.getString("60130adjapply", "060130adjapply0216")
+					/*
+					 * @res "申请子记录中{0}{1} 生效日期不能早于其最新定调资记录的截止日期/开始日期, 请修改."
+					 */,
+					rownum,
+					StringUtils.isEmpty(psnappaproveBVO.getPsnname()) ? "" : ResHelper.getString("60130adjapply",
+							"060130adjapply0217")
+							/* @res "人员：" */+ psnappaproveBVO.getPsnname()
+							+ (partflagShow.booleanValue() ? " ["
+									+ (psnappaproveBVO.getAssgid().equals(Integer.valueOf(1)) ? ResHelper.getString(
+											"60130adjapprove", "060130adjapprove0142")/*
+																					 * @
+																					 * res
+																					 * "主职  "
+																					 */
+									: ResHelper.getString("60130adjapprove", "060130adjapprove0140")/*
 																									 * @
 																									 * res
 																									 * "兼职： "
-																									 */)
-													+ "] "
-													: " "),
-							StringUtils.isEmpty(psnappaproveBVO
-									.getPk_wa_item_showname()) ? "" : ResHelper
-									.getString("60130adjapply",
-											"060130adjapply0218")
-									/* @res " 薪资项目：" */+ psnappaproveBVO
-											.getPk_wa_item_showname()));
+																									 */) + "] " : " "),
+					StringUtils.isEmpty(psnappaproveBVO.getPk_wa_item_showname()) ? "" : ResHelper.getString(
+							"60130adjapply", "060130adjapply0218")
+					/* @res " 薪资项目：" */+ psnappaproveBVO.getPk_wa_item_showname()));
 		}
 	}
 
 	@Override
-	public AggPsnappaproveVO[] queryObjectByPks(String[] pks)
-			throws BusinessException {
+	public AggPsnappaproveVO[] queryObjectByPks(String[] pks) throws BusinessException {
 
-		AggPsnappaproveVO[] vos = getServiceTemplate().queryByPks(
-				AggPsnappaproveVO.class, pks);
+		AggPsnappaproveVO[] vos = getServiceTemplate().queryByPks(AggPsnappaproveVO.class, pks);
 		;
 		return getAdjustDao().querySumApplyAndSumConfimMoney(vos);
 
 	}
 
 	@Override
-	public String[] queryPksByCondition(LoginContext context, String condition,
-			PFQueryParams queryParams, Boolean isApprove)
-			throws BusinessException {
+	public String[] queryPksByCondition(LoginContext context, String condition, PFQueryParams queryParams,
+			Boolean isApprove) throws BusinessException {
 		if (null != queryParams) {
 
 			IFlowBizItf itf = HrPfHelper.getFlowBizItf(AggPsnappaproveVO.class);
 
-			String strApproveDatePeriod = HrPfHelper.getApproveDatePeriod(itf,
-					"wa_psnappaprove", queryParams.getApproveDateParam(),
-					queryParams.getBillState());
+			String strApproveDatePeriod = HrPfHelper.getApproveDatePeriod(itf, "wa_psnappaprove",
+					queryParams.getApproveDateParam(), queryParams.getBillState());
 
 			if (StringUtils.isNotBlank(strApproveDatePeriod)) {
 				condition += " and " + strApproveDatePeriod;
 			}
 		}
 		if (null != condition) {
-			condition = condition
-					.replace("select pk_psnapp from wa_psnappaprove_b",
-							"select wa_psnappaprove_b.pk_psnapp from wa_psnappaprove_b");
+			condition = condition.replace("select pk_psnapp from wa_psnappaprove_b",
+					"select wa_psnappaprove_b.pk_psnapp from wa_psnappaprove_b");
 		}
-		String sql = "select wa_psnappaprove.pk_psnapp from wa_psnappaprove where "
-				+ condition;
+		String sql = "select wa_psnappaprove.pk_psnapp from wa_psnappaprove where " + condition;
 		// 2015-11-3 zhousze 定调资申请/审批根据当前组织过滤单据 begin
 		sql = sql + " and pk_org = '" + context.getPk_org() + "' ";
 		// end
-		List<String> pk_psnappsList = (List<String>) new BaseDAO()
-				.executeQuery(sql.toString(), new ColumnListProcessor());
+		List<String> pk_psnappsList = (List<String>) new BaseDAO().executeQuery(sql.toString(),
+				new ColumnListProcessor());
 		if (pk_psnappsList == null) {
 			return new String[0];
 		}

@@ -47,6 +47,7 @@ import nc.itf.hr.frame.IPersistenceRetrieve;
 import nc.itf.hr.frame.IPersistenceUpdate;
 import nc.itf.hr.infoset.IInfoSetQry;
 import nc.itf.hr.psnclrule.IPsnclruleQueryService;
+import nc.itf.hr.wa.IDeductDetailService;
 import nc.itf.hrp.psnbudget.IBudgetSetQueryService;
 import nc.itf.hrp.psnbudget.IOrgBudgetQueryService;
 import nc.itf.org.IOrgConst;
@@ -88,6 +89,7 @@ import nc.vo.hi.entrymng.EntryapplyVO;
 import nc.vo.hi.psndoc.Attribute;
 import nc.vo.hi.psndoc.CertVO;
 import nc.vo.hi.psndoc.CtrtVO;
+import nc.vo.hi.psndoc.DeductDetailsVO;
 import nc.vo.hi.psndoc.KeyPsnGrpVO;
 import nc.vo.hi.psndoc.KeyPsnVO;
 import nc.vo.hi.psndoc.PartTimeVO;
@@ -1825,9 +1827,22 @@ public class PsndocServiceImpl implements IPsndocService, IPsndocQryService {
 		}
 		// 但强 数据加密 2018-1-19 14:31:11 end
 		
-		return getPsndocDAO().savePsndoc(psndocAggVO);
+		PsndocAggVO aggvo =  getPsndocDAO().savePsndoc(psndocAggVO);
+
+	        //刷新法扣档案的操作
+	        updateCourtInfo(aggvo.getParentVO().getPk_psndoc());
+	        return aggvo;
 	}
 
+    private void updateCourtInfo(String pk_psndoc) throws BusinessException {
+	// 先获取此人所有的vo
+	String sql = "select * from hi_psndoc_deductdetails where dr = 0 and pk_psndoc = '" + pk_psndoc + "' ";
+	@SuppressWarnings("unchecked")
+	List<DeductDetailsVO> ddvList = (List<DeductDetailsVO>) new BaseDAO().executeQuery(sql, new BeanListProcessor(
+		DeductDetailsVO.class));
+	// 更新flag
+	NCLocator.getInstance().lookup(IDeductDetailService.class).updateDebtfile(ddvList, true);
+    }
 	/****************************************************************************
 	 * {@inheritDoc}<br>
 	 * Created on 2010-4-15 10:53:46<br>

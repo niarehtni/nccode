@@ -1,4 +1,4 @@
-ï»¿package nc.ui.bd.defdoc.action;
+package nc.ui.bd.defdoc.action;
 
 import nc.bs.framework.common.NCLocator;
 import nc.itf.hi.IPsndocSubInfoService4JFS;
@@ -57,27 +57,38 @@ public class DefdocBatchDisableAction extends BatchDisableLineAction {
 	}
 
 	@Override
-	public Object doDisable(Object obj) throws Exception {
-		DefdocVO[] newObjs = ((DefdocAppService) getModel().getService())
-				.disableDefdocs(new DefdocVO[] { (DefdocVO) obj });
-		//å›¢ä¿é™©ç§åˆ™è¿›è¡Œé€€ä¿åŠ¨ä½œ
-		if(getModel().getContext().getFuncInfo().getFuncode().equals(GROUP_INSURANCE_TYPE_FUNCTION_CODE)){
-			doDisableIns(newObjs[0]);
-		}
-		return newObjs[0];
+    public Object doDisable(Object obj) throws Exception {
+	// ÍÅ±£ÏÕÖÖÔò½øĞĞÍË±£¶¯×÷
+	boolean isDisable = true;
+	if (getModel().getContext().getFuncInfo().getFuncode().equals(GROUP_INSURANCE_TYPE_FUNCTION_CODE)) {
+	    isDisable = doDisableIns((DefdocVO) obj);
 	}
+	DefdocVO[] newObjs = new DefdocVO[] { (DefdocVO) obj };
+	if(isDisable){
+	    newObjs = ((DefdocAppService) getModel().getService())
+			.disableDefdocs(new DefdocVO[] { (DefdocVO) obj });
+	}
+	return newObjs[0];
+    }
 	
 	
-	public void doDisableIns(DefdocVO newObj) throws BusinessException{
+	public boolean doDisableIns(DefdocVO newObj) throws BusinessException{
 		if(newObj == null || newObj.getPk_defdoc() == null){
-			return;
+			return false;
 		}
 		DateChooseDialog dateChooseDlg = 
-				new DateChooseDialog(getModel().getContext().getEntranceUI(),"é€€ä¿æ—¥æœŸ","è¯·è¾“å…¥é€€ä¿æ—¥æœŸ:",false);
-		dateChooseDlg.showModal();
+				new DateChooseDialog(getModel().getContext().getEntranceUI(),"ÍË±£ÈÕÆÚ","ÇëÊäÈëÍË±£ÈÕÆÚ:",false);
+		int result = dateChooseDlg.showModal();
 		UFDate disDate = dateChooseDlg.getReturn();
-		NCLocator.getInstance().lookup(IPsndocSubInfoService4JFS.class)
-			.delGroupInsByType(disDate,newObj.getPk_defdoc());
+		if(disDate!=null && result==0){
+		    
+			NCLocator.getInstance().lookup(IPsndocSubInfoService4JFS.class)
+				.delGroupInsByType(disDate,newObj.getPk_defdoc());  
+		}else{
+		    return false;
+		}
+		
+		return true;
 	}
 
 }

@@ -406,9 +406,10 @@ public class DataItfFileReader {
 					dvo.setPk_banktype1(pk_banktype);
 
 					for (int i = 5; i < ary.length; i++) {
-						if (i == 32) {
+						//格式更改 tank 2020年1月31日00:27:36 薪资数据导入按指定格式
+					    /*if (i == 32) {
 							continue;
-						}
+						}*/
 						MappingFieldVO mappVO = indexItemKeyMap.get(String.valueOf(i));
 						if (null == mappVO) {
 							continue;
@@ -1220,9 +1221,10 @@ public class DataItfFileReader {
 					// 获得当前行的列数
 					int lastCellNum = datas.length;
 					for (int i = 5; i < lastCellNum; i++) {
-						if (i == 32) {
+					  //格式更改 tank 2020年1月31日00:27:36 薪资数据导入按指定格式
+					    	/*if (i == 32) {
 							continue;
-						}
+						}*/
 						MappingFieldVO mappVO = indexItemKeyMap.get(String.valueOf(i));
 						if (null == mappVO) {
 							continue;
@@ -2062,8 +2064,11 @@ public class DataItfFileReader {
 
 	// <psnCode, psnVO>
 	public static Map<String, PsndocVO> getCodePsnInfo(WaLoginContext waContext) throws Exception {
-		Map<String, PsndocVO> map = NCLocator.getInstance().lookup(IDataIOManageService.class)
-				.queryPsnByOrgConditionn(waContext.getPk_org(), null, false);
+		Map<String, PsndocVO> map = NCLocator
+				.getInstance()
+				.lookup(IDataIOManageService.class)
+				.queryPsnByOrgConditionn(waContext.getPk_org(), waContext.getPk_wa_class(), waContext.getCyear(),
+						waContext.getCperiod(), false);
 		if (null == map) {
 			map = new HashMap<String, PsndocVO>();
 		}
@@ -2072,8 +2077,11 @@ public class DataItfFileReader {
 
 	// <psnCode + deptCode, psnVO> psnVO include psnjobVO and psnorgVO
 	public static Map<String, PsndocVO> getCodeDeptPsnInfo(WaLoginContext waContext) throws Exception {
-		Map<String, PsndocVO> map = NCLocator.getInstance().lookup(IDataIOManageService.class)
-				.queryPsnByOrgConditionn(waContext.getPk_org(), null, true);
+		Map<String, PsndocVO> map = NCLocator
+				.getInstance()
+				.lookup(IDataIOManageService.class)
+				.queryPsnByOrgConditionn(waContext.getPk_org(), waContext.getPk_wa_class(), waContext.getCyear(),
+						waContext.getCperiod(), true);
 		if (null == map) {
 			map = new HashMap<String, PsndocVO>();
 		}

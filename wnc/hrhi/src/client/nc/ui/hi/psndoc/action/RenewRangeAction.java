@@ -8,7 +8,6 @@ import javax.swing.JComponent;
 import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
 
-
 import nc.bs.framework.common.NCLocator;
 import nc.bs.uif2.LockFailedException;
 import nc.bs.uif2.VersionConflictException;
@@ -36,11 +35,12 @@ public class RenewRangeAction extends HrAction {
 	private LoginContext context;
 	private EmployeePsndocModel model;
 	private String[] pk_wa_class = null;
-	/*private String cStartPeriod = null;
-	private String cEndPeriod = null;*/
+	/*
+	 * private String cStartPeriod = null; private String cEndPeriod = null;
+	 */
 	private UFDate dEffectiveDate = null;
 	private String errorMessage = "";
-	private String avgmoncount=null;
+	private String avgmoncount = null;
 	private UFDate cBaseDate = null;
 
 	public String[] getPk_wa_class() {
@@ -51,21 +51,17 @@ public class RenewRangeAction extends HrAction {
 		this.pk_wa_class = pk_wa_class;
 	}
 
-	/*public String getcStartPeriod() {
-		return cStartPeriod;
-	}
-
-	public void setcStartPeriod(String cStartPeriod) {
-		this.cStartPeriod = cStartPeriod;
-	}
-
-	public String getcEndPeriod() {
-		return cEndPeriod;
-	}
-
-	public void setcEndPeriod(String cEndPeriod) {
-		this.cEndPeriod = cEndPeriod;
-	}*/
+	/*
+	 * public String getcStartPeriod() { return cStartPeriod; }
+	 * 
+	 * public void setcStartPeriod(String cStartPeriod) { this.cStartPeriod =
+	 * cStartPeriod; }
+	 * 
+	 * public String getcEndPeriod() { return cEndPeriod; }
+	 * 
+	 * public void setcEndPeriod(String cEndPeriod) { this.cEndPeriod =
+	 * cEndPeriod; }
+	 */
 
 	public UFDate getdEffectiveDate() {
 		return dEffectiveDate;
@@ -74,8 +70,10 @@ public class RenewRangeAction extends HrAction {
 	public void setdEffectiveDate(UFDate dEffectiveDate) {
 		this.dEffectiveDate = dEffectiveDate;
 	}
+
 	/**
 	 * 基准日期
+	 * 
 	 * @return
 	 */
 	public UFDate getcBaseDate() {
@@ -85,91 +83,88 @@ public class RenewRangeAction extends HrAction {
 	public void setcBaseDate(UFDate cBaseDate) {
 		this.cBaseDate = cBaseDate;
 	}
+
 	/**
 	 * 平均月数
 	 */
-	public String getAvgmoncount(){
+	public String getAvgmoncount() {
 		return avgmoncount;
 	}
-	public void setAvgmoncount(String avgmoncount){
+
+	public void setAvgmoncount(String avgmoncount) {
 		this.avgmoncount = avgmoncount;
 	}
+
 	public RenewRangeAction() {
-		this.setBtnName(nc.vo.ml.NCLangRes4VoTransl.getNCLangRes().getStrByID(
-				"twhr_personalmgt", "068J61035-0005")/* @res 同步投保級距 */);
+		this.setBtnName(nc.vo.ml.NCLangRes4VoTransl.getNCLangRes().getStrByID("twhr_personalmgt", "068J61035-0005")/*
+																													 * @
+																													 * res
+																													 * 同步投保級距
+																													 */);
 		this.setCode("RenewRangeAction");
 	}
 
 	@Override
 	public void doAction(ActionEvent arg0) throws Exception {
-		if (getModel().getSelectedOperaRows() == null
-				|| getModel().getSelectedOperaRows().length == 0) {
-			errorMessage = nc.vo.ml.NCLangRes4VoTransl.getNCLangRes()
-					.getStrByID("twhr_personalmgt", "068J61035-0008")/*
-																	 * @res
-																	 * 同步投保級距發生錯誤
-																	 * ：
-																	 */
-					+ nc.vo.ml.NCLangRes4VoTransl.getNCLangRes().getStrByID(
-							"twhr_personalmgt", "068J61035-0025")/*
-																 * @res
-																 * 请选择要进行级距同步的员工
-																 */
+		if (getModel().getSelectedOperaRows() == null || getModel().getSelectedOperaRows().length == 0) {
+			errorMessage = nc.vo.ml.NCLangRes4VoTransl.getNCLangRes().getStrByID("twhr_personalmgt", "068J61035-0008")/*
+																													 * @
+																													 * res
+																													 * 同步投保級距發生錯誤
+																													 * ：
+																													 */
+					+ nc.vo.ml.NCLangRes4VoTransl.getNCLangRes().getStrByID("twhr_personalmgt", "068J61035-0025")/*
+																												 * @
+																												 * res
+																												 * 请选择要进行级距同步的员工
+																												 */
 			;
 			this.putValue("message_after_action", errorMessage);
 			return;
 		}
 
 		JComponent parentUi = getModel().getContext().getEntranceUI();
-		PeriodChooseDlg dlg = new PeriodChooseDlg(parentUi,
-				nc.vo.ml.NCLangRes4VoTransl.getNCLangRes().getStrByID(
-						"twhr_personalmgt", "068J61035-0006")/* @res 請選擇薪資基準期間 */);
+		PeriodChooseDlg dlg = new PeriodChooseDlg(parentUi, nc.vo.ml.NCLangRes4VoTransl.getNCLangRes().getStrByID(
+				"twhr_personalmgt", "068J61035-0006")/* @res 請選擇薪資基準期間 */);
 
 		dlg.initUI();
 		dlg.setContext(this.getContext());
 		dlg.loadPeriod();
 
 		if (dlg.showModal() == UIDialog.ID_OK) {
-			
+
 			this.setPk_wa_class(dlg.getPk_wa_class());
 			this.setcBaseDate(dlg.getcBaseDate());
 			this.setdEffectiveDate(dlg.getdEffectiveDate());
 			this.setAvgmoncount(dlg.getRefAvgMonCount().getRefShowCode());
 
 			new SwingWorker() {
-				BannerTimerDialog dialog = new BannerTimerDialog(
-						SwingUtilities.getWindowAncestor(getModel()
-								.getContext().getEntranceUI()));
+				BannerTimerDialog dialog = new BannerTimerDialog(SwingUtilities.getWindowAncestor(getModel()
+						.getContext().getEntranceUI()));
 				String error = null;
 
 				protected Boolean doInBackground() throws Exception {
 					try {
-						dialog.setStartText(nc.vo.ml.NCLangRes4VoTransl
-								.getNCLangRes().getStrByID("twhr_personalmgt",
-										"068J61035-0007")/* @res 正在同步投保級距及薪資標準 */);
+						dialog.setStartText(nc.vo.ml.NCLangRes4VoTransl.getNCLangRes().getStrByID("twhr_personalmgt",
+								"068J61035-0007")/* @res 正在同步投保級距及薪資標準 */);
 						dialog.start();
 
 						Object[] rows = getModel().getSelectedOperaDatas();
 						List<String> pk_psndocs = new ArrayList<String>();
 						for (Object row : rows) {
-							pk_psndocs.add(((PsndocAggVO) row).getParentVO()
-									.getPk_psndoc());
+							pk_psndocs.add(((PsndocAggVO) row).getParentVO().getPk_psndoc());
 						}
 
 						// 獲取資料
-						IPsndocSubInfoService4JFS service = NCLocator
-								.getInstance().lookup(
-										IPsndocSubInfoService4JFS.class);
-						service.renewRangeEx(getContext().getPk_org(),
-								pk_psndocs.toArray(new String[0]),getPk_wa_class(),
-								getcBaseDate(), getAvgmoncount(), 
-								getdEffectiveDate());
+						IPsndocSubInfoService4JFS service = NCLocator.getInstance().lookup(
+								IPsndocSubInfoService4JFS.class);
+						service.renewRangeEx(getContext().getPk_org(), pk_psndocs.toArray(new String[0]),
+								getPk_wa_class(), getcBaseDate(), getAvgmoncount(), getdEffectiveDate());
 
 					} catch (LockFailedException le) {
 						error = le.getMessage();
 					} catch (VersionConflictException le) {
-						throw new BusinessException(le.getBusiObject()
-								.toString(), le);
+						throw new BusinessException(le.getBusiObject().toString(), le);
 					} catch (Exception e) {
 						error = e.getMessage();
 					} finally {
@@ -180,18 +175,16 @@ public class RenewRangeAction extends HrAction {
 
 				protected void done() {
 					if (error != null) {
-						errorMessage = nc.vo.ml.NCLangRes4VoTransl
-								.getNCLangRes().getStrByID("twhr_personalmgt",
-										"068J61035-0008")/*
-														 * @res 同步投保級距發生錯誤：
-														 */
+						errorMessage = nc.vo.ml.NCLangRes4VoTransl.getNCLangRes().getStrByID("twhr_personalmgt",
+								"068J61035-0008")/*
+												 * @res 同步投保級距發生錯誤：
+												 */
 								+ error;
 					} else {
-						errorMessage = nc.vo.ml.NCLangRes4VoTransl
-								.getNCLangRes().getStrByID("twhr_personalmgt",
-										"068J61035-0009")/*
-														 * @res 投保級距同步成功。
-														 */
+						errorMessage = nc.vo.ml.NCLangRes4VoTransl.getNCLangRes().getStrByID("twhr_personalmgt",
+								"068J61035-0009")/*
+												 * @res 投保級距同步成功。
+												 */
 						;
 					}
 				}
@@ -224,16 +217,24 @@ public class RenewRangeAction extends HrAction {
 			return false;
 		} else {
 			try {
-				return SysInitQuery.getParaBoolean(
-						this.getContext().getPk_org(), "TWHR06").booleanValue();
+				// ssx added on 2020-01-14
+				// 當業務參數設置-組織 TWHR16 平均薪資同步級距之平均依據未設置時，下拉選單之同步投保級距投保級距按鈕置灰
+				String strTWHR16 = SysInitQuery.getParaString(this.getContext().getPk_org(), "TWHR16");
+
+				if (StringUtils.isEmpty(strTWHR16)) {
+					return false;
+				}
+				//
+
+				return SysInitQuery.getParaBoolean(this.getContext().getPk_org(), "TWHR06").booleanValue();
 			} catch (BusinessException e) {
 				ShowStatusBarMsgUtil.showStatusBarMsg(
-						nc.vo.ml.NCLangRes4VoTransl.getNCLangRes().getStrByID(
-								"twhr_personalmgt", "068J61035-0010")/*
-																	 * @res
-																	 * 取臺灣勞健保參數發生錯誤
-																	 * ：
-																	 */
+						nc.vo.ml.NCLangRes4VoTransl.getNCLangRes().getStrByID("twhr_personalmgt", "068J61035-0010")/*
+																													 * @
+																													 * res
+																													 * 取臺灣勞健保參數發生錯誤
+																													 * ：
+																													 */
 								+ e.getMessage(), getModel().getContext());
 			}
 		}

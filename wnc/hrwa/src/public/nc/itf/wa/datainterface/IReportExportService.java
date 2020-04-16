@@ -79,6 +79,23 @@ public interface IReportExportService {
 	public String[] getBankReportText(String pk_org, String offerPeriod, String pk_wa_class) throws BusinessException;
 
 	/**
+	 * 獲取滙豐銀行（臺灣）報盤數據
+	 * 
+	 * @param pk_org
+	 *            組織
+	 * @param offerPeriod
+	 *            報盤期間
+	 * @param pk_wa_class
+	 *            薪資方案
+	 * @param prefixClass
+	 *            人員類別前綴
+	 * @return
+	 * @throws BusinessException
+	 */
+	public String[] getBankDetailReportText(String pk_org, String offerPeriod, String pk_wa_class, String prefixPsnClass)
+			throws BusinessException;
+
+	/**
 	 * 取公司統一編號
 	 * 
 	 * @param pk_org
@@ -167,4 +184,5 @@ public interface IReportExportService {
 	 * @throws BusinessException
 	 */
 	public String[] getDeclaretype(String[] declaretypes) throws BusinessException;
+
 }

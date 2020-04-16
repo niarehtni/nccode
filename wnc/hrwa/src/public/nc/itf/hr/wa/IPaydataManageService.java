@@ -21,6 +21,10 @@ import nc.vo.wa.pub.WaLoginVO;
  * @修改日期:
  */
 public interface IPaydataManageService {
+	/**
+	 * 薪資解密臨時表：已解密wa_data行
+	 */
+	public static String DECRYPTEDPKTABLENAME = "wa_cacu_decryptedpk";
 
 	public void update(Object vo, WaLoginVO waLoginVO) throws BusinessException;
 
@@ -184,5 +188,14 @@ public interface IPaydataManageService {
 	 * @throws BusinessException
 	 */
 	public void updateCalFlag4OnTime(PsndocWaVO[] psndocWaVOs) throws BusinessException;
+
+	/**
+	 * 異常時加密已解密的數據
+	 * 
+	 * @param loginContext
+	 *            WaLoginContext
+	 * @throws BusinessException
+	 */
+	public void doEncryptEx(WaLoginContext loginContext) throws BusinessException;
 
 }

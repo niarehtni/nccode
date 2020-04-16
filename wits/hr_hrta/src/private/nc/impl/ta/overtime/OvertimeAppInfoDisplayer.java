@@ -1,9 +1,11 @@
 package nc.impl.ta.overtime;
 
+import java.text.SimpleDateFormat;
 import java.util.Map;
 import java.util.TimeZone;
 
 import nc.bs.dao.BaseDAO;
+import nc.bs.dao.DAOException;
 import nc.bs.framework.common.NCLocator;
 import nc.impl.ta.algorithm.BillProcessHelperAtServer;
 import nc.impl.ta.timebill.BillMethods;
@@ -154,6 +156,83 @@ public class OvertimeAppInfoDisplayer implements IOvertimeAppInfoDisplayer {
 //					}
 
 					subvo.setActhour(subvo.getLength());
+				}
+				
+				// 【假日加班規則】國定假日排班又申請加班單無效  by George  20190712  缺陷Bug #27379
+				// portal加班申請扣除時間分鐘調整  by George  20190620  缺陷Bug #27571
+				// 如果是平日加班
+				if (vo.getHeadVO().getPk_overtimetype().equals("1001A1100000000009PC")) {
+					// 平日加班:90分鐘以上 扣除時間分鐘:30分鐘
+					if (UFDateTime.getMinutesBetween(subvo.getOvertimebegintime(), subvo.getOvertimeendtime()) >= 90) {
+						subvo.setDeduct(Integer.valueOf(30));
+					// 平日加班:90分鐘之下 加班時長:0小時	
+					} else {
+						subvo.setLength(new UFDouble(0.00));
+					}	
+				// 非平日加班
+				} else {
+					// 非平日加班:240分鐘以上 & 270分鐘之下 扣除時間分鐘:0分鐘	 
+					if (UFDateTime.getMinutesBetween(subvo.getOvertimebegintime(), subvo.getOvertimeendtime()) >= 240 &&
+							UFDateTime.getMinutesBetween(subvo.getOvertimebegintime(), subvo.getOvertimeendtime()) < 270) {
+						subvo.setDeduct(Integer.valueOf(0));
+					// 非平日加班:480分鐘以上 & 511分鐘之下 扣除時間分鐘:30分鐘		
+					} else if (UFDateTime.getMinutesBetween(subvo.getOvertimebegintime(), subvo.getOvertimeendtime()) >= 480 &&
+							UFDateTime.getMinutesBetween(subvo.getOvertimebegintime(), subvo.getOvertimeendtime()) < 511) {
+						subvo.setDeduct(Integer.valueOf(30));
+					// 非平日加班:511分鐘以上 扣除時間分鐘:60分鐘
+					} else if (UFDateTime.getMinutesBetween(subvo.getOvertimebegintime(), subvo.getOvertimeendtime()) >= 511) {	
+						subvo.setDeduct(Integer.valueOf(60));
+					}
+					
+					// 公式: (結束時間 - 開始時間 - 扣除時間(分鐘))/60 ，無條件捨去小數點位數 ，再取2位小數點精度
+					subvo.setLength(new UFDouble(UFDateTime
+							.getMinutesBetween(subvo.getOvertimebegintime(), subvo.getOvertimeendtime()))
+					        .sub(subvo.getDeduct()).div(60).setScale(0, UFDouble.ROUND_DOWN)
+					        .setScale(2, UFDouble.ROUND_DOWN));
+                    
+					// 例外時間: 非平日加班:510分鐘以上 & 511分鐘之下 加班時長:8小時	
+					if (UFDateTime.getMinutesBetween(subvo.getOvertimebegintime(), subvo.getOvertimeendtime()) >= 511 &&
+							UFDateTime.getMinutesBetween(subvo.getOvertimebegintime(), subvo.getOvertimeendtime()) < 540) {	
+						subvo.setLength(new UFDouble(8.00));
+					}
+					
+					// 如果是國定假日加班
+					if (vo.getHeadVO().getPk_overtimetype().equals("1001A1100000000009PE")) {
+						try {
+							// 查詢員工工作日曆中，這位員工、組織、這一天日期的班次PK
+						    String strSQL = "select pk_shift from tbm_psncalendar where pk_psndoc = '" + vo.getHeadVO().getPk_psndoc() + "'"
+							        + " and tbm_psncalendar.pk_org = '" + vo.getHeadVO().getPk_org() + "'"
+								    + " and tbm_psncalendar.calendar = '" + subvo.getOvertimebegintime().toString().substring(0, 10) + "'";
+						
+						    String ispublicholiday = (String) new BaseDAO().executeQuery(strSQL, new ColumnProcessor());
+							// 不為公休(有排班) 且 不為空值
+							if(!"0001Z7000000000000GX".equals(ispublicholiday) && !"".equals(ispublicholiday)) {
+								// 是國定假日加班且非公休(有排班): 270分鐘以上 & 690分鐘之下 扣除時間分鐘:60分鐘
+								if (UFDateTime.getMinutesBetween(subvo.getOvertimebegintime(), subvo.getOvertimeendtime()) >= 270 &&
+										UFDateTime.getMinutesBetween(subvo.getOvertimebegintime(), subvo.getOvertimeendtime()) < 690) {
+									subvo.setDeduct(Integer.valueOf(60));
+								// 是國定假日加班且非公休(有排班): 690分鐘以上 扣除時間分鐘:90分鐘  	
+								} else if (UFDateTime.getMinutesBetween(subvo.getOvertimebegintime(), subvo.getOvertimeendtime()) >= 690) {
+									subvo.setDeduct(Integer.valueOf(90));
+								}
+								
+								// 公式: (結束時間 - 開始時間 - 扣除時間(分鐘))/60 ，無條件捨去小數點位數 ，再取2位小數點精度
+								subvo.setLength(new UFDouble(UFDateTime
+										.getMinutesBetween(subvo.getOvertimebegintime(), subvo.getOvertimeendtime()))
+								        .sub(subvo.getDeduct()).div(60).setScale(0, UFDouble.ROUND_DOWN)
+								        .setScale(2, UFDouble.ROUND_DOWN));
+								
+								// 例外時間: 是國定假日加班且非公休(有排班): 240分鐘以上 & 270分鐘之下  國定假日加班時長:3小時
+								if (UFDateTime.getMinutesBetween(subvo.getOvertimebegintime(), subvo.getOvertimeendtime()) >= 240 &&
+										UFDateTime.getMinutesBetween(subvo.getOvertimebegintime(), subvo.getOvertimeendtime()) < 270) {
+									subvo.setLength(new UFDouble(3.00));
+								}
+							}	
+						} catch (DAOException e) {
+							// TODO 自动生成的 catch 块
+							e.printStackTrace();
+						}
+					}	
 				}
 				totalHour = totalHour.add(subvo.getLength());
 			}

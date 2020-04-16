@@ -1,4 +1,4 @@
-ï»¿package nc.itf.ta.algorithm;
+package nc.itf.ta.algorithm;
 
 import static nc.vo.ta.bill.BillMutexRule.BILL_LEAVE;
 import static nc.vo.ta.bill.BillMutexRule.BILL_OVERTIME;
@@ -7,18 +7,22 @@ import static nc.vo.ta.bill.BillMutexRule.containsBillType;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.TimeZone;
 import java.util.Vector;
 
 import nc.bs.dao.DAOException;
+import nc.bs.framework.common.NCLocator;
 import nc.bs.logging.Logger;
 import nc.hr.utils.CommonUtils;
 import nc.itf.bd.shift.ShiftMaintainFacade;
 import nc.itf.bd.shift.ShiftServiceFacade;
 import nc.itf.ta.algorithm.impl.DefaultTimeScope;
+import nc.itf.uap.IUAPQueryBS;
 import nc.vo.bd.shift.AggShiftVO;
 import nc.vo.bd.shift.ShiftVO;
 import nc.vo.pub.BusinessException;
@@ -61,84 +65,89 @@ import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 
 /**
- * @author zengcheng
- * å¯¹å•æ®è¿›è¡Œå¤„ç†çš„å¸®åŠ©ç±»ï¼Œä¸»è¦ç”¨äºè®¡ç®—æ—¶é•¿
- * æ³¨æ„ï¼Œè®¡ç®—å•æ®æ—¶é•¿æ—¶ï¼Œå¦‚æœç¢°åˆ°äº†å¼¹æ€§ç­ï¼Œè¦å…ˆå°†å¼¹æ€§ç­è¿›è¡Œå›ºåŒ–ã€‚æ­¤ç±»ä¸è´Ÿè´£å›ºåŒ–ï¼Œä¹Ÿå°±æ˜¯è¯´ï¼Œåœ¨è°ƒç”¨æ­¤ç±»çš„æ–¹æ³•ä¹‹å‰ï¼Œå¿…é¡»ä¿è¯
- * å¼¹æ€§ç­å·²ç»è¢«å›ºåŒ–
+ * @author zengcheng ¶Ôµ¥¾İ½øĞĞ´¦ÀíµÄ°ïÖúÀà£¬Ö÷ÒªÓÃÓÚ¼ÆËãÊ±³¤
+ *         ×¢Òâ£¬¼ÆËãµ¥¾İÊ±³¤Ê±£¬Èç¹ûÅöµ½ÁËµ¯ĞÔ°à£¬ÒªÏÈ½«µ¯ĞÔ°à½øĞĞ¹Ì»¯¡£´ËÀà²»¸ºÔğ¹Ì»¯£¬Ò²¾ÍÊÇËµ£¬ÔÚµ÷ÓÃ´ËÀàµÄ·½·¨Ö®Ç°£¬±ØĞë±£Ö¤ µ¯ĞÔ°àÒÑ¾­±»¹Ì»¯
  */
 public class BillProcessHelper {
-	
-	
+
 	/**
-	 * å¤„ç†æ‰€æœ‰å•æ®çš„äº¤åˆ‡
+	 * ´¦ÀíËùÓĞµ¥¾İµÄ½»ÇĞ
+	 * 
 	 * @return
 	 */
-	public static ITimeScopeWithBillType[] crossAllBills(ITimeScopeWithBillType[]... bills){
+	public static ITimeScopeWithBillType[] crossAllBills(ITimeScopeWithBillType[]... bills) {
 		ITimeScopeWithBillType[] bigArray = mergeBillArray(bills);
-		if(bigArray==null||bigArray.length==0)
+		if (bigArray == null || bigArray.length == 0)
 			return bigArray;
 		return (ITimeScopeWithBillType[]) TimeScopeUtils.crossTimeScopes(bigArray);
 	}
+
 	/**
-	 * å¤„ç†æ‰€æœ‰å•æ®çš„äº¤åˆ‡
+	 * ´¦ÀíËùÓĞµ¥¾İµÄ½»ÇĞ
+	 * 
 	 * @return
 	 */
-	public static ITimeScopeWithBillType[] crossAllBills(List<? extends ITimeScopeWithBillType>... bills){
+	public static ITimeScopeWithBillType[] crossAllBills(List<? extends ITimeScopeWithBillType>... bills) {
 		List<ITimeScopeWithBillType> bigList = mergeBillList(bills);
-		if(bigList==null||bigList.size()==0)
+		if (bigList == null || bigList.size() == 0)
 			return null;
-		return (ITimeScopeWithBillType[]) TimeScopeUtils.crossTimeScopes(bigList.toArray(new ITimeScopeWithBillType[0]));
+		return (ITimeScopeWithBillType[]) TimeScopeUtils
+				.crossTimeScopes(bigList.toArray(new ITimeScopeWithBillType[0]));
 	}
-	
+
 	/**
-	 * å°†æ‰€æœ‰å•æ®çš„æ—¶é—´æ®µå¹¶èµ·æ¥
+	 * ½«ËùÓĞµ¥¾İµÄÊ±¼ä¶Î²¢ÆğÀ´
+	 * 
 	 * @return
 	 */
-	public static ITimeScope[] mergeAllBills(ITimeScopeWithBillType[]... bills){
+	public static ITimeScope[] mergeAllBills(ITimeScopeWithBillType[]... bills) {
 		ITimeScopeWithBillType[] bigArray = mergeBillArray(bills);
-		if(bigArray==null||bigArray.length==0)
+		if (bigArray == null || bigArray.length == 0)
 			return bigArray;
 		return TimeScopeUtils.mergeTimeScopes(bigArray);
 	}
-	
+
 	/**
-	 * å°†æ‰€æœ‰å•æ®çš„æ•°ç»„åˆå¹¶æˆä¸€ä¸ªå¤§æ•°ç»„
+	 * ½«ËùÓĞµ¥¾İµÄÊı×éºÏ²¢³ÉÒ»¸ö´óÊı×é
+	 * 
 	 * @return
 	 */
-	public static ITimeScopeWithBillType[] mergeBillArray(ITimeScopeWithBillType[]... bills){
-		int argCount = bills==null?0:bills.length;
-		if(argCount==0)
+	public static ITimeScopeWithBillType[] mergeBillArray(ITimeScopeWithBillType[]... bills) {
+		int argCount = bills == null ? 0 : bills.length;
+		if (argCount == 0)
 			return null;
 		List<ITimeScopeWithBillType> retList = new ArrayList<ITimeScopeWithBillType>();
-		for(ITimeScopeWithBillType[] scopes:bills){
-			if(scopes==null||scopes.length==0)
+		for (ITimeScopeWithBillType[] scopes : bills) {
+			if (scopes == null || scopes.length == 0)
 				continue;
 			retList.addAll(Arrays.asList(scopes));
 		}
 		return retList.toArray(new ITimeScopeWithBillType[0]);
 	}
-	
+
 	/**
-	 * å°†æ‰€æœ‰å•æ®çš„æ•°ç»„åˆå¹¶æˆä¸€ä¸ªå¤§æ•°ç»„
+	 * ½«ËùÓĞµ¥¾İµÄÊı×éºÏ²¢³ÉÒ»¸ö´óÊı×é
+	 * 
 	 * @param bills
 	 * @return
 	 */
-	public static List<ITimeScopeWithBillType> mergeBillList(List<? extends ITimeScopeWithBillType>... bills){
-		int argCount = bills==null?0:bills.length;
-		if(argCount==0)
+	public static List<ITimeScopeWithBillType> mergeBillList(List<? extends ITimeScopeWithBillType>... bills) {
+		int argCount = bills == null ? 0 : bills.length;
+		if (argCount == 0)
 			return null;
 		List<ITimeScopeWithBillType> retList = new ArrayList<ITimeScopeWithBillType>();
-		for(List<? extends ITimeScopeWithBillType> scopes:bills){
-			if(scopes==null||scopes.size()==0)
+		for (List<? extends ITimeScopeWithBillType> scopes : bills) {
+			if (scopes == null || scopes.size() == 0)
 				continue;
 			retList.addAll(scopes);
 		}
 		return retList;
 	}
-	
+
 	/**
-	 * è®¡ç®—æ—¥æŠ¥æ—¶ï¼Œå¤„ç†æŸæ—¥çš„ä¼‘å‡ç±»åˆ«çš„æ—¶é•¿ã€‚ä¼ è¿›æ¥çš„å•æ®å·²ç»æ˜¯æ ¹æ®å†²çªè§„åˆ™è¿‡æ»¤äº†çš„å•æ®
-	 * workDayLengthæ˜¯å·¥ä½œæ—¥æ—¶é•¿ï¼Œåœ¨è€ƒå‹¤è§„åˆ™é‡Œé¢å®šä¹‰ï¼Œä¸€ä¸ªå·¥ä½œæ—¥ç­‰äºå‡ ä¸ªå°æ—¶
+	 * ¼ÆËãÈÕ±¨Ê±£¬´¦ÀíÄ³ÈÕµÄĞİ¼ÙÀà±ğµÄÊ±³¤¡£´«½øÀ´µÄµ¥¾İÒÑ¾­ÊÇ¸ù¾İ³åÍ»¹æÔò¹ıÂËÁËµÄµ¥¾İ
+	 * workDayLengthÊÇ¹¤×÷ÈÕÊ±³¤£¬ÔÚ¿¼ÇÚ¹æÔòÀïÃæ¶¨Òå£¬Ò»¸ö¹¤×÷ÈÕµÈÓÚ¼¸¸öĞ¡Ê±
+	 * 
 	 * @param timeItems
 	 * @param billList
 	 * @param curCalendar
@@ -146,125 +155,250 @@ public class BillProcessHelper {
 	 * @param nextCalendar
 	 * @param statbVOList
 	 */
-	public static void processLeaveLength(TimeItemCopyVO[] timeItems,List<ITimeScopeWithBillType> billList,
-			AggPsnCalendar curCalendar,
-			ShiftVO preShift,ShiftVO curShift,ShiftVO nextShift,
-			TimeZone preTimeZone,TimeZone curTimeZone,TimeZone nextTimeZone,
-			List<DayStatbVO> statbVOList,Map<String, String[]> datePeriodMap,Map<String, Object> paraMap,
-			String pk_daystat,TimeRuleVO timeRuleVO){
-		if(timeItems==null){//æ²¡æœ‰ç±»åˆ« è‡ªç„¶ä¹Ÿä¸ç”¨è®¡ç®—ä¼‘å‡
+	public static void processLeaveLength(TimeItemCopyVO[] timeItems, List<ITimeScopeWithBillType> billList,
+			AggPsnCalendar curCalendar, ShiftVO preShift, ShiftVO curShift, ShiftVO nextShift, TimeZone preTimeZone,
+			TimeZone curTimeZone, TimeZone nextTimeZone, List<DayStatbVO> statbVOList,
+			Map<String, String[]> datePeriodMap, Map<String, Object> paraMap, String pk_daystat, TimeRuleVO timeRuleVO) {
+		if (timeItems == null) {// Ã»ÓĞÀà±ğ ×ÔÈ»Ò²²»ÓÃ¼ÆËãĞİ¼Ù
 			return;
 		}
-		//å¦‚æœæ²¡æœ‰ä¼‘å‡å•ï¼Œåˆ™ä¸ç”¨å¤„ç†ï¼ˆä¹Ÿæœ‰ä¸€ç§å¯èƒ½ï¼Œé‚£å°±æ˜¯æœ‰ä¼‘å‡å•ï¼Œä½†æ˜¯å’Œå…¶ä»–å•æ®æœ‰æ—¶é—´å†²çªï¼Œä¸”æŒ‰ç…§å†²çªè§„åˆ™çš„å®šä¹‰ï¼Œè¿™ç§å†²çªä¸ç®—ä¼‘å‡ï¼‰
-		if(billList==null||billList.size()==0)
+		// Èç¹ûÃ»ÓĞĞİ¼Ùµ¥£¬Ôò²»ÓÃ´¦Àí£¨Ò²ÓĞÒ»ÖÖ¿ÉÄÜ£¬ÄÇ¾ÍÊÇÓĞĞİ¼Ùµ¥£¬µ«ÊÇºÍÆäËûµ¥¾İÓĞÊ±¼ä³åÍ»£¬ÇÒ°´ÕÕ³åÍ»¹æÔòµÄ¶¨Òå£¬ÕâÖÖ³åÍ»²»ËãĞİ¼Ù£©
+		if (billList == null || billList.size() == 0)
 			return;
-		if(curCalendar==null)
+		if (curCalendar == null)
 			return;
 		PsnCalendarVO psncalendarVO = curCalendar.getPsnCalendarVO();
-		//å¦‚æœæ­¤å¤©æ²¡æœ‰å·¥ä½œæ—¥å†ï¼Œæˆ–è€…æ˜¯ä¸è€ƒå‹¤çš„ï¼Œåˆ™ä¼‘å‡æ—¶é—´ä¸º0
-//		if(psncalendarVO==null||ShiftVO.PK_GX.equals(psncalendarVO.getPk_shift()))
-		//å…¬ä¼‘æ—¥å¯èƒ½ä¼šæœ‰è®°ä¸ºä¼‘å‡çš„æƒ…å†µ ä¾‹å¦‚äº§å‡ã€å©šå‡ç­‰
-		if(psncalendarVO==null)
+		// Èç¹û´ËÌìÃ»ÓĞ¹¤×÷ÈÕÀú£¬»òÕßÊÇ²»¿¼ÇÚµÄ£¬ÔòĞİ¼ÙÊ±¼äÎª0
+		// if(psncalendarVO==null||ShiftVO.PK_GX.equals(psncalendarVO.getPk_shift()))
+		// ¹«ĞİÈÕ¿ÉÄÜ»áÓĞ¼ÇÎªĞİ¼ÙµÄÇé¿ö ÀıÈç²ú¼Ù¡¢»é¼ÙµÈ
+		if (psncalendarVO == null)
 			return;
-		//å°†ä¼‘å‡çš„æ—¶é—´æ®µä¸å·¥ä½œæ—¶é—´æ®µç›¸äº¤
-		ITimeScope[] workScopes = getWorkTimeScopes(psncalendarVO.getCalendar().toString(), 
-				curCalendar, preShift, nextShift,
-				curTimeZone,preTimeZone,nextTimeZone);
-		ITimeScopeWithBillType[] intersectionScopes = TimeScopeUtils.intersectionTimeScopes
-			(billList.toArray(new ITimeScopeWithBillType[0]), workScopes,new ITimeScopeWithBillType[0]);
-		//å¦‚æœæ²¡æœ‰ç›¸äº¤çš„éƒ¨åˆ†åˆ™ä¸ç”¨å¤„ç†
-		if(intersectionScopes==null||intersectionScopes.length==0)
-			return;
-		//å–å‡ºå‚æ•°ï¼šå•æ®è·¨æœŸé—´æ—¶ï¼Œæ˜¯è®°åœ¨å„ä¸ªæœŸé—´ï¼Œè¿˜æ˜¯ç¬¬ä¸€ä¸ªæœŸé—´è®°åœ¨ç¬¬äºŒä¸ªæœŸé—´,0-åˆ†åˆ«è®°ï¼Œ1-ç¬¬ä¸€è®°åœ¨ç¬¬äºŒ
-		//ç”±äºå‡ºå·®å’Œä¼‘å‡éƒ½æœ‰å¯èƒ½è°ƒç”¨æ­¤æ–¹æ³•ï¼Œå› æ­¤ä¸¤ç§æƒ…å†µå–ä¸åŒçš„å‚æ•°
+		// ½«Ğİ¼ÙµÄÊ±¼ä¶ÎÓë¹¤×÷Ê±¼ä¶ÎÏà½»
+		ITimeScope[] workScopes = getWorkTimeScopes(psncalendarVO.getCalendar().toString(), curCalendar, preShift,
+				nextShift, curTimeZone, preTimeZone, nextTimeZone);
+		ITimeScopeWithBillType[] intersectionScopes = TimeScopeUtils.intersectionTimeScopes(
+				billList.toArray(new ITimeScopeWithBillType[0]), workScopes, new ITimeScopeWithBillType[0]);
+		// Èç¹ûÃ»ÓĞÏà½»µÄ²¿·ÖÔò²»ÓÃ´¦Àí
+		// if (intersectionScopes == null || intersectionScopes.length == 0)
+		// return;
+		// È¡³ö²ÎÊı£ºµ¥¾İ¿çÆÚ¼äÊ±£¬ÊÇ¼ÇÔÚ¸÷¸öÆÚ¼ä£¬»¹ÊÇµÚÒ»¸öÆÚ¼ä¼ÇÔÚµÚ¶ş¸öÆÚ¼ä,0-·Ö±ğ¼Ç£¬1-µÚÒ»¼ÇÔÚµÚ¶ş
+		// ÓÉÓÚ³ö²îºÍĞİ¼Ù¶¼ÓĞ¿ÉÄÜµ÷ÓÃ´Ë·½·¨£¬Òò´ËÁ½ÖÖÇé¿öÈ¡²»Í¬µÄ²ÎÊı
 		Integer periodPara = null;
-		if(timeItems[0] instanceof LeaveTypeCopyVO)
-//			periodPara = (Integer)paraMap.get(LeaveConst.OVERPERIOD_PARAM);
+		if (timeItems[0] instanceof LeaveTypeCopyVO)
+			// periodPara = (Integer)paraMap.get(LeaveConst.OVERPERIOD_PARAM);
 			periodPara = timeRuleVO.getLevaeovperprtype();
 		else
-//			periodPara = (Integer)paraMap.get(AwayConst.PARA_AWAY_OVERPERIOD);
+			// periodPara =
+			// (Integer)paraMap.get(AwayConst.PARA_AWAY_OVERPERIOD);
 			periodPara = timeRuleVO.getAwayovperprtype();
-		if(periodPara==null)//é»˜è®¤åˆ†åˆ«è®°
-			periodPara=0;
-		for(TimeItemCopyVO item:timeItems){
-			//è¿™ç§ä¼‘å‡ç±»åˆ«è¿™å¤©çš„ä¼‘å‡æ—¶é•¿
-			TimeLengthWrapper result = calLeaveLength(item,intersectionScopes,curCalendar,curShift,timeRuleVO);
-			//å¤„ç†æœŸé—´
-			String calcPeirod = null;
-			if(periodPara==1){//å¦‚æœæ˜¯ç¬¬ä¸€æœŸé—´è®°åœ¨ç¬¬äºŒæœŸé—´
-				calcPeirod = queryCalcPeriod(curCalendar.getPsnCalendarVO().getCalendar().toString(),intersectionScopes,datePeriodMap,item.getPk_timeitem());
+		if (periodPara == null)// Ä¬ÈÏ·Ö±ğ¼Ç
+			periodPara = 0;
+		for (TimeItemCopyVO item : timeItems) {
+			// ÕâÖÖĞİ¼ÙÀà±ğÕâÌìµÄĞİ¼ÙÊ±³¤
+			// ssx modified on 2019-10-16
+			// †¢³ŒëHĞİ¼Ù•réL²»ĞèÒªÖØĞÂÓ‹Ëã£¬Ö»ĞèÒªÖ±½ÓÈ¡†Î“şÉÏµÄleavehours
+			// TimeLengthWrapper result =
+			// calLeaveLength(item,intersectionScopes,curCalendar,curShift,timeRuleVO);
+			TimeLengthWrapper result = null;
+			try {
+				result = calLeaveLength4WNC(item, billList, curCalendar, timeRuleVO);
+
+				// ´¦ÀíÆÚ¼ä
+				String calcPeirod = null;
+				if (periodPara == 1) {// Èç¹ûÊÇµÚÒ»ÆÚ¼ä¼ÇÔÚµÚ¶şÆÚ¼ä
+					calcPeirod = queryCalcPeriod(curCalendar.getPsnCalendarVO().getCalendar().toString(),
+							intersectionScopes, datePeriodMap, item.getPk_timeitem());
+				}
+				createDaystatbVO(pk_daystat, item.getPk_timeitem(), result.originalLength, result.processedLength,
+						result.originalLengthUseHour, result.processedLengthUseHour, result.toRestHour, statbVOList, 1,
+						calcPeirod, item.getTimeItemUnit());
+			} catch (BusinessException e) {
+				Logger.error(e.getMessage());
 			}
-			createDaystatbVO(pk_daystat,item.getPk_timeitem(), result.originalLength,result.processedLength,
-					result.originalLengthUseHour,result.processedLengthUseHour,result.toRestHour,
-					statbVOList,1,calcPeirod,item.getTimeItemUnit());
 		}
 	}
-	
-	
-	
-	public static void processLeaveLengthApproveCurrentMonth(TimeItemCopyVO[] timeItems,ITimeScopeWithBillType[] billList,
-			AggPsnCalendar curCalendar,
-			ShiftVO preShift,ShiftVO curShift,ShiftVO nextShift,
-			TimeZone preTimeZone,TimeZone curTimeZone,TimeZone nextTimeZone,
-			List<DaystatbNotCurrmonthVO> statbVOList,Map<String, String[]> datePeriodMap,Map<String, Object> paraMap,
-			String pk_daystat,TimeRuleVO timeRuleVO, LeaveRegVO vo, UFLiteralDate approve_date, UFLiteralDate calendar){
-		if(timeItems==null){//æ²¡æœ‰ç±»åˆ« è‡ªç„¶ä¹Ÿä¸ç”¨è®¡ç®—ä¼‘å‡
+
+	private static TimeLengthWrapper calLeaveLength4WNC(TimeItemCopyVO leaveItem,
+			List<ITimeScopeWithBillType> billList, AggPsnCalendar curCalendar, TimeRuleVO timeRuleVO)
+			throws BusinessException {
+		TimeLengthWrapper length = new TimeLengthWrapper();
+
+		UFDouble totalHours = UFDouble.ZERO_DBL;
+		for (ITimeScopeWithBillType bill : billList) {
+			if (bill instanceof LeaveRegVO) {
+				totalHours = getTotalHours(leaveItem, curCalendar, totalHours, bill);
+			} else if (bill.getOriginalTimeScopeMap() != null && bill.getOriginalTimeScopeMap().size() > 0) {
+				for (Entry<String, ITimeScopeWithBillType> leaveReg : bill.getOriginalTimeScopeMap().entrySet()) {
+					if (leaveReg.getValue() instanceof LeaveRegVO) {
+						totalHours = getTotalHours(leaveItem, curCalendar, totalHours, leaveReg.getValue());
+					}
+				}
+			}
+		}
+
+		length.originalLength = totalHours.doubleValue();
+		double hours = totalHours.doubleValue();
+		length.processedLength = hours;
+		length.originalLengthUseHour = length.originalLength;
+		length.processedLengthUseHour = length.processedLength;
+		return length;
+
+	}
+
+	public static UFDouble getTotalHours(TimeItemCopyVO leaveItem, AggPsnCalendar curCalendar, UFDouble totalHours,
+			ITimeScopeWithBillType bill) throws BusinessException {
+		String pk_leavetypecopy = ((LeaveRegVO) bill).getPk_leavetypecopy();
+		if (leaveItem.getPk_timeitemcopy().equals(pk_leavetypecopy)) {
+			if (curCalendar.getDate().isSameDate(getShiftRegDateByLeave(((LeaveRegVO) bill)))) {
+				UFDouble hours = ((LeaveRegVO) bill).getLeavehour();
+				totalHours = totalHours.add(hours);
+			}
+		}
+		return totalHours;
+	}
+
+	/**
+	 * ¸ù“ş¼Ó°àºË¶¨é_Ê¼ÈÕÆÚ²éÔƒ¼Ó°àŒëHšwŒÙ°à´ÎµÄËùŒÙÈÕÆÚ
+	 * 
+	 * @param vo
+	 *            ¼Ó°àµÇÓ›†Î
+	 * @return
+	 * @throws BusinessException
+	 */
+	@SuppressWarnings("unchecked")
+	public static UFLiteralDate getShiftRegDateByOvertime(OvertimeCommonVO vo) throws BusinessException {
+		UFLiteralDate rtnDate = vo.getBegindate();
+		if(vo instanceof OvertimeRegVO){
+		    UFLiteralDate vestDate = ((OvertimeRegVO)vo).getVestdate();
+			if (vestDate != null) {
+				return vestDate;
+			}
+		}
+		IUAPQueryBS qrySvc = NCLocator.getInstance().lookup(IUAPQueryBS.class);
+
+		Collection<PsnCalendarVO> psncals = qrySvc.retrieveByClause(PsnCalendarVO.class,
+				"pk_psndoc='" + vo.getPk_psndoc() + "' and calendar between '"
+						+ vo.getOvertimebegindate().getDateBefore(3) + "' and '"
+						+ vo.getOvertimebegindate().getDateAfter(3) + "'");
+		if (psncals != null && psncals.size() > 0) {
+			for (PsnCalendarVO psncal : psncals) {
+				if (psncal.getPk_shift() != null) {
+					ShiftVO shiftvo = (ShiftVO) qrySvc.retrieveByPK(ShiftVO.class, psncal.getPk_shift());
+					if (shiftvo != null) {
+						// mod start tank 2019Äê8ÔÂ21ÈÕ17:04:24 Ç°Ò»ÈÕ,ááÒ»ÈÕĞŞÍ
+						UFDateTime startDT = new UFDateTime(psncal.getCalendar()
+								.getDateAfter(shiftvo.getTimebeginday()).toString()
+								+ " " + shiftvo.getTimebegintime());
+
+						UFDateTime endDT = new UFDateTime(psncal.getCalendar().getDateAfter(shiftvo.getTimeendday())
+								.toString()
+								+ " " + shiftvo.getTimeendtime());
+						// end mod
+						if (vo.getOvertimebegintime().before(endDT) && vo.getOvertimebegintime().after(startDT)) {
+							rtnDate = psncal.getCalendar();
+						}
+					}
+				}
+			}
+		}
+		return rtnDate;
+	}
+
+	@SuppressWarnings("unchecked")
+	public static UFLiteralDate getShiftRegDateByLeave(LeaveRegVO vo) throws BusinessException {
+		UFLiteralDate rtnDate = vo.getBegindate();
+
+		IUAPQueryBS qrySvc = NCLocator.getInstance().lookup(IUAPQueryBS.class);
+
+		Collection<PsnCalendarVO> psncals = qrySvc.retrieveByClause(PsnCalendarVO.class,
+				"pk_psndoc='" + vo.getPk_psndoc() + "' and calendar between '"
+						+ vo.getLeavebegindate().getDateBefore(3) + "' and '" + vo.getLeavebegindate().getDateAfter(3)
+						+ "'");
+		if (psncals != null && psncals.size() > 0) {
+			for (PsnCalendarVO psncal : psncals) {
+				if (psncal.getPk_shift() != null) {
+					ShiftVO shiftvo = (ShiftVO) qrySvc.retrieveByPK(ShiftVO.class, psncal.getPk_shift());
+					if (shiftvo != null) {
+						// mod start tank 2019Äê8ÔÂ21ÈÕ17:04:24 Ç°Ò»ÈÕ,ááÒ»ÈÕĞŞÍ
+						UFDateTime startDT = new UFDateTime(psncal.getCalendar()
+								.getDateAfter(shiftvo.getTimebeginday()).toString()
+								+ " " + shiftvo.getTimebegintime());
+
+						UFDateTime endDT = new UFDateTime(psncal.getCalendar().getDateAfter(shiftvo.getTimeendday())
+								.toString()
+								+ " " + shiftvo.getTimeendtime());
+						// end mod
+						if (vo.getLeavebegintime().before(endDT) && vo.getLeavebegintime().after(startDT)) {
+							rtnDate = psncal.getCalendar();
+						}
+					}
+				}
+			}
+		}
+		return rtnDate;
+	}
+
+	public static void processLeaveLengthApproveCurrentMonth(TimeItemCopyVO[] timeItems,
+			ITimeScopeWithBillType[] billList, AggPsnCalendar curCalendar, ShiftVO preShift, ShiftVO curShift,
+			ShiftVO nextShift, TimeZone preTimeZone, TimeZone curTimeZone, TimeZone nextTimeZone,
+			List<DaystatbNotCurrmonthVO> statbVOList, Map<String, String[]> datePeriodMap, Map<String, Object> paraMap,
+			String pk_daystat, TimeRuleVO timeRuleVO, LeaveRegVO vo, UFLiteralDate approve_date, UFLiteralDate calendar) {
+		if (timeItems == null) {// Ã»ÓĞÀà±ğ ×ÔÈ»Ò²²»ÓÃ¼ÆËãĞİ¼Ù
 			return;
 		}
-		//å¦‚æœæ²¡æœ‰ä¼‘å‡å•ï¼Œåˆ™ä¸ç”¨å¤„ç†ï¼ˆä¹Ÿæœ‰ä¸€ç§å¯èƒ½ï¼Œé‚£å°±æ˜¯æœ‰ä¼‘å‡å•ï¼Œä½†æ˜¯å’Œå…¶ä»–å•æ®æœ‰æ—¶é—´å†²çªï¼Œä¸”æŒ‰ç…§å†²çªè§„åˆ™çš„å®šä¹‰ï¼Œè¿™ç§å†²çªä¸ç®—ä¼‘å‡ï¼‰
-		if(billList==null||billList.length==0)
+		// Èç¹ûÃ»ÓĞĞİ¼Ùµ¥£¬Ôò²»ÓÃ´¦Àí£¨Ò²ÓĞÒ»ÖÖ¿ÉÄÜ£¬ÄÇ¾ÍÊÇÓĞĞİ¼Ùµ¥£¬µ«ÊÇºÍÆäËûµ¥¾İÓĞÊ±¼ä³åÍ»£¬ÇÒ°´ÕÕ³åÍ»¹æÔòµÄ¶¨Òå£¬ÕâÖÖ³åÍ»²»ËãĞİ¼Ù£©
+		if (billList == null || billList.length == 0)
 			return;
-		if(curCalendar==null)
+		if (curCalendar == null)
 			return;
 		PsnCalendarVO psncalendarVO = curCalendar.getPsnCalendarVO();
-		//å¦‚æœæ­¤å¤©æ²¡æœ‰å·¥ä½œæ—¥å†ï¼Œæˆ–è€…æ˜¯ä¸è€ƒå‹¤çš„ï¼Œåˆ™ä¼‘å‡æ—¶é—´ä¸º0
-//		if(psncalendarVO==null||ShiftVO.PK_GX.equals(psncalendarVO.getPk_shift()))
-		//å…¬ä¼‘æ—¥å¯èƒ½ä¼šæœ‰è®°ä¸ºä¼‘å‡çš„æƒ…å†µ ä¾‹å¦‚äº§å‡ã€å©šå‡ç­‰
-		if(psncalendarVO==null)
+		// Èç¹û´ËÌìÃ»ÓĞ¹¤×÷ÈÕÀú£¬»òÕßÊÇ²»¿¼ÇÚµÄ£¬ÔòĞİ¼ÙÊ±¼äÎª0
+		// if(psncalendarVO==null||ShiftVO.PK_GX.equals(psncalendarVO.getPk_shift()))
+		// ¹«ĞİÈÕ¿ÉÄÜ»áÓĞ¼ÇÎªĞİ¼ÙµÄÇé¿ö ÀıÈç²ú¼Ù¡¢»é¼ÙµÈ
+		if (psncalendarVO == null)
 			return;
-		//å°†ä¼‘å‡çš„æ—¶é—´æ®µä¸å·¥ä½œæ—¶é—´æ®µç›¸äº¤
-		ITimeScope[] workScopes = getWorkTimeScopes(psncalendarVO.getCalendar().toString(), 
-				curCalendar, preShift, nextShift,
-				curTimeZone,preTimeZone,nextTimeZone);
-		ITimeScopeWithBillType[] intersectionScopes = TimeScopeUtils.intersectionTimeScopes
-			(billList, workScopes,new ITimeScopeWithBillType[0]);
-		//å¦‚æœæ²¡æœ‰ç›¸äº¤çš„éƒ¨åˆ†åˆ™ä¸ç”¨å¤„ç†
-		if(intersectionScopes==null||intersectionScopes.length==0)
+		// ½«Ğİ¼ÙµÄÊ±¼ä¶ÎÓë¹¤×÷Ê±¼ä¶ÎÏà½»
+		ITimeScope[] workScopes = getWorkTimeScopes(psncalendarVO.getCalendar().toString(), curCalendar, preShift,
+				nextShift, curTimeZone, preTimeZone, nextTimeZone);
+		ITimeScopeWithBillType[] intersectionScopes = TimeScopeUtils.intersectionTimeScopes(billList, workScopes,
+				new ITimeScopeWithBillType[0]);
+		// Èç¹ûÃ»ÓĞÏà½»µÄ²¿·ÖÔò²»ÓÃ´¦Àí
+		if (intersectionScopes == null || intersectionScopes.length == 0)
 			return;
-		//å–å‡ºå‚æ•°ï¼šå•æ®è·¨æœŸé—´æ—¶ï¼Œæ˜¯è®°åœ¨å„ä¸ªæœŸé—´ï¼Œè¿˜æ˜¯ç¬¬ä¸€ä¸ªæœŸé—´è®°åœ¨ç¬¬äºŒä¸ªæœŸé—´,0-åˆ†åˆ«è®°ï¼Œ1-ç¬¬ä¸€è®°åœ¨ç¬¬äºŒ
-		//ç”±äºå‡ºå·®å’Œä¼‘å‡éƒ½æœ‰å¯èƒ½è°ƒç”¨æ­¤æ–¹æ³•ï¼Œå› æ­¤ä¸¤ç§æƒ…å†µå–ä¸åŒçš„å‚æ•°
+		// È¡³ö²ÎÊı£ºµ¥¾İ¿çÆÚ¼äÊ±£¬ÊÇ¼ÇÔÚ¸÷¸öÆÚ¼ä£¬»¹ÊÇµÚÒ»¸öÆÚ¼ä¼ÇÔÚµÚ¶ş¸öÆÚ¼ä,0-·Ö±ğ¼Ç£¬1-µÚÒ»¼ÇÔÚµÚ¶ş
+		// ÓÉÓÚ³ö²îºÍĞİ¼Ù¶¼ÓĞ¿ÉÄÜµ÷ÓÃ´Ë·½·¨£¬Òò´ËÁ½ÖÖÇé¿öÈ¡²»Í¬µÄ²ÎÊı
 		Integer periodPara = null;
-		if(timeItems[0] instanceof LeaveTypeCopyVO)
+		if (timeItems[0] instanceof LeaveTypeCopyVO)
 			periodPara = timeRuleVO.getLevaeovperprtype();
-		
-		if(periodPara==null)//é»˜è®¤åˆ†åˆ«è®°
-			periodPara=0;
-		for(TimeItemCopyVO item:timeItems){
-			if(!item.getPk_timeitem().equals(vo.getPk_leavetype()))
-			{
+
+		if (periodPara == null)// Ä¬ÈÏ·Ö±ğ¼Ç
+			periodPara = 0;
+		for (TimeItemCopyVO item : timeItems) {
+			if (!item.getPk_timeitem().equals(vo.getPk_leavetype())) {
 				continue;
 			}
-			//è¿™ç§ä¼‘å‡ç±»åˆ«è¿™å¤©çš„ä¼‘å‡æ—¶é•¿
-			TimeLengthWrapper result = calLeaveLength(item,intersectionScopes,curCalendar,curShift,timeRuleVO);
-			//å¤„ç†æœŸé—´
+			// ÕâÖÖĞİ¼ÙÀà±ğÕâÌìµÄĞİ¼ÙÊ±³¤
+			TimeLengthWrapper result = calLeaveLength(item, intersectionScopes, curCalendar, curShift, timeRuleVO);
+			// ´¦ÀíÆÚ¼ä
 			String calcPeirod = null;
-			if(periodPara==1){//å¦‚æœæ˜¯ç¬¬ä¸€æœŸé—´è®°åœ¨ç¬¬äºŒæœŸé—´
-				calcPeirod = queryCalcPeriod(curCalendar.getPsnCalendarVO().getCalendar().toString(),intersectionScopes,datePeriodMap,item.getPk_timeitem());
+			if (periodPara == 1) {// Èç¹ûÊÇµÚÒ»ÆÚ¼ä¼ÇÔÚµÚ¶şÆÚ¼ä
+				calcPeirod = queryCalcPeriod(curCalendar.getPsnCalendarVO().getCalendar().toString(),
+						intersectionScopes, datePeriodMap, item.getPk_timeitem());
 			}
-			if(result.processedLength>0){
-				createDaystatbNotCurrentMonthVO(pk_daystat,item.getPk_timeitem(), result.originalLength,result.processedLength,
-						result.originalLengthUseHour,result.processedLengthUseHour,result.toRestHour,
-						statbVOList,1,calcPeirod,item.getTimeItemUnit(),vo, approve_date, calendar);
+			if (result.processedLength > 0) {
+				createDaystatbNotCurrentMonthVO(pk_daystat, item.getPk_timeitem(), result.originalLength,
+						result.processedLength, result.originalLengthUseHour, result.processedLengthUseHour,
+						result.toRestHour, statbVOList, 1, calcPeirod, item.getTimeItemUnit(), vo, approve_date,
+						calendar);
 			}
 		}
 	}
-	
-	private static void createDaystatbNotCurrentMonthVO(String pk_daystat,String pk_timeitem,
-			double originalVal,double processedVal,
-			double originalValUseHour,double processedValUseHour,
-			double toRestHour, List<DaystatbNotCurrmonthVO> statbNotCurrMonthVOList,
-			int type,String calPeriod,int timeitemUnit, LeaveRegVO leaveRegVO, UFLiteralDate approve_date, UFLiteralDate calendar){
-		if(Math.abs(originalVal-0)>0.0001||Math.abs(processedVal-0)>0.0001){
+
+	private static void createDaystatbNotCurrentMonthVO(String pk_daystat, String pk_timeitem, double originalVal,
+			double processedVal, double originalValUseHour, double processedValUseHour, double toRestHour,
+			List<DaystatbNotCurrmonthVO> statbNotCurrMonthVOList, int type, String calPeriod, int timeitemUnit,
+			LeaveRegVO leaveRegVO, UFLiteralDate approve_date, UFLiteralDate calendar) {
+		if (Math.abs(originalVal - 0) > 0.0001 || Math.abs(processedVal - 0) > 0.0001) {
 			DaystatbNotCurrmonthVO vo = new DaystatbNotCurrmonthVO();
 			vo.setDr(Integer.valueOf(0));
 			vo.setApprove_date(approve_date);
@@ -279,333 +413,364 @@ public class BillProcessHelper {
 			statbNotCurrMonthVOList.add(vo);
 		}
 	}
-	
-	private static String queryCalcPeriod(String curDate,ITimeScopeWithBillType[] intersectionScopes,Map<String, String[]> datePeriodMap,String pk_timeitem){
+
+	private static String queryCalcPeriod(String curDate, ITimeScopeWithBillType[] intersectionScopes,
+			Map<String, String[]> datePeriodMap, String pk_timeitem) {
 		String calcPeirod = null;
-		for(ITimeScopeWithBillType bill:intersectionScopes){
+		for (ITimeScopeWithBillType bill : intersectionScopes) {
 			IDateScopeBillBodyVO originalBill = (IDateScopeBillBodyVO) bill.getOriginalTimeScopeMap().get(pk_timeitem);
-			if(originalBill==null)
+			if (originalBill == null)
 				continue;
 			UFLiteralDate beginDate = originalBill.getBegindate();
 			String[] beginPeriods = datePeriodMap.get(beginDate.toString());
-			String beginPeriod = beginPeriods==null?null:beginPeriods[0];
+			String beginPeriod = beginPeriods == null ? null : beginPeriods[0];
 			UFLiteralDate endDate = originalBill.getEnddate();
 			String[] endPeriods = datePeriodMap.get(endDate.toString());
-			String endPeriod = endPeriods==null?null:endPeriods[0];
-			//å¼€å§‹æ—¥å’Œç»“æŸæ—¥æ— æœŸé—´ï¼Œæˆ–è€…å¼€å§‹æ—¥å’Œç»“æŸæ—¥åœ¨åŒä¸€ä¸ªæœŸé—´ï¼Œcontinue
-			if(beginPeriod==null||endPeriod==null||beginPeriod.equals(endPeriod))
+			String endPeriod = endPeriods == null ? null : endPeriods[0];
+			// ¿ªÊ¼ÈÕºÍ½áÊøÈÕÎŞÆÚ¼ä£¬»òÕß¿ªÊ¼ÈÕºÍ½áÊøÈÕÔÚÍ¬Ò»¸öÆÚ¼ä£¬continue
+			if (beginPeriod == null || endPeriod == null || beginPeriod.equals(endPeriod))
 				continue;
-			//å¼€å§‹æ—¥å’Œç»“æŸæ—¥ä¸åœ¨åŒä¸€ä¸ªæœŸé—´ï¼Œåˆ™è¦å¤„ç†
-			//å¦‚æœå½“å‰æ—¥å’Œç»“æŸæ—¥å±äºåŒä¸€ä¸ªæœŸé—´ï¼Œåˆ™continue
+			// ¿ªÊ¼ÈÕºÍ½áÊøÈÕ²»ÔÚÍ¬Ò»¸öÆÚ¼ä£¬ÔòÒª´¦Àí
+			// Èç¹ûµ±Ç°ÈÕºÍ½áÊøÈÕÊôÓÚÍ¬Ò»¸öÆÚ¼ä£¬Ôòcontinue
 			String[] curDatePeriods = datePeriodMap.get(curDate);
-			if(curDatePeriods==null||curDatePeriods[0]==null||endPeriod.equals(curDatePeriods[0]))
+			if (curDatePeriods == null || curDatePeriods[0] == null || endPeriod.equals(curDatePeriods[0]))
 				continue;
-			//å¦‚æœå½“å‰æ—¥å’Œç»“æŸæ—¥ä¸å±äºåŒä¸€ä¸ªæœŸé—´ï¼Œåˆ™è¿”å›å½“å‰æ—¥æ‰€å±æœŸé—´çš„ä¸‹ä¸€ä¸ªæœŸé—´
+			// Èç¹ûµ±Ç°ÈÕºÍ½áÊøÈÕ²»ÊôÓÚÍ¬Ò»¸öÆÚ¼ä£¬Ôò·µ»Øµ±Ç°ÈÕËùÊôÆÚ¼äµÄÏÂÒ»¸öÆÚ¼ä
 			calcPeirod = curDatePeriods[1];
 		}
 		return calcPeirod;
 	}
-	
+
 	/**
-	 * è®¡ç®—æŸä¸ªä¼‘å‡ç±»åˆ«çš„æ—¥æŠ¥æ—¶é•¿ï¼ŒcurCalendaræ˜¯å½“å‰è®¡ç®—æ—¥çš„ç­æ¬¡ï¼ŒlastCalendaræ˜¯è®¡ç®—æ—¥å‰ä¸€æ—¥çš„ç­æ¬¡ï¼ŒnextCalendaræ˜¯è®¡ç®—æ—¥åä¸€æ—¥çš„ç­æ¬¡
-	 * è¿”å›çš„æ˜¯å°æ—¶æ•°æˆ–è€…å¤©æ•°ï¼Œå¯ä»¥ç›´æ¥å†™å…¥æ•°æ®åº“ï¼Œä¸ç”¨åšå¦å¤–çš„è½¬æ¢
+	 * ¼ÆËãÄ³¸öĞİ¼ÙÀà±ğµÄÈÕ±¨Ê±³¤£¬curCalendarÊÇµ±Ç°¼ÆËãÈÕµÄ°à´Î£¬lastCalendarÊÇ¼ÆËãÈÕÇ°Ò»ÈÕµÄ°à´Î£¬
+	 * nextCalendarÊÇ¼ÆËãÈÕºóÒ»ÈÕµÄ°à´Î ·µ»ØµÄÊÇĞ¡Ê±Êı»òÕßÌìÊı£¬¿ÉÒÔÖ±½ÓĞ´ÈëÊı¾İ¿â£¬²»ÓÃ×öÁíÍâµÄ×ª»»
+	 * 
 	 * @param leaveItem
-	 * @param processedBills,æ‰€æœ‰çš„åŠ ç­å•ã€å‡ºå·®å•ã€ä¼‘å‡å•ã€åœå·¥å•ç»è¿‡äº¤åˆ‡ä¹‹åçš„ç»“æœ,å·²ç»ä¸å·¥ä½œæ—¶é—´æ®µäº¤è¿‡
+	 * @param processedBills
+	 *            ,ËùÓĞµÄ¼Ó°àµ¥¡¢³ö²îµ¥¡¢Ğİ¼Ùµ¥¡¢Í£¹¤µ¥¾­¹ı½»ÇĞÖ®ºóµÄ½á¹û,ÒÑ¾­Óë¹¤×÷Ê±¼ä¶Î½»¹ı
 	 * @param curCalendar
 	 * @param lastCalendar
 	 * @param nextCalendar
 	 * @return
 	 */
-	public static TimeLengthWrapper calLeaveLength(TimeItemCopyVO leaveItem,ITimeScopeWithBillType[] intersectionScopes,
-			AggPsnCalendar curCalendar,ShiftVO curShift,TimeRuleVO timeRuleVO){
-		//added by zengcheng 2009.01.08,å¯¹äºæ²¡æœ‰æ’ç­çš„æƒ…å†µï¼Œæš‚æ—¶å¤„ç†ä¸ºä¸è®¡ä¼‘å‡ï¼Œè¿”å›0å³å¯
-		if(curCalendar==null)
+	public static TimeLengthWrapper calLeaveLength(TimeItemCopyVO leaveItem,
+			ITimeScopeWithBillType[] intersectionScopes, AggPsnCalendar curCalendar, ShiftVO curShift,
+			TimeRuleVO timeRuleVO) {
+		// added by zengcheng 2009.01.08,¶ÔÓÚÃ»ÓĞÅÅ°àµÄÇé¿ö£¬ÔİÊ±´¦ÀíÎª²»¼ÆĞİ¼Ù£¬·µ»Ø0¼´¿É
+		if (curCalendar == null)
 			return TimeLengthWrapper.getZeroTimeLength();
-		int gxComType = leaveItem.getGxcomtype()==null?0:leaveItem.getGxcomtype().intValue();//0å…¬ä¼‘ä¸è®¡ï¼Œ1å…¬ä¼‘è®¡
-		//å¦‚æœæ˜¯å…¬ä¼‘ä¸”å…¬ä¼‘ä¸è®¡ä¼‘å‡åˆ™ç›´æ¥è¿”å›0
+		int gxComType = leaveItem.getGxcomtype() == null ? 0 : leaveItem.getGxcomtype().intValue();// 0¹«Ğİ²»¼Æ£¬1¹«Ğİ¼Æ
+		// Èç¹ûÊÇ¹«ĞİÇÒ¹«Ğİ²»¼ÆĞİ¼ÙÔòÖ±½Ó·µ»Ø0
 		boolean isGx = ShiftVO.PK_GX.equals(curCalendar.getPsnCalendarVO().getPk_shift());
-		if(isGx&&gxComType==0)
+		if (isGx && gxComType == 0)
 			return TimeLengthWrapper.getZeroTimeLength();
-		String itemPk = leaveItem.getPk_timeitem();//é¡¹ç›®ä¸»é”®
-		//è¿‡æ»¤å‡ºè¿™ç§ç±»å‹ï¼ˆæ¯”å¦‚äº‹å‡ï¼‰çš„æ—¶é—´æ®µ
+		String itemPk = leaveItem.getPk_timeitem();// ÏîÄ¿Ö÷¼ü
+		// ¹ıÂË³öÕâÖÖÀàĞÍ£¨±ÈÈçÊÂ¼Ù£©µÄÊ±¼ä¶Î
 		ITimeScopeWithBillType[] filteredScopes = TimeScopeUtils.filterByItemPK(itemPk, intersectionScopes);
-		if(filteredScopes==null||filteredScopes.length==0)
+		if (filteredScopes == null || filteredScopes.length == 0)
 			return TimeLengthWrapper.getZeroTimeLength();
-		int timeitemUnit = leaveItem.getTimeitemunit()==null?TimeItemCopyVO.TIMEITEMUNIT_HOUR:leaveItem.getTimeitemunit().intValue();//2æ˜¯æŒ‰å°æ—¶è®¡ç®—ï¼Œ1æ˜¯æŒ‰å¤©
-		//å¦‚æœæ˜¯æŒ‰å°æ—¶è®¡ç®—ï¼Œåˆ™å¾ˆç®€å•ï¼Œç›´æ¥æŠŠç§’æ•°é™¤ä»¥3600å³å¯ï¼ˆå¯¹äºå…¬ä¼‘åšäº†é™åˆ¶ï¼Œå…¬ä¼‘çš„ä¼‘å‡æ—¶é•¿ä¸èƒ½è¶…è¿‡è€ƒå‹¤è§„åˆ™å®šä¹‰çš„å·¥ä½œæ—¥æ—¶é•¿ï¼‰
-		//æœ€ç»ˆçš„ä¼‘å‡æ—¶é•¿ç­‰äºä¼‘å‡æ—¶é—´æ®µä¸å·¥ä½œæ—¶é—´æ®µçš„äº¤é›†çš„æ—¶é•¿å‡å»ä¼‘æ¯æ—¶é•¿
+		int timeitemUnit = leaveItem.getTimeitemunit() == null ? TimeItemCopyVO.TIMEITEMUNIT_HOUR : leaveItem
+				.getTimeitemunit().intValue();// 2ÊÇ°´Ğ¡Ê±¼ÆËã£¬1ÊÇ°´Ìì
+		// Èç¹ûÊÇ°´Ğ¡Ê±¼ÆËã£¬ÔòºÜ¼òµ¥£¬Ö±½Ó°ÑÃëÊı³ıÒÔ3600¼´¿É£¨¶ÔÓÚ¹«Ğİ×öÁËÏŞÖÆ£¬¹«ĞİµÄĞİ¼ÙÊ±³¤²»ÄÜ³¬¹ı¿¼ÇÚ¹æÔò¶¨ÒåµÄ¹¤×÷ÈÕÊ±³¤£©
+		// ×îÖÕµÄĞİ¼ÙÊ±³¤µÈÓÚĞİ¼ÙÊ±¼ä¶ÎÓë¹¤×÷Ê±¼ä¶ÎµÄ½»¼¯µÄÊ±³¤¼õÈ¥ĞİÏ¢Ê±³¤
 		long seconds = TimeScopeUtils.getLength(filteredScopes);
-		if(seconds==0)
+		if (seconds == 0)
 			return TimeLengthWrapper.getZeroTimeLength();
 		TimeLengthWrapper length = new TimeLengthWrapper();
-		//æœ€å°æ—¶é—´å•ä½-å¯¹äºä»¥å°æ—¶è®¡çš„åŠ ç­ç±»åˆ«ï¼Œå•ä½æ˜¯åˆ†é’Ÿï¼›å¯¹äºä»¥å¤©è®¡çš„åŠ ç­ç±»åˆ«ï¼Œå•ä½æ˜¯å¤©
-		double timeUnit = leaveItem.getTimeunit()==null?0:leaveItem.getTimeunit().doubleValue();
+		// ×îĞ¡Ê±¼äµ¥Î»-¶ÔÓÚÒÔĞ¡Ê±¼ÆµÄ¼Ó°àÀà±ğ£¬µ¥Î»ÊÇ·ÖÖÓ£»¶ÔÓÚÒÔÌì¼ÆµÄ¼Ó°àÀà±ğ£¬µ¥Î»ÊÇÌì
+		double timeUnit = leaveItem.getTimeunit() == null ? 0 : leaveItem.getTimeunit().doubleValue();
 		double workDayLength = timeRuleVO.getDaytohour2();
-		//å–æ•´è§„åˆ™ï¼Œ0å‘ä¸Šï¼Œ1å‘ä¸‹ï¼Œ2å››èˆäº”å…¥ï¼Œé»˜è®¤1ï¼›
-		int roundMode = leaveItem.getRoundmode()==null?1:leaveItem.getRoundmode().intValue();
-		//æŒ‰å°æ—¶è®¡ç®—
-		if(timeitemUnit==TimeItemCopyVO.TIMEITEMUNIT_HOUR){
-			double hours =  ((double)seconds)/ITimeScope.SECONDS_PER_HOUR;
-			//å¦‚æœæ˜¯å…¬ä¼‘ï¼Œåˆ™æ—¶é•¿ä¸èƒ½è¶…è¿‡è€ƒå‹¤è§„åˆ™çš„ä¸€ä¸ªå·¥ä½œæ—¥æ—¶é•¿
-			length.originalLength = isGx?Math.min(hours, workDayLength):hours;
-			hours = CommonMethods.processByDecimalDigitsAndRoundMode(CommonMethods.processByMinLengthAndRoundMode4HourUnit(timeUnit, roundMode, hours),timeRuleVO).doubleValue();
-			//å¦‚æœæ˜¯å…¬ä¼‘ï¼Œåˆ™æ—¶é•¿ä¸èƒ½è¶…è¿‡è€ƒå‹¤è§„åˆ™çš„ä¸€ä¸ªå·¥ä½œæ—¥æ—¶é•¿
-			if(isGx)
+		// È¡Õû¹æÔò£¬0ÏòÉÏ£¬1ÏòÏÂ£¬2ËÄÉáÎåÈë£¬Ä¬ÈÏ1£»
+		int roundMode = leaveItem.getRoundmode() == null ? 1 : leaveItem.getRoundmode().intValue();
+		// °´Ğ¡Ê±¼ÆËã
+		if (timeitemUnit == TimeItemCopyVO.TIMEITEMUNIT_HOUR) {
+			double hours = ((double) seconds) / ITimeScope.SECONDS_PER_HOUR;
+			// Èç¹ûÊÇ¹«Ğİ£¬ÔòÊ±³¤²»ÄÜ³¬¹ı¿¼ÇÚ¹æÔòµÄÒ»¸ö¹¤×÷ÈÕÊ±³¤
+			length.originalLength = isGx ? Math.min(hours, workDayLength) : hours;
+			hours = CommonMethods.processByDecimalDigitsAndRoundMode(
+					CommonMethods.processByMinLengthAndRoundMode4HourUnit(timeUnit, roundMode, hours), timeRuleVO)
+					.doubleValue();
+			// Èç¹ûÊÇ¹«Ğİ£¬ÔòÊ±³¤²»ÄÜ³¬¹ı¿¼ÇÚ¹æÔòµÄÒ»¸ö¹¤×÷ÈÕÊ±³¤
+			if (isGx)
 				hours = Math.min(hours, workDayLength);
-			length.processedLength=hours;
-			length.originalLengthUseHour=length.originalLength;
-			length.processedLengthUseHour=length.processedLength;
+			length.processedLength = hours;
+			length.originalLengthUseHour = length.originalLength;
+			length.processedLengthUseHour = length.processedLength;
 			return length;
 		}
-		//å¦‚æœæ˜¯æŒ‰å¤©è®¡ç®—ï¼Œåˆ™æ¯”è¾ƒå¤æ‚
-		//çœ‹æŠ˜ç®—æ–¹å¼ï¼Œå¦‚æœæ˜¯æŒ‰å·¥ä½œæ—¥æŠ˜ç®—ï¼Œåˆ™å°æ—¶æ•°è¦é™¤ä»¥è€ƒå‹¤è§„åˆ™å®šä¹‰çš„å·¥ä½œæ—¥æ—¶é•¿ã€‚å¦‚æœæ˜¯æŒ‰ç­æ¬¡æŠ˜ç®—ï¼Œåˆ™è¦é™¤ä»¥ç­æ¬¡æ—¶é•¿
-		int convertRule = leaveItem.getConvertrule()==null?TimeItemCopyVO.CONVERTRULE_TIME:leaveItem.getConvertrule().intValue();//æŠ˜ç®—æ–¹å¼
-		double divLength = 0;//ç”¨æ¥åšé™¤æ•°çš„æ—¶é•¿
-		//å¦‚æœæ˜¯å…¬ä¼‘ï¼Œæˆ–è€…æŠ˜ç®—æ–¹å¼æ˜¯æŒ‰å·¥ä½œæ—¥æŠ˜ç®—
-		if(curCalendar.getPsnCalendarVO().getPk_shift().equals(ShiftVO.PK_GX)||convertRule==TimeItemCopyVO.CONVERTRULE_DAY)
+		// Èç¹ûÊÇ°´Ìì¼ÆËã£¬Ôò±È½Ï¸´ÔÓ
+		// ¿´ÕÛËã·½Ê½£¬Èç¹ûÊÇ°´¹¤×÷ÈÕÕÛËã£¬ÔòĞ¡Ê±ÊıÒª³ıÒÔ¿¼ÇÚ¹æÔò¶¨ÒåµÄ¹¤×÷ÈÕÊ±³¤¡£Èç¹ûÊÇ°´°à´ÎÕÛËã£¬ÔòÒª³ıÒÔ°à´ÎÊ±³¤
+		int convertRule = leaveItem.getConvertrule() == null ? TimeItemCopyVO.CONVERTRULE_TIME : leaveItem
+				.getConvertrule().intValue();// ÕÛËã·½Ê½
+		double divLength = 0;// ÓÃÀ´×ö³ıÊıµÄÊ±³¤
+		// Èç¹ûÊÇ¹«Ğİ£¬»òÕßÕÛËã·½Ê½ÊÇ°´¹¤×÷ÈÕÕÛËã
+		if (curCalendar.getPsnCalendarVO().getPk_shift().equals(ShiftVO.PK_GX)
+				|| convertRule == TimeItemCopyVO.CONVERTRULE_DAY)
 			divLength = workDayLength;
-		//å¦‚æœæ˜¯æŒ‰ç­æ¬¡æ—¶é•¿æŠ˜ç®—.æ³¨æ„ï¼Œæ˜¯é™¤ä»¥shiftè¡¨çš„æ—¶é•¿ï¼Œè€Œä¸æ˜¯é™¤ä»¥psncalendarè¡¨çš„æ—¶é•¿ã€‚æ¯”å¦‚ä¸‰å…«å¦‡å¥³èŠ‚è¿™å¤©çš„ç­æ¬¡ï¼Œå¦‚æœè¯·å‡äº†ï¼Œé‚£ä¹ˆåªèƒ½ç®—åŠå¤©å‡ï¼Œè€Œä¸èƒ½ç®—æ˜¯ä¸€å¤©å‡
+		// Èç¹ûÊÇ°´°à´ÎÊ±³¤ÕÛËã.×¢Òâ£¬ÊÇ³ıÒÔshift±íµÄÊ±³¤£¬¶ø²»ÊÇ³ıÒÔpsncalendar±íµÄÊ±³¤¡£±ÈÈçÈı°Ë¸¾Å®½ÚÕâÌìµÄ°à´Î£¬Èç¹ûÇë¼ÙÁË£¬ÄÇÃ´Ö»ÄÜËã°ëÌì¼Ù£¬¶ø²»ÄÜËãÊÇÒ»Ìì¼Ù
 		else
 			divLength = curShift.getGzsj().doubleValue();
-		double days = seconds/(ITimeScope.SECONDS_PER_HOUR*divLength);
-		//å¦‚æœæ˜¯å…¬ä¼‘ï¼Œåˆ™æ—¶é•¿ä¸èƒ½è¶…è¿‡ä¸€å¤©
-		if(isGx)
+		double days = seconds / (ITimeScope.SECONDS_PER_HOUR * divLength);
+		// Èç¹ûÊÇ¹«Ğİ£¬ÔòÊ±³¤²»ÄÜ³¬¹ıÒ»Ìì
+		if (isGx)
 			days = Math.min(days, 1);
-		if(roundMode==0||roundMode==1){
+		if (roundMode == 0 || roundMode == 1) {
 			DecimalFormat dcmFmt = new DecimalFormat("0.0000");
-			days = new UFDouble(dcmFmt.format(days)).doubleValue();//è®¾ç½®å°æ•°ä½æ•°
+			days = new UFDouble(dcmFmt.format(days)).doubleValue();// ÉèÖÃĞ¡ÊıÎ»Êı
 		}
 		length.originalLength = days;
-		length.originalLengthUseHour=length.originalLength*divLength;
-		days = CommonMethods.processByDecimalDigitsAndRoundMode(CommonMethods.processByMinLengthAndRoundMode4DayUnit(timeUnit, roundMode, days),timeRuleVO).doubleValue();
-		if(isGx)
+		length.originalLengthUseHour = length.originalLength * divLength;
+		days = CommonMethods.processByDecimalDigitsAndRoundMode(
+				CommonMethods.processByMinLengthAndRoundMode4DayUnit(timeUnit, roundMode, days), timeRuleVO)
+				.doubleValue();
+		if (isGx)
 			days = Math.min(days, 1);
-		length.processedLength=days;
-		length.processedLengthUseHour=length.processedLength*divLength;
+		length.processedLength = days;
+		length.processedLengthUseHour = length.processedLength * divLength;
 		return length;
 	}
-	
-	
-	
+
 	/**
-	 * è®¡ç®—æŸä¸ªåœå·¥å¾…æ–™ç±»åˆ«çš„æ—¥æŠ¥æ—¶é•¿ï¼ŒcurCalendaræ˜¯å½“å‰è®¡ç®—æ—¥çš„ç­æ¬¡
-	 * è¿”å›çš„æ˜¯å°æ—¶æ•°æˆ–è€…å¤©æ•°ï¼Œå¯ä»¥ç›´æ¥å†™å…¥æ•°æ®åº“ï¼Œä¸ç”¨åšå¦å¤–çš„è½¬æ¢
+	 * ¼ÆËãÄ³¸öÍ£¹¤´ıÁÏÀà±ğµÄÈÕ±¨Ê±³¤£¬curCalendarÊÇµ±Ç°¼ÆËãÈÕµÄ°à´Î ·µ»ØµÄÊÇĞ¡Ê±Êı»òÕßÌìÊı£¬¿ÉÒÔÖ±½ÓĞ´ÈëÊı¾İ¿â£¬²»ÓÃ×öÁíÍâµÄ×ª»»
+	 * 
 	 * @param shutdownItem
-	 * @param processedBills,æ‰€æœ‰çš„åŠ ç­å•ã€å‡ºå·®å•ã€ä¼‘å‡å•ã€åœå·¥å•ç»è¿‡äº¤åˆ‡ä¹‹åçš„ç»“æœ
+	 * @param processedBills
+	 *            ,ËùÓĞµÄ¼Ó°àµ¥¡¢³ö²îµ¥¡¢Ğİ¼Ùµ¥¡¢Í£¹¤µ¥¾­¹ı½»ÇĞÖ®ºóµÄ½á¹û
 	 * @param curCalendar
 	 * @return
 	 */
-	public static TimeLengthWrapper calShutdownLength(TimeItemCopyVO shutdownItem,ITimeScopeWithBillType[] intersectionScopes,
-			AggPsnCalendar curCalendar,TimeRuleVO timeRuleVO){
-		//è¿‡æ»¤å‡ºè¿™ç§ç±»å‹çš„æ—¶é—´æ®µ
-		ITimeScopeWithBillType[] filteredScopes = TimeScopeUtils.filterByItemPK(shutdownItem.getPk_timeitem(), intersectionScopes);
-		if(filteredScopes==null||filteredScopes.length==0)
+	public static TimeLengthWrapper calShutdownLength(TimeItemCopyVO shutdownItem,
+			ITimeScopeWithBillType[] intersectionScopes, AggPsnCalendar curCalendar, TimeRuleVO timeRuleVO) {
+		// ¹ıÂË³öÕâÖÖÀàĞÍµÄÊ±¼ä¶Î
+		ITimeScopeWithBillType[] filteredScopes = TimeScopeUtils.filterByItemPK(shutdownItem.getPk_timeitem(),
+				intersectionScopes);
+		if (filteredScopes == null || filteredScopes.length == 0)
 			return TimeLengthWrapper.getZeroTimeLength();
-		if(curCalendar==null)
+		if (curCalendar == null)
 			return TimeLengthWrapper.getZeroTimeLength();
 		PsnCalendarVO psncalendarVO = curCalendar.getPsnCalendarVO();
 		PsnWorkTimeVO[] workVOs = curCalendar.getPsnWorkTimeVO();
-		//å¦‚æœæ­¤å¤©æ²¡æœ‰å·¥ä½œæ—¥å†ï¼Œæˆ–è€…æ˜¯å…¬ä¼‘æˆ–è€…ä¸è€ƒå‹¤çš„ï¼Œæˆ–è€…æ²¡æœ‰å·¥ä½œæ—¶é—´æ®µï¼Œåˆ™åœå·¥å¾…æ–™æ—¶é•¿ä¸º0
-		if(psncalendarVO==null||ShiftVO.PK_GX.equals(psncalendarVO.getPk_shift())||ArrayUtils.isEmpty(workVOs))
-			return TimeLengthWrapper.getZeroTimeLength(); 
-		//ç®—å‡ºåœå·¥å•ä¸å·¥ä½œæ—¶é—´æ®µçš„äº¤é›†
-		intersectionScopes = TimeScopeUtils.intersectionTimeScopes
-			(intersectionScopes, workVOs,new ITimeScopeWithBillType[0]);
-		//å¦‚æœæ²¡æœ‰äº¤é›†æ—¶é—´æ®µï¼Œåˆ™ä¸ç”¨å¤„ç†
-		if(intersectionScopes==null||intersectionScopes.length==0)
+		// Èç¹û´ËÌìÃ»ÓĞ¹¤×÷ÈÕÀú£¬»òÕßÊÇ¹«Ğİ»òÕß²»¿¼ÇÚµÄ£¬»òÕßÃ»ÓĞ¹¤×÷Ê±¼ä¶Î£¬ÔòÍ£¹¤´ıÁÏÊ±³¤Îª0
+		if (psncalendarVO == null || ShiftVO.PK_GX.equals(psncalendarVO.getPk_shift()) || ArrayUtils.isEmpty(workVOs))
 			return TimeLengthWrapper.getZeroTimeLength();
-		double result = (((double)(TimeScopeUtils.getLength(intersectionScopes))))/ITimeScope.SECONDS_PER_HOUR;
-		return new TimeLengthWrapper(result,CommonMethods.processByDecimalDigitsAndRoundMode(result,timeRuleVO).doubleValue());//å¯¹äºåœå·¥å¾…æ–™æ¥è¯´ï¼ŒåŸå§‹æ—¶é•¿å’Œæœ€åçš„æ—¶é•¿æ˜¯ä¸€æ ·çš„
+		// Ëã³öÍ£¹¤µ¥Óë¹¤×÷Ê±¼ä¶ÎµÄ½»¼¯
+		intersectionScopes = TimeScopeUtils.intersectionTimeScopes(intersectionScopes, workVOs,
+				new ITimeScopeWithBillType[0]);
+		// Èç¹ûÃ»ÓĞ½»¼¯Ê±¼ä¶Î£¬Ôò²»ÓÃ´¦Àí
+		if (intersectionScopes == null || intersectionScopes.length == 0)
+			return TimeLengthWrapper.getZeroTimeLength();
+		double result = (((double) (TimeScopeUtils.getLength(intersectionScopes)))) / ITimeScope.SECONDS_PER_HOUR;
+		return new TimeLengthWrapper(result, CommonMethods.processByDecimalDigitsAndRoundMode(result, timeRuleVO)
+				.doubleValue());// ¶ÔÓÚÍ£¹¤´ıÁÏÀ´Ëµ£¬Ô­Ê¼Ê±³¤ºÍ×îºóµÄÊ±³¤ÊÇÒ»ÑùµÄ
 	}
-	
-//	/**
-//	 * æ ¹æ®å·¥ä½œæ—¶é—´æ®µçš„ä¿¡æ¯ï¼Œå’Œå·²ç»ä¸å·¥ä½œæ—¶é—´æ®µè¿›è¡Œäº¤é›†å¤„ç†çš„æ—¶é—´æ®µï¼Œç®—å‡ºéœ€è¦ä»äº¤é›†æ—¶é—´æ®µçš„æ—¶é—´é•¿åº¦ä¸­æ‰£é™¤çš„ä¼‘æ¯æ—¶é•¿
-//	 * 5.5åœ¨å·¥ä½œæ—¶é—´æ®µä¸­å¼•å…¥äº†ä¼‘æ¯æ—¶é•¿çš„æ¦‚å¿µï¼Œè€Œä¼‘å‡å’Œåœå·¥çš„æ—¶é•¿è®¡ç®—éƒ½éœ€è¦å’Œå·¥ä½œæ—¶é—´æ®µäº¤ï¼Œæ‰€ä»¥ä¼‘å‡å’Œåœå·¥çš„è®¡ç®—éƒ½è¦
-//	 * è€ƒè™‘ä¼‘æ¯æ—¶é•¿
-//	 * zengcheng 2008.09.27å¢åŠ æ³¨é‡Šï¼šä¸éœ€æ±‚è®¨è®ºåï¼Œä¼‘æ¯æ—¶é•¿è¢«å»æ‰ï¼Œå› ä¸ºä¼šå¼•èµ·å¾ˆå¤šè®¡ç®—ä¸Šçš„é”™è¯¯
-//	 * @param curCalendar
-//	 * @param intersectionScopes
-//	 * @return éœ€è¦åœ¨åé¢å‡å»çš„ä¼‘æ¯æ—¶é•¿ï¼Œå•ä½ä¸ºç§’
-//	 */
-//	private static long getRestTimeToMinus(PsncalendarAllVO curCalendar,ITimeScopeWithBillType[] intersectionScopes){
-//		long restTimeToMinus = 0;//éœ€è¦åœ¨åé¢å‡å»çš„ä¼‘æ¯æ—¶é•¿ï¼Œå•ä½ä¸ºç§’ã€‚tbm_wtè¡¨çš„wtresttimeå­—æ®µå­˜å‚¨çš„ä¹Ÿæ˜¯ç§’
-//		if(curCalendar==null)
-//			return restTimeToMinus;
-//		Vector<PsncalendarbVO> psncalendarbVOsVec = curCalendar.getPsncalendarbVOs();
-//		if(psncalendarbVOsVec!=null&&psncalendarbVOsVec.size()>0){
-//			for(PsncalendarbVO calendarbVO:psncalendarbVOsVec){
-//				//æ­¤å·¥ä½œæ—¶æ®µçš„ä¼‘æ¯æ—¶é•¿,æ•°æ®åº“ä¸­å­˜å‚¨çš„æ˜¯åˆ†é’Ÿï¼Œè€Œæœ¬æ–¹æ³•æ˜¯ä»¥ç§’è®¡ç®—çš„ï¼Œæ‰€ä»¥è¦ä¹˜ä»¥60
-//				long wtresttime = calendarbVO.getWtresttime()==null?0:calendarbVO.getWtresttime().intValue()*ITimeScope.SECONDS_PER_MINUTE;
-//				//å¦‚æœä¼‘æ¯æ—¶é•¿ä¸º0ï¼Œåˆ™ä¸ç”¨å¤„ç†
-//				if(wtresttime==0)
-//					continue;
-//				//å¦‚æœä¼‘æ¯æ—¶é•¿å¤§äº0ï¼Œåˆ™åœ¨åé¢éœ€è¦å‡å»min(wtresttime,ä¸æ­¤æ—¶æ®µçš„äº¤é›†æ—¶é•¿)
-//				restTimeToMinus+=Math.min(wtresttime, TimeScopeUtils.getLength(TimeScopeUtils.intersectionTimeScopes(intersectionScopes, new ITimeScope[]{calendarbVO.toTimeScope(curCalendar.getPsncalendarVO().getCalendar().toString())})));
-//			}
-//		}
-//		return restTimeToMinus;
-//	}
+
+	// /**
+	// * ¸ù¾İ¹¤×÷Ê±¼ä¶ÎµÄĞÅÏ¢£¬ºÍÒÑ¾­Óë¹¤×÷Ê±¼ä¶Î½øĞĞ½»¼¯´¦ÀíµÄÊ±¼ä¶Î£¬Ëã³öĞèÒª´Ó½»¼¯Ê±¼ä¶ÎµÄÊ±¼ä³¤¶ÈÖĞ¿Û³ıµÄĞİÏ¢Ê±³¤
+	// * 5.5ÔÚ¹¤×÷Ê±¼ä¶ÎÖĞÒıÈëÁËĞİÏ¢Ê±³¤µÄ¸ÅÄî£¬¶øĞİ¼ÙºÍÍ£¹¤µÄÊ±³¤¼ÆËã¶¼ĞèÒªºÍ¹¤×÷Ê±¼ä¶Î½»£¬ËùÒÔĞİ¼ÙºÍÍ£¹¤µÄ¼ÆËã¶¼Òª
+	// * ¿¼ÂÇĞİÏ¢Ê±³¤
+	// * zengcheng 2008.09.27Ôö¼Ó×¢ÊÍ£ºÓëĞèÇóÌÖÂÛºó£¬ĞİÏ¢Ê±³¤±»È¥µô£¬ÒòÎª»áÒıÆğºÜ¶à¼ÆËãÉÏµÄ´íÎó
+	// * @param curCalendar
+	// * @param intersectionScopes
+	// * @return ĞèÒªÔÚºóÃæ¼õÈ¥µÄĞİÏ¢Ê±³¤£¬µ¥Î»ÎªÃë
+	// */
+	// private static long getRestTimeToMinus(PsncalendarAllVO
+	// curCalendar,ITimeScopeWithBillType[] intersectionScopes){
+	// long restTimeToMinus = 0;//ĞèÒªÔÚºóÃæ¼õÈ¥µÄĞİÏ¢Ê±³¤£¬µ¥Î»ÎªÃë¡£tbm_wt±íµÄwtresttime×Ö¶Î´æ´¢µÄÒ²ÊÇÃë
+	// if(curCalendar==null)
+	// return restTimeToMinus;
+	// Vector<PsncalendarbVO> psncalendarbVOsVec =
+	// curCalendar.getPsncalendarbVOs();
+	// if(psncalendarbVOsVec!=null&&psncalendarbVOsVec.size()>0){
+	// for(PsncalendarbVO calendarbVO:psncalendarbVOsVec){
+	// //´Ë¹¤×÷Ê±¶ÎµÄĞİÏ¢Ê±³¤,Êı¾İ¿âÖĞ´æ´¢µÄÊÇ·ÖÖÓ£¬¶ø±¾·½·¨ÊÇÒÔÃë¼ÆËãµÄ£¬ËùÒÔÒª³ËÒÔ60
+	// long wtresttime =
+	// calendarbVO.getWtresttime()==null?0:calendarbVO.getWtresttime().intValue()*ITimeScope.SECONDS_PER_MINUTE;
+	// //Èç¹ûĞİÏ¢Ê±³¤Îª0£¬Ôò²»ÓÃ´¦Àí
+	// if(wtresttime==0)
+	// continue;
+	// //Èç¹ûĞİÏ¢Ê±³¤´óÓÚ0£¬ÔòÔÚºóÃæĞèÒª¼õÈ¥min(wtresttime,Óë´ËÊ±¶ÎµÄ½»¼¯Ê±³¤)
+	// restTimeToMinus+=Math.min(wtresttime,
+	// TimeScopeUtils.getLength(TimeScopeUtils.intersectionTimeScopes(intersectionScopes,
+	// new
+	// ITimeScope[]{calendarbVO.toTimeScope(curCalendar.getPsncalendarVO().getCalendar().toString())})));
+	// }
+	// }
+	// return restTimeToMinus;
+	// }
 	/**
-	 * è®¡ç®—æŸä¸ªåŠ ç­ç±»åˆ«çš„åŠ ç­æ—¶é•¿ï¼ŒbelongtoCurDateBillMapæ˜¯å½’å±äºæŸä¸€å¤©çš„åŠ ç­å•çš„mapï¼Œkeyæ˜¯åŠ ç­å•ï¼Œvalueæ˜¯æ­¤åŠ ç­å•ä¸å…¶ä»–å•æ®äº¤åˆ‡åçš„ç»“æœæ•°ç»„
+	 * ¼ÆËãÄ³¸ö¼Ó°àÀà±ğµÄ¼Ó°àÊ±³¤£¬belongtoCurDateBillMapÊÇ¹éÊôÓÚÄ³Ò»ÌìµÄ¼Ó°àµ¥µÄmap£¬keyÊÇ¼Ó°àµ¥£¬
+	 * valueÊÇ´Ë¼Ó°àµ¥ÓëÆäËûµ¥¾İ½»ÇĞºóµÄ½á¹ûÊı×é
+	 * 
 	 * @param overtimeItem
 	 * @param belongtoCurDateBillMap
-	 * @param isMinusRestLengthï¼Œæ˜¯å¦æ‰£é™¤è½¬è°ƒä¼‘çš„æ—¶é•¿
+	 * @param isMinusRestLength
+	 *            £¬ÊÇ·ñ¿Û³ı×ªµ÷ĞİµÄÊ±³¤
 	 * @return
 	 */
-	public static TimeLengthWrapper calOvertimeLength(TimeItemCopyVO overtimeItem,Map<OvertimeCommonVO, 
-			List<ITimeScopeWithBillType>> belongtoCurDateBillMap,TimeRuleVO timeRuleVO,boolean isMinusRestLength){
-		TimeLengthWrapper result= new TimeLengthWrapper();
-		for(OvertimeCommonVO vo:belongtoCurDateBillMap.keySet()){
-			if(!overtimeItem.getPk_timeitem().equals(vo.getPk_overtimetype()))
+	public static TimeLengthWrapper calOvertimeLength(TimeItemCopyVO overtimeItem,
+			Map<OvertimeCommonVO, List<ITimeScopeWithBillType>> belongtoCurDateBillMap, TimeRuleVO timeRuleVO,
+			boolean isMinusRestLength) {
+		TimeLengthWrapper result = new TimeLengthWrapper();
+		for (OvertimeCommonVO vo : belongtoCurDateBillMap.keySet()) {
+			if (!overtimeItem.getPk_timeitem().equals(vo.getPk_overtimetype()))
 				continue;
-			TimeLengthWrapper tempResult=calOvertimeLength(overtimeItem, vo.getDeduct().doubleValue(), belongtoCurDateBillMap.get(vo),timeRuleVO);
-			//æš‚æ—¶å¤„ç†ä¸ºå¯¹äºåŸå§‹æ—¶é•¿ï¼Œä¸è€ƒè™‘è½¬è°ƒä¼‘æ—¶é•¿ã€‚å¯¹äºå¤„ç†æ—¶é•¿è¦æ‰£é™¤è½¬è°ƒä¼‘æ—¶é•¿
-			result.originalLength+=tempResult.originalLength;
-			result.originalLengthUseHour+=tempResult.originalLengthUseHour;
-			double toRestHour  = 0;
-			if(vo instanceof OvertimeRegVO){
-				OvertimeRegVO regVO = (OvertimeRegVO)vo;
-				toRestHour = regVO.getToresthour()==null?0:regVO.getToresthour().doubleValue();
+			TimeLengthWrapper tempResult = calOvertimeLength(overtimeItem, vo.getDeduct().doubleValue(),
+					belongtoCurDateBillMap.get(vo), timeRuleVO);
+			// ÔİÊ±´¦ÀíÎª¶ÔÓÚÔ­Ê¼Ê±³¤£¬²»¿¼ÂÇ×ªµ÷ĞİÊ±³¤¡£¶ÔÓÚ´¦ÀíÊ±³¤Òª¿Û³ı×ªµ÷ĞİÊ±³¤
+			result.originalLength += tempResult.originalLength;
+			result.originalLengthUseHour += tempResult.originalLengthUseHour;
+			double toRestHour = 0;
+			if (vo instanceof OvertimeRegVO) {
+				OvertimeRegVO regVO = (OvertimeRegVO) vo;
+				toRestHour = regVO.getToresthour() == null ? 0 : regVO.getToresthour().doubleValue();
 			}
-			result.toRestHour+=toRestHour;
-			if(isMinusRestLength){
-				double len = tempResult.processedLength-toRestHour;
-				if(len<0)
-					len=0;
-				result.processedLength+=len;
-				if(overtimeItem.getTimeItemUnit()==TimeItemCopyVO.TIMEITEMUNIT_HOUR){
-					result.processedLengthUseHour=result.processedLength;
+			result.toRestHour += toRestHour;
+			if (isMinusRestLength) {
+				double len = tempResult.processedLength - toRestHour;
+				if (len < 0)
+					len = 0;
+				result.processedLength += len;
+				if (overtimeItem.getTimeItemUnit() == TimeItemCopyVO.TIMEITEMUNIT_HOUR) {
+					result.processedLengthUseHour = result.processedLength;
+				} else {
+					result.processedLengthUseHour = result.processedLength * timeRuleVO.getDaytohour2();
 				}
-				else{
-					result.processedLengthUseHour=result.processedLength*timeRuleVO.getDaytohour2();
-				}
-			}
-			else{
-				result.processedLength+=tempResult.processedLength;
-				result.processedLengthUseHour=tempResult.processedLengthUseHour;
+			} else {
+				result.processedLength += tempResult.processedLength;
+				result.processedLengthUseHour = tempResult.processedLengthUseHour;
 			}
 		}
 		return result;
 	}
-	public static TimeLengthWrapper calOvertimeLength(TimeItemCopyVO overtimeItem,Map<OvertimeCommonVO, 
-			List<ITimeScopeWithBillType>> belongtoCurDateBillMap,TimeRuleVO timeRuleVO){
+
+	public static TimeLengthWrapper calOvertimeLength(TimeItemCopyVO overtimeItem,
+			Map<OvertimeCommonVO, List<ITimeScopeWithBillType>> belongtoCurDateBillMap, TimeRuleVO timeRuleVO) {
 		return calOvertimeLength(overtimeItem, belongtoCurDateBillMap, timeRuleVO, true);
 	}
+
 	/**
-	 * è®¡ç®—æŸä¸ªåŠ ç­å•çš„æ—¶é•¿ã€‚billListæ˜¯å·²ç»ä¸å…¶ä»–å•æ®äº¤åˆ‡è¿‡ï¼Œå¹¶ä¸”å‡å»äº†å·¥ä½œæ—¶é—´æ®µçš„å•æ®
-	 * æ­¤è®¡ç®—ä¸æ‰£é™¤å·²è½¬è°ƒä¼‘çš„æ—¶é•¿ï¼Œåªæ‰£é™¤æ‰£é™¤æ—¶é—´
+	 * ¼ÆËãÄ³¸ö¼Ó°àµ¥µÄÊ±³¤¡£billListÊÇÒÑ¾­ÓëÆäËûµ¥¾İ½»ÇĞ¹ı£¬²¢ÇÒ¼õÈ¥ÁË¹¤×÷Ê±¼ä¶ÎµÄµ¥¾İ ´Ë¼ÆËã²»¿Û³ıÒÑ×ªµ÷ĞİµÄÊ±³¤£¬Ö»¿Û³ı¿Û³ıÊ±¼ä
+	 * 
 	 * @param overtimeItem
 	 * @param deduct
 	 * @param billList
 	 * @param workDayLength
 	 * @return
 	 */
-	public static TimeLengthWrapper calOvertimeLength(TimeItemCopyVO overtimeItem,double deduct, 
-			List<ITimeScopeWithBillType> billList,TimeRuleVO timeRuleVO){
-		if(billList==null||billList.size()==0)
+	public static TimeLengthWrapper calOvertimeLength(TimeItemCopyVO overtimeItem, double deduct,
+			List<ITimeScopeWithBillType> billList, TimeRuleVO timeRuleVO) {
+		if (billList == null || billList.size() == 0)
 			return TimeLengthWrapper.getZeroTimeLength();
-		//1-å¤©ï¼Œ2-å°æ—¶,é»˜è®¤å°æ—¶
-		int timeitemUnit = overtimeItem.getTimeitemunit()==null?TimeItemCopyVO.TIMEITEMUNIT_HOUR:overtimeItem.getTimeitemunit().intValue();
-		//æœ€å°æ—¶é—´å•ä½-å¯¹äºä»¥å°æ—¶è®¡çš„åŠ ç­ç±»åˆ«ï¼Œå•ä½æ˜¯åˆ†é’Ÿï¼›å¯¹äºä»¥å¤©è®¡çš„åŠ ç­ç±»åˆ«ï¼Œå•ä½æ˜¯å¤©
-		double timeUnit = overtimeItem.getTimeunit()==null?0:overtimeItem.getTimeunit().doubleValue();
-		//å–æ•´è§„åˆ™ï¼Œ0å‘ä¸Šï¼Œ1å‘ä¸‹ï¼Œ2å››èˆäº”å…¥ï¼Œé»˜è®¤1ï¼›
-		int roundMode = overtimeItem.getRoundmode()==null?TimeItemCopyVO.ROUNDMODE_DOWN:overtimeItem.getRoundmode().intValue();
+		// 1-Ìì£¬2-Ğ¡Ê±,Ä¬ÈÏĞ¡Ê±
+		int timeitemUnit = overtimeItem.getTimeitemunit() == null ? TimeItemCopyVO.TIMEITEMUNIT_HOUR : overtimeItem
+				.getTimeitemunit().intValue();
+		// ×îĞ¡Ê±¼äµ¥Î»-¶ÔÓÚÒÔĞ¡Ê±¼ÆµÄ¼Ó°àÀà±ğ£¬µ¥Î»ÊÇ·ÖÖÓ£»¶ÔÓÚÒÔÌì¼ÆµÄ¼Ó°àÀà±ğ£¬µ¥Î»ÊÇÌì
+		double timeUnit = overtimeItem.getTimeunit() == null ? 0 : overtimeItem.getTimeunit().doubleValue();
+		// È¡Õû¹æÔò£¬0ÏòÉÏ£¬1ÏòÏÂ£¬2ËÄÉáÎåÈë£¬Ä¬ÈÏ1£»
+		int roundMode = overtimeItem.getRoundmode() == null ? TimeItemCopyVO.ROUNDMODE_DOWN : overtimeItem
+				.getRoundmode().intValue();
 		long seconds = TimeScopeUtils.getLength(billList.toArray(new ITimeScopeWithBillType[0]));
-		if(seconds==0)
+		if (seconds == 0)
 			return TimeLengthWrapper.getZeroTimeLength();
-		//å‡å»æ‰£é™¤æ—¶é—´
-		seconds = seconds-(int)(deduct*ITimeScope.SECONDS_PER_MINUTE);
-		//å¦‚æœå‡å»æ‰£é™¤æ—¶é—´åå°äºç­‰äº0ï¼Œåˆ™ç›´æ¥è¿”å›0
-		if(seconds<=0)
+		// ¼õÈ¥¿Û³ıÊ±¼ä
+		seconds = seconds - (int) (deduct * ITimeScope.SECONDS_PER_MINUTE);
+		// Èç¹û¼õÈ¥¿Û³ıÊ±¼äºóĞ¡ÓÚµÈÓÚ0£¬ÔòÖ±½Ó·µ»Ø0
+		if (seconds <= 0)
 			return TimeLengthWrapper.getZeroTimeLength();
-		//å¦‚æœæ˜¯æŒ‰å°æ—¶è®¡ç®—:
-		if(timeitemUnit==TimeItemCopyVO.TIMEITEMUNIT_HOUR){
-			double oriresult = ((double)seconds)/ITimeScope.SECONDS_PER_HOUR;
-			double processedResult = CommonMethods.processByDecimalDigitsAndRoundMode(CommonMethods.processByMinLengthAndRoundMode4HourUnit(timeUnit, roundMode, oriresult),timeRuleVO).doubleValue();
-			return new TimeLengthWrapper(oriresult,processedResult,oriresult,processedResult);
+		// Èç¹ûÊÇ°´Ğ¡Ê±¼ÆËã:
+		if (timeitemUnit == TimeItemCopyVO.TIMEITEMUNIT_HOUR) {
+			double oriresult = ((double) seconds) / ITimeScope.SECONDS_PER_HOUR;
+			double processedResult = CommonMethods.processByDecimalDigitsAndRoundMode(
+					CommonMethods.processByMinLengthAndRoundMode4HourUnit(timeUnit, roundMode, oriresult), timeRuleVO)
+					.doubleValue();
+			return new TimeLengthWrapper(oriresult, processedResult, oriresult, processedResult);
 		}
-		//å¦‚æœæ˜¯æŒ‰å¤©è®¡ç®—
-		double oriresult = seconds/(ITimeScope.SECONDS_PER_HOUR*timeRuleVO.getDaytohour2());
-		double processedResult =CommonMethods.processByDecimalDigitsAndRoundMode(CommonMethods.processByMinLengthAndRoundMode4DayUnit(timeUnit, roundMode, oriresult),timeRuleVO).doubleValue();
-		return new TimeLengthWrapper(oriresult,processedResult,oriresult*timeRuleVO.getDaytohour2(),processedResult*timeRuleVO.getDaytohour2());
+		// Èç¹ûÊÇ°´Ìì¼ÆËã
+		double oriresult = seconds / (ITimeScope.SECONDS_PER_HOUR * timeRuleVO.getDaytohour2());
+		double processedResult = CommonMethods.processByDecimalDigitsAndRoundMode(
+				CommonMethods.processByMinLengthAndRoundMode4DayUnit(timeUnit, roundMode, oriresult), timeRuleVO)
+				.doubleValue();
+		return new TimeLengthWrapper(oriresult, processedResult, oriresult * timeRuleVO.getDaytohour2(),
+				processedResult * timeRuleVO.getDaytohour2());
 	}
+
 	/**
-	 * å¤„ç†æŸäººæŸå¤©çš„åœå·¥å•çš„æ—¶é•¿ã€‚å¦‚æœç®—å¾—çš„æ—¶é•¿å¤§äº0ï¼Œåˆ™newä¸€ä¸ªæ—¥æŠ¥å­è¡¨voï¼ŒåŠ å…¥åˆ°listä¸­
+	 * ´¦ÀíÄ³ÈËÄ³ÌìµÄÍ£¹¤µ¥µÄÊ±³¤¡£Èç¹ûËãµÃµÄÊ±³¤´óÓÚ0£¬ÔònewÒ»¸öÈÕ±¨×Ó±ívo£¬¼ÓÈëµ½listÖĞ
+	 * 
 	 * @param timeItems
-	 * @param billListï¼Œä¸å…¶ä»–å•æ®äº¤åˆ‡è¿‡ï¼Œä½†è¿˜æ²¡æœ‰ä¸å·¥ä½œæ—¶é—´æ®µäº¤è¿‡çš„åœå·¥å•
+	 * @param billList
+	 *            £¬ÓëÆäËûµ¥¾İ½»ÇĞ¹ı£¬µ«»¹Ã»ÓĞÓë¹¤×÷Ê±¼ä¶Î½»¹ıµÄÍ£¹¤µ¥
 	 * @param curCalendar
 	 * @param pk_daystat
 	 * @param statbVOList
 	 */
-	public static void processShutdownLength(TimeItemCopyVO[] timeItems,List<ITimeScopeWithBillType> billList,AggPsnCalendar curCalendar,
-			List<DayStatbVO> statbVOList,String pk_daystat,TimeRuleVO timeRuleVO){
-		//å¦‚æœæ²¡æœ‰åœå·¥å•ï¼Œåˆ™ä¸ç”¨å¤„ç†ï¼ˆä¹Ÿæœ‰ä¸€ç§å¯èƒ½ï¼Œé‚£å°±æ˜¯æœ‰åœå·¥å•ï¼Œä½†æ˜¯å’Œå…¶ä»–å•æ®æœ‰æ—¶é—´å†²çªï¼Œä¸”æŒ‰ç…§å†²çªè§„åˆ™çš„å®šä¹‰ï¼Œè¿™ç§å†²çªä¸ç®—åœå·¥ï¼‰
-		if(billList==null||billList.size()==0)
+	public static void processShutdownLength(TimeItemCopyVO[] timeItems, List<ITimeScopeWithBillType> billList,
+			AggPsnCalendar curCalendar, List<DayStatbVO> statbVOList, String pk_daystat, TimeRuleVO timeRuleVO) {
+		// Èç¹ûÃ»ÓĞÍ£¹¤µ¥£¬Ôò²»ÓÃ´¦Àí£¨Ò²ÓĞÒ»ÖÖ¿ÉÄÜ£¬ÄÇ¾ÍÊÇÓĞÍ£¹¤µ¥£¬µ«ÊÇºÍÆäËûµ¥¾İÓĞÊ±¼ä³åÍ»£¬ÇÒ°´ÕÕ³åÍ»¹æÔòµÄ¶¨Òå£¬ÕâÖÖ³åÍ»²»ËãÍ£¹¤£©
+		if (billList == null || billList.size() == 0)
 			return;
-		if(curCalendar==null)
+		if (curCalendar == null)
 			return;
 		PsnCalendarVO psncalendarVO = curCalendar.getPsnCalendarVO();
 		PsnWorkTimeVO[] workVOs = curCalendar.getPsnWorkTimeVO();
-		//å¦‚æœæ­¤å¤©æ²¡æœ‰å·¥ä½œæ—¥å†ï¼Œæˆ–è€…æ˜¯å…¬ä¼‘æˆ–è€…ä¸è€ƒå‹¤çš„ï¼Œæˆ–è€…æ²¡æœ‰å·¥ä½œæ—¶é—´æ®µï¼Œåˆ™åœå·¥å¾…æ–™æ—¶é•¿ä¸º0
-		if(psncalendarVO==null||ShiftVO.PK_GX.equals(psncalendarVO.getPk_shift())||ArrayUtils.isEmpty(workVOs))
-			return; 
-		//ç®—å‡ºåœå·¥å•ä¸å·¥ä½œæ—¶é—´æ®µçš„äº¤é›†
-		ITimeScopeWithBillType[] intersectionScopes = TimeScopeUtils.intersectionTimeScopes
-			(billList.toArray(new ITimeScopeWithBillType[0]), workVOs,new ITimeScopeWithBillType[0]);
-		//å¦‚æœæ²¡æœ‰äº¤é›†æ—¶é—´æ®µï¼Œåˆ™ä¸ç”¨å¤„ç†
-		if(intersectionScopes==null||intersectionScopes.length==0)
+		// Èç¹û´ËÌìÃ»ÓĞ¹¤×÷ÈÕÀú£¬»òÕßÊÇ¹«Ğİ»òÕß²»¿¼ÇÚµÄ£¬»òÕßÃ»ÓĞ¹¤×÷Ê±¼ä¶Î£¬ÔòÍ£¹¤´ıÁÏÊ±³¤Îª0
+		if (psncalendarVO == null || ShiftVO.PK_GX.equals(psncalendarVO.getPk_shift()) || ArrayUtils.isEmpty(workVOs))
 			return;
-		for(TimeItemCopyVO item:timeItems){
-			TimeLengthWrapper result = calShutdownLength(item,intersectionScopes,curCalendar,timeRuleVO);
-			createDaystatbVO(pk_daystat,item.getPk_timeitem(), result.originalLength, result.processedLength,
-					result.originalLengthUseHour,result.processedLengthUseHour,result.toRestHour,
-					statbVOList,8,null,item.getTimeItemUnit());
+		// Ëã³öÍ£¹¤µ¥Óë¹¤×÷Ê±¼ä¶ÎµÄ½»¼¯
+		ITimeScopeWithBillType[] intersectionScopes = TimeScopeUtils.intersectionTimeScopes(
+				billList.toArray(new ITimeScopeWithBillType[0]), workVOs, new ITimeScopeWithBillType[0]);
+		// Èç¹ûÃ»ÓĞ½»¼¯Ê±¼ä¶Î£¬Ôò²»ÓÃ´¦Àí
+		if (intersectionScopes == null || intersectionScopes.length == 0)
+			return;
+		for (TimeItemCopyVO item : timeItems) {
+			TimeLengthWrapper result = calShutdownLength(item, intersectionScopes, curCalendar, timeRuleVO);
+			createDaystatbVO(pk_daystat, item.getPk_timeitem(), result.originalLength, result.processedLength,
+					result.originalLengthUseHour, result.processedLengthUseHour, result.toRestHour, statbVOList, 8,
+					null, item.getTimeItemUnit());
 		}
 	}
-	
-	
+
 	/**
-	 * å¤„ç†æŸå¤©çš„åŠ ç­å•çš„æ—¶é•¿
-	 * åŠ ç­å•çš„æ—¶é•¿å¤„ç†ä¸å…¶ä»–å•æ®ä¸ä¸€æ ·ã€‚å…¶ä»–å•æ®ä½¿ç”¨åˆ‡çš„æ–¹å¼ï¼Œä¹Ÿå°±æ˜¯è¯´ï¼Œä¸€å¼ å•æ®å¦‚æœè·¨äº†å‡ å¤©çš„è¯ï¼Œæ—¶é•¿æ˜¯åˆ†æ•£åœ¨å„å¤©çš„
-	 * è€ŒåŠ ç­å•æ˜¯å½’çš„æ–¹å¼ï¼šä¸€å¼ åŠ ç­å•çš„æ—¶é•¿ï¼Œæ˜¯å…¨éƒ¨ç®—åœ¨è¿™å¼ å•æ®æ‰€å±çš„å·¥ä½œæ—¥ä¸Šçš„ï¼Œä¸åˆ†æ‘Šåˆ°æ¯å¤©ã€‚
-	 * é‚£ä¹ˆè¯¥å¦‚ä½•ç¡®å®šä¸€å¼ åŠ ç­å•å½’å±äºå“ªä¸€ä¸ªå·¥ä½œæ—¥å‘¢ï¼Ÿ
-	 * 1.é¦–å…ˆå¯»æ‰¾ä¸æ­¤åŠ ç­å•æ—¶é—´æ®µæœ‰æ—¶é—´äº¤å‰çš„ç¬¬ä¸€ä¸ªå·¥ä½œæ—¥ï¼Œå¦‚æœæ‰¾åˆ°äº†ï¼Œåˆ™å½’å±äºæ­¤å·¥ä½œæ—¥
-	 * 2.å¦‚æœç¬¬ä¸€æ­¥æ²¡æ‰¾åˆ°ï¼Œåˆ™æŠŠåŠ ç­å•å¼€å§‹æ—¶é—´å¾€å‰æ¨ä¸€å¤©ï¼Œçœ‹è¿™ä¸ªæ—¶é—´ç‚¹æ˜¯å¦å±äºæŸä¸ªå·¥ä½œæ—¥ï¼Œå¦‚æœæ‰¾åˆ°äº†ï¼Œåˆ™å½’å±äºæ­¤å·¥ä½œæ—¥ï¼›å¦åˆ™åˆ°3
-	 * 3.å¦‚æœç¬¬äºŒæ­¥ä¹Ÿæ²¡æ‰¾åˆ°ï¼Œåˆ™æŠŠåŠ ç­å•ç»“æŸæ—¶é—´å¾€åæ¨ä¸€å¤©ï¼Œçœ‹è¿™ä¸ªæ—¶é—´ç‚¹æ˜¯å¦å±äºæŸä¸ªå·¥ä½œæ—¥ï¼Œå¦‚æœæ‰¾åˆ°äº†ï¼Œåˆ™å½’å±äºæ­¤å·¥ä½œæ—¥ï¼›å¦åˆ™åˆ°4
-	 * 4.æŠŠåŠ ç­å•å¼€å§‹æ—¶é—´å¾€å‰æ¨ä¸¤å¤©ï¼Œçœ‹è¿™ä¸ªæ—¶é—´ç‚¹æ˜¯å¦å±äºæŸä¸ªå·¥ä½œæ—¥ï¼Œå¦‚æœæ‰¾åˆ°äº†ï¼Œåˆ™å½’å±äºæ­¤å·¥ä½œæ—¥ï¼›å¦åˆ™åˆ°5
-	 * 5.æŠŠåŠ ç­å•ç»“æŸæ—¶é—´å¾€åæ¨ä¸¤å¤©ï¼Œçœ‹è¿™ä¸ªæ—¶é—´ç‚¹æ˜¯å¦å±äºæŸä¸ªå·¥ä½œæ—¥ï¼Œå¦‚æœæ‰¾åˆ°äº†ï¼Œåˆ™å½’å±äºæ­¤å·¥ä½œæ—¥ï¼›å¦åˆ™ä¸å†æ‰¾äº†ï¼Œè¿”å›ç©º
-	 * å› æ­¤è®¡ç®—æŸæ—¥çš„åŠ ç­æ—¶é•¿çš„æ–¹å¼æ˜¯ï¼šæ‰¾å‡ºå½’å±äºæ­¤å¤©çš„æ‰€æœ‰åŠ ç­å•ï¼Œç„¶åå¯¹æ¯ä¸ªåŠ ç­å•å•ç‹¬è®¡ç®—ï¼Œç„¶åæ±‡æ€»åˆ°è¿™å¤©
-	 * æ³¨æ„ï¼Œæ—¥æŠ¥çš„åŠ ç­æ—¶é•¿ï¼Œæ˜¯è¦å‡å»è½¬è°ƒä¼‘çš„æ—¶é•¿çš„ã€‚ç™»è®°å’Œç”³è¯·å®¡æ‰¹èŠ‚ç‚¹ä¸å‡
+	 * ´¦ÀíÄ³ÌìµÄ¼Ó°àµ¥µÄÊ±³¤ ¼Ó°àµ¥µÄÊ±³¤´¦ÀíÓëÆäËûµ¥¾İ²»Ò»Ñù¡£ÆäËûµ¥¾İÊ¹ÓÃÇĞµÄ·½Ê½£¬Ò²¾ÍÊÇËµ£¬Ò»ÕÅµ¥¾İÈç¹û¿çÁË¼¸ÌìµÄ»°£¬Ê±³¤ÊÇ·ÖÉ¢ÔÚ¸÷ÌìµÄ
+	 * ¶ø¼Ó°àµ¥ÊÇ¹éµÄ·½Ê½£ºÒ»ÕÅ¼Ó°àµ¥µÄÊ±³¤£¬ÊÇÈ«²¿ËãÔÚÕâÕÅµ¥¾İËùÊôµÄ¹¤×÷ÈÕÉÏµÄ£¬²»·ÖÌ¯µ½Ã¿Ìì¡£ ÄÇÃ´¸ÃÈçºÎÈ·¶¨Ò»ÕÅ¼Ó°àµ¥¹éÊôÓÚÄÄÒ»¸ö¹¤×÷ÈÕÄØ£¿
+	 * 1.Ê×ÏÈÑ°ÕÒÓë´Ë¼Ó°àµ¥Ê±¼ä¶ÎÓĞÊ±¼ä½»²æµÄµÚÒ»¸ö¹¤×÷ÈÕ£¬Èç¹ûÕÒµ½ÁË£¬Ôò¹éÊôÓÚ´Ë¹¤×÷ÈÕ
+	 * 2.Èç¹ûµÚÒ»²½Ã»ÕÒµ½£¬Ôò°Ñ¼Ó°àµ¥¿ªÊ¼Ê±¼äÍùÇ°ÍÆÒ»Ìì£¬¿´Õâ¸öÊ±¼äµãÊÇ·ñÊôÓÚÄ³¸ö¹¤×÷ÈÕ£¬Èç¹ûÕÒµ½ÁË£¬Ôò¹éÊôÓÚ´Ë¹¤×÷ÈÕ£»·ñÔòµ½3
+	 * 3.Èç¹ûµÚ¶ş²½Ò²Ã»ÕÒµ½£¬Ôò°Ñ¼Ó°àµ¥½áÊøÊ±¼äÍùºóÍÆÒ»Ìì£¬¿´Õâ¸öÊ±¼äµãÊÇ·ñÊôÓÚÄ³¸ö¹¤×÷ÈÕ£¬Èç¹ûÕÒµ½ÁË£¬Ôò¹éÊôÓÚ´Ë¹¤×÷ÈÕ£»·ñÔòµ½4
+	 * 4.°Ñ¼Ó°àµ¥¿ªÊ¼Ê±¼äÍùÇ°ÍÆÁ½Ìì£¬¿´Õâ¸öÊ±¼äµãÊÇ·ñÊôÓÚÄ³¸ö¹¤×÷ÈÕ£¬Èç¹ûÕÒµ½ÁË£¬Ôò¹éÊôÓÚ´Ë¹¤×÷ÈÕ£»·ñÔòµ½5
+	 * 5.°Ñ¼Ó°àµ¥½áÊøÊ±¼äÍùºóÍÆÁ½Ìì£¬¿´Õâ¸öÊ±¼äµãÊÇ·ñÊôÓÚÄ³¸ö¹¤×÷ÈÕ£¬Èç¹ûÕÒµ½ÁË£¬Ôò¹éÊôÓÚ´Ë¹¤×÷ÈÕ£»·ñÔò²»ÔÙÕÒÁË£¬·µ»Ø¿Õ
+	 * Òò´Ë¼ÆËãÄ³ÈÕµÄ¼Ó°àÊ±³¤µÄ·½Ê½ÊÇ£ºÕÒ³ö¹éÊôÓÚ´ËÌìµÄËùÓĞ¼Ó°àµ¥£¬È»ºó¶ÔÃ¿¸ö¼Ó°àµ¥µ¥¶À¼ÆËã£¬È»ºó»ã×Üµ½ÕâÌì
+	 * ×¢Òâ£¬ÈÕ±¨µÄ¼Ó°àÊ±³¤£¬ÊÇÒª¼õÈ¥×ªµ÷ĞİµÄÊ±³¤µÄ¡£µÇ¼ÇºÍÉêÇëÉóÅú½Úµã²»¼õ
+	 * 
 	 * @param timeItems
-	 * @param billListï¼Œå·²ç»å’Œå„ç§å•æ®äº¤åˆ‡è¿‡ï¼Œå¹¶ä¸”å·²ç»å‡å»äº†å·¥ä½œæ—¶é—´æ®µçš„å•æ®
+	 * @param billList
+	 *            £¬ÒÑ¾­ºÍ¸÷ÖÖµ¥¾İ½»ÇĞ¹ı£¬²¢ÇÒÒÑ¾­¼õÈ¥ÁË¹¤×÷Ê±¼ä¶ÎµÄµ¥¾İ
 	 * @param curCalendar
 	 * @param lastCalendar
 	 * @param nextCalendar
 	 * @param statbVOList
 	 */
-	public static void processOvertiemLength(TimeItemCopyVO[] timeItems,
-			List<ITimeScopeWithBillType> billList,
-			String curDate,Map<String, UFLiteralDate> belongtoDateMap,
-			List<DayStatbVO> statbVOList,String pk_daystat,TimeRuleVO timeRuleVO){
-		//å¦‚æœæ²¡æœ‰åŠ ç­å•ï¼Œåˆ™ä¸ç”¨å¤„ç†ï¼ˆä¹Ÿæœ‰ä¸€ç§å¯èƒ½ï¼Œé‚£å°±æ˜¯æœ‰åŠ ç­å•ï¼Œä½†æ˜¯å’Œå…¶ä»–å•æ®æœ‰æ—¶é—´å†²çªï¼Œä¸”æŒ‰ç…§å†²çªè§„åˆ™çš„å®šä¹‰ï¼Œè¿™ç§å†²çªä¸ç®—åŠ ç­ï¼‰
-		if(billList==null||billList.size()==0 ||timeItems ==null)
+	public static void processOvertiemLength(TimeItemCopyVO[] timeItems, List<ITimeScopeWithBillType> billList,
+			String curDate, Map<String, UFLiteralDate> belongtoDateMap, List<DayStatbVO> statbVOList,
+			String pk_daystat, TimeRuleVO timeRuleVO) {
+		// Èç¹ûÃ»ÓĞ¼Ó°àµ¥£¬Ôò²»ÓÃ´¦Àí£¨Ò²ÓĞÒ»ÖÖ¿ÉÄÜ£¬ÄÇ¾ÍÊÇÓĞ¼Ó°àµ¥£¬µ«ÊÇºÍÆäËûµ¥¾İÓĞÊ±¼ä³åÍ»£¬ÇÒ°´ÕÕ³åÍ»¹æÔòµÄ¶¨Òå£¬ÕâÖÖ³åÍ»²»Ëã¼Ó°à£©
+		if (billList == null || billList.size() == 0 || timeItems == null)
 			return;
-		//å½’å±äºæœ¬æ—¥çš„åŠ ç­å•ï¼Œkeyæ˜¯åŠ ç­åŸå§‹å•æ®ï¼Œvalueæ˜¯æ­¤åŸå§‹å•æ®å¯¹åº”çš„è¢«äº¤åˆ‡è¿‡çš„å•æ®
+		// ¹éÊôÓÚ±¾ÈÕµÄ¼Ó°àµ¥£¬keyÊÇ¼Ó°àÔ­Ê¼µ¥¾İ£¬valueÊÇ´ËÔ­Ê¼µ¥¾İ¶ÔÓ¦µÄ±»½»ÇĞ¹ıµÄµ¥¾İ
 		Map<OvertimeCommonVO, List<ITimeScopeWithBillType>> belongtoCurDateBillMap = new HashMap<OvertimeCommonVO, List<ITimeScopeWithBillType>>();
-		//æŒ‰å•æ®å¾ªç¯å¤„ç†
-		for(ITimeScopeWithBillType bill:billList){
-			for(ITimeScopeWithBillType originalBill: bill.getOriginalTimeScopeMap().values()){
-				if(!(originalBill instanceof OvertimeCommonVO))
+		// °´µ¥¾İÑ­»·´¦Àí
+		for (ITimeScopeWithBillType bill : billList) {
+			for (ITimeScopeWithBillType originalBill : bill.getOriginalTimeScopeMap().values()) {
+				if (!(originalBill instanceof OvertimeCommonVO))
 					continue;
-				OvertimeCommonVO overbvo = (OvertimeCommonVO)originalBill;
+				OvertimeCommonVO overbvo = (OvertimeCommonVO) originalBill;
 				UFLiteralDate belongdate = belongtoDateMap.get(overbvo.getPrimaryKey());
-				if(belongdate==null||!curDate.equals(belongdate.toString()))
+				if (belongdate == null || !curDate.equals(belongdate.toString()))
 					break;
-				//æ­¤å•æ®å±äºå½“å‰è®¡ç®—çš„å·¥ä½œæ—¥
+				// ´Ëµ¥¾İÊôÓÚµ±Ç°¼ÆËãµÄ¹¤×÷ÈÕ
 				List<ITimeScopeWithBillType> belongtoCurDateBillList = null;
-				if(belongtoCurDateBillMap.containsKey(overbvo))
+				if (belongtoCurDateBillMap.containsKey(overbvo))
 					belongtoCurDateBillList = belongtoCurDateBillMap.get(overbvo);
-				else{
+				else {
 					belongtoCurDateBillList = new Vector<ITimeScopeWithBillType>();
 					belongtoCurDateBillMap.put(overbvo, belongtoCurDateBillList);
 				}
@@ -613,313 +778,324 @@ public class BillProcessHelper {
 				break;
 			}
 		}
-		for(TimeItemCopyVO item:timeItems){
-			TimeLengthWrapper result = calOvertimeLength(item, belongtoCurDateBillMap, timeRuleVO,true);
-			createDaystatbVO(pk_daystat,item.getPk_timeitem(), result.originalLength,result.processedLength, 
-					result.originalLengthUseHour,result.processedLengthUseHour,result.toRestHour,
-					statbVOList,2,null,item.getTimeItemUnit());
+		for (TimeItemCopyVO item : timeItems) {
+			TimeLengthWrapper result = calOvertimeLength(item, belongtoCurDateBillMap, timeRuleVO, true);
+			createDaystatbVO(pk_daystat, item.getPk_timeitem(), result.originalLength, result.processedLength,
+					result.originalLengthUseHour, result.processedLengthUseHour, result.toRestHour, statbVOList, 2,
+					null, item.getTimeItemUnit());
 		}
 	}
-	
+
 	/**
-	 * æ ¹æ®å·¥ä½œæ—¥å†ï¼Œæ‰¾å‡ºæŸå¼ åŠ ç­å•æ‰€å±çš„å·¥ä½œæ—¥
-	 * 1.é¦–å…ˆå¯»æ‰¾ä¸æ­¤åŠ ç­å•æ—¶é—´æ®µæœ‰æ—¶é—´äº¤å‰çš„ç¬¬ä¸€ä¸ªå·¥ä½œæ—¥ï¼Œå¦‚æœæ‰¾åˆ°äº†ï¼Œåˆ™å½’å±äºæ­¤å·¥ä½œæ—¥
-	 * 2.å¦‚æœç¬¬ä¸€æ­¥æ²¡æ‰¾åˆ°ï¼Œåˆ™æŠŠåŠ ç­å•å¼€å§‹æ—¶é—´å¾€å‰æ¨ä¸€å¤©ï¼Œçœ‹è¿™ä¸ªæ—¶é—´ç‚¹æ˜¯å¦å±äºæŸä¸ªå·¥ä½œæ—¥ï¼Œå¦‚æœæ‰¾åˆ°äº†ï¼Œåˆ™å½’å±äºæ­¤å·¥ä½œæ—¥ï¼›å¦åˆ™åˆ°3
-	 * 3.å¦‚æœç¬¬äºŒæ­¥ä¹Ÿæ²¡æ‰¾åˆ°ï¼Œåˆ™æŠŠåŠ ç­å•ç»“æŸæ—¶é—´å¾€åæ¨ä¸€å¤©ï¼Œçœ‹è¿™ä¸ªæ—¶é—´ç‚¹æ˜¯å¦å±äºæŸä¸ªå·¥ä½œæ—¥ï¼Œå¦‚æœæ‰¾åˆ°äº†ï¼Œåˆ™å½’å±äºæ­¤å·¥ä½œæ—¥ï¼›å¦åˆ™åˆ°4
-	 * 4.æŠŠåŠ ç­å•å¼€å§‹æ—¶é—´å¾€å‰æ¨ä¸¤å¤©ï¼Œçœ‹è¿™ä¸ªæ—¶é—´ç‚¹æ˜¯å¦å±äºæŸä¸ªå·¥ä½œæ—¥ï¼Œå¦‚æœæ‰¾åˆ°äº†ï¼Œåˆ™å½’å±äºæ­¤å·¥ä½œæ—¥ï¼›å¦åˆ™åˆ°5
-	 * 5.æŠŠåŠ ç­å•ç»“æŸæ—¶é—´å¾€åæ¨ä¸¤å¤©ï¼Œçœ‹è¿™ä¸ªæ—¶é—´ç‚¹æ˜¯å¦å±äºæŸä¸ªå·¥ä½œæ—¥ï¼Œå¦‚æœæ‰¾åˆ°äº†ï¼Œåˆ™å½’å±äºæ­¤å·¥ä½œæ—¥ï¼›å¦åˆ™ä¸å†æ‰¾äº†ï¼Œè¿”å›ç©º
-	 * 2009.08.21ä¸å¼ æ—­è®¨è®ºï¼Œå°†ç®—æ³•æ”¹ä¸º
-	 * 1.ä¸åŸç®—æ³•ç¬¬ä¸€æ­¥ä¸€è‡´
-	 * 2.å°†åŠ ç­å¼€å§‹æ—¶é—´å¾€å‰æ¨24å°æ—¶ï¼Œåœ¨å¾€å‰æ¨çš„è¿‡ç¨‹ä¸­ï¼Œå¦‚æœç¢°åˆ°äº†æŸä¸ªå·¥ä½œæ—¥çš„ç»“æŸæ—¶é—´ï¼Œå°±ä»¥è¿™ä¸ªå·¥ä½œæ—¥ä½œä¸ºå½’å±æ—¥ï¼Œå¦åˆ™åˆ°3
-	 * 3.å°†åŠ ç­ç»“æŸæ—¶é—´å¾€åæ¨24å°æ—¶ï¼Œåœ¨å¾€åæ¨çš„è¿‡ç¨‹ä¸­ï¼Œå¦‚æœç¢°åˆ°äº†æŸä¸ªå·¥ä½œæ—¥çš„å¼€å§‹æ—¶é—´ï¼Œå°±ä»¥è¿™ä¸ªå·¥ä½œæ—¥ä½œä¸ºå½’å±æ—¥ï¼Œå¦åˆ™åˆ°4
-	 * 4.ä»¥è¿™ä¸ªå•æ®çš„å¼€å§‹æ—¶é—´æ‰€å±çš„è‡ªç„¶æ—¥ä½œä¸ºå½’å±æ—¥å¹¶è¿”å›
+	 * ¸ù¾İ¹¤×÷ÈÕÀú£¬ÕÒ³öÄ³ÕÅ¼Ó°àµ¥ËùÊôµÄ¹¤×÷ÈÕ 1.Ê×ÏÈÑ°ÕÒÓë´Ë¼Ó°àµ¥Ê±¼ä¶ÎÓĞÊ±¼ä½»²æµÄµÚÒ»¸ö¹¤×÷ÈÕ£¬Èç¹ûÕÒµ½ÁË£¬Ôò¹éÊôÓÚ´Ë¹¤×÷ÈÕ
+	 * 2.Èç¹ûµÚÒ»²½Ã»ÕÒµ½£¬Ôò°Ñ¼Ó°àµ¥¿ªÊ¼Ê±¼äÍùÇ°ÍÆÒ»Ìì£¬¿´Õâ¸öÊ±¼äµãÊÇ·ñÊôÓÚÄ³¸ö¹¤×÷ÈÕ£¬Èç¹ûÕÒµ½ÁË£¬Ôò¹éÊôÓÚ´Ë¹¤×÷ÈÕ£»·ñÔòµ½3
+	 * 3.Èç¹ûµÚ¶ş²½Ò²Ã»ÕÒµ½£¬Ôò°Ñ¼Ó°àµ¥½áÊøÊ±¼äÍùºóÍÆÒ»Ìì£¬¿´Õâ¸öÊ±¼äµãÊÇ·ñÊôÓÚÄ³¸ö¹¤×÷ÈÕ£¬Èç¹ûÕÒµ½ÁË£¬Ôò¹éÊôÓÚ´Ë¹¤×÷ÈÕ£»·ñÔòµ½4
+	 * 4.°Ñ¼Ó°àµ¥¿ªÊ¼Ê±¼äÍùÇ°ÍÆÁ½Ìì£¬¿´Õâ¸öÊ±¼äµãÊÇ·ñÊôÓÚÄ³¸ö¹¤×÷ÈÕ£¬Èç¹ûÕÒµ½ÁË£¬Ôò¹éÊôÓÚ´Ë¹¤×÷ÈÕ£»·ñÔòµ½5
+	 * 5.°Ñ¼Ó°àµ¥½áÊøÊ±¼äÍùºóÍÆÁ½Ìì£¬¿´Õâ¸öÊ±¼äµãÊÇ·ñÊôÓÚÄ³¸ö¹¤×÷ÈÕ£¬Èç¹ûÕÒµ½ÁË£¬Ôò¹éÊôÓÚ´Ë¹¤×÷ÈÕ£»·ñÔò²»ÔÙÕÒÁË£¬·µ»Ø¿Õ
+	 * 2009.08.21ÓëÕÅĞñÌÖÂÛ£¬½«Ëã·¨¸ÄÎª 1.ÓëÔ­Ëã·¨µÚÒ»²½Ò»ÖÂ
+	 * 2.½«¼Ó°à¿ªÊ¼Ê±¼äÍùÇ°ÍÆ24Ğ¡Ê±£¬ÔÚÍùÇ°ÍÆµÄ¹ı³ÌÖĞ£¬Èç¹ûÅöµ½ÁËÄ³¸ö¹¤×÷ÈÕµÄ½áÊøÊ±¼ä£¬¾ÍÒÔÕâ¸ö¹¤×÷ÈÕ×÷Îª¹éÊôÈÕ£¬·ñÔòµ½3
+	 * 3.½«¼Ó°à½áÊøÊ±¼äÍùºóÍÆ24Ğ¡Ê±£¬ÔÚÍùºóÍÆµÄ¹ı³ÌÖĞ£¬Èç¹ûÅöµ½ÁËÄ³¸ö¹¤×÷ÈÕµÄ¿ªÊ¼Ê±¼ä£¬¾ÍÒÔÕâ¸ö¹¤×÷ÈÕ×÷Îª¹éÊôÈÕ£¬·ñÔòµ½4
+	 * 4.ÒÔÕâ¸öµ¥¾İµÄ¿ªÊ¼Ê±¼äËùÊôµÄ×ÔÈ»ÈÕ×÷Îª¹éÊôÈÕ²¢·µ»Ø
+	 * 
 	 * @param overtimebVO
 	 * @param calendarMap
 	 * @param shiftMap
 	 * @return
-	 * @throws BusinessException 
+	 * @throws BusinessException
 	 */
-	public static UFLiteralDate findBelongtoDate(OvertimeCommonVO overtimeVO,Map<UFLiteralDate, AggPsnCalendar> calendarMap,
-			Map<String, ShiftVO> shiftMap,UFLiteralDate[] dateArray,
-			Map<UFLiteralDate, TimeZone> dateTimeZoneMap) throws BusinessException{
-		//å…ˆæ˜¯ç¬¬ä¸€è½®å¯»æ‰¾ï¼šæ‰¾å‡ºä¸åŠ ç­å•æœ‰æ—¶é—´äº¤é›†çš„æœ€æ—©çš„å·¥ä½œæ—¥ï¼Œä»å•æ®å¼€å§‹æ—¶é—´å‰ä¸¤å¤©å¼€å§‹å¯»æ‰¾ï¼Œæ‰¾åˆ°å•æ®ç»“æŸæ—¶é—´åä¸¤å¤©ä¸ºæ­¢
-		UFLiteralDate date = findBelongtoDate0(overtimeVO, calendarMap, shiftMap, dateArray,true,dateTimeZoneMap);
-		if(date!=null)
+	public static UFLiteralDate findBelongtoDate(OvertimeCommonVO overtimeVO,
+			Map<UFLiteralDate, AggPsnCalendar> calendarMap, Map<String, ShiftVO> shiftMap, UFLiteralDate[] dateArray,
+			Map<UFLiteralDate, TimeZone> dateTimeZoneMap) throws BusinessException {
+		// ÏÈÊÇµÚÒ»ÂÖÑ°ÕÒ£ºÕÒ³öÓë¼Ó°àµ¥ÓĞÊ±¼ä½»¼¯µÄ×îÔçµÄ¹¤×÷ÈÕ£¬´Óµ¥¾İ¿ªÊ¼Ê±¼äÇ°Á½Ìì¿ªÊ¼Ñ°ÕÒ£¬ÕÒµ½µ¥¾İ½áÊøÊ±¼äºóÁ½ÌìÎªÖ¹
+		UFLiteralDate date = findBelongtoDate0(overtimeVO, calendarMap, shiftMap, dateArray, true, dateTimeZoneMap);
+		if (date != null)
 			return date;
-		//ä»£ç èµ°åˆ°è¿™é‡Œï¼Œè¡¨ç¤ºç¬¬ä¸€è½®æ²¡æœ‰æ‰¾åˆ°å½’å±æ—¥ï¼Œéœ€è¦æŠŠåŠ ç­å•çš„æ—¶é—´ç‚¹åšä¸€äº›æ”¹é€ :å¼€å§‹æ—¶é—´ç‚¹å¾€å‰æŒªä¸€å¤©ï¼Œç»“æŸæ—¶é—´ç‚¹ä¸ºåŸæ¥çš„å¼€å§‹æ—¶é—´,å†æ¬¡æŸ¥æ‰¾,è¿™æ¬¡æ˜¯æŸ¥æ‰¾æœ‰äº¤çš„æœ€æ™šçš„
+		// ´úÂë×ßµ½ÕâÀï£¬±íÊ¾µÚÒ»ÂÖÃ»ÓĞÕÒµ½¹éÊôÈÕ£¬ĞèÒª°Ñ¼Ó°àµ¥µÄÊ±¼äµã×öÒ»Ğ©¸ÄÔì:¿ªÊ¼Ê±¼äµãÍùÇ°Å²Ò»Ìì£¬½áÊøÊ±¼äµãÎªÔ­À´µÄ¿ªÊ¼Ê±¼ä,ÔÙ´Î²éÕÒ,Õâ´ÎÊÇ²éÕÒÓĞ½»µÄ×îÍíµÄ
 		UFLiteralDate beginDate = overtimeVO.getOvertimebegindate();
-		OvertimeCommonVO cloneVO = (OvertimeCommonVO)overtimeVO.clone();
+		OvertimeCommonVO cloneVO = (OvertimeCommonVO) overtimeVO.clone();
 		cloneVO.setOvertimebegindate(beginDate.getDateBefore(1));
-		cloneVO.setOvertimebegintime(DateTimeUtils.getDateTimeBeforeMills(cloneVO.getOvertimebegintime(), ICalendar.MILLIS_PER_DAY));
+		cloneVO.setOvertimebegintime(DateTimeUtils.getDateTimeBeforeMills(cloneVO.getOvertimebegintime(),
+				ICalendar.MILLIS_PER_DAY));
 		cloneVO.setOvertimeenddate(beginDate);
 		cloneVO.setOvertimeendtime(overtimeVO.getOvertimebegintime());
-		date = findBelongtoDate0(cloneVO, calendarMap, shiftMap, dateArray,false,dateTimeZoneMap);
-		if(date!=null)
+		date = findBelongtoDate0(cloneVO, calendarMap, shiftMap, dateArray, false, dateTimeZoneMap);
+		if (date != null)
 			return date;
-		//èµ°åˆ°è¿™é‡Œï¼Œè¡¨ç¤ºç¬¬äºŒè½®ä¹Ÿæ²¡æœ‰æ‰¾åˆ°å½’å±æ—¥ï¼Œéœ€è¦æŠŠåŠ ç­å•çš„æ—¶é—´ç‚¹å†åšä¸€äº›æ”¹é€ :ç»“æŸæ—¶é—´ç‚¹å¾€åæŒªä¸€å¤©ï¼Œå¼€å§‹æ—¶é—´ç‚¹ä¸ºåŸæ¥çš„ç»“æŸæ—¶é—´,å†æ¬¡æŸ¥æ‰¾,è¿™æ¬¡æ˜¯æŸ¥æ‰¾æœ‰äº¤çš„æœ€æ—©çš„
+		// ×ßµ½ÕâÀï£¬±íÊ¾µÚ¶şÂÖÒ²Ã»ÓĞÕÒµ½¹éÊôÈÕ£¬ĞèÒª°Ñ¼Ó°àµ¥µÄÊ±¼äµãÔÙ×öÒ»Ğ©¸ÄÔì:½áÊøÊ±¼äµãÍùºóÅ²Ò»Ìì£¬¿ªÊ¼Ê±¼äµãÎªÔ­À´µÄ½áÊøÊ±¼ä,ÔÙ´Î²éÕÒ,Õâ´ÎÊÇ²éÕÒÓĞ½»µÄ×îÔçµÄ
 		UFLiteralDate endDate = overtimeVO.getOvertimeenddate();
-		cloneVO = (OvertimeCommonVO)overtimeVO.clone();
+		cloneVO = (OvertimeCommonVO) overtimeVO.clone();
 		cloneVO.setOvertimeenddate(endDate.getDateAfter(1));
-		cloneVO.setOvertimeendtime(DateTimeUtils.getDateTimeAfterMills(overtimeVO.getOvertimeendtime(), ICalendar.MILLIS_PER_DAY));
+		cloneVO.setOvertimeendtime(DateTimeUtils.getDateTimeAfterMills(overtimeVO.getOvertimeendtime(),
+				ICalendar.MILLIS_PER_DAY));
 		cloneVO.setOvertimebegindate(endDate);
 		cloneVO.setOvertimebegintime(overtimeVO.getOvertimeendtime());
-		date = findBelongtoDate0(cloneVO, calendarMap, shiftMap, dateArray,true,dateTimeZoneMap);
-		if(date!=null)
+		date = findBelongtoDate0(cloneVO, calendarMap, shiftMap, dateArray, true, dateTimeZoneMap);
+		if (date != null)
 			return date;
-		//èµ°åˆ°è¿™é‡Œä¸ç®¡èƒ½ä¸èƒ½æ‰¾åˆ°éƒ½è¿”å›ï¼Œä¸å†å¾€ä¸‹æ‰¾äº†
+		// ×ßµ½ÕâÀï²»¹ÜÄÜ²»ÄÜÕÒµ½¶¼·µ»Ø£¬²»ÔÙÍùÏÂÕÒÁË
 		return beginDate;
 	}
-	
+
 	/**
 	 * @param overtimebVO
 	 * @param calendarMap
 	 * @param shiftMap
 	 * @param dateArray
-	 * @param isAscSearch true è¡¨ç¤ºæ‰¾å‡ºæœ€æ—©ç›¸äº¤çš„ï¼Œfalse è¡¨ç¤ºæœ€æ™šç›¸äº¤çš„
+	 * @param isAscSearch
+	 *            true ±íÊ¾ÕÒ³ö×îÔçÏà½»µÄ£¬false ±íÊ¾×îÍíÏà½»µÄ
 	 * @return
-	 * @throws BusinessException 
+	 * @throws BusinessException
 	 */
 	public static UFLiteralDate findBelongtoDate0(OvertimeCommonVO overtimeVO,
-			Map<UFLiteralDate, AggPsnCalendar> calendarMap,
-			Map<String, ShiftVO> shiftMap,
-			UFLiteralDate[] dateArray,
-			boolean isAscSearch,
-			Map<UFLiteralDate, TimeZone> dateTimeZoneMap) throws BusinessException{
+			Map<UFLiteralDate, AggPsnCalendar> calendarMap, Map<String, ShiftVO> shiftMap, UFLiteralDate[] dateArray,
+			boolean isAscSearch, Map<UFLiteralDate, TimeZone> dateTimeZoneMap) throws BusinessException {
 		UFLiteralDate beginDate = overtimeVO.getOvertimebegindate();
 		UFLiteralDate endDate = overtimeVO.getOvertimeenddate();
-		int beginIndex = ArrayUtils.indexOf(dateArray,beginDate.getDateBefore(2));
-		beginIndex = beginIndex<0?0:beginIndex;
-		int endIndex = ArrayUtils.indexOf(dateArray,endDate.getDateAfter(2));
-		endIndex = endIndex<0?(dateArray.length-1):endIndex;
-		int i = isAscSearch?beginIndex:endIndex;
-		for(;;){
+		int beginIndex = ArrayUtils.indexOf(dateArray, beginDate.getDateBefore(2));
+		beginIndex = beginIndex < 0 ? 0 : beginIndex;
+		int endIndex = ArrayUtils.indexOf(dateArray, endDate.getDateAfter(2));
+		endIndex = endIndex < 0 ? (dateArray.length - 1) : endIndex;
+		int i = isAscSearch ? beginIndex : endIndex;
+		for (;;) {
 			UFLiteralDate curDate = dateArray[i];
-			//å½“å¤©ç­æ¬¡çš„è€ƒå‹¤æ—¶é—´æ®µ
-			ITimeScope curDateAttendTimeScope = getAttendTimeScope4OvertimeCheck(i==0?null:dateArray[i-1],
-					curDate, i==dateArray.length-1?null:dateArray[i+1],calendarMap, shiftMap,dateTimeZoneMap);
-			//å¦‚æœå½“å¤©çš„è€ƒå‹¤æ—¶é—´æ®µä¸åŠ ç­å•çš„æ—¶é—´æ®µæœ‰äº¤é›†ï¼Œåˆ™ç›´æ¥è¿”å›æ­¤å¤©
-			if(TimeScopeUtils.isCross(overtimeVO,curDateAttendTimeScope))
+			// µ±Ìì°à´ÎµÄ¿¼ÇÚÊ±¼ä¶Î
+			ITimeScope curDateAttendTimeScope = getAttendTimeScope4OvertimeCheck(i == 0 ? null : dateArray[i - 1],
+					curDate, i == dateArray.length - 1 ? null : dateArray[i + 1], calendarMap, shiftMap,
+					dateTimeZoneMap);
+			// Èç¹ûµ±ÌìµÄ¿¼ÇÚÊ±¼ä¶ÎÓë¼Ó°àµ¥µÄÊ±¼ä¶ÎÓĞ½»¼¯£¬ÔòÖ±½Ó·µ»Ø´ËÌì
+			if (TimeScopeUtils.isCross(overtimeVO, curDateAttendTimeScope))
 				return curDate;
-			i=isAscSearch?(i+1):(i-1);
-			if(i>endIndex||i<beginIndex)
+			i = isAscSearch ? (i + 1) : (i - 1);
+			if (i > endIndex || i < beginIndex)
 				break;
 		}
 		return null;
 	}
-	
-	public static UFLiteralDate findBelongtoDate(OvertimeCommonVO overtimeVO,Map<UFLiteralDate, AggPsnCalendar> calendarMap,
-			Map<String, ShiftVO> shiftMap,
-			Map<UFLiteralDate, TimeZone> dateTimeZoneMap) throws BusinessException{
+
+	public static UFLiteralDate findBelongtoDate(OvertimeCommonVO overtimeVO,
+			Map<UFLiteralDate, AggPsnCalendar> calendarMap, Map<String, ShiftVO> shiftMap,
+			Map<UFLiteralDate, TimeZone> dateTimeZoneMap) throws BusinessException {
 		UFLiteralDate beginDate = overtimeVO.getOvertimebegindate();
 		UFLiteralDate endDate = overtimeVO.getOvertimeenddate();
-		return findBelongtoDate(overtimeVO, calendarMap, shiftMap, CommonUtils.createDateArray(beginDate, endDate,2,2),dateTimeZoneMap);
+		return findBelongtoDate(overtimeVO, calendarMap, shiftMap,
+				CommonUtils.createDateArray(beginDate, endDate, 2, 2), dateTimeZoneMap);
 	}
-	
-	public static void findBelongtoDate(OvertimeCommonVO[] overtimeVOs,
-			Map<String,UFLiteralDate> belongDateMap,
-			Map<UFLiteralDate, AggPsnCalendar> calendarMap,
-			Map<String, ShiftVO> shiftMap,UFLiteralDate[] dateArray,
-			Map<UFLiteralDate, TimeZone> dateTimeZoneMap) throws BusinessException{
-		if(overtimeVOs == null || overtimeVOs.length==0)
+
+	public static void findBelongtoDate(OvertimeCommonVO[] overtimeVOs, Map<String, UFLiteralDate> belongDateMap,
+			Map<UFLiteralDate, AggPsnCalendar> calendarMap, Map<String, ShiftVO> shiftMap, UFLiteralDate[] dateArray,
+			Map<UFLiteralDate, TimeZone> dateTimeZoneMap) throws BusinessException {
+		if (overtimeVOs == null || overtimeVOs.length == 0)
 			return;
-		for(OvertimeCommonVO vo:overtimeVOs)
-			belongDateMap.put(vo.getPrimaryKey(), findBelongtoDate(vo, calendarMap, shiftMap,dateArray,dateTimeZoneMap));
+		for (OvertimeCommonVO vo : overtimeVOs)
+			belongDateMap.put(vo.getPrimaryKey(),
+					findBelongtoDate(vo, calendarMap, shiftMap, dateArray, dateTimeZoneMap));
 	}
-	
+
 	/**
-	 * ä»å„ç§å•æ®ï¼ˆåŒ…æ‹¬å‡ºå·®ä¼‘å‡åŠ ç­åœå·¥ï¼‰çš„æ—¶é—´æ®µæ•°ç»„ä¸­ï¼Œæ‰¾å‡ºç›¸åº”ç±»å‹çš„å•æ®ã€‚billTypeè¡¨æ˜æ˜¯åŠ ç­è¿˜æ˜¯ä¼‘å‡è¿˜æ˜¯å‡ºå·®è¿˜æ˜¯åœå·¥ã€‚è¯¦è§BillMutexRuleç±»çš„å¸¸é‡å®šä¹‰
-	 * å¦‚æœæ—¶é—´æ®µæ˜¯å‡ ç§å•æ®ç›¸äº¤è€Œæˆçš„ï¼ˆæ¯”å¦‚ä¼‘å‡å’Œå‡ºå·®äº¤ï¼‰ï¼Œé‚£ä¹ˆéœ€è¦ç”¨å†²çªè§„åˆ™æ¥åˆ¤æ–­æ˜¯å¦åº”è¯¥ç®—æˆbillTypeç±»å‹çš„æ—¶é—´æ®µ
+	 * ´Ó¸÷ÖÖµ¥¾İ£¨°üÀ¨³ö²îĞİ¼Ù¼Ó°àÍ£¹¤£©µÄÊ±¼ä¶ÎÊı×éÖĞ£¬ÕÒ³öÏàÓ¦ÀàĞÍµÄµ¥¾İ¡£billType±íÃ÷ÊÇ¼Ó°à»¹ÊÇĞİ¼Ù»¹ÊÇ³ö²î»¹ÊÇÍ£¹¤¡£
+	 * Ïê¼ûBillMutexRuleÀàµÄ³£Á¿¶¨Òå
+	 * Èç¹ûÊ±¼ä¶ÎÊÇ¼¸ÖÖµ¥¾İÏà½»¶ø³ÉµÄ£¨±ÈÈçĞİ¼ÙºÍ³ö²î½»£©£¬ÄÇÃ´ĞèÒªÓÃ³åÍ»¹æÔòÀ´ÅĞ¶ÏÊÇ·ñÓ¦¸ÃËã³ÉbillTypeÀàĞÍµÄÊ±¼ä¶Î
+	 * 
 	 * @param bills
 	 * @param billType
 	 * @return
 	 */
-	public static List<ITimeScopeWithBillType> filterBills(ITimeScopeWithBillType[] bills,int billType,BillMutexRule billMutexRule){
-		if(bills==null||bills.length==0)
+	public static List<ITimeScopeWithBillType> filterBills(ITimeScopeWithBillType[] bills, int billType,
+			BillMutexRule billMutexRule) {
+		if (bills == null || bills.length == 0)
 			return null;
 		List<ITimeScopeWithBillType> retList = new Vector<ITimeScopeWithBillType>(5);
-		for(ITimeScopeWithBillType scope:bills){
-			//å¦‚æœæ­¤æ—¶é—´æ®µå¯ä»¥è®¡ä¸ºbillTypeç±»å‹ï¼ˆè§BillMutexRuleç±»çš„å¸¸é‡å®šä¹‰ï¼‰çš„å•æ®ï¼Œåˆ™åŠ å…¥retListã€‚è¿™ä¸ªifä¼šè¿‡æ»¤æ‰ä¸æ˜¯billTypeç±»å‹çš„æ—¶é—´æ®µï¼Œä¹Ÿä¼šè¿‡æ»¤æ‰æ˜¯billType
-			//ç±»å‹ï¼Œä½†æ˜¯ä¸å…¶ä»–ç±»å‹çš„å•æ®æœ‰æ—¶é—´å†²çªä¸”æŒ‰ç…§å†²çªè§„åˆ™ä¸è®¡ä¸ºbillTypeçš„æ—¶é—´æ®µã€‚å†²çªè§„åˆ™å®šä¹‰è§BillMutexRule.getMutexResultæ–¹æ³•
-			//æ¯”å¦‚billTypeæ˜¯BillMutexRule.BILL_AWAYå‡ºå·®ç±»å‹ï¼Œé‚£ä¹ˆè¿™ä¸ªifä¼šè¿‡æ»¤æ‰åŠ ç­ä¼‘å‡åœå·¥ç±»å‹çš„æ—¶é—´æ®µï¼Œå¹¶ä¸”ä¼šè¿‡æ»¤æ‰å‡ºå·®ä¸å…¶ä»–ç±»å‹çš„å•æ®äº¤ä¸”æŒ‰å†²çªè§„åˆ™ä¸è®¡ä¸º
-			//å‡ºå·®çš„æ—¶é—´æ®µ
-			if(containsBillType(billMutexRule.getMutexResult(scope.getBillType()), billType))
+		for (ITimeScopeWithBillType scope : bills) {
+			// Èç¹û´ËÊ±¼ä¶Î¿ÉÒÔ¼ÆÎªbillTypeÀàĞÍ£¨¼ûBillMutexRuleÀàµÄ³£Á¿¶¨Òå£©µÄµ¥¾İ£¬Ôò¼ÓÈëretList¡£Õâ¸öif»á¹ıÂËµô²»ÊÇbillTypeÀàĞÍµÄÊ±¼ä¶Î£¬Ò²»á¹ıÂËµôÊÇbillType
+			// ÀàĞÍ£¬µ«ÊÇÓëÆäËûÀàĞÍµÄµ¥¾İÓĞÊ±¼ä³åÍ»ÇÒ°´ÕÕ³åÍ»¹æÔò²»¼ÆÎªbillTypeµÄÊ±¼ä¶Î¡£³åÍ»¹æÔò¶¨Òå¼ûBillMutexRule.getMutexResult·½·¨
+			// ±ÈÈçbillTypeÊÇBillMutexRule.BILL_AWAY³ö²îÀàĞÍ£¬ÄÇÃ´Õâ¸öif»á¹ıÂËµô¼Ó°àĞİ¼ÙÍ£¹¤ÀàĞÍµÄÊ±¼ä¶Î£¬²¢ÇÒ»á¹ıÂËµô³ö²îÓëÆäËûÀàĞÍµÄµ¥¾İ½»ÇÒ°´³åÍ»¹æÔò²»¼ÆÎª
+			// ³ö²îµÄÊ±¼ä¶Î
+			if (containsBillType(billMutexRule.getMutexResult(scope.getBillType()), billType))
 				retList.add(scope);
 		}
 		return retList;
 	}
-	
+
 	/**
-	 * ä»å„ç§å•æ®ï¼ˆåŒ…æ‹¬å‡ºå·®ä¼‘å‡åŠ ç­åœå·¥ï¼‰çš„æ—¶é—´æ®µæ•°ç»„ä¸­ï¼Œæ‰¾å‡ºåŠ ç­ç±»å‹çš„å•æ®ã€‚è¿‡æ»¤å‡ºå•æ®åï¼Œå†å‡å»å·¥ä½œæ—¶é—´æ®µï¼Œå‰©ä¸‹çš„æ‰æ˜¯èƒ½å¤Ÿè®¡ç®—åŠ ç­æ—¶é•¿çš„æ•°æ®
-	 * å—å­šç”µæ± æœ‰éœ€æ±‚ï¼šå¦‚æœå…¬ä¼‘æ—¥ä¸è®¡ä¼‘å‡ï¼Œé‚£ä¹ˆåŠ ç­å•åº”è¯¥å¯ä»¥å½•å…¥ï¼Œå¹¶ä¸”å¯è®¡ç®—æ—¶é•¿ã€‚è¿™ä¸ªéœ€æ±‚æ˜¯è„±ç¦»äºè€ƒå‹¤é¡¹ç›®çš„å†²çªè§„åˆ™çš„ï¼Œ
-	 * å› ä¸ºå°±ç®—å†²çªè§„åˆ™å®šä¹‰ä¼‘å‡å’ŒåŠ ç­å†²çªï¼Œå—å­šç”µæ± ä¹Ÿè¦æ±‚åœ¨å…¬ä¼‘æ—¥ä¸è®¡ä¼‘å‡çš„æ—¶å€™ï¼ŒåŠ ç­å•å¯ä»¥å½•å…¥ã€‚
-	 * å¦‚æœæ—¶é—´æ®µæ²¡æœ‰å’Œä¼‘å‡ç›¸äº¤ï¼Œåˆ™ç›´æ¥ä½¿ç”¨å†²çªè§„åˆ™ã€‚å¦‚æœå’Œä¼‘å‡ç›¸äº¤ï¼Œåˆ™è¦è€ƒè™‘
-	 * å¦‚æœå†²çªè§„åˆ™è§„å®šä¼‘å‡å’ŒåŠ ç­ä¸å†²çªï¼Œå¹¶ä¸”è®¡ä¸ºåŠ ç­ï¼Œé‚£ä¹ˆä¸ç”¨åšä»»ä½•ç‰¹æ®Šå¤„ç†ï¼Œç›´æ¥è°ƒç”¨filterBillsæ–¹æ³•å³å¯ã€‚å¯ä¸‹é¢çš„å‡ ç§æƒ…å†µ
-	 * éœ€è¦è€ƒè™‘
-	 * 1.å†²çªè§„åˆ™è§„å®šä¼‘å‡å’ŒåŠ ç­ä¸å†²çªï¼Œä½†åªè®¡ä¼‘å‡ï¼Œä¸è®¡åŠ ç­
-	 * 2.å†²çªè§„åˆ™è§„å®šä¼‘å‡å’ŒåŠ ç­å†²çª
+	 * ´Ó¸÷ÖÖµ¥¾İ£¨°üÀ¨³ö²îĞİ¼Ù¼Ó°àÍ£¹¤£©µÄÊ±¼ä¶ÎÊı×éÖĞ£¬ÕÒ³ö¼Ó°àÀàĞÍµÄµ¥¾İ¡£¹ıÂË³öµ¥¾İºó£¬ÔÙ¼õÈ¥¹¤×÷Ê±¼ä¶Î£¬Ê£ÏÂµÄ²ÅÊÇÄÜ¹»¼ÆËã¼Ó°àÊ±³¤µÄÊı¾İ
+	 * ÄÏæÚµç³ØÓĞĞèÇó£ºÈç¹û¹«ĞİÈÕ²»¼ÆĞİ¼Ù£¬ÄÇÃ´¼Ó°àµ¥Ó¦¸Ã¿ÉÒÔÂ¼Èë£¬²¢ÇÒ¿É¼ÆËãÊ±³¤¡£Õâ¸öĞèÇóÊÇÍÑÀëÓÚ¿¼ÇÚÏîÄ¿µÄ³åÍ»¹æÔòµÄ£¬
+	 * ÒòÎª¾ÍËã³åÍ»¹æÔò¶¨ÒåĞİ¼ÙºÍ¼Ó°à³åÍ»£¬ÄÏæÚµç³ØÒ²ÒªÇóÔÚ¹«ĞİÈÕ²»¼ÆĞİ¼ÙµÄÊ±ºò£¬¼Ó°àµ¥¿ÉÒÔÂ¼Èë¡£
+	 * Èç¹ûÊ±¼ä¶ÎÃ»ÓĞºÍĞİ¼ÙÏà½»£¬ÔòÖ±½ÓÊ¹ÓÃ³åÍ»¹æÔò¡£Èç¹ûºÍĞİ¼ÙÏà½»£¬ÔòÒª¿¼ÂÇ
+	 * Èç¹û³åÍ»¹æÔò¹æ¶¨Ğİ¼ÙºÍ¼Ó°à²»³åÍ»£¬²¢ÇÒ¼ÆÎª¼Ó°à£¬ÄÇÃ´²»ÓÃ×öÈÎºÎÌØÊâ´¦Àí£¬Ö±½Óµ÷ÓÃfilterBills·½·¨¼´¿É¡£¿ÉÏÂÃæµÄ¼¸ÖÖÇé¿ö ĞèÒª¿¼ÂÇ
+	 * 1.³åÍ»¹æÔò¹æ¶¨Ğİ¼ÙºÍ¼Ó°à²»³åÍ»£¬µ«Ö»¼ÆĞİ¼Ù£¬²»¼Æ¼Ó°à 2.³åÍ»¹æÔò¹æ¶¨Ğİ¼ÙºÍ¼Ó°à³åÍ»
 	 * 
-	 * v63æ·»åŠ ï¼Œå‡æ—¥æ’ç­è®°ä¸ºåŠ ç­ï¼Œå› æ­¤å‡å»å·¥ä½œæ—¶é—´æ®µæ—¶ï¼Œå·¥ä½œæ—¶é—´æ®µè¦å…ˆå‡å»å‡æ—¥æ—¶é—´
+	 * v63Ìí¼Ó£¬¼ÙÈÕÅÅ°à¼ÇÎª¼Ó°à£¬Òò´Ë¼õÈ¥¹¤×÷Ê±¼ä¶ÎÊ±£¬¹¤×÷Ê±¼ä¶ÎÒªÏÈ¼õÈ¥¼ÙÈÕÊ±¼ä
+	 * 
 	 * @param bills
 	 * @return
-	 * @throws BusinessException 
+	 * @throws BusinessException
 	 */
 	public static List<ITimeScopeWithBillType> filterOvertimeBills(ITimeScopeWithBillType[] bills,
-			TimeItemCopyVO[] leaveItemVOs,
-			Map<UFLiteralDate, AggPsnCalendar> calendarMap,
-			Map<String, AggShiftVO> shiftMap,
-			Map<UFLiteralDate, TimeZone> dateTimeZoneMap,
-			UFLiteralDate[] dateArray,int beginDateIndexInDateArray,int endDateIndexInDateArray,BillMutexRule billMutexRule,ITimeScope[] holidayScope) throws BusinessException{
-		if(bills==null||bills.length==0)
+			TimeItemCopyVO[] leaveItemVOs, Map<UFLiteralDate, AggPsnCalendar> calendarMap,
+			Map<String, AggShiftVO> shiftMap, Map<UFLiteralDate, TimeZone> dateTimeZoneMap, UFLiteralDate[] dateArray,
+			int beginDateIndexInDateArray, int endDateIndexInDateArray, BillMutexRule billMutexRule,
+			ITimeScope[] holidayScope) throws BusinessException {
+		if (bills == null || bills.length == 0)
 			return null;
-		//å¾ªç¯å¤„ç†
+		// Ñ­»·´¦Àí
 		List<ITimeScopeWithBillType> retList = new ArrayList<ITimeScopeWithBillType>(5);
-		for(ITimeScopeWithBillType scope:bills){
-			//å¦‚æœæ—¶é—´æ®µæ²¡æœ‰åŠ ç­å•å±æ€§ï¼Œåˆ™ä¸ç”¨è€ƒè™‘ï¼Œç›´æ¥continueï¼Œå› ä¸ºæ­¤æ–¹æ³•åªæ˜¯è¿‡æ»¤å‡ºåŠ ç­æ—¶é—´æ®µ
-			if((scope.getBillType()&BILL_OVERTIME)!=BILL_OVERTIME)
+		for (ITimeScopeWithBillType scope : bills) {
+			// Èç¹ûÊ±¼ä¶ÎÃ»ÓĞ¼Ó°àµ¥ÊôĞÔ£¬Ôò²»ÓÃ¿¼ÂÇ£¬Ö±½Ócontinue£¬ÒòÎª´Ë·½·¨Ö»ÊÇ¹ıÂË³ö¼Ó°àÊ±¼ä¶Î
+			if ((scope.getBillType() & BILL_OVERTIME) != BILL_OVERTIME)
 				continue;
-			//å¦‚æœæ—¶é—´æ®µæ²¡æœ‰å’Œä¼‘å‡å•ç›¸äº¤ï¼Œåˆ™é‡‡ç”¨å†²çªè§„åˆ™ï¼ˆä¸filterBillsæ–¹æ³•ä¸€æ ·ï¼‰ï¼Œä¸ç”¨ç‰¹æ®Šå¤„ç†ï¼Œé‡‡ç”¨å†²çªè§„åˆ™æ£€æŸ¥å³å¯
-			if((scope.getBillType()&BILL_LEAVE)!=BILL_LEAVE){
-				if(containsBillType(billMutexRule.getMutexResult(scope.getBillType()), BILL_OVERTIME))
+			// Èç¹ûÊ±¼ä¶ÎÃ»ÓĞºÍĞİ¼Ùµ¥Ïà½»£¬Ôò²ÉÓÃ³åÍ»¹æÔò£¨ÓëfilterBills·½·¨Ò»Ñù£©£¬²»ÓÃÌØÊâ´¦Àí£¬²ÉÓÃ³åÍ»¹æÔò¼ì²é¼´¿É
+			if ((scope.getBillType() & BILL_LEAVE) != BILL_LEAVE) {
+				if (containsBillType(billMutexRule.getMutexResult(scope.getBillType()), BILL_OVERTIME))
 					retList.add(scope);
 				continue;
 			}
-			//ä»£ç èµ°åˆ°è¿™é‡Œï¼Œscopeè‚¯å®šè‡³å°‘æ˜¯ä¼‘å‡å’ŒåŠ ç­çš„ç›¸äº¤çš„å•å­
-			//å¦‚æœæ—¶é—´æ®µå’Œä¼‘å‡å•ç›¸äº¤ï¼Œåˆ™çœ‹å†²çªè§„åˆ™è§„å®šæ­¤ç§ç»„åˆæ˜¯å¦å¯ä»¥è®¡ä¸ºåŠ ç­ï¼Œå¦‚æœè®¡ä¸ºåŠ ç­ï¼Œåˆ™ä¹Ÿä¸ç”¨ç‰¹æ®Šå¤„ç†ï¼Œé‡‡ç”¨å†²çªè§„åˆ™æ£€æŸ¥å³å¯
-			if(containsBillType(billMutexRule.getMutexResult(scope.getBillType()), BILL_OVERTIME)){
+			// ´úÂë×ßµ½ÕâÀï£¬scope¿Ï¶¨ÖÁÉÙÊÇĞİ¼ÙºÍ¼Ó°àµÄÏà½»µÄµ¥×Ó
+			// Èç¹ûÊ±¼ä¶ÎºÍĞİ¼Ùµ¥Ïà½»£¬Ôò¿´³åÍ»¹æÔò¹æ¶¨´ËÖÖ×éºÏÊÇ·ñ¿ÉÒÔ¼ÆÎª¼Ó°à£¬Èç¹û¼ÆÎª¼Ó°à£¬ÔòÒ²²»ÓÃÌØÊâ´¦Àí£¬²ÉÓÃ³åÍ»¹æÔò¼ì²é¼´¿É
+			if (containsBillType(billMutexRule.getMutexResult(scope.getBillType()), BILL_OVERTIME)) {
 				retList.add(scope);
 				continue;
 			}
-			//å¦‚æœåŠ ç­å’Œä¼‘å‡ç»„åˆä¸è®¡ä¸ºåŠ ç­ï¼Œåˆ™æŒ‰é“ç†å°±åº”è¯¥continueäº†ï¼Œä¸ç”¨ç†è¿™ä¸ªåŠ ç­æ—¶é—´æ®µã€‚ä½†å…¬ä¼‘æ—¥æ˜¯å¦è®¡ä¼‘å‡ç»™è¿™ä¸ªä¸¥æ ¼çš„è§„å®šå¼€äº†ä¸ª
-			//åé—¨ï¼šå¦‚æœå…¬ä¼‘æ—¥è®¡ä¼‘å‡ï¼Œé‚£ä¹ˆä¸ç”¨ç†ã€‚å¦‚æœå…¬ä¼‘æ—¥ä¸è®¡ä¼‘å‡ï¼Œé‚£ä¹ˆå°±è¦å¤„ç†ã€‚è¿™æ ·çš„è¯ï¼Œå°±è¦åˆ†ä¼‘å‡ç±»åˆ«ç±»åˆ«å¤„ç†
-			for(TimeItemCopyVO leaveItemVO: leaveItemVOs){
-				//å¦‚æœè¿™ä¸ªæ—¶é—´æ®µä¸å±äºè¿™ä¸ªä¼‘å‡ç±»åˆ«ï¼Œåˆ™continue
-				if(!scope.belongsToTimeItem(leaveItemVO.getPk_timeitem()))
+			// Èç¹û¼Ó°àºÍĞİ¼Ù×éºÏ²»¼ÆÎª¼Ó°à£¬Ôò°´µÀÀí¾ÍÓ¦¸ÃcontinueÁË£¬²»ÓÃÀíÕâ¸ö¼Ó°àÊ±¼ä¶Î¡£µ«¹«ĞİÈÕÊÇ·ñ¼ÆĞİ¼Ù¸øÕâ¸öÑÏ¸ñµÄ¹æ¶¨¿ªÁË¸ö
+			// ºóÃÅ£ºÈç¹û¹«ĞİÈÕ¼ÆĞİ¼Ù£¬ÄÇÃ´²»ÓÃÀí¡£Èç¹û¹«ĞİÈÕ²»¼ÆĞİ¼Ù£¬ÄÇÃ´¾ÍÒª´¦Àí¡£ÕâÑùµÄ»°£¬¾ÍÒª·ÖĞİ¼ÙÀà±ğÀà±ğ´¦Àí
+			for (TimeItemCopyVO leaveItemVO : leaveItemVOs) {
+				// Èç¹ûÕâ¸öÊ±¼ä¶Î²»ÊôÓÚÕâ¸öĞİ¼ÙÀà±ğ£¬Ôòcontinue
+				if (!scope.belongsToTimeItem(leaveItemVO.getPk_timeitem()))
 					continue;
-				//0:å…¬ä¼‘ä¸è®¡ä¼‘å‡ï¼Œ1ï¼šå…¬ä¼‘è®¡ä¼‘å‡
-				int gxComType = leaveItemVO.getGxcomtype()==null?0:leaveItemVO.getGxcomtype().intValue();
-				//å¦‚æœæ˜¯å…¬ä¼‘è®¡ä¼‘å‡ï¼Œé‚£ä¹ˆä¸ç”¨ç†
-				if(gxComType==1)
+				// 0:¹«Ğİ²»¼ÆĞİ¼Ù£¬1£º¹«Ğİ¼ÆĞİ¼Ù
+				int gxComType = leaveItemVO.getGxcomtype() == null ? 0 : leaveItemVO.getGxcomtype().intValue();
+				// Èç¹ûÊÇ¹«Ğİ¼ÆĞİ¼Ù£¬ÄÇÃ´²»ÓÃÀí
+				if (gxComType == 1)
 					break;
-				//å¦‚æœå…¬ä¼‘è®¡ä¼‘å‡ï¼Œé‚£ä¹ˆå°±è¦çœ‹æ­¤åŠ ç­æ—¶é—´æ®µæ˜¯å¦åœ¨å…¬ä¼‘èŒƒå›´å†…ï¼Œå¦‚æœä¸åœ¨å…¬ä¼‘èŒƒå›´å†…ï¼Œåˆ™ä¸ç”¨ç†ã€‚å¦‚æœåœ¨å…¬ä¼‘èŒƒå›´å†…ï¼Œåˆ™è¦å¤„ç†
-				if(MapUtils.isEmpty(calendarMap))
+				// Èç¹û¹«Ğİ¼ÆĞİ¼Ù£¬ÄÇÃ´¾ÍÒª¿´´Ë¼Ó°àÊ±¼ä¶ÎÊÇ·ñÔÚ¹«Ğİ·¶Î§ÄÚ£¬Èç¹û²»ÔÚ¹«Ğİ·¶Î§ÄÚ£¬Ôò²»ÓÃÀí¡£Èç¹ûÔÚ¹«Ğİ·¶Î§ÄÚ£¬ÔòÒª´¦Àí
+				if (MapUtils.isEmpty(calendarMap))
 					break;
-				//æŒ‰æ—¥æœŸå¾ªç¯å¤„ç†
-				for(int i =beginDateIndexInDateArray;i<= endDateIndexInDateArray;i++){
+				// °´ÈÕÆÚÑ­»·´¦Àí
+				for (int i = beginDateIndexInDateArray; i <= endDateIndexInDateArray; i++) {
 					AggPsnCalendar calendar = calendarMap.get(dateArray[i]);
-					PsnCalendarVO psncalendarVO =  calendar==null?null:calendar.getPsnCalendarVO();
-					if(psncalendarVO!=null&&!ShiftVO.PK_GX.equals(psncalendarVO.getPk_shift()))
+					PsnCalendarVO psncalendarVO = calendar == null ? null : calendar.getPsnCalendarVO();
+					if (psncalendarVO != null && !ShiftVO.PK_GX.equals(psncalendarVO.getPk_shift()))
 						continue;
 					TimeZone curTimeZone = CommonUtils.ensureTimeZone(dateTimeZoneMap.get(dateArray[i]));
-					TimeZone preTimeZone = CommonUtils.ensureTimeZone(dateTimeZoneMap.get(dateArray[i-1]));
-					TimeZone nextTimeZone = CommonUtils.ensureTimeZone(dateTimeZoneMap.get(dateArray[i+1]));
-					AggPsnCalendar preCalendar = calendarMap.get(dateArray[i-1]);
-					PsnCalendarVO prePsncalendarVO =  preCalendar==null?null:preCalendar.getPsnCalendarVO();
-					
-					ShiftVO preShiftVO = prePsncalendarVO==null?null:ShiftServiceFacade.getAggShiftVOFromMap(shiftMap, prePsncalendarVO.getPk_shift()).getShiftVO();
-					AggPsnCalendar nextCalendar = calendarMap.get(dateArray[i+1]);
-					PsnCalendarVO nextPsncalendarVO =  nextCalendar==null?null:nextCalendar.getPsnCalendarVO();
-					ShiftVO nextShiftVO = nextPsncalendarVO==null?null:ShiftServiceFacade.getAggShiftVOFromMap(shiftMap, nextPsncalendarVO.getPk_shift()).getShiftVO();
-					//å¦‚æœæ˜¯å…¬ä¼‘ï¼Œåˆ™å–åŠ ç­å•ä¸å…¬ä¼‘çš„äº¤é›†
-					ITimeScopeWithBillType[] intersection = 
-						TimeScopeUtils.intersectionTimeScopes(new ITimeScopeWithBillType[]{scope}, 
-								getWorkTimeScopes(dateArray[i].toString(), calendar, 
-										preShiftVO, 
-										nextShiftVO, 
-										curTimeZone,preTimeZone,nextTimeZone),
-										new ITimeScopeWithBillType[0]);
-					if(intersection==null||intersection.length==0)
+					TimeZone preTimeZone = CommonUtils.ensureTimeZone(dateTimeZoneMap.get(dateArray[i - 1]));
+					TimeZone nextTimeZone = CommonUtils.ensureTimeZone(dateTimeZoneMap.get(dateArray[i + 1]));
+					AggPsnCalendar preCalendar = calendarMap.get(dateArray[i - 1]);
+					PsnCalendarVO prePsncalendarVO = preCalendar == null ? null : preCalendar.getPsnCalendarVO();
+
+					ShiftVO preShiftVO = prePsncalendarVO == null ? null : ShiftServiceFacade.getAggShiftVOFromMap(
+							shiftMap, prePsncalendarVO.getPk_shift()).getShiftVO();
+					AggPsnCalendar nextCalendar = calendarMap.get(dateArray[i + 1]);
+					PsnCalendarVO nextPsncalendarVO = nextCalendar == null ? null : nextCalendar.getPsnCalendarVO();
+					ShiftVO nextShiftVO = nextPsncalendarVO == null ? null : ShiftServiceFacade.getAggShiftVOFromMap(
+							shiftMap, nextPsncalendarVO.getPk_shift()).getShiftVO();
+					// Èç¹ûÊÇ¹«Ğİ£¬ÔòÈ¡¼Ó°àµ¥Óë¹«ĞİµÄ½»¼¯
+					ITimeScopeWithBillType[] intersection = TimeScopeUtils.intersectionTimeScopes(
+							new ITimeScopeWithBillType[] { scope },
+							getWorkTimeScopes(dateArray[i].toString(), calendar, preShiftVO, nextShiftVO, curTimeZone,
+									preTimeZone, nextTimeZone), new ITimeScopeWithBillType[0]);
+					if (intersection == null || intersection.length == 0)
 						continue;
-					//æŠŠå•å­åŠ å…¥åˆ°è¿”å›åˆ—è¡¨ä¸­
+					// °Ñµ¥×Ó¼ÓÈëµ½·µ»ØÁĞ±íÖĞ
 					retList.addAll(Arrays.asList(intersection));
 				}
 			}
 		}
-		//å¦‚æœæ²¡æœ‰å·¥ä½œæ—¥å†ï¼Œåˆ™ä¸‹é¢çš„å‡å»å·¥ä½œæ—¶é—´æ®µçš„æ“ä½œä¸ç”¨è¿›è¡Œ
-		if(calendarMap==null||calendarMap.size()==0)
+		// Èç¹ûÃ»ÓĞ¹¤×÷ÈÕÀú£¬ÔòÏÂÃæµÄ¼õÈ¥¹¤×÷Ê±¼ä¶ÎµÄ²Ù×÷²»ÓÃ½øĞĞ
+		if (calendarMap == null || calendarMap.size() == 0)
 			return retList;
-		//æœ€ç»ˆçš„æ—¶é—´æ®µï¼Œè¦å‡å»å·¥ä½œæ—¶é—´æ®µï¼ˆä¸ä¼‘å‡åœå·¥ä¸åŒï¼Œä¼‘å‡åœå·¥ä¸å·¥ä½œæ—¶é—´æ®µçš„è¿ç®—ï¼Œæ˜¯åˆ†æ•£åœ¨æ¯ä¸€å¤©çš„ï¼Œè€ŒåŠ ç­å•æ˜¯åœ¨åˆšå¼€å§‹å°±æŠŠæ‰€æœ‰çš„åŠ ç­å•å‡å»æ‰€æœ‰çš„å·¥ä½œæ—¶é—´æ®µï¼Œç„¶åå†ç»†ç®—æ¯ä¸€å¤©çš„åŠ ç­å•é•¿åº¦ï¼‰
-		//æ‰€æœ‰å¤©çš„å·¥ä½œæ—¶é—´æ®µçš„list
+		// ×îÖÕµÄÊ±¼ä¶Î£¬Òª¼õÈ¥¹¤×÷Ê±¼ä¶Î£¨ÓëĞİ¼ÙÍ£¹¤²»Í¬£¬Ğİ¼ÙÍ£¹¤Óë¹¤×÷Ê±¼ä¶ÎµÄÔËËã£¬ÊÇ·ÖÉ¢ÔÚÃ¿Ò»ÌìµÄ£¬¶ø¼Ó°àµ¥ÊÇÔÚ¸Õ¿ªÊ¼¾Í°ÑËùÓĞµÄ¼Ó°àµ¥¼õÈ¥ËùÓĞµÄ¹¤×÷Ê±¼ä¶Î£¬È»ºóÔÙÏ¸ËãÃ¿Ò»ÌìµÄ¼Ó°àµ¥³¤¶È£©
+		// ËùÓĞÌìµÄ¹¤×÷Ê±¼ä¶ÎµÄlist
 		List<ITimeScope> worktimeScopeList = new Vector<ITimeScope>();
-		for(UFLiteralDate date:calendarMap.keySet()){
+		for (UFLiteralDate date : calendarMap.keySet()) {
 			AggPsnCalendar calendarAllVO = calendarMap.get(date);
-			if(calendarAllVO==null||ArrayUtils.isEmpty(calendarAllVO.getPsnWorkTimeVO()))
+			if (calendarAllVO == null || ArrayUtils.isEmpty(calendarAllVO.getPsnWorkTimeVO()))
 				continue;
 			PsnWorkTimeVO[] workTimeVOs = calendarAllVO.getPsnWorkTimeVO();
-			for(PsnWorkTimeVO workTimeVO:workTimeVOs){
+			for (PsnWorkTimeVO workTimeVO : workTimeVOs) {
 				worktimeScopeList.add(workTimeVO);
 			}
 		}
-		//å¦‚æœå·¥ä½œæ—¶é—´æ®µä¸ºç©ºï¼Œåˆ™ç›´æ¥è¿”å›åŸå§‹çš„å•æ®
-		if(worktimeScopeList.size()==0)
+		// Èç¹û¹¤×÷Ê±¼ä¶ÎÎª¿Õ£¬ÔòÖ±½Ó·µ»ØÔ­Ê¼µÄµ¥¾İ
+		if (worktimeScopeList.size() == 0)
 			return retList;
-		
+
 		ITimeScope[] worktimeScops = worktimeScopeList.toArray(new ITimeScope[0]);
-		//å¦åˆ™è¦å‡å»å·¥ä½œæ—¶é—´æ®µ
+		// ·ñÔòÒª¼õÈ¥¹¤×÷Ê±¼ä¶Î
 		ITimeScopeWithBillType[] billScopes = retList.toArray(new ITimeScopeWithBillType[0]);
-		ITimeScopeWithBillType[] minusedScopes =  (ITimeScopeWithBillType[]) TimeScopeUtils.minusTimeScopes(billScopes, worktimeScops);
-		if(!ArrayUtils.isEmpty(holidayScope)){
-//		//å·¥ä½œæ—¶é—´æ®µå†…æ˜¯å¦æœ‰æœ‰å‡æ—¥ï¼Œè‹¥æœ‰å‡æ—¥éœ€è¦è€ƒè™‘å‡æ—¥æ’ç­è®°ä¸ºåŠ ç­çš„æƒ…å†µ
-			//V63æ·»åŠ ï¼ŒåŠ ä¸Šï¼ˆå•æ®æ—¶é—´ã€å‡æ—¥æ—¶é—´ã€å·¥ä½œæ—¶é—´ä¸‰è€…é‡å è®°ä¸ºåŠ ç­çš„æ—¶é—´ï¼‰
+		ITimeScopeWithBillType[] minusedScopes = (ITimeScopeWithBillType[]) TimeScopeUtils.minusTimeScopes(billScopes,
+				worktimeScops);
+		if (!ArrayUtils.isEmpty(holidayScope)) {
+			// //¹¤×÷Ê±¼ä¶ÎÄÚÊÇ·ñÓĞÓĞ¼ÙÈÕ£¬ÈôÓĞ¼ÙÈÕĞèÒª¿¼ÂÇ¼ÙÈÕÅÅ°à¼ÇÎª¼Ó°àµÄÇé¿ö
+			// V63Ìí¼Ó£¬¼ÓÉÏ£¨µ¥¾İÊ±¼ä¡¢¼ÙÈÕÊ±¼ä¡¢¹¤×÷Ê±¼äÈıÕßÖØµş¼ÇÎª¼Ó°àµÄÊ±¼ä£©
 			ITimeScope[] holidayWorktimeScope = TimeScopeUtils.intersectionTimeScopes(worktimeScops, holidayScope);
-			ITimeScope[] holidayBillWorktimeScope = TimeScopeUtils.intersectionTimeScopes(billScopes, holidayWorktimeScope);
+			ITimeScope[] holidayBillWorktimeScope = TimeScopeUtils.intersectionTimeScopes(billScopes,
+					holidayWorktimeScope);
 			minusedScopes = (ITimeScopeWithBillType[]) ArrayUtils.addAll(minusedScopes, holidayBillWorktimeScope);
 		}
-		if(minusedScopes==null||minusedScopes.length==0)
+		if (minusedScopes == null || minusedScopes.length == 0)
 			return null;
-		//æ­¤æ—¶åŠ ç­æ—¶é—´æ®µè¿˜å¯èƒ½å«æœ‰å‡æ—¥æ’ç­ä¸­ç­æ¬¡çš„å·¥ä¼‘æ—¶é—´æ®µï¼Œå’Œä¸è®°ä¸ºåŠ ç­çš„ä¸Šä¸‹ç­çš„å»¶æ—¶æ—¶é—´æ®µ,è¿™äº›æ—¶é•¿éƒ½ä¸èƒ½è®°ä¸ºåŠ ç­æ—¶é•¿ã€‚
-		//æŒ‰æ—¥æœŸå¾ªç¯å¤„ç†
-		List<ITimeScope> rtScopeList = new Vector<ITimeScope>();//å·¥ä¼‘æ—¶é—´æ®µ
-		List<ITimeScope> notIncludList = new Vector<ITimeScope>();//ç­æ¬¡å®šä¹‰çš„å»¶æ—¶ä¸è®°ä¸ºåŠ ç­çš„æ—¶é•¿çš„æ—¶é—´æ®µ
-		for(UFLiteralDate date:calendarMap.keySet()){
+		// ´ËÊ±¼Ó°àÊ±¼ä¶Î»¹¿ÉÄÜº¬ÓĞ¼ÙÈÕÅÅ°àÖĞ°à´ÎµÄ¹¤ĞİÊ±¼ä¶Î£¬ºÍ²»¼ÇÎª¼Ó°àµÄÉÏÏÂ°àµÄÑÓÊ±Ê±¼ä¶Î,ÕâĞ©Ê±³¤¶¼²»ÄÜ¼ÇÎª¼Ó°àÊ±³¤¡£
+		// °´ÈÕÆÚÑ­»·´¦Àí
+		List<ITimeScope> rtScopeList = new Vector<ITimeScope>();// ¹¤ĞİÊ±¼ä¶Î
+		List<ITimeScope> notIncludList = new Vector<ITimeScope>();// °à´Î¶¨ÒåµÄÑÓÊ±²»¼ÇÎª¼Ó°àµÄÊ±³¤µÄÊ±¼ä¶Î
+		for (UFLiteralDate date : calendarMap.keySet()) {
 			AggPsnCalendar calendarAllVO = calendarMap.get(date);
-			if(calendarAllVO==null||ArrayUtils.isEmpty(calendarAllVO.getPsnWorkTimeVO())|| calendarAllVO.getPsnCalendarVO() == null||ShiftVO.PK_GX.equals(calendarAllVO.getPsnCalendarVO().getPk_shift()))
+			if (calendarAllVO == null || ArrayUtils.isEmpty(calendarAllVO.getPsnWorkTimeVO())
+					|| calendarAllVO.getPsnCalendarVO() == null
+					|| ShiftVO.PK_GX.equals(calendarAllVO.getPsnCalendarVO().getPk_shift()))
 				continue;
 			PsnWorkTimeVO[] workTimeVOs = calendarAllVO.getPsnWorkTimeVO();
-			if(workTimeVOs.length>1){//å–å·¥ä¼‘æ—¶é—´
+			if (workTimeVOs.length > 1) {// È¡¹¤ĞİÊ±¼ä
 				TimeScopeUtils.sort(workTimeVOs);
-				for(int i=1;i<workTimeVOs.length;i++){
+				for (int i = 1; i < workTimeVOs.length; i++) {
 					ITimeScope rtscope = new DefaultTimeScope();
-					rtscope.setScope_start_datetime(workTimeVOs[i-1].getScope_end_datetime());
+					rtscope.setScope_start_datetime(workTimeVOs[i - 1].getScope_end_datetime());
 					rtscope.setScope_end_datetime(workTimeVOs[i].getScope_start_datetime());
 					rtScopeList.add(rtscope);
 				}
 			}
 			ITimeScope workScope = calendarAllVO.toWorkScope();
-			ShiftVO workShift = ShiftServiceFacade.getAggShiftVOFromMap(shiftMap, calendarAllVO.getPsnCalendarVO().getPk_shift()).getShiftVO();
-			//ä¸Šç­å»¶è¿Ÿä¸è®°ä¸ºåŠ ç­çš„éƒ¨åˆ†
-			if(workShift.getUseontmrule()!=null&&workShift.getUseontmrule().booleanValue()){
-				ITimeScope notIncludBeforScope = new DefaultTimeScope(workShift.getOntmend().multiply(60).longValue(),workScope.getScope_start_datetime());
-//				rtScopeList.add(notIncludBeforScope);
+			ShiftVO workShift = ShiftServiceFacade.getAggShiftVOFromMap(shiftMap,
+					calendarAllVO.getPsnCalendarVO().getPk_shift()).getShiftVO();
+			// ÉÏ°àÑÓ³Ù²»¼ÇÎª¼Ó°àµÄ²¿·Ö
+			if (workShift.getUseontmrule() != null && workShift.getUseontmrule().booleanValue()) {
+				ITimeScope notIncludBeforScope = new DefaultTimeScope(workShift.getOntmend().multiply(60).longValue(),
+						workScope.getScope_start_datetime());
+				// rtScopeList.add(notIncludBeforScope);
 				notIncludList.add(notIncludBeforScope);
 			}
-			//ä¸‹ç­å»¶è¿Ÿä¸­ä¸è®°ä¸ºåŠ ç­çš„éƒ¨åˆ†
-			if(workShift.getUseovertmrule()!=null&&workShift.getUseovertmrule().booleanValue()){
-				ITimeScope notIncludAfterScope = new DefaultTimeScope(workScope.getScope_end_datetime(),workShift.getOvertmbegin().multiply(60).longValue());
-//				rtScopeList.add(notIncludAfterScope);
+			// ÏÂ°àÑÓ³ÙÖĞ²»¼ÇÎª¼Ó°àµÄ²¿·Ö
+			if (workShift.getUseovertmrule() != null && workShift.getUseovertmrule().booleanValue()) {
+				ITimeScope notIncludAfterScope = new DefaultTimeScope(workScope.getScope_end_datetime(), workShift
+						.getOvertmbegin().multiply(60).longValue());
+				// rtScopeList.add(notIncludAfterScope);
 				notIncludList.add(notIncludAfterScope);
 			}
-			
+
 		}
-//		if(rtScopeList==null||rtScopeList.size()==0)
-//			return Arrays.asList(minusedScopes);
-		if(!CollectionUtils.isEmpty(notIncludList)){
-			//æ‰£é™¤å»¶æ—¶ä¸è®°ä¸ºåŠ ç­çš„æ—¶é•¿çš„æ—¶é—´æ®µ
-			minusedScopes = (ITimeScopeWithBillType[]) TimeScopeUtils.minusTimeScopes(minusedScopes, notIncludList.toArray(new ITimeScope[0]));
+		// if(rtScopeList==null||rtScopeList.size()==0)
+		// return Arrays.asList(minusedScopes);
+		if (!CollectionUtils.isEmpty(notIncludList)) {
+			// ¿Û³ıÑÓÊ±²»¼ÇÎª¼Ó°àµÄÊ±³¤µÄÊ±¼ä¶Î
+			minusedScopes = (ITimeScopeWithBillType[]) TimeScopeUtils.minusTimeScopes(minusedScopes,
+					notIncludList.toArray(new ITimeScope[0]));
 		}
-		//æ‰£é™¤å‡æ—¥æ’ç­çš„å·¥é—´ä¼‘æ—¶é—´æ®µ
-		if(!ArrayUtils.isEmpty(minusedScopes)&&!ArrayUtils.isEmpty(holidayScope)&&CollectionUtils.isNotEmpty(rtScopeList)){
-			ITimeScope[] holidayrtScope = TimeScopeUtils.intersectionTimeScopes(rtScopeList.toArray(new ITimeScope[0]), holidayScope);
+		// ¿Û³ı¼ÙÈÕÅÅ°àµÄ¹¤¼äĞİÊ±¼ä¶Î
+		if (!ArrayUtils.isEmpty(minusedScopes) && !ArrayUtils.isEmpty(holidayScope)
+				&& CollectionUtils.isNotEmpty(rtScopeList)) {
+			ITimeScope[] holidayrtScope = TimeScopeUtils.intersectionTimeScopes(rtScopeList.toArray(new ITimeScope[0]),
+					holidayScope);
 			minusedScopes = (ITimeScopeWithBillType[]) TimeScopeUtils.minusTimeScopes(minusedScopes, holidayrtScope);
 		}
-		if(minusedScopes==null||minusedScopes.length==0)
+		if (minusedScopes == null || minusedScopes.length == 0)
 			return null;
 		return Arrays.asList(minusedScopes);
 	}
-	
+
 	/**
-	 * è®¡ç®—æŸæ—¥çš„å‡ºå·®æ—¶é•¿ï¼ŒfilteredVOså·²ç»ä¸åŠ ç­å•ä¼‘å‡å•åœå·¥å•äº¤åˆ‡è¿‡ï¼Œä½†è¿˜æ²¡æœ‰ä¸å·¥ä½œæ—¶é—´æ®µäº¤åˆ‡
-	 * è¦æ±‚ä¼ è¿›æ¥çš„å·¥ä½œæ—¥å†å·²ç»æ˜¯å›ºåŒ–äº†çš„ã€‚å³ï¼Œæ­¤ç±»ä¸è´Ÿè´£å›ºåŒ–å·¥ä½œ
-	 * æ ¹æ®å‡ºå·®ç±»åˆ«çš„è®¾ç½®ï¼Œå‡ºå·®çš„æ—¶é•¿æœ‰ä¸¤ç§ç®—æ³•ï¼šå¦‚æœå‡ºå·®æ—¶é•¿å–ä¸å·¥ä½œæ®µçš„äº¤é›†ï¼Œåˆ™ç®—æ³•ä¸ä¼‘å‡å®Œå…¨ä¸€æ ·ï¼›å¦‚æœå‡ºå·®æ—¶é•¿ä¸å–ä¸å·¥ä½œæ®µçš„äº¤é›†ï¼Œåˆ™æŒ‰è‡ªç„¶æ—¥ç®—æ³•
+	 * ¼ÆËãÄ³ÈÕµÄ³ö²îÊ±³¤£¬filteredVOsÒÑ¾­Óë¼Ó°àµ¥Ğİ¼Ùµ¥Í£¹¤µ¥½»ÇĞ¹ı£¬µ«»¹Ã»ÓĞÓë¹¤×÷Ê±¼ä¶Î½»ÇĞ
+	 * ÒªÇó´«½øÀ´µÄ¹¤×÷ÈÕÀúÒÑ¾­ÊÇ¹Ì»¯ÁËµÄ¡£¼´£¬´ËÀà²»¸ºÔğ¹Ì»¯¹¤×÷
+	 * ¸ù¾İ³ö²îÀà±ğµÄÉèÖÃ£¬³ö²îµÄÊ±³¤ÓĞÁ½ÖÖËã·¨£ºÈç¹û³ö²îÊ±³¤È¡Óë¹¤×÷¶ÎµÄ½»¼¯£¬ÔòËã·¨ÓëĞİ¼ÙÍêÈ«Ò»Ñù£»Èç¹û³ö²îÊ±³¤²»È¡Óë¹¤×÷¶ÎµÄ½»¼¯£¬Ôò°´×ÔÈ»ÈÕËã·¨
+	 * 
 	 * @param leaveItem
 	 * @param filteredVOs
 	 * @param curDate
@@ -930,80 +1106,77 @@ public class BillProcessHelper {
 	 * @param workDayLength
 	 * @return
 	 */
-	public static TimeLengthWrapper calAwayLength(TimeItemCopyVO timeItem,ITimeScopeWithBillType[] filteredVOs,String curDate,
-			AggPsnCalendar curCalendar,
-			ShiftVO preShift,ShiftVO curShift,ShiftVO nextShift,
-			TimeZone preTimeZone,TimeZone curTimeZone,TimeZone nextTimeZone,TimeRuleVO timeRuleVO){
-		//å¦‚æœæ˜¯å–äº¤é›†ï¼Œåˆ™å®Œå…¨é‡‡ç”¨ä¼‘å‡çš„ç®—æ³•
-		if(timeItem.getIsinterwt()!=null&&timeItem.getIsinterwt().booleanValue()){
-			return calLeaveLength(timeItem, filteredVOs, curDate, curCalendar, 
-					preShift, curShift, nextShift, 
-					preTimeZone,curTimeZone,nextTimeZone,
-					timeRuleVO);
+	public static TimeLengthWrapper calAwayLength(TimeItemCopyVO timeItem, ITimeScopeWithBillType[] filteredVOs,
+			String curDate, AggPsnCalendar curCalendar, ShiftVO preShift, ShiftVO curShift, ShiftVO nextShift,
+			TimeZone preTimeZone, TimeZone curTimeZone, TimeZone nextTimeZone, TimeRuleVO timeRuleVO) {
+		// Èç¹ûÊÇÈ¡½»¼¯£¬ÔòÍêÈ«²ÉÓÃĞİ¼ÙµÄËã·¨
+		if (timeItem.getIsinterwt() != null && timeItem.getIsinterwt().booleanValue()) {
+			return calLeaveLength(timeItem, filteredVOs, curDate, curCalendar, preShift, curShift, nextShift,
+					preTimeZone, curTimeZone, nextTimeZone, timeRuleVO);
 		}
-		return calAwayLength(timeItem, filteredVOs, curDate, curShift==null?null:curShift.getPrimaryKey(), timeRuleVO);
+		return calAwayLength(timeItem, filteredVOs, curDate, curShift == null ? null : curShift.getPrimaryKey(),
+				timeRuleVO);
 	}
-	
+
 	/**
-	 * å¤„ç†æŸäººæŸå¤©çš„å‡ºå·®å•çš„æ—¶é•¿ã€‚å¦‚æœç®—å¾—çš„æ—¶é•¿å¤§äº0ï¼Œåˆ™newä¸€ä¸ªæ—¥æŠ¥å­è¡¨voï¼ŒåŠ å…¥åˆ°listä¸­
-	 * å‡ºå·®æœ‰ä¸¤ç§ç®—æ³•ï¼šå–ä¸å·¥ä½œæ—¶é—´æ®µçš„äº¤é›†ï¼Œæˆ–è€…å–ä¸è‡ªç„¶æ—¥çš„äº¤é›†
-	 * å‡ºå·®æŒ‰è‡ªç„¶æ—¥è®¡ç®—ï¼Œå³æŸæ—¥çš„å‡ºå·®æ—¶é•¿æ˜¯å‡ºå·®å•ä¸è¿™ä¸€æ—¥0ç‚¹åˆ°23:59:59ä¹‹é—´äº¤çš„ç»“æœ
+	 * ´¦ÀíÄ³ÈËÄ³ÌìµÄ³ö²îµ¥µÄÊ±³¤¡£Èç¹ûËãµÃµÄÊ±³¤´óÓÚ0£¬ÔònewÒ»¸öÈÕ±¨×Ó±ívo£¬¼ÓÈëµ½listÖĞ
+	 * ³ö²îÓĞÁ½ÖÖËã·¨£ºÈ¡Óë¹¤×÷Ê±¼ä¶ÎµÄ½»¼¯£¬»òÕßÈ¡Óë×ÔÈ»ÈÕµÄ½»¼¯ ³ö²î°´×ÔÈ»ÈÕ¼ÆËã£¬¼´Ä³ÈÕµÄ³ö²îÊ±³¤ÊÇ³ö²îµ¥ÓëÕâÒ»ÈÕ0µãµ½23:59:59Ö®¼ä½»µÄ½á¹û
+	 * 
 	 * @param timeItems
-	 * @param billListæ‰€æœ‰å‡ºå·®å•çš„æ—¶é—´æ®µï¼ˆå·²ç»å’Œå…¶ä»–ç±»å‹çš„å•æ®æ¯”å¦‚åŠ ç­ä¼‘å‡åœå·¥äº¤è¿‡çš„ï¼Œå¹¶ä¸”å·²ç»æŒ‰å†²çªè§„åˆ™å»æ‰äº†å’Œå…¶ä»–å•æ®ç›¸å†²çªä¸”ä¸è®¡ä¸ºå‡ºå·®çš„æ—¶é—´éƒ¨åˆ†ï¼‰
+	 * @param billListËùÓĞ³ö²îµ¥µÄÊ±¼ä¶Î
+	 *            £¨ÒÑ¾­ºÍÆäËûÀàĞÍµÄµ¥¾İ±ÈÈç¼Ó°àĞİ¼ÙÍ£¹¤½»¹ıµÄ£¬²¢ÇÒÒÑ¾­°´³åÍ»¹æÔòÈ¥µôÁËºÍÆäËûµ¥¾İÏà³åÍ»ÇÒ²»¼ÆÎª³ö²îµÄÊ±¼ä²¿·Ö£©
 	 * @param curCalendar
 	 * @param statbVOList
 	 */
-	public static void processAwayLength(TimeItemCopyVO[] timeItems,List<ITimeScopeWithBillType> billList,String curDate,
-			AggPsnCalendar curCalendar,
-			ShiftVO preShift,ShiftVO curShift,ShiftVO nextShift,
-			TimeZone preTimeZone,TimeZone curTimeZone,TimeZone nextTimeZone,
-			List<DayStatbVO> statbVOList,Map<String, String[]> datePeriodMap,Map<String, Object> paraMap,
-			String pk_daystat,TimeRuleVO timeRuleVO){
-		if(timeItems==null){//å¦‚æœæ²¡æœ‰è®¾ç½®å‡ºå·®ç±»åˆ«åˆ™ç›´æ¥ä¸ç”¨è®¡ç®—
+	public static void processAwayLength(TimeItemCopyVO[] timeItems, List<ITimeScopeWithBillType> billList,
+			String curDate, AggPsnCalendar curCalendar, ShiftVO preShift, ShiftVO curShift, ShiftVO nextShift,
+			TimeZone preTimeZone, TimeZone curTimeZone, TimeZone nextTimeZone, List<DayStatbVO> statbVOList,
+			Map<String, String[]> datePeriodMap, Map<String, Object> paraMap, String pk_daystat, TimeRuleVO timeRuleVO) {
+		if (timeItems == null) {// Èç¹ûÃ»ÓĞÉèÖÃ³ö²îÀà±ğÔòÖ±½Ó²»ÓÃ¼ÆËã
 			return;
 		}
-		//å°†å‡ºå·®å•åˆ†ä¸ºä¸¤ç±»ï¼šä¸å·¥ä½œæ—¶é—´æ®µäº¤é›†çš„ä¸ºä¸€ç±»ï¼Œä¸è‡ªç„¶æ—¥äº¤é›†çš„ä¸ºä¸€ç±»
-		//ä¸å·¥ä½œæ—¶é—´æ®µäº¤é›†çš„ï¼Œé‡‡ç”¨ä¸ä¼‘å‡ç›¸åŒçš„ç®—æ³•ï¼Œä¸è‡ªç„¶æ—¥äº¤é›†çš„ï¼Œé‡‡ç”¨åŸå§‹çš„å‡ºå·®ç®—æ³•
+		// ½«³ö²îµ¥·ÖÎªÁ½Àà£ºÓë¹¤×÷Ê±¼ä¶Î½»¼¯µÄÎªÒ»Àà£¬Óë×ÔÈ»ÈÕ½»¼¯µÄÎªÒ»Àà
+		// Óë¹¤×÷Ê±¼ä¶Î½»¼¯µÄ£¬²ÉÓÃÓëĞİ¼ÙÏàÍ¬µÄËã·¨£¬Óë×ÔÈ»ÈÕ½»¼¯µÄ£¬²ÉÓÃÔ­Ê¼µÄ³ö²îËã·¨
 		List<TimeItemCopyVO> wtInterTypeList = new ArrayList<TimeItemCopyVO>();
 		List<ITimeScopeWithBillType> wtInterBillList = new ArrayList<ITimeScopeWithBillType>();
 		List<TimeItemCopyVO> natualDayInterTypeList = new ArrayList<TimeItemCopyVO>();
 		List<ITimeScopeWithBillType> natualDayBillList = new ArrayList<ITimeScopeWithBillType>();
-		for(TimeItemCopyVO typeVO:timeItems){
-			boolean isWtInter = typeVO.getIsinterwt()!=null&&typeVO.getIsinterwt().booleanValue();
-			if(isWtInter)
+		for (TimeItemCopyVO typeVO : timeItems) {
+			boolean isWtInter = typeVO.getIsinterwt() != null && typeVO.getIsinterwt().booleanValue();
+			if (isWtInter)
 				wtInterTypeList.add(typeVO);
 			else
 				natualDayInterTypeList.add(typeVO);
-			for(ITimeScopeWithBillType bill:billList){
-				if(!bill.belongsToTimeItem(typeVO.getPk_timeitem()))
+			for (ITimeScopeWithBillType bill : billList) {
+				if (!bill.belongsToTimeItem(typeVO.getPk_timeitem()))
 					continue;
-				if(isWtInter)
+				if (isWtInter)
 					wtInterBillList.add(bill);
 				else
 					natualDayBillList.add(bill);
 			}
 		}
-		//è®¡ç®—ä¸å·¥ä½œæ®µç›¸äº¤çš„ç±»åˆ«ï¼Œç®—æ³•ä¸ä¼‘å‡çš„è®¡ç®—ä¸€æ¨¡ä¸€æ ·
-		if(wtInterTypeList.size()>0&&wtInterBillList.size()>0){
-			processLeaveLength(wtInterTypeList.toArray(new TimeItemCopyVO[0]), wtInterBillList, curCalendar, 
-					preShift, curShift, nextShift, 
-					preTimeZone,curTimeZone,nextTimeZone,
-					statbVOList, datePeriodMap, paraMap,  pk_daystat, timeRuleVO);
+		// ¼ÆËãÓë¹¤×÷¶ÎÏà½»µÄÀà±ğ£¬Ëã·¨ÓëĞİ¼ÙµÄ¼ÆËãÒ»Ä£Ò»Ñù
+		if (wtInterTypeList.size() > 0 && wtInterBillList.size() > 0) {
+			processLeaveLength(wtInterTypeList.toArray(new TimeItemCopyVO[0]), wtInterBillList, curCalendar, preShift,
+					curShift, nextShift, preTimeZone, curTimeZone, nextTimeZone, statbVOList, datePeriodMap, paraMap,
+					pk_daystat, timeRuleVO);
 		}
-		//è®¡ç®—ä¸è‡ªç„¶æ—¥ç›¸äº¤çš„ç±»åˆ«
-		if(natualDayInterTypeList.size()>0&&natualDayBillList.size()>0){
+		// ¼ÆËãÓë×ÔÈ»ÈÕÏà½»µÄÀà±ğ
+		if (natualDayInterTypeList.size() > 0 && natualDayBillList.size() > 0) {
 			Map<UFLiteralDate, TimeZone> dateTimeZoneMap = new HashMap<UFLiteralDate, TimeZone>();
 			UFLiteralDate curLiteralDate = UFLiteralDate.getDate(curDate);
 			dateTimeZoneMap.put(curLiteralDate, curTimeZone);
 			dateTimeZoneMap.put(curLiteralDate.getDateBefore(1), preTimeZone);
 			dateTimeZoneMap.put(curLiteralDate.getDateAfter(1), nextTimeZone);
-			processAwayLength0(natualDayInterTypeList.toArray(new TimeItemCopyVO[0]), natualDayBillList, curDate, curCalendar, 
-					statbVOList, datePeriodMap, paraMap,  pk_daystat,dateTimeZoneMap, timeRuleVO);
+			processAwayLength0(natualDayInterTypeList.toArray(new TimeItemCopyVO[0]), natualDayBillList, curDate,
+					curCalendar, statbVOList, datePeriodMap, paraMap, pk_daystat, dateTimeZoneMap, timeRuleVO);
 		}
 	}
-	
+
 	/**
-	 * è®¡ç®—æ—¥æŠ¥çš„æŸä¸€å¤©å‡ºå·®çš„é•¿åº¦
+	 * ¼ÆËãÈÕ±¨µÄÄ³Ò»Ìì³ö²îµÄ³¤¶È
+	 * 
 	 * @param timeItems
 	 * @param billList
 	 * @param curDate
@@ -1015,68 +1188,84 @@ public class BillProcessHelper {
 	 * @param pk_daystat
 	 * @param curTimeZone
 	 */
-	private static void  processAwayLength0(TimeItemCopyVO[] timeItems,List<ITimeScopeWithBillType> billList,String curDate,
-			AggPsnCalendar curCalendar,List<DayStatbVO> statbVOList,Map<String, String[]> datePeriodMap,
-			Map<String, Object> paraMap,String pk_daystat,Map<UFLiteralDate, TimeZone> dateTimeZoneMap,TimeRuleVO timeRuleVO){
-		//å¦‚æœæ²¡æœ‰å‡ºå·®å•ï¼Œåˆ™ä¸ç”¨å¤„ç†ï¼ˆä¹Ÿæœ‰ä¸€ç§å¯èƒ½ï¼Œé‚£å°±æ˜¯æœ‰å‡ºå·®å•ï¼Œä½†æ˜¯å’Œå…¶ä»–å•æ®æœ‰æ—¶é—´å†²çªï¼Œä¸”æŒ‰ç…§å†²çªè§„åˆ™çš„å®šä¹‰ï¼Œè¿™ç§å†²çªä¸ç®—å‡ºå·®ï¼‰
-		if(billList==null||billList.size()==0)
+	private static void processAwayLength0(TimeItemCopyVO[] timeItems, List<ITimeScopeWithBillType> billList,
+			String curDate, AggPsnCalendar curCalendar, List<DayStatbVO> statbVOList,
+			Map<String, String[]> datePeriodMap, Map<String, Object> paraMap, String pk_daystat,
+			Map<UFLiteralDate, TimeZone> dateTimeZoneMap, TimeRuleVO timeRuleVO) {
+		// Èç¹ûÃ»ÓĞ³ö²îµ¥£¬Ôò²»ÓÃ´¦Àí£¨Ò²ÓĞÒ»ÖÖ¿ÉÄÜ£¬ÄÇ¾ÍÊÇÓĞ³ö²îµ¥£¬µ«ÊÇºÍÆäËûµ¥¾İÓĞÊ±¼ä³åÍ»£¬ÇÒ°´ÕÕ³åÍ»¹æÔòµÄ¶¨Òå£¬ÕâÖÖ³åÍ»²»Ëã³ö²î£©
+		if (billList == null || billList.size() == 0)
 			return;
-		//å–å¾—ç­æ¬¡ï¼ˆæ²¡æ’ç­æŒ‰å…¬ä¼‘ç®—ï¼‰
-		String pk_shift = curCalendar==null?ShiftVO.PK_GX:curCalendar.getPsnCalendarVO()==null?ShiftVO.PK_GX:curCalendar.getPsnCalendarVO().getPk_shift();
-		ITimeScope dateScope = TimeScopeUtils.toFullDay(curDate,dateTimeZoneMap.get(UFLiteralDate.getDate(curDate)));//è‡ªç„¶æ—¥çš„æ—¶é—´èŒƒå›´0ç‚¹åˆ°23:59:59
-		//å–å¾—å‡ºå·®æ—¶é—´æ®µä¸è‡ªç„¶æ—¥çš„äº¤é›†æ—¶é—´æ®µ
-		ITimeScopeWithBillType[] intersectionScopes = TimeScopeUtils.intersectionTimeScopes
-			(billList.toArray(new ITimeScopeWithBillType[0]), new ITimeScope[]{dateScope},new ITimeScopeWithBillType[0]);
-		//å¦‚æœä¸è‡ªç„¶æ—¥äº¤é›†ä¹‹åé•¿åº¦ä¸º0ï¼Œåˆ™ä¸ç”¨å¤„ç†
-		if(intersectionScopes==null||intersectionScopes.length==0)
+		// È¡µÃ°à´Î£¨Ã»ÅÅ°à°´¹«ĞİËã£©
+		String pk_shift = curCalendar == null ? ShiftVO.PK_GX : curCalendar.getPsnCalendarVO() == null ? ShiftVO.PK_GX
+				: curCalendar.getPsnCalendarVO().getPk_shift();
+		ITimeScope dateScope = TimeScopeUtils.toFullDay(curDate, dateTimeZoneMap.get(UFLiteralDate.getDate(curDate)));// ×ÔÈ»ÈÕµÄÊ±¼ä·¶Î§0µãµ½23:59:59
+		// È¡µÃ³ö²îÊ±¼ä¶ÎÓë×ÔÈ»ÈÕµÄ½»¼¯Ê±¼ä¶Î
+		ITimeScopeWithBillType[] intersectionScopes = TimeScopeUtils.intersectionTimeScopes(
+				billList.toArray(new ITimeScopeWithBillType[0]), new ITimeScope[] { dateScope },
+				new ITimeScopeWithBillType[0]);
+		// Èç¹ûÓë×ÔÈ»ÈÕ½»¼¯Ö®ºó³¤¶ÈÎª0£¬Ôò²»ÓÃ´¦Àí
+		if (intersectionScopes == null || intersectionScopes.length == 0)
 			return;
-		//å–å‡ºå‚æ•°ï¼šå•æ®è·¨æœŸé—´æ—¶ï¼Œæ˜¯è®°åœ¨å„ä¸ªæœŸé—´ï¼Œè¿˜æ˜¯ç¬¬ä¸€ä¸ªæœŸé—´è®°åœ¨ç¬¬äºŒä¸ªæœŸé—´,0-åˆ†åˆ«è®°ï¼Œ1-ç¬¬ä¸€è®°åœ¨ç¬¬äºŒ
-//		Integer periodPara = (Integer)paraMap.get(AwayConst.PARA_AWAY_OVERPERIOD);
-		Integer periodPara =  timeRuleVO.getAwayovperprtype();
-		if(periodPara==null)//é»˜è®¤åˆ†åˆ«è®°
-			periodPara=0;
-		//æŒ‰å‡ºå·®ç±»åˆ«å¾ªç¯å¤„ç†
-		for(TimeItemCopyVO item:timeItems){
-			TimeLengthWrapper result = calAwayLength(item,intersectionScopes,curDate,pk_shift,timeRuleVO);
-			//å¤„ç†æœŸé—´
+		// È¡³ö²ÎÊı£ºµ¥¾İ¿çÆÚ¼äÊ±£¬ÊÇ¼ÇÔÚ¸÷¸öÆÚ¼ä£¬»¹ÊÇµÚÒ»¸öÆÚ¼ä¼ÇÔÚµÚ¶ş¸öÆÚ¼ä,0-·Ö±ğ¼Ç£¬1-µÚÒ»¼ÇÔÚµÚ¶ş
+		// Integer periodPara =
+		// (Integer)paraMap.get(AwayConst.PARA_AWAY_OVERPERIOD);
+		Integer periodPara = timeRuleVO.getAwayovperprtype();
+		if (periodPara == null)// Ä¬ÈÏ·Ö±ğ¼Ç
+			periodPara = 0;
+		// °´³ö²îÀà±ğÑ­»·´¦Àí
+		for (TimeItemCopyVO item : timeItems) {
+			TimeLengthWrapper result = calAwayLength(item, intersectionScopes, curDate, pk_shift, timeRuleVO);
+			// ´¦ÀíÆÚ¼ä
 			String calcPeirod = null;
-			if(periodPara==1){
-				calcPeirod = queryCalcPeriod(curDate,intersectionScopes,datePeriodMap,item.getPk_timeitem());
+			if (periodPara == 1) {
+				calcPeirod = queryCalcPeriod(curDate, intersectionScopes, datePeriodMap, item.getPk_timeitem());
 			}
-			createDaystatbVO(pk_daystat,item.getPk_timeitem(), result.originalLength,result.processedLength, 
-					result.originalLengthUseHour,result.processedLengthUseHour,result.toRestHour,
-					statbVOList,3,calcPeirod,item.getTimeItemUnit());
+			createDaystatbVO(pk_daystat, item.getPk_timeitem(), result.originalLength, result.processedLength,
+					result.originalLengthUseHour, result.processedLengthUseHour, result.toRestHour, statbVOList, 3,
+					calcPeirod, item.getTimeItemUnit());
 		}
 	}
-	
+
 	/**
-	 * æ ¹æ®å‡ºå·®å•æ®å’Œå½“æ—¥çš„ç­æ¬¡è®¡ç®—å‡ºå‡ºå·®æ—¶é•¿
+	 * ¸ù¾İ³ö²îµ¥¾İºÍµ±ÈÕµÄ°à´Î¼ÆËã³ö³ö²îÊ±³¤
+	 * 
 	 * @param awayItem
 	 * @param vo
 	 * @param curDate
-	 * @param curCalendarï¼Œå·¥ä½œæ—¥å†ï¼Œåªæ˜¯ç”¨æ¥åˆ¤æ–­å½“æ—¥æ˜¯å¦æ˜¯å…¬ä¼‘ï¼Œæ²¡æœ‰å…¶ä»–ä½œç”¨
+	 * @param curCalendar
+	 *            £¬¹¤×÷ÈÕÀú£¬Ö»ÊÇÓÃÀ´ÅĞ¶Ïµ±ÈÕÊÇ·ñÊÇ¹«Ğİ£¬Ã»ÓĞÆäËû×÷ÓÃ
 	 * @return
 	 */
-//	public static TimeLengthWrapper calAwayLength(TimeItemCopyVO awayItem,AwayCommonVO vo,String curDate,
-//			AggPsnCalendar curCalendar,double workDayLength,TimeZone timeZone){
-//		ITimeScope dateScope = TimeScopeUtils.toFullDay(curDate,timeZone);//è‡ªç„¶æ—¥çš„æ—¶é—´èŒƒå›´0ç‚¹åˆ°23:59:59
-//		//å–å¾—å‡ºå·®æ—¶é—´æ®µä¸è‡ªç„¶æ—¥çš„äº¤é›†æ—¶é—´æ®µ
-//		ITimeScopeWithBillType[] intersectionScopes = TimeScopeUtils.intersectionTimeScopes
-//			(new AwayCommonVO[]{vo}, new ITimeScope[]{dateScope},new ITimeScopeWithBillType[0]);
-//		if(intersectionScopes==null||intersectionScopes.length==0)
-//			return TimeLengthWrapper.getZeroTimeLength();
-//		String pkClass = curCalendar==null?BclbVO.PK_GX:curCalendar.getPsnCalendarVO()==null?BclbVO.PK_GX:curCalendar.getPsnCalendarVO().getPk_class();
-//		return calAwayLength(awayItem,intersectionScopes,curDate,pkClass, workDayLength,timeZone);
-//	}
-	
-//	public static TimeLengthWrapper calLeaveLength(TimeItemCopyVO leaveItem,LeaveCommonVO vo,String curDate,
-//			AggPsnCalendar curCalendar,BclbVO preBclb,BclbVO curBclb,BclbVO nextBclb,double workDayLength,TimeZone timeZone){
-//		return calLeaveLength(leaveItem, new LeaveCommonVO[]{vo}, curCalendar,curBclb, workDayLength);
-//	}
-	
+	// public static TimeLengthWrapper calAwayLength(TimeItemCopyVO
+	// awayItem,AwayCommonVO vo,String curDate,
+	// AggPsnCalendar curCalendar,double workDayLength,TimeZone timeZone){
+	// ITimeScope dateScope =
+	// TimeScopeUtils.toFullDay(curDate,timeZone);//×ÔÈ»ÈÕµÄÊ±¼ä·¶Î§0µãµ½23:59:59
+	// //È¡µÃ³ö²îÊ±¼ä¶ÎÓë×ÔÈ»ÈÕµÄ½»¼¯Ê±¼ä¶Î
+	// ITimeScopeWithBillType[] intersectionScopes =
+	// TimeScopeUtils.intersectionTimeScopes
+	// (new AwayCommonVO[]{vo}, new ITimeScope[]{dateScope},new
+	// ITimeScopeWithBillType[0]);
+	// if(intersectionScopes==null||intersectionScopes.length==0)
+	// return TimeLengthWrapper.getZeroTimeLength();
+	// String pkClass =
+	// curCalendar==null?BclbVO.PK_GX:curCalendar.getPsnCalendarVO()==null?BclbVO.PK_GX:curCalendar.getPsnCalendarVO().getPk_class();
+	// return calAwayLength(awayItem,intersectionScopes,curDate,pkClass,
+	// workDayLength,timeZone);
+	// }
+
+	// public static TimeLengthWrapper calLeaveLength(TimeItemCopyVO
+	// leaveItem,LeaveCommonVO vo,String curDate,
+	// AggPsnCalendar curCalendar,BclbVO preBclb,BclbVO curBclb,BclbVO
+	// nextBclb,double workDayLength,TimeZone timeZone){
+	// return calLeaveLength(leaveItem, new LeaveCommonVO[]{vo},
+	// curCalendar,curBclb, workDayLength);
+	// }
+
 	/**
-	 * è®¡ç®—æŸæ—¥çš„ä¼‘å‡æ—¶é•¿ï¼ŒfilteredVOså·²ç»ä¸åŠ ç­å•å‡ºå·®å•åœå·¥å•äº¤åˆ‡è¿‡ï¼Œä½†è¿˜æ²¡æœ‰ä¸å·¥ä½œæ—¶é—´æ®µäº¤åˆ‡
-	 * è¦æ±‚ä¼ è¿›æ¥çš„å·¥ä½œæ—¥å†å·²ç»æ˜¯å›ºåŒ–äº†çš„ã€‚å³ï¼Œæ­¤ç±»ä¸è´Ÿè´£å›ºåŒ–å·¥ä½œ
+	 * ¼ÆËãÄ³ÈÕµÄĞİ¼ÙÊ±³¤£¬filteredVOsÒÑ¾­Óë¼Ó°àµ¥³ö²îµ¥Í£¹¤µ¥½»ÇĞ¹ı£¬µ«»¹Ã»ÓĞÓë¹¤×÷Ê±¼ä¶Î½»ÇĞ
+	 * ÒªÇó´«½øÀ´µÄ¹¤×÷ÈÕÀúÒÑ¾­ÊÇ¹Ì»¯ÁËµÄ¡£¼´£¬´ËÀà²»¸ºÔğ¹Ì»¯¹¤×÷
+	 * 
 	 * @param leaveItem
 	 * @param filteredVOs
 	 * @param curDate
@@ -1087,195 +1276,206 @@ public class BillProcessHelper {
 	 * @param workDayLength
 	 * @return
 	 */
-	public static TimeLengthWrapper calLeaveLength(TimeItemCopyVO leaveItem,ITimeScopeWithBillType[] filteredVOs,String curDate,
-			AggPsnCalendar curCalendar,
-			ShiftVO preShift,ShiftVO curShift,ShiftVO nextShift,
-			TimeZone preTimeZone,TimeZone curTimeZone,TimeZone nextTimeZone,
-			TimeRuleVO timeRuleVO){
-		//å–å¾—ä¼‘å‡æ—¶é—´æ®µä¸å·¥ä½œæ—¥çš„äº¤é›†æ—¶é—´æ®µ
-		ITimeScopeWithBillType[] intersectionScopes = TimeScopeUtils.intersectionTimeScopes
-			(filteredVOs, getWorkTimeScopes(curDate, curCalendar, preShift, nextShift,curTimeZone,preTimeZone,nextTimeZone)
-					,new ITimeScopeWithBillType[0]);
-		if(intersectionScopes==null||intersectionScopes.length==0)
+	public static TimeLengthWrapper calLeaveLength(TimeItemCopyVO leaveItem, ITimeScopeWithBillType[] filteredVOs,
+			String curDate, AggPsnCalendar curCalendar, ShiftVO preShift, ShiftVO curShift, ShiftVO nextShift,
+			TimeZone preTimeZone, TimeZone curTimeZone, TimeZone nextTimeZone, TimeRuleVO timeRuleVO) {
+		// È¡µÃĞİ¼ÙÊ±¼ä¶ÎÓë¹¤×÷ÈÕµÄ½»¼¯Ê±¼ä¶Î
+		ITimeScopeWithBillType[] intersectionScopes = TimeScopeUtils.intersectionTimeScopes(filteredVOs,
+				getWorkTimeScopes(curDate, curCalendar, preShift, nextShift, curTimeZone, preTimeZone, nextTimeZone),
+				new ITimeScopeWithBillType[0]);
+		if (intersectionScopes == null || intersectionScopes.length == 0)
 			return TimeLengthWrapper.getZeroTimeLength();
-		return calLeaveLength(leaveItem, intersectionScopes, curCalendar,curShift, timeRuleVO);
+		return calLeaveLength(leaveItem, intersectionScopes, curCalendar, curShift, timeRuleVO);
 	}
-	
-//	public static TimeLengthWrapper calShutdownLength(TimeItemCopyVO shutdownItem,ShutdownRegVO vo,
-//			AggPsnCalendar curCalendar){
-//		if(curCalendar == null)
-//			return TimeLengthWrapper.getZeroTimeLength();
-//		PsnCalendarVO psncalendarVO = curCalendar.getPsnCalendarVO();
-//		PsnWorkTimeVO[] workVOs = curCalendar.getPsnWorkTimeVO();
-//		//å¦‚æœæ­¤å¤©æ²¡æœ‰å·¥ä½œæ—¥å†ï¼Œæˆ–è€…æ˜¯å…¬ä¼‘æˆ–è€…ä¸è€ƒå‹¤çš„ï¼Œæˆ–è€…æ²¡æœ‰å·¥ä½œæ—¶é—´æ®µï¼Œåˆ™åœå·¥å¾…æ–™æ—¶é•¿ä¸º0
-//		if(psncalendarVO==null||BclbVO.PK_GX.equals(psncalendarVO.getPk_class())||ArrayUtils.isEmpty(workVOs))
-//			return TimeLengthWrapper.getZeroTimeLength(); 
-//		//ç®—å‡ºåœå·¥å•ä¸å·¥ä½œæ—¶é—´æ®µçš„äº¤é›†
-//		ITimeScopeWithBillType[] intersectionScopes = TimeScopeUtils.intersectionTimeScopes
-//			(new ITimeScope[]{vo}, workVOs,new ITimeScopeWithBillType[0]);
-//		//å¦‚æœæ²¡æœ‰äº¤é›†æ—¶é—´æ®µï¼Œåˆ™ä¸ç”¨å¤„ç†
-//		if(intersectionScopes==null||intersectionScopes.length==0)
-//			return TimeLengthWrapper.getZeroTimeLength();
-//		return calShutdownLength(shutdownItem,intersectionScopes,curCalendar);
-//	}
+
+	// public static TimeLengthWrapper calShutdownLength(TimeItemCopyVO
+	// shutdownItem,ShutdownRegVO vo,
+	// AggPsnCalendar curCalendar){
+	// if(curCalendar == null)
+	// return TimeLengthWrapper.getZeroTimeLength();
+	// PsnCalendarVO psncalendarVO = curCalendar.getPsnCalendarVO();
+	// PsnWorkTimeVO[] workVOs = curCalendar.getPsnWorkTimeVO();
+	// //Èç¹û´ËÌìÃ»ÓĞ¹¤×÷ÈÕÀú£¬»òÕßÊÇ¹«Ğİ»òÕß²»¿¼ÇÚµÄ£¬»òÕßÃ»ÓĞ¹¤×÷Ê±¼ä¶Î£¬ÔòÍ£¹¤´ıÁÏÊ±³¤Îª0
+	// if(psncalendarVO==null||BclbVO.PK_GX.equals(psncalendarVO.getPk_class())||ArrayUtils.isEmpty(workVOs))
+	// return TimeLengthWrapper.getZeroTimeLength();
+	// //Ëã³öÍ£¹¤µ¥Óë¹¤×÷Ê±¼ä¶ÎµÄ½»¼¯
+	// ITimeScopeWithBillType[] intersectionScopes =
+	// TimeScopeUtils.intersectionTimeScopes
+	// (new ITimeScope[]{vo}, workVOs,new ITimeScopeWithBillType[0]);
+	// //Èç¹ûÃ»ÓĞ½»¼¯Ê±¼ä¶Î£¬Ôò²»ÓÃ´¦Àí
+	// if(intersectionScopes==null||intersectionScopes.length==0)
+	// return TimeLengthWrapper.getZeroTimeLength();
+	// return calShutdownLength(shutdownItem,intersectionScopes,curCalendar);
+	// }
 	/**
-	 * è®¡ç®—æŸä¸ªå‡ºå·®ç±»åˆ«çš„æ—¶é•¿
-	 * intersectionScopesæ˜¯ä¸å…¶ä»–ç±»å‹å•æ®äº¤åˆ‡è¿‡ï¼Œä¸”ä¸è‡ªç„¶æ—¥äº¤é›†è¿‡åçš„æ—¶é—´æ®µï¼Œå·²ç»å°†ä¸ç¬¦åˆå†²çªè§„åˆ™çš„æ—¶é—´æ®µæŒ–å»
-	 * æ¯”å¦‚9:00-17:00å‡ºå·®ï¼Œ14:00-17:00ä¼‘å‡ï¼Œå¦‚æœå†²çªè§„åˆ™å®šä¹‰å‡ºå·®åŠ ä¼‘å‡ç®—ä¼‘å‡ï¼Œé‚£ä¹ˆ14:00-17:00è¿™æ®µæ—¶é—´å°±è¦ä»å‡ºå·®å•ä¸­æŒ–å»ï¼Œåªå‰©ä¸‹9:00-13:59:59
-	 * 5.5çš„å‡ºå·®ç®—æ³•ï¼Œä¸5.02å®Œå…¨ä¸€è‡´ï¼šæ²¡æœ‰æœ€å°æ—¶é•¿å’Œå–æ•´è§„åˆ™
-	 * æŒ‰å°æ—¶è®¡ç®—æ—¶ï¼šå¦‚æœæ˜¯å½“æ—¥å¾€è¿”ï¼Œåˆ™æŒ‰å®é™…å°æ—¶æ•°ç®—
-	 *            å¦‚æœæ˜¯è·¨å¤©ï¼Œåˆ™é¦–æ—¥ï¼š12ç‚¹å‰å‡ºå‘æŒ‰ä¸€ä¸ªå·¥ä½œæ—¥æ—¶é•¿ç®—ï¼Œå¦åˆ™0.5ä¸ªå·¥ä½œæ—¥æ—¶é•¿
-	 *                       å°¾æ—¥ï¼š12ç‚¹åå›æ¥æŒ‰ä¸€ä¸ªå·¥ä½œæ—¥æ—¶é•¿ç®—ï¼Œå¦åˆ™0.5ä¸ªå·¥ä½œæ—¥æ—¶é•¿
-	 *                       ä¸­é—´æ—¥ï¼šmin(å®é™…æ—¶é•¿ï¼Œå·¥ä½œæ—¥æ—¶é•¿)
-	 * æŒ‰å¤©è®¡ç®—æ—¶ï¼šé¦–å°¾å¤©è§„åˆ™æ˜¯å„è®¡ä¸€å¤©ï¼šæ¯å¤©éƒ½æŒ‰ä¸€å¤©ç®—
-	 *           é¦–å°¾å¤©è§„åˆ™æ˜¯ä»¥12ç‚¹ä¸ºç•Œï¼š
-	 *               å¦‚æœæ˜¯å½“æ—¥å¾€è¿”ï¼Œåˆ™12ç‚¹å‰å›æ¥æ˜¯0.5å¤©ï¼Œ12ç‚¹åå‡ºå‘æ—¶0.5å¤©ï¼Œ12ç‚¹å‰å‡ºå‘12ç‚¹åå›æ¥æ˜¯1å¤©
-	 *               å¦‚æœæ˜¯è·¨å¤©ï¼Œ åˆ™é¦–æ—¥ï¼š12ç‚¹å‰å‡ºå‘ç®—1å¤©ï¼Œå¦åˆ™0.5å¤©
-	 *                           å°¾æ—¥ï¼š12ç‚¹åå›æ¥ç®—1å¤©ï¼Œå¦åˆ™0.5å¤©
-	 *                           ä¸­é—´æ—¥ï¼š1å¤©
-	 *                      
+	 * ¼ÆËãÄ³¸ö³ö²îÀà±ğµÄÊ±³¤ intersectionScopesÊÇÓëÆäËûÀàĞÍµ¥¾İ½»ÇĞ¹ı£¬ÇÒÓë×ÔÈ»ÈÕ½»¼¯¹ıºóµÄÊ±¼ä¶Î£¬ÒÑ¾­½«²»·ûºÏ³åÍ»¹æÔòµÄÊ±¼ä¶ÎÍÚÈ¥
+	 * ±ÈÈç9:00-17:00³ö²î£¬14:00-17:00Ğİ¼Ù£¬Èç¹û³åÍ»¹æÔò¶¨Òå³ö²î¼ÓĞİ¼ÙËãĞİ¼Ù£¬ÄÇÃ´14:00-17:00Õâ¶ÎÊ±¼ä¾ÍÒª´Ó³ö²îµ¥ÖĞÍÚÈ¥£¬
+	 * Ö»Ê£ÏÂ9:00-13:59:59 5.5µÄ³ö²îËã·¨£¬Óë5.02ÍêÈ«Ò»ÖÂ£ºÃ»ÓĞ×îĞ¡Ê±³¤ºÍÈ¡Õû¹æÔò °´Ğ¡Ê±¼ÆËãÊ±£ºÈç¹ûÊÇµ±ÈÕÍù·µ£¬Ôò°´Êµ¼ÊĞ¡Ê±ÊıËã
+	 * Èç¹ûÊÇ¿çÌì£¬ÔòÊ×ÈÕ£º12µãÇ°³ö·¢°´Ò»¸ö¹¤×÷ÈÕÊ±³¤Ëã£¬·ñÔò0.5¸ö¹¤×÷ÈÕÊ±³¤ Î²ÈÕ£º12µãºó»ØÀ´°´Ò»¸ö¹¤×÷ÈÕÊ±³¤Ëã£¬·ñÔò0.5¸ö¹¤×÷ÈÕÊ±³¤
+	 * ÖĞ¼äÈÕ£ºmin(Êµ¼ÊÊ±³¤£¬¹¤×÷ÈÕÊ±³¤) °´Ìì¼ÆËãÊ±£ºÊ×Î²Ìì¹æÔòÊÇ¸÷¼ÆÒ»Ìì£ºÃ¿Ìì¶¼°´Ò»ÌìËã Ê×Î²Ìì¹æÔòÊÇÒÔ12µãÎª½ç£º
+	 * Èç¹ûÊÇµ±ÈÕÍù·µ£¬Ôò12µãÇ°»ØÀ´ÊÇ0.5Ìì£¬12µãºó³ö·¢Ê±0.5Ìì£¬12µãÇ°³ö·¢12µãºó»ØÀ´ÊÇ1Ìì Èç¹ûÊÇ¿çÌì£¬
+	 * ÔòÊ×ÈÕ£º12µãÇ°³ö·¢Ëã1Ìì£¬·ñÔò0.5Ìì Î²ÈÕ£º12µãºó»ØÀ´Ëã1Ìì£¬·ñÔò0.5Ìì ÖĞ¼äÈÕ£º1Ìì
+	 * 
 	 * @param awayItem
 	 * @param intersectionScopes
 	 * @param curDate
-	 * @return å‡ºå·®æ—¶é•¿ã€‚ç”±äºå‡ºå·®æ—¶é•¿ç»è¿‡å¤„ç†åä¸å½±å“å‡ºå‹¤å·¥æ—¶çš„è®¡ç®—ï¼Œå› æ­¤å‡ºå·®æ—¶é•¿çš„åŸå§‹æ—¶é•¿å’Œå¤„ç†æ—¶é•¿æš‚æ—¶å–ç›¸åŒçš„å€¼ï¼Œå¾…ä»¥åæœ‰éœ€æ±‚çš„æ—¶å€™å†æ”¹
+	 * @return ³ö²îÊ±³¤¡£ÓÉÓÚ³ö²îÊ±³¤¾­¹ı´¦Àíºó²»Ó°Ïì³öÇÚ¹¤Ê±µÄ¼ÆËã£¬Òò´Ë³ö²îÊ±³¤µÄÔ­Ê¼Ê±³¤ºÍ´¦ÀíÊ±³¤ÔİÊ±È¡ÏàÍ¬µÄÖµ£¬´ıÒÔºóÓĞĞèÇóµÄÊ±ºòÔÙ¸Ä
 	 */
-	private static TimeLengthWrapper calAwayLength(TimeItemCopyVO awayItem,ITimeScopeWithBillType[] intersectionScopes,
-			String curDate,String pk_shift,TimeRuleVO timeRuleVO){
-		int gxComType = awayItem.getGxcomtype()==null?0:awayItem.getGxcomtype().intValue();//0å…¬ä¼‘ä¸è®¡ï¼Œ1å…¬ä¼‘è®¡
-		//å¦‚æœæ˜¯å…¬ä¼‘ä¸”æ­¤ç±»åˆ«å…¬ä¼‘ä¸è®¡å‡ºå·®ï¼Œåˆ™è¿”å›0
-		if(ShiftVO.PK_GX.equals(pk_shift)&&gxComType==0)
+	private static TimeLengthWrapper calAwayLength(TimeItemCopyVO awayItem,
+			ITimeScopeWithBillType[] intersectionScopes, String curDate, String pk_shift, TimeRuleVO timeRuleVO) {
+		int gxComType = awayItem.getGxcomtype() == null ? 0 : awayItem.getGxcomtype().intValue();// 0¹«Ğİ²»¼Æ£¬1¹«Ğİ¼Æ
+		// Èç¹ûÊÇ¹«ĞİÇÒ´ËÀà±ğ¹«Ğİ²»¼Æ³ö²î£¬Ôò·µ»Ø0
+		if (ShiftVO.PK_GX.equals(pk_shift) && gxComType == 0)
 			return TimeLengthWrapper.getZeroTimeLength();
-		//è¿‡æ»¤å‡ºè¿™ç§ç±»å‹ï¼ˆæ¯”å¦‚æœ¬åœ°å‡ºå·®ï¼‰çš„æ—¶é—´æ®µ
-		ITimeScopeWithBillType[] filteredScopes = TimeScopeUtils.filterByItemPK(awayItem.getPk_timeitem(), intersectionScopes);
-		if(filteredScopes==null||filteredScopes.length==0)
+		// ¹ıÂË³öÕâÖÖÀàĞÍ£¨±ÈÈç±¾µØ³ö²î£©µÄÊ±¼ä¶Î
+		ITimeScopeWithBillType[] filteredScopes = TimeScopeUtils.filterByItemPK(awayItem.getPk_timeitem(),
+				intersectionScopes);
+		if (filteredScopes == null || filteredScopes.length == 0)
 			return TimeLengthWrapper.getZeroTimeLength();
-		//1-å¤©ï¼Œ2-å°æ—¶,é»˜è®¤å°æ—¶
-		int timeitemUnit = awayItem.getTimeitemunit()==null?TimeItemCopyVO.TIMEITEMUNIT_HOUR:awayItem.getTimeitemunit().intValue();
-		//æœ€å°æ—¶é—´å•ä½-å¯¹äºä»¥å°æ—¶è®¡çš„åŠ ç­ç±»åˆ«ï¼Œå•ä½æ˜¯åˆ†é’Ÿï¼›å¯¹äºä»¥å¤©è®¡çš„åŠ ç­ç±»åˆ«ï¼Œå•ä½æ˜¯å¤©
-//		double timeUnit = awayItem.getTimeunit()==null?0:awayItem.getTimeunit().doubleValue();
-		//å–æ•´è§„åˆ™ï¼Œ0å‘ä¸Šï¼Œ1å‘ä¸‹ï¼Œ2å››èˆäº”å…¥ï¼Œé»˜è®¤1ï¼›
-//		int roundMode = awayItem.getRoundmode()==null?1:awayItem.getRoundmode().intValue();
-		//å‡ºå·®æ—¶é—´æ®µçš„ç§’æ•°
-		//long seconds = TimeScopeUtils.getLengthAutoContainsLastSecond(filteredScopes);
-		//å¦‚æœæ˜¯æŒ‰å°æ—¶è®¡ç®—
+		// 1-Ìì£¬2-Ğ¡Ê±,Ä¬ÈÏĞ¡Ê±
+		int timeitemUnit = awayItem.getTimeitemunit() == null ? TimeItemCopyVO.TIMEITEMUNIT_HOUR : awayItem
+				.getTimeitemunit().intValue();
+		// ×îĞ¡Ê±¼äµ¥Î»-¶ÔÓÚÒÔĞ¡Ê±¼ÆµÄ¼Ó°àÀà±ğ£¬µ¥Î»ÊÇ·ÖÖÓ£»¶ÔÓÚÒÔÌì¼ÆµÄ¼Ó°àÀà±ğ£¬µ¥Î»ÊÇÌì
+		// double timeUnit =
+		// awayItem.getTimeunit()==null?0:awayItem.getTimeunit().doubleValue();
+		// È¡Õû¹æÔò£¬0ÏòÉÏ£¬1ÏòÏÂ£¬2ËÄÉáÎåÈë£¬Ä¬ÈÏ1£»
+		// int roundMode =
+		// awayItem.getRoundmode()==null?1:awayItem.getRoundmode().intValue();
+		// ³ö²îÊ±¼ä¶ÎµÄÃëÊı
+		// long seconds =
+		// TimeScopeUtils.getLengthAutoContainsLastSecond(filteredScopes);
+		// Èç¹ûÊÇ°´Ğ¡Ê±¼ÆËã
 		double result = 0;
 		double workDayLength = timeRuleVO.getDaytohour2();
-		if(timeitemUnit==TimeItemCopyVO.TIMEITEMUNIT_HOUR){
+		if (timeitemUnit == TimeItemCopyVO.TIMEITEMUNIT_HOUR) {
 			long seconds = 0;
-//			boolean containsBeginEndInSameDay = false;//è¿™äº›æ—¶é—´æ®µä¸­ï¼Œæ˜¯å¦æœ‰å½“å¤©å¾€è¿”çš„å•æ®
-			for(ITimeScopeWithBillType filteredScope:filteredScopes){
-				//å½“å‰æ—¶é—´æ®µçš„ç»å¯¹æ—¶é•¿
+			// boolean containsBeginEndInSameDay = false;//ÕâĞ©Ê±¼ä¶ÎÖĞ£¬ÊÇ·ñÓĞµ±ÌìÍù·µµÄµ¥¾İ
+			for (ITimeScopeWithBillType filteredScope : filteredScopes) {
+				// µ±Ç°Ê±¼ä¶ÎµÄ¾ø¶ÔÊ±³¤
 				long curBillLength = TimeScopeUtils.getLength(filteredScope);
 				int datePos = getDatePos(curDate, awayItem.getPk_timeitem(), filteredScope);
-//				if(datePos == TimeScopeUtils.DATE_POS_FIRST_LAST)
-//					containsBeginEndInSameDay = true;
-				if(curBillLength==0)
+				// if(datePos == TimeScopeUtils.DATE_POS_FIRST_LAST)
+				// containsBeginEndInSameDay = true;
+				if (curBillLength == 0)
 					continue;
-				//æ­¤åˆ‡å‰²åå•æ®ä¸ŠåŸå§‹çš„å•æ®
-				IBillInfo originalBill = (IBillInfo) filteredScope.getOriginalTimeScopeMap().get(awayItem.getPk_timeitem());
-				switch(datePos){
-				//å¦‚æœæ˜¯å½“æ—¥å¾€è¿”,åˆ™æŒ‰å®é™…æ—¶é•¿è®¡ç®—ï¼ˆ2012.5.28ä¸zxè®¨è®ºåç¡®è®¤ï¼ŒæŒ‰å°æ—¶è®¡ç®—æ—¶ï¼Œå½“æ—¥å¾€è¿”ç”¨è‡ªç„¶æ—¶é•¿ï¼Œä¸èƒ½è¶…è¿‡è€ƒå‹¤è§„åˆ™çš„å·¥ä½œæ—¥æŠ˜åˆæ—¶é•¿,æ”¹å˜äº†ä¹‹å‰å½“æ—¥å¾€è¿”å¯èƒ½å‡ºå·®åå‡ ä¸ªå°æ—¶çš„ç®—æ³•ï¼‰
+				// ´ËÇĞ¸îºóµ¥¾İÉÏÔ­Ê¼µÄµ¥¾İ
+				IBillInfo originalBill = (IBillInfo) filteredScope.getOriginalTimeScopeMap().get(
+						awayItem.getPk_timeitem());
+				switch (datePos) {
+				// Èç¹ûÊÇµ±ÈÕÍù·µ,Ôò°´Êµ¼ÊÊ±³¤¼ÆËã£¨2012.5.28ÓëzxÌÖÂÛºóÈ·ÈÏ£¬°´Ğ¡Ê±¼ÆËãÊ±£¬µ±ÈÕÍù·µÓÃ×ÔÈ»Ê±³¤£¬²»ÄÜ³¬¹ı¿¼ÇÚ¹æÔòµÄ¹¤×÷ÈÕÕÛºÏÊ±³¤,¸Ä±äÁËÖ®Ç°µ±ÈÕÍù·µ¿ÉÄÜ³ö²îÊ®¼¸¸öĞ¡Ê±µÄËã·¨£©
 				case TimeScopeUtils.DATE_POS_FIRST_LAST:
-					seconds+=Math.min(TimeScopeUtils.getLength(filteredScope),ITimeScope.SECONDS_PER_HOUR*workDayLength);
+					seconds += Math.min(TimeScopeUtils.getLength(filteredScope), ITimeScope.SECONDS_PER_HOUR
+							* workDayLength);
 					break;
-					//ä¸­é—´å¤©,åˆ™æŒ‰å®é™…æ—¶é•¿è®¡ç®—
+				// ÖĞ¼äÌì,Ôò°´Êµ¼ÊÊ±³¤¼ÆËã
 				case TimeScopeUtils.DATE_POS_MIDDLE:
-					seconds+= Math.min(curBillLength,ITimeScope.SECONDS_PER_HOUR*workDayLength);
+					seconds += Math.min(curBillLength, ITimeScope.SECONDS_PER_HOUR * workDayLength);
 					break;
-					//é¦–æ—¥ï¼Œåˆ™12ç‚¹å‰å‡ºå‘æ˜¯ä¸€ä¸ªå·¥ä½œæ—¥æ—¶é•¿ï¼Œå¦åˆ™0.5ä¸ªå·¥ä½œæ—¥æ—¶é•¿
+				// Ê×ÈÕ£¬Ôò12µãÇ°³ö·¢ÊÇÒ»¸ö¹¤×÷ÈÕÊ±³¤£¬·ñÔò0.5¸ö¹¤×÷ÈÕÊ±³¤
 				case TimeScopeUtils.DATE_POS_FIRST:
-					if(filteredScope.getScope_start_datetime().toStdString(originalBill.getTimezone()).substring(11).compareTo("12:00:00")<0){
-						seconds+=ITimeScope.SECONDS_PER_HOUR*workDayLength;
+					if (filteredScope.getScope_start_datetime().toStdString(originalBill.getTimezone()).substring(11)
+							.compareTo("12:00:00") < 0) {
+						seconds += ITimeScope.SECONDS_PER_HOUR * workDayLength;
 						break;
 					}
-					//åœ¨12ç‚¹ï¼ˆåŒ…å«ï¼‰ä¹‹åå¼€å§‹è®¡ä¸ºåŠå¤©
-					seconds+=ITimeScope.SECONDS_PER_HOUR*workDayLength/2;
+					// ÔÚ12µã£¨°üº¬£©Ö®ºó¿ªÊ¼¼ÆÎª°ëÌì
+					seconds += ITimeScope.SECONDS_PER_HOUR * workDayLength / 2;
 					break;
-					//å°¾æ—¥ï¼š12ç‚¹åå›æ¥ï¼Œè®¡ä¸º1ä¸ªå·¥ä½œæ—¥æ—¶é•¿ï¼Œå¦åˆ™0.5ä¸ªå·¥ä½œæ—¥æ—¶é•¿
+				// Î²ÈÕ£º12µãºó»ØÀ´£¬¼ÆÎª1¸ö¹¤×÷ÈÕÊ±³¤£¬·ñÔò0.5¸ö¹¤×÷ÈÕÊ±³¤
 				case TimeScopeUtils.DATE_POS_LAST:
-					if(filteredScope.getScope_end_datetime().toStdString(originalBill.getTimezone()).substring(11).compareTo("12:00:00")>0){
-						seconds+=ITimeScope.SECONDS_PER_HOUR*workDayLength;
+					if (filteredScope.getScope_end_datetime().toStdString(originalBill.getTimezone()).substring(11)
+							.compareTo("12:00:00") > 0) {
+						seconds += ITimeScope.SECONDS_PER_HOUR * workDayLength;
 						break;
 					}
-					//åœ¨12ç‚¹ï¼ˆåŒ…å«ï¼‰ä¹‹å‰ç»“æŸè®¡ä¸ºåŠå¤©
-					seconds+=ITimeScope.SECONDS_PER_HOUR*workDayLength/2;
+					// ÔÚ12µã£¨°üº¬£©Ö®Ç°½áÊø¼ÆÎª°ëÌì
+					seconds += ITimeScope.SECONDS_PER_HOUR * workDayLength / 2;
 					break;
 				}
 			}
-			result = Math.min(workDayLength, ((double)seconds)/ITimeScope.SECONDS_PER_HOUR);
-			double processedLen = Math.min(workDayLength, CommonMethods.processByDecimalDigitsAndRoundMode(((double)seconds)/ITimeScope.SECONDS_PER_HOUR, timeRuleVO).doubleValue());
-			return new TimeLengthWrapper(result,processedLen,result,processedLen);
+			result = Math.min(workDayLength, ((double) seconds) / ITimeScope.SECONDS_PER_HOUR);
+			double processedLen = Math.min(
+					workDayLength,
+					CommonMethods.processByDecimalDigitsAndRoundMode(((double) seconds) / ITimeScope.SECONDS_PER_HOUR,
+							timeRuleVO).doubleValue());
+			return new TimeLengthWrapper(result, processedLen, result, processedLen);
 		}
-		//å¦‚æœæ˜¯æŒ‰å¤©è®¡ç®—
-		int calculatetype = awayItem.getCalculatetype()==null?0:awayItem.getCalculatetype().intValue();//é¦–å°¾å¤©è®¡ç®—æ–¹å¼0ï¼š12ç‚¹ä¸ºç•Œè®¡åŠå¤©ï¼Œ1ï¼šè®¡ä¸€å¤©
+		// Èç¹ûÊÇ°´Ìì¼ÆËã
+		int calculatetype = awayItem.getCalculatetype() == null ? 0 : awayItem.getCalculatetype().intValue();// Ê×Î²Ìì¼ÆËã·½Ê½0£º12µãÎª½ç¼Æ°ëÌì£¬1£º¼ÆÒ»Ìì
 		double days = 0;
-		for(ITimeScopeWithBillType filteredScope:filteredScopes){
-			//å½“å‰æ—¶é—´æ®µçš„ç»å¯¹æ—¶é•¿
+		for (ITimeScopeWithBillType filteredScope : filteredScopes) {
+			// µ±Ç°Ê±¼ä¶ÎµÄ¾ø¶ÔÊ±³¤
 			long curBillLength = TimeScopeUtils.getLength(filteredScope);
-			if(curBillLength==0)
+			if (curBillLength == 0)
 				continue;
 			int datePos = getDatePos(curDate, awayItem.getPk_timeitem(), filteredScope);
-			//å¦‚æœé¦–å°¾å¤©è§„åˆ™æ˜¯å„è®¡ä¸€å¤©ï¼Œåˆ™æ¯å¤©éƒ½æŒ‰ä¸€å¤©è®¡
-			if(calculatetype==1){//é¦–å°¾å¤©åˆ†åˆ«è®¡ä¸º1å¤©
-				if(datePos!=TimeScopeUtils.DATE_POS_OUT_OF_RANGE)
-					days+=1;
+			// Èç¹ûÊ×Î²Ìì¹æÔòÊÇ¸÷¼ÆÒ»Ìì£¬ÔòÃ¿Ìì¶¼°´Ò»Ìì¼Æ
+			if (calculatetype == 1) {// Ê×Î²Ìì·Ö±ğ¼ÆÎª1Ìì
+				if (datePos != TimeScopeUtils.DATE_POS_OUT_OF_RANGE)
+					days += 1;
 				continue;
 			}
-			//æ­¤åˆ‡å‰²åå•æ®ä¸ŠåŸå§‹çš„å•æ®
+			// ´ËÇĞ¸îºóµ¥¾İÉÏÔ­Ê¼µÄµ¥¾İ
 			IBillInfo originalBill = (IBillInfo) filteredScope.getOriginalTimeScopeMap().get(awayItem.getPk_timeitem());
-			//å¦‚æœæ˜¯é¦–å°¾å¤©è§„åˆ™æ˜¯ä»¥12ç‚¹ä¸ºç•Œï¼Œåˆ™è¦çœ‹æ˜¯å¦æ˜¯é¦–å°¾å¤©
-			switch(datePos){
-			//å¦‚æœæ˜¯å½“æ—¥å¾€è¿”,åˆ™12ç‚¹å‰å›æ¥æ˜¯0.5å¤©ï¼Œ12ç‚¹åå‡ºå‘æ—¶0.5å¤©ï¼Œ12ç‚¹å‰å‡ºå‘12ç‚¹åå›æ¥æ˜¯1å¤©
+			// Èç¹ûÊÇÊ×Î²Ìì¹æÔòÊÇÒÔ12µãÎª½ç£¬ÔòÒª¿´ÊÇ·ñÊÇÊ×Î²Ìì
+			switch (datePos) {
+			// Èç¹ûÊÇµ±ÈÕÍù·µ,Ôò12µãÇ°»ØÀ´ÊÇ0.5Ìì£¬12µãºó³ö·¢Ê±0.5Ìì£¬12µãÇ°³ö·¢12µãºó»ØÀ´ÊÇ1Ìì
 			case TimeScopeUtils.DATE_POS_FIRST_LAST:
-				if(filteredScope.getScope_end_datetime().toStdString(originalBill.getTimezone()).substring(11).compareTo("12:00:00")<=0
-						||filteredScope.getScope_start_datetime().toStdString(originalBill.getTimezone()).substring(11).compareTo("12:00:00")>=0){
-					days+=0.5;
+				if (filteredScope.getScope_end_datetime().toStdString(originalBill.getTimezone()).substring(11)
+						.compareTo("12:00:00") <= 0
+						|| filteredScope.getScope_start_datetime().toStdString(originalBill.getTimezone())
+								.substring(11).compareTo("12:00:00") >= 0) {
+					days += 0.5;
 					break;
 				}
-				days+=1;
+				days += 1;
 				break;
-				//ä¸­é—´å¤©,ç®—ä¸€å¤©
+			// ÖĞ¼äÌì,ËãÒ»Ìì
 			case TimeScopeUtils.DATE_POS_MIDDLE:
-				days+=1;
+				days += 1;
 				break;
-				//é¦–æ—¥ï¼Œåˆ™12ç‚¹å‰å‡ºå‘æ˜¯ä¸€å¤©ï¼Œå¦åˆ™åŠå¤©
+			// Ê×ÈÕ£¬Ôò12µãÇ°³ö·¢ÊÇÒ»Ìì£¬·ñÔò°ëÌì
 			case TimeScopeUtils.DATE_POS_FIRST:
-				if(filteredScope.getScope_start_datetime().toStdString(originalBill.getTimezone()).substring(11).compareTo("12:00:00")<=0){
-					days+=1;
+				if (filteredScope.getScope_start_datetime().toStdString(originalBill.getTimezone()).substring(11)
+						.compareTo("12:00:00") <= 0) {
+					days += 1;
 					break;
 				}
-				//åœ¨12ç‚¹ï¼ˆåŒ…å«ï¼‰ä¹‹åå¼€å§‹è®¡ä¸ºåŠå¤©
-				days+=0.5;
+				// ÔÚ12µã£¨°üº¬£©Ö®ºó¿ªÊ¼¼ÆÎª°ëÌì
+				days += 0.5;
 				break;
-				//å°¾æ—¥ï¼š12ç‚¹åå›æ¥ï¼Œè®¡ä¸º1ä¸ªå·¥ä½œæ—¥æ—¶é•¿ï¼Œå¦åˆ™0.5ä¸ªå·¥ä½œæ—¥æ—¶é•¿
+			// Î²ÈÕ£º12µãºó»ØÀ´£¬¼ÆÎª1¸ö¹¤×÷ÈÕÊ±³¤£¬·ñÔò0.5¸ö¹¤×÷ÈÕÊ±³¤
 			case TimeScopeUtils.DATE_POS_LAST:
-				if(filteredScope.getScope_end_datetime().toStdString(originalBill.getTimezone()).substring(11).compareTo("12:00:00")>=0){
-					days+=1;
+				if (filteredScope.getScope_end_datetime().toStdString(originalBill.getTimezone()).substring(11)
+						.compareTo("12:00:00") >= 0) {
+					days += 1;
 					break;
 				}
-				//åœ¨12ç‚¹ï¼ˆåŒ…å«ï¼‰ä¹‹å‰ç»“æŸè®¡ä¸ºåŠå¤©
-				days+=0.5;
+				// ÔÚ12µã£¨°üº¬£©Ö®Ç°½áÊø¼ÆÎª°ëÌì
+				days += 0.5;
 				break;
 			}
 		}
-		days=Math.min(1, days);
-		double processedDays = Math.min(1, CommonMethods.processByDecimalDigitsAndRoundMode(days, timeRuleVO).doubleValue());
-		return new TimeLengthWrapper(days,processedDays,days*timeRuleVO.getDaytohour2(),processedDays*timeRuleVO.getDaytohour2());
+		days = Math.min(1, days);
+		double processedDays = Math.min(1, CommonMethods.processByDecimalDigitsAndRoundMode(days, timeRuleVO)
+				.doubleValue());
+		return new TimeLengthWrapper(days, processedDays, days * timeRuleVO.getDaytohour2(), processedDays
+				* timeRuleVO.getDaytohour2());
 	}
-	
+
 	/**
-	 * æ ¹æ®è€ƒå‹¤é¡¹ç›®çš„å€¼å’Œè€ƒå‹¤é¡¹ç›®ä¸»é”®ï¼Œç”Ÿæˆæ—¥æŠ¥å­è¡¨voã€‚å¦‚æœå€¼ç­‰äº0ï¼Œåˆ™ä¸ç”Ÿæˆvo
+	 * ¸ù¾İ¿¼ÇÚÏîÄ¿µÄÖµºÍ¿¼ÇÚÏîÄ¿Ö÷¼ü£¬Éú³ÉÈÕ±¨×Ó±ívo¡£Èç¹ûÖµµÈÓÚ0£¬Ôò²»Éú³Évo
+	 * 
 	 * @param pk_timeitem
 	 * @param val
 	 * @param statbVOList
-	 * @param type:1.ä¼‘å‡(è¯·å‡)  2.åŠ ç­  3.å‡ºå·®(å…¬å‡º)8:åœå·¥å¾…æ–™
+	 * @param type
+	 *            :1.Ğİ¼Ù(Çë¼Ù) 2.¼Ó°à 3.³ö²î(¹«³ö)8:Í£¹¤´ıÁÏ
 	 */
-	private static void createDaystatbVO(String pk_daystat,String pk_timeitem,
-			double originalVal,double processedVal,
-			double originalValUseHour,double processedValUseHour,
-			double toRestHour, List<DayStatbVO> statbVOList,
-			int type,String calPeriod,int timeitemUnit){
-		if(Math.abs(originalVal-0)>0.0001||Math.abs(processedVal-0)>0.0001){
+	private static void createDaystatbVO(String pk_daystat, String pk_timeitem, double originalVal,
+			double processedVal, double originalValUseHour, double processedValUseHour, double toRestHour,
+			List<DayStatbVO> statbVOList, int type, String calPeriod, int timeitemUnit) {
+		if (Math.abs(originalVal - 0) > 0.0001 || Math.abs(processedVal - 0) > 0.0001) {
 			DayStatbVO vo = new DayStatbVO();
 			vo.setDr(Integer.valueOf(0));
 			vo.setOrihournum(new UFDouble(originalVal));
@@ -1291,73 +1491,76 @@ public class BillProcessHelper {
 			statbVOList.add(vo);
 		}
 	}
-	
+
 	/**
-	 * åˆ¤æ–­curDateè¡¨ç¤ºçš„æ—¥æœŸåœ¨scopeè¡¨ç¤ºçš„å•æ®çš„åŸå§‹å•æ®ä¸­æ‰€å¤„çš„ä½ç½®ï¼Œæ˜¯é¦–å¤©è¿˜æ˜¯å°¾å¤©è¿˜æ˜¯ä¸­é—´å¤©
+	 * ÅĞ¶ÏcurDate±íÊ¾µÄÈÕÆÚÔÚscope±íÊ¾µÄµ¥¾İµÄÔ­Ê¼µ¥¾İÖĞËù´¦µÄÎ»ÖÃ£¬ÊÇÊ×Ìì»¹ÊÇÎ²Ìì»¹ÊÇÖĞ¼äÌì
+	 * 
 	 * @param scope
 	 * @return
 	 */
-	private static int getDatePos(String curDate,String pk_timeitem,ITimeScopeWithBillType scope){
-		//åŸå§‹å•æ®
+	private static int getDatePos(String curDate, String pk_timeitem, ITimeScopeWithBillType scope) {
+		// Ô­Ê¼µ¥¾İ
 		ITimeScope originalBill = scope.getOriginalTimeScopeMap().get(pk_timeitem);
-		if(originalBill==null)
+		if (originalBill == null)
 			return TimeScopeUtils.DATE_POS_OUT_OF_RANGE;
-		return TimeScopeUtils.getDatePos(curDate, originalBill,((IBillInfo)originalBill).getTimezone());
+		return TimeScopeUtils.getDatePos(curDate, originalBill, ((IBillInfo) originalBill).getTimezone());
 	}
-	
+
 	/**
-	 * å¾—åˆ°curCalendarå¯¹åº”çš„å·¥ä½œæ—¶é—´æ®µã€‚å¯¹äºéå…¬ä¼‘ç­æ¬¡ï¼Œå°±æ˜¯ç­æ¬¡å®šä¹‰çš„æ—¶é—´æ®µã€‚
-	 * å¯¹äºå…¬ä¼‘ç­æ¬¡ï¼Œåˆ™è¦çœ‹å‰ä¸€å¤©çš„ç­æ¬¡å’Œåä¸€å¤©çš„ç­æ¬¡ï¼š
-	 * å¦‚æœå‰ä¸€å¤©æ˜¯å…¬ä¼‘ï¼Œé‚£ä¹ˆcurCalendarä»00:00:00å¼€å§‹ï¼Œå¦åˆ™ä»å‰ä¸€ä¸ªç­æ¬¡çš„ç»“æŸæ—¶é—´å¼€å§‹
-	 * å¦‚æœåä¸€å¤©æ˜¯å…¬ä¼‘ï¼Œé‚£ä¹ˆcurCalendaråˆ°23:59:59ç»“æŸï¼Œå¦åˆ™åˆ°åä¸€ä¸ªç­æ¬¡çš„å¼€å§‹æ—¶é—´ç»“æŸ
+	 * µÃµ½curCalendar¶ÔÓ¦µÄ¹¤×÷Ê±¼ä¶Î¡£¶ÔÓÚ·Ç¹«Ğİ°à´Î£¬¾ÍÊÇ°à´Î¶¨ÒåµÄÊ±¼ä¶Î¡£ ¶ÔÓÚ¹«Ğİ°à´Î£¬ÔòÒª¿´Ç°Ò»ÌìµÄ°à´ÎºÍºóÒ»ÌìµÄ°à´Î£º
+	 * Èç¹ûÇ°Ò»ÌìÊÇ¹«Ğİ£¬ÄÇÃ´curCalendar´Ó00:00:00¿ªÊ¼£¬·ñÔò´ÓÇ°Ò»¸ö°à´ÎµÄ½áÊøÊ±¼ä¿ªÊ¼
+	 * Èç¹ûºóÒ»ÌìÊÇ¹«Ğİ£¬ÄÇÃ´curCalendarµ½23:59:59½áÊø£¬·ñÔòµ½ºóÒ»¸ö°à´ÎµÄ¿ªÊ¼Ê±¼ä½áÊø
+	 * 
 	 * @param curCalendar
 	 * @param lastCalendar
 	 * @param nextCalendar
 	 * @return
 	 */
-	public static ITimeScope[] getWorkTimeScopes(String curDate,AggPsnCalendar curCalendar,ShiftVO preShift,ShiftVO nextShift,
-			TimeZone curTimeZone,TimeZone preTimeZone,TimeZone nextTimeZone){
-		//ç­æ¬¡ä¸ºç©ºå°±æŒ‰å…¬ä¼‘å¤„ç†
-		String pk_shift = curCalendar==null?ShiftVO.PK_GX:curCalendar.getPsnCalendarVO()==null?ShiftVO.PK_GX:curCalendar.getPsnCalendarVO().getPk_shift();
-		//å¦‚æœä¸æ˜¯å…¬ä¼‘ï¼Œåˆ™æ˜¯å·¥ä½œæ—¶é—´æ®µï¼Œä¸ç”¨è€ƒè™‘å‰åå¤©çš„ç­æ¬¡
-		if(!ShiftVO.PK_GX.equals(pk_shift)){
+	public static ITimeScope[] getWorkTimeScopes(String curDate, AggPsnCalendar curCalendar, ShiftVO preShift,
+			ShiftVO nextShift, TimeZone curTimeZone, TimeZone preTimeZone, TimeZone nextTimeZone) {
+		// °à´ÎÎª¿Õ¾Í°´¹«Ğİ´¦Àí
+		String pk_shift = curCalendar == null ? ShiftVO.PK_GX : curCalendar.getPsnCalendarVO() == null ? ShiftVO.PK_GX
+				: curCalendar.getPsnCalendarVO().getPk_shift();
+		// Èç¹û²»ÊÇ¹«Ğİ£¬ÔòÊÇ¹¤×÷Ê±¼ä¶Î£¬²»ÓÃ¿¼ÂÇÇ°ºóÌìµÄ°à´Î
+		if (!ShiftVO.PK_GX.equals(pk_shift)) {
 			return curCalendar.getPsnWorkTimeVO();
 		}
-		return new ITimeScope[]{ShiftVO.toKqScope(null, preShift, nextShift, curDate, curTimeZone,preTimeZone,nextTimeZone)};
+		return new ITimeScope[] { ShiftVO.toKqScope(null, preShift, nextShift, curDate, curTimeZone, preTimeZone,
+				nextTimeZone) };
 	}
-	
+
 	/**
-	 * å¾—åˆ°æŸå¤©çš„è€ƒå‹¤æ—¶é—´æ®µã€‚å³åˆ·å¡å¼€å§‹åˆ°åˆ·å¡ç»“æŸæ—¶é—´æ®µ
+	 * µÃµ½Ä³ÌìµÄ¿¼ÇÚÊ±¼ä¶Î¡£¼´Ë¢¿¨¿ªÊ¼µ½Ë¢¿¨½áÊøÊ±¼ä¶Î
+	 * 
 	 * @param curDate
 	 * @param preShift
 	 * @param curShift
 	 * @param nextShift
 	 * @return
 	 */
-	public static ITimeScope getAttendTimeScope(String curDate,ShiftVO preShift,ShiftVO curShift,ShiftVO nextShift,
-			TimeZone preTimeZone,TimeZone curTimeZone,TimeZone nextTimeZone){
-		return ShiftVO.toKqScope(curShift, preShift, nextShift, curDate, curTimeZone,preTimeZone,nextTimeZone);
+	public static ITimeScope getAttendTimeScope(String curDate, ShiftVO preShift, ShiftVO curShift, ShiftVO nextShift,
+			TimeZone preTimeZone, TimeZone curTimeZone, TimeZone nextTimeZone) {
+		return ShiftVO.toKqScope(curShift, preShift, nextShift, curDate, curTimeZone, preTimeZone, nextTimeZone);
 	}
-	
-	
+
 	/**
-	 * å¾—åˆ°æŸå¤©çš„è€ƒå‹¤æ—¶é—´æ®µ
+	 * µÃµ½Ä³ÌìµÄ¿¼ÇÚÊ±¼ä¶Î
+	 * 
 	 * @param curDate
 	 * @param psnCalendarMap
 	 * @param shiftMap
 	 * @return
-	 * @throws BusinessException 
+	 * @throws BusinessException
 	 */
-	public static ITimeScope getAttendTimeScope(
-			UFLiteralDate preDate,UFLiteralDate curDate,UFLiteralDate nextDate,
-			Map<UFLiteralDate, AggPsnCalendar> psnCalendarMap,
-			Map<String, ShiftVO> shiftMap,
-			Map<UFLiteralDate, TimeZone> dateTimeZoneMap) throws BusinessException{
+	public static ITimeScope getAttendTimeScope(UFLiteralDate preDate, UFLiteralDate curDate, UFLiteralDate nextDate,
+			Map<UFLiteralDate, AggPsnCalendar> psnCalendarMap, Map<String, ShiftVO> shiftMap,
+			Map<UFLiteralDate, TimeZone> dateTimeZoneMap) throws BusinessException {
 		return getAttendTimeScope(preDate, curDate, nextDate, psnCalendarMap, shiftMap, dateTimeZoneMap, false);
 	}
-	
+
 	/**
-	 * å¾—åˆ°æŸå¤©çš„è€ƒå‹¤æ—¶é—´æ®µï¼Œä¸“ç”¨äºåŠ ç­æ ¡éªŒ
+	 * µÃµ½Ä³ÌìµÄ¿¼ÇÚÊ±¼ä¶Î£¬×¨ÓÃÓÚ¼Ó°àĞ£Ñé
+	 * 
 	 * @param preDate
 	 * @param curDate
 	 * @param nextDate
@@ -1367,248 +1570,262 @@ public class BillProcessHelper {
 	 * @return
 	 * @throws BusinessException
 	 */
-	public static ITimeScope getAttendTimeScope4OvertimeCheck(
-			UFLiteralDate preDate,UFLiteralDate curDate,UFLiteralDate nextDate,
-			Map<UFLiteralDate, AggPsnCalendar> psnCalendarMap,
-			Map<String, ShiftVO> shiftMap,
-			Map<UFLiteralDate, TimeZone> dateTimeZoneMap) throws BusinessException{
+	public static ITimeScope getAttendTimeScope4OvertimeCheck(UFLiteralDate preDate, UFLiteralDate curDate,
+			UFLiteralDate nextDate, Map<UFLiteralDate, AggPsnCalendar> psnCalendarMap, Map<String, ShiftVO> shiftMap,
+			Map<UFLiteralDate, TimeZone> dateTimeZoneMap) throws BusinessException {
 		return getAttendTimeScope(preDate, curDate, nextDate, psnCalendarMap, shiftMap, dateTimeZoneMap, true);
 	}
-	
-	protected static ITimeScope getAttendTimeScope(
-			UFLiteralDate preDate,UFLiteralDate curDate,UFLiteralDate nextDate,
-			Map<UFLiteralDate, AggPsnCalendar> psnCalendarMap,
-			Map<String, ShiftVO> shiftMap,
-			Map<UFLiteralDate, TimeZone> dateTimeZoneMap,
-			boolean is4OvertimeCheck) throws BusinessException{
-		//å½“æ—¥ç­æ¬¡
-		AggPsnCalendar curCalendar = MapUtils.isEmpty(psnCalendarMap)?null:psnCalendarMap.get(curDate);
-		ShiftVO curShift = curCalendar==null?null:curCalendar.getPsnCalendarVO()==null?null:ShiftServiceFacade.getShiftVOFromMap(shiftMap, curCalendar.getPsnCalendarVO().getPk_shift());
-		//å‰ä¸€æ—¥ç­æ¬¡
-		AggPsnCalendar preCalendar = preDate==null?null:(MapUtils.isEmpty(psnCalendarMap)?null:psnCalendarMap.get(preDate));
-		ShiftVO preShift = preCalendar==null?null:preCalendar.getPsnCalendarVO()==null?null:ShiftServiceFacade.getShiftVOFromMap(shiftMap, preCalendar.getPsnCalendarVO().getPk_shift());
-		//åä¸€æ—¥ç­æ¬¡
-		AggPsnCalendar nextCalendar = nextDate==null?null:(MapUtils.isEmpty(psnCalendarMap)?null:psnCalendarMap.get(nextDate));
-		ShiftVO nextShift = nextCalendar==null?null:nextCalendar.getPsnCalendarVO()==null?null:ShiftServiceFacade.getShiftVOFromMap(shiftMap, nextCalendar.getPsnCalendarVO().getPk_shift());
-		TimeZone curTimeZone = CommonUtils.ensureTimeZone(dateTimeZoneMap == null?null:dateTimeZoneMap.get(curDate));
-		TimeZone preTimeZone = CommonUtils.ensureTimeZone(dateTimeZoneMap == null?null:dateTimeZoneMap.get(preDate));
-		TimeZone nextTimeZone = CommonUtils.ensureTimeZone(dateTimeZoneMap == null?null:dateTimeZoneMap.get(nextDate));
-		return is4OvertimeCheck?
-				ShiftVO.toKqScope4OvertimeCheckAndGen(curShift, preShift, nextShift, curDate.toString(), curTimeZone,preTimeZone,nextTimeZone)
-				:ShiftVO.toKqScope(curShift, preShift, nextShift, curDate.toString(), curTimeZone,preTimeZone,nextTimeZone);
+
+	protected static ITimeScope getAttendTimeScope(UFLiteralDate preDate, UFLiteralDate curDate,
+			UFLiteralDate nextDate, Map<UFLiteralDate, AggPsnCalendar> psnCalendarMap, Map<String, ShiftVO> shiftMap,
+			Map<UFLiteralDate, TimeZone> dateTimeZoneMap, boolean is4OvertimeCheck) throws BusinessException {
+		// µ±ÈÕ°à´Î
+		AggPsnCalendar curCalendar = MapUtils.isEmpty(psnCalendarMap) ? null : psnCalendarMap.get(curDate);
+		ShiftVO curShift = curCalendar == null ? null : curCalendar.getPsnCalendarVO() == null ? null
+				: ShiftServiceFacade.getShiftVOFromMap(shiftMap, curCalendar.getPsnCalendarVO().getPk_shift());
+		// Ç°Ò»ÈÕ°à´Î
+		AggPsnCalendar preCalendar = preDate == null ? null : (MapUtils.isEmpty(psnCalendarMap) ? null : psnCalendarMap
+				.get(preDate));
+		ShiftVO preShift = preCalendar == null ? null : preCalendar.getPsnCalendarVO() == null ? null
+				: ShiftServiceFacade.getShiftVOFromMap(shiftMap, preCalendar.getPsnCalendarVO().getPk_shift());
+		// ºóÒ»ÈÕ°à´Î
+		AggPsnCalendar nextCalendar = nextDate == null ? null : (MapUtils.isEmpty(psnCalendarMap) ? null
+				: psnCalendarMap.get(nextDate));
+		ShiftVO nextShift = nextCalendar == null ? null : nextCalendar.getPsnCalendarVO() == null ? null
+				: ShiftServiceFacade.getShiftVOFromMap(shiftMap, nextCalendar.getPsnCalendarVO().getPk_shift());
+		TimeZone curTimeZone = CommonUtils
+				.ensureTimeZone(dateTimeZoneMap == null ? null : dateTimeZoneMap.get(curDate));
+		TimeZone preTimeZone = CommonUtils
+				.ensureTimeZone(dateTimeZoneMap == null ? null : dateTimeZoneMap.get(preDate));
+		TimeZone nextTimeZone = CommonUtils.ensureTimeZone(dateTimeZoneMap == null ? null : dateTimeZoneMap
+				.get(nextDate));
+		return is4OvertimeCheck ? ShiftVO.toKqScope4OvertimeCheckAndGen(curShift, preShift, nextShift,
+				curDate.toString(), curTimeZone, preTimeZone, nextTimeZone) : ShiftVO.toKqScope(curShift, preShift,
+				nextShift, curDate.toString(), curTimeZone, preTimeZone, nextTimeZone);
 	}
-	
-//	public static ITimeScope getAttendTimeScope(UFDate curDate,
-//			Map<String, PsncalendarAllVO> psnCalendarMap,Map<String, BclbVO> bclbMap){
-//		return getAttendTimeScope(curDate.getDateBefore(1).toString(), curDate.toString(), curDate.getDateAfter(1).toString(), psnCalendarMap, bclbMap);
-//	}
-//	
+
+	// public static ITimeScope getAttendTimeScope(UFDate curDate,
+	// Map<String, PsncalendarAllVO> psnCalendarMap,Map<String, BclbVO>
+	// bclbMap){
+	// return getAttendTimeScope(curDate.getDateBefore(1).toString(),
+	// curDate.toString(), curDate.getDateAfter(1).toString(), psnCalendarMap,
+	// bclbMap);
+	// }
+	//
 	/**
 	 * @param hvos
 	 * @return
 	 */
-	public static List<AwaybVO> toAwaybVOList(List<AggAwayVO> aggVOList){
+	public static List<AwaybVO> toAwaybVOList(List<AggAwayVO> aggVOList) {
 		return toAwaybVOList(aggVOList.toArray(new AggAwayVO[0]));
 	}
-	
-	public static AwaybVO[] toAwaybVOs(List<AggAwayVO> aggVOList){
+
+	public static AwaybVO[] toAwaybVOs(List<AggAwayVO> aggVOList) {
 		return toAwaybVOs(aggVOList.toArray(new AggAwayVO[0]));
 	}
-	
-	public static List<AwaybVO> toAwaybVOList(AggAwayVO[] aggVOs){
+
+	public static List<AwaybVO> toAwaybVOList(AggAwayVO[] aggVOs) {
 		List<AwaybVO> scopes = new ArrayList<AwaybVO>();
-		for(int i = 0;i<aggVOs.length;i++){
+		for (int i = 0; i < aggVOs.length; i++) {
 			scopes.addAll(Arrays.asList(aggVOs[i].getBodyVOsExceptDelete()));
 		}
 		return scopes;
 	}
-	
-	public static AwaybVO[] toAwaybVOs(AggAwayVO[] aggVOs){
+
+	public static AwaybVO[] toAwaybVOs(AggAwayVO[] aggVOs) {
 		return toAwaybVOList(aggVOs).toArray(new AwaybVO[0]);
 	}
-	
-	public static List<ChangeShiftbVO> toChangeShiftbVOList(List<AggChangeShiftVO> aggVOList){
+
+	public static List<ChangeShiftbVO> toChangeShiftbVOList(List<AggChangeShiftVO> aggVOList) {
 		return toChangeShiftbVOList(aggVOList.toArray(new AggChangeShiftVO[0]));
 	}
-	
-	public static ChangeShiftbVO[] toChangeShiftbVOs(List<AggChangeShiftVO> aggVOList){
+
+	public static ChangeShiftbVO[] toChangeShiftbVOs(List<AggChangeShiftVO> aggVOList) {
 		return toChangeShiftbVOs(aggVOList.toArray(new AggChangeShiftVO[0]));
 	}
-	
-	public static List<ChangeShiftbVO> toChangeShiftbVOList(AggChangeShiftVO[] aggVOs){
+
+	public static List<ChangeShiftbVO> toChangeShiftbVOList(AggChangeShiftVO[] aggVOs) {
 		List<ChangeShiftbVO> scopes = new ArrayList<ChangeShiftbVO>();
-		for(int i = 0;i<aggVOs.length;i++){
+		for (int i = 0; i < aggVOs.length; i++) {
 			ChangeShiftbVO[] bvos = aggVOs[i].getChangeShiftbVOs();
-			if(ArrayUtils.isEmpty(bvos))
+			if (ArrayUtils.isEmpty(bvos))
 				continue;
-			for(ChangeShiftbVO bvo:bvos){
-				if(bvo.getStatus()==VOStatus.DELETED)
+			for (ChangeShiftbVO bvo : bvos) {
+				if (bvo.getStatus() == VOStatus.DELETED)
 					continue;
-				bvo.setBill_code(aggVOs[i].getChangeShifthVO().getBill_code());//é”™è¯¯æç¤ºä¿¡æ¯éœ€è¦ç¼–ç 
+				bvo.setBill_code(aggVOs[i].getChangeShifthVO().getBill_code());// ´íÎóÌáÊ¾ĞÅÏ¢ĞèÒª±àÂë
 				scopes.add(bvo);
 			}
 		}
 		return scopes;
 	}
-	
-	public static ChangeShiftbVO[] toChangeShiftbVOs(AggChangeShiftVO[] aggVOs){
+
+	public static ChangeShiftbVO[] toChangeShiftbVOs(AggChangeShiftVO[] aggVOs) {
 		return toChangeShiftbVOList(aggVOs).toArray(new ChangeShiftbVO[0]);
 	}
-	
+
 	/**
 	 * @param hvos
 	 * @return
 	 */
-	public static List<LeavebVO> toLeavebVOList(List<AggLeaveVO> aggVOList){
+	public static List<LeavebVO> toLeavebVOList(List<AggLeaveVO> aggVOList) {
 		return toLeavebVOList(aggVOList.toArray(new AggLeaveVO[0]));
 	}
-	
-	public static LeavebVO[] toLeavebVOs(List<AggLeaveVO> aggVOList){
+
+	public static LeavebVO[] toLeavebVOs(List<AggLeaveVO> aggVOList) {
 		return toLeavebVOs(aggVOList.toArray(new AggLeaveVO[0]));
 	}
-	
-	public static List<LeavebVO> toLeavebVOList(AggLeaveVO[] aggVOs){
+
+	public static List<LeavebVO> toLeavebVOList(AggLeaveVO[] aggVOs) {
 		List<LeavebVO> scopes = new ArrayList<LeavebVO>();
-		for(int i = 0;i<aggVOs.length;i++){
+		for (int i = 0; i < aggVOs.length; i++) {
 			scopes.addAll(Arrays.asList(aggVOs[i].getBodyVOsExceptDelete()));
 		}
 		return scopes;
 	}
-	
-	public static LeavebVO[] toLeavebVOs(AggLeaveVO[] aggVOs){
+
+	public static LeavebVO[] toLeavebVOs(AggLeaveVO[] aggVOs) {
 		return toLeavebVOList(aggVOs).toArray(new LeavebVO[0]);
 	}
-	
-	public static LeaveoffVO[] toLeaveoffVOs(AggLeaveoffVO[] aggvos){
-		if(ArrayUtils.isEmpty(aggvos))
+
+	public static LeaveoffVO[] toLeaveoffVOs(AggLeaveoffVO[] aggvos) {
+		if (ArrayUtils.isEmpty(aggvos))
 			return null;
 		LeaveoffVO[] leaveoffvos = new LeaveoffVO[aggvos.length];
-		for(int i=0;i<aggvos.length;i++){
+		for (int i = 0; i < aggvos.length; i++) {
 			leaveoffvos[i] = aggvos[i].getLeaveoffVO();
 		}
 		return leaveoffvos;
 	}
-	public static AwayOffVO[] toAwayOffVOs(AggAwayOffVO[] aggvos){
-		if(ArrayUtils.isEmpty(aggvos))
+
+	public static AwayOffVO[] toAwayOffVOs(AggAwayOffVO[] aggvos) {
+		if (ArrayUtils.isEmpty(aggvos))
 			return null;
 		AwayOffVO[] awayoffvos = new AwayOffVO[aggvos.length];
-		for(int i=0;i<aggvos.length;i++){
+		for (int i = 0; i < aggvos.length; i++) {
 			awayoffvos[i] = aggvos[i].getAwayOffVO();
 		}
 		return awayoffvos;
 	}
-	
+
 	/**
 	 * @param hvos
 	 * @return
 	 */
-	public static List<OvertimebVO> toOvertimebVOList(List<AggOvertimeVO> aggVOList){
+	public static List<OvertimebVO> toOvertimebVOList(List<AggOvertimeVO> aggVOList) {
 		return toOvertimebVOList(aggVOList.toArray(new AggOvertimeVO[0]));
 	}
-	
-	public static OvertimebVO[] toOvertimebVOs(List<AggOvertimeVO> aggVOList){
+
+	public static OvertimebVO[] toOvertimebVOs(List<AggOvertimeVO> aggVOList) {
 		return toOvertimebVOs(aggVOList.toArray(new AggOvertimeVO[0]));
 	}
-	
-	public static List<OvertimebVO> toOvertimebVOList(AggOvertimeVO[] aggVOs){
+
+	public static List<OvertimebVO> toOvertimebVOList(AggOvertimeVO[] aggVOs) {
 		List<OvertimebVO> scopes = new ArrayList<OvertimebVO>();
-		for(int i = 0;i<aggVOs.length;i++){
+		for (int i = 0; i < aggVOs.length; i++) {
 			scopes.addAll(Arrays.asList(aggVOs[i].getBodyVOsExceptDelete()));
 		}
 		return scopes;
 	}
-	
-	public static OvertimebVO[] toOvertimebVOs(AggOvertimeVO[] aggVOs){
+
+	public static OvertimebVO[] toOvertimebVOs(AggOvertimeVO[] aggVOs) {
 		return toOvertimebVOList(aggVOs).toArray(new OvertimebVO[0]);
 	}
-//	/**
-//	 * @param hvos
-//	 * @return
-//	 */
-//	public static List<ShutdownbVO> toShutdownSubVOList(List<ShutdownhVO> hvos){
-//		return toShutdownSubVOList(hvos.toArray(new ShutdownhVO[0]));
-//	}
-//	public static List<ShutdownbVO> toShutdownSubVOList(ShutdownhVO[] hvos){
-//		List<ShutdownbVO> scopes = new ArrayList<ShutdownbVO>();
-//		for(int i = 0;i<hvos.length;i++){
-//			scopes.addAll(Arrays.asList(hvos[i].getShutdownbVOs()));
-//		}
-//		return scopes;
-//	}
-//	
-//	
-//	/**
-//	 * æ‰¾å‡ºæŸä¸ªæ—¶é—´ç‚¹æ‰€å±çš„ç­æ¬¡çš„æ—¥æœŸ
-//	 * @param time
-//	 * @param psnCalendarMapï¼Œäººå‘˜çš„å·¥ä½œæ—¥å†mapï¼Œkeyæ˜¯æ—¥æœŸ
-//	 * @param bclbMapï¼Œç­æ¬¡mapï¼Œkeyæ˜¯ç­æ¬¡ä¸»é”®
-//	 * @return
-//	 */
-//	public static UFDate findBelongtoCalendar(UFDateTime time,
-//			Map<String, PsncalendarAllVO> psnCalendarMap,Map<String, BclbVO> bclbMap){
-//		UFDate date = time.getDate();
-//		//ä»å‰1å¤©åˆ°å1å¤©å¯»æ‰¾
-//		UFDate searchStartDate = date.getDateBefore(1);
-//		UFDate searchEndDate = date.getDateAfter(1);
-//		for(UFDate curDate = searchStartDate;!curDate.after(searchEndDate);curDate = curDate.getDateAfter(1)){
-//			ITimeScope attendTimeScope = 
-//				getAttendTimeScope(curDate, psnCalendarMap, bclbMap);
-//			if(attendTimeScope!=null&&TimeScopeUtils.contains(attendTimeScope, time))
-//				return curDate;
-//		}
-//		//èµ°åˆ°è¿™é‡Œï¼Œè¯´æ˜æ²¡æœ‰æ‰¾åˆ°
-//		return null;
-//	}
-//	
+
+	// /**
+	// * @param hvos
+	// * @return
+	// */
+	// public static List<ShutdownbVO> toShutdownSubVOList(List<ShutdownhVO>
+	// hvos){
+	// return toShutdownSubVOList(hvos.toArray(new ShutdownhVO[0]));
+	// }
+	// public static List<ShutdownbVO> toShutdownSubVOList(ShutdownhVO[] hvos){
+	// List<ShutdownbVO> scopes = new ArrayList<ShutdownbVO>();
+	// for(int i = 0;i<hvos.length;i++){
+	// scopes.addAll(Arrays.asList(hvos[i].getShutdownbVOs()));
+	// }
+	// return scopes;
+	// }
+	//
+	//
+	// /**
+	// * ÕÒ³öÄ³¸öÊ±¼äµãËùÊôµÄ°à´ÎµÄÈÕÆÚ
+	// * @param time
+	// * @param psnCalendarMap£¬ÈËÔ±µÄ¹¤×÷ÈÕÀúmap£¬keyÊÇÈÕÆÚ
+	// * @param bclbMap£¬°à´Îmap£¬keyÊÇ°à´ÎÖ÷¼ü
+	// * @return
+	// */
+	// public static UFDate findBelongtoCalendar(UFDateTime time,
+	// Map<String, PsncalendarAllVO> psnCalendarMap,Map<String, BclbVO>
+	// bclbMap){
+	// UFDate date = time.getDate();
+	// //´ÓÇ°1Ììµ½ºó1ÌìÑ°ÕÒ
+	// UFDate searchStartDate = date.getDateBefore(1);
+	// UFDate searchEndDate = date.getDateAfter(1);
+	// for(UFDate curDate =
+	// searchStartDate;!curDate.after(searchEndDate);curDate =
+	// curDate.getDateAfter(1)){
+	// ITimeScope attendTimeScope =
+	// getAttendTimeScope(curDate, psnCalendarMap, bclbMap);
+	// if(attendTimeScope!=null&&TimeScopeUtils.contains(attendTimeScope, time))
+	// return curDate;
+	// }
+	// //×ßµ½ÕâÀï£¬ËµÃ÷Ã»ÓĞÕÒµ½
+	// return null;
+	// }
+	//
 	/**
-	 * å°†æŸäººçš„ç­æ¬¡æŒ‰è§„åˆ™åœ¨æ—¶é—´è½´ä¸Šè¿èµ·æ¥ï¼Œè¿æ¥çš„è§„åˆ™æ˜¯ï¼š
-	 * å¦‚æœæŸæ—¥æ’äº†ç­ï¼Œå‰ä¸€å¤©ä¹Ÿæ’äº†ç­ï¼Œåˆ™æ­¤å¤©çš„ç­æ¬¡çš„è€ƒå‹¤å¼€å§‹æ—¶é—´å¾€å‰æ¨ï¼Œå‰ä¸€å¤©çš„ç­æ¬¡çš„è€ƒå‹¤ç»“æŸæ—¶é—´å¾€åæ¨ï¼Œç›´åˆ°è¿åœ¨ä¸€èµ·ã€‚
-	 * åä¸€å¤©ä¹Ÿæ’äº†ç­ï¼Œåˆ™æ­¤å¤©çš„ç­æ¬¡çš„è€ƒå‹¤ç»“æŸæ—¶é—´å¾€åæ¨ï¼Œåä¸€å¤©çš„ç­æ¬¡çš„è€ƒå‹¤å¼€å§‹æ—¶é—´å¾€å‰æ¨ï¼Œç›´åˆ°è¿åœ¨ä¸€èµ·ã€‚
-	 * å¦‚æœå‰ä¸€å¤©æ²¡æœ‰æ’ç­ï¼Œåˆ™å¼€å§‹æ—¶é—´ä¸å¾€å‰æ¨ï¼›å¦‚æœåä¸€å¤©æ²¡æœ‰æ’ç­ï¼Œåˆ™ç»“æŸæ—¶é—´ä¸å¾€åæ¨ã€‚åœæ­¢è€ƒå‹¤è¿™ç§ç­æ¬¡è§†ä¸ºæ²¡æœ‰æ’ç­
-	 * è¿™æ ·åšäº†ä¹‹åï¼Œå‡¡æ˜¯è¿ç»­æ’ç­çš„æ—¥æœŸæ®µï¼Œè€ƒå‹¤æ—¶é—´æ®µåœ¨æ—¶é—´è½´ä¸Šå°±ä¼šè¿æˆä¸€æ•´ä¸ªæ—¶é—´æ®µã€‚è€Œå¦‚æœä¸­é—´æœ‰æ—¥æœŸæ²¡æœ‰æ’ç­ï¼Œåˆ™ä¼šå‡ºç°ç©ºç™½æ®µ
-	 * ç®€å•åœ°è¯´ï¼Œå°±æ˜¯å¦‚æœè¿ç»­ä¸¤å¤©éƒ½æœ‰æ’ç­ï¼Œé‚£ä¹ˆå‰ä¸€å¤©çš„è€ƒå‹¤å¼€å§‹æ—¶é—´åˆ°åä¸€å¤©çš„è€ƒå‹¤ç»“æŸæ—¶é—´è¦è¿æˆä¸€ä¸ªæ—¶é—´æ®µ
-	 * ä¾‹å­ï¼šæŸäººçš„æ’ç­æƒ…å†µå¦‚ä¸‹ï¼ˆå‡è®¾ç™½ç­çš„è€ƒå‹¤æ—¶é—´æ®µæ˜¯3:00-23:00ï¼‰ï¼š
-	 * 1æ—¥ç™½ç­ï¼ˆä¹‹å‰éƒ½æ²¡æœ‰æ’ç­ï¼‰,2æ—¥æ²¡æœ‰æ’ç­ï¼Œ3ï¼Œ4ï¼Œ5æ—¥éƒ½æ’ç™½ç­ï¼Œ6æ—¥å¼€å§‹åˆæ²¡æœ‰æ’ç­
-	 * é‚£ä¹ˆç»è¿‡ä¸Šè¿°çš„è¿æ¥æ—¶é—´æ®µçš„æ“ä½œåï¼Œæ’ç­çš„æ—¶é—´æ®µèŒƒå›´å°±æ˜¯ï¼š1æ—¥3:00-23:00ï¼Œ3æ—¥3:00-5æ—¥23:00
+	 * ½«Ä³ÈËµÄ°à´Î°´¹æÔòÔÚÊ±¼äÖáÉÏÁ¬ÆğÀ´£¬Á¬½ÓµÄ¹æÔòÊÇ£º
+	 * Èç¹ûÄ³ÈÕÅÅÁË°à£¬Ç°Ò»ÌìÒ²ÅÅÁË°à£¬Ôò´ËÌìµÄ°à´ÎµÄ¿¼ÇÚ¿ªÊ¼Ê±¼äÍùÇ°ÍÆ£¬Ç°Ò»ÌìµÄ°à´ÎµÄ¿¼ÇÚ½áÊøÊ±¼äÍùºóÍÆ£¬Ö±µ½Á¬ÔÚÒ»Æğ¡£
+	 * ºóÒ»ÌìÒ²ÅÅÁË°à£¬Ôò´ËÌìµÄ°à´ÎµÄ¿¼ÇÚ½áÊøÊ±¼äÍùºóÍÆ£¬ºóÒ»ÌìµÄ°à´ÎµÄ¿¼ÇÚ¿ªÊ¼Ê±¼äÍùÇ°ÍÆ£¬Ö±µ½Á¬ÔÚÒ»Æğ¡£
+	 * Èç¹ûÇ°Ò»ÌìÃ»ÓĞÅÅ°à£¬Ôò¿ªÊ¼Ê±¼ä²»ÍùÇ°ÍÆ£»Èç¹ûºóÒ»ÌìÃ»ÓĞÅÅ°à£¬Ôò½áÊøÊ±¼ä²»ÍùºóÍÆ¡£Í£Ö¹¿¼ÇÚÕâÖÖ°à´ÎÊÓÎªÃ»ÓĞÅÅ°à
+	 * ÕâÑù×öÁËÖ®ºó£¬·²ÊÇÁ¬ĞøÅÅ°àµÄÈÕÆÚ¶Î£¬¿¼ÇÚÊ±¼ä¶ÎÔÚÊ±¼äÖáÉÏ¾Í»áÁ¬³ÉÒ»Õû¸öÊ±¼ä¶Î¡£¶øÈç¹ûÖĞ¼äÓĞÈÕÆÚÃ»ÓĞÅÅ°à£¬Ôò»á³öÏÖ¿Õ°×¶Î
+	 * ¼òµ¥µØËµ£¬¾ÍÊÇÈç¹ûÁ¬ĞøÁ½Ìì¶¼ÓĞÅÅ°à£¬ÄÇÃ´Ç°Ò»ÌìµÄ¿¼ÇÚ¿ªÊ¼Ê±¼äµ½ºóÒ»ÌìµÄ¿¼ÇÚ½áÊøÊ±¼äÒªÁ¬³ÉÒ»¸öÊ±¼ä¶Î
+	 * Àı×Ó£ºÄ³ÈËµÄÅÅ°àÇé¿öÈçÏÂ£¨¼ÙÉè°×°àµÄ¿¼ÇÚÊ±¼ä¶ÎÊÇ3:00-23:00£©£º
+	 * 1ÈÕ°×°à£¨Ö®Ç°¶¼Ã»ÓĞÅÅ°à£©,2ÈÕÃ»ÓĞÅÅ°à£¬3£¬4£¬5ÈÕ¶¼ÅÅ°×°à£¬6ÈÕ¿ªÊ¼ÓÖÃ»ÓĞÅÅ°à
+	 * ÄÇÃ´¾­¹ıÉÏÊöµÄÁ¬½ÓÊ±¼ä¶ÎµÄ²Ù×÷ºó£¬ÅÅ°àµÄÊ±¼ä¶Î·¶Î§¾ÍÊÇ£º1ÈÕ3:00-23:00£¬3ÈÕ3:00-5ÈÕ23:00
 	 * 
-	 * æ­¤æ–¹æ³•ä¸»è¦ç”¨äºä¼‘å‡å’Œåœå·¥çš„å·¥ä½œæ—¥å†æ˜¯å¦å®Œæ•´çš„åˆ¤æ–­
-	 * @param calendarMapï¼Œkeyæ˜¯æ—¥æœŸ
-	 * @param shiftMapï¼Œkeyæ˜¯ç­æ¬¡ä¸»é”®
+	 * ´Ë·½·¨Ö÷ÒªÓÃÓÚĞİ¼ÙºÍÍ£¹¤µÄ¹¤×÷ÈÕÀúÊÇ·ñÍêÕûµÄÅĞ¶Ï
+	 * 
+	 * @param calendarMap
+	 *            £¬keyÊÇÈÕÆÚ
+	 * @param shiftMap
+	 *            £¬keyÊÇ°à´ÎÖ÷¼ü
 	 * @return
-	 * @throws DAOException 
+	 * @throws DAOException
 	 */
-	public static ITimeScope[] mergeToTimeScope(
-			Map<UFLiteralDate, AggPsnCalendar> calendarMap,
-			Map<String, ShiftVO> shiftMap,
-			Map<UFLiteralDate, TimeZone> dateTimeZoneMap) throws DAOException{
-		if(calendarMap==null||calendarMap.size()==0)
+	public static ITimeScope[] mergeToTimeScope(Map<UFLiteralDate, AggPsnCalendar> calendarMap,
+			Map<String, ShiftVO> shiftMap, Map<UFLiteralDate, TimeZone> dateTimeZoneMap) throws DAOException {
+		if (calendarMap == null || calendarMap.size() == 0)
 			return null;
-		//å°†æ—¥æœŸæ’åº
+		// ½«ÈÕÆÚÅÅĞò
 		UFLiteralDate[] dates = calendarMap.keySet().toArray(new UFLiteralDate[0]);
 		Arrays.sort(dates);
-		//å°†è¿™äº›æ—¥æœŸåˆ†æˆå‡ ä¸ªç»„ï¼Œæ»¡è¶³ä»¥ä¸‹å‡ ä¸ªæ¡ä»¶
-		//1.ç»„å†…çš„æ—¥æœŸæ˜¯è¿ç»­çš„
-		//2.ç»„ä¹‹é—´çš„æ—¥æœŸæ˜¯ä¸è¿ç»­çš„
-		//3.ç»„å†…çš„æ—¥æœŸéƒ½æœ‰æ’ç­ï¼ˆæ­£å¸¸ç­å’Œå…¬ä¼‘éƒ½ç®—æ’ç­ï¼Œåœæ­¢è€ƒå‹¤ç®—æ²¡æœ‰æ’ç­ï¼‰
+		// ½«ÕâĞ©ÈÕÆÚ·Ö³É¼¸¸ö×é£¬Âú×ãÒÔÏÂ¼¸¸öÌõ¼ş
+		// 1.×éÄÚµÄÈÕÆÚÊÇÁ¬ĞøµÄ
+		// 2.×éÖ®¼äµÄÈÕÆÚÊÇ²»Á¬ĞøµÄ
+		// 3.×éÄÚµÄÈÕÆÚ¶¼ÓĞÅÅ°à£¨Õı³£°àºÍ¹«Ğİ¶¼ËãÅÅ°à£¬Í£Ö¹¿¼ÇÚËãÃ»ÓĞÅÅ°à£©
 		List<List<UFLiteralDate>> groupedDates = new ArrayList<List<UFLiteralDate>>();
-		for(int i = 0;i<dates.length;i++){
+		for (int i = 0; i < dates.length; i++) {
 			UFLiteralDate date = dates[i];
-			//é¦–å…ˆçœ‹è¿™ä¸€å¤©æ˜¯ä¸æ˜¯æ’ç­äº†ï¼ˆæ­£å¸¸ç­å’Œå…¬ä¼‘ç®—ï¼Œåœæ­¢è€ƒå‹¤ä¸ç®—ï¼‰
+			// Ê×ÏÈ¿´ÕâÒ»ÌìÊÇ²»ÊÇÅÅ°àÁË£¨Õı³£°àºÍ¹«ĞİËã£¬Í£Ö¹¿¼ÇÚ²»Ëã£©
 			AggPsnCalendar calendar = calendarMap.get(date);
-			if(calendar==null||calendar.getPsnCalendarVO()==null||StringUtils.isEmpty(calendar.getPsnCalendarVO().getPk_shift()))
+			if (calendar == null || calendar.getPsnCalendarVO() == null
+					|| StringUtils.isEmpty(calendar.getPsnCalendarVO().getPk_shift()))
 				continue;
-			//èµ°åˆ°è¿™é‡Œï¼Œè¯´æ˜è¿™å¤©æ’äº†æ­£å¸¸ç­æˆ–è€…å…¬ä¼‘
-			//å¦‚æœgroupedDatesä¸­è¿˜æ˜¯ç©ºçš„
-			if(groupedDates.size()==0){
+			// ×ßµ½ÕâÀï£¬ËµÃ÷ÕâÌìÅÅÁËÕı³£°à»òÕß¹«Ğİ
+			// Èç¹ûgroupedDatesÖĞ»¹ÊÇ¿ÕµÄ
+			if (groupedDates.size() == 0) {
 				List<UFLiteralDate> group = new ArrayList<UFLiteralDate>();
 				group.add(date);
 				groupedDates.add(group);
 				continue;
 			}
-			//groupedDatesä¸æ˜¯ç©ºçš„ï¼Œçœ‹dateèƒ½ä¸èƒ½åŠ åˆ°groupedDatesçš„æœ€åä¸€ä¸ªæ—¥æœŸç»„ä¸­å»
-			List<UFLiteralDate> lastGroup = groupedDates.get(groupedDates.size()-1);
-			//å¦‚æœdateå’Œæœ€åä¸€ä¸ªç»„æ˜¯è¿ç»­çš„ï¼Œåˆ™åŠ åˆ°æœ€åä¸€ä¸ªç»„ï¼Œå¦åˆ™æ–°å¼€ä¸€ä¸ªç»„
-			if(UFLiteralDate.getDaysBetween(lastGroup.get(lastGroup.size()-1), date)==1){
+			// groupedDates²»ÊÇ¿ÕµÄ£¬¿´dateÄÜ²»ÄÜ¼Óµ½groupedDatesµÄ×îºóÒ»¸öÈÕÆÚ×éÖĞÈ¥
+			List<UFLiteralDate> lastGroup = groupedDates.get(groupedDates.size() - 1);
+			// Èç¹ûdateºÍ×îºóÒ»¸ö×éÊÇÁ¬ĞøµÄ£¬Ôò¼Óµ½×îºóÒ»¸ö×é£¬·ñÔòĞÂ¿ªÒ»¸ö×é
+			if (UFLiteralDate.getDaysBetween(lastGroup.get(lastGroup.size() - 1), date) == 1) {
 				lastGroup.add(date);
 				continue;
 			}
@@ -1616,73 +1833,78 @@ public class BillProcessHelper {
 			group.add(date);
 			groupedDates.add(group);
 		}
-		//ä¸Šé¢è¿™ä¸ªforå¾ªç¯èµ°å®Œåï¼Œæ—¥æœŸå·²ç»æŒ‰è§„åˆ™è¢«åˆ†ç»„äº†
-		if(groupedDates.size()==0)
+		// ÉÏÃæÕâ¸öforÑ­»·×ßÍêºó£¬ÈÕÆÚÒÑ¾­°´¹æÔò±»·Ö×éÁË
+		if (groupedDates.size() == 0)
 			return null;
-		//æŒ‰ç»„å¾ªç¯å¤„ç†ï¼Œæ¯ä¸€ä¸ªç»„éƒ½ç”Ÿæˆä¸€ä¸ªæ—¶é—´æ®µ
+		// °´×éÑ­»·´¦Àí£¬Ã¿Ò»¸ö×é¶¼Éú³ÉÒ»¸öÊ±¼ä¶Î
 		List<ITimeScope> retScopeList = new ArrayList<ITimeScope>();
-		for(int i = 0;i<groupedDates.size();i++){
+		for (int i = 0; i < groupedDates.size(); i++) {
 			List<UFLiteralDate> group = groupedDates.get(i);
-			//å¦‚æœæ­¤æ—¥æœŸç»„åªæœ‰ä¸€å¤©ï¼Œé‚£ä¹ˆå°±æ˜¯è¿™å¤©çš„è€ƒå‹¤æ—¶é—´æ®µçš„å¼€å§‹æ—¶é—´å’Œç»“æŸæ—¶é—´ä½œä¸ºä¸€ä¸ªæ—¶é—´æ®µ
-			if(group.size()==1){
+			// Èç¹û´ËÈÕÆÚ×éÖ»ÓĞÒ»Ìì£¬ÄÇÃ´¾ÍÊÇÕâÌìµÄ¿¼ÇÚÊ±¼ä¶ÎµÄ¿ªÊ¼Ê±¼äºÍ½áÊøÊ±¼ä×÷ÎªÒ»¸öÊ±¼ä¶Î
+			if (group.size() == 1) {
 				PsnCalendarVO calendar = calendarMap.get(group.get(0)).getPsnCalendarVO();
 				String pkShift = calendar.getPk_shift();
-				//å¦‚æœæ˜¯å…¬ä¼‘
-				if(ShiftVO.PK_GX.equals(pkShift)){
+				// Èç¹ûÊÇ¹«Ğİ
+				if (ShiftVO.PK_GX.equals(pkShift)) {
 					retScopeList.add(TimeScopeUtils.toFullDay(calendar.getCalendar().toString()));
 					continue;
 				}
-				//å¦‚æœä¸æ˜¯å…¬ä¼‘ï¼Œåˆ™ä½¿ç”¨ç­æ¬¡çš„è€ƒå‹¤å¼€å§‹æ—¶é—´å’Œç»“æŸæ—¶é—´
-				//å®¹é”™å¤„ç†ï¼Œä¸€èˆ¬æƒ…å†µä¸‹ï¼ŒshiftMapé‡Œé¢ä¼šåŒ…å«æ‰€æœ‰å¯èƒ½å‡ºç°çš„pk_shiftï¼Œä½†æœ‰å¯èƒ½åœ¨ä¸€äº›äººäº‹å˜åŠ¨ç‚¹å‰åäº§ç”Ÿä¸€äº›ç›²åŒºï¼Œå¦‚æœå‡ºç°ç›²åŒºï¼Œåˆ™éœ€è¦å®¹é”™
+				// Èç¹û²»ÊÇ¹«Ğİ£¬ÔòÊ¹ÓÃ°à´ÎµÄ¿¼ÇÚ¿ªÊ¼Ê±¼äºÍ½áÊøÊ±¼ä
+				// Èİ´í´¦Àí£¬Ò»°ãÇé¿öÏÂ£¬shiftMapÀïÃæ»á°üº¬ËùÓĞ¿ÉÄÜ³öÏÖµÄpk_shift£¬µ«ÓĞ¿ÉÄÜÔÚÒ»Ğ©ÈËÊÂ±ä¶¯µãÇ°ºó²úÉúÒ»Ğ©Ã¤Çø£¬Èç¹û³öÏÖÃ¤Çø£¬ÔòĞèÒªÈİ´í
 				ShiftVO shiftVO = getShiftVOFromMap(shiftMap, pkShift);
-				retScopeList.add(TimeScopeUtils.toTimeScope(shiftVO.toRelativeKqScope(), calendar.getCalendar().toString(),dateTimeZoneMap.get(calendar.getCalendar())));
-				continue;			
+				retScopeList.add(TimeScopeUtils.toTimeScope(shiftVO.toRelativeKqScope(), calendar.getCalendar()
+						.toString(), dateTimeZoneMap.get(calendar.getCalendar())));
+				continue;
 			}
-			//å¦‚æœä¸åªä¸€å¤©ï¼Œåˆ™å–ç¬¬ä¸€å¤©çš„è€ƒå‹¤å¼€å§‹æ—¶é—´å’Œæœ€åä¸€å¤©çš„è€ƒå‹¤ç»“æŸæ—¶é—´ï¼Œä½œä¸ºä¸€ä¸ªæ—¶é—´æ®µ
+			// Èç¹û²»Ö»Ò»Ìì£¬ÔòÈ¡µÚÒ»ÌìµÄ¿¼ÇÚ¿ªÊ¼Ê±¼äºÍ×îºóÒ»ÌìµÄ¿¼ÇÚ½áÊøÊ±¼ä£¬×÷ÎªÒ»¸öÊ±¼ä¶Î
 			PsnCalendarVO firstCalendar = calendarMap.get(group.get(0)).getPsnCalendarVO();
 			String firstPkShift = firstCalendar.getPk_shift();
-			//å¦‚æœç¬¬ä¸€å¤©æ˜¯å…¬ä¼‘ï¼Œåˆ™å¼€å§‹æ—¶é—´æ˜¯é›¶ç‚¹
+			// Èç¹ûµÚÒ»ÌìÊÇ¹«Ğİ£¬Ôò¿ªÊ¼Ê±¼äÊÇÁãµã
 			UFDateTime beginDT = null;
-			if(ShiftVO.PK_GX.equals(firstPkShift)){
-				beginDT = new UFDateTime(firstCalendar.getCalendar()+" 00:00:00");
+			if (ShiftVO.PK_GX.equals(firstPkShift)) {
+				beginDT = new UFDateTime(firstCalendar.getCalendar() + " 00:00:00");
 			}
-			//å¦‚æœä¸æ˜¯å…¬ä¼‘ï¼Œåˆ™å¼€å§‹æ—¶é—´æ˜¯ç­æ¬¡çš„è€ƒå‹¤å¼€å§‹æ—¶é—´
-			else{
-				//å®¹é”™å¤„ç†ï¼Œä¸€èˆ¬æƒ…å†µä¸‹ï¼ŒshiftMapé‡Œé¢ä¼šåŒ…å«æ‰€æœ‰å¯èƒ½å‡ºç°çš„pk_shiftï¼Œä½†æœ‰å¯èƒ½åœ¨ä¸€äº›äººäº‹å˜åŠ¨ç‚¹å‰åäº§ç”Ÿä¸€äº›ç›²åŒºï¼Œå¦‚æœå‡ºç°ç›²åŒºï¼Œåˆ™éœ€è¦å®¹é”™
+			// Èç¹û²»ÊÇ¹«Ğİ£¬Ôò¿ªÊ¼Ê±¼äÊÇ°à´ÎµÄ¿¼ÇÚ¿ªÊ¼Ê±¼ä
+			else {
+				// Èİ´í´¦Àí£¬Ò»°ãÇé¿öÏÂ£¬shiftMapÀïÃæ»á°üº¬ËùÓĞ¿ÉÄÜ³öÏÖµÄpk_shift£¬µ«ÓĞ¿ÉÄÜÔÚÒ»Ğ©ÈËÊÂ±ä¶¯µãÇ°ºó²úÉúÒ»Ğ©Ã¤Çø£¬Èç¹û³öÏÖÃ¤Çø£¬ÔòĞèÒªÈİ´í
 				ShiftVO shiftVO = getShiftVOFromMap(shiftMap, firstPkShift);
-				beginDT = TimeScopeUtils.toTimeScope(shiftVO.toRelativeKqScope(), firstCalendar.getCalendar().toString(),dateTimeZoneMap.get(firstCalendar.getCalendar())).getScope_start_datetime();
+				beginDT = TimeScopeUtils.toTimeScope(shiftVO.toRelativeKqScope(),
+						firstCalendar.getCalendar().toString(), dateTimeZoneMap.get(firstCalendar.getCalendar()))
+						.getScope_start_datetime();
 			}
-			PsnCalendarVO preCalendar = calendarMap.get(group.get(group.size()-1)).getPsnCalendarVO();
+			PsnCalendarVO preCalendar = calendarMap.get(group.get(group.size() - 1)).getPsnCalendarVO();
 			String prePkShift = preCalendar.getPk_shift();
-			//å¦‚æœæœ€åä¸€å¤©æ˜¯å…¬ä¼‘ï¼Œåˆ™ç»“æŸæ—¶é—´æ˜¯23:59:59
+			// Èç¹û×îºóÒ»ÌìÊÇ¹«Ğİ£¬Ôò½áÊøÊ±¼äÊÇ23:59:59
 			UFDateTime endDT = null;
-			if(ShiftVO.PK_GX.equals(prePkShift)){
-				endDT = new UFDateTime(preCalendar.getCalendar()+" 23:59:59");
+			if (ShiftVO.PK_GX.equals(prePkShift)) {
+				endDT = new UFDateTime(preCalendar.getCalendar() + " 23:59:59");
 			}
-			//å¦‚æœä¸æ˜¯å…¬ä¼‘ï¼Œåˆ™å¼€å§‹æ—¶é—´æ˜¯ç­æ¬¡çš„è€ƒå‹¤å¼€å§‹æ—¶é—´
-			else{
-				//å®¹é”™å¤„ç†ï¼Œä¸€èˆ¬æƒ…å†µä¸‹ï¼ŒshiftMapé‡Œé¢ä¼šåŒ…å«æ‰€æœ‰å¯èƒ½å‡ºç°çš„pk_shiftï¼Œä½†æœ‰å¯èƒ½åœ¨ä¸€äº›äººäº‹å˜åŠ¨ç‚¹å‰åäº§ç”Ÿä¸€äº›ç›²åŒºï¼Œå¦‚æœå‡ºç°ç›²åŒºï¼Œåˆ™éœ€è¦å®¹é”™
+			// Èç¹û²»ÊÇ¹«Ğİ£¬Ôò¿ªÊ¼Ê±¼äÊÇ°à´ÎµÄ¿¼ÇÚ¿ªÊ¼Ê±¼ä
+			else {
+				// Èİ´í´¦Àí£¬Ò»°ãÇé¿öÏÂ£¬shiftMapÀïÃæ»á°üº¬ËùÓĞ¿ÉÄÜ³öÏÖµÄpk_shift£¬µ«ÓĞ¿ÉÄÜÔÚÒ»Ğ©ÈËÊÂ±ä¶¯µãÇ°ºó²úÉúÒ»Ğ©Ã¤Çø£¬Èç¹û³öÏÖÃ¤Çø£¬ÔòĞèÒªÈİ´í
 				ShiftVO shiftVO = getShiftVOFromMap(shiftMap, prePkShift);
-				endDT = TimeScopeUtils.toTimeScope(shiftVO.toRelativeKqScope(), preCalendar.getCalendar().toString(),dateTimeZoneMap.get(preCalendar.getCalendar())).getScope_end_datetime();
+				endDT = TimeScopeUtils.toTimeScope(shiftVO.toRelativeKqScope(), preCalendar.getCalendar().toString(),
+						dateTimeZoneMap.get(preCalendar.getCalendar())).getScope_end_datetime();
 			}
-			retScopeList.add(new DefaultTimeScope(beginDT,endDT,ShiftVO.PK_GX.equals(prePkShift)));
+			retScopeList.add(new DefaultTimeScope(beginDT, endDT, ShiftVO.PK_GX.equals(prePkShift)));
 		}
 		return TimeScopeUtils.mergeTimeScopes(retScopeList.toArray(new ITimeScope[0]));
 	}
-	
-	private static ShiftVO getShiftVOFromMap(Map<String, ShiftVO> shiftMap,String pk_shift) throws DAOException{
+
+	private static ShiftVO getShiftVOFromMap(Map<String, ShiftVO> shiftMap, String pk_shift) throws DAOException {
 		ShiftVO shiftVO = null;
-		if(MapUtils.isNotEmpty(shiftMap)&&shiftMap.containsKey(pk_shift))
+		if (MapUtils.isNotEmpty(shiftMap) && shiftMap.containsKey(pk_shift))
 			shiftVO = shiftMap.get(pk_shift);
-		else if(StringUtils.isNotBlank(pk_shift)){
-//			shiftVO = (ShiftVO) new BaseDAO().retrieveByPK(ShiftVO.class, pk_shift);
+		else if (StringUtils.isNotBlank(pk_shift)) {
+			// shiftVO = (ShiftVO) new BaseDAO().retrieveByPK(ShiftVO.class,
+			// pk_shift);
 			try {
 				shiftVO = ShiftMaintainFacade.queryShiftByPk(pk_shift).getShiftVO();
 			} catch (BusinessException e) {
-				Logger.error(e.getMessage(),e);
+				Logger.error(e.getMessage(), e);
 			}
 			shiftMap.put(pk_shift, shiftVO);
 		}
 		return shiftVO;
-	} 
+	}
 }

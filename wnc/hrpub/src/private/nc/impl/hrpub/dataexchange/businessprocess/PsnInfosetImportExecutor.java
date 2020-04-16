@@ -110,8 +110,11 @@ public class PsnInfosetImportExecutor extends DataImportExecutor implements IDat
 					}
 					// 员工考核信息专用通道--试用情况
 					if (this.getNcEntityName().equals("hi_psndoc_trial")) {
+						// MOD by ssx on 2020-03-25
+						// 新增按開始日期倒序（新的在前），保證匹配到最新一條有交集的任職記錄
 						Collection<PsnJobVO> psnjobs = this.getBaseDAO().retrieveByClause(PsnJobVO.class,
-								"pk_psndoc = '" + rowNCMap.get(rowNo + ":pk_psndoc") + "'");
+								"pk_psndoc = '" + rowNCMap.get(rowNo + ":pk_psndoc") + "'", "begindate desc");
+						// end
 						// UFLiteralDate regulardate = new
 						// UFLiteralDate(rowNCMap.get(rowNo +
 						// ":regulardate").toString());
@@ -130,14 +133,17 @@ public class PsnInfosetImportExecutor extends DataImportExecutor implements IDat
 						}
 						for (PsnJobVO psnjob : psnjobs) {
 							// 试用的时间在开始时间和结束时间之间
-							if (null != begindate
-									&& ((null != psnjob.getEnddate() && (begindate.isSameDate(psnjob.getBegindate()) || begindate
-											.after(psnjob.getBegindate())
-											&& (enddate.isSameDate(psnjob.getEnddate()) || enddate.before(psnjob
-													.getEnddate())))) || (null == psnjob.getEnddate() && begindate
-											.after(psnjob.getBegindate())))) {
+							UFLiteralDate dBegin = psnjob.getBegindate();
+							UFLiteralDate dEnd = psnjob.getEnddate() == null ? new UFLiteralDate("9999-12-31") : psnjob
+									.getEnddate();
+							if ((dBegin.isSameDate(enddate) || dBegin.before(enddate))
+									&& (dEnd.isSameDate(begindate) || dEnd.after(begindate))) {
+								// MOD by ssx on 2020-03-25
+								// 取第一個匹配到的任職記錄
 								rowNCMap.put(rowNo + ":PK_PSNORG", psnjob.getPk_psnorg());
 								rowNCMap.put(rowNo + ":PK_PSNJOB", psnjob.getPk_psnjob());
+								break;
+								//
 							}
 						}
 						rowNCMap.put(rowNo + ":PK_ORG", this.getPk_org());
@@ -275,5 +281,11 @@ public class PsnInfosetImportExecutor extends DataImportExecutor implements IDat
 
 		((IPersistenceUpdate) NCLocator.getInstance().lookup(IPersistenceUpdate.class)).updateVOArray(null, vos,
 				new String[] { "recordnum", "lastflag" }, null);
+	}
+
+	@Override
+	public void doQueryByBP() throws BusinessException {
+		// TODO 自動產生的方法 Stub
+
 	}
 }

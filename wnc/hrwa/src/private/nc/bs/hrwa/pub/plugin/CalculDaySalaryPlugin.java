@@ -11,7 +11,6 @@ import nc.bs.pub.pa.PreAlertObject;
 import nc.bs.pub.pa.PreAlertReturnType;
 import nc.bs.pub.taskcenter.BgWorkingContext;
 import nc.bs.pub.taskcenter.IBackgroundWorkPlugin;
-import nc.itf.hrwa.IWaTbmdaysalaryService;
 import nc.itf.hrwa.IWadaysalaryService;
 import nc.vo.hrwa.wadaysalary.DaySalaryEnum;
 import nc.vo.org.OrgVO;
@@ -42,6 +41,16 @@ public class CalculDaySalaryPlugin implements IBackgroundWorkPlugin{
 	@Override
 	public PreAlertObject executeTask(BgWorkingContext bgwc)
 			throws BusinessException {
+		//tank 2019年10月15日21:27:13 日薪后台任务暂停 实时计算
+		
+		StringBuffer sendmsg=new StringBuffer();
+		sendmsg.append("日薪沒有需要計算的數據\n");
+		PreAlertObject retObj = new PreAlertObject();
+		retObj.setReturnType(PreAlertReturnType.RETURNMESSAGE);
+		retObj.setReturnObj(sendmsg.toString());
+		return retObj;
+		/*
+		
 		// 數據檢查範圍
 		int checkrange = 0;
 		//日薪數據保留時間
@@ -78,7 +87,7 @@ public class CalculDaySalaryPlugin implements IBackgroundWorkPlugin{
 		if(reserved<DaySalaryEnum.MINRESERVE||reserved>DaySalaryEnum.MAXRESERVE){
 			throw new BusinessException("後台日薪數據保留時間最長不超過90天，最少不小於31天");
 		}
-		Logger.error("******進入：日薪計算 *************************");
+		Logger.error("******進入：日薪計算 nc.bs.hrwa.pub.plugin.CalculDaySalaryPlugin*************************");
 		long t1=System.currentTimeMillis();
 		
 		IWadaysalaryService waService=NCLocator.getInstance().lookup(IWadaysalaryService.class);
@@ -86,7 +95,7 @@ public class CalculDaySalaryPlugin implements IBackgroundWorkPlugin{
 		waService.deleteDaySalary(pk_hrorg, calculDate, reserved);//刪除未在保留期間的數據
 		waService.checkDaySalaryAndCalculSalary(pk_hrorg, calculDate, checkrange);//檢查日薪計算結果
 		long t2=System.currentTimeMillis();
-		Logger.error("******結束：日薪計算*************************");
+		Logger.error("******結束：日薪計算 nc.bs.hrwa.pub.plugin.CalculDaySalaryPlugin*************************");
 		Logger.error("耗時："+(t2-t1)+"ms");
 		OrgVO orgVO=(OrgVO) getDao().retrieveByPK(OrgVO.class, pk_hrorg);
 		StringBuffer sendmsg=new StringBuffer();
@@ -95,36 +104,10 @@ public class CalculDaySalaryPlugin implements IBackgroundWorkPlugin{
 		sendmsg.append("計算日期："+calculDate.toStdString()+"\n");
 		sendmsg.append("耗       時："+(t2-t1)+"ms\n");
 		sendmsg.append("完成時間："+new UFDateTime().toString());
-		
-		Logger.error("******進入：考勤薪资計算*************************");
-		long t3=System.currentTimeMillis();
-		IWaTbmdaysalaryService tbmwaService=NCLocator.getInstance().lookup(IWaTbmdaysalaryService.class);
-		tbmwaService.calculTbmSalaryByHrorg(pk_hrorg, calculDate);//計算當日考勤薪资
-		tbmwaService.deleteTbmDaySalary(pk_hrorg, calculDate, reserved);//刪除未在保留期間的數據
-		tbmwaService.checkTbmDaySalaryAndCalculSalary(pk_hrorg, calculDate, checkrange);//檢查考勤薪资計算結果
-		long t4=System.currentTimeMillis();
-		Logger.error("******結束：考勤薪资計算*************************");
-		Logger.error("耗時："+(t4-t3)+"ms");
-		
-		
-		sendmsg.append("考勤薪资計算執行成功\n");
-		sendmsg.append("組        織："+orgVO.getName()+"("+orgVO.getCode()+")\n");
-		sendmsg.append("計算日期："+calculDate.toStdString()+"\n");
-		sendmsg.append("耗       時："+(t4-t1)+"ms\n");
-		sendmsg.append("完成時間："+new UFDateTime().toString());
-		
-		
-		
-		
-		
-		
-		
-		
-		
 		PreAlertObject retObj = new PreAlertObject();
 		retObj.setReturnType(PreAlertReturnType.RETURNMESSAGE);
 		retObj.setMsgTitle("日薪計算執行結果");
 		retObj.setReturnObj(sendmsg.toString());
-		return retObj;
+		return retObj;*/
 	}
 }

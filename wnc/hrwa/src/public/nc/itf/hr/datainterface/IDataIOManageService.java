@@ -72,26 +72,25 @@ public interface IDataIOManageService {
 	 * @return
 	 * @throws BusinessException
 	 */
-	AggHrIntfaceVO[] queryByCondition(LoginContext context, String condition,
-			String strOrderBy) throws BusinessException;
+	AggHrIntfaceVO[] queryByCondition(LoginContext context, String condition, String strOrderBy)
+			throws BusinessException;
 
 	// MOD {薪资、奖金明细代扣项导入} kevin.nie 2018-01-30 start
-	<T extends SuperVO> T[] queryDataByConditon(String conditon,
-			String[] psnPks, Class<T> classz) throws BusinessException;
-
-	<T extends SuperVO> T[] insertPayDetail(T[] vos, T[] delVos)
+	<T extends SuperVO> T[] queryDataByConditon(String conditon, String[] psnPks, Class<T> classz)
 			throws BusinessException;
 
-	void importPayDataSD(DataVO[] SDVos, SalaryOthBuckVO[] SODVos)
+	<T extends SuperVO> T[] insertPayDetail(T[] vos, T[] delVos) throws BusinessException;
+
+	void importPayDataSD(DataVO[] SDVos, SalaryOthBuckVO[] SODVos) throws BusinessException;
+
+	void importPayDataBD(DataVO[] BDVos, BonusOthBuckVO[] BODVos) throws BusinessException;
+
+	Map<String, PsndocVO> queryPsnByOrgConditionn(String pk_org, String pk_wa_class, String cyear, String cperiod,
+			boolean includeJob) throws BusinessException;
+
+	Map<String, PsndocVO> queryPsnByOrgConditionn(String pk_org, String condition, boolean includeJob)
 			throws BusinessException;
 
-	void importPayDataBD(DataVO[] BDVos, BonusOthBuckVO[] BODVos)
-			throws BusinessException;
-
-	Map<String, PsndocVO> queryPsnByOrgConditionn(String pk_org,
-			String condition, boolean includeJob) throws BusinessException;
-
-	Map<Integer, MappingFieldVO[]> qryImpFieldMappingVO(String conditon)
-			throws BusinessException;
+	Map<Integer, MappingFieldVO[]> qryImpFieldMappingVO(String conditon) throws BusinessException;
 	// {薪资、奖金明细代扣项导入} kevin.nie 2018-01-30 end
 }

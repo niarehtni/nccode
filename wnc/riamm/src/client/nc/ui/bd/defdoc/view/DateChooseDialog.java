@@ -1,4 +1,4 @@
-ï»¿package nc.ui.bd.defdoc.view;
+package nc.ui.bd.defdoc.view;
 import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
@@ -17,7 +17,7 @@ import nc.ui.pub.beans.UIRefPane;
 import nc.vo.pub.lang.UFDate;
 
 /**
- * Â * è‡ªå®šä¹‰å¯¹è¯æ¡† å¯¹è¯æ¡†åŒ…æ‹¬ä¸€ä¸ªlabelã€ä¸€ä¸ªæ–‡æœ¬æ¡†å’Œ2ä¸ªæŒ‰é’®ã€‚ Â PropertyChangeListener,
+ * ?* ×Ô¶¨Òå¶Ô»°¿ò ¶Ô»°¿ò°üÀ¨Ò»¸ölabel¡¢Ò»¸öÎÄ±¾¿òºÍ2¸ö°´Å¥¡£ ?PropertyChangeListener,
  */
 public class DateChooseDialog extends UIDialog implements ActionListener {
 
@@ -28,7 +28,7 @@ public class DateChooseDialog extends UIDialog implements ActionListener {
 
 	String reason;
 	
-	// æ˜¯å¦å…³é—­
+	// ÊÇ·ñ¹Ø±Õ
 	public boolean isOK;
 	
 	private UIRefPane refEnableDate = null;
@@ -41,7 +41,7 @@ public class DateChooseDialog extends UIDialog implements ActionListener {
 	}
 
 
-	// æŒ‰é’®
+	// °´Å¥
 	JButton setButton;
 	JButton cancelButton;
 
@@ -63,10 +63,10 @@ public class DateChooseDialog extends UIDialog implements ActionListener {
 
 
 	/**
-	 * æ„é€ å‡½æ•°ï¼Œå‚æ•°ä¸ºçˆ¶çª—ä½“å’Œå¯¹è¯æ¡†çš„æ ‡é¢˜ Â  Â  Â 
+	 * ¹¹Ôìº¯Êı£¬²ÎÊıÎª¸¸´°ÌåºÍ¶Ô»°¿òµÄ±êÌâ ? ? ?
 	 */
 	public DateChooseDialog(Container conter,String title,String desc, boolean t) {
-		// æ·»åŠ Labelå’Œè¾“å…¥æ–‡æœ¬æ¡†
+		// Ìí¼ÓLabelºÍÊäÈëÎÄ±¾¿ò
 		super(conter, t);
 		setTitle(title);
 		setReason(desc);
@@ -77,14 +77,14 @@ public class DateChooseDialog extends UIDialog implements ActionListener {
 		getContentPane().add("Center", p1);
 
 		
-		// æ·»åŠ ç¡®å®šå’Œå–æ¶ˆæŒ‰é’®
+		// Ìí¼ÓÈ·¶¨ºÍÈ¡Ïû°´Å¥
 		JPanel p2 = new JPanel();
 		p2.setLayout(new FlowLayout(FlowLayout.RIGHT));
 		p2.add(getBtnOk());
-		//p2.add(getCancelButton());
+		p2.add(getCancelButton());
 		getContentPane().add("South", p2);
 
-		// è°ƒæ•´å¯¹è¯æ¡†å¸ƒå±€å¤§å°
+		// µ÷Õû¶Ô»°¿ò²¼¾Ö´óĞ¡
 		pack();
 		setSize(300, 70);
 		this.setModal(true);
@@ -93,7 +93,7 @@ public class DateChooseDialog extends UIDialog implements ActionListener {
 	}
 
 
-	/** æ³¨å†ŒæŒ‰é’®äº‹ä»¶ */
+	/** ×¢²á°´Å¥ÊÂ¼ş */
 	public void registerAction() {
 		//this.cancelButton.addActionListener(this);
 		this.setButton.addActionListener(this);
@@ -125,7 +125,7 @@ public class DateChooseDialog extends UIDialog implements ActionListener {
 
 	public UIRefPane getRefEnableDate() {
 		if (refEnableDate == null) {
-			refEnableDate = new UIRefPane("æ—¥æœŸ");
+			refEnableDate = new UIRefPane("ÈÕÆÚ");
 			refEnableDate.setVisible(true);
 			refEnableDate.setValue(result.toStdString());
 			refEnableDate.setPreferredSize(new Dimension(200, 20));
@@ -140,14 +140,14 @@ public class DateChooseDialog extends UIDialog implements ActionListener {
 
 	public JButton getBtnOk(){
 		if(null == setButton){
-			setButton = new JButton("ç¡® å®š");
+			setButton = new JButton("È· ¶¨");
 			setButton.addActionListener(this);
 		}
 		return setButton;
 	}
 	public JButton getCancelButton(){
 		if(null == cancelButton){
-			cancelButton = new JButton("å– æ¶ˆ");
+			cancelButton = new JButton("È¡ Ïû");
 			cancelButton.addActionListener(this);
 		}
 		return cancelButton;
@@ -172,11 +172,14 @@ public class DateChooseDialog extends UIDialog implements ActionListener {
 						.toString());
 				this.dispose();
 			}catch(Exception e){
-				MessageDialog.showErrorDlg(this.getOwner(),"æç¤º:","è«‹è¼¸å…¥æ­£ç¢ºçš„æ—¥æœŸæ ¼å¼!");
+				MessageDialog.showErrorDlg(this.getOwner(),"ÌáÊ¾:","Õˆİ”ÈëÕı´_µÄÈÕÆÚ¸ñÊ½!");
 				this.getRefEnableDate().setValueObj(new UFDate().toStdString());
 				result = new UFDate();
 				clossflag = !clossflag;
 			}
+		}else if(source == cancelButton){
+		    result = null;
+		    this.dispose();
 		}
 		
 	}

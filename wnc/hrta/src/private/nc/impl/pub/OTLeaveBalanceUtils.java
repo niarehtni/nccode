@@ -14,20 +14,39 @@ import nc.jdbc.framework.processor.MapListProcessor;
 import nc.pubitf.para.SysInitQuery;
 import nc.vo.hi.psndoc.PsnOrgVO;
 import nc.vo.pub.BusinessException;
+import nc.vo.pub.lang.UFBoolean;
 import nc.vo.pub.lang.UFDouble;
 import nc.vo.pub.lang.UFLiteralDate;
 import nc.vo.ta.leave.LeaveRegVO;
 import nc.vo.ta.overtime.OTLeaveBalanceVO;
 
+import org.apache.commons.lang.StringUtils;
+
 public class OTLeaveBalanceUtils {
 	@SuppressWarnings("unchecked")
-	public static String[] getPsnListByDateScope(String pk_org, String[] pk_psndocs, UFLiteralDate beginDate,
-			UFLiteralDate endDate) throws BusinessException {
+	public static String[] getPsnListByDateScope(String pk_org, String[] pk_psndocs, String[] pk_depts,
+			UFBoolean isTermLeave, UFLiteralDate beginDate, UFLiteralDate endDate) throws BusinessException {
 		if (pk_psndocs == null || pk_psndocs.length == 0) {
-			List<String> psnList = (List<String>) new BaseDAO().executeQuery(
-					"select distinct pk_psndoc from tbm_psndoc where pk_org = '" + pk_org
-							+ "' and isnull(dr,0)=0 and '" + beginDate.toString() + "' <= enddate and '"
-							+ endDate.toString() + "' >= begindate", new ColumnListProcessor());
+			List<String> psnList = (List<String>) new BaseDAO()
+					.executeQuery(
+							"select distinct pk_psndoc from tbm_psndoc psn "
+									+ "inner join hi_psnorg og on psn.pk_psnorg = og.pk_psnorg "
+									+ (pk_depts == null || pk_depts.length == 0 ? ""
+											: " inner join hi_psnjob on og.pk_psnorg = hi_psnjob.pk_psnorg ")
+									+ "where psn.pk_org = '"
+									+ pk_org
+									+ "' and isnull(psn.dr,0)=0 and '"
+									+ beginDate.toString()
+									+ "' <= psn.enddate and '"
+									+ endDate.toString()
+									+ "' >= psn.begindate "
+									+ (pk_depts == null || pk_depts.length == 0 ? "" : " and hi_psnjob.pk_dept in ("
+											+ new InSQLCreator().getInSQL(pk_depts) + ")")
+									+ (isTermLeave == null ? ""
+											: " and (select count(pk_psnjob) from hi_psnjob where pk_psnorg=psn.pk_psnorg and trnstype=(SELECT value FROM pub_sysinit WHERE pk_org=psn.pk_org AND initcode='TWHR11')) "
+													+ (isTermLeave.booleanValue() ? ">" : "=")
+													+ " (select count(pk_psnjob) from hi_psnjob where pk_psnorg=psn.pk_psnorg and trnstype=(SELECT value FROM pub_sysinit WHERE pk_org=psn.pk_org AND initcode='TWHR12'))"),
+							new ColumnListProcessor());
 			if (psnList != null && psnList.size() > 0) {
 				pk_psndocs = psnList.toArray(new String[0]);
 			}
@@ -36,18 +55,29 @@ public class OTLeaveBalanceUtils {
 	}
 
 	@SuppressWarnings("unchecked")
-	public static String[] getPsnListByQueryYear(String pk_org, String[] pk_psndocs, String queryYear)
-			throws BusinessException {
+	public static String[] getPsnListByQueryYear(String pk_org, String[] pk_psndocs, String[] pk_depts,
+			UFBoolean isTermLeave, String queryYear) throws BusinessException {
 		if (pk_psndocs == null || pk_psndocs.length == 0) {
 			List<String> psnList = (List<String>) new BaseDAO()
 					.executeQuery(
-							"select distinct psn.pk_psndoc from tbm_psndoc psn inner join hi_psnorg og on psn.pk_psnorg = og.pk_psnorg where psn.pk_org = '"
+							"select distinct psn.pk_psndoc from tbm_psndoc psn "
+									+ "inner join hi_psnorg og on psn.pk_psnorg = og.pk_psnorg "
+									+ (pk_depts == null || pk_depts.length == 0 ? ""
+											: " inner join hi_psnjob on og.pk_psnorg = hi_psnjob.pk_psnorg ")
+									+ " where psn.pk_org = '"
 									+ pk_org
-									+ "' and psn.enddate >= '"
+									+ "' and psn.enddate >= ('"
 									+ queryYear
-									+ "' || right(og.workagestartdate, 6) and psn.begindate < '"
+									+ "' || right(og.workagestartdate, 6)) and psn.begindate < ('"
 									+ String.valueOf(Integer.valueOf(queryYear) + 1)
-									+ "' || right(og.workagestartdate, 6)", new ColumnListProcessor());
+									+ "' || right(og.workagestartdate, 6))"
+									+ (pk_depts == null || pk_depts.length == 0 ? "" : " and hi_psnjob.pk_dept in ("
+											+ new InSQLCreator().getInSQL(pk_depts) + ")")
+									+ (isTermLeave == null ? ""
+											: " and (select count(pk_psnjob) from hi_psnjob where pk_psnorg=psn.pk_psnorg and trnstype=(SELECT value FROM pub_sysinit WHERE pk_org=psn.pk_org AND initcode='TWHR11')) "
+													+ (isTermLeave.booleanValue() ? ">" : "=")
+													+ " (select count(pk_psnjob) from hi_psnjob where pk_psnorg=psn.pk_psnorg and trnstype=(SELECT value FROM pub_sysinit WHERE pk_org=psn.pk_org AND initcode='TWHR12'))"),
+							new ColumnListProcessor());
 			if (psnList != null && psnList.size() > 0) {
 				pk_psndocs = psnList.toArray(new String[0]);
 			}
@@ -59,7 +89,7 @@ public class OTLeaveBalanceUtils {
 	public static LeaveRegVO[] getLeaveRegByPsnYear(String pk_org, String pk_psndoc, String queryYear,
 			String pk_leavetypecopy) throws BusinessException {
 		Map<String, UFLiteralDate> psnWorkStartDate = OTLeaveBalanceUtils.getPsnWorkStartDateMap(pk_org,
-				new String[] { pk_psndoc }, queryYear, pk_leavetypecopy);
+				new String[] { pk_psndoc }, null, null, queryYear, pk_leavetypecopy);
 
 		return getLeaveRegByPsnDate(pk_org, pk_psndoc,
 				getBeginDateByWorkAgeStartDate(queryYear, psnWorkStartDate.get(pk_psndoc)),
@@ -105,48 +135,60 @@ public class OTLeaveBalanceUtils {
 
 	@SuppressWarnings({ "unchecked" })
 	public static Map<String, UFLiteralDate> getPsnWorkStartDateMap(String pk_org, String[] pk_psndocs,
-			String queryYear, String pk_leavetypecopy) throws BusinessException {
+			String[] pk_depts, UFBoolean isTermLeave, String queryYear, String pk_leavetypecopy)
+			throws BusinessException {
 		Map<String, UFLiteralDate> rtn = new HashMap<String, UFLiteralDate>();
+		if (!StringUtils.isEmpty(pk_org)) {
+			String pk_otleavetype = SysInitQuery.getParaString(pk_org, "TWHRT08");
+			String pk_exleavetype = SysInitQuery.getParaString(pk_org, "TWHRT10");
 
-		String pk_otleavetype = SysInitQuery.getParaString(pk_org, "TWHRT08");
-		String pk_exleavetype = SysInitQuery.getParaString(pk_org, "TWHRT10");
+			String effCondition = " ";
+			if (pk_leavetypecopy.equals(pk_otleavetype)) {
+				effCondition = " and (select count(pk_segdetail) from hrta_segdetail where pk_psndoc = psn.pk_psndoc and expirydate >= '"
+						+ queryYear
+						+ "' || right(og.workagestartdate, 6) AND expirydate < '"
+						+ String.valueOf(Integer.valueOf(queryYear) + 1) + "' || right(og.workagestartdate, 6)) > 0";
+			} else if (pk_leavetypecopy.equals(pk_exleavetype)) {
+				effCondition = " and (select count(pk_extrarest) from tbm_extrarest where pk_psndoc = psn.pk_psndoc and expiredate >= '"
+						+ queryYear
+						+ "' || right(og.workagestartdate, 6) AND expiredate < '"
+						+ String.valueOf(Integer.valueOf(queryYear) + 1) + "' || right(og.workagestartdate, 6)) > 0";
+			}
 
-		String effCondition = " ";
-		if (pk_leavetypecopy.equals(pk_otleavetype)) {
-			effCondition = " and (select count(pk_segdetail) from hrta_segdetail where pk_psndoc = psn.pk_psndoc and expirydate >= '"
-					+ queryYear
-					+ "' || right(og.workagestartdate, 6) AND expirydate < '"
-					+ String.valueOf(Integer.valueOf(queryYear) + 1) + "' || right(og.workagestartdate, 6)) > 0";
-		} else if (pk_leavetypecopy.equals(pk_exleavetype)) {
-			effCondition = " and (select count(pk_extrarest) from tbm_extrarest where pk_psndoc = psn.pk_psndoc and expiredate >= '"
-					+ queryYear
-					+ "' || right(og.workagestartdate, 6) AND expiredate < '"
-					+ String.valueOf(Integer.valueOf(queryYear) + 1) + "' || right(og.workagestartdate, 6)) > 0";
-		}
+			List<Map> psnList = (List<Map>) new BaseDAO()
+					.executeQuery(
+							"select distinct psn.pk_psndoc, og.workagestartdate from tbm_psndoc psn "
+									+ "inner join hi_psnorg og on psn.pk_psnorg = og.pk_psnorg "
+									+ ((pk_depts == null || pk_depts.length == 0) && isTermLeave == null ? ""
+											: " inner join hi_psnjob on og.pk_psnorg = hi_psnjob.pk_psnorg ")
+									+ " where psn.pk_org = '"
+									+ pk_org
+									+ "' and psn.enddate >= ('"
+									+ queryYear
+									+ "' || right(og.workagestartdate, 6)) and psn.begindate < ('"
+									+ String.valueOf(Integer.valueOf(queryYear) + 1)
+									+ "' || right(og.workagestartdate, 6)) and og.workagestartdate is not null "
+									+ ((pk_psndocs != null && pk_psndocs.length > 0) ? (" and psn.pk_psndoc in ("
+											+ (new InSQLCreator()).getInSQL(pk_psndocs, false) + ")") : "")
+									+ effCondition
+									+ (pk_depts == null || pk_depts.length == 0 ? "" : " and hi_psnjob.pk_dept in ("
+											+ new InSQLCreator().getInSQL(pk_depts) + ")")
+									+ (isTermLeave == null ? ""
+											: " and (select count(pk_psnjob) from hi_psnjob where pk_psnorg=psn.pk_psnorg and trnstype=(SELECT value FROM pub_sysinit WHERE pk_org=psn.pk_org AND initcode='TWHR11')) "
+													+ (isTermLeave.booleanValue() ? ">" : "=")
+													+ " (select count(pk_psnjob) from hi_psnjob where pk_psnorg=psn.pk_psnorg and trnstype=(SELECT value FROM pub_sysinit WHERE pk_org=psn.pk_org AND initcode='TWHR12'))"),
+							new MapListProcessor());
 
-		List<Map> psnList = (List<Map>) new BaseDAO()
-				.executeQuery(
-						"select distinct psn.pk_psndoc, og.workagestartdate from tbm_psndoc psn inner join hi_psnorg og on psn.pk_psnorg = og.pk_psnorg where psn.pk_org = '"
-								+ pk_org
-								+ "' and psn.enddate >= '"
-								+ queryYear
-								+ "' || right(og.workagestartdate, 6) and psn.begindate < '"
-								+ String.valueOf(Integer.valueOf(queryYear) + 1)
-								+ "' || right(og.workagestartdate, 6) and og.workagestartdate is not null "
-								+ ((pk_psndocs != null && pk_psndocs.length > 0) ? (" and psn.pk_psndoc in ("
-										+ (new InSQLCreator()).getInSQL(pk_psndocs, false) + ")") : "") + effCondition,
-						new MapListProcessor());
-
-		if (psnList != null && psnList.size() > 0) {
-			for (Map psn : psnList) {
-				String pk_psndoc = (String) psn.get("pk_psndoc");
-				UFLiteralDate workstartdate = new UFLiteralDate((String) psn.get("workagestartdate"));
-				if (!rtn.containsKey(pk_psndoc)) {
-					rtn.put(pk_psndoc, workstartdate);
+			if (psnList != null && psnList.size() > 0) {
+				for (Map psn : psnList) {
+					String pk_psndoc = (String) psn.get("pk_psndoc");
+					UFLiteralDate workstartdate = new UFLiteralDate((String) psn.get("workagestartdate"));
+					if (!rtn.containsKey(pk_psndoc)) {
+						rtn.put(pk_psndoc, workstartdate);
+					}
 				}
 			}
 		}
-
 		return rtn;
 	}
 

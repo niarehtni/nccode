@@ -312,6 +312,7 @@
 		<property name="service" ref="bmModelModelService" />
 		<property name="editor" ref="billForm" />
 		<property name="context" ref="context" />
+		<property name="orgpanel" ref="orgpanel" />
 	</bean>
 	<bean id="cancelAction" class="nc.ui.twhr.nhicalc.action.CancelAction">
 		<property name="model" ref="bmModel" />

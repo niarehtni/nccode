@@ -17,22 +17,23 @@ public class DeptVerExecutorPlugin implements IBackgroundWorkPlugin {
 	@Override
 	public PreAlertObject executeTask(BgWorkingContext arg0) throws BusinessException {
 		// 執行今天的版本化
-		PreAlertObject rtnObj = new PreAlertObject();
+		PreAlertObject obj = new PreAlertObject();
 		try {
 			String errMsg = NCLocator.getInstance().lookup(IDeptAdjustService.class)
 					.executeDeptVersion(new UFLiteralDate());
 
 			if (StringUtils.isEmpty(errMsg)) {
-				rtnObj.setReturnType(PreAlertReturnType.RETURNNOTHING);
+				obj.setReturnType(PreAlertReturnType.RETURNNOTHING);
 			} else {
-				rtnObj.setReturnType(PreAlertReturnType.RETURNMESSAGE);
-				rtnObj.setReturnObj(errMsg);
+				obj.setReturnType(PreAlertReturnType.RETURNMULTILANGTEXT);
+				obj.setReturnObj(errMsg);
 			}
 		} catch (Exception e) {
 			Debug.debug(e.getMessage());
 			throw new BusinessException(e.getMessage());
 		}
-		return rtnObj;
+
+		return obj;
 	}
 
 }

@@ -18,31 +18,44 @@ import nc.vo.wa.pub.plugin.WaDeptBelongVO;
 import org.apache.commons.lang.StringUtils;
 
 /**
- * @description Ëñ™ËµÑÈÉ®Èó®ÊâÄÂ±ûÈÉ®Èó®Êü•ËØ¢ÂêéÂè∞‰ªªÂä°
- * @description ÊØèÊ¨°ÊâßË°åÊä•Ë°®Êü•ËØ¢ÂâçÔºåÈúÄË¶ÅÂÖàÊâãÂä®ÊâßË°åËØ•‰ªªÂä°Ôºå‰ª•Á°Æ‰øùÈÉ®Èó®Êï∞ÊçÆÁöÑÊ≠£Á°ÆÊÄß
+ * @description –Ω◊ ≤ø√≈À˘ Ù≤ø√≈≤È—Ø∫ÛÃ®»ŒŒÒ
+ * @description √ø¥Œ÷¥––±®±Ì≤È—Ø«∞£¨–Ë“™œ» ÷∂Ø÷¥––∏√»ŒŒÒ£¨“‘»∑±£≤ø√≈ ˝æ›µƒ’˝»∑–‘
  * @since 2019-05-25
  * @author Connie.ZH
  * 
  */
+//20200107	by Jimmy	wnc0001	∏¸∏ƒ≤øÈTcombine_logic»Áœ¬°£
+/*
+ * combine_logic
+ 1.
+ ≤øºâ“‘œ¬£¨–Ë∫œÅ„÷¡≤øºâ“‘…œûÈ÷π°£
+ 2.
+ »Áπ˚≤øÈT”–œ‡Õ¨µƒ…œºâ≤øÈT£¨Ñt…ŸÏ∂µ»Ï∂2»Àµƒ≤øÈT“™ÖRøÇ∫Û∫œÅ„µΩ…œºâ≤øÈT£¨‘Ÿ»•≈–î‡…œºâ≤øÈT «∑Ò…ŸÏ∂µ»Ï∂2»À°£
+ ¿˝»Á£¨A≤øÈTœ¬”÷A1∫ÕA2°¢A3»˝ÇÄ◊”≤øÈT£¨A≤øÈT”–1ÇÄ»À£¨A1≤øÈT”–1ÇÄ»À£¨A2≤øÈT”–3ÇÄ»À£¨A3≤øÈT”–1ÇÄ»À£¨
+ ƒ«¸NÖRøÇ∫Û£¨A2≤øÈTµƒöwåŸ≤øÈTﬂÄ «A2£¨
+ A1∫ÕA3≤øÈT”…Ï∂∂º «…ŸÏ∂µ»Ï∂2ÇÄ»À£¨À˘“‘“™å¢A1∫ÕA3≤øÈTµƒ»ÀîµÖRøÇ∫Û£¨‘ŸœÚ…œ∫œÅ„£¨∫œÅ„∫ÛA≤øÈT”–3»À°£
+ “¿¥ŒÓêÕ∆¿^¿mœÚ…œ∫œÅ„£¨÷±µΩÖRøÇµΩ…œºâ∫Û≤øÈT»Àîµ¥ÛÏ∂2»ÀïrûÈ÷π°£ 
+ 3.
+ ∫œÅ„ïr£¨ûÈ¡À÷™µ¿…œºâ «∑ÒûÈIDL or DL£¨∂‡“ªÇÄ≈–î‡ >> »Ù…œºâ‘≠ º»Àîµ > 0 ≤≈∫œÅ„
+ 4.
+ »Áπ˚ﬂÄ «”–»Àîµ…ŸÏ∂3»Àµƒ‘í£¨¿^¿mœÚ…œ∫œÅ„£¨“ª÷±µΩ∂≠ ¬ÈL “ûÈ÷π
+*/
 public class CalWaDeptBelongPlugin implements IBackgroundWorkPlugin {
 
-	private static BaseDAO dao;
+	private static BaseDAO dao; 
 
-	// Ëë£‰∫ãÈïøÊâÄÂú®ÈÉ®Èó®PK
+	// ∂≠ ¬≥§À˘‘⁄≤ø√≈PK
 	private static final String CHAIRMAN_DEPT = "1001A1100000000001V9";
 
-	// Êü•ËØ¢ÊúÄÂ∫ïÂ±ÇÁöÑÈÉ®Èó®
-	private static final String getButtomDepts = "select org_dept.pk_dept from org_dept where org_dept.enablestate=2 and org_dept.hrcanceled='N' and org_dept.pk_dept not in ( (select pk_dept from org_dept where pk_dept  in ( select pk_fatherorg from org_dept))) group by org_dept.pk_dept";
+	// ≤È—Ø◊Óµ◊≤„µƒ≤ø√≈
+	private static final String getButtomDepts = "SELECT org_dept.pk_dept FROM org_dept WHERE org_dept.enablestate=2 and org_dept.hrcanceled='N' and org_dept.pk_dept not in ( (SELECT pk_dept FROM org_dept WHERE pk_dept  in ( SELECT pk_fatherorg FROM org_dept))) group by org_dept.pk_dept";
 
+	// ≤È—ØÀ˘”–≤ø√≈å”ºâ
+	private static final String getDeptsLevel = "SELECT to_number(NVL(def.code,0)) FROM org_dept dept LEFT JOIN bd_defdoc def ON dept.deptlevel = def.pk_defdoc WHERE to_number(NVL(def.code,0)) != 0 GROUP BY to_number(NVL(def.code,0)) ORDER BY to_number(NVL(def.code,0)) DESC";
+	
 	public static final String CAL_CYEAR = "cyear";
 	private static final String CAL_CPERIOD = "cperiod";
-	private static final int Highest_Level = 20;// actually, they won't have 20
-												// dept levels
-	private static final int Default_Level = 30;// actually, they won't have 30
-												// dept levels
-
-	// dept levels
-
+	
 	private synchronized static BaseDAO getDao() {
 		if (dao == null) {
 			dao = new BaseDAO();
@@ -50,6 +63,7 @@ public class CalWaDeptBelongPlugin implements IBackgroundWorkPlugin {
 		return dao;
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
 	public PreAlertObject executeTask(BgWorkingContext bgwc) throws BusinessException {
 		// 0. clear
@@ -60,7 +74,7 @@ public class CalWaDeptBelongPlugin implements IBackgroundWorkPlugin {
 		if (StringUtils.isEmpty(cyear) || StringUtils.isEmpty(cperiod)) {
 			throw new BusinessException("Both cyear and cperiod can not be empty!");
 		}
-		// 1. find all the buttomest dept
+		// 1-1. find all the buttomest dept
 		String[] buttomDepts = (String[]) getDao().executeQuery(getButtomDepts, new ResultSetProcessor() {
 			@Override
 			public Object handleResultSet(ResultSet rs) {
@@ -76,16 +90,35 @@ public class CalWaDeptBelongPlugin implements IBackgroundWorkPlugin {
 				return buttomDepts.toArray(new String[0]);
 			}
 		});
+		// 1-2. find all the dept levels
+		Integer[] DeptsLevel = (Integer[]) getDao().executeQuery(getDeptsLevel, new ResultSetProcessor() {
+			@Override
+			public Object handleResultSet(ResultSet rs) {
+				List<Integer> DeptsLevel = new ArrayList<Integer>();
+				try {
+					while (rs.next()) {
+						DeptsLevel.add(rs.getInt(1));
+					}
+				} catch (SQLException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				return DeptsLevel.toArray(new Integer[0]);
+			}
+		});
 		// 2. insert all the original employees's number to the all depts
+		//≤È‘ÉIDL & DL≤øÈT(µ◊å”≤øÈT)
 		List<WaDeptBelongVO> buttonDeptListIDL = new ArrayList<WaDeptBelongVO>();
 		try {
 			buttonDeptListIDL = (ArrayList<WaDeptBelongVO>) getDao()
 					.executeQuery(
-							" select dept.pk_dept,v.num,dept.pk_fatherorg from org_dept dept left join  V_WA_DEPT_CAL_IDL v on v.workdept=dept.pk_dept and cyear='"
+							" SELECT dept.pk_dept,v.num,dept.pk_fatherorg,to_number(NVL(def.code,0)) dept_level FROM org_dept dept "
+									+ "LEFT JOIN bd_defdoc def ON dept.deptlevel = def.pk_defdoc "
+									+ "LEFT JOIN  V_WA_DEPT_CAL_IDL v on v.workdept=dept.pk_dept and cyear='"
 									+ cyear
 									+ "' and cperiod = '"
 									+ cperiod
-									+ "'  where  dept.pk_dept in ('"
+									+ "'  WHERE  dept.pk_dept in ('"
 									+ StringUtils.join(buttomDepts, "','") + "')", new ResultSetProcessor() {
 								@Override
 								public Object handleResultSet(ResultSet rs) {
@@ -95,7 +128,7 @@ public class CalWaDeptBelongPlugin implements IBackgroundWorkPlugin {
 											WaDeptBelongVO vo = new WaDeptBelongVO();
 											vo.setError_flag("N");
 											vo.setDir("IDL");
-											vo.setDept_level(0);
+											vo.setDept_level(rs.getInt(4));
 											vo.setPk_dept(rs.getString(1));
 											vo.setOri_num(null == rs.getString(2) ? 0 : new Integer(rs.getString(2)));
 											vo.setPk_fatherorg(rs.getString(3));
@@ -117,11 +150,13 @@ public class CalWaDeptBelongPlugin implements IBackgroundWorkPlugin {
 		try {
 			buttonDeptListDL = (ArrayList<WaDeptBelongVO>) getDao()
 					.executeQuery(
-							" select dept.pk_dept,v.num,dept.pk_fatherorg from org_dept dept left join  V_WA_DEPT_CAL_DL v on v.workdept=dept.pk_dept and cyear='"
+							" SELECT dept.pk_dept,v.num,dept.pk_fatherorg,to_number(NVL(def.code,0)) dept_level FROM org_dept dept "
+									+ "LEFT JOIN bd_defdoc def ON dept.deptlevel = def.pk_defdoc "
+									+ "LEFT JOIN  V_WA_DEPT_CAL_DL v on v.workdept=dept.pk_dept and cyear='"
 									+ cyear
 									+ "' and cperiod = '"
 									+ cperiod
-									+ "' where  dept.pk_dept in ('"
+									+ "' WHERE  dept.pk_dept in ('"
 									+ StringUtils.join(buttomDepts, "','") + "')", new ResultSetProcessor() {
 								@Override
 								public Object handleResultSet(ResultSet rs) {
@@ -131,7 +166,7 @@ public class CalWaDeptBelongPlugin implements IBackgroundWorkPlugin {
 											WaDeptBelongVO vo = new WaDeptBelongVO();
 											vo.setError_flag("N");
 											vo.setDir("DL");
-											vo.setDept_level(0);
+											vo.setDept_level(rs.getInt(4));
 											vo.setPk_dept(rs.getString(1));
 											vo.setOri_num(null == rs.getString(2) ? 0 : new Integer(rs.getString(2)));
 											vo.setPk_fatherorg(rs.getString(3));
@@ -148,85 +183,230 @@ public class CalWaDeptBelongPlugin implements IBackgroundWorkPlugin {
 		} catch (DAOException e) {
 			throw new BusinessException(e.getMessage());
 		}
+		//åë»Îwa_dept_belong£¨ŸY¡œÅÌ‘¥ IDL & DL IN µ◊å”
 		getDao().insertVOList(buttonDeptListDL);
 		getDao().insertVOList(buttonDeptListIDL);
+		//åë»Îwa_dept_belong£¨ŸY¡œÅÌ‘¥ IDL & DL NOT IN µ◊å”
 		insertDeptBelong("DL", cyear, cperiod, buttomDepts);
 		insertDeptBelong("IDL", cyear, cperiod, buttomDepts);
 		// query all depts
-		List<WaDeptBelongVO> allDLs = (List<WaDeptBelongVO>) getDao().retrieveByClause(WaDeptBelongVO.class,
-				" dir = 'DL'  order by dept_level asc");
 		List<WaDeptBelongVO> allIDLs = (List<WaDeptBelongVO>) getDao().retrieveByClause(WaDeptBelongVO.class,
-				" dir = 'IDL'  order by dept_level asc");
-		updateBaseDeptLevel(allIDLs);
-		updateBaseDeptLevel(allDLs);
-		// 3. calculate all the employees's number then update(by dept
-		// level,from buttom to top)
-		int startLevel = 0;
-		while (startLevel <= Highest_Level) {
-			updateDeptLevel(allDLs, startLevel);
-			startLevel++;
-		}
+				" dir = 'IDL' AND dept_level != 0  order by dept_level desc,pk_fatherorg,pk_dept");
+		List<WaDeptBelongVO> allDLs = (List<WaDeptBelongVO>) getDao().retrieveByClause(WaDeptBelongVO.class,
+				" dir = 'DL' AND dept_level != 0  order by dept_level desc,pk_fatherorg,pk_dept");
 
-		startLevel = 0;
-		while (startLevel <= Highest_Level) {// they won't have 20 dept levels
-			updateDeptLevel(allIDLs, startLevel);
-			startLevel++;
-		}
 
-		// calcaulate dept number from buttom to top(except buttom depts)
-		for (int i = 1; i <= Default_Level; i++) {
-			for (WaDeptBelongVO idlvo : allIDLs) {
-				if (i == idlvo.getDept_level()) {
-					int num = idlvo.getOri_num();
-					for (WaDeptBelongVO cal_idlvo : allIDLs) {
-						if (idlvo.getPk_dept().equals(cal_idlvo.getPk_fatherorg()) && cal_idlvo.getCal_num() < 3) {
-							num += cal_idlvo.getOri_num();
-						}
-					}
+//combine_logic(1)
+		
+		for (WaDeptBelongVO idlvo : allIDLs) {
+			int num = idlvo.getCal_num();
+			for (WaDeptBelongVO cal_idlvo : allIDLs) {
+				if (cal_idlvo.getDept_level() > 70 && idlvo.getPk_dept().equals(cal_idlvo.getPk_fatherorg())){
+					cal_idlvo.setPk_dept_belong(idlvo.getPk_dept());
+					num += cal_idlvo.getCal_num();
+					cal_idlvo.setCal_num(0);
 					idlvo.setCal_num(num);
 				}
 			}
 		}
 
-		for (int i = 1; i <= Default_Level; i++) {
-			for (WaDeptBelongVO dlvo : allDLs) {
-				if (i == dlvo.getDept_level()) {
-					int num = dlvo.getOri_num();
-					for (WaDeptBelongVO cal_dlvo : allDLs) {
-						if (dlvo.getPk_dept().equals(cal_dlvo.getPk_fatherorg()) && cal_dlvo.getCal_num() < 3) {
-							num += cal_dlvo.getOri_num();
-						}
-					}
+		for (WaDeptBelongVO dlvo : allDLs) {
+			int num = dlvo.getCal_num();
+			for (WaDeptBelongVO cal_dlvo : allDLs) {
+				if (cal_dlvo.getDept_level() > 70 && dlvo.getPk_dept().equals(cal_dlvo.getPk_fatherorg())){
+					cal_dlvo.setPk_dept_belong(dlvo.getPk_dept());
+					num += cal_dlvo.getCal_num();
+					cal_dlvo.setCal_num(0);
 					dlvo.setCal_num(num);
 				}
 			}
 		}
-		// 4. calculate all the pk_dept_belong
-		for (WaDeptBelongVO dlvo : allDLs) {
-			if (dlvo.getCal_num() >= 3) {
-				dlvo.setPk_dept_belong(dlvo.getPk_dept());
+		
+		
+
+//combine_logic(2 & 3)
+		
+		for (WaDeptBelongVO idlvo : allIDLs) {
+
+			int num = idlvo.getCal_num();
+			for (WaDeptBelongVO cal_idlvo : allIDLs) {
+				if (cal_idlvo.getDept_level() <= 70 && idlvo.getPk_dept().equals(cal_idlvo.getPk_fatherorg()) && idlvo.getOri_num() > 0){
+					if(idlvo.getCal_num() < 3 || cal_idlvo.getCal_num() < 3 ){
+						cal_idlvo.setPk_dept_belong(idlvo.getPk_dept());
+						num += cal_idlvo.getCal_num();
+						cal_idlvo.setCal_num(0);
+						idlvo.setCal_num(num);
+					}else{
+						cal_idlvo.setPk_dept_belong(cal_idlvo.getPk_dept());
+						idlvo.setPk_dept_belong(idlvo.getPk_dept());
+						idlvo.setCal_num(num);
+					}
+				}else if (StringUtils.isEmpty(cal_idlvo.getPk_fatherorg())){
+					cal_idlvo.setPk_dept_belong(idlvo.getPk_dept());
+				}
 			}
 		}
+
+		//∏¸–¬∫œÅ„≤øÈTô⁄Œª£¨å¢“—Ωõ∫œÅ„··µƒ≤øÈT£¨∏¸–¬÷¡…œºâ◊ÓΩK∫œÅ„µƒ≤øÈT
 		for (WaDeptBelongVO idlvo : allIDLs) {
-			if (idlvo.getCal_num() >= 3) {
+			for (WaDeptBelongVO cal_idlvo : allIDLs) {
+				if (idlvo.getDept_level() <= 70 && cal_idlvo.getCal_num() == 0 && idlvo.getPk_dept().equals(cal_idlvo.getPk_dept_belong()) && idlvo.getOri_num() > 0){
+					if(!StringUtils.isEmpty(idlvo.getPk_dept_belong())){
+						cal_idlvo.setPk_dept_belong(idlvo.getPk_dept_belong());
+					}
+				}else if (idlvo.getDept_level() > 70 && cal_idlvo.getCal_num() == 0 && idlvo.getPk_dept().equals(cal_idlvo.getPk_dept_belong()) && cal_idlvo.getDept_level() > 70){
+					if(!StringUtils.isEmpty(idlvo.getPk_dept_belong())){
+						cal_idlvo.setPk_dept_belong(idlvo.getPk_dept_belong());
+					}
+				}
+			}
+		}
+
+		//∏¸–¬∫œÅ„≤øÈTô⁄Œª£¨å¢Œ¥∫œÅ„µƒ≤øÈT£¨∏¸–¬∫œÅ„≤øÈTûÈ◊‘º∫
+		for (WaDeptBelongVO idlvo : allIDLs) {
+			if (StringUtils.isEmpty(idlvo.getPk_dept_belong())){
 				idlvo.setPk_dept_belong(idlvo.getPk_dept());
 			}
 		}
-		int cnt = allDLs.size();
-		while (cnt > 0) {
-			updateBelongDept(allDLs);
-			cnt--;
+		
+
+		for (WaDeptBelongVO dlvo : allDLs) {
+
+			int num = dlvo.getCal_num();
+			for (WaDeptBelongVO cal_dlvo : allDLs) {
+				if (cal_dlvo.getDept_level() <= 70 && dlvo.getPk_dept().equals(cal_dlvo.getPk_fatherorg()) && dlvo.getOri_num() > 0){
+					if(dlvo.getCal_num() < 3 || cal_dlvo.getCal_num() < 3 ){
+						cal_dlvo.setPk_dept_belong(dlvo.getPk_dept());
+						num += cal_dlvo.getCal_num();
+						cal_dlvo.setCal_num(0);
+						dlvo.setCal_num(num);
+					}else{
+						cal_dlvo.setPk_dept_belong(cal_dlvo.getPk_dept());
+						dlvo.setPk_dept_belong(dlvo.getPk_dept());
+						dlvo.setCal_num(num);
+					}
+				}else if (StringUtils.isEmpty(cal_dlvo.getPk_fatherorg())){
+					cal_dlvo.setPk_dept_belong(dlvo.getPk_dept());
+				}
+			}
 		}
-		cnt = allIDLs.size();
-		while (cnt > 0) {
-			updateBelongDept(allIDLs);
-			cnt--;
+		
+
+//combine_logic(4)
+		
+		//∏¸–¬∫œÅ„≤øÈTô⁄Œª£¨å¢“—Ωõ∫œÅ„··µƒ≤øÈT£¨∏¸–¬÷¡…œºâ◊ÓΩK∫œÅ„µƒ≤øÈT
+		for (WaDeptBelongVO dlvo : allDLs) {
+			for (WaDeptBelongVO cal_dlvo : allDLs) {
+				if (dlvo.getDept_level() <= 70 && cal_dlvo.getCal_num() == 0 && dlvo.getPk_dept().equals(cal_dlvo.getPk_dept_belong()) && dlvo.getOri_num() > 0){
+					if(!StringUtils.isEmpty(dlvo.getPk_dept_belong())){
+						cal_dlvo.setPk_dept_belong(dlvo.getPk_dept_belong());
+					}
+				}else if (dlvo.getDept_level() > 70 && cal_dlvo.getCal_num() == 0 && dlvo.getPk_dept().equals(cal_dlvo.getPk_dept_belong()) && cal_dlvo.getDept_level() > 70){
+					if(!StringUtils.isEmpty(dlvo.getPk_dept_belong())){
+						cal_dlvo.setPk_dept_belong(dlvo.getPk_dept_belong());
+					}
+				}
+			}
 		}
+		
+		//∏¸–¬∫œÅ„≤øÈTô⁄Œª£¨å¢Œ¥∫œÅ„µƒ≤øÈT£¨∏¸–¬∫œÅ„≤øÈTûÈ◊‘º∫
+		for (WaDeptBelongVO dlvo : allDLs) {
+			if (StringUtils.isEmpty(dlvo.getPk_dept_belong())){
+				dlvo.setPk_dept_belong(dlvo.getPk_dept());
+			}
+		}
+
+
+		//∏¸–¬ERRORô⁄Œª£¨å¢∫œÅ„··…ŸÏ∂3»Àµƒ≤øÈT£¨ERROR = Y
+		for (WaDeptBelongVO idlvo : allIDLs) {
+			if ((idlvo.getCal_num() < 3 && idlvo.getCal_num() > 0) || (!idlvo.getPk_dept().equals(idlvo.getPk_dept_belong()) && idlvo.getCal_num() > 0)){
+				idlvo.setError_flag("Y");
+			}else{
+				idlvo.setError_flag("N");
+			}
+		}
+		for (WaDeptBelongVO dlvo : allDLs) {
+			if ((dlvo.getCal_num() < 3 && dlvo.getCal_num() > 0) || (!dlvo.getPk_dept().equals(dlvo.getPk_dept_belong()) && dlvo.getCal_num() > 0)){
+				dlvo.setError_flag("Y");
+			}else{
+				dlvo.setError_flag("N");
+			}
+		}
+
+		//∏¸–¬ERRORô⁄Œª=Yµƒ£¨å¢∆‰∫œÅ„÷¡»Àîµ¥ÛÏ∂3µƒ◊Ó…œå”≤øÈT
+		//”ãîµÂe’`ﬁí»¶£¨±£◊C≤øÈTø…“‘0Âe’`
+		int error_count = 3;
+		while(error_count != 0){
+
+			for (WaDeptBelongVO idlvo : allIDLs) {
+				int num = idlvo.getCal_num();
+				for (WaDeptBelongVO cal_idlvo : allIDLs) {
+					String calDept = cal_idlvo.getPk_dept() == cal_idlvo.getPk_dept_belong() ? cal_idlvo.getPk_fatherorg() : cal_idlvo.getPk_dept_belong();
+					if (cal_idlvo.getError_flag() == "Y" && idlvo.getPk_dept().equals(calDept)){
+						if((num + cal_idlvo.getCal_num()) >= 3){
+							cal_idlvo.setPk_dept_belong(idlvo.getPk_dept());
+							num += cal_idlvo.getCal_num();
+							cal_idlvo.setCal_num(0);
+							idlvo.setCal_num(num);
+							cal_idlvo.setError_flag("N");
+							//å¢œ¬ºâ≤øÈT÷Æ«∞µƒ∫œÅ„≤øÈT£¨∏¸∏ƒ≥…◊Ó…œå”µƒ∫œÅ„≤øÈT
+							for (WaDeptBelongVO below_idlvo : allIDLs) {
+								if (cal_idlvo.getPk_dept().equals(below_idlvo.getPk_dept_belong())){
+									below_idlvo.setPk_dept_belong(calDept);
+								}
+							}
+						//»Ù…œºâ»ÀîµûÈ0£¨Ñt¿^¿mÕ˘…œ∏¸–¬∫œÅ„≤øÈT
+						}else{
+							String idlvoCalDept = idlvo.getPk_dept() == idlvo.getPk_dept_belong() ? idlvo.getPk_fatherorg() : idlvo.getPk_dept_belong();
+							if(!StringUtils.isEmpty(idlvoCalDept)){
+								cal_idlvo.setPk_dept_belong(idlvoCalDept);
+							}else{
+								cal_idlvo.setPk_dept_belong(cal_idlvo.getPk_dept());
+							}
+						}
+					}
+				}
+			}
+			for (WaDeptBelongVO dlvo : allDLs) {
+				int num = dlvo.getCal_num();
+				for (WaDeptBelongVO cal_dlvo : allDLs) {
+					String calDept = cal_dlvo.getPk_dept() == cal_dlvo.getPk_dept_belong() ? cal_dlvo.getPk_fatherorg() : cal_dlvo.getPk_dept_belong();
+					if (cal_dlvo.getError_flag() == "Y" && dlvo.getPk_dept().equals(calDept)){
+						if((num + cal_dlvo.getCal_num()) >= 3){
+							cal_dlvo.setPk_dept_belong(dlvo.getPk_dept());
+							num += cal_dlvo.getCal_num();
+							cal_dlvo.setCal_num(0);
+							dlvo.setCal_num(num);
+							cal_dlvo.setError_flag("N");
+							//å¢œ¬ºâ≤øÈT÷Æ«∞µƒ∫œÅ„≤øÈT£¨∏¸∏ƒ≥…◊Ó…œå”µƒ∫œÅ„≤øÈT
+							for (WaDeptBelongVO below_dlvo : allDLs) {
+								if (cal_dlvo.getPk_dept().equals(below_dlvo.getPk_dept_belong())){
+									below_dlvo.setPk_dept_belong(calDept);
+								}
+							}
+						//»Ù…œºâ»ÀîµûÈ0£¨Ñt¿^¿mÕ˘…œ∏¸–¬∫œÅ„≤øÈT
+						}else{
+							String dlvoCalDept = dlvo.getPk_dept() == dlvo.getPk_dept_belong() ? dlvo.getPk_fatherorg() : dlvo.getPk_dept_belong();
+							if(!StringUtils.isEmpty(dlvoCalDept)){
+								cal_dlvo.setPk_dept_belong(dlvoCalDept);
+							}else{
+								cal_dlvo.setPk_dept_belong(cal_dlvo.getPk_dept());
+							}
+							
+							
+						}
+					}
+				}
+			}
+			error_count--;
+		}
+		
 		getDao().updateVOList(allDLs);
 		getDao().updateVOList(allIDLs);
 		return null;
 	}
-
+	
+	
 	/**
 	 * @description insert dept belong records of non-buttom depts
 	 * @param type
@@ -245,10 +425,12 @@ public class CalWaDeptBelongPlugin implements IBackgroundWorkPlugin {
 		if ("DL".equals(type)) {
 			tableName = "V_WA_DEPT_CAL_DL";
 		}
-		String sql = " select dept.pk_dept,dept.pk_fatherorg,v.num from org_dept dept left join " + tableName
+		String sql = " SELECT dept.pk_dept,dept.pk_fatherorg,v.num,to_number(def.code) dept_level FROM org_dept dept "
+				+ "LEFT JOIN bd_defdoc def ON dept.deptlevel = def.pk_defdoc "
+				+ "LEFT JOIN " + tableName
 				+ " v on v.workdept = dept.pk_dept and cyear='" + cyear + "' and cperiod = '" + cperiod
 				+ "' and psnclcode = '" + dir
-				+ "' where dept.HRCANCELED='N' and dept.enablestate = 2 and dept.pk_dept not in ('"
+				+ "' WHERE dept.HRCANCELED='N' and dept.enablestate = 2 and dept.pk_dept not in ('"
 				+ StringUtils.join(buttomDeptArr, "','") + "')";
 		getDao().executeQuery(sql, new ResultSetProcessor() {
 			@Override
@@ -258,10 +440,11 @@ public class CalWaDeptBelongPlugin implements IBackgroundWorkPlugin {
 						WaDeptBelongVO vo = new WaDeptBelongVO();
 						vo.setError_flag("N");
 						vo.setDir(dir);
-						vo.setDept_level(Default_Level);
+						vo.setDept_level(rs.getInt(4));
 						vo.setPk_dept(rs.getString(1));
 						vo.setPk_fatherorg(rs.getString(2));
 						vo.setOri_num(null == rs.getString(3) ? 0 : new Integer(rs.getString(3)));
+						vo.setCal_num(vo.getOri_num());
 						list.add(vo);
 					}
 				} catch (SQLException e) {
@@ -275,92 +458,6 @@ public class CalWaDeptBelongPlugin implements IBackgroundWorkPlugin {
 			getDao().insertVOList(list);
 		} else {
 			throw new BusinessException("Query dept error !");
-		}
-	}
-
-	/**
-	 * @description set dept level to zero, when it don't have child dept
-	 * @param list
-	 */
-	private void updateBaseDeptLevel(List<WaDeptBelongVO> list) {
-		for (int j = 0; j < list.size(); j++) {
-			if (0 != list.get(j).getDept_level()) {
-				String pk_dept = list.get(j).getPk_dept();
-				boolean flag = false;
-				for (int k = 0; k < list.size(); k++) {
-					if (pk_dept.equals(list.get(k).getPk_fatherorg())) {
-						flag = true;
-						break;
-					}
-				}
-				if (!flag) {
-					list.get(j).setDept_level(0);
-					list.get(j).setCal_num(list.get(j).getOri_num());
-				}
-			}
-		}
-	}
-
-	/**
-	 * @description calculate the dept level of each dept
-	 * @param list
-	 * @param startLevel
-	 */
-	private void updateDeptLevel(List<WaDeptBelongVO> list, int startLevel) {
-		for (int j = 0; j < list.size(); j++) {
-			if (startLevel == list.get(j).getDept_level()) {
-				for (int k = 0; k < list.size(); k++) {
-					if (list.get(k).getPk_dept().equals(list.get(j).getPk_fatherorg())) {
-						list.get(k).setDept_level(startLevel + 1);
-					}
-				}
-			}
-		}
-	}
-
-	/**
-	 * @description update belong dept by cal num
-	 * @param list
-	 */
-	private void updateBelongDept(List<WaDeptBelongVO> list) {
-		for (int j = 0; j < list.size(); j++) {
-			if (StringUtils.isEmpty(list.get(j).getPk_dept_belong())) {
-				String pk_fatherorg = list.get(j).getPk_fatherorg();
-				if (CHAIRMAN_DEPT.equals(pk_fatherorg)) {
-					for (WaDeptBelongVO tmpvo : list) {
-						if (tmpvo.getPk_dept().equals(CHAIRMAN_DEPT)) {
-							if (tmpvo.getCal_num() >= 3) {
-								list.get(j).setPk_dept_belong(CHAIRMAN_DEPT);
-							}
-						} else {
-							list.get(j).setPk_dept_belong(list.get(j).getPk_dept());
-							list.get(j).setError_flag("Y");
-						}
-					}
-					return;
-				} else if (StringUtils.isEmpty(pk_fatherorg)) {
-					list.get(j).setPk_dept_belong(list.get(j).getPk_dept());
-					list.get(j).setError_flag("Y");
-					return;
-				}
-				while (!CHAIRMAN_DEPT.equals(pk_fatherorg) && !StringUtils.isEmpty(pk_fatherorg)) {
-					for (int k = 0; k < list.size(); k++) {
-						if (list.get(k).getPk_dept().equals(pk_fatherorg)) {
-							if (list.get(k).getCal_num() >= 3) {
-								list.get(j).setPk_dept_belong(list.get(k).getPk_dept());
-								return;
-							} else {
-								pk_fatherorg = list.get(k).getPk_fatherorg();
-								if (CHAIRMAN_DEPT.equals(pk_fatherorg) || StringUtils.isEmpty(pk_fatherorg)) {
-									list.get(j).setPk_dept_belong(list.get(j).getPk_dept());
-									list.get(j).setError_flag("Y");
-									return;
-								}
-							}
-						}
-					}
-				}
-			}
 		}
 	}
 

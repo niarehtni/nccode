@@ -41,7 +41,17 @@ public class CalculTbmDaySalaryPlugin implements IBackgroundWorkPlugin{
 	@Override
 	public PreAlertObject executeTask(BgWorkingContext bgwc)
 			throws BusinessException {
-		// 數據檢查範圍
+		// tank 2019年10月15日21:27:13 日薪后台任务暂停 实时计算
+
+		StringBuffer sendmsg = new StringBuffer();
+		sendmsg.append("日薪沒有需要計算的數據\n");
+		PreAlertObject retObj = new PreAlertObject();
+		retObj.setReturnType(PreAlertReturnType.RETURNMESSAGE);
+		retObj.setReturnObj(sendmsg.toString());
+		return retObj;
+		
+		
+		/*// 數據檢查範圍
 		int checkrange = 0;
 		//考勤數據保留時間
 		int reserved=31;
@@ -98,6 +108,6 @@ public class CalculTbmDaySalaryPlugin implements IBackgroundWorkPlugin{
 		retObj.setReturnType(PreAlertReturnType.RETURNMESSAGE);
 		retObj.setMsgTitle("考勤薪资計算執行結果");
 		retObj.setReturnObj(sendmsg.toString());
-		return retObj;
+		return retObj;*/
 	}
 }

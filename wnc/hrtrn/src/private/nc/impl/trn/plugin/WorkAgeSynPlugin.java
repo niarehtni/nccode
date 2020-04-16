@@ -79,7 +79,8 @@ public class WorkAgeSynPlugin implements IBackgroundWorkPlugin {
 	@SuppressWarnings("unchecked")
 	private String[] getPsndocsByOrg(String pk_org) throws BusinessException {
 		List<String> psndocs = (List<String>) this.getBaseDao().executeQuery(
-				"select pk_psndoc from bd_psndoc where pk_org = '" + pk_org + "'", new ColumnListProcessor());
+				"select distinct pk_psndoc from hi_psnorg where pk_org = '" + pk_org
+						+ "' and lastflag='Y' and endflag = 'N'", new ColumnListProcessor());
 
 		if (psndocs == null) {
 			return null;

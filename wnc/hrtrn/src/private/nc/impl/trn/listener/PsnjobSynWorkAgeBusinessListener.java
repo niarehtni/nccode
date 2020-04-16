@@ -7,12 +7,15 @@ import nc.bs.businessevent.IBusinessEvent;
 import nc.bs.businessevent.IBusinessListener;
 import nc.bs.dao.BaseDAO;
 import nc.bs.dao.DAOException;
+import nc.bs.logging.Logger;
 import nc.pubitf.para.SysInitQuery;
 import nc.vo.hi.psndoc.PsnJobVO;
 import nc.vo.hi.psndoc.PsnOrgVO;
+import nc.vo.hi.psndoc.PsndocVO;
 import nc.vo.hi.pub.HiBatchEventValueObject;
 import nc.vo.hi.pub.HiEventValueObject;
 import nc.vo.pub.BusinessException;
+import nc.vo.pub.VOStatus;
 import nc.vo.pub.lang.UFBoolean;
 import nc.vo.pub.lang.UFLiteralDate;
 
@@ -68,45 +71,54 @@ public class PsnjobSynWorkAgeBusinessListener implements IBusinessListener {
 			PsnJobVO newPsnJob = vo.getPsnjob_after();
 			String pk_hrorg = vo.getPk_hrorg();
 
-			// 是否啟用年資起算日
-			UFBoolean refEnableWorkAgeFunc = SysInitQuery.getParaBoolean(pk_hrorg, "TWHR10");
+			// 留停異動類型
+			String refTransType = SysInitQuery.getParaString(pk_hrorg, "TWHR11").toString();
+			// 複職異動類型
+			String refReturnType = SysInitQuery.getParaString(pk_hrorg, "TWHR12").toString();
 
-			if (refEnableWorkAgeFunc != null && refEnableWorkAgeFunc.booleanValue()) {
-				// 留停異動類型
-				String refTransType = SysInitQuery.getParaString(pk_hrorg, "TWHR11").toString();
-				// 複職異動類型
-				String refReturnType = SysInitQuery.getParaString(pk_hrorg, "TWHR12").toString();
-
-				if (refTransType == null || refTransType.equals("~")) {
-					throw new BusinessException("系統參數 [TWHR11] 未指定用於留停的異動類型。");
-				}
-
-				if (refReturnType == null || refReturnType.equals("~")) {
-					throw new BusinessException("系統參數 [TWHR12] 未指定用於留停複職的異動類型。");
-				}
-
-				lastPsnJob.setEnddate(newPsnJob.getBegindate().getDateBefore(1));
-				lastPsnJob.setPoststat(UFBoolean.FALSE);
-				lastPsnJob.setEndflag(UFBoolean.TRUE);
-				lastPsnJob.setLastflag(UFBoolean.FALSE);
-				newPsnJob.setLastflag(UFBoolean.TRUE);
-
-				// MOD by ssx for update old data without modify recordnum
-				// on 2019-06-14
-				if (lastPsnJob.getRecordnum() == 0) {
-					lastPsnJob.setRecordnum(lastPsnJob.getRecordnum() + 1);
-					newPsnJob.setRecordnum(0);
-				}
-				// end
-
-				calculateWorkAgeDate(lastPsnJob, refTransType, refReturnType, false);
+			if (lastPsnJob.getStatus() == VOStatus.DELETED) {
+				// newPsnJob.setEnddate(null);
 				calculateWorkAgeDate(newPsnJob, refTransType, refReturnType, false);
+			} else {
+
+				// 是否啟用年資起算日
+				UFBoolean refEnableWorkAgeFunc = SysInitQuery.getParaBoolean(pk_hrorg, "TWHR10");
+
+				if (refEnableWorkAgeFunc != null && refEnableWorkAgeFunc.booleanValue()) {
+
+					if (refTransType == null || refTransType.equals("~")) {
+						throw new BusinessException("系統參數 [TWHR11] 未指定用於留停的異動類型。");
+					}
+
+					if (refReturnType == null || refReturnType.equals("~")) {
+						throw new BusinessException("系統參數 [TWHR12] 未指定用於留停複職的異動類型。");
+					}
+
+					lastPsnJob.setEnddate(newPsnJob.getBegindate().getDateBefore(1));
+					lastPsnJob.setPoststat(UFBoolean.FALSE);
+					// lastPsnJob.setEndflag(UFBoolean.TRUE);
+					// lastPsnJob.setLastflag(UFBoolean.FALSE);
+					// newPsnJob.setLastflag(UFBoolean.TRUE);
+
+					// MOD by ssx for update old data without modify recordnum
+					// on 2019-06-14
+					if (lastPsnJob.getRecordnum() == 0) {
+						lastPsnJob.setRecordnum(lastPsnJob.getRecordnum() + 1);
+						newPsnJob.setRecordnum(0);
+					}
+					// end
+
+					calculateWorkAgeDate(lastPsnJob, refTransType, refReturnType, false);
+					calculateWorkAgeDate(newPsnJob, refTransType, refReturnType, false);
+				}
 			}
 		}
 	}
 
 	public void calculateWorkAgeDate(PsnJobVO psnjob, String refTransType, String refReturnType, boolean isSyn)
 			throws BusinessException {
+		// 重新加載vo，以免傳入的是舊的，把已經更新的覆蓋掉
+		psnjob = (PsnJobVO) this.getBaseDao().retrieveByPK(PsnJobVO.class, psnjob.getPk_psnjob());
 		// 是否計算纍計留停
 		boolean isCalculateLeaveDays = false;
 		// 是否需要更新 "是否留停" 欄位
@@ -176,12 +188,11 @@ public class PsnjobSynWorkAgeBusinessListener implements IBusinessListener {
 	@SuppressWarnings("unchecked")
 	private int calculateLeaveDaysOnPsnJob(PsnJobVO psnjob, boolean isCalculateLeaveDays) throws DAOException {
 		// 留停結束時，計算留停天數，存儲位置：人員工作記錄.留停天數
-		if (psnjob.getBegindate() == null || !isCalculateLeaveDays) {
+		if (psnjob.getBegindate() == null || psnjob.getEnddate() == null || !isCalculateLeaveDays) {
 			psnjob.setAttributeValue("leavedays", null); // 留停天數
 		} else {
-			UFLiteralDate endDate = psnjob.getEnddate() == null || new UFLiteralDate().before(psnjob.getEnddate()) ? new UFLiteralDate()
-					: psnjob.getEnddate();
-			psnjob.setAttributeValue("leavedays", UFLiteralDate.getDaysBetween(psnjob.getBegindate(), endDate) + 1);
+			psnjob.setAttributeValue("leavedays",
+					UFLiteralDate.getDaysBetween(psnjob.getBegindate(), psnjob.getEnddate()) + 1);
 		}
 		this.getBaseDao().updateVO(psnjob);
 
@@ -206,7 +217,15 @@ public class PsnjobSynWorkAgeBusinessListener implements IBusinessListener {
 		// 計算年資起算日
 		// 組織關係.年資起算日=(在職員工|留停天數=null).進入集團日期
 		// 組織關係.年資起算日=(在職員工|留停天數<>null).進入集團日期+纍計留停天數-年資保留天數
+		;
 		PsnOrgVO psnorgVO = (PsnOrgVO) this.getBaseDao().retrieveByPK(PsnOrgVO.class, psnjob.getPk_psnorg());
+
+		if (psnorgVO.getJoinsysdate() == null) {
+			PsndocVO psnvo = (PsndocVO) this.getBaseDao().retrieveByPK(PsndocVO.class, psnorgVO.getPk_psndoc());
+			Logger.error("員工 [" + psnvo.getCode() + "] 的到職日（JoinSysDate）为空，無法計算年資起算日。");
+			return;
+		}
+
 		int remaindays = (int) (psnorgVO.getAttributeValue("workageremaindays") == null ? 0 : psnorgVO
 				.getAttributeValue("workageremaindays"));
 		psnorgVO.setAttributeValue("totalleavedays", days);// 累計留停天數
@@ -218,11 +237,16 @@ public class PsnjobSynWorkAgeBusinessListener implements IBusinessListener {
 			UFBoolean refEnableWorkAge = SysInitQuery.getParaBoolean(psnorgVO.getPk_hrorg(), "TWHR13");
 			if (null != refEnableWorkAge && refEnableWorkAge.booleanValue()) {
 				if (null == psnorgVO.getAttributeValue("workageremaindays")) {
-					psnorgVO.setAttributeValue("workagestartdate", psnorgVO.getBegindate().getDateAfter(days)
-							.getDateBefore(0));
+					psnorgVO.setAttributeValue("workagestartdate", psnorgVO.getJoinsysdate().getDateAfter(days));
 				} else {
-					psnorgVO.setAttributeValue("workagestartdate", psnorgVO.getBegindate().getDateAfter(days)
+					psnorgVO.setAttributeValue("workagestartdate", psnorgVO.getJoinsysdate().getDateAfter(days)
 							.getDateBefore((int) psnorgVO.getAttributeValue("workageremaindays")));
+				}
+			} else {
+				if (null != psnorgVO.getJoinsysdate()) {
+					psnorgVO.setAttributeValue("workagestartdate", psnorgVO.getJoinsysdate().getDateAfter(days));
+				} else {
+					psnorgVO.setAttributeValue("workagestartdate", null);
 				}
 			}
 		} catch (BusinessException e) {
@@ -240,7 +264,7 @@ public class PsnjobSynWorkAgeBusinessListener implements IBusinessListener {
 		// this.getBaseDao().updateVO(psnorgVO);
 
 		String sql = "update HI_PSNORG set TOTALLEAVEDAYS=" + Integer.toString(days) + ",WORKAGESTARTDATE='"
-				+ psnorgVO.getBegindate().getDateAfter(days).getDateBefore(remaindays).toString() + "'";
+				+ psnorgVO.getJoinsysdate().getDateAfter(days).getDateBefore(remaindays).toString() + "'";
 		if (needUpdateLoaflag)
 			sql += ",LOAFLAG='" + ((isloa) ? UFBoolean.TRUE.toString() : UFBoolean.FALSE.toString()) + "'";
 

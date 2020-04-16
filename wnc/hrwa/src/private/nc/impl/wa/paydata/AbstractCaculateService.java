@@ -52,6 +52,7 @@ public abstract class AbstractCaculateService extends AppendBaseDAO {
 	public CalculatingDataDEUtil getDEUtil() throws BusinessException {
 		if (deutil == null) {
 			deutil = new CalculatingDataDEUtil(this.getLoginContext());
+			deutil.setBaseDAO(getBaseDao());
 		}
 		return deutil;
 	}
@@ -348,6 +349,7 @@ public abstract class AbstractCaculateService extends AppendBaseDAO {
 		String value = sqlFragment.getValue();
 		value = parse(value);
 		value = FuncParse.addSourceTable2Value(value);
+
 		// mod by Connie.ZH
 		// 2019-05-25 started
 		// wage calculation efficiency
@@ -422,6 +424,7 @@ public abstract class AbstractCaculateService extends AppendBaseDAO {
 		// 对于数值型，添加默认值0
 		value = addDefaultVaule(itemVO, value);
 		StringBuilder sbd = new StringBuilder();
+
 		if (DataVOUtils.isDigitsAttribute(itemVO.getItemkey())
 				&& (itemVO.getRound_type() == null || itemVO.getRound_type().intValue() == 0)) {
 			int digits = itemVO.getIflddecimal();
@@ -447,7 +450,9 @@ public abstract class AbstractCaculateService extends AppendBaseDAO {
 			}
 			sbd.append("update wa_data set wa_data." + itemVO.getItemkey() + " = (" + value + ") " + where);
 		}
-		return sbd.toString();
+
+		return sbd.toString().replace("#WACLASS#", itemVO.getPk_wa_class())
+				.replace("#CREATOR#", getLoginContext().getPk_loginUser());
 
 	}
 

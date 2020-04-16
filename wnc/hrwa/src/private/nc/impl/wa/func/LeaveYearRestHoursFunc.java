@@ -22,12 +22,17 @@ public class LeaveYearRestHoursFunc extends AbstractWAFormulaParse {
 
 	@Override
 	public FunctionReplaceVO getReplaceStr(String formula) throws BusinessException {
-		FunctionReplaceVO fvo = new FunctionReplaceVO();
-		fvo.setAliTableName("wa_cacu_data");
-		fvo.setReplaceStr(" wa_cacu_data.cacu_value ");
 		IFormula excutor = new YearRestHoursFormulaPreExecutor(true);
 		((AbstractWAFormulaParse) excutor).setFunctionVO(getFunctionVO());
 		excutor.excute(formula, getContext());
+
+		FunctionReplaceVO fvo = new FunctionReplaceVO();
+		fvo.setAliTableName("wa_cacu_data");
+		fvo.setReplaceStr("coalesce((select hours from wa_cacu_yearresthour where dr=0 and isleave='Y' and pk_wa_class='"
+				+ context.getPk_wa_class()
+				+ "' and creator='"
+				+ context.getPk_loginUser()
+				+ "' and pk_psndoc=wa_cacu_data.pk_psndoc),0)");
 		return fvo;
 	}
 

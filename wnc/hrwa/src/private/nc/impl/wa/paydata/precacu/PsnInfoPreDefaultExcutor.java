@@ -45,13 +45,13 @@ public class PsnInfoPreDefaultExcutor extends AbstractFormulaExecutor {
 
 		if ("1".equals(isSum)) {// 按法人组织汇总 tablename table_Fld
 			groupByTableField(context, tablename, table_Fld, nc.vo.hi.psndoc.PsnJobVO.PK_ORG, "0001Z710000000000ZO4",
-					false); // 0001Z710000000000ZO4=法人组织参照
+					false,date); // 0001Z710000000000ZO4=法人组织参照
 		} else if ("2".equals(isSum)) {// 按人力资源组织汇总
 			groupByTableField(context, tablename, table_Fld, nc.vo.hi.psndoc.PsnJobVO.PK_HRORG, "0001Z01000000001BVPV",
-					false); // 0001Z01000000001BVPV=人力资源组织参照
+					false,date); // 0001Z01000000001BVPV=人力资源组织参照
 		} else if ("3".equals(isSum)) {// 全部汇总
 			groupByTableField(context, tablename, table_Fld, nc.vo.hi.psndoc.PsnJobVO.PK_HRORG, "0001Z01000000001BVPV",
-					true);
+					true,date);
 		} else {
 
 			Object object = context.getInitData();
@@ -66,7 +66,8 @@ public class PsnInfoPreDefaultExcutor extends AbstractFormulaExecutor {
 			// (1) 是取最新记录还是限定日期
 			// (2) 取主职还是兼职
 			String l_datewhere = "";
-
+			String begindate = null;
+			String enddate = null;
 			if (date == null || !isUseDate(tablename)) {
 				// 能力素质子集单独处理
 				// if(CapaVO.getDefaultTableName().equalsIgnoreCase(tablename))
@@ -102,9 +103,17 @@ public class PsnInfoPreDefaultExcutor extends AbstractFormulaExecutor {
 				}
 			} else {
 				// 限定日期，不再取最新记录
-				l_datewhere = " and  (( " + tablename + ".begindate <= '" + date + "' and " + tablename
-						+ ".enddate >= '" + date + "' )" + " or ( " + tablename + ".begindate <= '" + date + "' and ("
-						+ tablename + ".enddate='~' or " + tablename + ".enddate is null " + ") ) ) ";
+				// hepingyang
+				//mod tank 期间转换成日期
+
+				if(date.split("_").length == 2){
+					begindate = date.split("_")[0];
+					enddate = date.split("_")[1];
+				}else{
+					begindate = date;
+					enddate = date;
+				}
+				l_datewhere = getCommonWhereScope(begindate,enddate,tablename);
 			}
 
 			// 兼职记录：conditon 不为空 不是“null”
@@ -138,12 +147,23 @@ public class PsnInfoPreDefaultExcutor extends AbstractFormulaExecutor {
 			// NCZX：NCdp204970905离职后换组织入职取工作记录信息可能取到前一个组织的信息项，没有加任职组织限制，同时信息项为空的记录不能取
 			String sql = "select max(" + table_Fld
 					+ ") from "
-					+ tablename
-					// + " where isnull(" + table_Fld + ",'~')<> '~' and " +
-					// tablename
-					// guoqt 取子集数值型字段非空处理
-					+ " where (" + table_Fld + ") is not null and (" + table_Fld + ")  <>'~' and " + tablename
+					+ tablename;
+
+			//add for scope tank 2019年9月1日00:48:40 ..这代码写的很渣,我知道..我也没时间去改集团架构
+			//如果交集内有不止一条数据,则取开始时间最大的
+			if(date!=null && date.split("_").length == 2){
+				sql += (" left join (" + getMaxDate(tablename, begindate, enddate) + ") maxbegindate "
+						+ " on maxbegindate.pk_psndoc = "+tablename+".pk_psndoc ");
+			}
+
+			// + " where isnull(" + table_Fld + ",'~')<> '~' and " +
+			// tablename
+			// guoqt 取子集数值型字段非空处理
+			sql += " where (" + table_Fld + ") is not null and (" + table_Fld + ")  <>'~' and " + tablename
 					+ ".pk_psndoc = wa_cacu_data.pk_psndoc ";
+			if(date!=null && date.split("_").length == 2){
+				sql += (" and "+tablename + ".begindate = maxbegindate.maxbegindate ");
+			}
 			// guoqt金额不能用<>'~'，会报错
 			if (coloumn.equals("cacu_value")) {
 				sql = sql.replace("and (" + table_Fld + ")  <>'~'", "");
@@ -158,13 +178,15 @@ public class PsnInfoPreDefaultExcutor extends AbstractFormulaExecutor {
 			if (!StringUtils.isBlank(ref_table) && !"null".equals(ref_table)) {
 				sql2 = " select "
 						+ (refcodeORname.equals("name") || refcodeORname.equals("postname") ? SQLHelper
-								.getMultiLangNameColumn(ref_table + "." + refcodeORname) : ref_table + "."
-								+ refcodeORname) + " from  " + ref_table + " where " + ref_table + "." + ref_pk_field
+						.getMultiLangNameColumn(ref_table + "." + refcodeORname) : ref_table + "."
+						+ refcodeORname) + " from  " + ref_table + " where " + ref_table + "." + ref_pk_field
 						+ " = (" + sql + ") ";
 			} else {
 				if (tablename.equalsIgnoreCase("bd_psndoc") && table_Fld.equalsIgnoreCase("name")) {
-					sql2 = "select max(" + SQLHelper.getMultiLangNameColumn(table_Fld) + ") from " + tablename
-							+ " where " + tablename + ".pk_psndoc = wa_cacu_data.pk_psndoc ";
+					sql2 = "select max(" + SQLHelper.getMultiLangNameColumn(table_Fld) + ") from " + tablename;
+
+					sql2+= " where " + tablename + ".pk_psndoc = wa_cacu_data.pk_psndoc ";
+
 				} else {
 					sql2 = sql;
 				}
@@ -178,35 +200,54 @@ public class PsnInfoPreDefaultExcutor extends AbstractFormulaExecutor {
 
 	}
 
+	private String getCommonWhereScope(String begindate,String enddate, String tablename) {
+		//和薪资期间有交集即可
+		String l_datewhere = " and  ( " + tablename + ".begindate <= '" + enddate
+				+ "' and isnull(" + tablename + ".enddate,'9999-12-31') >= '" + begindate + "' )";
+		//健保信息要过滤本人 2019年8月31日22:10:12 tank
+		if("hi_psndoc_headetail".equalsIgnoreCase(tablename)){
+			l_datewhere += " and appellation = '本人' ";
+		}else if("hi_psndoc_glbdef2".equalsIgnoreCase(tablename)){
+			l_datewhere += " and glbdef2 = '本人' ";
+		}
+
+		return l_datewhere+= " and " + tablename + ".dr = 0";
+	}
+
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	private void groupByTableField(WaLoginContext context, String tablename, String table_Fld, String fieldOnPsnJob,
-			String pk_refinfo, boolean isHRTotal) throws DAOException {
+								   String pk_refinfo, boolean isHRTotal,String date) throws DAOException {
 		String code = (String) this.getBaseDao().executeQuery(
 				"select item_code from hr_infoset_item where ref_model_name='" + pk_refinfo
 						+ "' and pk_infoset = (select pk_infoset from hr_infoset where infoset_code ='" + tablename
 						+ "')", new ColumnProcessor());
 		if (!StringUtils.isEmpty(code)) {
+			String begindate = null;
+			String enddate = null;
+			if(date.split("_").length == 2){
+				begindate = date.split("_")[0];
+				enddate = date.split("_")[1];
+			}else{
+				begindate = date;
+				enddate = date;
+			}
 			String strSQL = "SELECT wa_cacu_data.pk_psndoc, SUM(" + table_Fld + ") totalamount";
 			strSQL += " FROM " + tablename + "";
 			strSQL += " INNER JOIN wa_cacu_data ON wa_cacu_data.pk_psndoc = " + tablename + ".pk_psndoc";
-			strSQL += " INNER JOIN wa_data ON wa_data.pk_wa_data = wa_cacu_data.pk_wa_data";
-			strSQL += " INNER JOIN hi_psnjob ON hi_psnjob.pk_psnjob = wa_data.pk_psnjob";
 			strSQL += " WHERE " + tablename + ".pk_psndoc=wa_cacu_data.pk_psndoc";
 			strSQL += " AND wa_cacu_data.pk_wa_class = '" + context.getPk_wa_class() + "'";
 			strSQL += " AND wa_cacu_data.creator = '" + context.getPk_loginUser() + "'";
-			strSQL += " AND '" + context.getWaLoginVO().getPeriodVO().getCstartdate().toString() + "' <= " + tablename
-					+ ".enddate";
-			strSQL += " AND '" + context.getWaLoginVO().getPeriodVO().getCenddate().toString() + "' >= " + tablename
-					+ ".begindate";
+			strSQL += getCommonWhereScope(begindate,enddate,tablename);
 			strSQL += " GROUP BY " + tablename + "." + code + ", wa_cacu_data.pk_psndoc";
 
 			List<Map> results = (List<Map>) getBaseDao().executeQuery(strSQL, new MapListProcessor());
 
-			// 中间表清零 tank 2019年8月30日11:15:39
+
+			//中间表清零 tank 2019年8月30日11:15:39
 			getBaseDao().executeUpdate(
-					"update wa_cacu_data set cacu_value= 0 where pk_wa_class='" + context.getPk_wa_class()
-							+ "' and creator='" + context.getPk_loginUser() + "'");
-			// 中间表清零 end 2019年8月30日11:18:44
+					"update wa_cacu_data set cacu_value= 0 where pk_wa_class='"
+							+ context.getPk_wa_class() + "' and creator='" + context.getPk_loginUser() + "'");
+			//中间表清零 end 2019年8月30日11:18:44
 
 			if (results != null && results.size() > 0) {
 				for (Map result : results) {
@@ -218,6 +259,28 @@ public class PsnInfoPreDefaultExcutor extends AbstractFormulaExecutor {
 				}
 			}
 		}
+	}
+	/**
+	 * 如果有交集,则获取最大的日期的记录
+	 * 如果是健保信息,则要过滤本人
+	 * @param tableName
+	 * @param begindate
+	 * @param endate
+	 * @return
+	 */
+	private String getMaxDate(String tableName,String begindate,String endate) {
+		String sql = "select pk_psndoc,max(begindate) maxbegindate from " +tableName
+				+" where "+tableName+".begindate <= '"+endate+"' "
+				+" and isnull("+tableName+".enddate,'9999-12-31') >= '"+begindate+"' "
+				+" and "+tableName+".dr = 0 ";
+		if("hi_psndoc_glbdef2".equalsIgnoreCase(tableName)){
+			sql+=" and hi_psndoc_glbdef2.glbdef2 = '本人'  ";
+		}else if("hi_psndoc_headetail".equalsIgnoreCase(tableName)){
+			sql+=" and hi_psndoc_headetail.appellation = '本人'  ";
+		}
+
+		sql +=" group by pk_psndoc ";
+		return sql;
 	}
 
 	private boolean isUseDate(String tableid) throws BusinessException {
@@ -244,5 +307,17 @@ public class PsnInfoPreDefaultExcutor extends AbstractFormulaExecutor {
 		}
 		return false;
 	}
+
+
+
+
+
+
+
+
+
+
+
+
 
 }

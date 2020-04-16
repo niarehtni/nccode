@@ -28,6 +28,7 @@ import nc.itf.hi.IPsndocQryService;
 import nc.itf.hi.IPsndocService;
 import nc.itf.hr.frame.IPersistenceRetrieve;
 import nc.itf.uap.IUAPQueryBS;
+import nc.jdbc.framework.processor.ColumnProcessor;
 import nc.jdbc.framework.processor.MapListProcessor;
 import nc.md.MDBaseQueryFacade;
 import nc.md.data.access.DASFacade;
@@ -94,6 +95,7 @@ import nc.vo.hi.psndoc.TrialVO;
 import nc.vo.hi.psndoc.enumeration.TrnseventEnum;
 import nc.vo.hr.psnclrule.PsnclinfosetVO;
 import nc.vo.hr.validator.CommnonValidator;
+import nc.vo.ml.MultiLangUtil;
 import nc.vo.om.job.JobVO;
 import nc.vo.om.joblevelsys.FilterTypeEnum;
 import nc.vo.om.post.PostVO;
@@ -411,9 +413,27 @@ public class PsndocFormEditor extends HrBillFormEditor implements BillCardBefore
 				}
 				// by he
 			} else if ("hi_psndoc_courtdeduction".equals(evt.getTableCode()) && "courtdeductways".equals(evt.getKey())) {
-				setBodyValue(evt.getTableCode(), evt.getRow(), "monthexecutrate", null);
-				setBodyValue(evt.getTableCode(), evt.getRow(), "mindeductcountry", null);
-				setBodyValue(evt.getTableCode(), evt.getRow(), "monthexecutamount", null);
+				if ("courtdeductways".equals(evt.getKey())) {
+					setBodyValue(evt.getTableCode(), evt.getRow(), "monthexecutrate", null);
+					setBodyValue(evt.getTableCode(), evt.getRow(), "mindeductcountry", null);
+					setBodyValue(evt.getTableCode(), evt.getRow(), "monthexecutamount", null);
+				} else if ("minimumlifeways".equals(evt.getKey())) {
+					Object value = getBodyItemValue(evt.getTableCode(), "minimumlifeways", evt.getRow());
+					if (value != null) {
+						setBodyValue(evt.getTableCode(), evt.getRow(), "monthexecutrate", 1);
+					}
+
+				}
+
+			} else if (PsndocDefTableUtil.getPsnLaborTablename().equals(evt.getTableCode())) {
+				if ("begindate".equals(evt.getKey())) {
+					setBodyValue(evt.getTableCode(), evt.getRow(), "glbdef10", UFBoolean.TRUE); // 是否劳保投保
+					setBodyValue(evt.getTableCode(), evt.getRow(), "glbdef11", UFBoolean.TRUE); // 是否劳退投保
+				}
+			} else if (PsndocDefTableUtil.getPsnHealthTablename().equals(evt.getTableCode())) {
+				if ("begindate".equals(evt.getKey())) {
+					setBodyValue(evt.getTableCode(), evt.getRow(), "glbdef14", UFBoolean.TRUE); // 是否投保
+				}
 			}
 
 			getBodyItemValue(evt.getTableCode(), "pk_jobgrade_ID", evt.getRow());
@@ -712,6 +732,33 @@ public class PsndocFormEditor extends HrBillFormEditor implements BillCardBefore
 					// ssx added for Group Insurance on 2017-09-13
 					if (evt.getKey().equals("glbdef4")) { // 投保身份
 						this.getBillCardPanel().getBillModel().setValueAt(null, evt.getRow(), "glbdef5"); // 投保身份编辑后清空投保险种
+						this.getBillCardPanel().getBillModel().setValueAt(null, evt.getRow(), "insurancecompany_ID"); // 投保身份编辑后清空保险公司
+						this.getBillCardPanel().getBillModel().setValueAt(null, evt.getRow(), "insurancecompany");
+					} else if (evt.getKey().equals("glbdef5")) {
+						// 投保险种编辑后，刷新保险公司
+						String pk_grprel = (String) this.getBillCardPanel().getBillModel()
+								.getValueAt(evt.getRow(), "glbdef4_ID");
+						String pk_grpins = (String) this.getBillCardPanel().getBillModel()
+								.getValueAt(evt.getRow(), "glbdef5_ID");
+
+						if (!StringUtils.isEmpty(pk_grpins) && !StringUtils.isEmpty(pk_grprel)) {
+							IUAPQueryBS query = NCLocator.getInstance().lookup(IUAPQueryBS.class);
+							String inscompany = (String) query.executeQuery(
+									"select insurancecompany from twhr_groupinsurancesetting where cgrpinsid = '"
+											+ pk_grpins + "' and cgrpinsrelid = '" + pk_grprel + "'",
+									new ColumnProcessor());
+							String inscompanyname = (String) query.executeQuery(
+									"select name from bd_defdoc where pk_defdoc = '" + inscompany + "'",
+									new ColumnProcessor());
+							this.getBillCardPanel().getBillModel()
+									.setValueAt(inscompany, evt.getRow(), "insurancecompany_ID");
+							this.getBillCardPanel().getBillModel()
+									.setValueAt(inscompanyname, evt.getRow(), "insurancecompany");
+						} else {
+							this.getBillCardPanel().getBillModel()
+									.setValueAt(null, evt.getRow(), "insurancecompany_ID"); // 投保身份编辑后清空保险公司
+							this.getBillCardPanel().getBillModel().setValueAt(null, evt.getRow(), "insurancecompany");
+						}
 					}
 				}
 			} catch (BusinessException e) {
@@ -727,11 +774,21 @@ public class PsndocFormEditor extends HrBillFormEditor implements BillCardBefore
 		// 2019-05-28 started
 		// set residence due date column's state after is foreign edited
 		if (Is_Foreign_Key.equals(evt.getKey())) {
-			getBillCardPanel().getHeadItem(Residence_Due_Date).setNull((Boolean) evt.getValue());
+			// ssx modified on 2019-12-01
+			// 外籍人士自動帶出扣稅核算入境日期為到職日
+			// 居留證到期日不可以必輸，因為入職時居留證還沒有發
+			// getBillCardPanel().getHeadItem(Residence_Due_Date).setNull((Boolean)
+			// evt.getValue());
 			getBillCardPanel().getHeadItem(Residence_Due_Date).setEnabled((Boolean) evt.getValue());
+			getBillCardPanel().getHeadItem("glbdef9").setEnabled((Boolean) evt.getValue());
 			if (!(Boolean) evt.getValue()) {
 				getBillCardPanel().getHeadItem(Residence_Due_Date).setValue(null);
+				getBillCardPanel().getHeadItem("glbdef9").setValue(null);
+			} else {
+				getBillCardPanel().getHeadItem("glbdef9").setValue(
+						getBillCardPanel().getHeadItem("hi_psnorg_joinsysdate").getValueObject());
 			}
+			// end ssx
 			return;
 		}
 		// 2019-05-28 ended
@@ -1347,8 +1404,15 @@ public class PsndocFormEditor extends HrBillFormEditor implements BillCardBefore
 					}
 				}
 				// 最低扣款縣市
-				if ("mindeductcountry".equals(evt.getKey())) {
-					if (!courtdeductways.getValue().toString().equals("3")) {
+				// if ("mindeductcountry".equals(evt.getKey())) {
+				// if (!courtdeductways.getValue().toString().equals("1")
+				// && !courtdeductways.getValue().toString().equals("3")) {
+				// return false;
+				// }
+				// }
+				// 保留最低生活費方式
+				if ("minimumlifeways".equals(evt.getKey())) {
+					if (!courtdeductways.getValue().toString().equals("1")) {
 						return false;
 					}
 				}
@@ -1495,6 +1559,31 @@ public class PsndocFormEditor extends HrBillFormEditor implements BillCardBefore
 							((UIRefPane) item.getComponent())
 									.setWhereString(" pk_defdoc in (select cgrpinsid from twhr_groupinsurancesetting where cgrpinsrelid = '"
 											+ psnType + "') "); // 按投保身份过滤投保险种
+						} else if (evt.getKey().equals("insurancecompany")) {
+							return false; // 不能编辑保险公司
+						} else if (evt.getKey().equals("glbdef1") || evt.getKey().equals("glbdef2")
+								|| evt.getKey().equals("glbdef3")) {
+							BillItem item = (BillItem) evt.getSource();
+							UIRefPane newRef = new UIRefPane();
+							newRef.setRefModel(new TWHIFamilyRefModel());
+							item.setComponent(newRef);
+							((TWHIFamilyRefModel) ((UIRefPane) item.getComponent()).getRefModel())
+									.setPk_psndoc((String) getHeadItemValue("pk_psndoc"));
+							((UIRefPane) item.getComponent()).showModel();
+							if (((UIRefPane) item.getComponent()).getRefModel().getSelectedData() != null) {
+								Vector selData = (Vector) ((UIRefPane) item.getComponent()).getRefModel()
+										.getSelectedData().elementAt(0);
+								// glbdef1: 投保人或眷属姓名
+								getBillCardPanel().getBillModel(evt.getTableCode()).setValueAt(selData.elementAt(0),
+										evt.getRow(), "glbdef1");
+								// glbdef2: 身份证号码
+								getBillCardPanel().getBillModel(evt.getTableCode()).setValueAt(selData.elementAt(2),
+										evt.getRow(), "glbdef2");
+								// glbdef3: 出生日期
+								getBillCardPanel().getBillModel(evt.getTableCode()).setValueAt(selData.elementAt(3),
+										evt.getRow(), "glbdef3");
+							}
+							return false;
 						}
 					}
 
@@ -2150,6 +2239,7 @@ public class PsndocFormEditor extends HrBillFormEditor implements BillCardBefore
 			} catch (BusinessException ex) {
 				throw new BusinessRuntimeException(ex.getMessage(), ex);
 			}
+
 			if ((subVOs != null) && (subVOs.length > 0)) {
 				billModel.clearBodyData();
 				billModel.addLine(subVOs.length);
@@ -2158,7 +2248,18 @@ public class PsndocFormEditor extends HrBillFormEditor implements BillCardBefore
 					billModel.setRowState(i, 0);
 				}
 				billModel.execLoadFormula();
+
+				// ssx added on 2020-02-16
+				// 模板上增加father_serial_name自定義項，接收次職類對應的父職類名稱
+				if (getBillCardPanel().getHeadItem("father_serial_name") != null) {
+					nc.vo.pub.lang.MultiLangText names = (MultiLangText) getBillCardPanel().getBodyValueAt(
+							subVOs.length - 1, "series.father_pk.jobtypename");
+					getBillCardPanel().setHeadItem("father_serial_name",
+							names.getText(MultiLangUtil.getCurrentLangSeq() - 1));
+				}
+				// end
 			}
+
 			getHashSubHaveLoad().add(PsnJobVO.getDefaultTableName());
 		} else {
 			super.handleEvent(evt);
@@ -2376,8 +2477,12 @@ public class PsndocFormEditor extends HrBillFormEditor implements BillCardBefore
 		// 2019-05-28 started
 		// set residence due date column's state when editor change to edit
 		// state
-		getBillCardPanel().getHeadItem(Residence_Due_Date).setNull(
-				(Boolean) getBillCardPanel().getHeadItem(Is_Foreign_Key).getValueObject());
+		// ssx modified on 2019-12-01
+		// 不是所有人的居留證到期日在入職時都能拿到，所以不能變為必輸
+		// getBillCardPanel().getHeadItem(Residence_Due_Date).setNull(
+		// (Boolean)
+		// getBillCardPanel().getHeadItem(Is_Foreign_Key).getValueObject());
+		// ssx end
 		getBillCardPanel().getHeadItem(Residence_Due_Date).setEnabled(
 				(Boolean) getBillCardPanel().getHeadItem(Is_Foreign_Key).getValueObject());
 		// 2019-05-28 end

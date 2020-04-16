@@ -90,19 +90,17 @@ public class DataIOManageServiceImpl implements IDataIOManageService {
 	 *      java.lang.String, java.lang.String)
 	 */
 	@Override
-	public AggHrIntfaceVO[] queryByCondition(LoginContext context,
-			String condition, String strOrderBy) throws BusinessException {
+	public AggHrIntfaceVO[] queryByCondition(LoginContext context, String condition, String strOrderBy)
+			throws BusinessException {
 
-		return getWaifsetDao().queryByCondition((WaLoginContext) context,
-				condition, strOrderBy);
+		return getWaifsetDao().queryByCondition((WaLoginContext) context, condition, strOrderBy);
 
 	}
 
 	@Override
 	public AggHrIntfaceVO update(AggHrIntfaceVO vo) throws BusinessException {
 		if (vo.getParentVO().getAttributeValue("classid") != null) {
-			String sql = "delete from hr_dataintface_b where ifid = '"
-					+ vo.getParentVO().getPrimaryKey() + "'";
+			String sql = "delete from hr_dataintface_b where ifid = '" + vo.getParentVO().getPrimaryKey() + "'";
 			getWaifsetDao().getBaseDao().executeUpdate(sql);
 		}
 		return getServiceTemplate().update(vo, true);
@@ -139,24 +137,19 @@ public class DataIOManageServiceImpl implements IDataIOManageService {
 
 	// MOD {薪资、奖金明细代扣项导入} kevin.nie 2018-01-30 start
 	@Override
-	public <T extends SuperVO> T[] queryDataByConditon(String condition,
-			String[] psnPks, Class<T> classz) throws BusinessException {
+	public <T extends SuperVO> T[] queryDataByConditon(String condition, String[] psnPks, Class<T> classz)
+			throws BusinessException {
 		if (psnPks != null && psnPks.length > 0) {
 			condition += " and pk_psndoc in (select in_pk from ";
-			String tmpTableName = "hr_wadata_import_"
-					+ String.valueOf(new UFDouble(Math.random() * 100000)
-							.intValue());
-			condition += new InSQLCreator().createTempTable(tmpTableName,
-					psnPks);
+			String tmpTableName = "hr_wadata_import_" + String.valueOf(new UFDouble(Math.random() * 100000).intValue());
+			condition += new InSQLCreator().createTempTable(tmpTableName, psnPks);
 			condition += ") ";
 		}
-		return CommonUtils.retrieveByClause(classz, getWaifsetDao()
-				.getBaseDao(), condition);
+		return CommonUtils.retrieveByClause(classz, getWaifsetDao().getBaseDao(), condition);
 	}
 
 	@Override
-	public <T extends SuperVO> T[] insertPayDetail(T[] vos, T[] delVos)
-			throws BusinessException {
+	public <T extends SuperVO> T[] insertPayDetail(T[] vos, T[] delVos) throws BusinessException {
 		if (!ArrayUtils.isEmpty(delVos)) {
 			getWaifsetDao().getBaseDao().deleteVOArray(delVos);
 		}
@@ -171,8 +164,7 @@ public class DataIOManageServiceImpl implements IDataIOManageService {
 	}
 
 	@Override
-	public void importPayDataSD(DataVO[] SDVos, SalaryOthBuckVO[] SODVos)
-			throws BusinessException {
+	public void importPayDataSD(DataVO[] SDVos, SalaryOthBuckVO[] SODVos) throws BusinessException {
 		// 组装薪资明细数据存储逻辑
 		if (ArrayUtils.isEmpty(SDVos)) {
 			return;
@@ -187,8 +179,7 @@ public class DataIOManageServiceImpl implements IDataIOManageService {
 	}
 
 	@Override
-	public void importPayDataBD(DataVO[] BDVos, BonusOthBuckVO[] BODVos)
-			throws BusinessException {
+	public void importPayDataBD(DataVO[] BDVos, BonusOthBuckVO[] BODVos) throws BusinessException {
 		// 组装奖金明细数据存储逻辑
 		if (ArrayUtils.isEmpty(BDVos)) {
 			return;
@@ -203,41 +194,48 @@ public class DataIOManageServiceImpl implements IDataIOManageService {
 	}
 
 	@Override
-	public Map<String, PsndocVO> queryPsnByOrgConditionn(String pk_org,
-			String condition, boolean includeJob) throws BusinessException {
+	public Map<String, PsndocVO> queryPsnByOrgConditionn(String pk_org, String pk_wa_class, String cyear,
+			String cperiod, boolean includeJob) throws BusinessException {
+		String condition = " (pk_psndoc in (select distinct pk_psndoc from hi_psnjob pj inner join (select cstartdate, cenddate from wa_period wp inner join wa_periodscheme ps on wp.pk_periodscheme = ps.pk_periodscheme inner join wa_waclass wc on wc.pk_periodscheme = wp.pk_periodscheme where wp.cyear='"
+				+ cyear
+				+ "' and wp.cperiod='"
+				+ cperiod
+				+ "' and wc.pk_wa_class = '"
+				+ pk_wa_class
+				+ "') tmp on tmp.cstartdate <= nvl(pj.enddate,'9999-12-31') and pj.trnsevent<>4)) ";
+		return queryPsnByOrgConditionn(pk_org, condition, includeJob);
+	}
+
+	@Override
+	public Map<String, PsndocVO> queryPsnByOrgConditionn(String pk_org, String condition, boolean includeJob)
+			throws BusinessException {
 		SqlBuilder where = new SqlBuilder();
 		where.append("pk_org", pk_org);
-		where.append("and pk_psndoc in (select distinct pk_psndoc from hi_psnorg where indocflag='Y') ");
 		if (StringUtils.isNotBlank(condition)) {
 			where.append(" and ");
 			where.append(condition);
+		} else {
+			where.append("and pk_psndoc in (select distinct pk_psndoc from hi_psnorg where indocflag='Y') ");
 		}
-		PsndocVO[] psnVos = CommonUtils.retrieveByClause(PsndocVO.class,
-				where.toString());
+		PsndocVO[] psnVos = CommonUtils.retrieveByClause(PsndocVO.class, where.toString());
 		if (includeJob && !ArrayUtils.isEmpty(psnVos)) {
-			String[] psnPks = StringPiecer.getStrArrayDistinct(psnVos,
-					PsndocVO.PK_PSNDOC);
+			String[] psnPks = StringPiecer.getStrArrayDistinct(psnVos, PsndocVO.PK_PSNDOC);
 			InSQLCreator isc = new InSQLCreator();
-			PsnJobVO[] jobVos = CommonUtils.retrieveByClause(PsnJobVO.class,
-					"ismainjob='Y' and pk_psndoc in (" + isc.getInSQL(psnPks)
-							+ ") ");
+			PsnJobVO[] jobVos = CommonUtils.retrieveByClause(
+					PsnJobVO.class,
+					"ismainjob='Y' and "
+							+ (StringUtils.isNotBlank(condition) ? condition.replaceAll("pk_psndoc", "pk_psnjob")
+									: ("pk_psndoc in (" + isc.getInSQL(psnPks) + ") ")));
 			if (!ArrayUtils.isEmpty(jobVos)) {
-				Map<String, PsnJobVO[]> psnJobArrMap = CommonUtils
-						.group2ArrayByField(PsnJobVO.PK_PSNDOC, jobVos);
+				Map<String, PsnJobVO[]> psnJobArrMap = CommonUtils.group2ArrayByField(PsnJobVO.PK_PSNDOC, jobVos);
 
-				String[] psnorgPks = StringPiecer.getStrArrayDistinct(jobVos,
-						PsnJobVO.PK_PSNORG);
-				PsnOrgVO[] psnorgVos = CommonUtils.queryByPks(PsnOrgVO.class,
-						psnorgPks);
-				Map<String, PsnOrgVO> pkPsnorgVOMap = CommonUtils.toMap(
-						PsnOrgVO.PK_PSNORG, psnorgVos);
+				String[] psnorgPks = StringPiecer.getStrArrayDistinct(jobVos, PsnJobVO.PK_PSNORG);
+				PsnOrgVO[] psnorgVos = CommonUtils.queryByPks(PsnOrgVO.class, psnorgPks);
+				Map<String, PsnOrgVO> pkPsnorgVOMap = CommonUtils.toMap(PsnOrgVO.PK_PSNORG, psnorgVos);
 
-				String[] deptPks = StringPiecer.getStrArrayDistinct(jobVos,
-						PsnJobVO.PK_DEPT);
-				HRDeptVO[] deptVos = CommonUtils.queryByPks(HRDeptVO.class,
-						deptPks);
-				Map<String, HRDeptVO> pkDeptVOMap = CommonUtils.toMap(
-						HRDeptVO.PK_DEPT, deptVos);
+				String[] deptPks = StringPiecer.getStrArrayDistinct(jobVos, PsnJobVO.PK_DEPT);
+				HRDeptVO[] deptVos = CommonUtils.queryByPks(HRDeptVO.class, deptPks);
+				Map<String, HRDeptVO> pkDeptVOMap = CommonUtils.toMap(HRDeptVO.PK_DEPT, deptVos);
 
 				Map<String, PsndocVO> resultMap = new HashMap<String, PsndocVO>();
 				for (PsndocVO psnVO : psnVos) {
@@ -249,8 +247,7 @@ public class DataIOManageServiceImpl implements IDataIOManageService {
 							Arrays.sort(jobs, new Comparator<PsnJobVO>() {
 								@Override
 								public int compare(PsnJobVO o1, PsnJobVO o2) {
-									return o1.getBegindate().compareTo(
-											o2.getBegindate());
+									return o1.getBegindate().compareTo(o2.getBegindate());
 								}
 							});
 						}
@@ -258,17 +255,13 @@ public class DataIOManageServiceImpl implements IDataIOManageService {
 							PsndocVO baseVO = (PsndocVO) psnVO.clone();
 							baseVO.setPsnJobVO(psnjob);
 							if (null != pkPsnorgVOMap) {
-								baseVO.setPsnOrgVO(pkPsnorgVOMap.get(psnjob
-										.getPk_psnorg()));
+								baseVO.setPsnOrgVO(pkPsnorgVOMap.get(psnjob.getPk_psnorg()));
 							}
 
 							String key = psnVO.getCode();
 							if (null != pkDeptVOMap) {
-								HRDeptVO deptVO = pkDeptVOMap.get(psnjob
-										.getPk_dept());
-								if (null != deptVO
-										&& StringUtils.isNotBlank(deptVO
-												.getCode())) {
+								HRDeptVO deptVO = pkDeptVOMap.get(psnjob.getPk_dept());
+								if (null != deptVO && StringUtils.isNotBlank(deptVO.getCode())) {
 									key += deptVO.getCode();
 								}
 							}
@@ -283,16 +276,14 @@ public class DataIOManageServiceImpl implements IDataIOManageService {
 		return CommonUtils.toMap(PsndocVO.CODE, psnVos);
 	}
 
-	private void addOtherToMainVO(DataVO[] vos, DataItfFileVO[] detailVos)
-			throws BusinessException {
+	private void addOtherToMainVO(DataVO[] vos, DataItfFileVO[] detailVos) throws BusinessException {
 		// TODO处理必要字段及加扣明细-奖金
 		String[] orgpks = StringPiecer.getStrArrayDistinct(vos, DataVO.WORKORG);
-		String[] deptpks = StringPiecer.getStrArrayDistinct(vos,
-				DataVO.WORKDEPT);
-		Map<String, String> deptVMap = qryVersionPks(HRDeptVersionVO.class,
-				HRDeptVersionVO.PK_DEPT, deptpks, HRDeptVersionVO.PK_VID);
-		Map<String, String> orgVMap = qryVersionPks(HROrgVersionVO.class,
-				HROrgVersionVO.PK_ORG, orgpks, HROrgVersionVO.PK_VID);
+		String[] deptpks = StringPiecer.getStrArrayDistinct(vos, DataVO.WORKDEPT);
+		Map<String, String> deptVMap = qryVersionPks(HRDeptVersionVO.class, HRDeptVersionVO.PK_DEPT, deptpks,
+				HRDeptVersionVO.PK_VID);
+		Map<String, String> orgVMap = qryVersionPks(HROrgVersionVO.class, HROrgVersionVO.PK_ORG, orgpks,
+				HROrgVersionVO.PK_VID);
 		Map<String, Map<String, DataItfFileVO>> uidCodeVOMap = null;
 		Integer type = null;
 		if (!ArrayUtils.isEmpty(detailVos)) {
@@ -304,8 +295,7 @@ public class DataIOManageServiceImpl implements IDataIOManageService {
 				type = MappingFieldVO.TYPE_BOD;
 			}
 		}
-		Map<String, MappingFieldVO> codeMappVOMap = DataItfFileReader
-				.getMappingByType(type);
+		Map<String, MappingFieldVO> codeMappVOMap = DataItfFileReader.getMappingByType(type);
 		Map<String, DataVO> cyearperidVOMap = new HashMap<String, DataVO>();
 		for (DataVO vo : vos) {
 			// 处理加扣明细
@@ -321,15 +311,12 @@ public class DataIOManageServiceImpl implements IDataIOManageService {
 		dealWithPeriodState(vos[0], cyearperidVOMap);
 	}
 
-	protected void dealWithDetail(DataVO vo,
-			Map<String, Map<String, DataItfFileVO>> uidCodeVOMap,
-			Map<String, MappingFieldVO> codeMappVOMap, Integer type)
-			throws BusinessException {
+	protected void dealWithDetail(DataVO vo, Map<String, Map<String, DataItfFileVO>> uidCodeVOMap,
+			Map<String, MappingFieldVO> codeMappVOMap, Integer type) throws BusinessException {
 		if (MapUtils.isEmpty(uidCodeVOMap)) {
 			return;
 		}
-		String uid = new StringBuilder(vo.getPk_psndoc())
-				.append(vo.getWorkdept()).append(vo.getCyearperiod())
+		String uid = new StringBuilder(vo.getPk_psndoc()).append(vo.getWorkdept()).append(vo.getCyearperiod())
 				.toString();
 		Map<String, DataItfFileVO> codeVOMap = uidCodeVOMap.get(uid);
 		if (MapUtils.isEmpty(codeVOMap) || type == null) {
@@ -337,8 +324,7 @@ public class DataIOManageServiceImpl implements IDataIOManageService {
 		}
 		if (MapUtils.isEmpty(codeMappVOMap)) {
 			// Mapping表(wa_imp_fieldmapping)中没有找到类型[{0}]的薪资项目对应字段信息!
-			throw new BusinessException(ResHelper.getString("6013dataitf_01",
-					"dataitf-01-0041", null,
+			throw new BusinessException(ResHelper.getString("6013dataitf_01", "dataitf-01-0041", null,
 					new String[] { String.valueOf(type) }));
 		}
 		int len = codeVOMap.size();
@@ -352,15 +338,14 @@ public class DataIOManageServiceImpl implements IDataIOManageService {
 			String itemkey = mappVO.getItemkey();
 			DataItfFileVO difVO = codeVOMap.get(code);
 			String vitemkey = difVO.getTotalSum();
-			StringBuilder vRemark = new StringBuilder(StringUtils.isBlank(vo
-					.getVpaycomment()) ? "" : vo.getVpaycomment());
+			StringBuilder vRemark = new StringBuilder(StringUtils.isBlank(vo.getVpaycomment()) ? ""
+					: vo.getVpaycomment());
 			if (StringUtils.isNotBlank(difVO.getRemark())) {
 				vRemark.append(",").append(difVO.getRemark());
 			}
 			if (StringUtils.isNotBlank(itemkey)) {
 				Object obj = vo.getAttributeValue(itemkey);
-				UFDouble ufd = (null == obj ? UFDouble.ZERO_DBL : new UFDouble(
-						String.valueOf(obj)));
+				UFDouble ufd = (null == obj ? UFDouble.ZERO_DBL : new UFDouble(String.valueOf(obj)));
 				ufd = ufd.add(new UFDouble(vitemkey));
 				vitemkey = DataItfConst.DF_NUM.format(ufd.doubleValue());
 				vo.setAttributeValue(itemkey, vitemkey);
@@ -374,8 +359,7 @@ public class DataIOManageServiceImpl implements IDataIOManageService {
 		}
 	}
 
-	protected void setDefaultDate(DataVO vo, Map<String, String> deptVMap,
-			Map<String, String> orgVMap) {
+	protected void setDefaultDate(DataVO vo, Map<String, String> deptVMap, Map<String, String> orgVMap) {
 		vo.setPk_wa_data(null);
 		vo.setAssgid(Integer.valueOf(1));
 		// vo.setAttributeValue("C_11", "postname");
@@ -431,18 +415,15 @@ public class DataIOManageServiceImpl implements IDataIOManageService {
 		vo.setWorkorgvid(orgVMap.get(vo.getWorkorg()));
 	}
 
-	protected <T extends SuperVO> Map<String, String> qryVersionPks(
-			Class<T> classz, String pkFieldName, String[] pks, String vfieldName)
-			throws BusinessException {
+	protected <T extends SuperVO> Map<String, String> qryVersionPks(Class<T> classz, String pkFieldName, String[] pks,
+			String vfieldName) throws BusinessException {
 		Map<String, String> result = new HashMap<String, String>();
 		StringBuilder condition = new StringBuilder();
 		if (!ArrayUtils.isEmpty(pks)) {
 			InSQLCreator isc = new InSQLCreator();
-			condition.append(pkFieldName).append(" in (")
-					.append(isc.getInSQL(pks)).append(") ");
+			condition.append(pkFieldName).append(" in (").append(isc.getInSQL(pks)).append(") ");
 		}
-		T[] ts = CommonUtils.retrieveByClause(classz, getWaifsetDao()
-				.getBaseDao(), condition.toString());
+		T[] ts = CommonUtils.retrieveByClause(classz, getWaifsetDao().getBaseDao(), condition.toString());
 		if (!ArrayUtils.isEmpty(ts)) {
 			for (T t : ts) {
 				String key = (String) t.getAttributeValue(pkFieldName);
@@ -455,12 +436,10 @@ public class DataIOManageServiceImpl implements IDataIOManageService {
 	}
 
 	@Override
-	public Map<Integer, MappingFieldVO[]> qryImpFieldMappingVO(String conditon)
-			throws BusinessException {
-		MappingFieldVO[] mappingVos = CommonUtils.retrieveByClause(
-				MappingFieldVO.class, getWaifsetDao().getBaseDao(), conditon);
-		Map<Integer, MappingFieldVO[]> typeVOMap = CommonUtils
-				.group2ArrayByField(MappingFieldVO.IMPTYPE, mappingVos);
+	public Map<Integer, MappingFieldVO[]> qryImpFieldMappingVO(String conditon) throws BusinessException {
+		MappingFieldVO[] mappingVos = CommonUtils.retrieveByClause(MappingFieldVO.class, getWaifsetDao().getBaseDao(),
+				conditon);
+		Map<Integer, MappingFieldVO[]> typeVOMap = CommonUtils.group2ArrayByField(MappingFieldVO.IMPTYPE, mappingVos);
 		return typeVOMap;
 	}
 
@@ -490,12 +469,11 @@ public class DataIOManageServiceImpl implements IDataIOManageService {
 		pstateVO.setCpaydate(paydate);
 	}
 
-	protected void dealWithPeriodState(DataVO vo,
-			Map<String, DataVO> cyearperidVOMap) throws BusinessException {
+	protected void dealWithPeriodState(DataVO vo, Map<String, DataVO> cyearperidVOMap) throws BusinessException {
 		List<PeriodStateVO> insertStateVOList = new ArrayList<PeriodStateVO>();
 		List<PeriodStateVO> updateStateVOList = new ArrayList<PeriodStateVO>();
-		Map<String, PeriodStateVO> yearmonthStateVOMap = qryDBPeriodState(
-				vo.getPk_group(), vo.getPk_org(), vo.getPk_wa_class());
+		Map<String, PeriodStateVO> yearmonthStateVOMap = qryDBPeriodState(vo.getPk_group(), vo.getPk_org(),
+				vo.getPk_wa_class());
 		if (!MapUtils.isEmpty(cyearperidVOMap)) {
 			Map<String, String> cyearperiodPKMap = qryYearmonthPKMap();
 			for (String yearmonth : cyearperidVOMap.keySet()) {
@@ -514,25 +492,21 @@ public class DataIOManageServiceImpl implements IDataIOManageService {
 			}
 		}
 		if (!insertStateVOList.isEmpty()) {
-			getWaifsetDao().getBaseDao().insertVOArray(
-					insertStateVOList.toArray(new PeriodStateVO[0]));
+			getWaifsetDao().getBaseDao().insertVOArray(insertStateVOList.toArray(new PeriodStateVO[0]));
 		}
 		if (!updateStateVOList.isEmpty()) {
 			getWaifsetDao().getBaseDao().updateVOArray(
 					updateStateVOList.toArray(new PeriodStateVO[0]),
-					new String[] { "accountmark", "caculateflag", "checkflag",
-							"enableflag", "isapproved", "payoffflag",
-							"cpaydate" });
+					new String[] { "accountmark", "caculateflag", "checkflag", "enableflag", "isapproved",
+							"payoffflag", "cpaydate" });
 		}
 	}
 
 	@SuppressWarnings("unchecked")
-	protected Map<String, PeriodStateVO> qryDBPeriodState(String pk_group,
-			String pk_org, String pk_wa_class) throws BusinessException {
-		PeriodVO[] periodVOs = CommonUtils.retrieveByClause(PeriodVO.class,
-				getWaifsetDao().getBaseDao(), null);
-		Map<String, PeriodVO> pkPeriodVOMap = CommonUtils.toMap(
-				PeriodVO.PK_WA_PERIOD, periodVOs);
+	protected Map<String, PeriodStateVO> qryDBPeriodState(String pk_group, String pk_org, String pk_wa_class)
+			throws BusinessException {
+		PeriodVO[] periodVOs = CommonUtils.retrieveByClause(PeriodVO.class, getWaifsetDao().getBaseDao(), null);
+		Map<String, PeriodVO> pkPeriodVOMap = CommonUtils.toMap(PeriodVO.PK_WA_PERIOD, periodVOs);
 
 		Map<String, PeriodStateVO> resultMap = new HashMap<String, PeriodStateVO>();
 		SqlBuilder sql = new SqlBuilder();
@@ -541,20 +515,15 @@ public class DataIOManageServiceImpl implements IDataIOManageService {
 		sql.append("and pk_org", pk_org);
 		sql.append("and pk_wa_class", pk_wa_class);
 
-		List<PeriodStateVO> psvoList = (List<PeriodStateVO>) getWaifsetDao()
-				.getBaseDao().executeQuery(sql.toString(),
-						new BeanListProcessor(PeriodStateVO.class));
-		PeriodStateVO[] pstateVOs = CommonUtils.toArray(PeriodStateVO.class,
-				psvoList);
-		Map<String, PeriodStateVO> periodPKStateVOMap = CommonUtils.toMap(
-				"pk_wa_period", pstateVOs);
+		List<PeriodStateVO> psvoList = (List<PeriodStateVO>) getWaifsetDao().getBaseDao().executeQuery(sql.toString(),
+				new BeanListProcessor(PeriodStateVO.class));
+		PeriodStateVO[] pstateVOs = CommonUtils.toArray(PeriodStateVO.class, psvoList);
+		Map<String, PeriodStateVO> periodPKStateVOMap = CommonUtils.toMap("pk_wa_period", pstateVOs);
 		if (!MapUtils.isEmpty(periodPKStateVOMap)) {
 			for (String key : periodPKStateVOMap.keySet()) {
-				if (!MapUtils.isEmpty(pkPeriodVOMap)
-						&& null != pkPeriodVOMap.get(key)) {
+				if (!MapUtils.isEmpty(pkPeriodVOMap) && null != pkPeriodVOMap.get(key)) {
 					PeriodVO vo = pkPeriodVOMap.get(key);
-					resultMap.put(vo.getCyear() + vo.getCperiod(),
-							periodPKStateVOMap.get(key));
+					resultMap.put(vo.getCyear() + vo.getCperiod(), periodPKStateVOMap.get(key));
 				}
 			}
 		}
@@ -564,24 +533,20 @@ public class DataIOManageServiceImpl implements IDataIOManageService {
 
 	protected Map<String, String> qryYearmonthPKMap() throws BusinessException {
 		Map<String, String> yearmonthPKMap = new HashMap<String, String>();
-		PeriodVO[] periodVOs = CommonUtils.retrieveByClause(PeriodVO.class,
-				getWaifsetDao().getBaseDao(), null);
+		PeriodVO[] periodVOs = CommonUtils.retrieveByClause(PeriodVO.class, getWaifsetDao().getBaseDao(), null);
 		if (!ArrayUtils.isEmpty(periodVOs)) {
 			for (PeriodVO vo : periodVOs) {
-				yearmonthPKMap.put(vo.getCyear() + vo.getCperiod(),
-						vo.getPk_wa_period());
+				yearmonthPKMap.put(vo.getCyear() + vo.getCperiod(), vo.getPk_wa_period());
 			}
 		}
 		return yearmonthPKMap;
 	}
 
-	protected Map<String, Map<String, DataItfFileVO>> transferDetailToMap(
-			DataItfFileVO[] detailVos) {
+	protected Map<String, Map<String, DataItfFileVO>> transferDetailToMap(DataItfFileVO[] detailVos) {
 		// <unionID,<plcode,vo>>
 		Map<String, Map<String, DataItfFileVO>> unionidPlcodeVOMap = new HashMap<String, Map<String, DataItfFileVO>>();
 		for (DataItfFileVO vo : detailVos) {
-			String kStr = new StringBuilder(vo.getPk_psndoc())
-					.append(vo.getPk_dept()).append(vo.getCyearperiod())
+			String kStr = new StringBuilder(vo.getPk_psndoc()).append(vo.getPk_dept()).append(vo.getCyearperiod())
 					.toString();
 			Map<String, DataItfFileVO> codeVOMap = unionidPlcodeVOMap.get(kStr);
 			if (null == codeVOMap) {

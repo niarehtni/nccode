@@ -118,6 +118,7 @@ import nc.vo.pub.lang.UFLiteralDate;
 import nc.vo.pub.lang.UFTime;
 import nc.vo.sm.UserVO;
 import nc.vo.twhr.nhicalc.NhiCalcUtils;
+import nc.vo.twhr.nhicalc.PsndocDefTableUtil;
 import nc.vo.uap.rbac.constant.INCSystemUserConst;
 import nc.vo.uif2.LoginContext;
 import nc.vo.util.AuditInfoUtil;
@@ -182,7 +183,18 @@ public class PsndocDAO extends SimpleDocServiceTemplate {
 			if (objAttrValue == null) {
 				para.addNullParam(Types.NULL);
 			} else {
-				para.addParam(objAttrValue);
+				// 批改調整勞保級距為5000確定後變為15000可能是加密問題 by George 20200306 缺陷Bug
+				// #33607
+				// update 時候少了薪資加密，所以讀取解密時數字錯誤
+
+				// MOD by ssx on 2020-03-25
+				// George考慮欠妥，不能只考慮數字
+				if (needEncrypt(tableName, strFieldCode)) {
+					para.addParam(SalaryEncryptionUtil.encryption(Double.parseDouble(objAttrValue.toString())));
+				} else {
+					para.addParam(objAttrValue.toString());
+				}
+				// end ssx
 			}
 			baseDAOManager.executeUpdate(updateSQL, para);
 
@@ -204,6 +216,37 @@ public class PsndocDAO extends SimpleDocServiceTemplate {
 				ttu.clear();
 			}
 		}
+	}
+
+	private boolean needEncrypt(String tableName, String strFieldCode) throws BusinessException {
+		// 勞保勞退頁簽
+		if (tableName.equals(PsndocDefTableUtil.getPsnLaborTablename())) {
+			for (String fn : NhiCalcUtils.getLaborInsEncryptionAttributes()) {
+				if (strFieldCode.equals(fn)) {
+					return true;
+				}
+			}
+		}
+
+		// 健保頁簽
+		if (tableName.equals(PsndocDefTableUtil.getPsnHealthTablename())) {
+			for (String fn : NhiCalcUtils.getHealthInsEncryptionAttributes()) {
+				if (strFieldCode.equals(fn)) {
+					return true;
+				}
+			}
+		}
+
+		// 團保信息
+		if (tableName.equals(PsndocDefTableUtil.getGroupInsuranceTablename())) {
+			for (String fn : NhiCalcUtils.getGroupInsEncryptionAttributes()) {
+				if (strFieldCode.equals(fn)) {
+					return true;
+				}
+			}
+		}
+
+		return false;
 	}
 
 	public PsndocAggVO[] batchUpdatePsndocMain(SuperVO superVO, String strFieldCode, String[] strPk_psnjob,

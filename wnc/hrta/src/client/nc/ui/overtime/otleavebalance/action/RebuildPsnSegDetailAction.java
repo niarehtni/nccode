@@ -9,12 +9,10 @@ import javax.swing.SwingWorker;
 
 import nc.bs.framework.common.NCLocator;
 import nc.itf.uap.IUAPQueryBS;
-import nc.pubitf.para.SysInitQuery;
 import nc.pubitf.ta.overtime.ISegDetailService;
 import nc.ui.dcm.chnlrplstrct.maintain.action.MessageDialog;
 import nc.ui.hr.caculate.view.BannerTimerDialog;
 import nc.ui.hr.uif2.action.HrAction;
-import nc.ui.overtime.otleavebalance.model.OTLeaveBalanceModeDataManager;
 import nc.ui.overtime.otleavebalance.model.OTLeaveBalanceModel;
 import nc.ui.overtime.otleavebalance.view.OTLeaveBalanceOrgPanel;
 import nc.ui.overtime.otleavebalance.view.PsnListViewPanel;
@@ -23,9 +21,7 @@ import nc.ui.pub.beans.UIRefPane;
 import nc.ui.pub.bill.BillItem;
 import nc.ui.uif2.editor.IBillListPanelView;
 import nc.vo.hi.psndoc.PsndocVO;
-import nc.vo.pub.BusinessException;
 import nc.vo.ta.overtime.OTLeaveBalanceVO;
-import nc.vo.ta.timeitem.LeaveTypeCopyVO;
 
 public class RebuildPsnSegDetailAction extends HrAction {
 
@@ -130,18 +126,25 @@ public class RebuildPsnSegDetailAction extends HrAction {
 	}
 
 	protected boolean isActionEnable() {
-		LeaveTypeCopyVO ltvo = (LeaveTypeCopyVO) ((OTLeaveBalanceModeDataManager) getOrgpanel().getDataManager())
-				.getHierachicalModel().getSelectedData();
-		String pk_leavetypecopy = "";
-		try {
-			pk_leavetypecopy = SysInitQuery.getParaString(getOrgpanel().getRefPane().getRefPK(), "TWHRT08");
-		} catch (BusinessException e) {
-
-		}
-		return getOrgpanel().getRefPane().getValueObj() != null
-				&& (getOrgpanel().getCboYear().getSelectdItemValue() != null || getOrgpanel().getRefBeginDate()
-						.getValueObj() != null && getOrgpanel().getRefEndDate().getValueObj() != null)
-				&& pk_leavetypecopy != null && ltvo != null && pk_leavetypecopy.equals(ltvo.getPk_timeitemcopy());
+		// LeaveTypeCopyVO ltvo = (LeaveTypeCopyVO)
+		// ((OTLeaveBalanceModeDataManager) getOrgpanel().getDataManager())
+		// .getHierachicalModel().getSelectedData();
+		// String pk_leavetypecopy = "";
+		// try {
+		// pk_leavetypecopy =
+		// SysInitQuery.getParaString(getOrgpanel().getRefPane().getRefPK(),
+		// "TWHRT08");
+		// } catch (BusinessException e) {
+		//
+		// }
+		// return getOrgpanel().getRefPane().getValueObj() != null
+		// && (getOrgpanel().getCboYear().getSelectdItemValue() != null ||
+		// getOrgpanel().getRefBeginDate()
+		// .getValueObj() != null && getOrgpanel().getRefEndDate().getValueObj()
+		// != null)
+		// && pk_leavetypecopy != null && ltvo != null &&
+		// pk_leavetypecopy.equals(ltvo.getPk_timeitemcopy());
+		return false;
 	}
 
 	public OTLeaveBalanceOrgPanel getOrgpanel() {

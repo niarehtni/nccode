@@ -222,6 +222,16 @@ public class ReportExportServiceImpl implements IReportExportService {
 		return formatter.getData();
 	}
 
+	public String[] getBankDetailReportText(String pk_org, String offerPeriod, String pk_wa_class)
+			throws BusinessException {
+		DataFormatter formatter = new DataFormatter("FUBON_DTL_FMT_TW_2017");
+		formatter.setPk_org(pk_org);
+		formatter.setiYear(Integer.valueOf(offerPeriod.substring(0, 4)));
+		formatter.setStartPeriod(offerPeriod);
+		formatter.setClassid(pk_wa_class);
+		return formatter.getData();
+	}
+
 	@Override
 	public String getOrgVATNumber(String pk_org) throws BusinessException {
 		String strSQL = "SELECT def.code FROM org_hrorg org inner join bd_defdoc def on org.glbdef30=def.pk_defdoc WHERE org.pk_hrorg='"
@@ -462,6 +472,18 @@ public class ReportExportServiceImpl implements IReportExportService {
 			}
 		}
 		return declaretypepks;
+	}
+
+	@Override
+	public String[] getBankDetailReportText(String pk_org, String offerPeriod, String pk_wa_class, String prefixPsnClass)
+			throws BusinessException {
+		DataFormatter formatter = new DataFormatter("FUBON_DTL_FMT_TW_2017");
+		formatter.setPk_org(pk_org);
+		formatter.setiYear(Integer.valueOf(offerPeriod.substring(0, 4)));
+		formatter.setStartPeriod(offerPeriod);
+		formatter.setClassid(pk_wa_class);
+		formatter.getRefsMap().put("PREFIXPSNCLS", prefixPsnClass);
+		return formatter.getData();
 	}
 
 }

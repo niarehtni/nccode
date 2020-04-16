@@ -75,55 +75,43 @@ import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 
-public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain,
-		ILeaveBalanceQueryMaintain {
+public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain, ILeaveBalanceQueryMaintain {
 
 	private SimpleDocServiceTemplate serviceTemplate;
 
 	public SimpleDocServiceTemplate getServiceTemplate() {
 		if (serviceTemplate == null) {
-			serviceTemplate = new SimpleDocServiceTemplate(
-					IMetaDataIDConst.LEAVEBALANCE);
+			serviceTemplate = new SimpleDocServiceTemplate(IMetaDataIDConst.LEAVEBALANCE);
 		}
 		return serviceTemplate;
 	}
 
 	@Override
-	public LeaveBalanceVO[] calculate(String pk_org, String pk_leavetype,
-			String year, String month, LeaveBalanceVO[] vos)
-			throws BusinessException {
+	public LeaveBalanceVO[] calculate(String pk_org, String pk_leavetype, String year, String month,
+			LeaveBalanceVO[] vos) throws BusinessException {
 		UFDateTime calTime = PubEnv.getServerTime();
 		// 根据计算时间校验期间的合法性
-		UFLiteralDate periodCheckDate = UFLiteralDate.getDate(calTime.getDate()
-				.toString());
+		UFLiteralDate periodCheckDate = UFLiteralDate.getDate(calTime.getDate().toString());
 		// PeriodServiceFacade.checkDateScope(pk_org, periodCheckDate,
 		// periodCheckDate);
 		PeriodServiceFacade.queryByDateWithCheck(pk_org, periodCheckDate);
 		if (ArrayUtils.isEmpty(vos)) {
 			return vos;
 		}
-		LeaveTypeCopyVO typeVO = (LeaveTypeCopyVO) NCLocator
-				.getInstance()
-				.lookup(ITimeItemQueryService.class)
-				.queryCopyTypesByDefPK(pk_org, pk_leavetype,
-						TimeItemVO.LEAVE_TYPE);
+		LeaveTypeCopyVO typeVO = (LeaveTypeCopyVO) NCLocator.getInstance().lookup(ITimeItemQueryService.class)
+				.queryCopyTypesByDefPK(pk_org, pk_leavetype, TimeItemVO.LEAVE_TYPE);
 		// 排除掉无权计算的
 		List<LeaveBalanceVO> canCalList = new ArrayList<LeaveBalanceVO>();
 		String pk_user = InvocationInfoProxy.getInstance().getUserId();
 		String pk_group = InvocationInfoProxy.getInstance().getGroupId();
-		IDataPermissionPubService perimssionService = NCLocator.getInstance()
-				.lookup(IDataPermissionPubService.class);
-		Map<String, UFBoolean> perimssionMap = perimssionService
-				.isUserhasPermissionByMetaDataOperation("60170psndoc",
-						StringPiecer.getStrArrayDistinct(vos,
-								LeaveBalanceVO.PK_TBM_PSNDOC),
-						"CalcLeaveBalance", pk_group, pk_user);
+		IDataPermissionPubService perimssionService = NCLocator.getInstance().lookup(IDataPermissionPubService.class);
+		Map<String, UFBoolean> perimssionMap = perimssionService.isUserhasPermissionByMetaDataOperation("60170psndoc",
+				StringPiecer.getStrArrayDistinct(vos, LeaveBalanceVO.PK_TBM_PSNDOC), "CalcLeaveBalance", pk_group,
+				pk_user);
 		for (LeaveBalanceVO vo : vos) {
 			// 没有计算权限的，刨除掉
-			if (perimssionMap != null
-					&& perimssionMap.get(vo.toTBMPsndocVO().getPrimaryKey()) != null
-					&& !perimssionMap.get(vo.toTBMPsndocVO().getPrimaryKey())
-							.booleanValue())
+			if (perimssionMap != null && perimssionMap.get(vo.toTBMPsndocVO().getPrimaryKey()) != null
+					&& !perimssionMap.get(vo.toTBMPsndocVO().getPrimaryKey()).booleanValue())
 				continue;
 			canCalList.add(vo);
 		}
@@ -135,38 +123,31 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain,
 			i++;
 			oncecal.add(vo);
 			if (i > 200) {
-				calculate(pk_org, typeVO, year, month,
-						oncecal.toArray(new LeaveBalanceVO[0]), calTime);
+				calculate(pk_org, typeVO, year, month, oncecal.toArray(new LeaveBalanceVO[0]), calTime);
 				i = 0;
 				oncecal.clear();
 			}
 		}
-		calculate(pk_org, typeVO, year, month,
-				oncecal.toArray(new LeaveBalanceVO[0]), calTime);
+		calculate(pk_org, typeVO, year, month, oncecal.toArray(new LeaveBalanceVO[0]), calTime);
 		LeaveBalanceVO[] retvos = setDefaultTimeitemCopy(vos);
 		// 业务日志
 		TaBusilogUtil.writeLeaveBalanceCalculateBusiLog(retvos);
 		return retvos;
 	}
 
-	protected UFLiteralDate getHireStartDate(String pk_psnorg)
-			throws BusinessException {
-		PsnOrgVO psnOrgVO = (PsnOrgVO) new BaseDAO().retrieveByPK(
-				PsnOrgVO.class, pk_psnorg);
+	protected UFLiteralDate getHireStartDate(String pk_psnorg) throws BusinessException {
+		PsnOrgVO psnOrgVO = (PsnOrgVO) new BaseDAO().retrieveByPK(PsnOrgVO.class, pk_psnorg);
 		return getHireStartDate(psnOrgVO);
 	}
 
-	protected UFLiteralDate getHireStartDate(PsnOrgVO psnOrgVO)
-			throws BusinessException {
+	protected UFLiteralDate getHireStartDate(PsnOrgVO psnOrgVO) throws BusinessException {
 		// ssx added on 2018-03-16
 		// for changes of start date of company age
 		// 是否啟用年資起算日
-		UFBoolean refEnableWorkAgeFunc = SysInitQuery.getParaBoolean(
-				psnOrgVO.getPk_hrorg(), "TWHR10");
+		UFBoolean refEnableWorkAgeFunc = SysInitQuery.getParaBoolean(psnOrgVO.getPk_hrorg(), "TWHR10");
 
 		if (refEnableWorkAgeFunc != null && refEnableWorkAgeFunc.booleanValue()) {
-			UFLiteralDate beginDate = (UFLiteralDate) psnOrgVO
-					.getAttributeValue("orgglbdef3");
+			UFLiteralDate beginDate = (UFLiteralDate) psnOrgVO.getAttributeValue("orgglbdef3");
 
 			if (beginDate != null) {
 				return beginDate;
@@ -181,27 +162,23 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain,
 		if (beginDate != null) {
 			return beginDate;
 		}
-		return UFLiteralDate.getDate(psnOrgVO.getCreationtime().toStdString()
-				.substring(0, 10));
+		return UFLiteralDate.getDate(psnOrgVO.getCreationtime().toStdString().substring(0, 10));
 	}
 
 	protected UFLiteralDate getHireDate(String pk_psnorg) throws DAOException {
-		PsnOrgVO psnOrgVO = (PsnOrgVO) new BaseDAO().retrieveByPK(
-				PsnOrgVO.class, pk_psnorg);
+		PsnOrgVO psnOrgVO = (PsnOrgVO) new BaseDAO().retrieveByPK(PsnOrgVO.class, pk_psnorg);
 		return getHireDate(psnOrgVO);
 	}
 
-	protected LeaveBalanceVO[] calculate(String pk_org, LeaveTypeCopyVO typeVO,
-			String year, String month, LeaveBalanceVO[] vos, UFDateTime calTime)
-			throws BusinessException {
+	protected LeaveBalanceVO[] calculate(String pk_org, LeaveTypeCopyVO typeVO, String year, String month,
+			LeaveBalanceVO[] vos, UFDateTime calTime) throws BusinessException {
 		return calculate(pk_org, typeVO, year, month, vos, calTime, true);
 	}
 
-	protected LeaveBalanceVO calculate(String pk_org, LeaveTypeCopyVO typeVO,
-			LeaveBalanceVO vo, UFDateTime calTime, boolean needEnsure)
-			throws BusinessException {
-		return calculate(pk_org, typeVO, vo.getCuryear(), vo.getCurmonth(),
-				new LeaveBalanceVO[] { vo }, calTime, needEnsure)[0];
+	protected LeaveBalanceVO calculate(String pk_org, LeaveTypeCopyVO typeVO, LeaveBalanceVO vo, UFDateTime calTime,
+			boolean needEnsure) throws BusinessException {
+		return calculate(pk_org, typeVO, vo.getCuryear(), vo.getCurmonth(), new LeaveBalanceVO[] { vo }, calTime,
+				needEnsure)[0];
 	}
 
 	/**
@@ -216,14 +193,12 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain,
 	 * @return
 	 * @throws BusinessException
 	 */
-	protected LeaveBalanceVO[] calculate(String pk_org, LeaveTypeCopyVO typeVO,
-			String year, String month, LeaveBalanceVO[] vos,
-			UFDateTime calTime, boolean needEnsure) throws BusinessException {
+	protected LeaveBalanceVO[] calculate(String pk_org, LeaveTypeCopyVO typeVO, String year, String month,
+			LeaveBalanceVO[] vos, UFDateTime calTime, boolean needEnsure) throws BusinessException {
 		if (ArrayUtils.isEmpty(vos)) {
 			return vos;
 		}
-		if (typeVO.getIslactation() != null
-				&& typeVO.getIslactation().booleanValue()) {// 如果是哺乳假，则不需要计算
+		if (typeVO.getIslactation() != null && typeVO.getIslactation().booleanValue()) {// 如果是哺乳假，则不需要计算
 			return vos;
 			// throw new
 			// BusinessException("lactation holiday can not be computed!");
@@ -233,22 +208,19 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain,
 		String[] lockables = new String[vos.length];
 		// 将此HR组织内，这些人的这个休假类别锁住
 		for (int i = 0; i < vos.length; i++) {
-			lockables[i] = "leavebalance" + pk_org + typeVO.getPk_timeitem()
-					+ vos[i].getPk_psnorg();
+			lockables[i] = "leavebalance" + pk_org + typeVO.getPk_timeitem() + vos[i].getPk_psnorg();
 		}
 		PKLock lock = PKLock.getInstance();
 
 		try {
 			// modify xw 审批时总报数据被锁住，未查找到此原因，故改为只有一条数据时不加锁 20171205
 
-			boolean acquired = vos.length == 1 ? true : lock.acquireBatchLock(
-					lockables, PubEnv.getPk_user(), null);
+			boolean acquired = vos.length == 1 ? true : lock.acquireBatchLock(lockables, PubEnv.getPk_user(), null);
 			// boolean acquired = lock.acquireBatchLock(lockables,
 			// PubEnv.getPk_user(), null);
 
 			if (!acquired)
-				throw new BusinessException(ResHelper.getString("6017leave",
-						"06017leave0253")
+				throw new BusinessException(ResHelper.getString("6017leave", "06017leave0253")
 				/* @res "数据正被他人修改或他人正在进行假期计算，请稍候再试!" */);
 			LeaveBalanceDAO balanceDAO = new LeaveBalanceDAO();
 			LeaveBalanceVO[] filteredVOs = null;
@@ -261,8 +233,7 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain,
 			// PeriodVO periodVO =
 			// NCLocator.getInstance().lookup(IPeriodQueryService.class).queryByYearMonth(pk_org,
 			// year, month);
-			String[] pks = SQLHelper.getStrArray(filteredVOs,
-					LeaveBalanceVO.PK_LEAVEBALANCE);
+			String[] pks = SQLHelper.getStrArray(filteredVOs, LeaveBalanceVO.PK_LEAVEBALANCE);
 			// InSQLCreator isc = null;
 			UFLiteralDate periodBeginDate = null;// 期间开始日和期间结束日，对于按年、期间结算的有效，对于按入职日结算的无效
 			UFLiteralDate periodEndDate = null;
@@ -274,21 +245,16 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain,
 				for (LeaveBalanceVO vo : vos) {
 					vo.setPeriodbegindate(vo.getHirebegindate());
 					vo.setPeriodenddate(vo.getHireenddate());
-					vo.setPeriodextendenddate(typeVO.getExtendDaysCount() == 0 ? vo
-							.getHireenddate() : vo.getHireenddate()
-							.getDateAfter(typeVO.getExtendDaysCount()));
+					vo.setPeriodextendenddate(typeVO.getExtendDaysCount() == 0 ? vo.getHireenddate() : vo
+							.getHireenddate().getDateAfter(typeVO.getExtendDaysCount()));
 				}
 			} else {
-				UFLiteralDate[] periodBeginEndDates = queryPeriodBeginEndDate(
-						pk_org, typeVO, year, month);
-				if (periodBeginEndDates != null
-						&& periodBeginEndDates.length == 2) {
+				UFLiteralDate[] periodBeginEndDates = queryPeriodBeginEndDate(pk_org, typeVO, year, month);
+				if (periodBeginEndDates != null && periodBeginEndDates.length == 2) {
 					periodBeginDate = periodBeginEndDates[0];
 					periodEndDate = periodBeginEndDates[1];
-					UFLiteralDate periodExtendDate = typeVO
-							.getExtendDaysCount() == 0 ? periodEndDate
-							: periodEndDate.getDateAfter(typeVO
-									.getExtendDaysCount());
+					UFLiteralDate periodExtendDate = typeVO.getExtendDaysCount() == 0 ? periodEndDate : periodEndDate
+							.getDateAfter(typeVO.getExtendDaysCount());
 					for (LeaveBalanceVO vo : vos) {
 						vo.setPeriodbegindate(periodBeginDate);
 						vo.setPeriodenddate(periodEndDate);
@@ -300,24 +266,56 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain,
 				return vos;
 			InSQLCreator isc = new InSQLCreator();
 			try {
-				String inSQL = isc.getInSQL(pks);
-				// 如果是否加班转调休，则需要计算享有和实际享有（加班转调休的享有和实际享有都是在转调休、反转调休时生成）
-				if (!typeVO.getTimeitemcode().equals(
-						TimeItemCopyVO.OVERTIMETOLEAVETYPE))
-					calCurRealDayOrHour(pk_org, typeVO, year, month,
-							periodBeginDate, periodEndDate, filteredVOs, inSQL,
-							calTime);
-				else
-					balanceDAO.syncFromDB4DataExists(filteredVOs);// 如果是加班转调休，则享有和实际享有也要从数据库中同步一下，防止后台和界面不一致
-				calYiRestFreezeDayOrHour(pk_org, typeVO, year, month,
-						periodBeginDate, periodEndDate, filteredVOs, inSQL,
-						calTime);
+				// ssx added on 2019-10-23
+				// 分組計算解決公式效率問題
+				List<String> items = new ArrayList<String>();
+				List<List<String>> groups = new ArrayList<List<String>>();
+				int i = 1;
+				for (String pk : pks) {
+					if (i < 100) {
+						items.add(pk);
+					} else {
+						items.add(pk);
+						groups.add(items);
+						items = new ArrayList<String>();
+						i = 0;
+					}
+					i++;
+				}
+
+				if (i > 1) {
+					groups.add(items);
+				}
+				i = 1;
+				if (groups.size() > 0) {
+					for (List<String> groupItems : groups) {
+						long starttime = System.currentTimeMillis();
+						String inSQL = isc.getInSQL(groupItems.toArray(new String[0]));
+						List<LeaveBalanceVO> groupVOs = new ArrayList<LeaveBalanceVO>();
+						for (LeaveBalanceVO vo : filteredVOs) {
+							if (groupItems.contains(vo.getPk_leavebalance())) {
+								groupVOs.add(vo);
+							}
+						}
+						// 如果是否加班转调休，则需要计算享有和实际享有（加班转调休的享有和实际享有都是在转调休、反转调休时生成）
+						if (!typeVO.getTimeitemcode().equals(TimeItemCopyVO.OVERTIMETOLEAVETYPE))
+							calCurRealDayOrHour(pk_org, typeVO, year, month, periodBeginDate, periodEndDate,
+									groupVOs.toArray(new LeaveBalanceVO[0]), inSQL, calTime);
+						else
+							balanceDAO.syncFromDB4DataExists(filteredVOs);// 如果是加班转调休，则享有和实际享有也要从数据库中同步一下，防止后台和界面不一致
+						calYiRestFreezeDayOrHour(pk_org, typeVO, year, month, periodBeginDate, periodEndDate,
+								groupVOs.toArray(new LeaveBalanceVO[0]), inSQL, calTime);
+
+						long endttime = System.currentTimeMillis();
+						Logger.error("---------LEAVEBALANCE-CACU-GROUP-[" + String.valueOf(i++) + "]-["
+								+ String.valueOf((endttime - starttime) / 1000) + "]--------");
+					}
+				}
+				// end
 
 				// 容错处理，因为一些原因导致休假计算数据中的hirebegindate和hireenddate为空，此处补齐
-				if (LeaveTypeCopyVO.LEAVESETPERIOD_DATE == typeVO
-						.getLeavesetperiod().intValue()) {
-					new BaseDAO().updateVOArray(filteredVOs, new String[] {
-							LeaveBalanceVO.HIREBEGINDATE,
+				if (LeaveTypeCopyVO.LEAVESETPERIOD_DATE == typeVO.getLeavesetperiod().intValue()) {
+					new BaseDAO().updateVOArray(filteredVOs, new String[] { LeaveBalanceVO.HIREBEGINDATE,
 							LeaveBalanceVO.HIREENDDATE });
 				}
 			} finally {
@@ -344,25 +342,19 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain,
 			if (!vo.isSettlement())
 				retList.add(vo);
 		}
-		return retList.size() == 0 ? null : retList
-				.toArray(new LeaveBalanceVO[0]);
+		return retList.size() == 0 ? null : retList.toArray(new LeaveBalanceVO[0]);
 	}
 
 	@Override
-	public LeaveBalanceVO[] save(LoginContext context, String pk_leavetype,
-			String year, String month, LeaveBalanceVO[] vos)
-			throws BusinessException {
+	public LeaveBalanceVO[] save(LoginContext context, String pk_leavetype, String year, String month,
+			LeaveBalanceVO[] vos) throws BusinessException {
 		if (ArrayUtils.isEmpty(vos)) {
 			return vos;
 		}
-		LeaveBalanceVO[] oldvos = getServiceTemplate().queryByPks(
-				LeaveBalanceVO.class,
+		LeaveBalanceVO[] oldvos = getServiceTemplate().queryByPks(LeaveBalanceVO.class,
 				StringPiecer.getStrArray(vos, LeaveBalanceVO.PK_LEAVEBALANCE));
-		LeaveTypeCopyVO typeVO = (LeaveTypeCopyVO) NCLocator
-				.getInstance()
-				.lookup(ITimeItemQueryService.class)
-				.queryCopyTypesByDefPK(context.getPk_org(), pk_leavetype,
-						TimeItemCopyVO.LEAVE_TYPE);
+		LeaveTypeCopyVO typeVO = (LeaveTypeCopyVO) NCLocator.getInstance().lookup(ITimeItemQueryService.class)
+				.queryCopyTypesByDefPK(context.getPk_org(), pk_leavetype, TimeItemCopyVO.LEAVE_TYPE);
 		// int leavesetperiod = typeVO.getLeavesetperiod().intValue();
 		// boolean isYear =
 		// leavesetperiod==LeaveTypeCopyVO.LEAVESETPERIOD_YEAR;//是否按年计算
@@ -370,8 +362,7 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain,
 		for (int i = 0; vos != null && i < vos.length; i++) {
 			vos[i].setPk_timeitem(pk_leavetype);
 			vos[i].setCuryear(year);
-			if (TimeItemCopyVO.LEAVESETPERIOD_MONTH == typeVO
-					.getLeavesetperiod().intValue()) {
+			if (TimeItemCopyVO.LEAVESETPERIOD_MONTH == typeVO.getLeavesetperiod().intValue()) {
 				vos[i].setCurmonth(month);
 			} else {
 				vos[i].setCurmonth(null);
@@ -394,8 +385,7 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain,
 			if (vos[i].getFreezedayorhour() == null)
 				vos[i].setFreezedayorhour(UFDouble.ZERO_DBL);
 
-			if (vos[i].getPk_leavebalance() == null
-					|| vos[i].getPk_leavebalance().equals("")) {
+			if (vos[i].getPk_leavebalance() == null || vos[i].getPk_leavebalance().equals("")) {
 				getServiceTemplate().insert(vos[i]);
 			} else {
 				getServiceTemplate().update(vos[i], true);
@@ -419,26 +409,21 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain,
 	 * @return
 	 * @throws BusinessException
 	 */
-	private LeaveFormulaCalParam createFormulaPara(String pk_org,
-			LeaveTypeCopyVO typeVO, String year, String month,
-			UFLiteralDate calDate, UFDateTime calculateTime)
-			throws BusinessException {
+	private LeaveFormulaCalParam createFormulaPara(String pk_org, LeaveTypeCopyVO typeVO, String year, String month,
+			UFLiteralDate calDate, UFDateTime calculateTime) throws BusinessException {
 		LeaveFormulaCalParam para = new LeaveFormulaCalParam();
 		para.setTypeVO(typeVO);
 		para.setCalDate(calDate);
 		para.setCalTime(calculateTime);
 		PeriodVO periodVO = PeriodServiceFacade.queryByDate(pk_org, calDate);// 计算日所属考勤期间
 		para.setCalDateBelongToPeriod(periodVO);
-		PeriodVO previousPeriodVO = PeriodServiceFacade.queryPreviousPeriod(
-				pk_org, calDate);// 计算日所属考勤的上一个考勤期间
+		PeriodVO previousPeriodVO = PeriodServiceFacade.queryPreviousPeriod(pk_org, calDate);// 计算日所属考勤的上一个考勤期间
 		para.setPreviousCalDateBelongToPeriod(previousPeriodVO);
 		int settlePeriod = typeVO.getLeavesetperiod().intValue();
 		if (settlePeriod == TimeItemCopyVO.LEAVESETPERIOD_MONTH) {// 如果是按期间结算，则要查出year,month对应的期间
-			PeriodVO calPeriodVO = PeriodServiceFacade.queryByYearMonth(pk_org,
-					year, month);
+			PeriodVO calPeriodVO = PeriodServiceFacade.queryByYearMonth(pk_org, year, month);
 			para.setCalPeriod(calPeriodVO);
-			PeriodVO previousCalPeriodVO = PeriodServiceFacade
-					.queryPreviousPeriod(pk_org, year, month);
+			PeriodVO previousCalPeriodVO = PeriodServiceFacade.queryPreviousPeriod(pk_org, year, month);
 			para.setPreviousCalPeriod(previousCalPeriodVO);
 		}
 		// 查出year对应的所有期间
@@ -479,14 +464,12 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain,
 	 * @param calculateTime
 	 * @throws BusinessException
 	 */
-	protected void calCurRealDayOrHour(String pk_org, LeaveTypeCopyVO typeVO,
-			String year, String month, UFLiteralDate periodBeginDate,
-			UFLiteralDate periodEndDate, LeaveBalanceVO[] vos, String inSQL,
+	protected void calCurRealDayOrHour(String pk_org, LeaveTypeCopyVO typeVO, String year, String month,
+			UFLiteralDate periodBeginDate, UFLiteralDate periodEndDate, LeaveBalanceVO[] vos, String inSQL,
 			UFDateTime calculateTime) throws BusinessException {
 		InputStream is = null;
 		try {
-			String where = " where " + LeaveBalanceVO.PK_LEAVEBALANCE + " in("
-					+ inSQL + ")";
+			String where = " where " + LeaveBalanceVO.PK_LEAVEBALANCE + " in(" + inSQL + ")";
 			String formula = CommonUtils.toStringObject(typeVO.getFormula());
 			// 2012.05.16，与需求讨论后确定，如果公式没有任何内容，则不计算享有、当前享有，以用户在假期计算处填写的数据为准
 			boolean isBlank = StringUtils.isBlank(formula);
@@ -500,14 +483,11 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain,
 
 			}
 			String parsedFormula = null;
-			boolean isZero = isDecimal
-					&& Double.parseDouble(formula.trim()) == 0.0;
+			boolean isZero = isDecimal && Double.parseDouble(formula.trim()) == 0.0;
 			// 计算日期，需要将计算时间与HR组织的时区进行比对
-			TimeRuleVO timeRuleVO = NCLocator.getInstance()
-					.lookup(ITimeRuleQueryService.class).queryByOrg(pk_org);
+			TimeRuleVO timeRuleVO = NCLocator.getInstance().lookup(ITimeRuleQueryService.class).queryByOrg(pk_org);
 			TimeZone timeZone = timeRuleVO.getTimeZone();
-			UFLiteralDate calDate = UFLiteralDate.getDate(calculateTime
-					.toStdString(timeZone).substring(0, 10));
+			UFLiteralDate calDate = UFLiteralDate.getDate(calculateTime.toStdString(timeZone).substring(0, 10));
 			// 如果计算时间还没到期间第一天，则设置为期间第一天，否则没法提前请假
 			if (periodBeginDate != null && calDate.before(periodBeginDate))
 				calDate = periodBeginDate;
@@ -520,20 +500,16 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain,
 				is = ParaHelper.class.getResource(parserFilePath).openStream();
 				IFormulaParser parser = new XMLFormulaParser(is);
 				// 准备公式计算的参数，例如计算日/时间/期间/上期/当前年度/上一年度等信息
-				LeaveFormulaCalParam param = createFormulaPara(pk_org, typeVO,
-						year, month, calDate, calculateTime);
+				LeaveFormulaCalParam param = createFormulaPara(pk_org, typeVO, year, month, calDate, calculateTime);
 				// ssx added on 2017-11-24
 				// 標準產品未處理按入職日期結算、按年計算的計算日期
 				// 計算日期大於年度入職年度結束日期，即應處理為入職年度結束日期
 				// 如果小於年度入職年度結束日期，即為系統日期
-				if (typeVO.getLeavesetperiod().equals(
-						LeaveTypeCopyVO.LEAVESETPERIOD_DATE) // 結算週期：按入職日期結算
-						&& typeVO.getLeavescale().equals(
-								LeaveTypeCopyVO.LEAVESCALE_YEAR // 假期計算方式：按年計算
+				if (typeVO.getLeavesetperiod().equals(LeaveTypeCopyVO.LEAVESETPERIOD_DATE) // 結算週期：按入職日期結算
+						&& typeVO.getLeavescale().equals(LeaveTypeCopyVO.LEAVESCALE_YEAR // 假期計算方式：按年計算
 								)) {
 					formula = formula
-							.replace(
-									"CALCULATIONINFO.CALCULATIONDATE",
+							.replace("CALCULATIONINFO.CALCULATIONDATE",
 									"(case when CALCULATIONINFO.CALCULATIONDATE > hireenddate then hireenddate else CALCULATIONINFO.CALCULATIONDATE end)");
 				}
 				// end
@@ -541,24 +517,18 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain,
 			}
 			BaseDAO dao = new BaseDAO();
 			if (dao.getDBType() == DBUtil.SQLSERVER) {
-				if (parsedFormula != null
-						&& parsedFormula.toLowerCase().contains("convert")) {
+				if (parsedFormula != null && parsedFormula.toLowerCase().contains("convert")) {
 
-					parsedFormula = parsedFormula.replaceAll(
-							"convert\\(NUMBER", "convert\\(int");
-					parsedFormula = parsedFormula.replaceAll(
-							"convert\\( NUMBER", "convert\\(int");
-					parsedFormula = parsedFormula.replaceAll(
-							"convert\\(number", "convert\\(int");
-					parsedFormula = parsedFormula.replaceAll(
-							"convert\\( number", "convert\\(int");
+					parsedFormula = parsedFormula.replaceAll("convert\\(NUMBER", "convert\\(int");
+					parsedFormula = parsedFormula.replaceAll("convert\\( NUMBER", "convert\\(int");
+					parsedFormula = parsedFormula.replaceAll("convert\\(number", "convert\\(int");
+					parsedFormula = parsedFormula.replaceAll("convert\\( number", "convert\\(int");
 				}
 
 			}
 			// 如果是按期间结算，或者是“按年/入职日结算 and 按年计算”，则当前享有=享有；否则需要按照当前月份折算当前实际享有
-			String updateSQL = "update " + LeaveBalanceVO.getDefaultTableName()
-					+ " set " + LeaveBalanceVO.CURDAYORHOUR + "= isnull("
-					+ parsedFormula + ",0)";
+			String updateSQL = "update " + LeaveBalanceVO.getDefaultTableName() + " set " + LeaveBalanceVO.CURDAYORHOUR
+					+ "= isnull(" + parsedFormula + ",0)";
 			if (isZero)
 				updateSQL += "," + LeaveBalanceVO.REALDAYORHOUR + "=0.0 ";
 			updateSQL += where;
@@ -583,18 +553,16 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain,
 				return;
 			}
 			if (typeVO.isRealEqualsCur() && !isZero) {
-				String updateSQL2 = "update "
-						+ LeaveBalanceVO.getDefaultTableName() + " set "
-						+ LeaveBalanceVO.REALDAYORHOUR + "="
-						+ LeaveBalanceVO.CURDAYORHOUR + where;
+				String updateSQL2 = "update " + LeaveBalanceVO.getDefaultTableName() + " set "
+						+ LeaveBalanceVO.REALDAYORHOUR + "=" + LeaveBalanceVO.CURDAYORHOUR + where;
 				dao.executeUpdate(updateSQL2);
 				balanceDAO.syncFromDB4DataExists(vos);
 				return;
 			}
 			// 代码走到这里，说明享有!=0，且需要按月来折算当前实际享有
 			balanceDAO.syncFromDB4DataExists(vos);
-			calRealDayORHour(pk_org, typeVO, year, month, periodBeginDate,
-					periodEndDate, vos, inSQL, calculateTime, calDate);
+			calRealDayORHour(pk_org, typeVO, year, month, periodBeginDate, periodEndDate, vos, inSQL, calculateTime,
+					calDate);
 		} catch (IOException e) {
 			Logger.error(e.getMessage(), e);
 			throw new BusinessException(e.getMessage(), e);
@@ -621,20 +589,16 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain,
 	 * @param vos
 	 * @param calculateTime
 	 */
-	protected void calRealDayORHour(String pk_org, LeaveTypeCopyVO typeVO,
-			String year, String month, UFLiteralDate periodBeginDate,
-			UFLiteralDate periodEndDate, LeaveBalanceVO[] vos, String pkInSQL,
-			UFDateTime calculateTime, UFLiteralDate calculateDate)
-			throws BusinessException {
+	protected void calRealDayORHour(String pk_org, LeaveTypeCopyVO typeVO, String year, String month,
+			UFLiteralDate periodBeginDate, UFLiteralDate periodEndDate, LeaveBalanceVO[] vos, String pkInSQL,
+			UFDateTime calculateTime, UFLiteralDate calculateDate) throws BusinessException {
 		// 如果是按年结算，且计算日还未到期间第一天，则当前实际享有肯定是0
 		int setPeriod = typeVO.getLeavesetperiod();
 		BaseDAO dao = new BaseDAO();
-		if (setPeriod == LeaveTypeCopyVO.LEAVESETPERIOD_YEAR
-				&& periodBeginDate != null
+		if (setPeriod == LeaveTypeCopyVO.LEAVESETPERIOD_YEAR && periodBeginDate != null
 				&& calculateDate.before(periodBeginDate)) {
-			String updateSQL = "update " + LeaveBalanceVO.getDefaultTableName()
-					+ " set " + LeaveBalanceVO.REALDAYORHOUR + "=0.0"
-					+ " where " + LeaveBalanceVO.PK_LEAVEBALANCE + " in ("
+			String updateSQL = "update " + LeaveBalanceVO.getDefaultTableName() + " set "
+					+ LeaveBalanceVO.REALDAYORHOUR + "=0.0" + " where " + LeaveBalanceVO.PK_LEAVEBALANCE + " in ("
 					+ pkInSQL + ")";
 			dao.executeUpdate(updateSQL);
 			LeaveBalanceDAO balanceDAO = new LeaveBalanceDAO();
@@ -643,14 +607,12 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain,
 		}
 		if (setPeriod == LeaveTypeCopyVO.LEAVESETPERIOD_YEAR) {
 			Map<String, UFLiteralDate> hireDateMap = queryHireDate(pk_org, vos);
-			calRealDayORHour4YearPeriod(pk_org, typeVO, periodBeginDate,
-					periodEndDate, vos, pkInSQL, calculateTime, calculateDate,
-					hireDateMap);
+			calRealDayORHour4YearPeriod(pk_org, typeVO, periodBeginDate, periodEndDate, vos, pkInSQL, calculateTime,
+					calculateDate, hireDateMap);
 			return;
 		}
 		// 按入职日结算
-		calRealDayORHour4HirePeriod(pk_org, typeVO, year, vos, pkInSQL,
-				calculateTime, calculateDate);
+		calRealDayORHour4HirePeriod(pk_org, typeVO, year, vos, pkInSQL, calculateTime, calculateDate);
 	}
 
 	/**
@@ -666,11 +628,9 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain,
 	 * @param calculateDate
 	 * @throws BusinessException
 	 */
-	protected void calYiRestFreezeDayOrHour(String pk_org,
-			LeaveTypeCopyVO typeVO, String year, String month,
-			UFLiteralDate periodBeginDate, UFLiteralDate periodEndDate,
-			LeaveBalanceVO[] vos, String pkInSQL, UFDateTime calculateTime)
-			throws BusinessException {
+	protected void calYiRestFreezeDayOrHour(String pk_org, LeaveTypeCopyVO typeVO, String year, String month,
+			UFLiteralDate periodBeginDate, UFLiteralDate periodEndDate, LeaveBalanceVO[] vos, String pkInSQL,
+			UFDateTime calculateTime) throws BusinessException {
 		// 考勤规则
 		// TimeRuleVO timeRuleVO =
 		// NCLocator.getInstance().lookup(ITimeRuleQueryService.class).queryByOrg(pk_org);
@@ -684,22 +644,18 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain,
 		// typeMap.put(typeVO.getPk_timeitem(), typeVO);
 
 		// 优化：查询按leaveindex分组，批量查询
-		Map<Integer, LeaveBalanceVO[]> indexMap = CommonUtils
-				.group2ArrayByField(LeaveBalanceVO.LEAVEINDEX, vos);
+		Map<Integer, LeaveBalanceVO[]> indexMap = CommonUtils.group2ArrayByField(LeaveBalanceVO.LEAVEINDEX, vos);
 		for (Integer leaveindex : indexMap.keySet()) {
 			LeaveBalanceVO[] indexvos = indexMap.get(leaveindex);
 			if (ArrayUtils.isEmpty(indexvos))
 				continue;
 			// 查询出此期间内的所有审批通过的单据和登记单据，
-			String[] pk_psnorgs = StringPiecer.getStrArray(indexvos,
-					LeaveBalanceVO.PK_PSNORG);
-			LeaveRegVO[] regVOs = LeaveServiceFacade
-					.queryByPsnsLeaveTypePeriod(pk_org, pk_psnorgs, typeVO,
-							year, month, leaveindex);
+			String[] pk_psnorgs = StringPiecer.getStrArray(indexvos, LeaveBalanceVO.PK_PSNORG);
+			LeaveRegVO[] regVOs = LeaveServiceFacade.queryByPsnsLeaveTypePeriod(pk_org, pk_psnorgs, typeVO, year,
+					month, leaveindex);
 			// 查询出此期间内的自由态，审批中的申请单
-			LeavebVO[] leavebVOs = LeaveServiceFacade
-					.queryBeforePassWithoutNoPassByPsnsLeaveTypePeriod(pk_org,
-							pk_psnorgs, typeVO, year, month, leaveindex);
+			LeavebVO[] leavebVOs = LeaveServiceFacade.queryBeforePassWithoutNoPassByPsnsLeaveTypePeriod(pk_org,
+					pk_psnorgs, typeVO, year, month, leaveindex);
 			// LeaveCommonVO[] leaveVOs = CommonUtils.merge2Array(regVOs,
 			// leavebVOs);
 			List<LeaveCommonVO> leaveVOList = new ArrayList<LeaveCommonVO>();
@@ -707,8 +663,8 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain,
 				CollectionUtils.addAll(leaveVOList, regVOs);
 			if (!ArrayUtils.isEmpty(leavebVOs))
 				CollectionUtils.addAll(leaveVOList, leavebVOs);
-			LeaveCommonVO[] leaveVOs = CollectionUtils.isEmpty(leaveVOList) ? null
-					: leaveVOList.toArray(new LeaveCommonVO[0]);
+			LeaveCommonVO[] leaveVOs = CollectionUtils.isEmpty(leaveVOList) ? null : leaveVOList
+					.toArray(new LeaveCommonVO[0]);
 			BillProcessHelperAtServer.calLeaveLength(pk_org, leaveVOs);
 			// BillProcessHelperAtServer.calculateLengths(pk_org,
 			// BillMutexRule.BILL_LEAVE, leaveVOs, timeRuleVO, billMutexRule,
@@ -738,38 +694,28 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain,
 				lbList.add((LeavebVO) leaveVOs[i]);
 			}
 			for (LeaveBalanceVO vo : indexvos) {
-				LeaveRegVO[] leaveRegVOs = CollectionUtils.isEmpty(regMap
-						.get(vo.getPk_psnorg())) ? null : regMap.get(
+				LeaveRegVO[] leaveRegVOs = CollectionUtils.isEmpty(regMap.get(vo.getPk_psnorg())) ? null : regMap.get(
 						vo.getPk_psnorg()).toArray(new LeaveRegVO[0]);
-				LeavebVO[] leavebVOs2 = CollectionUtils.isEmpty(leavebMap
-						.get(vo.getPk_psnorg())) ? null : leavebMap.get(
-						vo.getPk_psnorg()).toArray(new LeavebVO[0]);
+				LeavebVO[] leavebVOs2 = CollectionUtils.isEmpty(leavebMap.get(vo.getPk_psnorg())) ? null : leavebMap
+						.get(vo.getPk_psnorg()).toArray(new LeavebVO[0]);
 				// double result =
 				// BillProcessHelperAtServer.calConsumedLeaveLength(leaveRegVOs,
 				// pk_org, typeVO, timeRuleVO, billMutexRule, aggShiftMap);
 				double result = getSumValue(leaveRegVOs);
-				vo.setYidayorhour(result == 0 ? UFDouble.ZERO_DBL
-						: new UFDouble(result));
+				vo.setYidayorhour(result == 0 ? UFDouble.ZERO_DBL : new UFDouble(result));
 				// 结余=上期结余+当前实际享有-已休
 				// vo.setRestdayorhour(new
 				// UFDouble(vo.getLastdayorhour().doubleValue()+vo.getRealdayorhour().doubleValue()-result));
 				// 根据港华需求：结余=上期结余+当前实际享有-已休 + 调整时长
-				double changeLength = vo.getChangelength() == null ? 0.0 : vo
-						.getChangelength().doubleValue();
-				vo.setRestdayorhour(new UFDouble(vo.getLastdayorhour()
-						.doubleValue()
-						+ vo.getRealdayorhour().doubleValue()
-						- result + changeLength));
+				double changeLength = vo.getChangelength() == null ? 0.0 : vo.getChangelength().doubleValue();
+				vo.setRestdayorhour(new UFDouble(vo.getLastdayorhour().doubleValue()
+						+ vo.getRealdayorhour().doubleValue() - result + changeLength));
 				// v63添加如果结余是可转移的还要计算上转入转出时长，2013-03-04修改根据转移标识判断
 				// if(typeVO.getIsleavetransfer()!=null&&typeVO.getIsleavetransfer().booleanValue()){
-				if (vo.getTransflag() != null
-						&& vo.getTransflag().booleanValue()) {
-					double in = vo.getTranslatein() == null ? 0 : vo
-							.getTranslatein().doubleValue();
-					double out = vo.getTranslateout() == null ? 0 : vo
-							.getTranslateout().doubleValue();
-					vo.setRestdayorhour(new UFDouble(vo.getRestdayorhour()
-							.doubleValue() + in - out));
+				if (vo.getTransflag() != null && vo.getTransflag().booleanValue()) {
+					double in = vo.getTranslatein() == null ? 0 : vo.getTranslatein().doubleValue();
+					double out = vo.getTranslateout() == null ? 0 : vo.getTranslateout().doubleValue();
+					vo.setRestdayorhour(new UFDouble(vo.getRestdayorhour().doubleValue() + in - out));
 				}
 				// 计算冻结时长
 				// double freeze =
@@ -799,10 +745,9 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain,
 		// vo.setFreezedayorhour(new UFDouble(freeze));
 		// vo.setCalculatetime(calculateTime);
 		// }
-		new BaseDAO().updateVOArray(vos, new String[] {
-				LeaveBalanceVO.TRANSLATEIN, LeaveBalanceVO.TRANSLATEOUT,
-				LeaveBalanceVO.YIDAYORHOUR, LeaveBalanceVO.RESTDAYORHOUR,
-				LeaveBalanceVO.FREEZEDAYORHOUR, LeaveBalanceVO.CALCULATETIME });
+		new BaseDAO().updateVOArray(vos, new String[] { LeaveBalanceVO.TRANSLATEIN, LeaveBalanceVO.TRANSLATEOUT,
+				LeaveBalanceVO.YIDAYORHOUR, LeaveBalanceVO.RESTDAYORHOUR, LeaveBalanceVO.FREEZEDAYORHOUR,
+				LeaveBalanceVO.CALCULATETIME });
 		new LeaveBalanceDAO().syncFromDB4DataExists(vos);
 	}
 
@@ -837,28 +782,22 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain,
 	 * @param hireDateMap
 	 * @throws BusinessException
 	 */
-	protected void calRealDayORHour4YearPeriod(String pk_org,
-			LeaveTypeCopyVO typeVO, UFLiteralDate periodBeginDate,
-			UFLiteralDate periodEndDate, LeaveBalanceVO[] vos, String pkInSQL,
-			UFDateTime calculateTime, UFLiteralDate calculateDate,
-			Map<String, UFLiteralDate> hireDateMap) throws BusinessException {
+	protected void calRealDayORHour4YearPeriod(String pk_org, LeaveTypeCopyVO typeVO, UFLiteralDate periodBeginDate,
+			UFLiteralDate periodEndDate, LeaveBalanceVO[] vos, String pkInSQL, UFDateTime calculateTime,
+			UFLiteralDate calculateDate, Map<String, UFLiteralDate> hireDateMap) throws BusinessException {
 		// 根据港华的需求进行变更了
-		double monthDiff = !calculateDate.before(periodEndDate) ? 12
-				: (calMonthDiff(periodBeginDate, calculateDate));
+		double monthDiff = !calculateDate.before(periodEndDate) ? 12 : (calMonthDiff(periodBeginDate, calculateDate));
 		if (typeVO.getLeavesetperiod() == TimeItemCopyVO.LEAVESETPERIOD_YEAR
 				&& typeVO.getLeavescale() == TimeItemCopyVO.LEAVESCALE_MONTH) {
-			IPeriodQueryService periodSer = NCLocator.getInstance().lookup(
-					IPeriodQueryService.class);
-			PeriodVO culPeriod = periodSer.queryByDate(pk_org, calculateDate
-					.before(periodEndDate) ? calculateDate : periodEndDate);
-			PeriodVO[] periods = periodSer.queryByYear(pk_org,
-					vos[0].getCuryear());
+			IPeriodQueryService periodSer = NCLocator.getInstance().lookup(IPeriodQueryService.class);
+			PeriodVO culPeriod = periodSer.queryByDate(pk_org, calculateDate.before(periodEndDate) ? calculateDate
+					: periodEndDate);
+			PeriodVO[] periods = periodSer.queryByYear(pk_org, vos[0].getCuryear());
 			int months = periods.length;
 			int curMonth = 0;
 			for (PeriodVO period : periods) {
 				curMonth++;
-				if (culPeriod.getTimemonth().equalsIgnoreCase(
-						period.getTimemonth()))
+				if (culPeriod.getTimemonth().equalsIgnoreCase(period.getTimemonth()))
 					break;
 			}
 			monthDiff = curMonth * 12.0 / months;
@@ -882,17 +821,14 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain,
 				vo.setRealdayorhour(UFDouble.ZERO_DBL);
 				continue;
 			}
-			vo.setRealdayorhour(new UFDouble(vo.getCurdayorhour().doubleValue()
-					* psnMonthDiff / 12.0));
+			vo.setRealdayorhour(new UFDouble(vo.getCurdayorhour().doubleValue() * psnMonthDiff / 12.0));
 		}
-		new BaseDAO().updateVOArray(vos,
-				new String[] { LeaveBalanceVO.REALDAYORHOUR });
+		new BaseDAO().updateVOArray(vos, new String[] { LeaveBalanceVO.REALDAYORHOUR });
 	}
 
 	private int calMonthDiff(UFLiteralDate beginDate, UFLiteralDate endDate) {
 		// 2012.4与需求讨论后决定，按月计算时，改“下月开始才享有上月额度”为“当月开始就享有当月额度”
-		return (endDate.getYear() - beginDate.getYear()) * 12
-				+ endDate.getMonth() - beginDate.getMonth() + 1;
+		return (endDate.getYear() - beginDate.getYear()) * 12 + endDate.getMonth() - beginDate.getMonth() + 1;
 	}
 
 	/**
@@ -909,10 +845,9 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain,
 	 * @param hireDateMap
 	 * @throws BusinessException
 	 */
-	protected void calRealDayORHour4HirePeriod(String pk_org,
-			LeaveTypeCopyVO typeVO, String year, LeaveBalanceVO[] vos,
-			String pkInSQL, UFDateTime calculateTime,
-			UFLiteralDate calculateDate) throws BusinessException {
+	protected void calRealDayORHour4HirePeriod(String pk_org, LeaveTypeCopyVO typeVO, String year,
+			LeaveBalanceVO[] vos, String pkInSQL, UFDateTime calculateTime, UFLiteralDate calculateDate)
+			throws BusinessException {
 		for (LeaveBalanceVO vo : vos) {
 			// 按入职日结算时，每个人员的期间都需要单独计算：
 			// 期间第一天：期间年度=year,月日部分=入职日月日部分；
@@ -932,11 +867,9 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain,
 				vo.setRealdayorhour(UFDouble.ZERO_DBL);
 				continue;
 			}
-			vo.setRealdayorhour(new UFDouble(vo.getCurdayorhour().doubleValue()
-					* psnMonthDiff / 12.0));
+			vo.setRealdayorhour(new UFDouble(vo.getCurdayorhour().doubleValue() * psnMonthDiff / 12.0));
 		}
-		new BaseDAO().updateVOArray(vos,
-				new String[] { LeaveBalanceVO.REALDAYORHOUR });
+		new BaseDAO().updateVOArray(vos, new String[] { LeaveBalanceVO.REALDAYORHOUR });
 	}
 
 	/**
@@ -961,24 +894,16 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain,
 		String hireDateStr = hireDate.toString();
 		// 组合日期之前进行 日期校验 因为 平年+2月29的组合会报错。
 		if (!UFLiteralDate.isLeapYear(Integer.valueOf(year) + 1)
-				&& "-02-29".equals(hireDateStr.substring(4,
-						hireDateStr.length()))) {
+				&& "-02-29".equals(hireDateStr.substring(4, hireDateStr.length()))) {
 			return UFLiteralDate.getDate(
 					(Integer.parseInt(year) + 1)
 							+ "-"
-							+ hireDate
-									.getDateBefore(1)
-									.toString()
-									.substring(
-											4,
-											(hireDate.getDateBefore(1)
-													.toString()).length()))
-					.getDateBefore(1);
+							+ hireDate.getDateBefore(1).toString()
+									.substring(4, (hireDate.getDateBefore(1).toString()).length())).getDateBefore(1);
 		} else {
 			return UFLiteralDate.getDate(
-					(Integer.parseInt(year) + 1) + "-"
-							+ hireDateStr.substring(4, hireDateStr.length()))
-					.getDateBefore(1);
+					(Integer.parseInt(year) + 1) + "-" + hireDateStr.substring(4, hireDateStr.length())).getDateBefore(
+					1);
 		}
 
 	}
@@ -993,20 +918,11 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain,
 	protected UFLiteralDate getDateInYear(String year, UFLiteralDate date) {
 		String dateStr = date.toString();
 		// 组合日期之前进行 日期校验 因为 平年+2月29的组合会报错。
-		if (!UFLiteralDate.isLeapYear(Integer.valueOf(year))
-				&& "-02-29".equals(dateStr.substring(4, dateStr.length()))) {
-			return UFLiteralDate
-					.getDate(year
-							+ "-"
-							+ date.getDateBefore(1)
-									.toString()
-									.substring(
-											5,
-											(date.getDateBefore(1).toString())
-													.length()));
-		} else {
+		if (!UFLiteralDate.isLeapYear(Integer.valueOf(year)) && "-02-29".equals(dateStr.substring(4, dateStr.length()))) {
 			return UFLiteralDate.getDate(year + "-"
-					+ dateStr.substring(5, dateStr.length()));
+					+ date.getDateBefore(1).toString().substring(5, (date.getDateBefore(1).toString()).length()));
+		} else {
+			return UFLiteralDate.getDate(year + "-" + dateStr.substring(5, dateStr.length()));
 		}
 	}
 
@@ -1022,8 +938,7 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain,
 	 * @param calculateDate
 	 * @return
 	 */
-	private Map<String, UFLiteralDate> queryHireDate(String pk_org,
-			LeaveBalanceVO[] vos) throws BusinessException {
+	private Map<String, UFLiteralDate> queryHireDate(String pk_org, LeaveBalanceVO[] vos) throws BusinessException {
 		// 首先查询这些人员的入职日
 		String[] psnorgs = SQLHelper.getStrArray(vos, LeaveBalanceVO.PK_PSNORG);
 		return queryHireDate(psnorgs);
@@ -1037,8 +952,7 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain,
 	 * @return
 	 * @throws BusinessException
 	 */
-	private Map<String, UFLiteralDate> queryHireDate(String[] pk_psnorgs)
-			throws BusinessException {
+	private Map<String, UFLiteralDate> queryHireDate(String[] pk_psnorgs) throws BusinessException {
 		Map<String, UFLiteralDate> retMap = new HashMap<String, UFLiteralDate>();
 		if (ArrayUtils.isEmpty(pk_psnorgs))
 			return retMap;
@@ -1047,8 +961,7 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain,
 		try {
 			String psnorgInSQL = isc.getInSQL(pk_psnorgs);
 			// 人员的组织关系vo，用来取入职日期。
-			psnorgVOs = CommonUtils.retrieveByClause(PsnOrgVO.class,
-					PsnOrgVO.PK_PSNORG + " in(" + psnorgInSQL + ")");
+			psnorgVOs = CommonUtils.retrieveByClause(PsnOrgVO.class, PsnOrgVO.PK_PSNORG + " in(" + psnorgInSQL + ")");
 		} finally {
 			isc.clear();
 		}
@@ -1070,18 +983,14 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain,
 	 * nc.vo.ta.leavebalance.LeaveBalanceVO[])
 	 */
 	@Override
-	public UnSettlementResult unSettlement(String pk_org, String pk_leavetype,
-			String year, String month, LeaveBalanceVO[] vos)
-			throws BusinessException {
+	public UnSettlementResult unSettlement(String pk_org, String pk_leavetype, String year, String month,
+			LeaveBalanceVO[] vos) throws BusinessException {
 		UnSettlementResult result = new UnSettlementResult();
 		result.setUnSettledVOs(vos);
 		if (ArrayUtils.isEmpty(vos))
 			return result;
-		LeaveTypeCopyVO typeVO = (LeaveTypeCopyVO) NCLocator
-				.getInstance()
-				.lookup(ITimeItemQueryService.class)
-				.queryCopyTypesByDefPK(pk_org, pk_leavetype,
-						TimeItemVO.LEAVE_TYPE);
+		LeaveTypeCopyVO typeVO = (LeaveTypeCopyVO) NCLocator.getInstance().lookup(ITimeItemQueryService.class)
+				.queryCopyTypesByDefPK(pk_org, pk_leavetype, TimeItemVO.LEAVE_TYPE);
 		LeaveBalanceDAO balanceDAO = new LeaveBalanceDAO();
 		balanceDAO.syncFromDB(typeVO, year, month, vos);
 		LeaveBalanceVO[] canUnSettlementVOs = filterCanUnSettlementVOs(vos);
@@ -1098,12 +1007,11 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain,
 		boolean isMonth = leaveSetPeriod == LeaveTypeCopyVO.LEAVESETPERIOD_MONTH;
 		String pk_timeitem = typeVO.getPk_timeitem();
 		String periodField = isMonth ? "curyear||curmonth" : "curyear";
-		String badCond = "pk_org=? and pk_psnorg=? and pk_timeitem=? and (("
-				+ periodField + ">? and " + LeaveBalanceVO.ISSETTLEMENT
-				+ "='Y') or (" + periodField + "=? and "
-				+ LeaveBalanceVO.LEAVEINDEX + ">?))";
-		String nextPeriodCond = "pk_org=? and pk_psnorg=? and pk_timeitem=? and "
-				+ periodField + "=? and " + LeaveBalanceVO.LEAVEINDEX + "=1";
+		String badCond = "pk_org=? and pk_psnorg=? and pk_timeitem=? and ((" + periodField + ">? and "
+				+ LeaveBalanceVO.ISSETTLEMENT + "='Y') or (" + periodField + "=? and " + LeaveBalanceVO.LEAVEINDEX
+				+ ">?))";
+		String nextPeriodCond = "pk_org=? and pk_psnorg=? and pk_timeitem=? and " + periodField + "=? and "
+				+ LeaveBalanceVO.LEAVEINDEX + "=1";
 		SQLParameter para = new SQLParameter();
 		StringBuilder errMsg = new StringBuilder();
 		List<LeaveBalanceVO> updateList = new ArrayList<LeaveBalanceVO>();
@@ -1117,11 +1025,9 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain,
 			para.addParam(isMonth ? (year + month) : year);
 			para.addParam(isMonth ? (year + month) : year);
 			para.addParam(vo.getLeaveindex());
-			LeaveBalanceVO[] badVOs = CommonUtils.retrieveByClause(
-					LeaveBalanceVO.class, badCond, para);
+			LeaveBalanceVO[] badVOs = CommonUtils.retrieveByClause(LeaveBalanceVO.class, badCond, para);
 			if (!ArrayUtils.isEmpty(badVOs)) {
-				nextPeriodSealedLine.add(lineNoMap.get(vo.getPk_psnorg()
-						+ vo.getLeaveindex()));
+				nextPeriodSealedLine.add(lineNoMap.get(vo.getPk_psnorg() + vo.getLeaveindex()));
 				// errMsg.append(MessageFormat.format(getNextPeriodSealedError(),
 				// Integer.toString(lineNoMap.get(vo.getPk_psnorg()+vo.getLeaveindex())+1)));
 				continue;
@@ -1138,18 +1044,16 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain,
 				para.addParam(vo.getPk_psnorg());
 				para.addParam(pk_timeitem);
 				para.addParam(isMonth ? (nextYear + nextMonth) : nextYear);
-				LeaveBalanceVO[] nextPeriodVOs = CommonUtils.retrieveByClause(
-						LeaveBalanceVO.class, nextPeriodCond, para);
+				LeaveBalanceVO[] nextPeriodVOs = CommonUtils.retrieveByClause(LeaveBalanceVO.class, nextPeriodCond,
+						para);
 				// 如果数据库有，则需要将上期结余设置为0，并且从结余中扣除
 				if (!ArrayUtils.isEmpty(nextPeriodVOs)) {
 					LeaveBalanceVO updateVO = nextPeriodVOs[0];
 					updateList.add(updateVO);
 					updateVO.setLastdayorhour(UFDouble.ZERO_DBL);// 将下期的“上期结余”set为0
-					if (vo.getRestdayorhour() != null
-							&& vo.getRestdayorhour().doubleValue() != 0) {// 如果本期结余不为0，才有必要重算下期的结余
-						updateVO.setRestdayorhour(updateVO.getRestdayorhour() == null ? UFDouble.ZERO_DBL
-								.sub(vo.getRestdayorhour()) : updateVO
-								.getRestdayorhour().sub(vo.getRestdayorhour()));
+					if (vo.getRestdayorhour() != null && vo.getRestdayorhour().doubleValue() != 0) {// 如果本期结余不为0，才有必要重算下期的结余
+						updateVO.setRestdayorhour(updateVO.getRestdayorhour() == null ? UFDouble.ZERO_DBL.sub(vo
+								.getRestdayorhour()) : updateVO.getRestdayorhour().sub(vo.getRestdayorhour()));
 					}
 				}
 			}
@@ -1164,8 +1068,7 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain,
 			new BaseDAO().updateVOList(updateList);
 		if (nextPeriodSealedLine.size() > 0) {
 			String errLineNo = getMultiLineNo(nextPeriodSealedLine);
-			errMsg.append(MessageFormat.format(getNextPeriodSealedError(),
-					errLineNo));
+			errMsg.append(MessageFormat.format(getNextPeriodSealedError(), errLineNo));
 		}
 		if (errMsg.length() > 0)
 			result.setErrMsg(errMsg.toString());
@@ -1192,20 +1095,16 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain,
 	 * @return
 	 * @throws BusinessException
 	 */
-	private LeaveBalanceVO[] filterCanUnSettlementVOs(LeaveBalanceVO[] vos)
-			throws BusinessException {
+	private LeaveBalanceVO[] filterCanUnSettlementVOs(LeaveBalanceVO[] vos) throws BusinessException {
 		if (ArrayUtils.isEmpty(vos))
 			return vos;
 		List<LeaveBalanceVO> retList = new ArrayList<LeaveBalanceVO>();
 		String pk_user = InvocationInfoProxy.getInstance().getUserId();
 		String pk_group = InvocationInfoProxy.getInstance().getGroupId();
-		IDataPermissionPubService perimssionService = NCLocator.getInstance()
-				.lookup(IDataPermissionPubService.class);
-		Map<String, UFBoolean> perimssionMap = perimssionService
-				.isUserhasPermissionByMetaDataOperation("60170psndoc",
-						StringPiecer.getStrArrayDistinct(vos,
-								LeaveBalanceVO.PK_TBM_PSNDOC),
-						"UnLeaveBalanceAction", pk_group, pk_user);
+		IDataPermissionPubService perimssionService = NCLocator.getInstance().lookup(IDataPermissionPubService.class);
+		Map<String, UFBoolean> perimssionMap = perimssionService.isUserhasPermissionByMetaDataOperation("60170psndoc",
+				StringPiecer.getStrArrayDistinct(vos, LeaveBalanceVO.PK_TBM_PSNDOC), "UnLeaveBalanceAction", pk_group,
+				pk_user);
 		for (LeaveBalanceVO vo : vos) {
 			if (!vo.isSettlement() || vo.isUse())
 				continue;
@@ -1213,15 +1112,12 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain,
 			// pk_user, "60170psndoc", "UnLeaveBalanceAction",
 			// pk_group, vo.toTBMPsndocVO()))
 			// continue;
-			if (perimssionMap != null
-					&& perimssionMap.get(vo.toTBMPsndocVO().getPrimaryKey()) != null
-					&& !perimssionMap.get(vo.toTBMPsndocVO().getPrimaryKey())
-							.booleanValue())
+			if (perimssionMap != null && perimssionMap.get(vo.toTBMPsndocVO().getPrimaryKey()) != null
+					&& !perimssionMap.get(vo.toTBMPsndocVO().getPrimaryKey()).booleanValue())
 				continue;// 没有反结算权限的，刨除掉
 			retList.add(vo);
 		}
-		return retList.size() == 0 ? null : retList
-				.toArray(new LeaveBalanceVO[0]);
+		return retList.size() == 0 ? null : retList.toArray(new LeaveBalanceVO[0]);
 	}
 
 	/**
@@ -1241,33 +1137,26 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain,
 	 * @return
 	 * @throws BusinessException
 	 */
-	protected LeaveBalanceVO[] queryByCondition4HireDateSettlement(
-			String pk_org, LeaveTypeCopyVO typeVO, String year,
+	protected LeaveBalanceVO[] queryByCondition4HireDateSettlement(String pk_org, LeaveTypeCopyVO typeVO, String year,
 			FromWhereSQL fromWhereSQL) throws BusinessException {
 		// 首先，按照入职年的最大日期范围，查出一个大概的人员范围：
 		UFLiteralDate yearEarliestDay = UFLiteralDate.getDate(year + "-01-01");
-		UFLiteralDate yearLatesDay = UFLiteralDate.getDate(Integer
-				.toString(Integer.parseInt(year) + 1) + "-12-30");
-		ITBMPsndocQueryService tbmpsndocService = NCLocator.getInstance()
-				.lookup(ITBMPsndocQueryService.class);
+		UFLiteralDate yearLatesDay = UFLiteralDate.getDate(Integer.toString(Integer.parseInt(year) + 1) + "-12-30");
+		ITBMPsndocQueryService tbmpsndocService = NCLocator.getInstance().lookup(ITBMPsndocQueryService.class);
 		// 以pk_psnorg分组，查询每组中最新的
-		TBMPsndocVO[] psndocVOs = tbmpsndocService
-				.queryPsnorgLatestByCondition(pk_org, fromWhereSQL,
-						yearEarliestDay, yearLatesDay);
+		TBMPsndocVO[] psndocVOs = tbmpsndocService.queryPsnorgLatestByCondition(pk_org, fromWhereSQL, yearEarliestDay,
+				yearLatesDay);
 		// 如果没有考勤档案，则返回null
 		if (ArrayUtils.isEmpty(psndocVOs))
 			return null;
 		// 否则查询这些人员的入职日期
-		Map<String, UFLiteralDate> hireDateMap = queryHireDate(SQLHelper
-				.getStrArray(psndocVOs, TBMPsndocVO.PK_PSNORG));// key-pk_psnorg,value-入职日期
+		Map<String, UFLiteralDate> hireDateMap = queryHireDate(SQLHelper.getStrArray(psndocVOs, TBMPsndocVO.PK_PSNORG));// key-pk_psnorg,value-入职日期
 		// 然后将这些记录插入临时表
 		LeaveBalanceDAO leaveBalanceDAO = new LeaveBalanceDAO();
 		leaveBalanceDAO.initHireDateTempTable(year, psndocVOs, hireDateMap);
-		LeaveBalanceVO[] vos = leaveBalanceDAO
-				.queryByCondition4HireDateSettlementWithHireDateTempTable(
-						pk_org, typeVO, year, fromWhereSQL);
-		return processMultiRecordsPerPsnorg(pk_org, typeVO, year, null, null,
-				null, vos);
+		LeaveBalanceVO[] vos = leaveBalanceDAO.queryByCondition4HireDateSettlementWithHireDateTempTable(pk_org, typeVO,
+				year, fromWhereSQL);
+		return processMultiRecordsPerPsnorg(pk_org, typeVO, year, null, null, null, vos);
 	}
 
 	/**
@@ -1290,23 +1179,20 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain,
 	 * @param vos
 	 * @throws BusinessException
 	 */
-	private LeaveBalanceVO[] processMultiRecordsPerPsnorg(String pk_org,
-			LeaveTypeCopyVO typeVO, String year, String month,
-			UFLiteralDate periodBeginDate, UFLiteralDate periodEndDate,
-			LeaveBalanceVO[] vos) throws BusinessException {
+	private LeaveBalanceVO[] processMultiRecordsPerPsnorg(String pk_org, LeaveTypeCopyVO typeVO, String year,
+			String month, UFLiteralDate periodBeginDate, UFLiteralDate periodEndDate, LeaveBalanceVO[] vos)
+			throws BusinessException {
 		if (ArrayUtils.isEmpty(vos))
 			return vos;
 		String pk_group = InvocationInfoProxy.getInstance().getGroupId();
 		String pk_leavetype = typeVO.getPk_timeitem();
 		// 按pk_psnorg分组处理
-		Map<String, LeaveBalanceVO[]> psnorgGroupMap = CommonUtils
-				.group2ArrayByField(LeaveBalanceVO.PK_PSNORG, vos);
+		Map<String, LeaveBalanceVO[]> psnorgGroupMap = CommonUtils.group2ArrayByField(LeaveBalanceVO.PK_PSNORG, vos);
 		// List<LeaveBalanceVO> voList = Arrays.asList(vos);
-		ITBMPsndocQueryService tbmpsndocService = NCLocator.getInstance()
-				.lookup(ITBMPsndocQueryService.class);
+		ITBMPsndocQueryService tbmpsndocService = NCLocator.getInstance().lookup(ITBMPsndocQueryService.class);
 		boolean isHireDateSet = typeVO.getLeavesetperiod().intValue() == TimeItemCopyVO.LEAVESETPERIOD_DATE
-				// ssx added on 2018-03-16
-				// for changes of start date of company age
+		// ssx added on 2018-03-16
+		// for changes of start date of company age
 				|| typeVO.getLeavesetperiod().intValue() == TimeItemCopyVO.LEAVESETPERIOD_STARTDATE;
 		//
 		for (String pk_psnorg : psnorgGroupMap.keySet()) {
@@ -1326,8 +1212,7 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain,
 					lastSetVO = vo;
 					continue;
 				}
-				if (lastSetVO.getSettlementdate()
-						.before(vo.getSettlementdate()))
+				if (lastSetVO.getSettlementdate().before(vo.getSettlementdate()))
 					lastSetVO = vo;
 			}
 			if (unSetVO != null
@@ -1338,18 +1223,15 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain,
 			) {// 如果存在未结算的数据，则不用考虑new一个新的
 				continue;
 			}
-			UFLiteralDate psnorgPeriodEndDate = isHireDateSet ? lastSetVO
-					.getHireenddate() : periodEndDate;
+			UFLiteralDate psnorgPeriodEndDate = isHireDateSet ? lastSetVO.getHireenddate() : periodEndDate;
 			// 如果所有的都结算了，那么需要将最晚的结算日期与期间结束日比较（对于按入职日结算的，期间结束日每个人都可能不一样）
 			// 如果最晚结算日在期间最后一天之后，则视为正常
 			if (lastSetVO.getSettlementdate().after(psnorgPeriodEndDate))
 				continue;
 			// 如果最晚结算的一条记录，是在期间结束之前结算的，则要看结算日到期间结束日之间是否有pk_psnorg的考勤档案记录，如果有，则需要new一条记录
-			UFLiteralDate beginDate = lastSetVO.getSettlementdate()
-					.getDateAfter(1);
-			TBMPsndocVO latestTbmPsndocVO = tbmpsndocService
-					.queryLatestByPsnorgDate(pk_org, pk_psnorg, beginDate,
-							psnorgPeriodEndDate);
+			UFLiteralDate beginDate = lastSetVO.getSettlementdate().getDateAfter(1);
+			TBMPsndocVO latestTbmPsndocVO = tbmpsndocService.queryLatestByPsnorgDate(pk_org, pk_psnorg, beginDate,
+					psnorgPeriodEndDate);
 			if (latestTbmPsndocVO == null)
 				continue;
 			LeaveBalanceVO newVO = new LeaveBalanceVO();
@@ -1388,14 +1270,12 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain,
 	 * @return
 	 * @throws BusinessException
 	 */
-	protected LeaveBalanceVO[] queryByCondition4YearMonthSettlement(
-			String pk_org, LeaveTypeCopyVO typeVO, String year, String month,
-			FromWhereSQL fromWhereSQL) throws BusinessException {
+	protected LeaveBalanceVO[] queryByCondition4YearMonthSettlement(String pk_org, LeaveTypeCopyVO typeVO, String year,
+			String month, FromWhereSQL fromWhereSQL) throws BusinessException {
 
 		UFLiteralDate periodBeginDate = null;
 		UFLiteralDate periodEndDate = null;
-		UFLiteralDate[] periodBeginEndDates = queryPeriodBeginEndDate(pk_org,
-				typeVO, year, month);
+		UFLiteralDate[] periodBeginEndDates = queryPeriodBeginEndDate(pk_org, typeVO, year, month);
 		if (periodBeginEndDates != null && periodBeginEndDates.length == 2) {
 			periodBeginDate = periodBeginEndDates[0];
 			periodEndDate = periodBeginEndDates[1];
@@ -1404,12 +1284,11 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain,
 
 		int leavesetperiod = typeVO.getLeavesetperiod().intValue();
 		boolean isYear = leavesetperiod == LeaveTypeCopyVO.LEAVESETPERIOD_YEAR;
-		LeaveBalanceVO[] vos = new LeaveBalanceDAO().queryByDateScope(pk_org,
-				fromWhereSQL, periodBeginDate, periodEndDate, pk_leavetype,
-				year, isYear ? null : month);
+		LeaveBalanceVO[] vos = new LeaveBalanceDAO().queryByDateScope(pk_org, fromWhereSQL, periodBeginDate,
+				periodEndDate, pk_leavetype, year, isYear ? null : month);
 		if (!ArrayUtils.isEmpty(vos)) {
-			UFLiteralDate priodExtendEndDate = typeVO.getExtendDaysCount() == 0 ? periodEndDate
-					: periodEndDate.getDateAfter(typeVO.getExtendDaysCount());
+			UFLiteralDate priodExtendEndDate = typeVO.getExtendDaysCount() == 0 ? periodEndDate : periodEndDate
+					.getDateAfter(typeVO.getExtendDaysCount());
 			for (LeaveBalanceVO vo : vos) {
 				vo.setPeriodbegindate(periodBeginDate);
 				vo.setPeriodenddate(periodEndDate);
@@ -1418,8 +1297,7 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain,
 					vo.setChangelength(UFDouble.ZERO_DBL);
 			}
 		}
-		return processMultiRecordsPerPsnorg(pk_org, typeVO, year, month,
-				periodBeginDate, periodEndDate, vos);
+		return processMultiRecordsPerPsnorg(pk_org, typeVO, year, month, periodBeginDate, periodEndDate, vos);
 	}
 
 	/**
@@ -1433,8 +1311,7 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain,
 	 * @return
 	 * @throws BusinessException
 	 */
-	private UFLiteralDate[] queryPeriodBeginEndDate(String pk_org,
-			LeaveTypeCopyVO typeVO, String year, String month,
+	private UFLiteralDate[] queryPeriodBeginEndDate(String pk_org, LeaveTypeCopyVO typeVO, String year, String month,
 			boolean throwsException) throws BusinessException {
 		int leavesetperiod = typeVO.getLeavesetperiod().intValue();
 		if (leavesetperiod == TimeItemCopyVO.LEAVESETPERIOD_DATE
@@ -1447,19 +1324,16 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain,
 		UFLiteralDate periodBeginDate = null;
 		UFLiteralDate periodEndDate = null;
 		if (!isYear) {
-			PeriodVO periodVO = PeriodServiceFacade.queryByYearMonth(pk_org,
-					year, month);
+			PeriodVO periodVO = PeriodServiceFacade.queryByYearMonth(pk_org, year, month);
 			periodBeginDate = periodVO.getBegindate();
 			periodEndDate = periodVO.getEnddate();
 		} else {
-			PeriodVO[] periodVOs = PeriodServiceFacade
-					.queryByYear(pk_org, year);
+			PeriodVO[] periodVOs = PeriodServiceFacade.queryByYear(pk_org, year);
 			// if(periodVOs==null||periodVOs.length<1)return null;
 			if (ArrayUtils.isEmpty(periodVOs)) {
 				if (throwsException)
-					throw new BusinessException(ResHelper.getString(
-							"6017leave", "06017leave0231"
-							/* @res "{0}年考勤期间未定义!" */, year));
+					throw new BusinessException(ResHelper.getString("6017leave", "06017leave0231"
+					/* @res "{0}年考勤期间未定义!" */, year));
 				return null;
 			}
 			// MOD 按自然年结算 James
@@ -1482,8 +1356,7 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain,
 	 * @return
 	 * @throws BusinessException
 	 */
-	private UFLiteralDate[] queryPeriodBeginEndDate(String pk_org,
-			LeaveTypeCopyVO typeVO, String year, String month)
+	private UFLiteralDate[] queryPeriodBeginEndDate(String pk_org, LeaveTypeCopyVO typeVO, String year, String month)
 			throws BusinessException {
 		return queryPeriodBeginEndDate(pk_org, typeVO, year, month, true);
 	}
@@ -1510,18 +1383,13 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain,
 	// }
 
 	@Override
-	public LeaveBalanceVO[] queryByCondition(String pk_org,
-			String pk_leavetype, String year, String month,
-			FromWhereSQL fromWhereSQL, String pk_dept, boolean containsSubDepts)
-			throws BusinessException {
-		ITimeItemQueryService service = NCLocator.getInstance().lookup(
-				ITimeItemQueryService.class);
-		LeaveTypeCopyVO typeVO = (LeaveTypeCopyVO) service
-				.queryCopyTypesByDefPK(pk_org, pk_leavetype,
-						TimeItemCopyVO.LEAVE_TYPE);
+	public LeaveBalanceVO[] queryByCondition(String pk_org, String pk_leavetype, String year, String month,
+			FromWhereSQL fromWhereSQL, String pk_dept, boolean containsSubDepts) throws BusinessException {
+		ITimeItemQueryService service = NCLocator.getInstance().lookup(ITimeItemQueryService.class);
+		LeaveTypeCopyVO typeVO = (LeaveTypeCopyVO) service.queryCopyTypesByDefPK(pk_org, pk_leavetype,
+				TimeItemCopyVO.LEAVE_TYPE);
 		return queryByCondition(pk_org, typeVO, year, month,
-				TBMPsndocSqlPiecer.addDeptPk2QuerySQL(pk_dept,
-						containsSubDepts, fromWhereSQL));
+				TBMPsndocSqlPiecer.addDeptPk2QuerySQL(pk_dept, containsSubDepts, fromWhereSQL));
 	}
 
 	// @Override
@@ -1535,25 +1403,19 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain,
 	// }
 
 	@Override
-	public LeaveBalanceVO[] queryByCondition(LoginContext context,
-			String pk_leavetype, String year, String month,
+	public LeaveBalanceVO[] queryByCondition(LoginContext context, String pk_leavetype, String year, String month,
 			FromWhereSQL fromWhereSQL) throws BusinessException {
 
-		ITimeItemQueryService service = NCLocator.getInstance().lookup(
-				ITimeItemQueryService.class);
-		LeaveTypeCopyVO typeVO = (LeaveTypeCopyVO) service
-				.queryCopyTypesByDefPK(context.getPk_org(), pk_leavetype,
-						TimeItemCopyVO.LEAVE_TYPE);
+		ITimeItemQueryService service = NCLocator.getInstance().lookup(ITimeItemQueryService.class);
+		LeaveTypeCopyVO typeVO = (LeaveTypeCopyVO) service.queryCopyTypesByDefPK(context.getPk_org(), pk_leavetype,
+				TimeItemCopyVO.LEAVE_TYPE);
 		// 考虑权限
-		fromWhereSQL = TBMPsndocSqlPiecer
-				.addPsnjobPermissionSQL2QuerySQL(fromWhereSQL);
-		return queryByCondition(context.getPk_org(), typeVO, year, month,
-				fromWhereSQL);
+		fromWhereSQL = TBMPsndocSqlPiecer.addPsnjobPermissionSQL2QuerySQL(fromWhereSQL);
+		return queryByCondition(context.getPk_org(), typeVO, year, month, fromWhereSQL);
 
 	}
 
-	protected LeaveBalanceVO[] queryByCondition(String pk_org,
-			LeaveTypeCopyVO typeVO, String year, String month,
+	protected LeaveBalanceVO[] queryByCondition(String pk_org, LeaveTypeCopyVO typeVO, String year, String month,
 			FromWhereSQL fromWhereSQL) throws BusinessException {
 		LeaveBalanceVO[] leaveBalanceVOs = null;
 		int leavesetperiod = typeVO.getLeavesetperiod().intValue();
@@ -1562,30 +1424,27 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain,
 		// for changes of start date of company age
 				|| leavesetperiod == LeaveTypeCopyVO.LEAVESETPERIOD_STARTDATE//
 		) {
-			leaveBalanceVOs = setDefaultTimeitemCopy(queryByCondition4HireDateSettlement(
-					pk_org, typeVO, year, fromWhereSQL));
+			leaveBalanceVOs = setDefaultTimeitemCopy(queryByCondition4HireDateSettlement(pk_org, typeVO, year,
+					fromWhereSQL));
 		} else {
-			leaveBalanceVOs = setDefaultTimeitemCopy(queryByCondition4YearMonthSettlement(
-					pk_org, typeVO, year, month, fromWhereSQL));
+			leaveBalanceVOs = setDefaultTimeitemCopy(queryByCondition4YearMonthSettlement(pk_org, typeVO, year, month,
+					fromWhereSQL));
 		}
 		return leaveBalanceVOs;
 	}
 
 	@Override
-	public SettlementResult firstSettlement(String pk_org, String pk_leavetype,
-			String year, String month, LeaveBalanceVO[] vos,
-			String pk_salaryPeriod) throws BusinessException {
+	public SettlementResult firstSettlement(String pk_org, String pk_leavetype, String year, String month,
+			LeaveBalanceVO[] vos, String pk_salaryPeriod) throws BusinessException {
 		UFLiteralDate settlementDate = PubEnv.getServerLiteralDate();
 		// 首先查询是否有：
 		// 1.结算日>=结算周期最后一天，但未到有效期天（只针对按入职日结算的情形，按年按期间结算的不用此查询，因为所有人的期间最后一天都是一样的，如果提示明细就比较怪）
 		// 2.未到期间最后一天，但已无考勤档案
 		// 如果有，则先不执行结算，将这些需要提示的信息返回到客户端
 		// 否则，直接执行结算（结算可以结算的，不能结算的跳过，但是要有描述信息）
-		ITimeItemQueryService service = NCLocator.getInstance().lookup(
-				ITimeItemQueryService.class);
-		LeaveTypeCopyVO typeVO = (LeaveTypeCopyVO) service
-				.queryCopyTypesByDefPK(pk_org, pk_leavetype,
-						TimeItemCopyVO.LEAVE_TYPE);
+		ITimeItemQueryService service = NCLocator.getInstance().lookup(ITimeItemQueryService.class);
+		LeaveTypeCopyVO typeVO = (LeaveTypeCopyVO) service.queryCopyTypesByDefPK(pk_org, pk_leavetype,
+				TimeItemCopyVO.LEAVE_TYPE);
 		LeaveBalanceDAO balanceDAO = new LeaveBalanceDAO();
 		balanceDAO.syncFromDB(typeVO, year, month, vos);
 		int leavesetPeriod = typeVO.getLeavesetperiod().intValue();
@@ -1593,14 +1452,12 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain,
 		PeriodVO salaryPeriodVO = null;
 		String salaryYear = null;
 		String salaryMonth = null;
-		IPeriodQueryService periodQuery = NCLocator.getInstance().lookup(
-				IPeriodQueryService.class);
+		IPeriodQueryService periodQuery = NCLocator.getInstance().lookup(IPeriodQueryService.class);
 		if (TimeItemCopyVO.LEAVESETTLEMENT_MONEY == typeVO.getLeavesettlement()) {// 若是转薪资的，需要确认把薪资转移到哪个考勤期间，若期间为空默认当前期间
 			if (StringUtils.isBlank(pk_salaryPeriod)) {
 				salaryPeriodVO = periodQuery.queryCurPeriod(pk_org);
 			} else {
-				salaryPeriodVO = (PeriodVO) new BaseDAO().retrieveByPK(
-						PeriodVO.class, pk_salaryPeriod);
+				salaryPeriodVO = (PeriodVO) new BaseDAO().retrieveByPK(PeriodVO.class, pk_salaryPeriod);
 			}
 			salaryYear = salaryPeriodVO.getYear();
 			salaryMonth = salaryPeriodVO.getMonth();
@@ -1613,10 +1470,8 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain,
 		if (leavesetPeriod == TimeItemCopyVO.LEAVESETPERIOD_DATE
 				|| leavesetPeriod == TimeItemCopyVO.LEAVESETPERIOD_STARTDATE)
 			//
-			return firstSettlement4HireDate(pk_org, typeVO, year, vos,
-					settlementDate, salaryYear, salaryMonth);
-		return firstSettlement4YearMonth(pk_org, typeVO, year, month, vos,
-				settlementDate, salaryYear, salaryMonth);
+			return firstSettlement4HireDate(pk_org, typeVO, year, vos, settlementDate, salaryYear, salaryMonth);
+		return firstSettlement4YearMonth(pk_org, typeVO, year, month, vos, settlementDate, salaryYear, salaryMonth);
 	}
 
 	/**
@@ -1629,16 +1484,14 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain,
 	 * @param salaryMonth
 	 * @param salaryYear
 	 */
-	protected SettlementResult firstSettlement4YearMonth(String pk_org,
-			LeaveTypeCopyVO typeVO, String year, String month,
-			LeaveBalanceVO[] vos, UFLiteralDate settlementDate,
-			String salaryYear, String salaryMonth) throws BusinessException {
-		UFLiteralDate[] periodBeginEndDate = queryPeriodBeginEndDate(pk_org,
-				typeVO, year, month);
+	protected SettlementResult firstSettlement4YearMonth(String pk_org, LeaveTypeCopyVO typeVO, String year,
+			String month, LeaveBalanceVO[] vos, UFLiteralDate settlementDate, String salaryYear, String salaryMonth)
+			throws BusinessException {
+		UFLiteralDate[] periodBeginEndDate = queryPeriodBeginEndDate(pk_org, typeVO, year, month);
 		UFLiteralDate periodBeginDate = periodBeginEndDate[0];
 		UFLiteralDate periodEndDate = periodBeginEndDate[1];
-		SettlementGroupVO sgv = groupSettlementVOs4YearMonth(pk_org, typeVO,
-				year, periodBeginDate, periodEndDate, vos, settlementDate);
+		SettlementGroupVO sgv = groupSettlementVOs4YearMonth(pk_org, typeVO, year, periodBeginDate, periodEndDate, vos,
+				settlementDate);
 		SettlementResult result = new SettlementResult();
 		result.setQueryUserVOsNotToEffectiveDate4ExistTbmPsndoc(sgv.notToEffectiveDateExistTbmPsndocVOs);
 		result.setQueryUserVOsNotToEffectiveDate4NoTbmPsndoc(sgv.notToEffectiveDateNoTbmPsndocVOs);
@@ -1652,39 +1505,29 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain,
 		LeaveBalanceVO[] canSettleVOs = sgv.toCanSettleVOs();
 		if (ArrayUtils.isEmpty(canSettleVOs))
 			return result;
-		UFLiteralDate[] nextPeriodBeginEndDate = queryPeriodBeginEndDate(
-				pk_org, typeVO, nextYearMonth[0],
+		UFLiteralDate[] nextPeriodBeginEndDate = queryPeriodBeginEndDate(pk_org, typeVO, nextYearMonth[0],
 				nextYearMonth.length == 2 ? nextYearMonth[1] : null);
 		PeriodVO nextPeriod = new PeriodVO();
 		nextPeriod.setTimeyear(nextYearMonth[0]);
-		nextPeriod.setTimemonth(nextYearMonth.length == 2 ? nextYearMonth[1]
-				: null);
+		nextPeriod.setTimemonth(nextYearMonth.length == 2 ? nextYearMonth[1] : null);
 		nextPeriod.setBegindate(nextPeriodBeginEndDate[0]);
 		nextPeriod.setEnddate(nextPeriodBeginEndDate[1]);
 		// 前一个期间/年度
-		String[] previousYearMonth = queryPreviousPeriod(pk_org, typeVO, year,
-				month);
+		String[] previousYearMonth = queryPreviousPeriod(pk_org, typeVO, year, month);
 		PeriodVO previousPeriod = null;
 		if (!ArrayUtils.isEmpty(previousYearMonth)) {
-			UFLiteralDate[] previousPeriodBeginEndDate = queryPeriodBeginEndDate(
-					pk_org,
-					typeVO,
-					previousYearMonth[0],
-					previousYearMonth.length == 2 ? previousYearMonth[1] : null,
-					false);
+			UFLiteralDate[] previousPeriodBeginEndDate = queryPeriodBeginEndDate(pk_org, typeVO, previousYearMonth[0],
+					previousYearMonth.length == 2 ? previousYearMonth[1] : null, false);
 			if (!ArrayUtils.isEmpty(previousPeriodBeginEndDate)) {
 				previousPeriod = new PeriodVO();
 				previousPeriod.setTimeyear(previousYearMonth[0]);
-				previousPeriod
-						.setTimemonth(previousYearMonth.length == 2 ? previousYearMonth[1]
-								: null);
+				previousPeriod.setTimemonth(previousYearMonth.length == 2 ? previousYearMonth[1] : null);
 				previousPeriod.setBegindate(previousPeriodBeginEndDate[0]);
 				previousPeriod.setEnddate(previousPeriodBeginEndDate[1]);
 			}
 		}
-		settlement(pk_org, typeVO, year, month, previousPeriod, nextPeriod,
-				canSettleVOs, createLineNoMap(canSettleVOs), settlementDate,
-				result, salaryYear, salaryMonth);
+		settlement(pk_org, typeVO, year, month, previousPeriod, nextPeriod, canSettleVOs,
+				createLineNoMap(canSettleVOs), settlementDate, result, salaryYear, salaryMonth);
 		return result;
 	}
 
@@ -1696,12 +1539,10 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain,
 	 * @param salaryMonth
 	 * @param salaryYear
 	 */
-	protected SettlementResult firstSettlement4HireDate(String pk_org,
-			LeaveTypeCopyVO typeVO, String year, LeaveBalanceVO[] vos,
-			UFLiteralDate settlementDate, String salaryYear, String salaryMonth)
+	protected SettlementResult firstSettlement4HireDate(String pk_org, LeaveTypeCopyVO typeVO, String year,
+			LeaveBalanceVO[] vos, UFLiteralDate settlementDate, String salaryYear, String salaryMonth)
 			throws BusinessException {
-		SettlementGroupVO sgv = groupSettlementVOs4HireDate(pk_org, typeVO,
-				year, vos, settlementDate);
+		SettlementGroupVO sgv = groupSettlementVOs4HireDate(pk_org, typeVO, year, vos, settlementDate);
 		SettlementResult result = new SettlementResult();
 		result.setQueryUserVOsNotToEffectiveDate4ExistTbmPsndoc(sgv.notToEffectiveDateExistTbmPsndocVOs);
 		result.setQueryUserVOsNotToEffectiveDate4NoTbmPsndoc(sgv.notToEffectiveDateNoTbmPsndocVOs);
@@ -1718,9 +1559,8 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain,
 		String previousYear = Integer.toString(Integer.parseInt(year) - 1);
 		PeriodVO previousPeriod = new PeriodVO();
 		previousPeriod.setTimeyear(previousYear);
-		settlement(pk_org, typeVO, year, null, previousPeriod, nextPeriod,
-				canSettleVOs, createLineNoMap(canSettleVOs), settlementDate,
-				result, salaryYear, salaryMonth);
+		settlement(pk_org, typeVO, year, null, previousPeriod, nextPeriod, canSettleVOs, createLineNoMap(canSettleVOs),
+				settlementDate, result, salaryYear, salaryMonth);
 		return result;
 	}
 
@@ -1734,17 +1574,14 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain,
 	}
 
 	@SuppressWarnings("unchecked")
-	private void settlement(String pk_org, LeaveTypeCopyVO typeVO, String year,
-			String month, PeriodVO previousPeriod, PeriodVO nextPeriod,
-			LeaveBalanceVO[] vos,
-			Map<String, Integer> lineNoMap,// 由于此方法传入的vos是界面vos的子集，为了正确地提示行号，需要将vo的行号放入map，key是pk_psnorg+leaveindex
-			UFLiteralDate settlementDate, SettlementResult result,
-			String salaryYear, String salaryMonth) throws BusinessException {
+	private void settlement(String pk_org, LeaveTypeCopyVO typeVO, String year, String month, PeriodVO previousPeriod,
+			PeriodVO nextPeriod, LeaveBalanceVO[] vos, Map<String, Integer> lineNoMap,// 由于此方法传入的vos是界面vos的子集，为了正确地提示行号，需要将vo的行号放入map，key是pk_psnorg+leaveindex
+			UFLiteralDate settlementDate, SettlementResult result, String salaryYear, String salaryMonth)
+			throws BusinessException {
 		if (ArrayUtils.isEmpty(vos))
 			return;
 		// 结算前，需要先计算
-		UFDateTime calTime = new UFDateTime(settlementDate.toString()
-				+ " 00:00:00");
+		UFDateTime calTime = new UFDateTime(settlementDate.toString() + " 00:00:00");
 		UFDateTime now = new UFDateTime();
 		if (calTime.before(now))
 			calTime = now;
@@ -1756,24 +1593,15 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain,
 		int leaveSet = typeVO.getLeavesettlement().intValue();// 结算方式：作废，转下期，转工资
 		String pk_timeitem = typeVO.getPk_timeitem();
 		String periodField = isMonth ? "curyear||curmonth" : "curyear";
-		String nextPeriodBadCond = "pk_org=? and pk_psnorg=? and pk_timeitem=? and (("
-				+ periodField
-				+ ">? and "
-				+ LeaveBalanceVO.ISSETTLEMENT
-				+ "='Y') or ("
-				+ periodField
-				+ "=? and "
-				+ LeaveBalanceVO.LEAVEINDEX + ">?))";
-		String nextPeriodCond = "pk_org=? and pk_psnorg=? and pk_timeitem=? and "
-				+ periodField + "=? and " + LeaveBalanceVO.LEAVEINDEX + "=1";
+		String nextPeriodBadCond = "pk_org=? and pk_psnorg=? and pk_timeitem=? and ((" + periodField + ">? and "
+				+ LeaveBalanceVO.ISSETTLEMENT + "='Y') or (" + periodField + "=? and " + LeaveBalanceVO.LEAVEINDEX
+				+ ">?))";
+		String nextPeriodCond = "pk_org=? and pk_psnorg=? and pk_timeitem=? and " + periodField + "=? and "
+				+ LeaveBalanceVO.LEAVEINDEX + "=1";
 
-		String preLeaveIndexBadCond = "pk_org=? and pk_psnorg=? and pk_timeitem=? and "
-				+ LeaveBalanceVO.ISSETTLEMENT
-				+ "='Y' and "
-				+ periodField
-				+ "=? and " + LeaveBalanceVO.LEAVEINDEX + "=?";
-		String prePeriodCond = "pk_org=? and pk_psnorg=? and pk_timeitem=? and "
-				+ periodField + "=?";
+		String preLeaveIndexBadCond = "pk_org=? and pk_psnorg=? and pk_timeitem=? and " + LeaveBalanceVO.ISSETTLEMENT
+				+ "='Y' and " + periodField + "=? and " + LeaveBalanceVO.LEAVEINDEX + "=?";
+		String prePeriodCond = "pk_org=? and pk_psnorg=? and pk_timeitem=? and " + periodField + "=?";
 
 		BaseDAO dao = new BaseDAO();
 		SQLParameter para = new SQLParameter();
@@ -1784,31 +1612,24 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain,
 		List<Integer> nextPeriodSealedLine = new ArrayList<Integer>();// 下期已结算的行
 		List<Integer> samePreRecordNotSealedLine = new ArrayList<Integer>();// 同期更早记录还未结算的行
 		List<Integer> previousPeriodNotSealedLine = new ArrayList<Integer>();// 上期还未结算的行
-		ITBMPsndocQueryService psndocService = NCLocator.getInstance().lookup(
-				ITBMPsndocQueryService.class);
+		ITBMPsndocQueryService psndocService = NCLocator.getInstance().lookup(ITBMPsndocQueryService.class);
 
 		// 前期为空时不需要查询考勤档案，因为后续也不会使用
-		TBMPsndocVO[] existtbmpsndocs = previousPeriod == null ? null
-				: psndocService
-						.queryTBMPsndocByPsnorgs(pk_org, StringPiecer
-								.getStrArray(vos, LeaveBalanceVO.PK_PSNORG),
-								previousPeriod.getBegindate(), previousPeriod
-										.getEnddate());
-		Map<Object, TBMPsndocVO[]> tbmpsnExistMap = CommonUtils
-				.group2ArrayByField(TBMPsndocVO.PK_PSNORG, existtbmpsndocs);
+		TBMPsndocVO[] existtbmpsndocs = previousPeriod == null ? null : psndocService.queryTBMPsndocByPsnorgs(pk_org,
+				StringPiecer.getStrArray(vos, LeaveBalanceVO.PK_PSNORG), previousPeriod.getBegindate(),
+				previousPeriod.getEnddate());
+		Map<Object, TBMPsndocVO[]> tbmpsnExistMap = CommonUtils.group2ArrayByField(TBMPsndocVO.PK_PSNORG,
+				existtbmpsndocs);
 		boolean existMapIsNull = MapUtils.isEmpty(tbmpsnExistMap);
 		// 取入职日期
 		Map<String, UFLiteralDate> psnOrgDateMap = new HashMap<String, UFLiteralDate>();
 		InSQLCreator isc = new InSQLCreator();
 		try {
-			String psnOrgInSql = isc.getInSQL(StringPiecer.getStrArray(vos,
-					LeaveBalanceVO.PK_PSNORG));
-			PsnOrgVO[] psnOrgVOs = CommonUtils.retrieveByClause(PsnOrgVO.class,
-					" pk_psnorg in (" + psnOrgInSql + ") ");
+			String psnOrgInSql = isc.getInSQL(StringPiecer.getStrArray(vos, LeaveBalanceVO.PK_PSNORG));
+			PsnOrgVO[] psnOrgVOs = CommonUtils.retrieveByClause(PsnOrgVO.class, " pk_psnorg in (" + psnOrgInSql + ") ");
 			if (!ArrayUtils.isEmpty(psnOrgVOs)) {
 				for (PsnOrgVO psnOrgVO : psnOrgVOs)
-					psnOrgDateMap.put(psnOrgVO.getPk_psnorg(),
-							psnOrgVO.getBegindate());
+					psnOrgDateMap.put(psnOrgVO.getPk_psnorg(), psnOrgVO.getBegindate());
 			}
 		} finally {
 			isc.clear();
@@ -1822,14 +1643,12 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain,
 			para.addParam(isMonth ? (year + month) : year);
 			para.addParam(isMonth ? (year + month) : year);
 			para.addParam(vo.getLeaveindex());
-			LeaveBalanceVO[] badVOs = (LeaveBalanceVO[]) CommonUtils.toArray(
-					LeaveBalanceVO.class, dao.retrieveByClause(
-							LeaveBalanceVO.class, nextPeriodBadCond, para));
+			LeaveBalanceVO[] badVOs = (LeaveBalanceVO[]) CommonUtils.toArray(LeaveBalanceVO.class,
+					dao.retrieveByClause(LeaveBalanceVO.class, nextPeriodBadCond, para));
 			if (!ArrayUtils.isEmpty(badVOs)) {
 				// errMsg.append(MessageFormat.format(getNextPeriodSealedError(),
 				// Integer.toString(lineNoMap.get(vo.getPk_psnorg()+vo.getLeaveindex())+1)));
-				nextPeriodSealedLine.add(lineNoMap.get(vo.getPk_psnorg()
-						+ vo.getLeaveindex()));
+				nextPeriodSealedLine.add(lineNoMap.get(vo.getPk_psnorg() + vo.getLeaveindex()));
 				continue;
 			}
 			// 如果此条记录是在同期/同年还有更老的记录，则要求上一条必须已经结算
@@ -1840,15 +1659,12 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain,
 				para.addParam(pk_timeitem);
 				para.addParam(isMonth ? (year + month) : year);
 				para.addParam(vo.getLeaveindex().intValue() - 1);
-				badVOs = (LeaveBalanceVO[]) CommonUtils.toArray(
-						LeaveBalanceVO.class, dao.retrieveByClause(
-								LeaveBalanceVO.class, preLeaveIndexBadCond,
-								para));
+				badVOs = (LeaveBalanceVO[]) CommonUtils.toArray(LeaveBalanceVO.class,
+						dao.retrieveByClause(LeaveBalanceVO.class, preLeaveIndexBadCond, para));
 				if (ArrayUtils.isEmpty(badVOs) || !badVOs[0].isSettlement()) {
 					// errMsg.append(MessageFormat.format(getSamePreRecordNotSealedError(),
 					// Integer.toString(lineNoMap.get(vo.getPk_psnorg()+vo.getLeaveindex())+1)));
-					samePreRecordNotSealedLine.add(lineNoMap.get(vo
-							.getPk_psnorg() + vo.getLeaveindex()));
+					samePreRecordNotSealedLine.add(lineNoMap.get(vo.getPk_psnorg() + vo.getLeaveindex()));
 					continue;
 				}
 			}
@@ -1864,19 +1680,13 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain,
 					// existsTBMPsndoc = psndocService.existsTBMPsndoc(pk_org,
 					// vo.getPk_psnorg(), previousPeriod.getBegindate(),
 					// previousPeriod.getEnddate());
-					existsTBMPsndoc = !existMapIsNull
-							&& !ArrayUtils.isEmpty(tbmpsnExistMap.get(vo
-									.getPk_psnorg()));
+					existsTBMPsndoc = !existMapIsNull && !ArrayUtils.isEmpty(tbmpsnExistMap.get(vo.getPk_psnorg()));
 				} else {
 					// 如果为按入职日期结算，且当前单据开始日期与入职日期一样，则不再找上期（为了排除工作记录开始日期比组织关系开始日期早的特殊情况）
 					if (psnOrgDateMap.get(vo.getPk_psnorg()) == null
-							|| !psnOrgDateMap.get(vo.getPk_psnorg()).equals(
-									vo.getHirebegindate()))
-						existsTBMPsndoc = psndocService.existsTBMPsndoc(
-								pk_org,
-								vo.getPk_psnorg(),
-								getHireBeginDate(previousPeriod.getYear(),
-										vo.getHirebegindate()), vo
+							|| !psnOrgDateMap.get(vo.getPk_psnorg()).equals(vo.getHirebegindate()))
+						existsTBMPsndoc = psndocService.existsTBMPsndoc(pk_org, vo.getPk_psnorg(),
+								getHireBeginDate(previousPeriod.getYear(), vo.getHirebegindate()), vo
 										.getHirebegindate().getDateBefore(1));
 				}
 				if (existsTBMPsndoc) {
@@ -1884,11 +1694,10 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain,
 					para.addParam(pk_org);
 					para.addParam(vo.getPk_psnorg());
 					para.addParam(pk_timeitem);
-					para.addParam(isMonth ? (previousPeriod.getTimeyear() + previousPeriod
-							.getTimemonth()) : previousPeriod.getTimeyear());
-					badVOs = (LeaveBalanceVO[]) CommonUtils.toArray(
-							LeaveBalanceVO.class, dao.retrieveByClause(
-									LeaveBalanceVO.class, prePeriodCond, para));
+					para.addParam(isMonth ? (previousPeriod.getTimeyear() + previousPeriod.getTimemonth())
+							: previousPeriod.getTimeyear());
+					badVOs = (LeaveBalanceVO[]) CommonUtils.toArray(LeaveBalanceVO.class,
+							dao.retrieveByClause(LeaveBalanceVO.class, prePeriodCond, para));
 					boolean prePeriodNotSealed = false;
 					if (ArrayUtils.isEmpty(badVOs))
 						prePeriodNotSealed = true;
@@ -1903,8 +1712,7 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain,
 					if (prePeriodNotSealed) {
 						// errMsg.append(MessageFormat.format(getPreviousPeriodNotSealedError(),
 						// Integer.toString(lineNoMap.get(vo.getPk_psnorg()+vo.getLeaveindex())+1)));
-						previousPeriodNotSealedLine.add(lineNoMap.get(vo
-								.getPk_psnorg() + vo.getLeaveindex()));
+						previousPeriodNotSealedLine.add(lineNoMap.get(vo.getPk_psnorg() + vo.getLeaveindex()));
 						continue;
 					}
 				}
@@ -1918,8 +1726,8 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain,
 				para.addParam(pk_org);
 				para.addParam(vo.getPk_psnorg());
 				para.addParam(pk_timeitem);
-				para.addParam(isMonth ? (nextPeriod.getTimeyear() + nextPeriod
-						.getTimemonth()) : nextPeriod.getTimeyear());
+				para.addParam(isMonth ? (nextPeriod.getTimeyear() + nextPeriod.getTimemonth()) : nextPeriod
+						.getTimeyear());
 
 				// 2015-09-10修改，若下期没有考勤档案则结余不转下期，解决离职再入职时会把离职前的结余数据带进来（离职时可能已经结算工资了）
 				// 是否要insert，需要看下期是否有考勤档案记录，如果没有，则不需要insert
@@ -1929,27 +1737,18 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain,
 				// for changes of start date of company age
 						&& leaveSetPeriod != LeaveTypeCopyVO.LEAVESETPERIOD_STARTDATE //
 				) {// 按年和期间结算的，下期的日期范围是固定的
-					needInsert = psndocService.existsTBMPsndoc(pk_org,
-							vo.getPk_psnorg(), nextPeriod.getBegindate(),
+					needInsert = psndocService.existsTBMPsndoc(pk_org, vo.getPk_psnorg(), nextPeriod.getBegindate(),
 							nextPeriod.getEnddate());
 				} else {// 按入职日结算的，下期的日期范围因人而异
-					needInsert = psndocService.existsTBMPsndoc(
-							pk_org,
-							vo.getPk_psnorg(),
-							vo.getHireenddate().getDateAfter(1),
-							getHireEndDate(nextPeriod.getTimeyear(),
-									vo.getHirebegindate()));
+					needInsert = psndocService.existsTBMPsndoc(pk_org, vo.getPk_psnorg(), vo.getHireenddate()
+							.getDateAfter(1), getHireEndDate(nextPeriod.getTimeyear(), vo.getHirebegindate()));
 				}
 
-				LeaveBalanceVO[] nextPeriodVOs = (LeaveBalanceVO[]) CommonUtils
-						.toArray(LeaveBalanceVO.class, dao.retrieveByClause(
-								LeaveBalanceVO.class, nextPeriodCond, para));
+				LeaveBalanceVO[] nextPeriodVOs = (LeaveBalanceVO[]) CommonUtils.toArray(LeaveBalanceVO.class,
+						dao.retrieveByClause(LeaveBalanceVO.class, nextPeriodCond, para));
 				UFDouble toLeave = vo.getRestdayorhour();// 转下期的数据，根据需求，转下期是有上限的，因此在此处理。
-				if (typeVO.getLeavemax() != null
-						&& toLeave != null
-						&& typeVO.getLeavemax().doubleValue() > 0
-						&& toLeave.doubleValue() > typeVO.getLeavemax()
-								.doubleValue()) {
+				if (typeVO.getLeavemax() != null && toLeave != null && typeVO.getLeavemax().doubleValue() > 0
+						&& toLeave.doubleValue() > typeVO.getLeavemax().doubleValue()) {
 					toLeave = typeVO.getLeavemax();
 				}
 				// 如果数据库有，则需要update，否则需要insert
@@ -1959,8 +1758,8 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain,
 					updateList.add(updateVO);
 					updateVO.setLastdayorhour(toLeave);// 将本期结余更新到下期的“上期结余”
 					if (toLeave != null && toLeave.doubleValue() != 0) {// 如果本期结余不为0，才有必要重算下期的结余
-						updateVO.setRestdayorhour(updateVO.getRestdayorhour() == null ? toLeave
-								: toLeave.add(updateVO.getRestdayorhour()));
+						updateVO.setRestdayorhour(updateVO.getRestdayorhour() == null ? toLeave : toLeave.add(updateVO
+								.getRestdayorhour()));
 					}
 				} else {
 					// //是否要insert，需要看下期是否有考勤档案记录，如果没有，则不需要insert
@@ -2016,18 +1815,15 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain,
 		}
 		if (nextPeriodSealedLine.size() > 0) {
 			String errLineNo = getMultiLineNo(nextPeriodSealedLine);
-			errMsg.append(MessageFormat.format(getNextPeriodSealedError(),
-					errLineNo));
+			errMsg.append(MessageFormat.format(getNextPeriodSealedError(), errLineNo));
 		}
 		if (samePreRecordNotSealedLine.size() > 0) {
 			String errLineNo = getMultiLineNo(samePreRecordNotSealedLine);
-			errMsg.append(MessageFormat.format(
-					getSamePreRecordNotSealedError(), errLineNo));
+			errMsg.append(MessageFormat.format(getSamePreRecordNotSealedError(), errLineNo));
 		}
 		if (previousPeriodNotSealedLine.size() > 0) {
 			String errLineNo = getMultiLineNo(previousPeriodNotSealedLine);
-			errMsg.append(MessageFormat.format(
-					getPreviousPeriodNotSealedError(), errLineNo));
+			errMsg.append(MessageFormat.format(getPreviousPeriodNotSealedError(), errLineNo));
 		}
 		if (errMsg.length() > 0)
 			result.setErrMsg(errMsg.toString());
@@ -2045,19 +1841,16 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain,
 	 * @return
 	 * @throws BusinessException
 	 */
-	private String[] queryNextPeriod(String pk_org, LeaveTypeCopyVO typeVO,
-			String year, String month) throws BusinessException {
+	private String[] queryNextPeriod(String pk_org, LeaveTypeCopyVO typeVO, String year, String month)
+			throws BusinessException {
 		int leaveSetPeriod = typeVO.getLeavesetperiod().intValue();
 		if (leaveSetPeriod == TimeItemCopyVO.LEAVESETPERIOD_MONTH) {
-			PeriodVO nextPeriod = PeriodServiceFacade.queryNextPeriod(pk_org,
-					year, month);
+			PeriodVO nextPeriod = PeriodServiceFacade.queryNextPeriod(pk_org, year, month);
 			if (nextPeriod != null)
-				return new String[] { nextPeriod.getTimeyear(),
-						nextPeriod.getTimemonth() };
+				return new String[] { nextPeriod.getTimeyear(), nextPeriod.getTimemonth() };
 			return null;
 		}
-		return new String[] { Integer.toString(Integer.parseInt(year) + 1),
-				null };
+		return new String[] { Integer.toString(Integer.parseInt(year) + 1), null };
 	}
 
 	/**
@@ -2070,19 +1863,16 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain,
 	 * @return
 	 * @throws BusinessException
 	 */
-	private String[] queryPreviousPeriod(String pk_org, LeaveTypeCopyVO typeVO,
-			String year, String month) throws BusinessException {
+	private String[] queryPreviousPeriod(String pk_org, LeaveTypeCopyVO typeVO, String year, String month)
+			throws BusinessException {
 		int leaveSetPeriod = typeVO.getLeavesetperiod().intValue();
 		if (leaveSetPeriod == TimeItemCopyVO.LEAVESETPERIOD_MONTH) {
-			PeriodVO previousPeriod = PeriodServiceFacade.queryPreviousPeriod(
-					pk_org, year, month);
+			PeriodVO previousPeriod = PeriodServiceFacade.queryPreviousPeriod(pk_org, year, month);
 			if (previousPeriod != null)
-				return new String[] { previousPeriod.getTimeyear(),
-						previousPeriod.getTimemonth() };
+				return new String[] { previousPeriod.getTimeyear(), previousPeriod.getTimemonth() };
 			return null;
 		}
-		return new String[] { Integer.toString(Integer.parseInt(year) - 1),
-				null };
+		return new String[] { Integer.toString(Integer.parseInt(year) - 1), null };
 	}
 
 	/*
@@ -2095,35 +1885,23 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain,
 	 * boolean, boolean)
 	 */
 	@Override
-	public SettlementResult secondSettlement(String pk_org,
-			String pk_leavetype, String year, String month,
-			LeaveBalanceVO[] vos,
-			boolean isSettleNotToPeriodEndDateNoTbmPsndoc,
-			boolean isSettleNotToEffectiveDateNoTbmPsndocVOs,
-			boolean isSettleNotToEffectiveDateExistTbmPsndocVOs,
-			boolean needCheckNextPeriod, String pk_salaryPeriod)
-			throws BusinessException {
+	public SettlementResult secondSettlement(String pk_org, String pk_leavetype, String year, String month,
+			LeaveBalanceVO[] vos, boolean isSettleNotToPeriodEndDateNoTbmPsndoc,
+			boolean isSettleNotToEffectiveDateNoTbmPsndocVOs, boolean isSettleNotToEffectiveDateExistTbmPsndocVOs,
+			boolean needCheckNextPeriod, String pk_salaryPeriod) throws BusinessException {
 		UFLiteralDate settlementDate = PubEnv.getServerLiteralDate();
-		return secondSettlement(pk_org, pk_leavetype, year, month, vos,
-				settlementDate, isSettleNotToPeriodEndDateNoTbmPsndoc,
-				isSettleNotToEffectiveDateNoTbmPsndocVOs,
-				isSettleNotToEffectiveDateExistTbmPsndocVOs,
-				needCheckNextPeriod, pk_salaryPeriod);
+		return secondSettlement(pk_org, pk_leavetype, year, month, vos, settlementDate,
+				isSettleNotToPeriodEndDateNoTbmPsndoc, isSettleNotToEffectiveDateNoTbmPsndocVOs,
+				isSettleNotToEffectiveDateExistTbmPsndocVOs, needCheckNextPeriod, pk_salaryPeriod);
 	}
 
-	private SettlementResult secondSettlement(String pk_org,
-			String pk_leavetype, String year, String month,
-			LeaveBalanceVO[] vos, UFLiteralDate settlementDate,
-			boolean isSettleNotToPeriodEndDateNoTbmPsndoc,
-			boolean isSettleNotToEffectiveDateNoTbmPsndocVOs,
-			boolean isSettleNotToEffectiveDateExistTbmPsndocVOs,
-			boolean needCheckNextPeriod, String pk_salaryPeriod)
-			throws BusinessException {
-		ITimeItemQueryService service = NCLocator.getInstance().lookup(
-				ITimeItemQueryService.class);
-		LeaveTypeCopyVO typeVO = (LeaveTypeCopyVO) service
-				.queryCopyTypesByDefPK(pk_org, pk_leavetype,
-						TimeItemCopyVO.LEAVE_TYPE);
+	private SettlementResult secondSettlement(String pk_org, String pk_leavetype, String year, String month,
+			LeaveBalanceVO[] vos, UFLiteralDate settlementDate, boolean isSettleNotToPeriodEndDateNoTbmPsndoc,
+			boolean isSettleNotToEffectiveDateNoTbmPsndocVOs, boolean isSettleNotToEffectiveDateExistTbmPsndocVOs,
+			boolean needCheckNextPeriod, String pk_salaryPeriod) throws BusinessException {
+		ITimeItemQueryService service = NCLocator.getInstance().lookup(ITimeItemQueryService.class);
+		LeaveTypeCopyVO typeVO = (LeaveTypeCopyVO) service.queryCopyTypesByDefPK(pk_org, pk_leavetype,
+				TimeItemCopyVO.LEAVE_TYPE);
 		LeaveBalanceDAO balanceDAO = new LeaveBalanceDAO();
 		balanceDAO.syncFromDB(typeVO, year, month, vos);
 		int leavesetPeriod = typeVO.getLeavesetperiod().intValue();
@@ -2131,14 +1909,12 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain,
 		PeriodVO salaryPeriodVO = null;
 		String salaryYear = null;
 		String salaryMonth = null;
-		IPeriodQueryService periodQuery = NCLocator.getInstance().lookup(
-				IPeriodQueryService.class);
+		IPeriodQueryService periodQuery = NCLocator.getInstance().lookup(IPeriodQueryService.class);
 		if (TimeItemCopyVO.LEAVESETTLEMENT_MONEY == typeVO.getLeavesettlement()) {// 若是转薪资的，需要确认把薪资转移到哪个考勤期间，若期间为空默认当前期间
 			if (StringUtils.isBlank(pk_salaryPeriod)) {
 				salaryPeriodVO = periodQuery.queryCurPeriod(pk_org);
 			} else {
-				salaryPeriodVO = (PeriodVO) new BaseDAO().retrieveByPK(
-						PeriodVO.class, pk_salaryPeriod);
+				salaryPeriodVO = (PeriodVO) new BaseDAO().retrieveByPK(PeriodVO.class, pk_salaryPeriod);
 			}
 			salaryYear = salaryPeriodVO.getYear();
 			salaryMonth = salaryPeriodVO.getMonth();
@@ -2152,36 +1928,26 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain,
 		// for changes of start date of company age
 				|| leavesetPeriod == TimeItemCopyVO.LEAVESETPERIOD_STARTDATE)
 			//
-			return secondSettlement4HireDate(pk_org, typeVO, year, vos,
-					settlementDate, isSettleNotToPeriodEndDateNoTbmPsndoc,
-					isSettleNotToEffectiveDateNoTbmPsndocVOs,
-					isSettleNotToEffectiveDateExistTbmPsndocVOs,
-					needCheckNextPeriod, salaryYear, salaryMonth);
-		return secondSettlement4YearMonth(pk_org, typeVO, year, month, vos,
-				settlementDate, isSettleNotToPeriodEndDateNoTbmPsndoc,
-				isSettleNotToEffectiveDateNoTbmPsndocVOs,
-				isSettleNotToEffectiveDateExistTbmPsndocVOs,
-				needCheckNextPeriod, salaryYear, salaryMonth);
+			return secondSettlement4HireDate(pk_org, typeVO, year, vos, settlementDate,
+					isSettleNotToPeriodEndDateNoTbmPsndoc, isSettleNotToEffectiveDateNoTbmPsndocVOs,
+					isSettleNotToEffectiveDateExistTbmPsndocVOs, needCheckNextPeriod, salaryYear, salaryMonth);
+		return secondSettlement4YearMonth(pk_org, typeVO, year, month, vos, settlementDate,
+				isSettleNotToPeriodEndDateNoTbmPsndoc, isSettleNotToEffectiveDateNoTbmPsndocVOs,
+				isSettleNotToEffectiveDateExistTbmPsndocVOs, needCheckNextPeriod, salaryYear, salaryMonth);
 	}
 
-	protected SettlementResult secondSettlement4YearMonth(String pk_org,
-			LeaveTypeCopyVO typeVO, String year, String month,
-			LeaveBalanceVO[] vos, UFLiteralDate settlementDate,
-			boolean isSettleNotToPeriodEndDateNoTbmPsndoc,
-			boolean isSettleNotToEffectiveDateNoTbmPsndocVOs,
-			boolean isSettleNotToEffectiveDateExistTbmPsndocVOs,
-			boolean needCheckNextPeriod, String salaryYear, String salaryMonth)
-			throws BusinessException {
-		UFLiteralDate[] periodBeginEndDate = queryPeriodBeginEndDate(pk_org,
-				typeVO, year, month);
+	protected SettlementResult secondSettlement4YearMonth(String pk_org, LeaveTypeCopyVO typeVO, String year,
+			String month, LeaveBalanceVO[] vos, UFLiteralDate settlementDate,
+			boolean isSettleNotToPeriodEndDateNoTbmPsndoc, boolean isSettleNotToEffectiveDateNoTbmPsndocVOs,
+			boolean isSettleNotToEffectiveDateExistTbmPsndocVOs, boolean needCheckNextPeriod, String salaryYear,
+			String salaryMonth) throws BusinessException {
+		UFLiteralDate[] periodBeginEndDate = queryPeriodBeginEndDate(pk_org, typeVO, year, month);
 		UFLiteralDate periodBeginDate = periodBeginEndDate[0];
 		UFLiteralDate periodEndDate = periodBeginEndDate[1];
-		SettlementGroupVO sgv = groupSettlementVOs4YearMonth(pk_org, typeVO,
-				year, periodBeginDate, periodEndDate, vos, settlementDate);
-		LeaveBalanceVO[] canSettleVOs = sgv.toCanSettleVOs(
-				isSettleNotToPeriodEndDateNoTbmPsndoc,
-				isSettleNotToEffectiveDateNoTbmPsndocVOs,
-				isSettleNotToEffectiveDateExistTbmPsndocVOs);
+		SettlementGroupVO sgv = groupSettlementVOs4YearMonth(pk_org, typeVO, year, periodBeginDate, periodEndDate, vos,
+				settlementDate);
+		LeaveBalanceVO[] canSettleVOs = sgv.toCanSettleVOs(isSettleNotToPeriodEndDateNoTbmPsndoc,
+				isSettleNotToEffectiveDateNoTbmPsndocVOs, isSettleNotToEffectiveDateExistTbmPsndocVOs);
 		SettlementResult result = new SettlementResult();
 		result.setSettledVOs(vos);
 		if (ArrayUtils.isEmpty(canSettleVOs))
@@ -2189,66 +1955,46 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain,
 		PeriodVO nextPeriod = null;
 		// 2013-03-20 添加调配出组织，休假转移的数据不需要处理下期
 		if (needCheckNextPeriod) {
-			String[] nextYearMonth = queryNextPeriod(pk_org, typeVO, year,
-					month);
+			String[] nextYearMonth = queryNextPeriod(pk_org, typeVO, year, month);
 			if (ArrayUtils.isEmpty(nextYearMonth))
-				throw new BusinessException(ResHelper.getString("6017leave",
-						"06017leave0232")
+				throw new BusinessException(ResHelper.getString("6017leave", "06017leave0232")
 				/* @res "系统未定义下期!" */);
-			UFLiteralDate[] nextPeriodBeginEndDate = queryPeriodBeginEndDate(
-					pk_org, typeVO, nextYearMonth[0],
+			UFLiteralDate[] nextPeriodBeginEndDate = queryPeriodBeginEndDate(pk_org, typeVO, nextYearMonth[0],
 					nextYearMonth.length == 2 ? nextYearMonth[1] : null);
 			nextPeriod = new PeriodVO();
 			nextPeriod.setTimeyear(nextYearMonth[0]);
-			nextPeriod
-					.setTimemonth(nextYearMonth.length == 2 ? nextYearMonth[1]
-							: null);
+			nextPeriod.setTimemonth(nextYearMonth.length == 2 ? nextYearMonth[1] : null);
 			nextPeriod.setBegindate(nextPeriodBeginEndDate[0]);
 			nextPeriod.setEnddate(nextPeriodBeginEndDate[1]);
 		}
 
-		String[] previousYearMonth = queryPreviousPeriod(pk_org, typeVO, year,
-				month);
+		String[] previousYearMonth = queryPreviousPeriod(pk_org, typeVO, year, month);
 		PeriodVO previousPeriod = null;
 		if (!ArrayUtils.isEmpty(previousYearMonth)) {
-			UFLiteralDate[] previousPeriodBeginEndDate = queryPeriodBeginEndDate(
-					pk_org,
-					typeVO,
-					previousYearMonth[0],
-					previousYearMonth.length == 2 ? previousYearMonth[1] : null,
-					false);
+			UFLiteralDate[] previousPeriodBeginEndDate = queryPeriodBeginEndDate(pk_org, typeVO, previousYearMonth[0],
+					previousYearMonth.length == 2 ? previousYearMonth[1] : null, false);
 			if (!ArrayUtils.isEmpty(previousPeriodBeginEndDate)) {
 				previousPeriod = new PeriodVO();
 				previousPeriod.setTimeyear(previousYearMonth[0]);
-				previousPeriod
-						.setTimemonth(previousYearMonth.length == 2 ? previousYearMonth[1]
-								: null);
+				previousPeriod.setTimemonth(previousYearMonth.length == 2 ? previousYearMonth[1] : null);
 				previousPeriod.setBegindate(previousPeriodBeginEndDate[0]);
 				previousPeriod.setEnddate(previousPeriodBeginEndDate[1]);
 			}
 		}
-		settlement(pk_org, typeVO, year, month, previousPeriod, nextPeriod,
-				canSettleVOs, createLineNoMap(canSettleVOs), settlementDate,
-				result, salaryYear, salaryMonth);
+		settlement(pk_org, typeVO, year, month, previousPeriod, nextPeriod, canSettleVOs,
+				createLineNoMap(canSettleVOs), settlementDate, result, salaryYear, salaryMonth);
 		return result;
 	}
 
-	protected SettlementResult secondSettlement4HireDate(String pk_org,
-			LeaveTypeCopyVO typeVO, String year, LeaveBalanceVO[] vos,
-			UFLiteralDate settlementDate,
-			boolean isSettleNotToPeriodEndDateNoTbmPsndoc,
-			boolean isSettleNotToEffectiveDateNoTbmPsndocVOs,
-			boolean isSettleNotToEffectiveDateExistTbmPsndocVOs,
-			boolean needCheckNextPeriod, String salaryYear, String salaryMonth)
-			throws BusinessException {
+	protected SettlementResult secondSettlement4HireDate(String pk_org, LeaveTypeCopyVO typeVO, String year,
+			LeaveBalanceVO[] vos, UFLiteralDate settlementDate, boolean isSettleNotToPeriodEndDateNoTbmPsndoc,
+			boolean isSettleNotToEffectiveDateNoTbmPsndocVOs, boolean isSettleNotToEffectiveDateExistTbmPsndocVOs,
+			boolean needCheckNextPeriod, String salaryYear, String salaryMonth) throws BusinessException {
 		if (ArrayUtils.isEmpty(vos))
 			return new SettlementResult();
-		SettlementGroupVO sgv = groupSettlementVOs4HireDate(pk_org, typeVO,
-				year, vos, settlementDate);
-		LeaveBalanceVO[] canSettleVOs = sgv.toCanSettleVOs(
-				isSettleNotToPeriodEndDateNoTbmPsndoc,
-				isSettleNotToEffectiveDateNoTbmPsndocVOs,
-				isSettleNotToEffectiveDateExistTbmPsndocVOs);
+		SettlementGroupVO sgv = groupSettlementVOs4HireDate(pk_org, typeVO, year, vos, settlementDate);
+		LeaveBalanceVO[] canSettleVOs = sgv.toCanSettleVOs(isSettleNotToPeriodEndDateNoTbmPsndoc,
+				isSettleNotToEffectiveDateNoTbmPsndocVOs, isSettleNotToEffectiveDateExistTbmPsndocVOs);
 		SettlementResult result = new SettlementResult();
 		result.setSettledVOs(vos);
 		if (ArrayUtils.isEmpty(canSettleVOs))
@@ -2264,9 +2010,8 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain,
 		String previousYear = Integer.toString(Integer.parseInt(year) - 1);
 		PeriodVO previousPeriod = new PeriodVO();
 		previousPeriod.setTimeyear(previousYear);
-		settlement(pk_org, typeVO, year, null, previousPeriod, nextPeriod,
-				canSettleVOs, createLineNoMap(canSettleVOs), settlementDate,
-				result, salaryYear, salaryMonth);
+		settlement(pk_org, typeVO, year, null, previousPeriod, nextPeriod, canSettleVOs, createLineNoMap(canSettleVOs),
+				settlementDate, result, salaryYear, salaryMonth);
 		return result;
 
 	}
@@ -2282,32 +2027,27 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain,
 	 * @return
 	 * @throws BusinessException
 	 */
-	private SettlementGroupVO groupSettlementVOs4HireDate(String pk_org,
-			LeaveTypeCopyVO typeVO, String year, LeaveBalanceVO[] vos,// 要求传入的vo已经和数据库中的同步过
+	private SettlementGroupVO groupSettlementVOs4HireDate(String pk_org, LeaveTypeCopyVO typeVO, String year,
+			LeaveBalanceVO[] vos,// 要求传入的vo已经和数据库中的同步过
 			UFLiteralDate settlementDate) throws BusinessException {
 		// 如果结算日期早于year 01-01，则抛异常
 		if (settlementDate.toString().substring(0, 4).compareTo(year) < 0)
-			throw new BusinessException(MessageFormat.format(
-					getSealDateTooEarlyError(), year + "-01-01"));
+			throw new BusinessException(MessageFormat.format(getSealDateTooEarlyError(), year + "-01-01"));
 		List<LeaveBalanceVO> notToPeriodEndDateNoTbmPsndocList = new ArrayList<LeaveBalanceVO>();// 未结算，且未到期末日，且结算日到期末日无考勤档案的人员，需要提示是否结算
 		List<LeaveBalanceVO> notToEffectiveDateNoTbmPsndocList = new ArrayList<LeaveBalanceVO>();// 未结算，且过了期末日未到有效期，且结算日到有效期内无考勤档案的人员，需要提示是否结算
 		List<LeaveBalanceVO> notToEffectiveDateExistTbmPsndocList = new ArrayList<LeaveBalanceVO>();// 未结算，且过了期末日未到有效期，且结算日到有效期内有考勤档案的人员，需要提示是否结算
 		List<LeaveBalanceVO> exceedEffectiveDateList = new ArrayList<LeaveBalanceVO>();// 未结算，且已过了有效期的人员，无需提示，肯定能结算
-		ITBMPsndocQueryService tbmpsndocService = NCLocator.getInstance()
-				.lookup(ITBMPsndocQueryService.class);
+		ITBMPsndocQueryService tbmpsndocService = NCLocator.getInstance().lookup(ITBMPsndocQueryService.class);
 		int extendCount = typeVO.getExtendDaysCount();// 有效期能延长多少天
 		SettlementGroupVO retVO = new SettlementGroupVO();
 		String pk_user = InvocationInfoProxy.getInstance().getUserId();
 		String pk_group = InvocationInfoProxy.getInstance().getGroupId();
-		IDataPermissionPubService perimssionService = NCLocator.getInstance()
-				.lookup(IDataPermissionPubService.class);
+		IDataPermissionPubService perimssionService = NCLocator.getInstance().lookup(IDataPermissionPubService.class);
 		Map<String, UFBoolean> perimssionMap = null;
 		if (!PubEnv.UAP_USER.equalsIgnoreCase(pk_user))// 2013-03-29后台任务查询权限报错
-			perimssionMap = perimssionService
-					.isUserhasPermissionByMetaDataOperation("60170psndoc",
-							StringPiecer.getStrArrayDistinct(vos,
-									LeaveBalanceVO.PK_TBM_PSNDOC),
-							"LeaveBalanceAction", pk_group, pk_user);
+			perimssionMap = perimssionService.isUserhasPermissionByMetaDataOperation("60170psndoc",
+					StringPiecer.getStrArrayDistinct(vos, LeaveBalanceVO.PK_TBM_PSNDOC), "LeaveBalanceAction",
+					pk_group, pk_user);
 		for (LeaveBalanceVO vo : vos) {
 			if (vo.isSettlement()) {// 已经结算了的，刨除掉
 				continue;
@@ -2317,37 +2057,28 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain,
 			}
 			// // 没有权限的刨除掉 #2012-10-10修改，使用map减少sql量
 			if (!PubEnv.UAP_USER.equalsIgnoreCase(pk_user)) {
-				if (perimssionMap != null
-						&& perimssionMap
-								.get(vo.toTBMPsndocVO().getPrimaryKey()) != null
-						&& !perimssionMap.get(
-								vo.toTBMPsndocVO().getPrimaryKey())
-								.booleanValue())
+				if (perimssionMap != null && perimssionMap.get(vo.toTBMPsndocVO().getPrimaryKey()) != null
+						&& !perimssionMap.get(vo.toTBMPsndocVO().getPrimaryKey()).booleanValue())
 					continue;
 			}
 			// if(!perimssionService.isUserhasPermissionByMetaDataOperation("60170psndoc",
 			// vo.toTBMPsndocVO().getPrimaryKey(), "LeaveBalanceAction",
 			// pk_group, pk_user))
 			// continue;//没有结算权限的，刨除掉
-			if (!settlementDate.before(vo.getHirebegindate())
-					&& !settlementDate.after(vo.getHireenddate())) {
-				boolean existPsndoc = tbmpsndocService.existsTBMPsndoc(pk_org,
-						vo.getPk_psnorg(), settlementDate.getDateAfter(1),
-						vo.getHireenddate());
+			if (!settlementDate.before(vo.getHirebegindate()) && !settlementDate.after(vo.getHireenddate())) {
+				boolean existPsndoc = tbmpsndocService.existsTBMPsndoc(pk_org, vo.getPk_psnorg(),
+						settlementDate.getDateAfter(1), vo.getHireenddate());
 				if (!existPsndoc) {
 					notToPeriodEndDateNoTbmPsndocList.add(vo);
 					continue;
 				}
 				continue;
 			}
-			UFLiteralDate effectiveDate = extendCount == 0 ? vo
-					.getHireenddate() : vo.getHireenddate().getDateAfter(
+			UFLiteralDate effectiveDate = extendCount == 0 ? vo.getHireenddate() : vo.getHireenddate().getDateAfter(
 					extendCount);
-			if (settlementDate.after(vo.getHireenddate())
-					&& !settlementDate.after(effectiveDate)) {
-				boolean existPsndoc = tbmpsndocService.existsTBMPsndoc(pk_org,
-						vo.getPk_psnorg(), settlementDate.getDateAfter(1),
-						effectiveDate);
+			if (settlementDate.after(vo.getHireenddate()) && !settlementDate.after(effectiveDate)) {
+				boolean existPsndoc = tbmpsndocService.existsTBMPsndoc(pk_org, vo.getPk_psnorg(),
+						settlementDate.getDateAfter(1), effectiveDate);
 				if (existPsndoc) {
 					notToEffectiveDateExistTbmPsndocList.add(vo);
 					continue;
@@ -2359,17 +2090,14 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain,
 				exceedEffectiveDateList.add(vo);
 		}
 		if (notToPeriodEndDateNoTbmPsndocList.size() > 0)
-			retVO.notToPeriodEndDateNoTbmPsndocVOs = notToPeriodEndDateNoTbmPsndocList
-					.toArray(new LeaveBalanceVO[0]);
+			retVO.notToPeriodEndDateNoTbmPsndocVOs = notToPeriodEndDateNoTbmPsndocList.toArray(new LeaveBalanceVO[0]);
 		if (notToEffectiveDateNoTbmPsndocList.size() > 0)
-			retVO.notToEffectiveDateNoTbmPsndocVOs = notToEffectiveDateNoTbmPsndocList
-					.toArray(new LeaveBalanceVO[0]);
+			retVO.notToEffectiveDateNoTbmPsndocVOs = notToEffectiveDateNoTbmPsndocList.toArray(new LeaveBalanceVO[0]);
 		if (notToEffectiveDateExistTbmPsndocList.size() > 0)
 			retVO.notToEffectiveDateExistTbmPsndocVOs = notToEffectiveDateExistTbmPsndocList
 					.toArray(new LeaveBalanceVO[0]);
 		if (exceedEffectiveDateList.size() > 0)
-			retVO.exceedEffectiveDateVOs = exceedEffectiveDateList
-					.toArray(new LeaveBalanceVO[0]);
+			retVO.exceedEffectiveDateVOs = exceedEffectiveDateList.toArray(new LeaveBalanceVO[0]);
 		return retVO;
 	}
 
@@ -2386,70 +2114,52 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain,
 	 * @return
 	 * @throws BusinessException
 	 */
-	private SettlementGroupVO groupSettlementVOs4YearMonth(String pk_org,
-			LeaveTypeCopyVO typeVO, String year, UFLiteralDate periodBeginDate,
-			UFLiteralDate periodEndDate, LeaveBalanceVO[] vos,// 要求传入的vo已经和数据库中的同步过
+	private SettlementGroupVO groupSettlementVOs4YearMonth(String pk_org, LeaveTypeCopyVO typeVO, String year,
+			UFLiteralDate periodBeginDate, UFLiteralDate periodEndDate, LeaveBalanceVO[] vos,// 要求传入的vo已经和数据库中的同步过
 			UFLiteralDate settlementDate) throws BusinessException {
 		if (settlementDate.before(periodBeginDate))
-			throw new BusinessException(MessageFormat.format(
-					getSealDateTooEarlyError(), periodBeginDate));
+			throw new BusinessException(MessageFormat.format(getSealDateTooEarlyError(), periodBeginDate));
 		int extendCount = typeVO.getExtendDaysCount();// 有效期能延长多少天
-		UFLiteralDate effectiveDate = extendCount == 0 ? periodEndDate
-				: periodEndDate.getDateAfter(extendCount);
+		UFLiteralDate effectiveDate = extendCount == 0 ? periodEndDate : periodEndDate.getDateAfter(extendCount);
 		SettlementGroupVO retVO = new SettlementGroupVO();
 		String pk_user = InvocationInfoProxy.getInstance().getUserId();
 		String pk_group = InvocationInfoProxy.getInstance().getGroupId();
-		IDataPermissionPubService perimssionService = NCLocator.getInstance()
-				.lookup(IDataPermissionPubService.class);
-		Map<String, UFBoolean> perimssionMap = perimssionService
-				.isUserhasPermissionByMetaDataOperation("60170psndoc",
-						StringPiecer.getStrArrayDistinct(vos,
-								LeaveBalanceVO.PK_TBM_PSNDOC),
-						"LeaveBalanceAction", pk_group, pk_user);
+		IDataPermissionPubService perimssionService = NCLocator.getInstance().lookup(IDataPermissionPubService.class);
+		Map<String, UFBoolean> perimssionMap = perimssionService.isUserhasPermissionByMetaDataOperation("60170psndoc",
+				StringPiecer.getStrArrayDistinct(vos, LeaveBalanceVO.PK_TBM_PSNDOC), "LeaveBalanceAction", pk_group,
+				pk_user);
 		if (settlementDate.after(effectiveDate)) {// 如果结算日已过有效期，则只可能有两种：结算了的，和剩下的
 			List<LeaveBalanceVO> leftList = new ArrayList<LeaveBalanceVO>();
 			for (LeaveBalanceVO vo : vos) {
 				if (vo.isSettlement())
 					continue;
-				if (perimssionMap != null
-						&& perimssionMap
-								.get(vo.toTBMPsndocVO().getPrimaryKey()) != null
-						&& !perimssionMap.get(
-								vo.toTBMPsndocVO().getPrimaryKey())
-								.booleanValue())
+				if (perimssionMap != null && perimssionMap.get(vo.toTBMPsndocVO().getPrimaryKey()) != null
+						&& !perimssionMap.get(vo.toTBMPsndocVO().getPrimaryKey()).booleanValue())
 					continue;// 没有结算权限的，刨除掉
 				leftList.add(vo);
 			}
 			if (leftList.size() > 0)
-				retVO.exceedEffectiveDateVOs = leftList
-						.toArray(new LeaveBalanceVO[0]);
+				retVO.exceedEffectiveDateVOs = leftList.toArray(new LeaveBalanceVO[0]);
 			return retVO;
 		}
-		ITBMPsndocQueryService tbmpsndocService = NCLocator.getInstance()
-				.lookup(ITBMPsndocQueryService.class);
+		ITBMPsndocQueryService tbmpsndocService = NCLocator.getInstance().lookup(ITBMPsndocQueryService.class);
 		// 如果结算日未过期末日，则只能有三种：结算了的，和未过期末日无/有考勤档案的
 		if (!settlementDate.after(periodEndDate)) {
 			List<LeaveBalanceVO> noPsndocList = new ArrayList<LeaveBalanceVO>();
 
 			// 优化时添加
-			TBMPsndocVO[] tbmpsndocs = tbmpsndocService
-					.queryTBMPsndocByPsnorgs(pk_org, StringPiecer.getStrArray(
-							vos, LeaveBalanceVO.PK_PSNORG), settlementDate
-							.getDateAfter(1), periodEndDate);
-			Map<Object, TBMPsndocVO[]> tbmpsnMap = CommonUtils
-					.group2ArrayByField(TBMPsndocVO.PK_PSNORG, tbmpsndocs);
+			TBMPsndocVO[] tbmpsndocs = tbmpsndocService.queryTBMPsndocByPsnorgs(pk_org,
+					StringPiecer.getStrArray(vos, LeaveBalanceVO.PK_PSNORG), settlementDate.getDateAfter(1),
+					periodEndDate);
+			Map<Object, TBMPsndocVO[]> tbmpsnMap = CommonUtils.group2ArrayByField(TBMPsndocVO.PK_PSNORG, tbmpsndocs);
 			boolean mapIsNull = MapUtils.isEmpty(tbmpsnMap);
 
 			for (LeaveBalanceVO vo : vos) {
 				if (vo.isSettlement()) {
 					continue;
 				}
-				if (perimssionMap != null
-						&& perimssionMap
-								.get(vo.toTBMPsndocVO().getPrimaryKey()) != null
-						&& !perimssionMap.get(
-								vo.toTBMPsndocVO().getPrimaryKey())
-								.booleanValue())
+				if (perimssionMap != null && perimssionMap.get(vo.toTBMPsndocVO().getPrimaryKey()) != null
+						&& !perimssionMap.get(vo.toTBMPsndocVO().getPrimaryKey()).booleanValue())
 					continue;// 没有结算权限的，刨除掉
 				// 不再循环中查询了，提取出来
 				// boolean existPsndoc =
@@ -2459,30 +2169,25 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain,
 				// noPsndocList.add(vo);
 				// continue;
 				// }
-				if (mapIsNull
-						|| ArrayUtils.isEmpty(tbmpsnMap.get(vo.getPk_psnorg()))) {
+				if (mapIsNull || ArrayUtils.isEmpty(tbmpsnMap.get(vo.getPk_psnorg()))) {
 					noPsndocList.add(vo);
 					continue;
 				}
 			}
 			if (noPsndocList.size() > 0)
-				retVO.notToPeriodEndDateNoTbmPsndocVOs = noPsndocList
-						.toArray(new LeaveBalanceVO[0]);
+				retVO.notToPeriodEndDateNoTbmPsndocVOs = noPsndocList.toArray(new LeaveBalanceVO[0]);
 			return retVO;
 		}
 		// 如果结算日过了期末日，但未到有效期日，则只能有三种：结算了的，和未到有效期无/有考勤档案的
-		if (settlementDate.after(periodEndDate)
-				&& !settlementDate.after(effectiveDate)) {
+		if (settlementDate.after(periodEndDate) && !settlementDate.after(effectiveDate)) {
 			List<LeaveBalanceVO> noPsndocList = new ArrayList<LeaveBalanceVO>();
 			List<LeaveBalanceVO> existPsndocList = new ArrayList<LeaveBalanceVO>();
 
 			// 优化时添加
-			TBMPsndocVO[] tbmpsndocs = tbmpsndocService
-					.queryTBMPsndocByPsnorgs(pk_org, StringPiecer.getStrArray(
-							vos, LeaveBalanceVO.PK_PSNORG), settlementDate
-							.getDateAfter(1), effectiveDate);
-			Map<Object, TBMPsndocVO[]> tbmpsnMap = CommonUtils
-					.group2ArrayByField(TBMPsndocVO.PK_PSNORG, tbmpsndocs);
+			TBMPsndocVO[] tbmpsndocs = tbmpsndocService.queryTBMPsndocByPsnorgs(pk_org,
+					StringPiecer.getStrArray(vos, LeaveBalanceVO.PK_PSNORG), settlementDate.getDateAfter(1),
+					effectiveDate);
+			Map<Object, TBMPsndocVO[]> tbmpsnMap = CommonUtils.group2ArrayByField(TBMPsndocVO.PK_PSNORG, tbmpsndocs);
 			boolean mapIsNull = MapUtils.isEmpty(tbmpsnMap);
 
 			for (LeaveBalanceVO vo : vos) {
@@ -2498,9 +2203,7 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain,
 				// continue;
 				// }
 
-				if (!mapIsNull
-						&& !ArrayUtils
-								.isEmpty(tbmpsnMap.get(vo.getPk_psnorg()))) {
+				if (!mapIsNull && !ArrayUtils.isEmpty(tbmpsnMap.get(vo.getPk_psnorg()))) {
 					existPsndocList.add(vo);
 					continue;
 				}
@@ -2508,11 +2211,9 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain,
 				noPsndocList.add(vo);
 			}
 			if (existPsndocList.size() > 0)
-				retVO.notToEffectiveDateExistTbmPsndocVOs = existPsndocList
-						.toArray(new LeaveBalanceVO[0]);
+				retVO.notToEffectiveDateExistTbmPsndocVOs = existPsndocList.toArray(new LeaveBalanceVO[0]);
 			if (noPsndocList.size() > 0)
-				retVO.notToEffectiveDateNoTbmPsndocVOs = noPsndocList
-						.toArray(new LeaveBalanceVO[0]);
+				retVO.notToEffectiveDateNoTbmPsndocVOs = noPsndocList.toArray(new LeaveBalanceVO[0]);
 			return retVO;
 		}
 		return retVO;
@@ -2538,43 +2239,34 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain,
 			return exceedEffectiveDateVOs;
 		}
 
-		LeaveBalanceVO[] toCanSettleVOs(
-				boolean isSettleNotToPeriodEndDateNoTbmPsndoc,
-				boolean isSettleNotToEffectiveDateNoTbmPsndocVOs,
-				boolean isSettleNotToEffectiveDateExistTbmPsndocVOs) {// 根据界面用户的选择，返回可以结算的人员
+		LeaveBalanceVO[] toCanSettleVOs(boolean isSettleNotToPeriodEndDateNoTbmPsndoc,
+				boolean isSettleNotToEffectiveDateNoTbmPsndocVOs, boolean isSettleNotToEffectiveDateExistTbmPsndocVOs) {// 根据界面用户的选择，返回可以结算的人员
 			LeaveBalanceVO[] retVOs = exceedEffectiveDateVOs;
-			if (isSettleNotToPeriodEndDateNoTbmPsndoc
-					&& !ArrayUtils.isEmpty(notToPeriodEndDateNoTbmPsndocVOs))
-				retVOs = (LeaveBalanceVO[]) org.apache.commons.lang.ArrayUtils
-						.addAll(retVOs, notToPeriodEndDateNoTbmPsndocVOs);
-			if (isSettleNotToEffectiveDateNoTbmPsndocVOs
-					&& !ArrayUtils.isEmpty(notToEffectiveDateNoTbmPsndocVOs))
-				retVOs = (LeaveBalanceVO[]) org.apache.commons.lang.ArrayUtils
-						.addAll(retVOs, notToEffectiveDateNoTbmPsndocVOs);
-			if (isSettleNotToEffectiveDateExistTbmPsndocVOs
-					&& !ArrayUtils.isEmpty(notToEffectiveDateExistTbmPsndocVOs))
-				retVOs = (LeaveBalanceVO[]) org.apache.commons.lang.ArrayUtils
-						.addAll(retVOs, notToEffectiveDateExistTbmPsndocVOs);
+			if (isSettleNotToPeriodEndDateNoTbmPsndoc && !ArrayUtils.isEmpty(notToPeriodEndDateNoTbmPsndocVOs))
+				retVOs = (LeaveBalanceVO[]) org.apache.commons.lang.ArrayUtils.addAll(retVOs,
+						notToPeriodEndDateNoTbmPsndocVOs);
+			if (isSettleNotToEffectiveDateNoTbmPsndocVOs && !ArrayUtils.isEmpty(notToEffectiveDateNoTbmPsndocVOs))
+				retVOs = (LeaveBalanceVO[]) org.apache.commons.lang.ArrayUtils.addAll(retVOs,
+						notToEffectiveDateNoTbmPsndocVOs);
+			if (isSettleNotToEffectiveDateExistTbmPsndocVOs && !ArrayUtils.isEmpty(notToEffectiveDateExistTbmPsndocVOs))
+				retVOs = (LeaveBalanceVO[]) org.apache.commons.lang.ArrayUtils.addAll(retVOs,
+						notToEffectiveDateExistTbmPsndocVOs);
 			return retVOs;
 		}
 	}
 
-	private LeaveBalanceVO[] setDefaultTimeitemCopy(LeaveBalanceVO[] vos)
-			throws BusinessException {
+	private LeaveBalanceVO[] setDefaultTimeitemCopy(LeaveBalanceVO[] vos) throws BusinessException {
 		if (ArrayUtils.isEmpty(vos))
 			return null;
-		ITimeItemQueryService queryService = NCLocator.getInstance().lookup(
-				ITimeItemQueryService.class);
+		ITimeItemQueryService queryService = NCLocator.getInstance().lookup(ITimeItemQueryService.class);
 		// 休假类别Map, Key: 组织主键 value-key: 休假类别定义主键 value: 休假类别
 		Map<String, Map<String, LeaveTypeCopyVO>> allTimeitemMap = new HashMap<String, Map<String, LeaveTypeCopyVO>>();
 		for (int i = 0; i < vos.length; i++) {
 			String pk_org = vos[i].getPk_org();
 			if (allTimeitemMap.get(pk_org) == null)
-				allTimeitemMap.put(pk_org,
-						queryService.queryLeaveCopyTypeMapByOrg(pk_org));
-			String pk_timeitemcopy = allTimeitemMap.get(pk_org) == null ? null
-					: allTimeitemMap.get(pk_org).get(vos[i].getPk_timeitem())
-							.getPk_timeitemcopy();
+				allTimeitemMap.put(pk_org, queryService.queryLeaveCopyTypeMapByOrg(pk_org));
+			String pk_timeitemcopy = allTimeitemMap.get(pk_org) == null ? null : allTimeitemMap.get(pk_org)
+					.get(vos[i].getPk_timeitem()).getPk_timeitemcopy();
 			vos[i].setPk_timeitemcopy(pk_timeitemcopy);
 		}
 		return vos;
@@ -2582,23 +2274,18 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain,
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public LeaveBalanceVO[] queryByPsn(String pk_psndoc, String pk_leavetype,
-			String year, boolean containsHis, UFBoolean issettlement)
-			throws BusinessException {
-		TBMPsndocVO latestVO = NCLocator.getInstance()
-				.lookup(ITBMPsndocQueryMaintain.class)
+	public LeaveBalanceVO[] queryByPsn(String pk_psndoc, String pk_leavetype, String year, boolean containsHis,
+			UFBoolean issettlement) throws BusinessException {
+		TBMPsndocVO latestVO = NCLocator.getInstance().lookup(ITBMPsndocQueryMaintain.class)
 				.queryByPsndocAndDateTime(pk_psndoc, new UFDateTime());
 		List<LeaveBalanceVO> listVO = null;
 		if (latestVO == null)
 			return null;
-		ITimeItemQueryService timeItemService = NCLocator.getInstance().lookup(
-				ITimeItemQueryService.class);
+		ITimeItemQueryService timeItemService = NCLocator.getInstance().lookup(ITimeItemQueryService.class);
 		// 需要根据结算方式过滤一下数据，比如假期计算默认按年结算，假期计算后，在自助假期查询可以查询到计算的数据。将参数改为按期间结算，在期间计算后，在自助假期查询能查到期间的数据，但之前年的数据还在，应该删掉
-		LeaveTypeCopyVO typeCopyVO = (LeaveTypeCopyVO) timeItemService
-				.queryCopyTypesByDefPK(latestVO.getPk_org(), pk_leavetype,
-						TimeItemVO.LEAVE_TYPE);
-		String cond = LeaveBalanceVO.PK_PSNDOC + "=? and "
-				+ LeaveBalanceVO.PK_TIMEITEM + "=? ";
+		LeaveTypeCopyVO typeCopyVO = (LeaveTypeCopyVO) timeItemService.queryCopyTypesByDefPK(latestVO.getPk_org(),
+				pk_leavetype, TimeItemVO.LEAVE_TYPE);
+		String cond = LeaveBalanceVO.PK_PSNDOC + "=? and " + LeaveBalanceVO.PK_TIMEITEM + "=? ";
 		if (StringUtils.isNotBlank(year)) {// 自助查询可以查询所有年度的，年度为空
 			cond += "and " + LeaveBalanceVO.CURYEAR + "=? ";
 		}
@@ -2606,11 +2293,9 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain,
 		if (!containsHis)
 			cond += " and " + LeaveBalanceVO.PK_ORG + "=? ";
 		// 若按月结算的需过滤一下
-		if (TimeItemCopyVO.LEAVESETPERIOD_MONTH == typeCopyVO
-				.getLeavesetperiod()) {
+		if (TimeItemCopyVO.LEAVESETPERIOD_MONTH == typeCopyVO.getLeavesetperiod()) {
 			cond += " and curmonth is not null";
-		} else if (TimeItemCopyVO.LEAVESETPERIOD_YEAR == typeCopyVO
-				.getLeavesetperiod()) {// 按年结算修改为按期间结算后产生垃圾数据，需要过滤一下
+		} else if (TimeItemCopyVO.LEAVESETPERIOD_YEAR == typeCopyVO.getLeavesetperiod()) {// 按年结算修改为按期间结算后产生垃圾数据，需要过滤一下
 			cond += " and curmonth is null";
 		}
 		if (issettlement != null && issettlement.booleanValue()) {
@@ -2626,15 +2311,12 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain,
 		}
 		if (!containsHis)
 			para.addParam(latestVO.getPk_org());
-		String order = LeaveBalanceVO.CURMONTH + "," + LeaveBalanceVO.PK_PSNORG
-				+ "," + LeaveBalanceVO.LEAVEINDEX;
-		LeaveBalanceVO[] vos = (LeaveBalanceVO[]) CommonUtils.toArray(
-				LeaveBalanceVO.class, new BaseDAO().retrieveByClause(
-						LeaveBalanceVO.class, cond, order, para));
+		String order = LeaveBalanceVO.CURMONTH + "," + LeaveBalanceVO.PK_PSNORG + "," + LeaveBalanceVO.LEAVEINDEX;
+		LeaveBalanceVO[] vos = (LeaveBalanceVO[]) CommonUtils.toArray(LeaveBalanceVO.class,
+				new BaseDAO().retrieveByClause(LeaveBalanceVO.class, cond, order, para));
 		if (ArrayUtils.isEmpty(vos))
 			return null;
-		String pk_psnorg = processPsnjobAndLeaveTypeCopy4Psn(pk_psndoc,
-				pk_leavetype, vos);
+		String pk_psnorg = processPsnjobAndLeaveTypeCopy4Psn(pk_psndoc, pk_leavetype, vos);
 		// 过滤掉不是最新考勤档案的休假数据
 		if (pk_psnorg != null) {
 			listVO = new ArrayList<LeaveBalanceVO>();
@@ -2659,18 +2341,15 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain,
 	 * @param leaveBalanceVOs
 	 * @throws BusinessException
 	 */
-	private String processPsnjobAndLeaveTypeCopy4Psn(String pk_psndoc,
-			String pk_leavetype, LeaveBalanceVO[] leaveBalanceVOs)
-			throws BusinessException {
-		ITBMPsndocQueryService psndocService = NCLocator.getInstance().lookup(
-				ITBMPsndocQueryService.class);
-		ITimeItemQueryService timeItemService = NCLocator.getInstance().lookup(
-				ITimeItemQueryService.class);
+	private String processPsnjobAndLeaveTypeCopy4Psn(String pk_psndoc, String pk_leavetype,
+			LeaveBalanceVO[] leaveBalanceVOs) throws BusinessException {
+		ITBMPsndocQueryService psndocService = NCLocator.getInstance().lookup(ITBMPsndocQueryService.class);
+		ITimeItemQueryService timeItemService = NCLocator.getInstance().lookup(ITimeItemQueryService.class);
 		Map<String, String> typeCopyMap = new HashMap<String, String>();// key是pk_org,value是leavetypecopy
 		String pk_psnorg = null;
 		String Sql = "select pk_timeitem from tbm_timeitem where (timeitemname='Annual Leave' or timeitemname='年假') and (enablestate='2') ";
-		GeneralVO[] pk_timeitems = (GeneralVO[]) new BaseDAO().executeQuery(
-				Sql, new GeneralVOProcessor<GeneralVO>(GeneralVO.class));
+		GeneralVO[] pk_timeitems = (GeneralVO[]) new BaseDAO().executeQuery(Sql, new GeneralVOProcessor<GeneralVO>(
+				GeneralVO.class));
 		for (LeaveBalanceVO leaveBalanceVO : leaveBalanceVOs) {
 			String pk_org = leaveBalanceVO.getPk_org();
 			String year = leaveBalanceVO.getCuryear();
@@ -2678,22 +2357,19 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain,
 			UFLiteralDate beginDate = null;
 			UFLiteralDate endDate = null;
 			if (org.apache.commons.lang.StringUtils.isNotEmpty(month)) {
-				PeriodVO periodVO = PeriodServiceFacade.queryByYearMonth(
-						pk_org, year, month);
+				PeriodVO periodVO = PeriodServiceFacade.queryByYearMonth(pk_org, year, month);
 				if (periodVO == null)
 					continue;
 				beginDate = periodVO.getBegindate();
 				endDate = periodVO.getEnddate();
 			} else {
-				PeriodVO[] periodVOs = PeriodServiceFacade.queryByYear(pk_org,
-						year);
+				PeriodVO[] periodVOs = PeriodServiceFacade.queryByYear(pk_org, year);
 				if (ArrayUtils.isEmpty(periodVOs))
 					continue;
 				beginDate = periodVOs[0].getBegindate();
 				endDate = periodVOs[periodVOs.length - 1].getEnddate();
 			}
-			TBMPsndocVO psndocVO = psndocService.queryLatestByPsndocDate(
-					pk_org, pk_psndoc, beginDate, endDate);
+			TBMPsndocVO psndocVO = psndocService.queryLatestByPsndocDate(pk_org, pk_psndoc, beginDate, endDate);
 			if (psndocVO == null)
 				continue;
 			leaveBalanceVO.setPk_psnjob(psndocVO.getPk_psnjob());
@@ -2703,15 +2379,13 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain,
 			}
 			// 如果休假类别为年假，通过pk_psnorg过滤掉离职再入职人员的离职前数据
 			if (pk_leavetype != null
-					&& pk_leavetype.equals(pk_timeitems == null ? null
-							: pk_timeitems[0].getAttributeValue("pk_timeitem"))) {
+					&& pk_leavetype.equals(pk_timeitems == null ? null : pk_timeitems[0]
+							.getAttributeValue("pk_timeitem"))) {
 				pk_psnorg = psndocVO.getPk_psnorg();
 			}
-			LeaveTypeCopyVO typeCopyVO = (LeaveTypeCopyVO) timeItemService
-					.queryCopyTypesByDefPK(pk_org, pk_leavetype,
-							TimeItemVO.LEAVE_TYPE);
-			String pk_leavetypecopy = typeCopyVO == null ? null : typeCopyVO
-					.getPk_timeitemcopy();
+			LeaveTypeCopyVO typeCopyVO = (LeaveTypeCopyVO) timeItemService.queryCopyTypesByDefPK(pk_org, pk_leavetype,
+					TimeItemVO.LEAVE_TYPE);
+			String pk_leavetypecopy = typeCopyVO == null ? null : typeCopyVO.getPk_timeitemcopy();
 			typeCopyMap.put(pk_org, pk_leavetypecopy);
 			leaveBalanceVO.setPk_timeitemcopy(pk_leavetypecopy);
 		}
@@ -2751,59 +2425,42 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain,
 	 * @throws BusinessException
 	 */
 	@Override
-	public void translateLeave(PsnJobVO oldJobvo, PsnJobVO newJobvo)
-			throws BusinessException {
+	public void translateLeave(PsnJobVO oldJobvo, PsnJobVO newJobvo) throws BusinessException {
 		if (oldJobvo == null || newJobvo == null)
 			return;
 		// 所属组织不一定是hr组织，需要处理一下
-		OrgVO oldhr = NCLocator.getInstance().lookup(IAOSQueryService.class)
-				.queryHROrgByOrgPK(oldJobvo.getPk_org());
-		OrgVO newhr = NCLocator.getInstance().lookup(IAOSQueryService.class)
-				.queryHROrgByOrgPK(newJobvo.getPk_org());
+		OrgVO oldhr = NCLocator.getInstance().lookup(IAOSQueryService.class).queryHROrgByOrgPK(oldJobvo.getPk_org());
+		OrgVO newhr = NCLocator.getInstance().lookup(IAOSQueryService.class).queryHROrgByOrgPK(newJobvo.getPk_org());
 		String oldhrorg = oldhr.getPk_org();
 		String newhrorg = newhr.getPk_org();
 		// 所属人力资源组织没有发生变化不用转移结余
 		if (oldhrorg.equals(newhrorg))
 			return;
 		// 查询需要转移的休假类别
-		ITimeItemQueryMaintain leaveTypeQuery = NCLocator.getInstance().lookup(
-				ITimeItemQueryMaintain.class);
+		ITimeItemQueryMaintain leaveTypeQuery = NCLocator.getInstance().lookup(ITimeItemQueryMaintain.class);
 		String condition = LeaveTypeCopyVO.ISLEAVETRANSFER + " = 'Y' ";
-		LeaveTypeCopyVO[] oldTypes = leaveTypeQuery.queryLeaveCopyTypesByOrg(
-				oldhrorg, condition);
+		LeaveTypeCopyVO[] oldTypes = leaveTypeQuery.queryLeaveCopyTypesByOrg(oldhrorg, condition);
 		if (ArrayUtils.isEmpty(oldTypes))
 			return;
-		LeaveTypeCopyVO[] newTypes = leaveTypeQuery.queryLeaveCopyTypesByOrg(
-				newhrorg, condition);
+		LeaveTypeCopyVO[] newTypes = leaveTypeQuery.queryLeaveCopyTypesByOrg(newhrorg, condition);
 		if (ArrayUtils.isEmpty(newTypes))
 			return;
 
-		TimeRuleVO newTimeRuleVO = NCLocator.getInstance()
-				.lookup(ITimeRuleQueryService.class).queryByOrg(newhrorg);
-		IPeriodQueryService periodQuery = NCLocator.getInstance().lookup(
-				IPeriodQueryService.class);
+		TimeRuleVO newTimeRuleVO = NCLocator.getInstance().lookup(ITimeRuleQueryService.class).queryByOrg(newhrorg);
+		IPeriodQueryService periodQuery = NCLocator.getInstance().lookup(IPeriodQueryService.class);
 		UFLiteralDate enddate = newJobvo.getBegindate();
 		PeriodVO oldPeriod = periodQuery.queryByDate(oldhrorg, enddate);
-		PeriodVO newPeriod = periodQuery.queryByDate(newhrorg,
-				newJobvo.getBegindate());
+		PeriodVO newPeriod = periodQuery.queryByDate(newhrorg, newJobvo.getBegindate());
 		// 找出共同引用全局或集团的类别的进行处理转移结余时长
-		Map<String, LeaveTypeCopyVO> oldMap = CommonUtils.toMap(
-				LeaveTypeCopyVO.PK_TIMEITEM, oldTypes);
-		Map<String, LeaveTypeCopyVO> newMap = CommonUtils.toMap(
-				LeaveTypeCopyVO.PK_TIMEITEM, newTypes);
+		Map<String, LeaveTypeCopyVO> oldMap = CommonUtils.toMap(LeaveTypeCopyVO.PK_TIMEITEM, oldTypes);
+		Map<String, LeaveTypeCopyVO> newMap = CommonUtils.toMap(LeaveTypeCopyVO.PK_TIMEITEM, newTypes);
 		// LeaveBalanceVO的查询条件
-		FromWhereSQL fromWhereSQL = TBMPsndocSqlPiecer
-				.ensureJoinPsnjobTable(null);// 首先要保证关联了工作记录表
-		String psnjobTableName = fromWhereSQL
-				.getTableAliasByAttrpath("pk_psnjob");
-		String oldPsnjobCond = psnjobTableName + ".pk_psnjob = '"
-				+ oldJobvo.getPk_psnjob() + "' ";
-		FromWhereSQL oldFromWhereSQL = TBMPsndocSqlPiecer
-				.addPsnjobCond2QuerySQL(oldPsnjobCond, fromWhereSQL);
-		String newPsnjobCond = psnjobTableName + ".pk_psnjob = '"
-				+ newJobvo.getPk_psnjob() + "' ";
-		FromWhereSQL newFromWhereSQL = TBMPsndocSqlPiecer
-				.addPsnjobCond2QuerySQL(newPsnjobCond, fromWhereSQL);
+		FromWhereSQL fromWhereSQL = TBMPsndocSqlPiecer.ensureJoinPsnjobTable(null);// 首先要保证关联了工作记录表
+		String psnjobTableName = fromWhereSQL.getTableAliasByAttrpath("pk_psnjob");
+		String oldPsnjobCond = psnjobTableName + ".pk_psnjob = '" + oldJobvo.getPk_psnjob() + "' ";
+		FromWhereSQL oldFromWhereSQL = TBMPsndocSqlPiecer.addPsnjobCond2QuerySQL(oldPsnjobCond, fromWhereSQL);
+		String newPsnjobCond = psnjobTableName + ".pk_psnjob = '" + newJobvo.getPk_psnjob() + "' ";
+		FromWhereSQL newFromWhereSQL = TBMPsndocSqlPiecer.addPsnjobCond2QuerySQL(newPsnjobCond, fromWhereSQL);
 		List<LeaveBalanceVO> updateList = new ArrayList<LeaveBalanceVO>();
 		// 此处for循环中有数据库操作，但是不需要优化，因为循环次数一般<=1,且不一定走完，若是都提取到循环外，则一定要查询几次数据库，有可能适得其反了
 		for (String pk_timeitem : oldMap.keySet()) {
@@ -2812,16 +2469,14 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain,
 			LeaveTypeCopyVO oldTypeVO = oldMap.get(pk_timeitem);
 			LeaveTypeCopyVO newTypeVO = newMap.get(pk_timeitem);
 			// 查询原组织记录
-			LeaveBalanceVO[] oldLeaveBalanceVOs = queryByCondition(oldhrorg,
-					oldTypeVO, oldPeriod.getTimeyear(),
+			LeaveBalanceVO[] oldLeaveBalanceVOs = queryByCondition(oldhrorg, oldTypeVO, oldPeriod.getTimeyear(),
 					oldPeriod.getTimemonth(), oldFromWhereSQL);
 			if (ArrayUtils.isEmpty(oldLeaveBalanceVOs))
 				continue;
 			LeaveBalanceVO oldLeaveVO = null;
 			// 原组织的假期记录可能有多条，取未结算的,2013-03-27与需求确定 若都已经结算了则不再转移
 			for (LeaveBalanceVO vo : oldLeaveBalanceVOs) {
-				if (vo.getIssettlement() != null
-						&& vo.getIssettlement().booleanValue())
+				if (vo.getIssettlement() != null && vo.getIssettlement().booleanValue())
 					continue;
 				if (oldLeaveVO == null) {
 					oldLeaveVO = vo;
@@ -2836,13 +2491,10 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain,
 			// oldPeriod.getTimemonth(),oldLeaveBalanceVOs, new
 			// UFDateTime(enddate.toDate()));
 			// 结算，获取结余时长
-			SettlementResult secondSettlement = secondSettlement(oldhrorg,
-					pk_timeitem, oldPeriod.getTimeyear(),
-					oldPeriod.getTimemonth(),
-					new LeaveBalanceVO[] { oldLeaveVO }, enddate, true, true,
-					true, false, null);
-			LeaveBalanceVO[] oldSettlementVos = secondSettlement
-					.getSettledVOs();
+			SettlementResult secondSettlement = secondSettlement(oldhrorg, pk_timeitem, oldPeriod.getTimeyear(),
+					oldPeriod.getTimemonth(), new LeaveBalanceVO[] { oldLeaveVO }, enddate, true, true, true, false,
+					null);
+			LeaveBalanceVO[] oldSettlementVos = secondSettlement.getSettledVOs();
 			if (ArrayUtils.isEmpty(oldSettlementVos))
 				continue;
 			// 找出本次结算的那条数据作为转出数据
@@ -2871,8 +2523,7 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain,
 			// UFDateTime(oldSettVO.getSettlementdate().toDate()));
 			// }
 			oldSettVO.setCalculatetime(new UFDateTime(enddate.toDate()));
-			if (oldSettVO.getIssettlement() == null
-					|| !oldSettVO.getIssettlement().booleanValue()) {
+			if (oldSettVO.getIssettlement() == null || !oldSettVO.getIssettlement().booleanValue()) {
 				oldSettVO.setIssettlement(UFBoolean.TRUE);
 				oldSettVO.setSettlementdate(enddate);
 				oldSettVO.setSettlementmethod(3);
@@ -2891,8 +2542,7 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain,
 				}
 			}
 			// 获取转入组织的记录
-			LeaveBalanceVO[] newLeaveBalanceVOs = queryByCondition(newhrorg,
-					newTypeVO, newPeriod.getTimeyear(),
+			LeaveBalanceVO[] newLeaveBalanceVOs = queryByCondition(newhrorg, newTypeVO, newPeriod.getTimeyear(),
 					newPeriod.getTimemonth(), newFromWhereSQL);
 			// 计算
 			// newLeaveBalanceVOs = calculate(newhrorg, newTypeVO,
@@ -2916,9 +2566,8 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain,
 			newVo.setTransflag(UFBoolean.TRUE);
 			// 重新计算结余时长，由系统计算，此处不处理了
 			// newVo.setRestdayorhour(newVo.getRestdayorhour().add(inLength));
-			calculate(newhrorg, newTypeVO, newPeriod.getTimeyear(),
-					newPeriod.getTimemonth(), new LeaveBalanceVO[] { newVo },
-					new UFDateTime(enddate.toDate()));
+			calculate(newhrorg, newTypeVO, newPeriod.getTimeyear(), newPeriod.getTimemonth(),
+					new LeaveBalanceVO[] { newVo }, new UFDateTime(enddate.toDate()));
 
 			// 保存处理后的数据
 			updateList.add(oldSettVO);
@@ -2931,8 +2580,7 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain,
 	}
 
 	@Override
-	public void translateLeaves(PsnJobVO[] oldJobvos, PsnJobVO[] newJobvos)
-			throws BusinessException {
+	public void translateLeaves(PsnJobVO[] oldJobvos, PsnJobVO[] newJobvos) throws BusinessException {
 		if (ArrayUtils.isEmpty(newJobvos))
 			return;
 		for (int i = 0; i < newJobvos.length; i++) {
@@ -2941,26 +2589,20 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain,
 	}
 
 	@Override
-	public LeaveBalanceVO[] queryByPsnPks(String[] pk_psnOrgs,
-			LoginContext context, String pk_leavetype, String year, String month)
-			throws BusinessException {
+	public LeaveBalanceVO[] queryByPsnPks(String[] pk_psnOrgs, LoginContext context, String pk_leavetype, String year,
+			String month) throws BusinessException {
 		// 使用pk_psndocs对离职再入职人员会出现一个Pk_psndoc对应两条数据的情况，修改为使用pk_psnorg
 		// FromWhereSQL createPsndocArrayQuerySQL =
 		// TBMPsndocSqlPiecer.createPsndocArrayQuerySQL(pk_psndocs);
-		FromWhereSQL fromWhereSql = TBMPsndocSqlPiecer
-				.addTBMPsndocCond2QuerySQL(" pk_psnorg in("
-						+ new InSQLCreator().getInSQL(pk_psnOrgs) + ") ", null);
-		return queryByCondition(context, pk_leavetype, year, month,
-				fromWhereSql);
+		FromWhereSQL fromWhereSql = TBMPsndocSqlPiecer.addTBMPsndocCond2QuerySQL(
+				" pk_psnorg in(" + new InSQLCreator().getInSQL(pk_psnOrgs) + ") ", null);
+		return queryByCondition(context, pk_leavetype, year, month, fromWhereSql);
 	}
 
 	@Override
-	public String[] queryPsnPksByCondition(LoginContext context,
-			String pk_leavetype, String year, String month,
+	public String[] queryPsnPksByCondition(LoginContext context, String pk_leavetype, String year, String month,
 			FromWhereSQL fromWhereSQL) throws BusinessException {
-		LeaveBalanceVO[] queryByCondition = queryByCondition(context,
-				pk_leavetype, year, month, fromWhereSQL);
-		return StringPiecer.getStrArray(queryByCondition,
-				LeaveBalanceVO.PK_PSNORG);// 此处无法使用主键，因为有新构造的vo，数据库中不存在
+		LeaveBalanceVO[] queryByCondition = queryByCondition(context, pk_leavetype, year, month, fromWhereSQL);
+		return StringPiecer.getStrArray(queryByCondition, LeaveBalanceVO.PK_PSNORG);// 此处无法使用主键，因为有新构造的vo，数据库中不存在
 	}
 }

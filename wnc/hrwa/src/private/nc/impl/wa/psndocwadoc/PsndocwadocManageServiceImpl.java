@@ -1,17 +1,23 @@
 package nc.impl.wa.psndocwadoc;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 import java.util.Vector;
 
 import nc.bs.bd.baseservice.busilog.BDBusiLogUtil;
+import nc.bs.dao.BaseDAO;
 import nc.bs.dao.DAOException;
 import nc.bs.framework.common.NCLocator;
 import nc.bs.logging.Logger;
@@ -30,10 +36,19 @@ import nc.itf.hr.wa.IPsndocwadocManageService;
 import nc.itf.hr.wa.IPsndocwadocQueryService;
 import nc.itf.hr.wa.IWaGradeService;
 import nc.itf.hr.wa.WaPowerSqlHelper;
+import nc.itf.ta.IPsnCalendarManageService;
 import nc.jdbc.framework.SQLParameter;
+import nc.jdbc.framework.processor.ColumnProcessor;
+import nc.jdbc.framework.processor.ResultSetProcessor;
 import nc.pub.encryption.util.SalaryDecryptUtil;
 import nc.pub.encryption.util.SalaryEncryptionUtil;
+import nc.pubitf.para.SysInitQuery;
 import nc.ui.hr.comp.sort.UFDoubleCompare;
+import nc.vo.bd.team.team01.entity.TeamHeadVO;
+import nc.vo.bd.team.team01.entity.TeamItemVO;
+import nc.vo.hi.psndoc.PsnJobVO;
+import nc.vo.hi.psndoc.PsnOrgVO;
+import nc.vo.hi.psndoc.PsndocVO;
 import nc.vo.hi.psndoc.WainfoVO;
 import nc.vo.hi.pub.HICommonValue;
 import nc.vo.hi.wadoc.PsndocWadocMainVO;
@@ -42,6 +57,8 @@ import nc.vo.hr.managescope.ManagescopeBusiregionEnum;
 import nc.vo.jcom.lang.StringUtil;
 import nc.vo.org.DeptVO;
 import nc.vo.pub.BusinessException;
+import nc.vo.pub.CircularlyAccessibleValueObject;
+import nc.vo.pub.VOStatus;
 import nc.vo.pub.lang.UFBoolean;
 import nc.vo.pub.lang.UFDouble;
 import nc.vo.pub.lang.UFLiteralDate;
@@ -51,7 +68,15 @@ import nc.vo.wa.adjust.AdjustWadocVO;
 import nc.vo.wa.adjust.BatchAdjustVO;
 import nc.vo.wa.adjust.PsnappaproveBVO;
 import nc.vo.wa.adjust.WaAdjustParaTool;
+import nc.vo.wa.grade.AggWaGradeVO;
+import nc.vo.wa.grade.IWaGradeCommonDef;
 import nc.vo.wa.grade.WaCriterionVO;
+import nc.vo.wa.grade.WaGradeVO;
+import nc.vo.wa.grade.WaGradeVerVO;
+import nc.vo.wa.grade.WaPrmlvVO;
+import nc.vo.wa.grade.WaPsnhiBVO;
+import nc.vo.wa.grade.WaPsnhiVO;
+import nc.vo.wa.grade.WaSeclvVO;
 import nc.vo.wa.pub.HRWAMetadataConstants;
 
 import org.apache.commons.lang.ArrayUtils;
@@ -65,10 +90,13 @@ import org.apache.commons.lang.StringUtils;
  * @since: eHR V6.0
  * @走查人:
  * @走查日期:
- * @修改人:
+ * @修改人:s
  * @修改日期:
  */
 public class PsndocwadocManageServiceImpl implements IPsndocwadocManageService, IPsndocwadocQueryService {
+
+	private String refTransType; // 留停異動類型
+	private String refReturnType;// 複職異動類型
 
 	private PsndocWadocDAO psndocWadocDaO;
 
@@ -1017,8 +1045,8 @@ public class PsndocwadocManageServiceImpl implements IPsndocwadocManageService, 
 		if (StringUtils.isEmpty(strPKPrmlv)) {
 			throw new BusinessException(ResHelper.getString("60130adjapply", "060130adjapply0111"));
 		}
-		criterionVo = ((NCLocator.getInstance().lookup(IWaGradeService.class))).getCrierionVOByPrmSec(strPKPrmlv,
-				strPKSeclv);
+		criterionVo = ((NCLocator.getInstance().lookup(IWaGradeService.class))).getCrierionVOByPrmSec(
+				wadocVO.getBegindate(), strPKPrmlv, strPKSeclv);
 
 		if (criterionVo != null) {
 			// 2016-12-2 zhousze 薪资加密：这里处理定调资信息维护修改保存时，校验逻辑解密数据 begin
@@ -2045,4 +2073,679 @@ public class PsndocwadocManageServiceImpl implements IPsndocwadocManageService, 
 	public void psndocWadocSaveToWainfoVO(PsndocWadocVO[] psndocWadocs) throws BusinessException {
 		BTOBXVOConversionUtility.psndocWadocSaveToWainfoVO(psndocWadocs);
 	}
+
+	@Override
+	public void generateByPsnJob(PsnJobVO[] newPsnJobs) throws BusinessException {
+
+		// 留停異動類型
+
+		// 加载人员信息和工作记录的逻辑字段
+		String loadLogicSql = "select HR_INFOSET.INFOSET_CODE||'::'||HR_INFOSET_ITEM.ITEM_CODE from HR_INFOSET_ITEM "
+				+ " left join HR_INFOSET on HR_INFOSET.PK_INFOSET = HR_INFOSET_ITEM.PK_INFOSET  and HR_INFOSET.dr = 0 "
+				+ " where HR_INFOSET_ITEM.dr = 0 and HR_INFOSET_ITEM.DATA_TYPE = 4 and HR_INFOSET.INFOSET_CODE in ( 'bd_psndoc','hi_psnjob') ";
+		@SuppressWarnings("unchecked")
+		Set<String> logicColSet = (Set<String>) getPsndocWadocDao().getBaseDao().executeQuery(loadLogicSql,
+				new ResultSetProcessor() {
+					private Set<String> rsSet = new HashSet<>();
+
+					@Override
+					public Object handleResultSet(ResultSet rs) throws SQLException {
+						while (rs.next()) {
+							rsSet.add(rs.getString(1));
+						}
+						return rsSet;
+					}
+				});
+		for (PsnJobVO newPsnJob : newPsnJobs) {
+			refTransType = SysInitQuery.getParaString(newPsnJob.getPk_hrorg(), "TWHR11").toString();
+			// 複職異動類型
+			refReturnType = SysInitQuery.getParaString(newPsnJob.getPk_hrorg(), "TWHR12").toString();
+
+			if (newPsnJob == null) {
+				continue;
+			}
+			// 校验考勤档案和定调资记录
+			if (newPsnJob.getEnddate() != null) {
+				validateTbmAndWadoc(newPsnJob);
+			}
+
+			PsndocVO psnVO = (PsndocVO) getPsndocWadocDao().getBaseDao().retrieveByPK(PsndocVO.class,
+					newPsnJob.getPk_psndoc());
+
+			// 離職情況不處理
+			if (newPsnJob.getTrnsevent() == 4) {
+				this.getPsndocWadocDao()
+						.getBaseDao()
+						.executeUpdate(
+								"update hi_psndoc_wadoc set enddate='"
+										+ newPsnJob.getBegindate().getDateBefore(1).toString() + "' where pk_psndoc='"
+										+ newPsnJob.getPk_psndoc()
+										+ "' and isnull(enddate, '9999-12-31') >= '9999-01-01'");
+				return;
+			}
+
+			// 未轉入人員檔案的不能生成定調資數據
+			PsnOrgVO psnorg = (PsnOrgVO) this.getPsndocWadocDao().getBaseDao()
+					.retrieveByPK(PsnOrgVO.class, newPsnJob.getPk_psnorg());
+			if (psnorg.getIndocflag() == null || !psnorg.getIndocflag().booleanValue()) {
+				continue;
+			}
+
+			// ssx added on 2020-01-15
+			// 由於薪資暫時不處理派遣人員，故對派遣人員暫不處理定調資相關資料，日後處理這部分資料時需要放開此限制
+			String empForm = (String) newPsnJob.getAttributeValue("jobglbdef8");
+			String sendingType = (String) this
+					.getPsndocWadocDao()
+					.getBaseDao()
+					.executeQuery(
+							"select pk_defdoc from bd_defdoc where pk_defdoclist = (select pk_defdoclist from bd_defdoclist where code = 'HR006_0xx') and code in ('C')",
+							new ColumnProcessor());
+			if (sendingType.equals(empForm)) {
+				continue;
+			}
+			// end 2020-01-15
+
+			if (refTransType == null || refTransType.equals("~")) {
+				throw new BusinessException("系統參數 [TWHR11] 未指定用於留停的異動類型。");
+			}
+
+			if (refReturnType == null || refReturnType.equals("~")) {
+				throw new BusinessException("系統參數 [TWHR12] 未指定用於留停複職的異動類型。");
+			}
+
+			// 處理停薪留職影響定調資，返回值為TRUE時，不再繼續處理後續定調資項目生成邏輯，用於停薪留職
+			if (!dealWithStopWageRemainPos(newPsnJob)) {
+
+				List<AggWaGradeVO> aggvos = new ArrayList<AggWaGradeVO>();
+				Map<String, WaCriterionVO[]> gradeCriterions = new HashMap<String, WaCriterionVO[]>();
+				Map<String, Collection<WaPsnhiBVO>> gradePsnhiBs = new HashMap<String, Collection<WaPsnhiBVO>>();
+
+				// 加載薪資標準相關數據
+				loadWaGradeInfo(newPsnJob, aggvos, gradeCriterions, gradePsnhiBs);
+
+				for (AggWaGradeVO aggvo : aggvos) {
+					Map<String, String> psnClassValues = new HashMap<String, String>();// 人員級別取值
+					Map<String, String> psnLevelValues = new HashMap<String, String>();// 人員檔別取值
+					for (CircularlyAccessibleValueObject psnhiVO : aggvo.getTableVO(IWaGradeCommonDef.WA_PSNHI)) {
+						((WaPsnhiVO) psnhiVO).getVfldcode();
+						String value = null;
+
+						if (getSourceMeta(((WaPsnhiVO) psnhiVO).getPk_flddict()).contains("hrhi.bd_psndoc")) {
+							value = String.valueOf(psnVO.getAttributeValue(((WaPsnhiVO) psnhiVO).getVfldcode()));
+							// 如果是逻辑类型,那么需要把空值设为N
+							if (value.equals("null")
+									&& logicColSet.contains("bd_psndoc::" + ((WaPsnhiVO) psnhiVO).getVfldcode())) {
+								value = "N";
+							}
+						} else {
+							value = String.valueOf(newPsnJob.getAttributeValue(((WaPsnhiVO) psnhiVO).getVfldcode()));
+							// 如果是逻辑类型,那么需要把空值设为N
+							if (value.equals("null")
+									&& logicColSet.contains("hi_psnjob::" + ((WaPsnhiVO) psnhiVO).getVfldcode())) {
+								value = "N";
+							}
+						}
+
+						if (((WaPsnhiVO) psnhiVO).getClasstype() == 1) {
+							// 級別
+							psnClassValues.put(((WaPsnhiVO) psnhiVO).getPk_wa_psnhi(), value);
+						} else {
+							// 檔別
+							psnLevelValues.put(((WaPsnhiVO) psnhiVO).getPk_wa_psnhi(), value);
+						}
+					}
+					String pk_wa_item = aggvo.getParentVO().getPk_wa_item(); // 薪資級別對應薪資項目
+
+					// 查找對應實際級別、檔別取值對應的級別PK、檔別PK
+					String pkFoundClass = null;
+					String pkFoundLevel = null;
+					if (gradePsnhiBs.containsKey((aggvo.getParentVO().getPk_wa_grd()))) {
+						for (Entry<String, List<WaPsnhiBVO>> bvo : getClassGroup(
+								gradePsnhiBs.get(aggvo.getParentVO().getPk_wa_grd())).entrySet()) {
+							// ssx modified on 2019-08-21
+							// 修復匹配規則問題
+							String[] matchedValues = groupMatched(bvo.getValue(), psnClassValues);
+
+							if (matchedValues != null) {
+								if (psnClassValues.containsKey(matchedValues[0])) {
+									pkFoundClass = matchedValues[1];
+								}
+							}
+
+							matchedValues = groupMatched(bvo.getValue(), psnLevelValues);
+							if (matchedValues != null) {
+								if (psnLevelValues.containsKey(matchedValues[0])) {
+									pkFoundLevel = matchedValues[1];
+								}
+							}
+							// end
+						}
+					} else {
+						continue;
+					}
+					// mod 如果没有匹配到薪资标准,那么不进行定调资的新增操作 tank 2020年2月12日21:19:25
+					if (pkFoundClass == null) {
+						// 结束相同薪资项目,日期更早的定调资记录
+						this.getBaseDao().executeUpdate(
+								"update hi_psndoc_wadoc set enddate='"
+										+ newPsnJob.getBegindate().getDateBefore(1).toString() + "' where pk_psndoc='"
+										+ newPsnJob.getPk_psndoc()
+										+ "' and isnull(enddate, '9999-12-31') >= '9999-01-01'" + " and pk_psnjob='"
+										+ newPsnJob.getPk_psnjob() + "' and pk_wa_item='" + pk_wa_item
+										+ "' and isnull(dr,0)=0" + " and begindate < '"
+										+ newPsnJob.getBegindate().toStdString() + "' ");
+						continue;
+					}
+					// mod end 如果没有匹配到薪资标准,那么不进行定调资的新增操作 tank 2020年2月12日21:19:25
+					UFDouble gradeSalary = UFDouble.ZERO_DBL;
+					String pk_wa_crt = "";
+					// 找到薪資級：級別人員屬性設置=級別實際值
+					if (gradeCriterions.containsKey(aggvo.getParentVO().getPk_wa_grd())) {
+						for (WaCriterionVO vlvo : gradeCriterions.get(aggvo.getParentVO().getPk_wa_grd())) {
+							if (vlvo.getPk_wa_prmlv().equals(pkFoundClass)
+									&& (vlvo.getPk_wa_seclv() == null || vlvo.getPk_wa_seclv().equals(pkFoundLevel))) {
+								pk_wa_crt = vlvo.getPk_wa_crt();
+								gradeSalary = new UFDouble(SalaryDecryptUtil.decrypt(vlvo.getCriterionvalue()
+										.doubleValue()));
+							}
+						}
+					} else {
+						continue;
+					}
+
+					PsndocWadocVO existWadoc = getExistsWadoc(newPsnJob.getPk_psnjob(), pk_wa_item); // 已存在的定調資項目
+					if (existWadoc != null) {
+						// 當前工作記錄已存在定調資項目，更新原有記錄
+						if (!aggvo.getParentVO().getPk_wa_grd().equals(existWadoc.getPk_wa_grd())
+								|| !gradeSalary.equals(existWadoc.getNmoney())
+								|| !pkFoundClass.equals(existWadoc.getPk_wa_prmlv())
+								|| !pkFoundLevel.equals(existWadoc.getPk_wa_seclv())) { // 薪資標準中有任意一項不匹配就更新
+							existWadoc.setPk_wa_grd(aggvo.getParentVO().getPk_wa_grd());
+							existWadoc.setPk_wa_crt(pk_wa_crt);
+							existWadoc.setPk_wa_prmlv(pkFoundClass);
+							existWadoc.setPk_wa_seclv(pkFoundLevel);
+							existWadoc.setCriterionvalue(gradeSalary);
+							existWadoc.setNmoney(gradeSalary);
+							existWadoc.setIsrange(UFBoolean.FALSE);
+							getPsndocwadocManageService().updatePsndocWadoc(existWadoc);
+						}
+					} else {
+						// 當前工作記錄不存在定調資項目，按規則停用舊項目，創建新項目
+						Collection<PsndocWadocVO> wadocs = this.getBaseDao().retrieveByClause(
+								PsndocWadocVO.class,
+								"pk_psndoc = '" + newPsnJob.getPk_psndoc() + "' and pk_wa_item='" + pk_wa_item
+										+ "' and isnull(dr,0)=0");
+						for (PsndocWadocVO wadoc : wadocs) {
+							if (wadoc.getPk_wa_item().equals(pk_wa_item) // 同一薪資項目
+									&& (wadoc.getEnddate() == null || wadoc.getEnddate()
+											.after(newPsnJob.getBegindate()))// 薪資項目的結束日期在工作記錄的開始日期之後
+									&& UFBoolean.TRUE.equals(wadoc.getWaflag()) // 發放中
+							) {
+								// 結束前一個生效的薪資項目
+								this.getPsndocWadocDao()
+										.getBaseDao()
+										.executeUpdate(
+												"update hi_psndoc_wadoc set enddate='"
+														+ newPsnJob.getBegindate().getDateBefore(1).toString()
+														+ "', lastflag='N' where pk_psndoc_sub='"
+														+ wadoc.getPk_psndoc_sub() + "'");
+								break;
+							}
+						}
+
+						if (gradeSalary.doubleValue() > 0) {
+							this.getPsndocWadocDao()
+									.getBaseDao()
+									.executeUpdate(
+											"update hi_psndoc_wadoc set recordnum=recordnum+1 where pk_psndoc='"
+													+ newPsnJob.getPk_psndoc() + "'");
+
+							PsndocWadocVO newVO = creatNewPsndocWadocVO(newPsnJob, aggvo.getParentVO().getPk_wa_grd(),
+									pk_wa_item, pkFoundClass, pkFoundLevel, gradeSalary, pk_wa_crt);
+							getPsndocwadocManageService().insertPsndocWadocVO(newVO);
+						}
+					}
+				}
+			}
+		}
+	}
+
+	private PsndocWadocVO creatNewPsndocWadocVO(PsnJobVO newPsnJob, String pk_wa_grd, String pk_wa_item,
+			String pkFoundClass, String pkFoundLevel, UFDouble gradeSalary, String pk_wa_crt) {
+		PsndocWadocVO newVO = new PsndocWadocVO();
+		newVO.setPk_group(newPsnJob.getPk_group());
+		newVO.setPk_org(newPsnJob.getPk_org());
+		newVO.setPk_psndoc(newPsnJob.getPk_psndoc());
+		newVO.setPk_psnjob(newPsnJob.getPk_psnjob());
+		newVO.setPk_wa_item(pk_wa_item);
+		newVO.setPk_wa_grd(pk_wa_grd);
+		newVO.setPk_wa_crt(pk_wa_crt);
+		newVO.setPk_wa_prmlv(pkFoundClass);
+		newVO.setPk_wa_seclv(StringUtil.isEmpty(pkFoundLevel) ? null : pkFoundLevel);
+		newVO.setBegindate(newPsnJob.getBegindate());
+		newVO.setChangedate(new UFLiteralDate());
+		newVO.setCriterionvalue(gradeSalary);
+		newVO.setNmoney(gradeSalary);
+		newVO.setNegotiation_wage(UFBoolean.FALSE);
+		newVO.setWaflag(UFBoolean.TRUE);
+		newVO.setLastflag(UFBoolean.TRUE);
+		newVO.setPartflag(UFBoolean.FALSE);
+		newVO.setIadjustmatter(1);
+		newVO.setAssgid(newPsnJob.getAssgid());
+		newVO.setDr(0);
+		newVO.setRecordnum(0);
+		newVO.setWorkflowflag(UFBoolean.FALSE);
+		newVO.setIsrange(UFBoolean.FALSE);
+		newVO.setIadjustmatter(1);
+		return newVO;
+	}
+
+	/**
+	 * 结束工作记录时/或者修改已经结束的工作记录,不得有开始日期为工作记录结束日期之后的考勤档案或者定调资记录 2020年2月12日21:48:542
+	 * tank by Jessie
+	 * 
+	 * @param newPsnJob
+	 * @throws BusinessException
+	 */
+	private void validateTbmAndWadoc(PsnJobVO newPsnJob) throws BusinessException {
+		String pk_psndoc = newPsnJob.getPk_psndoc();
+		UFLiteralDate checkDate = newPsnJob.getEnddate().getDateAfter(1);
+
+		if (pk_psndoc != null) {
+			String sql = "select count(*) from tbm_psndoc where pk_psndoc = '" + pk_psndoc
+					+ "' and dr = 0 and BEGINDATE >= '" + checkDate.toStdString() + "' ";
+			Integer tbmCount = (Integer) getBaseDao().executeQuery(sql, new ColumnProcessor());
+			if (tbmCount != null && tbmCount > 0) {
+				throw new BusinessException("該人員已存在開始日期在[" + checkDate + "]之後的考勤記錄,無法修改!");
+			}
+			sql = "select count(*) from hi_psndoc_wadoc where pk_psndoc = '" + pk_psndoc
+					+ "'  and dr = 0 and BEGINDATE >= '" + checkDate.toStdString() + "' ";
+			Integer waCount = (Integer) getBaseDao().executeQuery(sql, new ColumnProcessor());
+			if (waCount != null && waCount > 0) {
+				throw new BusinessException("該人員錄已存在開始日期在[" + checkDate + "]之後的定調資記錄,無法修改!");
+			}
+		}
+	}
+
+	@SuppressWarnings("unchecked")
+	private PsndocWadocVO getExistsWadoc(String pk_psnjob, String pk_wa_item) throws BusinessException {
+		Collection<PsndocWadocVO> vos = this.getBaseDao().retrieveByClause(PsndocWadocVO.class,
+				"pk_psnjob='" + pk_psnjob + "' and pk_wa_item='" + pk_wa_item + "' and isnull(dr,0)=0");
+		if (vos != null && vos.size() > 0) {
+			return vos.toArray(new PsndocWadocVO[0])[0];
+		} else {
+			return null;
+		}
+	}
+
+	private Map<String, List<WaPsnhiBVO>> getClassGroup(Collection<WaPsnhiBVO> bvos) {
+		Map<String, List<WaPsnhiBVO>> groupMap = new HashMap<String, List<WaPsnhiBVO>>();
+		for (WaPsnhiBVO bvo : bvos) {
+			if (!groupMap.containsKey(bvo.getSortgroup())) {
+				groupMap.put(bvo.getSortgroup(), new ArrayList<WaPsnhiBVO>());
+			}
+
+			groupMap.get(bvo.getSortgroup()).add(bvo);
+		}
+		return groupMap;
+	}
+
+	@SuppressWarnings("unchecked")
+	private boolean dealWithStopWageRemainPos(PsnJobVO newPsnJob) throws BusinessException {
+		Collection existVOs = this.getBaseDao().retrieveByClause(PsndocWadocVO.class,
+				"pk_psnjob='" + newPsnJob.getPk_psnjob() + "' and isnull(dr,0)=0");
+		if (existVOs != null && existVOs.size() > 0) {
+			// 當前工作記錄已生成定調資，認為是修改操作
+			return false;
+		}
+		String strWhere = getGradeWhereFilter(newPsnJob);
+
+		if (refTransType.equals(newPsnJob.getTrnstype())) {
+			// 停薪留職
+			Collection<PsndocWadocVO> wadocs = this.getBaseDao().retrieveByClause(
+					PsndocWadocVO.class,
+					"pk_psndoc = '" + newPsnJob.getPk_psndoc()
+							+ "' and waflag='Y' and lastflag='Y' and isnull(dr, 0)=0");
+			for (PsndocWadocVO wadoc : wadocs) {
+				if (wadoc.getEnddate() == null || wadoc.getEnddate().after(newPsnJob.getBegindate().getDateBefore(1))) // 結束日期晚於停薪留職開始日期前一天
+				{
+					wadoc.setNmoney(new UFDouble(SalaryDecryptUtil.decrypt(wadoc.getNmoney() == null ? 0 : wadoc
+							.getNmoney().doubleValue())));
+					wadoc.setCriterionvalue(new UFDouble(
+							SalaryDecryptUtil.decrypt(wadoc.getCriterionvalue() == null ? 0 : wadoc.getCriterionvalue()
+									.doubleValue())));
+					wadoc.setChangedate(new UFLiteralDate());
+					// wadoc.setWaflag(UFBoolean.FALSE);
+					wadoc.setWaflag(UFBoolean.TRUE);
+					wadoc.setEnddate(newPsnJob.getBegindate().getDateBefore(1));
+					wadoc.setIsrange(wadoc.getIsrange() == null ? UFBoolean.FALSE : wadoc.getIsrange());
+					getPsndocwadocManageService().updatePsndocWadoc(wadoc);
+				}
+			}
+
+			return true;
+		} else if (refReturnType.equals(newPsnJob.getTrnstype())) {
+			// 留停復職
+			Collection<PsndocWadocVO> wadocs = this.getBaseDao().retrieveByClause(
+					PsndocWadocVO.class,
+					"pk_psndoc = '" + newPsnJob.getPk_psndoc()
+							+ "' and lastflag='Y' and isnull(dr, 0)=0 and pk_wa_item not in ("
+							+ "select pk_wa_item from wa_grade where pk_org='" + newPsnJob.getPk_org()
+							+ "' and isnull(dr,0)=0" + strWhere + ")");
+
+			for (PsndocWadocVO wadoc : wadocs) {
+				if (wadoc.getEnddate() != null
+						&& wadoc.getEnddate().isSameDate(
+								getTransTypeEndDate(newPsnJob.getPk_org(), newPsnJob.getBegindate(), refTransType,
+										newPsnJob.getPk_psndoc()))) // 結束日期是停薪留職開始日期前一天的
+				{
+					wadoc.setNmoney(new UFDouble(SalaryDecryptUtil.decrypt(wadoc.getNmoney() == null ? 0 : wadoc
+							.getNmoney().doubleValue())));
+					wadoc.setCriterionvalue(new UFDouble(
+							SalaryDecryptUtil.decrypt(wadoc.getCriterionvalue() == null ? 0 : wadoc.getCriterionvalue()
+									.doubleValue())));
+					wadoc.setLastflag(UFBoolean.FALSE);
+					wadoc.setIsrange(UFBoolean.FALSE);
+					getPsndocwadocManageService().updatePsndocWadoc(wadoc);
+
+					PsndocWadocVO newVO = (PsndocWadocVO) wadoc.clone();
+					newVO.setBegindate(newPsnJob.getBegindate());
+					newVO.setEnddate(newPsnJob.getEnddate());
+					newVO.setPk_psnjob(newPsnJob.getPk_psnjob());
+					newVO.setNmoney(new UFDouble(SalaryDecryptUtil.decrypt(newVO.getNmoney() == null ? 0 : newVO
+							.getNmoney().doubleValue())));
+					newVO.setCriterionvalue(new UFDouble(
+							SalaryDecryptUtil.decrypt(newVO.getCriterionvalue() == null ? 0 : newVO.getCriterionvalue()
+									.doubleValue())));
+					newVO.setPk_changecause(null);
+					newVO.setTs(null);
+					newVO.setChangedate(new UFLiteralDate());
+					newVO.setIsrange(wadoc.getIsrange() == null ? UFBoolean.FALSE : wadoc.getIsrange());
+					newVO.setPk_psndoc_sub(null);
+					newVO.setWaflag(UFBoolean.TRUE);
+					newVO.setLastflag(UFBoolean.TRUE);
+					getPsndocwadocManageService().insertPsndocWadocVO(newVO);
+				}
+			}
+		}
+
+		return false;
+	}
+
+	@SuppressWarnings("unchecked")
+	private void loadWaGradeInfo(PsnJobVO newPsnJob, List<AggWaGradeVO> aggvos,
+			Map<String, WaCriterionVO[]> gradeCriterions, Map<String, Collection<WaPsnhiBVO>> gradePsnhiBs)
+			throws BusinessException {
+		String strWhere = getGradeWhereFilter(newPsnJob);
+
+		Collection<WaGradeVO> gradevos = this.getBaseDao().retrieveByClause(WaGradeVO.class,
+				"pk_org='" + newPsnJob.getPk_org() + "' and isnull(dr,0)=0 " + strWhere);
+
+		for (WaGradeVO gradevo : gradevos) {
+			Collection<WaGradeVerVO> gradeVerVOs = this.getBaseDao().retrieveByClause(WaGradeVerVO.class,
+					"pk_wa_grd='" + gradevo.getPk_wa_grd() + "'");
+
+			// ssx added on 2020-01-16
+			// 增加取薪資標準版本邏輯
+			String pkVer = "";
+			int verTerm = Integer.MAX_VALUE;
+			for (WaGradeVerVO verVO : gradeVerVOs) {
+				UFLiteralDate verDate = verVO.getVer_create_date().toUFLiteralDate(UFLiteralDate.BASE_TIMEZONE);
+				if (StringUtils.isEmpty(pkVer)) {
+					pkVer = verVO.getPk_wa_gradever();
+					verTerm = UFLiteralDate.getDaysBetween(verDate, newPsnJob.getBegindate());
+				} else {
+					if (UFLiteralDate.getDaysBetween(verDate, newPsnJob.getBegindate()) >= 0
+							&& UFLiteralDate.getDaysBetween(verDate, newPsnJob.getBegindate()) < verTerm) {
+						verTerm = UFLiteralDate.getDaysBetween(verDate, newPsnJob.getBegindate());
+						pkVer = verVO.getPk_wa_gradever();
+					}
+				}
+			}
+			// end
+
+			Collection<WaPsnhiVO> psnhis = this.getBaseDao().retrieveByClause(WaPsnhiVO.class,
+					" pk_wa_grd = '" + gradevo.getPk_wa_grd() + "' and isnull(dr,0)=0");
+
+			// 組織薪資級別相關數據
+			if (psnhis != null && psnhis.size() > 0) {
+
+				// 薪資級別AggVO
+				AggWaGradeVO aggvo = new AggWaGradeVO();
+
+				// 薪資標準表
+				aggvo.setParentVO(gradevo);
+
+				// 級別、檔別設置
+				aggvo.setTableVO(IWaGradeCommonDef.WA_PSNHI, psnhis.toArray(new WaPsnhiVO[0]));
+
+				// 級別
+				Collection<WaPrmlvVO> prmlvs = this.getBaseDao().retrieveByClause(WaPrmlvVO.class,
+						"pk_wa_grd='" + gradevo.getPk_wa_grd() + "'  and isnull(dr,0)=0 ");
+				if (prmlvs != null && prmlvs.size() > 0) {
+					aggvo.setTableVO(IWaGradeCommonDef.WA_PRMLV, prmlvs.toArray(new WaPrmlvVO[0]));
+				}
+
+				// 檔別
+				Collection<WaSeclvVO> seclvs = this.getBaseDao().retrieveByClause(WaSeclvVO.class,
+						"pk_wa_grd='" + gradevo.getPk_wa_grd() + "' and isnull(dr,0)=0");
+				if (seclvs != null && seclvs.size() > 0) {
+					aggvo.setTableVO(IWaGradeCommonDef.WA_SECLV, seclvs.toArray(new WaSeclvVO[0]));
+				}
+
+				aggvos.add(aggvo);
+				//
+
+				// 薪資標準表
+				// ssx added on 2020-01-16
+				// 增加取薪資標準版本邏輯
+				Collection<WaCriterionVO> criterionvos = this.getBaseDao().retrieveByClause(
+						WaCriterionVO.class,
+						"pk_wa_grd='" + gradevo.getPk_wa_grd() + "' and isnull(dr,0)=0 and pk_wa_gradever='" + pkVer
+								+ "'");
+				// end
+				if (criterionvos != null && criterionvos.size() > 0) {
+					gradeCriterions.put(gradevo.getPk_wa_grd(), criterionvos.toArray(new WaCriterionVO[0]));
+				}
+				//
+
+				for (WaPsnhiVO psnhi : psnhis) {
+					// 級別人員屬性設置，檔別人員屬性設置
+					Collection<WaPsnhiBVO> psnhibvos = this.getBaseDao().retrieveByClause(WaPsnhiBVO.class,
+							"pk_wa_psnhi='" + psnhi.getPk_wa_psnhi() + "' and isnull(dr,0)=0");
+					if (psnhibvos != null && psnhibvos.size() > 0) {
+						if (!gradePsnhiBs.containsKey(gradevo.getPk_wa_grd())) {
+							gradePsnhiBs.put(gradevo.getPk_wa_grd(), psnhibvos);
+						} else {
+							gradePsnhiBs.get(gradevo.getPk_wa_grd()).addAll(psnhibvos);
+						}
+					}
+				}
+				//
+			}
+		}
+	}
+
+	private String getSourceMeta(String pk_flddict) throws BusinessException {
+		String metadata = (String) this.getBaseDao().executeQuery(
+				"select meta_data from hr_infoset_item where pk_infoset_item = '" + pk_flddict + "'",
+				new ColumnProcessor());
+		return metadata;
+	}
+
+	private String[] groupMatched(List<WaPsnhiBVO> groupGrade, Map<String, String> psnClassValues) {
+		boolean rtn = true;
+		boolean found = false;
+		String foundKey = "";
+		String foundValue = "";
+		if (groupGrade != null && psnClassValues != null) {
+			for (WaPsnhiBVO bvo : groupGrade) {
+				if (psnClassValues.containsKey(bvo.getPk_wa_psnhi())) {
+					if ((bvo.getVfldvalue() == null && psnClassValues.get(bvo.getPk_wa_psnhi()) == null)
+							|| (bvo.getVfldvalue() != null && bvo.getVfldvalue().equals(
+									psnClassValues.get(bvo.getPk_wa_psnhi())))) {
+						rtn &= true;
+						found = true;
+						foundKey = bvo.getPk_wa_psnhi();
+						foundValue = bvo.getPk_wa_grdlv();
+					} else {
+						return null;
+					}
+				} else {
+					found = found | false;
+				}
+			}
+		}
+		if (rtn & found) {
+			return new String[] { foundKey, foundValue };
+		} else {
+			return null;
+		}
+	}
+
+	private String getGradeWhereFilter(PsnJobVO newPsnJob) throws BusinessException {
+		String expCodes = SysInitQuery.getParaString(newPsnJob.getPk_org(), "HRWAWNC01");
+		String strWhere = "";
+		if (!StringUtils.isEmpty(expCodes)) {
+			for (String code : expCodes.replace("，", ",").split(",")) {
+				if (!StringUtils.isEmpty(code)) {
+					if (StringUtils.isEmpty(strWhere)) {
+						strWhere = "'" + code.trim() + "'";
+					} else {
+						strWhere += ",'" + code.trim() + "'";
+					}
+				}
+			}
+			if (!StringUtils.isEmpty(strWhere)) {
+				strWhere = "and code not in (" + strWhere + ")";
+			}
+		}
+		return strWhere;
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public UFLiteralDate getTransTypeEndDate(String pk_org, UFLiteralDate begindate, String refTransType,
+			String pk_psndoc) throws BusinessException {
+		int minDays = Integer.MAX_VALUE;
+		PsnJobVO retvo = null;
+		Collection<PsnJobVO> psnjobs = this.getBaseDao().retrieveByClause(
+				PsnJobVO.class,
+				"trnstype='" + refTransType + "' and pk_psndoc='" + pk_psndoc + "' and pk_org='" + pk_org
+						+ "' and isnull(dr,0)=0");
+		for (PsnJobVO psnjob : psnjobs) {
+			int days = UFLiteralDate.getDaysBetween(psnjob.getBegindate().getDateBefore(1), begindate);
+			if (minDays > days) {
+				minDays = days;
+				retvo = psnjob;
+			}
+		}
+		return retvo == null ? new UFLiteralDate("9999-12-31") : retvo.getBegindate().getDateBefore(1);
+	}
+
+	private static IPsndocwadocManageService getPsndocwadocManageService() {
+		return (IPsndocwadocManageService) NCLocator.getInstance().lookup(IPsndocwadocManageService.class);
+	}
+
+	private BaseDAO getBaseDao() {
+		return getPsndocWadocDao().getBaseDao();
+	}
+
+	@Override
+	public void generateTeamItem(PsnJobVO newPsnJob) throws BusinessException {
+
+		String newShift = ((String) newPsnJob.getAttributeValue("jobglbdef7"));
+		// 新班組為空時，不做開始動作
+		if (!StringUtils.isEmpty(newShift)) {
+			TeamHeadVO headVO = (TeamHeadVO) this.getBaseDao().retrieveByPK(TeamHeadVO.class,
+					(String) newPsnJob.getAttributeValue("jobglbdef7"));
+			Collection<TeamItemVO> insertItemVOs = new ArrayList<TeamItemVO>();
+
+			// 构造新成员TeamItemVO，加入itemVOs
+			TeamItemVO newMemberVO = new TeamItemVO();
+			newMemberVO.setPk_group(headVO.getPk_group());
+			newMemberVO.setPk_org(headVO.getPk_org());
+			newMemberVO.setPk_org_v(headVO.getPk_org_v());
+			newMemberVO.setPk_dept(newPsnJob.getPk_dept());
+			newMemberVO.setPk_psncl(newPsnJob.getPk_psncl());
+			newMemberVO.setPk_psnjob(newPsnJob.getPk_psnjob());
+			newMemberVO.setCworkmanid(newPsnJob.getPk_psndoc());
+			newMemberVO.setCteamid(headVO.getCteamid());
+			newMemberVO.setBmanager(UFBoolean.FALSE);
+			newMemberVO.setDr(0);
+			newMemberVO.setDstartdate(newPsnJob.getBegindate());
+			newMemberVO.setDenddate(newPsnJob.getEnddate());
+			newMemberVO.setStatus(VOStatus.NEW);
+			insertItemVOs.add(newMemberVO);
+
+			updateShiftGroup(headVO, insertItemVOs);
+
+			String maxTeamDate = (String) this.getBaseDao().executeQuery(
+					"select max(calendar) cl from bd_teamcalendar where pk_team = '" + newShift + "'",
+					new ColumnProcessor());
+			if (!StringUtils.isEmpty(maxTeamDate)) {
+				((IPsnCalendarManageService) NCLocator.getInstance().lookup(IPsnCalendarManageService.class))
+						.sync2TeamCalendar(headVO.getPk_org(), newShift, new String[] { newPsnJob.getPk_psndoc() },
+								newPsnJob.getBegindate(), new UFLiteralDate(maxTeamDate));
+			}
+		}
+
+	}
+	
+	/**
+	 * 此方法用於插入工作記錄的情況,只會同步新增的那條工作記錄時間段的排班
+	 * @param insertPsnJob
+	 * @throws BusinessException
+	 */
+	@Override
+	public void generateTeamItemForInsertPsn(PsnJobVO insertPsnJob) throws BusinessException {
+
+		String newShift = ((String) insertPsnJob.getAttributeValue("jobglbdef7"));
+		// 新班組為空時，不做開始動作
+		if (!StringUtils.isEmpty(newShift)) {
+			TeamHeadVO headVO = (TeamHeadVO) this.getBaseDao().retrieveByPK(TeamHeadVO.class,
+					(String) insertPsnJob.getAttributeValue("jobglbdef7"));
+			Collection<TeamItemVO> insertItemVOs = new ArrayList<TeamItemVO>();
+
+			// 构造新成员TeamItemVO，加入itemVOs
+			TeamItemVO newMemberVO = new TeamItemVO();
+			newMemberVO.setPk_group(headVO.getPk_group());
+			newMemberVO.setPk_org(headVO.getPk_org());
+			newMemberVO.setPk_org_v(headVO.getPk_org_v());
+			newMemberVO.setPk_dept(insertPsnJob.getPk_dept());
+			newMemberVO.setPk_psncl(insertPsnJob.getPk_psncl());
+			newMemberVO.setPk_psnjob(insertPsnJob.getPk_psnjob());
+			newMemberVO.setCworkmanid(insertPsnJob.getPk_psndoc());
+			newMemberVO.setCteamid(headVO.getCteamid());
+			newMemberVO.setBmanager(UFBoolean.FALSE);
+			newMemberVO.setDr(0);
+			newMemberVO.setDstartdate(insertPsnJob.getBegindate());
+			newMemberVO.setDenddate(insertPsnJob.getEnddate());
+			newMemberVO.setStatus(VOStatus.NEW);
+			insertItemVOs.add(newMemberVO);
+
+			updateShiftGroup(headVO, insertItemVOs);
+        	    ((IPsnCalendarManageService) NCLocator.getInstance().lookup(IPsnCalendarManageService.class))
+        		    .sync2TeamCalendar(headVO.getPk_org(), newShift, new String[] { insertPsnJob.getPk_psndoc() },
+        			    insertPsnJob.getBegindate(), insertPsnJob.getEnddate());
+		}
+
+	}
+
+	public void updateShiftGroup(TeamHeadVO headVO, Collection<TeamItemVO> itemVOs) throws BusinessException {
+		if (itemVOs != null && itemVOs.size() > 0) {
+			for (TeamItemVO vo : itemVOs) {
+				if (vo.getStatus() == VOStatus.UPDATED) {
+					this.getBaseDao().updateVO(vo);
+					vo.setStatus(VOStatus.UNCHANGED);
+				} else if (vo.getStatus() == VOStatus.NEW) {
+					this.getBaseDao().insertVO(vo);
+					vo.setStatus(VOStatus.UNCHANGED);
+				} else if (vo.getStatus() == VOStatus.DELETED) {
+					this.getBaseDao().deleteVO(vo);
+				}
+			}
+		}
+	}
+
 }

@@ -1,23 +1,29 @@
 package nc.impl.wa.rpt;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import nc.bs.dao.BaseDAO;
 import nc.bs.framework.common.NCLocator;
 import nc.hr.utils.InSQLCreator;
+import nc.impl.wa.func.CourtDeductParse;
 import nc.itf.hr.wa.IDeductDetailService;
 import nc.itf.uap.IUAPQueryBS;
+import nc.jdbc.framework.processor.BeanListProcessor;
+import nc.jdbc.framework.processor.ColumnProcessor;
 import nc.jdbc.framework.processor.MapListProcessor;
-import nc.vo.hi.psndoc.DebtFileVO;
+import nc.jdbc.framework.processor.ResultSetProcessor;
 import nc.vo.hi.psndoc.DeductDetailsVO;
 import nc.vo.pub.BusinessException;
+import nc.vo.pub.VOStatus;
 import nc.vo.pub.lang.UFDouble;
-import nc.vo.pub.lang.UFLiteralDate;
 import nc.vo.wa.func.WherePartUtil;
-import nc.vo.wa.period.PeriodVO;
 import nc.vo.wa.pub.WaLoginVO;
 
 public class DeductDetailServiceImpl implements IDeductDetailService {
@@ -29,9 +35,10 @@ public class DeductDetailServiceImpl implements IDeductDetailService {
 
 	/**
 	 * 回写到扣款明细子集
+	 * @throws BusinessException 
 	 */
 	@Override
-	public void rollbacktodeductdetail(WaLoginVO waLoginVO, String whereCondition, Boolean isRangeAll) {
+	public void rollbacktodeductdetail(WaLoginVO waLoginVO, String whereCondition, Boolean isRangeAll) throws BusinessException {
 		String cyear = waLoginVO.getCyear();
 		String cperiod = waLoginVO.getCperiod();
 		String pk_wa_class = waLoginVO.getPk_wa_class();
@@ -48,293 +55,221 @@ public class DeductDetailServiceImpl implements IDeductDetailService {
 		}
 		// 所有pk_psndoc
 		IUAPQueryBS iUAPQueryBS = (IUAPQueryBS) NCLocator.getInstance().lookup(IUAPQueryBS.class.getName());
-		try {
+			@SuppressWarnings("unchecked")
 			List<Map<String, String>> custlist = (List<Map<String, String>>) iUAPQueryBS.executeQuery(
 					sqlBuffer.toString(), new MapListProcessor());
 			List<String> pk_psndoclist = new ArrayList<String>();
 			for (Map<String, String> custmap : custlist) {
 				pk_psndoclist.add(custmap.get("pk_psndoc"));
 			}
-			// 校验债权档案中比率是否满足1
+			//tank 这两个方法疯狂报错,没在工作,于是重写 2019年12月4日21:53:43
+			// 校验债权档案中比率
 			validatedeductfileratio(waLoginVO, pk_psndoclist);
 			// 回写子集
 			rollback(waLoginVO, pk_psndoclist.toArray(new String[0]));
-		} catch (BusinessException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+			
+			
 	}
 
-	private void rollback(WaLoginVO waLoginVO, String[] pk_psndocs) {
+	private void rollback(WaLoginVO waLoginVO, String[] pk_psndocs) throws BusinessException{
 		String cperiod = waLoginVO.getCperiod();
 		String cyear = waLoginVO.getCyear();
 		String pk_wa_class = waLoginVO.getPk_wa_class();
-		InSQLCreator insql = new InSQLCreator();
-		try {
+		//查詢此薪資方案下所有需要回寫的數據
+		String sql = "select * from "+CourtDeductParse.TEMP_DEDUCT_TABLE_NAME+" tb "
+				+ " where tb.waclass = '"+pk_wa_class+"' and tb.salaryyearmonth = '"+cyear+""+cperiod+"'";
+		@SuppressWarnings("unchecked")
+		List<DeductDetailsVO> ddvList = 
+				(List<DeductDetailsVO>) getBaseDAO().executeQuery(sql, new BeanListProcessor(DeductDetailsVO.class));
+		if (ddvList != null && ddvList.size() > 0) {
 
-			// 查询出薪资期间
-			List<PeriodVO> periodlist = (List<PeriodVO>) this.baseDAO.retrieveByClause(PeriodVO.class,
-					"pk_periodscheme = (select pk_periodscheme from WA_WACLASS " + " where pk_wa_class='" + pk_wa_class
-							+ "') " + " and cyear='" + cyear + "' and cperiod='" + cperiod + "'");
-			UFLiteralDate cbegindate = periodlist.get(0).getCstartdate();
-			UFLiteralDate cenddate = (UFLiteralDate) (periodlist.get(0).getCenddate() == null ? "9999-12-31"
-					: periodlist.get(0).getCenddate());
-			// 查询出符合条件的债权档案
-			List<DebtFileVO> debtfilevos = (List<DebtFileVO>) this.baseDAO.retrieveByClause(
-					DebtFileVO.class,
-					"pk_psndoc in(" + insql.getInSQL(pk_psndocs) + ") and stopflag <> 'Y' and  "
-							+ " DFILENUMBER in (select filenumber from HI_PSNDOC_COURTDEDUCTION where pk_psndoc in("
-							+ insql.getInSQL(pk_psndocs) + ") " + "and isstop <> 'Y' and cstartdate < '"
-							+ cenddate.toString() + "')");
-
-			// 查询出最小的剩余余额
-			Map<String, UFDouble> map = new HashMap<String, UFDouble>();
-			List<Map<String, String>> detailslist = (List<Map<String, String>>) this.baseDAO.executeQuery(
-					"select hpd.dfilenumber, HPDE.pk_psndoc,HPDE.dcreditor,min(HPDE.remainmoney) as minremainmoney"
-							+ " from HI_PSNDOC_DEDUCTDETAILS hpde, HI_PSNDOC_DEBTFILE hpd,"
-							+ "HI_PSNDOC_COURTDEDUCTION hpc where  " + "HPDE.pk_debtfile=HPD.PK_PSNDOC_SUB and "
-							+ "HPD.DFILENUMBER=HPC.FILENUMBER and HPC.ISSTOP <> 'Y' "
-							+ "AND HPD.STOPFLAG <> 'Y' AND HPDE.pk_psndoc in (" + insql.getInSQL(pk_psndocs) + ") "
-							+ "GROUP BY HPDE.pk_psndoc,HPDE.dcreditor ,hpd.dfilenumber", new MapListProcessor());
-			if (detailslist.size() > 0) {
-				for (Map<String, String> details : detailslist) {
-					map.put(details.get("pk_psndoc") + ":" + details.get("dfilenumber") + ":"
-							+ details.get("dcreditor"), new UFDouble(String.valueOf(details.get("minremainmoney"))));
-				}
-			}
-
-			List<DeductDetailsVO> deductvs = new ArrayList<DeductDetailsVO>();
-			// 需要更新状态的债权档案
-			List<DebtFileVO> stopflags = new ArrayList<DebtFileVO>();
-			// 当map大于0说明有历史回写记录
-			if (map.size() > 0) {
-				Map<String, UFDouble> etmap = new HashMap<String, UFDouble>();
-				Map<String, UFDouble> ermap = new HashMap<String, UFDouble>();
-				for (String pk_psndoc : map.keySet()) {
-					for (DebtFileVO debtfilevo : debtfilevos) {
-						if (pk_psndoc.split(":")[0].equals(debtfilevo.getPk_psndoc())
-								&& debtfilevo.getAttributeValue("dfilenumber").equals(pk_psndoc.split(":")[1])
-								&& pk_psndoc.split(":")[2].equals(debtfilevo.getAttributeValue("creditor"))) {
-							if (new UFDouble(String.valueOf(map.get(pk_psndoc))).sub(
-									new UFDouble(String.valueOf(debtfilevo.getAttributeValue("repaymentamount"))))
-									.doubleValue() <= 0) {
-								// 剩余出来的金额
-								UFDouble extralamount = new UFDouble(String.valueOf(debtfilevo
-										.getAttributeValue("repaymentamount"))).sub(new UFDouble(String.valueOf(map
-										.get(pk_psndoc))));
-								if (etmap.size() > 0
-										&& etmap.containsKey(debtfilevo.getPk_psndoc()
-												+ debtfilevo.getAttributeValue("dfilenumber"))) {
-									etmap.put(
-											debtfilevo.getPk_psndoc() + debtfilevo.getAttributeValue("dfilenumber"),
-											etmap.get(
-													debtfilevo.getPk_psndoc()
-															+ debtfilevo.getAttributeValue("dfilenumber")).add(
-													extralamount));
-								} else {
-									etmap.put(debtfilevo.getPk_psndoc() + debtfilevo.getAttributeValue("dfilenumber"),
-											extralamount);
-								}
-								debtfilevo.setAttributeValue("repaymentamount",
-										new UFDouble(String.valueOf(new UFDouble(String.valueOf(map.get(pk_psndoc))))));
-								// 已经还清的债权的比例
-								UFDouble extralratio = new UFDouble(String.valueOf(debtfilevo
-										.getAttributeValue("repaymentratio")));
-								if (ermap.size() > 0
-										&& ermap.containsKey(debtfilevo.getPk_psndoc()
-												+ debtfilevo.getAttributeValue("dfilenumber"))) {
-									ermap.put(
-											debtfilevo.getPk_psndoc() + debtfilevo.getAttributeValue("dfilenumber"),
-											ermap.get(
-													debtfilevo.getPk_psndoc()
-															+ debtfilevo.getAttributeValue("dfilenumber")).add(
-													extralratio));
-								}
-								{
-									ermap.put(debtfilevo.getPk_psndoc() + debtfilevo.getAttributeValue("dfilenumber"),
-											extralratio);
-								}
-
-							}
-							debtfilevo.setAttributeValue("creditamount",
-									new UFDouble(String.valueOf(new UFDouble(String.valueOf(map.get(pk_psndoc))))));
-						}
-					}
-				}
-
-				for (DebtFileVO debtfilevo : debtfilevos) {
-					UFDouble money = UFDouble.ZERO_DBL;
-					UFDouble ratio = UFDouble.ZERO_DBL;
-					if (etmap.size() > 0) {
-						for (String strmoney : etmap.keySet()) {
-							if ((debtfilevo.getPk_psndoc() + debtfilevo.getAttributeValue("dfilenumber"))
-									.equals(strmoney)
-									&& !debtfilevo.getAttributeValue("creditamount").equals(
-											debtfilevo.getAttributeValue("repaymentamount"))) {
-								money = etmap.get(strmoney);
-							}
-
-						}
-					}
-					if (ermap.size() > 0) {
-						for (String strratio : ermap.keySet()) {
-							if ((debtfilevo.getPk_psndoc() + debtfilevo.getAttributeValue("dfilenumber"))
-									.equals(strratio)
-									&& !debtfilevo.getAttributeValue("creditamount").equals(
-											debtfilevo.getAttributeValue("repaymentamount"))) {
-								ratio = ermap.get(strratio);
-							}
-						}
-					}
-					debtfilevo.setAttributeValue("repaymentamount",
-							new UFDouble(String.valueOf(debtfilevo.getAttributeValue("repaymentamount"))).add(money
-									.multiply(new UFDouble(String.valueOf(debtfilevo
-											.getAttributeValue("repaymentratio"))).div(UFDouble.ONE_DBL.sub(ratio)))));
-
-					DeductDetailsVO deductdetail = new DeductDetailsVO();
-					deductdetail.setAttributeValue("salaryyearmonth", cyear + cperiod);
-					deductdetail.setAttributeValue("waclass", pk_wa_class);
-					deductdetail.setAttributeValue("pk_psndoc", debtfilevo.getPk_psndoc());
-					deductdetail.setAttributeValue("dcreditor", debtfilevo.getAttributeValue("creditor"));
-					deductdetail.setAttributeValue("pk_debtfile", debtfilevo.getPk_psndoc_sub());
-					deductdetail.setAttributeValue("deductmoney",
-							new UFDouble(String.valueOf(debtfilevo.getAttributeValue("repaymentamount"))));
-					deductdetail.setAttributeValue(
-							"remainmoney",
-							new UFDouble(String.valueOf(debtfilevo.getAttributeValue("creditamount"))).sub(
-									new UFDouble(String.valueOf(debtfilevo.getAttributeValue("repaymentamount"))))
-									.doubleValue() < 0 ? UFDouble.ZERO_DBL : new UFDouble(String.valueOf(debtfilevo
-									.getAttributeValue("creditamount"))).sub(new UFDouble(String.valueOf(debtfilevo
-									.getAttributeValue("repaymentamount")))));
-					deductvs.add(deductdetail);
-					if (new UFDouble(String.valueOf(deductdetail.getAttributeValue("remainmoney"))).doubleValue() == 0) {
-						stopflags.add(debtfilevo);
-					}
-				}
-
-			} else {
-				// 第一次回写
-				for (DebtFileVO debtfilevo : debtfilevos) {
-					DeductDetailsVO deductdetail = new DeductDetailsVO();
-					deductdetail.setAttributeValue("salaryyearmonth", cyear + cperiod);
-					deductdetail.setAttributeValue("waclass", pk_wa_class);
-					deductdetail.setAttributeValue("pk_psndoc", debtfilevo.getPk_psndoc());
-					deductdetail.setAttributeValue("dcreditor", debtfilevo.getAttributeValue("creditor"));
-					deductdetail.setAttributeValue("pk_debtfile", debtfilevo.getPk_psndoc_sub());
-					deductdetail.setAttributeValue("deductmoney",
-							new UFDouble(String.valueOf(debtfilevo.getAttributeValue("repaymentamount"))));
-					UFDouble remainmoney = new UFDouble(String.valueOf(debtfilevo.getAttributeValue("creditamount")))
-							.sub(new UFDouble(String.valueOf(debtfilevo.getAttributeValue("repaymentamount"))));
-					deductdetail.setAttributeValue("remainmoney", remainmoney.doubleValue() < 0 ? UFDouble.ZERO_DBL
-							: remainmoney);
-					deductvs.add(deductdetail);
-					if (remainmoney.doubleValue() == 0) {
-						stopflags.add(debtfilevo);
-					}
-				}
+			for (DeductDetailsVO vo : ddvList) {
+				vo.setPk_psndoc_sub(null);
+				vo.setStatus(VOStatus.NEW);
 			}
 			// 持久化到数据库
-			this.baseDAO.insertVOArray(deductvs.toArray(new DeductDetailsVO[0]));
-			// 更新是否停止状态
-			updateflag(stopflags);
-
-		} catch (BusinessException e) {
-			e.printStackTrace();
+			getBaseDAO().insertVOArray(ddvList.toArray(new DeductDetailsVO[0]));
+			
+			//更新rownum
+			sql = " MERGE INTO hi_psndoc_deductdetails a "
+				+" USING ( SELECT pk_psndoc_sub, ROW_NUMBER() OVER (partition BY pk_psndoc ORDER BY ts DESC)  RN "
+				+" FROM hi_psndoc_deductdetails) b ON ( "
+				+" a.pk_psndoc_sub = b.pk_psndoc_sub) WHEN MATCHED "
+				+" THEN UPDATE SET a.recordnum = b.RN ";
+			getBaseDAO().executeUpdate(sql);
+			// 更新债券档案
+			updateDebtfile(ddvList,false);
 		}
-
 	}
-
-	private void updateflag(List<DebtFileVO> debtfilevos) {
-		try {
+	/**
+	 * 更新债券档案-此方法需要在扣款明细子集更新后执行
+	 * @param ddvList 变动的扣款明细vo
+	 * @throws BusinessException 
+	 */
+	@Override
+	public void updateDebtfile(List<DeductDetailsVO> ddvList,boolean isUpdatenull) throws BusinessException {
+		
+		if(ddvList!=null && ddvList.size() > 0){
+			//提取扣款明细信息 key pk_psndoc::fileNumber::creditor 用于找出所有相关联的债券档案
+			Set<String> debInfoSet = new HashSet<>();
+			//人员::档案编号 pk_psndoc::fileNumber
+			Set<String> fileNumberSet = new HashSet<>();
+			//人员
+			Set<String> pk_psndocSet = new HashSet<>();
+			for(DeductDetailsVO vo : ddvList){
+				String pk_psndoc  = vo.getPk_psndoc();
+				String fileNumber = vo.getAttributeValue("filenumber")==null?null:String.valueOf(vo.getAttributeValue("filenumber"));
+				String dcreditor = vo.getAttributeValue("dcreditor")==null?null:String.valueOf(vo.getAttributeValue("dcreditor"));
+				if(pk_psndoc!=null && fileNumber!=null && dcreditor!=null){
+					debInfoSet.add(pk_psndoc+"::"+fileNumber+"::"+dcreditor);
+					fileNumberSet.add(pk_psndoc+"::"+fileNumber);
+					pk_psndocSet.add(pk_psndoc);
+				}
+			}
 			InSQLCreator insql = new InSQLCreator();
-			List<String> pk_psndocs = new ArrayList<String>();
-			List<String> filenumbers = new ArrayList<String>();
-			List<String> listpsndoc = new ArrayList<String>();
-			List<String> listfilenumber = new ArrayList<String>();
-			List<String> pk_debtfiles = new ArrayList<String>();
-			Map<String, String> map = new HashMap<String, String>();
-			if (debtfilevos.size() <= 0) {
-				return;
-			}
-			for (DebtFileVO devo : debtfilevos) {
-				pk_psndocs.add(devo.getPk_psndoc());
-				filenumbers.add(String.valueOf(devo.getAttributeValue("dfilenumber")));
-				map.put(devo.getPk_psndoc() + ":" + devo.getAttributeValue("dfilenumber"), null);
-				pk_debtfiles.add(devo.getPk_psndoc_sub());
-			}
-			this.getBaseDAO().executeUpdate(
-					"update HI_PSNDOC_DEBTFILE set stopflag ='Y' where pk_psndoc_sub in ("
-							+ insql.getInSQL(pk_debtfiles.toArray(new String[0])) + ");");
-			// this.baseDAO.updateVOArray(debtfilevos.toArray(new
-			// DebtFileVO[0]));
-
-			List<Map<String, String>> list = (List<Map<String, String>>) this.baseDAO.executeQuery(
-					"select PK_PSNDOC,dfilenumber,STOPFLAG from HI_PSNDOC_DEBTFILE where PK_PSNDOC in ("
-							+ insql.getInSQL(pk_psndocs.toArray(new String[0])) + ") and dfilenumber in("
-							+ insql.getInSQL(filenumbers.toArray(new String[0])) + ")"
-							+ " GROUP BY PK_PSNDOC,dfilenumber,STOPFLAG", new MapListProcessor());
-			for (String pks : map.keySet()) {
-				int i = 0;
-				for (Map<String, String> maps : list) {
-					if (pks.equals(maps.get("pk_psndoc") + ":" + maps.get("dfilenumber"))) {
-						i++;
+			String psnFileCreditorInsql = insql.getInSQL(debInfoSet.toArray(new String[0]));
+			if(debInfoSet.size() > 0){
+				//找出所有相关的债券档案
+				@SuppressWarnings("unchecked")
+				Set<String> pkDebtfileSet = (Set<String>)getBaseDAO().executeQuery(
+						"select pk_psndoc_sub from hi_psndoc_debtfile debfile where debfile.dr = 0 "
+						+ " and (debfile.pk_psndoc||'::'||debfile.dfilenumber||'::'||creditor) in ("
+						+psnFileCreditorInsql+")", new ResultSetProcessor() {
+							private static final long serialVersionUID = 7469495167226795395L;
+							private Set<String> rsSet = new HashSet<>();
+							@Override
+							public Object handleResultSet(ResultSet rs) throws SQLException {
+								while(rs.next()){
+									if(rs.getString(1)!=null){
+										rsSet.add(rs.getString(1));
+									}
+								}
+								return rsSet;
+							}
+						});
+				//是否更新没有扣款记录的债券档案
+				if(isUpdatenull){
+					String sql = "select debfile.pk_psndoc_sub,debfile.pk_psndoc,debfile.dfilenumber from hi_psndoc_debtfile debfile "
+							+" left join hi_psndoc_deductdetails details on "
+							+ " (debfile.pk_psndoc = details.pk_psndoc and debfile.dfilenumber = details.filenumber "
+							+ " and debfile.creditor = details.dcreditor) "
+							+ " where details.pk_psndoc_sub is null ";
+					@SuppressWarnings("unchecked")
+					Map<String,String> newFileMap = (Map<String,String>)getBaseDAO().executeQuery(sql, new ResultSetProcessor() {
+						private static final long serialVersionUID = 5402157412328745715L;
+						private Map<String,String> newFileMap = new HashMap<>();
+						@Override
+						public Object handleResultSet(ResultSet rs) throws SQLException {
+							while(rs.next()){
+								if(rs.getString(1)!= null){
+									newFileMap.put(rs.getString(1),rs.getString(2)+"::"+rs.getString(3));
+								}
+							}
+							return newFileMap;
+						}
+					});
+					if(newFileMap!=null && newFileMap.size() > 0){
+						pkDebtfileSet.addAll(newFileMap.keySet());
+						fileNumberSet.addAll(newFileMap.values());
 					}
 				}
-				if (i == 1) {
-					listpsndoc.add(pks.split(":")[0]);
-					listfilenumber.add(pks.split(":")[1]);
-				}
+				String pkDebtfileInsql = insql.getInSQL(pkDebtfileSet.toArray(new String[0]));
+				
+				String psnFileInsql = insql.getInSQL(fileNumberSet.toArray(new String[0]));
+				//更新之
+				String updateRestSql = "MERGE INTO hi_psndoc_debtfile a "
+					+" USING ( SELECT debfile.pk_psndoc_sub pk_psndoc_sub, "
+					+" (nvl(debfile.creditamount,0)-nvl(sumdeb.sumde,0)) restmoneycal "
+					+" FROM hi_psndoc_debtfile debfile LEFT JOIN "
+					+" ( SELECT pk_psndoc, filenumber, dcreditor, SUM(deductmoney) sumde "
+					+" FROM hi_psndoc_deductdetails WHERE dr = 0 "
+					+" GROUP BY pk_psndoc, filenumber, dcreditor ) sumdeb "
+					+" ON ( debfile.pk_psndoc = sumdeb.pk_psndoc AND debfile.dfilenumber = sumdeb.filenumber "
+					+" AND debfile.creditor = sumdeb.dcreditor )  WHERE "
+					+" debfile.pk_psndoc_sub IN ("
+					+ pkDebtfileInsql +") ) b "
+					+" ON (a.pk_psndoc_sub = b.pk_psndoc_sub) WHEN MATCHED "
+					+" THEN UPDATE SET a.restmoney = b.restmoneycal";
+				getBaseDAO().executeUpdate(updateRestSql);
+				
+				//如果债券档案的剩余金额已经小于等于0,那么就结束
+				String stopFlagUpdateSql = "update hi_psndoc_debtfile set stopflag = 'Y' where "
+						+ " dr = 0 and isnull(restmoney,0) <= 0 and pk_psndoc_sub in ("+pkDebtfileInsql+")";
+				getBaseDAO().executeUpdate(stopFlagUpdateSql);
+				//如果债券档案的剩余金额已经大于0,那么不结束
+				stopFlagUpdateSql = "update hi_psndoc_debtfile set stopflag = 'N' where "
+						+ " dr = 0 and isnull(restmoney,0) > 0 and pk_psndoc_sub in ("+pkDebtfileInsql+")";
+				getBaseDAO().executeUpdate(stopFlagUpdateSql);
+				
+				//如果法扣已经没有未结束的债券档案,那么就结束
+				String updateIsStopFlagSql = "update hi_psndoc_courtdeduction set isstop = 'N' "
+						+" where (pk_psndoc||'::'||filenumber) in (select pk_psndoc||'::'||dfilenumber from ( "
+						+" select pk_psndoc,dfilenumber,count(*) countn from hi_psndoc_debtfile debfile "
+						+" where  (debfile.pk_psndoc||'::'||debfile.dfilenumber) in ("+psnFileInsql+") "
+						+" and dr = 0 and isnull(debfile.stopflag,'N') = 'N' "
+						+" group by pk_psndoc,dfilenumber ) tb where countn <= 0 ) ";
+				getBaseDAO().executeUpdate(updateIsStopFlagSql);	
+				//如果法扣还有未结束的债券档案,那么不结束
+				updateIsStopFlagSql = "update hi_psndoc_courtdeduction set isstop = 'N' "
+						+" where (pk_psndoc||'::'||filenumber) in (select pk_psndoc||'::'||dfilenumber from ( "
+						+" select pk_psndoc,dfilenumber,count(*) countn from hi_psndoc_debtfile debfile "
+						+" where  (debfile.pk_psndoc||'::'||debfile.dfilenumber) in ("+psnFileInsql+") "
+						+" and dr = 0 and isnull(debfile.stopflag,'N') = 'N' "
+						+" group by pk_psndoc,dfilenumber ) tb where countn > 0 ) ";
+				getBaseDAO().executeUpdate(updateIsStopFlagSql);
+				
 			}
-			this.getBaseDAO().executeUpdate(
-					"update HI_PSNDOC_COURTDEDUCTION set isstop ='Y' where PK_PSNDOC in("
-							+ insql.getInSQL(listpsndoc.toArray(new String[0])) + ") and filenumber in("
-							+ insql.getInSQL(listfilenumber.toArray(new String[0])) + ");");
-
-		} catch (BusinessException e) {
-			e.printStackTrace();
+			
 		}
+		
 	}
 
-	private void validatedeductfileratio(WaLoginVO waLoginVO, List<String> pk_psndoclist) {
+	private void validatedeductfileratio(WaLoginVO waLoginVO, List<String> pk_psndoclist) throws BusinessException {
+		//校验1.债券档案的方法比率要大于1
 		// 在债权档案里面查询出这些人的信息
 		IUAPQueryBS iUAPQueryBS = (IUAPQueryBS) NCLocator.getInstance().lookup(IUAPQueryBS.class.getName());
 		InSQLCreator insql = new InSQLCreator();
-		try {
-			String psndocsInSQL = insql.getInSQL(pk_psndoclist.toArray(new String[0]));
-			List<Map<String, String>> delist = (List<Map<String, String>>) iUAPQueryBS.executeQuery(
-					"select DFILENUMBER, pk_psndoc, SUM(repaymentratio) as sumratio from HI_PSNDOC_DEBTFILE "
-							+ "where STOPFLAG <> 'Y' and pk_psndoc in(" + psndocsInSQL + ")  "
-							+ "GROUP BY DFILENUMBER,pk_psndoc;", new MapListProcessor());
-			// 根据pk查询人员code
-			List<Map<String, String>> psndoclist = (List<Map<String, String>>) iUAPQueryBS.executeQuery(
-					"select code, pk_psndoc from bd_psndoc " + "where pk_psndoc in(" + psndocsInSQL + ")",
-					new MapListProcessor());
-			List<String> errmaps = new ArrayList<String>();
-			for (Map<String, String> psndocmap : psndoclist) {
-				for (Map<String, String> demap : delist) {
-					UFDouble sumratio = new UFDouble(String.valueOf(demap.get("sumratio")));
-					// BigDecimal bg = new BigDecimal(sumratio.doubleValue());
-					// double newsumratio = bg.setScale(2,
-					// BigDecimal.ROUND_HALF_UP).doubleValue();
-					String psndoccode = null;
-					for (String str : psndocmap.keySet()) {
-						if (demap.get("pk_psndoc").equals(psndocmap.get(str))) {
-							psndoccode = psndocmap.get("code");
-						}
-					}
-					if (sumratio != UFDouble.ONE_DBL) {
-						String message = "再请重新分配員工编号: " + psndoccode + " 的档案编号: " + demap.get("dfilenumber") + " 欠款比率";
-						errmaps.add(message);
-					}
-				}
-			}
-			if (errmaps.size() > 0) {
-				throw new BusinessException(errmaps.toString());
-			}
 
-		} catch (BusinessException e) {
-			e.printStackTrace();
+		String psndocsInSQL = insql.getInSQL(pk_psndoclist.toArray(new String[0]));
+		@SuppressWarnings("unchecked")
+		List<Map<String, String>> delist = (List<Map<String, String>>) iUAPQueryBS.executeQuery(
+				"select court.filenumber filenumber, court.pk_psndoc, SUM(isnull(dfile.repaymentratio,0)) sumratio from hi_psndoc_courtdeduction court "
+				+" left join hi_psndoc_debtfile dfile on (dfile.dfilenumber = court.filenumber and court.pk_psndoc = dfile.pk_psndoc) "
+				+" where court.pk_psndoc in ("+psndocsInSQL+") and court.dr = 0 and isnull(court.isstop,'N') = 'N'and isnull(dfile.stopflag,'N') = 'N' "
+				+" GROUP BY court.filenumber,court.pk_psndoc", new MapListProcessor());
+		List<String> errmaps = new ArrayList<String>();
+
+		for (Map<String, String> demap : delist) {
+			UFDouble sumratio = new UFDouble(String.valueOf(demap.get("sumratio")));
+			if (Math.abs(sumratio.sub(1.0).doubleValue()) > 0.000001) {
+				String message = "請先進行員工["
+						+ (String) iUAPQueryBS.executeQuery(
+								"select code from bd_psndoc where pk_psndoc = '" + demap.get("pk_psndoc") + "' ",
+								new ColumnProcessor()) + "],檔案號["+demap.get("filenumber")+"] 的法院強制扣款債權比率的調整。";
+				errmaps.add(message);
+			}
 		}
 
+		if (errmaps.size() > 0) {
+			throw new BusinessException(errmaps.toString());
+		}
+
+	}
+
+	@Override
+	public void cancelDeductdetail(String pk_wa_class, String waPeriod) throws BusinessException {
+		//先获取到需要删除的VO
+		String sql = "select * from hi_psndoc_deductdetails"
+				+ " where waclass = '"+pk_wa_class+"' and salaryyearmonth = '"+waPeriod+"' and dr = 0";
+				@SuppressWarnings("unchecked")
+				List<DeductDetailsVO> ddvList = 
+						(List<DeductDetailsVO>) getBaseDAO().executeQuery(sql, new BeanListProcessor(DeductDetailsVO.class));
+		//删除VO
+		sql = "delete from hi_psndoc_deductdetails"
+				+ " where waclass = '"+pk_wa_class+"' and salaryyearmonth = '"+waPeriod+"'";
+		getBaseDAO().executeUpdate(sql);
+		//更新flag
+		updateDebtfile(ddvList,false);
+		
 	}
 }

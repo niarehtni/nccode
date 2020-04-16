@@ -220,6 +220,10 @@ public class FunctionKey {
 	public static final String REGISTERDATE = "REGISTERDATE";// 入职日期
 	public static final String DISMISSIONDATE = "DISMISSIONDATE";// 离职日期
 	public static final String WAGEDAYS = "WAGEDAYS";// 计薪日天数
+
+	// ssx added on 2020-02-21
+	public static final String TERMWAGEDAYS = "TERMWAGEDAYS";// 在职期间计薪日天数
+
 	public static final String INTERVALDURATION = "INTERVALDURATION";// 區間留停天數
 	public static final String OVERTIMEPAY = "OVERTIMEPAY";// 免税加班薪资
 	public static final String TAXABLEOVERTIMEPAY = "TAXABLEOVERTIMEPAY";// 应税加班薪资
@@ -236,4 +240,6 @@ public class FunctionKey {
 																	// ssx on
 																	// 2019-01-25
 	public static final String LEAVEYEARLYRESTHOURS = "LEAVEYEARLYRESTHOURS"; // 離職人員外加補休剩餘時數
+	public static final String BONUSBASEOFLASTTERM = "BONUSBASEOFLASTTERM"; // 上期期末獎金基數
+	public static final String LASTWADOCAMOUNT = "LASTWADOCAMOUNT"; // 最新定薪函数
 }

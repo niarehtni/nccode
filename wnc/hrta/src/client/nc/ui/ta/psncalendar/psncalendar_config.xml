@@ -88,6 +88,7 @@
 	<!-- 时间段界面 -->
 	<bean id="gridView" class="nc.ui.ta.psncalendar.view.GridPanel" init-method="initUI">
 		<property name="model" ref="model"></property>
+		<property name="manager" ref="modelDataManager"></property>
 	</bean>
 	<!-- 日历界面 -->
 	<bean id="calendarView" class="nc.ui.ta.psncalendar.view.CalendarPanel" init-method="initUI">

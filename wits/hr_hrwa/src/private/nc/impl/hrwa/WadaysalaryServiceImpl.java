@@ -641,9 +641,8 @@ public class WadaysalaryServiceImpl implements IWadaysalaryService {
 		OrgVO orgvo = (OrgVO) getDao().retrieveByPK(OrgVO.class, waclassvo.getPk_org());
 		String inpsndocsql = new InSQLCreator().getInSQL(pk_psndocs, true);
 
-		String strSQL = "SELECT   '"
-				+ waclassvo.getPk_org()
-				+ "' pk_org, " //
+		String strSQL = "SELECT   "
+				+ " pk_org, " //
 				+ " calendar.calendardate, " //
 				+ " wadoc.pk_psndoc, " //
 				+ " wadoc.pk_psnjob, " //
@@ -665,7 +664,10 @@ public class WadaysalaryServiceImpl implements IWadaysalaryService {
 				+ begindate.toStdString()
 				+ "' " //
 				+ " AND calendar.pk_workcalendar='" + orgvo.getWorkcalendar() + "' " + " AND wadoc.pk_wa_item='"
-				+ pk_wa_item + "' " + " AND wadoc.waflag='Y' " + " AND wadoc.pk_psndoc in (" + inpsndocsql + ") ";
+				+ pk_wa_item + "' " + " AND wadoc.waflag='Y' " + " AND wadoc.pk_psndoc in (" + inpsndocsql + ")"
+				// 人員組織調動後，薪資計算未區分組織  20190724 George 缺陷Bug #29070
+				// 應組織案組織區分pk_org，pk_org不應全部都一樣
+				+ " AND wadoc.pk_org = '" + waclassvo.getPk_org() + "'";
 
 		// 查询出定调资存在新增、修改的记录以及记录为空的数据
 		// 按薪资方案的组织进行过滤,防止兼职人员加重

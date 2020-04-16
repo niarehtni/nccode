@@ -32,6 +32,7 @@ import nc.vo.pub.BusinessException;
 import nc.vo.pub.VOStatus;
 import nc.vo.pub.lang.UFBoolean;
 import nc.vo.pub.lang.UFDate;
+import nc.vo.pub.lang.UFDouble;
 
 import org.apache.commons.lang.StringUtils;
 
@@ -51,7 +52,7 @@ public class AddSumIncomeTaxAction extends NCAction {
 	private AbstractAppModel model;
 
 	public AddSumIncomeTaxAction() {
-		this.setBtnName(ResHelper.getString("incometax", "2incometax-n-000006")/*"申报明细档汇总"*/);
+		this.setBtnName(ResHelper.getString("incometax", "2incometax-n-000006")/* "申报明细档汇总" */);
 		super.setCode("declaresum");
 		super.putValue("declaresum", ResHelper.getString("incometax", "2incometax-n-000006"));
 	}
@@ -59,31 +60,32 @@ public class AddSumIncomeTaxAction extends NCAction {
 	@Override
 	public void doAction(ActionEvent e) throws Exception {
 		MessageDialog.showWarningDlg(getModel().getContext().getEntranceUI(),
-				ResHelper.getString("incometax", "2incometax-n-000004"),ResHelper.getString("incometax", "2incometax-n-000007") /*"申报明细档汇总生成时，已经汇总过的单据将重新汇总，并删除已经汇总的信息"*/);
+				ResHelper.getString("incometax", "2incometax-n-000004"),
+				ResHelper.getString("incometax", "2incometax-n-000007") /* "申报明细档汇总生成时，已经汇总过的单据将重新汇总，并删除已经汇总的信息" */);
 		if (addSumTaxView == null) {
 			addSumTaxView = new AddSumIncomeTaxView();
-			addSumTaxView.setTitle(ResHelper.getString("incometax", "2incometax-n-000006")/*"申报明细档汇总"*/);
+			addSumTaxView.setTitle(ResHelper.getString("incometax", "2incometax-n-000006")/* "申报明细档汇总" */);
 		}
 		if (addSumTaxView.showModal() == 1) {
 			new Thread() {
 				@Override
 				public void run() {
 
-					IProgressMonitor progressMonitor = NCProgresses
-							.createDialogProgressMonitor(getModel()
-									.getContext().getEntranceUI());
+					IProgressMonitor progressMonitor = NCProgresses.createDialogProgressMonitor(getModel().getContext()
+							.getEntranceUI());
 
 					try {
-						progressMonitor.beginTask("匯出中...",
-								IProgressMonitor.UNKNOWN_REMAIN_TIME);
+						progressMonitor.beginTask("匯出中...", IProgressMonitor.UNKNOWN_REMAIN_TIME);
 						progressMonitor.setProcessInfo("匯出中，請稍候.....");
 						CreateSumIncomeTax();
-						ShowStatusBarMsgUtil.showStatusBarMsg(ResHelper.getString("incometax", "2incometax-n-000008")/*"汇总成功"*/,
-								getModel().getContext());
+						ShowStatusBarMsgUtil.showStatusBarMsg(
+								ResHelper.getString("incometax", "2incometax-n-000008")/* "汇总成功" */, getModel()
+										.getContext());
 					} catch (Exception e) {
 						e.printStackTrace();
-						ShowStatusBarMsgUtil.showErrorMsg(ResHelper.getString("incometax", "2incometax-n-000004")/*"提示"*/,
-								e.getMessage(), getModel().getContext());
+						ShowStatusBarMsgUtil.showErrorMsg(
+								ResHelper.getString("incometax", "2incometax-n-000004")/* "提示" */, e.getMessage(),
+								getModel().getContext());
 					} finally {
 						progressMonitor.done(); // 进度任务结束
 					}
@@ -109,6 +111,10 @@ public class AddSumIncomeTaxAction extends NCAction {
 		this.model.addAppEventListener(this);
 	}
 
+	private UFDouble getDoubleValue(UFDouble value) {
+		return value == null ? UFDouble.ZERO_DBL : value;
+	}
+
 	/**
 	 * 申报明细档汇总
 	 * 
@@ -119,14 +125,14 @@ public class AddSumIncomeTaxAction extends NCAction {
 		String granttype = addSumTaxView.getGranttype();// 凭单填发格式
 		String declarenum = addSumTaxView.getDeclarenum();// 申报次数
 		String reason = addSumTaxView.getReason();// 重复申报原因
-		/*String businessno = addSumTaxView.getBusinessno();// 业别代号
-		String costno = addSumTaxView.getCostno();// 费用别代号
-		String projectno = addSumTaxView.getProjectno();// 项目代号
-*/		String contactname = addSumTaxView.getContactName();// 联络人姓名
+		/*
+		 * String businessno = addSumTaxView.getBusinessno();// 业别代号 String
+		 * costno = addSumTaxView.getCostno();// 费用别代号 String projectno =
+		 * addSumTaxView.getProjectno();// 项目代号
+		 */String contactname = addSumTaxView.getContactName();// 联络人姓名
 		String contacttel = addSumTaxView.getContactTel();// 联络人电话
 		String contactemail = addSumTaxView.getContactEmail();// 申报单位电子邮箱
-		Object[] objects = ((IMultiRowSelectModel) getModel())
-				.getSelectedOperaDatas();
+		Object[] objects = ((IMultiRowSelectModel) getModel()).getSelectedOperaDatas();
 		if (null == objects || objects.length < 1) {
 			return;
 		}
@@ -136,37 +142,35 @@ public class AddSumIncomeTaxAction extends NCAction {
 		List<AggIncomeTaxVO> listAggVos = new ArrayList<AggIncomeTaxVO>();// 设置申报明细档为已汇总
 		for (int i = 0; i < objects.length; i++) {
 			AggIncomeTaxVO aggvo = (AggIncomeTaxVO) objects[i];
-			CIncomeTaxVO incomeVo = parseCIncomeTaxVO(aggvo
-					.getParentVO());
+			CIncomeTaxVO incomeVo = parseCIncomeTaxVO(aggvo.getParentVO());
 			if (incomeVo.getIsdeclare().booleanValue()) {
 				// 选中的数据存在已注记的内容时，不允许汇总
-				throw new BusinessException(ResHelper.getString("incometax", "2incometax-n-000009")/*"选中的数据存在注记的内容，请先取消注记，再重新汇总！"*/);
+				throw new BusinessException(ResHelper.getString("incometax", "2incometax-n-000009")/* "选中的数据存在注记的内容，请先取消注记，再重新汇总！" */);
 			}
 			if (!Arrays.asList(declaretype).contains(incomeVo.getDeclaretype())) {
 				// 选中的数据的申报格式和汇总格式不一致时，跳过
 				continue;
 			}
-			//当给付总额、扣缴税额、给付净额、员工自提金额都为空时，不产生汇总信息
-			if (incomeVo.getTaxbase().intValue() == 0
-					&& incomeVo.getCacu_value().intValue() == 0
-					&& incomeVo.getNetincome().intValue() == 0
-					&& incomeVo.getPickedup().intValue() == 0) {
+			// 当给付总额、扣缴税额、给付净额、员工自提金额都为空时，不产生汇总信息
+			if (incomeVo.getTaxbase().intValue() == 0 && incomeVo.getCacu_value().intValue() == 0
+					&& incomeVo.getNetincome().intValue() == 0 && incomeVo.getPickedup().intValue() == 0) {
 				listAggVos.add(aggvo);
 				continue;
 			}
-//			aggvo.getParentVO().setIsgather(UFBoolean.TRUE);
-//			aggvo.getParentVO().setStatus(VOStatus.UPDATED);
+			// aggvo.getParentVO().setIsgather(UFBoolean.TRUE);
+			// aggvo.getParentVO().setStatus(VOStatus.UPDATED);
 			listAggVos.add(aggvo);
 			deletePks.add(incomeVo.getPk_incometax());
 			aggvo.getParentVO().getBiztype();
-			String biztype = aggvo.getParentVO().getBiztype()==null?"":aggvo.getParentVO().getBiztype();
-			String feetype = aggvo.getParentVO().getFeetype()==null?"":aggvo.getParentVO().getFeetype();
-			String projectcode = aggvo.getParentVO().getProjectcode()==null?"":aggvo.getParentVO().getProjectcode();
-			
-			String key = incomeVo.getPk_psndoc() + incomeVo.getDeclaretype() + biztype + feetype + projectcode +incomeVo.getCyear()+incomeVo.getUnifiednumber();
+			String biztype = aggvo.getParentVO().getBiztype() == null ? "" : aggvo.getParentVO().getBiztype();
+			String feetype = aggvo.getParentVO().getFeetype() == null ? "" : aggvo.getParentVO().getFeetype();
+			String projectcode = aggvo.getParentVO().getProjectcode() == null ? "" : aggvo.getParentVO()
+					.getProjectcode();
+
+			String key = incomeVo.getPk_psndoc() + incomeVo.getDeclaretype() + biztype + feetype + projectcode
+					+ incomeVo.getCyear() + incomeVo.getUnifiednumber();
 			if (!mapSum.containsKey(key)) {
-				SumIncomeTaxVO sumTaxVO = getSumIncomeTaxVO(incomeVo,
-						granttype, declarenum, reason, biztype, feetype,
+				SumIncomeTaxVO sumTaxVO = getSumIncomeTaxVO(incomeVo, granttype, declarenum, reason, biztype, feetype,
 						projectcode, contactname, contacttel, contactemail);
 				mapSum.put(key, sumTaxVO);
 				List<CIncomeTaxVO> listIncomes = new ArrayList<CIncomeTaxVO>();
@@ -174,20 +178,16 @@ public class AddSumIncomeTaxAction extends NCAction {
 				mapIncome.put(key, listIncomes);
 			} else {
 				SumIncomeTaxVO sumTaxVO = mapSum.get(key);
-				sumTaxVO.setTaxbase(sumTaxVO.getTaxbase().add(
-						incomeVo.getTaxbase()));
-				sumTaxVO.setCacu_value(sumTaxVO.getCacu_value().add(
-						incomeVo.getCacu_value()));
-				sumTaxVO.setNetincome(sumTaxVO.getNetincome().add(
-						incomeVo.getNetincome()));
-				sumTaxVO.setPickedup(sumTaxVO.getPickedup().add(
-						incomeVo.getPickedup()));
-				if (isperiod(sumTaxVO.getBeginperiod(),
-						incomeVo.getCyearperiod())) {
+				sumTaxVO.setTaxbase(getDoubleValue(sumTaxVO.getTaxbase()).add(getDoubleValue(incomeVo.getTaxbase())));
+				sumTaxVO.setCacu_value(getDoubleValue(sumTaxVO.getCacu_value()).add(
+						getDoubleValue(incomeVo.getCacu_value())));
+				sumTaxVO.setNetincome(getDoubleValue(sumTaxVO.getNetincome()).add(
+						getDoubleValue(incomeVo.getNetincome())));
+				sumTaxVO.setPickedup(getDoubleValue(sumTaxVO.getPickedup()).add(getDoubleValue(incomeVo.getPickedup())));
+				if (isperiod(sumTaxVO.getBeginperiod(), incomeVo.getCyearperiod())) {
 					sumTaxVO.setBeginperiod(incomeVo.getCyearperiod());
 				}
-				if (!isperiod(sumTaxVO.getEndperiod(),
-						incomeVo.getCyearperiod())) {
+				if (!isperiod(sumTaxVO.getEndperiod(), incomeVo.getCyearperiod())) {
 					sumTaxVO.setEndperiod(incomeVo.getCyearperiod());
 				}
 				mapIncome.get(key).add(incomeVo);
@@ -197,38 +197,33 @@ public class AddSumIncomeTaxAction extends NCAction {
 			return;
 		}
 
-		IGetAggIncomeTaxData getServices = NCLocator.getInstance().lookup(
-				IGetAggIncomeTaxData.class);
+		IGetAggIncomeTaxData getServices = NCLocator.getInstance().lookup(IGetAggIncomeTaxData.class);
 		AggSumIncomeTaxVO[] aggTaxVOs = new AggSumIncomeTaxVO[mapSum.size()];
 		int j = 0;
 		for (Entry<String, SumIncomeTaxVO> e : mapSum.entrySet()) {
 			AggSumIncomeTaxVO aggvo = new AggSumIncomeTaxVO();
 			String key = e.getKey();
 			SumIncomeTaxVO sumTaxVO = e.getValue();
-			sumTaxVO.setIdtypeno(getServices.getIdtypeno(
-					sumTaxVO.getPk_psndoc(), sumTaxVO.getEndperiod()));// 获取证别号
+			sumTaxVO.setIdtypeno(getServices.getIdtypeno(sumTaxVO.getPk_psndoc(), sumTaxVO.getEndperiod()));// 获取证别号
 			sumTaxVO.setBilldate(new UFDate());// 单据日期
 			aggvo.setParentVO(sumTaxVO);
 			aggvo.setChildrenVO(mapIncome.get(key).toArray(new CIncomeTaxVO[0]));
 			aggTaxVOs[j] = aggvo;
 			j++;
 		}
-		IIncometaxMaintain service2 = NCLocator.getInstance().lookup(
-				IIncometaxMaintain.class);
+		IIncometaxMaintain service2 = NCLocator.getInstance().lookup(IIncometaxMaintain.class);
 		for (int i = 0; i < listAggVos.size(); i++) {
 			AggIncomeTaxVO aggvo = listAggVos.get(i);
 			aggvo.getParentVO().setIsgather(UFBoolean.TRUE);
 			aggvo.getParentVO().setStatus(VOStatus.UPDATED);
-			
+
 		}
-		AggIncomeTaxVO[] aggvos = service2.update(
-				listAggVos.toArray(new AggIncomeTaxVO[0]), null);
+		AggIncomeTaxVO[] aggvos = service2.update(listAggVos.toArray(new AggIncomeTaxVO[0]), null);
 		((BillManageModel) getModel()).directlyUpdate(aggvos);
 		// 结束
 		// 删除已经生产的汇总信息
 		getServices.deleteSumIncomeTax(deletePks.toArray(new String[0]));
-		ISumincometaxMaintain service = NCLocator.getInstance().lookup(
-				ISumincometaxMaintain.class);
+		ISumincometaxMaintain service = NCLocator.getInstance().lookup(ISumincometaxMaintain.class);
 		service.insert(aggTaxVOs);// 插入汇总数据
 	}
 
@@ -247,10 +242,9 @@ public class AddSumIncomeTaxAction extends NCAction {
 	 * @param contactemail
 	 * @return
 	 */
-	public SumIncomeTaxVO getSumIncomeTaxVO(CIncomeTaxVO incomeVo,
-			String granttype, String declarenum, String reason,
-			String businessno, String costno, String projectno,
-			String contactname, String contacttel, String contactemail) {
+	public SumIncomeTaxVO getSumIncomeTaxVO(CIncomeTaxVO incomeVo, String granttype, String declarenum, String reason,
+			String businessno, String costno, String projectno, String contactname, String contacttel,
+			String contactemail) {
 		SumIncomeTaxVO sumTaxVO = new SumIncomeTaxVO();
 		sumTaxVO.setCode(incomeVo.getCode());
 		sumTaxVO.setPk_psndoc(incomeVo.getPk_psndoc());
@@ -268,15 +262,15 @@ public class AddSumIncomeTaxAction extends NCAction {
 		sumTaxVO.setContactemail(contactemail);
 		sumTaxVO.setBeginperiod(incomeVo.getCyearperiod());
 		sumTaxVO.setEndperiod(incomeVo.getCyearperiod());
-		sumTaxVO.setTaxbase(incomeVo.getTaxbase());
-		sumTaxVO.setCacu_value(incomeVo.getCacu_value());
-		sumTaxVO.setNetincome(incomeVo.getNetincome());
-		sumTaxVO.setPickedup(incomeVo.getPickedup());
+		sumTaxVO.setTaxbase(getDoubleValue(incomeVo.getTaxbase()));
+		sumTaxVO.setCacu_value(getDoubleValue(incomeVo.getCacu_value()));
+		sumTaxVO.setNetincome(getDoubleValue(incomeVo.getNetincome()));
+		sumTaxVO.setPickedup(getDoubleValue(incomeVo.getPickedup()));
 		sumTaxVO.setPk_hrorg(incomeVo.getPk_hrorg());
 		sumTaxVO.setPk_org(getModel().getContext().getPk_org());
 		sumTaxVO.setPk_group(getModel().getContext().getPk_group());
 		sumTaxVO.setCreator(getModel().getContext().getPk_loginUser());
-		sumTaxVO.setUnifiednumber(incomeVo.getUnifiednumber());//统一编号
+		sumTaxVO.setUnifiednumber(incomeVo.getUnifiednumber());// 统一编号
 		sumTaxVO.setCyear(incomeVo.getCyear());
 		sumTaxVO.setIsforeignmonthdec(incomeVo.getIsforeignmonthdec());
 		return sumTaxVO;
@@ -308,16 +302,14 @@ public class AddSumIncomeTaxAction extends NCAction {
 	 */
 	public CIncomeTaxVO parseCIncomeTaxVO(IncomeTaxVO incomeVo) {
 		CIncomeTaxVO cIncomeTaxVO = new CIncomeTaxVO();
-		Map<String, String> voAttrTypeMap = IncomeTaxUtil
-				.getVOFieldType(CIncomeTaxVO.class);
+		Map<String, String> voAttrTypeMap = IncomeTaxUtil.getVOFieldType(CIncomeTaxVO.class);
 		for (String voAttr : voAttrTypeMap.keySet()) {
-			String value = incomeVo.getAttributeValue(voAttr) != null ? incomeVo
-					.getAttributeValue(voAttr).toString() : "";
+			String value = incomeVo.getAttributeValue(voAttr) != null ? incomeVo.getAttributeValue(voAttr).toString()
+					: "";
 			if (StringUtils.isNotBlank(voAttr)) {
 				String attrType = voAttrTypeMap.get(voAttr);
 				if (StringUtils.isNotBlank(attrType)) {
-					IncomeTaxUtil.setVoFieldValueByType(cIncomeTaxVO, attrType,
-							voAttr, value);
+					IncomeTaxUtil.setVoFieldValueByType(cIncomeTaxVO, attrType, voAttr, value);
 				}
 			}
 		}
@@ -326,8 +318,7 @@ public class AddSumIncomeTaxAction extends NCAction {
 
 	@Override
 	protected boolean isActionEnable() {
-		Object[] objects = ((IMultiRowSelectModel) getModel())
-				.getSelectedOperaDatas();
+		Object[] objects = ((IMultiRowSelectModel) getModel()).getSelectedOperaDatas();
 		if (null == objects) {
 			return false;
 		}

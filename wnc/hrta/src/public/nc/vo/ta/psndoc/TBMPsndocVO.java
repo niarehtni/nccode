@@ -72,6 +72,10 @@ public class TBMPsndocVO extends SuperVO implements IDateScope, Comparable<TBMPs
 	public static final String TABLE_NAME = "tbm_psndoc";
 	private String specialrest;// 特休结算
 	private java.lang.Integer overtimecontrol;
+	
+	// 考勤增加不同步班次標識  by George 20200326 特性 #33851
+	// 新增 不同步班組工作日曆 
+	private nc.vo.pub.lang.UFBoolean notsyncal;
 
 	public static final String SPECIALREST = "specialrest";
 	public static final String PK_TBM_PSNDOC = "pk_tbm_psndoc";
@@ -102,6 +106,7 @@ public class TBMPsndocVO extends SuperVO implements IDateScope, Comparable<TBMPs
 	public static final String SIGNTYPE = "signtype";
 	public static final String WEEKFORM = "weekform";
 	public static final String OVERTIMECONTROL = "overtimecontrol";
+	public static final String NOTSYNCAL = "notsyncal";
 
 	/**
 	 * 属性pk_tbm_psndoc的Getter方法. 创建日期:2009-11-18 20:27:22
@@ -750,5 +755,13 @@ public class TBMPsndocVO extends SuperVO implements IDateScope, Comparable<TBMPs
 
 	public void setSpecialrest(String specialrest) {
 		this.specialrest = specialrest;
+	}
+	
+	public nc.vo.pub.lang.UFBoolean getNotsyncal() {
+		return notsyncal;
+	}
+
+	public void setNotsyncal(nc.vo.pub.lang.UFBoolean notsyncal) {
+		this.notsyncal = notsyncal;
 	}
 }

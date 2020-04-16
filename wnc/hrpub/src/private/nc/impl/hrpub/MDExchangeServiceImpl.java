@@ -33,6 +33,7 @@ import nc.impl.hrpub.dataexchange.businessprocess.HRInfosetExportExecutor;
 import nc.impl.hrpub.dataexchange.businessprocess.ImportDataImportExecutor;
 import nc.impl.hrpub.dataexchange.businessprocess.LeaveBPImportExecutor;
 import nc.impl.hrpub.dataexchange.businessprocess.LeaveImportExecutor;
+import nc.impl.hrpub.dataexchange.businessprocess.OTLeaveBalanceBPExportExecutor;
 import nc.impl.hrpub.dataexchange.businessprocess.OvertimeBPImportExecutor;
 import nc.impl.hrpub.dataexchange.businessprocess.OvertimeImportExecutor;
 import nc.impl.hrpub.dataexchange.businessprocess.PsnInfosetImportExecutor;
@@ -231,7 +232,8 @@ public class MDExchangeServiceImpl implements IMDExchangeService, IBackgroundWor
 	}
 
 	private String getPk_group(String pk_org) throws BusinessException {
-		return (String) this.getBaseDAO().executeQuery("select pk_group from org_orgs where pk_org = '" + pk_org + "'", new ColumnProcessor());
+		return (String) this.getBaseDAO().executeQuery("select pk_group from org_orgs where pk_org = '" + pk_org + "'",
+				new ColumnProcessor());
 	}
 
 	private String getPk_ioschema(String schema) throws BusinessException {
@@ -262,18 +264,23 @@ public class MDExchangeServiceImpl implements IMDExchangeService, IBackgroundWor
 	}
 
 	@Override
-	public String checkExchangeRights(String method, String pk_org, String pk_ioschema, String cuserid, String entityName) throws BusinessException {
-		String strSQL = "SELECT count(*) FROM hrpub_iopermit pmt " + " LEFT JOIN hrpub_mdclass cls on pmt.pk_org = cls.pk_org and pmt.pk_mdclass = cls.pk_mdclass "
-				+ " LEFT JOIN md_class mcl on cls.pk_class = mcl.id " + " WHERE pmt.pk_org = '" + pk_org + "' " + " AND pmt.cuserid = '" + cuserid + "' " + " AND pmt.pk_ioschema='" + pk_ioschema
-				+ "' " + (method.toUpperCase().equals("IMPORT") ? " AND enableimport = 'Y' " : " AND enableexport = 'Y' ") + " AND (cls.pk_class is null or cls.pk_class = '~' or LOWER(mcl.name) = '"
-				+ entityName.toLowerCase() + "') " + "AND pmt.dr = 0 " + "AND pmt.dr = 0 ";
+	public String checkExchangeRights(String method, String pk_org, String pk_ioschema, String cuserid,
+			String entityName) throws BusinessException {
+		String strSQL = "SELECT count(*) FROM hrpub_iopermit pmt "
+				+ " LEFT JOIN hrpub_mdclass cls on pmt.pk_org = cls.pk_org and pmt.pk_mdclass = cls.pk_mdclass "
+				+ " LEFT JOIN md_class mcl on cls.pk_class = mcl.id " + " WHERE pmt.pk_org = '" + pk_org + "' "
+				+ " AND pmt.cuserid = '" + cuserid + "' " + " AND pmt.pk_ioschema='" + pk_ioschema + "' "
+				+ (method.toUpperCase().equals("IMPORT") ? " AND enableimport = 'Y' " : " AND enableexport = 'Y' ")
+				+ " AND (cls.pk_class is null or cls.pk_class = '~' or LOWER(mcl.name) = '" + entityName.toLowerCase()
+				+ "') " + "AND pmt.dr = 0 " + "AND pmt.dr = 0 ";
 		Integer count = (Integer) this.getBaseDAO().executeQuery(strSQL, new ColumnProcessor());
 		if (count == 0) {
 			throw new BusinessException("当前用户不允许进行数据交换操作");
 		}
 
-		strSQL = "select mcl.id from hrpub_mdclass cls " + "inner join md_class mcl ON cls.pk_class = mcl.id " + "where cls.pk_ioschema='" + pk_ioschema + "' and LOWER(mcl.name) =  '"
-				+ entityName.toLowerCase() + "' " + "and cls.isenabled='Y' and cls.dr=0";
+		strSQL = "select mcl.id from hrpub_mdclass cls " + "inner join md_class mcl ON cls.pk_class = mcl.id "
+				+ "where cls.pk_ioschema='" + pk_ioschema + "' and LOWER(mcl.name) =  '" + entityName.toLowerCase()
+				+ "' " + "and cls.isenabled='Y' and cls.dr=0";
 		String classid = (String) this.getBaseDAO().executeQuery(strSQL, new ColumnProcessor());
 		return classid;
 	}
@@ -328,7 +335,8 @@ public class MDExchangeServiceImpl implements IMDExchangeService, IBackgroundWor
 							lineNo++;
 							List valueList = CsvUtil.fromCSVLinetoArray(data);
 							if (valueList.size() != 0 && headList.size() != valueList.size()) {
-								throw new BusinessException("文件格式错误：标题与数据个数不匹配（文件：[" + f.getName() + "], 行：[" + lineNo.toString() + "]）");
+								throw new BusinessException("文件格式错误：标题与数据个数不匹配（文件：[" + f.getName() + "], 行：["
+										+ lineNo.toString() + "]）");
 							}
 							Map<String, Object> valueMap = new HashMap<String, Object>();
 							valueMap.put("ROWNO", String.valueOf(lineNo));
@@ -337,21 +345,28 @@ public class MDExchangeServiceImpl implements IMDExchangeService, IBackgroundWor
 							}
 							jsonObj.add(valueMap);
 							if (jsonObj.size() == batchSize) {
-								errMsgs.putAll(saveToService(f.getName().substring(0, f.getName().lastIndexOf(".csv")), jsonObj, bgwc));
+								errMsgs.putAll(saveToService(f.getName().substring(0, f.getName().lastIndexOf(".csv")),
+										jsonObj, bgwc));
 								jsonObj.clear();
 							}
 						}
 
 						if (jsonObj.size() > 0) {
-							errMsgs.putAll(saveToService(f.getName().substring(0, f.getName().lastIndexOf(".csv")), jsonObj, bgwc));
+							errMsgs.putAll(saveToService(f.getName().substring(0, f.getName().lastIndexOf(".csv")),
+									jsonObj, bgwc));
 						}
 
 						csvUtl.closeFile();
 
 						if (errMsgs.size() > 0) {
-							File outFile = new File(f.getPath().replace(".csv", ".unimported." + (new UFDateTime().toString().replace(" ", "_").replace(":", "_").replace("-", "_")) + ".csv"));
+							File outFile = new File(f.getPath().replace(
+									".csv",
+									".unimported."
+											+ (new UFDateTime().toString().replace(" ", "_").replace(":", "_").replace(
+													"-", "_")) + ".csv"));
 							outFile.createNewFile();
-							BufferedWriter fwriter = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(outFile), StandardCharsets.UTF_8));
+							BufferedWriter fwriter = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(
+									outFile), StandardCharsets.UTF_8));
 							int row = 1;
 							csvUtl = new CsvUtil(f.getPath());
 							while (!StringUtils.isEmpty(data = csvUtl.readLine())) {
@@ -366,17 +381,28 @@ public class MDExchangeServiceImpl implements IMDExchangeService, IBackgroundWor
 							fwriter.close();
 						}
 
-						f.renameTo(new File(f.getPath().replace(".csv", ".csv." + (new UFDateTime().toString().replace(" ", "_").replace(":", "_").replace("-", "_")) + ".bak")));
+						f.renameTo(new File(f.getPath().replace(
+								".csv",
+								".csv."
+										+ (new UFDateTime().toString().replace(" ", "_").replace(":", "_").replace("-",
+												"_")) + ".bak")));
 
 						if (errMsgs.size() > 0) {
-							File logFile = new File(f.getPath().replace(".csv", ".csv." + (new UFDateTime().toString().replace(" ", "_").replace(":", "_").replace("-", "_"))) + ".log");
+							File logFile = new File(f.getPath().replace(
+									".csv",
+									".csv."
+											+ (new UFDateTime().toString().replace(" ", "_").replace(":", "_").replace(
+													"-", "_")))
+									+ ".log");
 							logFile.createNewFile();
-							BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(logFile), StandardCharsets.UTF_8));
+							BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(
+									logFile), StandardCharsets.UTF_8));
 							writer.write("------ Data Migration Import Log -----\r\n\r\n");
 							MapKeyComparator mapCmp = new MapKeyComparator();
 							errMsgs = mapCmp.sortMapByKey(errMsgs);
 							for (Entry<String, String> err : errMsgs.entrySet()) {
-								writer.write("Log Time:" + new UFDateTime().toString() + "\r\nRow No.:" + err.getKey() + "\r\nMessages:\r\n" + err.getValue() + "\r\n\r\n");
+								writer.write("Log Time:" + new UFDateTime().toString() + "\r\nRow No.:" + err.getKey()
+										+ "\r\nMessages:\r\n" + err.getValue() + "\r\n\r\n");
 							}
 							writer.flush();
 							writer.close();
@@ -411,7 +437,8 @@ public class MDExchangeServiceImpl implements IMDExchangeService, IBackgroundWor
 
 	}
 
-	private Map<String, String> saveToService(String classname, List<Map<String, Object>> jsonObj, BgWorkingContext bgwc) throws BusinessException {
+	private Map<String, String> saveToService(String classname, List<Map<String, Object>> jsonObj, BgWorkingContext bgwc)
+			throws BusinessException {
 		AbstractExecutor executor = getDataImportExecutor(classname, ExchangeTypeEnum.CUSTOMIZE);
 		String pk_ioschema = (String) bgwc.getKeyMap().get("pk_ioschema");
 		String pk_org = (String) bgwc.getKeyMap().get("pk_org");
@@ -500,12 +527,27 @@ public class MDExchangeServiceImpl implements IMDExchangeService, IBackgroundWor
 	}
 
 	private AbstractExecutor getDataExportExecutor(String classname, ExchangeTypeEnum exType) throws BusinessException {
+		DataExportExecutor newExportExecutor = null;
 		if (exType.equals(ExchangeTypeEnum.CUSTOMIZE)) {
 			if (classname.toLowerCase().startsWith("hi_psndoc_")) {
-				return new HRInfosetExportExecutor();
+				newExportExecutor = new HRInfosetExportExecutor();
+				newExportExecutor.setQueryByBP(false);
+			} else {
+				switch (classname) {
+				case "otleavebalance":
+					newExportExecutor = new OTLeaveBalanceBPExportExecutor();
+					newExportExecutor.setQueryByBP(true);
+					break;
+				}
 			}
 		}
-		return new DataExportExecutor();
+
+		if (newExportExecutor == null) {
+			newExportExecutor = new DataExportExecutor();
+			newExportExecutor.setQueryByBP(false);
+		}
+
+		return newExportExecutor;
 	}
 
 	@Override

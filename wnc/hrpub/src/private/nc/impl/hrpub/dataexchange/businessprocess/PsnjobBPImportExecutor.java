@@ -115,6 +115,19 @@ public class PsnjobBPImportExecutor extends DataImportExecutor implements IDataE
 						psnjobVO.setAttributeValue("jobglbdef1", rowNCMap.get(rowNo + ":jobglbdef1"));
 					}
 
+					//#33735	add By Jimmy20200325
+					if (null == rowNCMap.get(rowNo + ":jobglbdef2")) {
+						psnjobVO.setAttributeValue("jobglbdef2", psndocVO.getPsnJobVO().getAttributeValue("jobglbdef2"));
+					} else {
+						psnjobVO.setAttributeValue("jobglbdef2", rowNCMap.get(rowNo + ":jobglbdef2"));
+					}
+					//#33735	add By Jimmy20200325
+					if (null == rowNCMap.get(rowNo + ":jobglbdef3")) {
+						psnjobVO.setAttributeValue("jobglbdef3", psndocVO.getPsnJobVO().getAttributeValue("jobglbdef3"));
+					} else {
+						psnjobVO.setAttributeValue("jobglbdef3", rowNCMap.get(rowNo + ":jobglbdef3"));
+					}
+					
 					if (null == rowNCMap.get(rowNo + ":jobglbdef4")) {
 						psnjobVO.setAttributeValue("jobglbdef4", psndocVO.getPsnJobVO().getAttributeValue("jobglbdef4"));
 					} else {
@@ -124,6 +137,12 @@ public class PsnjobBPImportExecutor extends DataImportExecutor implements IDataE
 						psnjobVO.setAttributeValue("jobglbdef5", psndocVO.getPsnJobVO().getAttributeValue("jobglbdef5"));
 					} else {
 						psnjobVO.setAttributeValue("jobglbdef5", rowNCMap.get(rowNo + ":jobglbdef5"));
+					}
+					//#33735	add By Jimmy20200325
+					if (null == rowNCMap.get(rowNo + ":jobglbdef6")) {
+						psnjobVO.setAttributeValue("jobglbdef6", psndocVO.getPsnJobVO().getAttributeValue("jobglbdef6"));
+					} else {
+						psnjobVO.setAttributeValue("jobglbdef6", rowNCMap.get(rowNo + ":jobglbdef6"));
 					}
 					if (null == rowNCMap.get(rowNo + ":jobglbdef7")) {
 						psnjobVO.setAttributeValue("jobglbdef7", psndocVO.getPsnJobVO().getAttributeValue("jobglbdef7"));
@@ -136,16 +155,62 @@ public class PsnjobBPImportExecutor extends DataImportExecutor implements IDataE
 						psnjobVO.setAttributeValue("jobglbdef8", rowNCMap.get(rowNo + ":jobglbdef8"));
 					}
 
+					//#33735	add By Jimmy20200325
+					if (null == rowNCMap.get(rowNo + ":jobglbdef9")) {
+						psnjobVO.setAttributeValue("jobglbdef9", psndocVO.getPsnJobVO().getAttributeValue("jobglbdef9"));
+					} else {
+						psnjobVO.setAttributeValue("jobglbdef9", rowNCMap.get(rowNo + ":jobglbdef9"));
+					}
+					//#33735	add By Jimmy20200325
+					if (null == rowNCMap.get(rowNo + ":jobglbdef10")) {
+						psnjobVO.setAttributeValue("jobglbdef10", psndocVO.getPsnJobVO().getAttributeValue("jobglbdef10"));
+					} else {
+						psnjobVO.setAttributeValue("jobglbdef10", rowNCMap.get(rowNo + ":jobglbdef10"));
+					}
+					//#33735	add By Jimmy20200325
+					if (null == rowNCMap.get(rowNo + ":jobglbdef11")) {
+						psnjobVO.setAttributeValue("jobglbdef11", psndocVO.getPsnJobVO().getAttributeValue("jobglbdef11"));
+					} else {
+						psnjobVO.setAttributeValue("jobglbdef11", rowNCMap.get(rowNo + ":jobglbdef11"));
+					}
+					//#33735	add By Jimmy20200325
+					if (null == rowNCMap.get(rowNo + ":jobglbdef12")) {
+						psnjobVO.setAttributeValue("jobglbdef12", psndocVO.getPsnJobVO().getAttributeValue("jobglbdef12"));
+					} else {
+						psnjobVO.setAttributeValue("jobglbdef12", rowNCMap.get(rowNo + ":jobglbdef12"));
+					}
+					//#33735	add By Jimmy20200325
+					if (null == rowNCMap.get(rowNo + ":jobglbdef13")) {
+						psnjobVO.setAttributeValue("jobglbdef13", psndocVO.getPsnJobVO().getAttributeValue("jobglbdef13"));
+					} else {
+						psnjobVO.setAttributeValue("jobglbdef13", rowNCMap.get(rowNo + ":jobglbdef13"));
+					}
+					//#33735	add By Jimmy20200325
+					if (null == rowNCMap.get(rowNo + ":jobglbdef15")) {
+						psnjobVO.setAttributeValue("jobglbdef15", psndocVO.getPsnJobVO().getAttributeValue("jobglbdef15"));
+					} else {
+						psnjobVO.setAttributeValue("jobglbdef15", rowNCMap.get(rowNo + ":jobglbdef15"));
+					}
+					//#33735	add By Jimmy20200325
+					if (null == rowNCMap.get(rowNo + ":jobglbdef16")) {
+						psnjobVO.setAttributeValue("jobglbdef16", psndocVO.getPsnJobVO().getAttributeValue("jobglbdef16"));
+					} else {
+						psnjobVO.setAttributeValue("jobglbdef16", rowNCMap.get(rowNo + ":jobglbdef16"));
+					}
+					
 					if (!StringUtils.isEmpty((String) rowNCMap.get(rowNo + ":trnsevent"))) {
 						psnjobVO.setTrnsevent(Integer.valueOf((String) rowNCMap.get(rowNo + ":trnsevent")));
 					} else {
 						throw new BusinessException("異動事件 [trnsevent] 不能為空");
 					}
-					if (null == rowNCMap.get(rowNo + ":memo")) {
-						psnjobVO.setMemo(psndocVO.getPsnJobVO().getMemo());
-					} else {
-						psnjobVO.setMemo((String) rowNCMap.get(rowNo + ":memo"));
-					}
+					//#33986 mark By Jimmy20200410 if memo is null then memo = ''
+//					if (null == rowNCMap.get(rowNo + ":memo")) {
+//						psnjobVO.setMemo(psndocVO.getPsnJobVO().getMemo());
+//					} else {
+//						psnjobVO.setMemo((String) rowNCMap.get(rowNo + ":memo"));
+//					}
+					//#33986 add By Jimmy20200410 if memo is null then memo = ''
+					psnjobVO.setMemo((String) rowNCMap.get(rowNo + ":memo"));
 					if (null == rowNCMap.get(rowNo + ":pk_dept")) {
 						throw new BusinessException("部門編碼[NDEPNO]為空或者根據編碼查不到相應部門");
 					} else {
@@ -178,6 +243,7 @@ public class PsnjobBPImportExecutor extends DataImportExecutor implements IDataE
 					psnjobVO.setPsntype(0);
 					psnjobVO.setAttributeValue("jobglbdef9",
 							getPrincipal(deptlist, psnjobVO.getPk_dept(), psnjobVO.getPk_psndoc()));
+					psnjobVO.setAttributeValue("ismonsalary", UFBoolean.TRUE);
 					if (null == rowNCMap.get(rowNo + ":series")) {
 						psnjobVO.setSeries(psndocVO.getPsnJobVO().getSeries());
 					} else {
@@ -484,5 +550,11 @@ public class PsnjobBPImportExecutor extends DataImportExecutor implements IDataE
 			baseDao = new BaseDAO();
 		}
 		return baseDao;
+	}
+
+	@Override
+	public void doQueryByBP() throws BusinessException {
+		// TODO 自動產生的方法 Stub
+
 	}
 }

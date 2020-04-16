@@ -175,11 +175,11 @@ public class LeaveBalanceServiceImpl implements ILeaveBalanceQueryService, ILeav
 				PeriodVO[] periodVOs = PeriodServiceFacade.queryByYear(pk_org, year);
 				if (ArrayUtils.isEmpty(periodVOs))
 					return null;
-				// MOD 按自然年结算 James
-				periodBeginDate = new UFLiteralDate(year + "-01-01");
-				periodEndDate = new UFLiteralDate(year + "-12-31");
-				// periodBeginDate = periodVOs[0].getBegindate();
-				// periodEndDate = periodVOs[periodVOs.length-1].getEnddate();
+				// // MOD 按自然年结算 James
+				// periodBeginDate = new UFLiteralDate(year + "-01-01");
+				// periodEndDate = new UFLiteralDate(year + "-12-31");
+				periodBeginDate = periodVOs[0].getBegindate();
+				periodEndDate = periodVOs[periodVOs.length - 1].getEnddate();
 			} else {
 				/* ssx added on 2018-12-20 */
 				if (leavesetperiod == LeaveTypeCopyVO.LEAVESETPERIOD_STARTDATE) {
@@ -270,7 +270,9 @@ public class LeaveBalanceServiceImpl implements ILeaveBalanceQueryService, ILeav
 					// by ssx on 2018-12-22
 					if (leavesetPeriod == LeaveTypeCopyVO.LEAVESETPERIOD_YEAR
 							|| leavesetPeriod == LeaveTypeCopyVO.LEAVESETPERIOD_STARTDATE) {
-						if (dbVO.getHirebegindate() == null) {
+						if (dbVO.getHirebegindate() == null || dbVO.getHireenddate() == null
+								|| !dbVO.getHirebegindate().isSameDate(periodBeginDate)
+								|| !dbVO.getHireenddate().isSameDate(periodEndDate)) {
 							dbVO.setHirebegindate(periodBeginDate);
 							dbVO.setHireenddate(periodEndDate);
 						}
@@ -827,10 +829,18 @@ public class LeaveBalanceServiceImpl implements ILeaveBalanceQueryService, ILeav
 						crossYears = new String[] { leaveCommonVO.getLeaveyear() };
 					}
 				// end
-				else
-					crossYears = PreHolidayLeaveBalanceUtils.queryRelatedHireYearsWithExtendCount(
-							typeVO.getExtendDaysCount(), leaveCommonVO.getPk_psndoc(), hireDate,
-							leaveCommonVO.getLeavebegindate(), leaveCommonVO.getLeaveenddate());
+				else {
+					// ssx MOD 增加啟碁指定休假年份判定，如指定，不自己計算，直接引用
+					// on 2020-02-25
+					if (StringUtils.isEmpty(leaveCommonVO.getLeaveyear())) {
+						crossYears = PreHolidayLeaveBalanceUtils.queryRelatedHireYearsWithExtendCount(
+								typeVO.getExtendDaysCount(), leaveCommonVO.getPk_psndoc(), hireDate,
+								leaveCommonVO.getLeavebegindate(), leaveCommonVO.getLeaveenddate());
+					} else {
+						crossYears = new String[] { leaveCommonVO.getLeaveyear() };
+					}
+					// end
+				}
 				if (ArrayUtils.isEmpty(crossYears))
 					continue;
 				Map<String, List<LeaveCommonVO>> yearMap = voMap.get(typeVO.getPk_timeitem());

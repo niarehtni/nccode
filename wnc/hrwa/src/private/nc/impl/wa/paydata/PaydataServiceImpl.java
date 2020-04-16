@@ -5,6 +5,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -22,6 +23,7 @@ import nc.hr.utils.InSQLCreator;
 import nc.hr.utils.PubEnv;
 import nc.hr.utils.ResHelper;
 import nc.hr.wa.log.WaBusilogUtil;
+import nc.impl.hrwa.DaySalaryCache;
 import nc.impl.wa.payfile.PayfileServiceImpl;
 import nc.impl.wa.repay.RepayDAO;
 import nc.itf.hr.frame.IPersistenceRetrieve;
@@ -36,6 +38,7 @@ import nc.itf.hr.wa.IUnitWaClassQuery;
 import nc.itf.hr.wa.IWaClass;
 import nc.itf.hr.wa.PaydataDspUtil;
 import nc.itf.hr.wa.WaPowerSqlHelper;
+import nc.itf.hrwa.IWadaysalaryService;
 import nc.itf.uap.IUAPQueryBS;
 import nc.jdbc.framework.processor.ColumnListProcessor;
 import nc.jdbc.framework.processor.ColumnProcessor;
@@ -47,7 +50,6 @@ import nc.pubitf.rbac.IDataPermissionPubService;
 import nc.pubitf.twhr.utils.LegalOrgUtilsEX;
 import nc.vo.hi.psndoc.Attribute;
 import nc.vo.hi.psndoc.PsnJobVO;
-import nc.vo.hi.psndoc.PsnOrgVO;
 import nc.vo.hi.psndoc.PsndocVO;
 import nc.vo.hi.pub.HICommonValue;
 import nc.vo.hr.append.AppendableVO;
@@ -67,6 +69,7 @@ import nc.vo.pub.lang.UFDate;
 import nc.vo.pub.lang.UFDateTime;
 import nc.vo.pub.lang.UFDouble;
 import nc.vo.pub.lang.UFLiteralDate;
+import nc.vo.pubapp.pattern.exception.ExceptionUtils;
 import nc.vo.twhr.nhicalc.PsndocDefTableUtil;
 import nc.vo.util.BDPKLockUtil;
 import nc.vo.util.BDVersionValidationUtil;
@@ -181,69 +184,9 @@ public class PaydataServiceImpl implements IPaydataManageService, IPaydataQueryS
 			updateCollectDataForThisTime(waLoginVO);
 		}
 		// 取消审核之后，删除回写到扣款明细子集里面的数据 by he
-		unbackdeductdetails(waLoginVO, whereCondition, isRangeAll);
-	}
-
-	/**
-	 * 撤回回写扣款明细子集的数据
-	 * 
-	 * @param waLoginVO
-	 * @param isRangeAll
-	 * @param whereCondition
-	 */
-	private void unbackdeductdetails(WaLoginVO waLoginVO, String whereCondition, boolean isRangeAll) {
-		BaseDAO dao = new BaseDAO();
-		String cyear = waLoginVO.getCyear();
-		String cperiod = waLoginVO.getCperiod();
-		String pk_wa_class = waLoginVO.getPk_wa_class();
-		StringBuffer sqlBuffer = new StringBuffer();
-		sqlBuffer.append("select wa_data.pk_psndoc ");
-		sqlBuffer.append("  from wa_data ");
-		sqlBuffer.append(" where wa_data.checkflag = 'N' ");
-		sqlBuffer.append("   and wa_data.stopflag = 'N' ");
-		sqlBuffer.append("   and wa_data.pk_wa_class ='" + pk_wa_class + "' ");
-		sqlBuffer.append("   and wa_data.cyear ='" + cyear + "' ");
-		sqlBuffer.append("   and wa_data.cperiod ='" + cperiod + "' ");
-		if (!isRangeAll) {
-			sqlBuffer.append(WherePartUtil.formatAddtionalWhere(whereCondition));
-		}
-		try {
-			// 所有pk_psndoc
-			List<Map<String, String>> custlist = (List<Map<String, String>>) dao.executeQuery(sqlBuffer.toString(),
-					new MapListProcessor());
-			if (custlist.size() <= 0) {
-				return;
-			}
-			List<String> pk_psndoclist = new ArrayList<String>();
-			for (Map<String, String> custmap : custlist) {
-				pk_psndoclist.add(custmap.get("pk_psndoc"));
-			}
-
-			InSQLCreator insql = new InSQLCreator();
-			String psndocsInSQL = insql.getInSQL(pk_psndoclist.toArray(new String[0]));
-			// 更新债权档案子集的是否结束标志
-			String upsql = "update HI_PSNDOC_DEBTFILE set STOPFLAG ='N' where " + "PK_PSNDOC in(" + psndocsInSQL
-					+ ") and CREDITOR in (select DCREDITOR from HI_PSNDOC_DEDUCTDETAILS " + "where PK_PSNDOC in ("
-					+ psndocsInSQL + ") and SALARYYEARMONTH='" + (cyear + cperiod)
-					+ "') and pk_psndoc_sub in (select pk_debtfile " + "from HI_PSNDOC_DEDUCTDETAILS "
-					+ "where PK_PSNDOC in (" + psndocsInSQL + ") and SALARYYEARMONTH='" + (cyear + cperiod) + "')";
-			dao.executeUpdate(upsql);
-			// 更新法扣子集是否结束标识
-			String cdstr = "update HI_PSNDOC_COURTDEDUCTION set isstop='N' "
-					+ "WHERE filenumber in (select DFILENUMBER from HI_PSNDOC_DEBTFILE where PK_PSNDOC in("
-					+ psndocsInSQL + ") "
-					+ " and CREDITOR in (select DCREDITOR from HI_PSNDOC_DEDUCTDETAILS  where PK_PSNDOC in ("
-					+ psndocsInSQL + ") " + " and SALARYYEARMONTH='" + (cyear + cperiod)
-					+ "' and dr=0) and dr=0 and STOPFLAG <> 'Y') " + " and pk_psndoc in(" + psndocsInSQL + ")";
-			dao.executeUpdate(cdstr);
-			// 删除符合条件的子集信息
-			String delsql = "delete from HI_PSNDOC_DEDUCTDETAILS where PK_PSNDOC in (" + psndocsInSQL
-					+ ") and SALARYYEARMONTH = '" + (cyear + cperiod) + "'";
-			dao.executeUpdate(delsql);
-		} catch (BusinessException e) {
-			e.printStackTrace();
-		}
-
+		// unbackdeductdetails(waLoginVO, whereCondition, isRangeAll);
+		NCLocator.getInstance().lookup(IDeductDetailService.class)
+				.cancelDeductdetail(waLoginVO.getPk_wa_class(), waLoginVO.getCyear() + "" + waLoginVO.getCperiod());
 	}
 
 	/**
@@ -666,12 +609,103 @@ public class PaydataServiceImpl implements IPaydataManageService, IPaydataQueryS
 			// 版本校验（时间戳校验）
 			BDVersionValidationUtil.validateSuperVO(superVOs);
 		}
+		// 进行日薪的计算
+		// 废弃 tank 2019年10月15日18:08:08 不再使用时点薪资的方式,改为本地化标准版
+		// tank 日薪重构,拉倒内存运算数据 2019年10月17日20:06:42
+		DaySalaryCache.getInstance().setCaculateTime(loginContext.getPk_loginUser(), 0.0d);
+		UFDateTime starttime = new UFDateTime();
+		try {
+			doDaySalary(loginContext, caculateTypeVO, superVOs);
+		} catch (BusinessException ex) {
+			throw ex;
+		} catch (Exception e) {
+			throw new BusinessException("日薪計算異常！");
+		}
+
+		UFDateTime endtime = new UFDateTime();
+		long calcutime = (endtime.getMillis() - starttime.getMillis()) / 1000;
 
 		// 判断补发
 		checkReData(loginContext.getWaLoginVO());
 
 		DataCaculateService caculateService = new DataCaculateService(loginContext, caculateTypeVO, condition);
 		caculateService.doCaculate();
+
+		// 日薪计算结束操作
+		clearDaySalary(loginContext, calcutime);
+	}
+
+	private void clearDaySalary(WaLoginContext loginContext, double calcutime) {
+		Double useTime = DaySalaryCache.getInstance().getCaculateTime(loginContext.getPk_loginUser());
+		if (useTime == null) {
+			useTime = 0.0d;
+		}
+		DaySalaryCache.getInstance().setCaculateTime(loginContext.getPk_loginUser(), calcutime);
+		DaySalaryCache.getInstance().clearByUser(loginContext.getPk_loginUser());
+	}
+
+	private List<String> getCalculatePsnList(WaLoginContext waLoginContext, CaculateTypeVO caculateTypeVO,
+			List<SuperVO> payfileVos) {
+		List<String> pk_psndoclist = new ArrayList<String>();
+		String where = null;
+		// 计算范围
+		boolean all = caculateTypeVO.getRange().booleanValue();
+		if (where == null || all) {
+			where = null;
+		}
+
+		// 计算方式
+		boolean type = caculateTypeVO.getType().booleanValue();
+		if (type) {
+			String addWhere = "  wa_data.checkflag = 'N'  ";
+			where = where == null ? addWhere : (where + " and   " + addWhere);
+		} else {
+			String addWhere = "  wa_data.checkflag = 'N' and wa_data.caculateflag = 'N'   ";
+			where = where == null ? addWhere : (where + " and   " + addWhere);
+		}
+		if (StringUtils.isEmpty(where)) {
+			where = WherePartUtil.getCommonWhereCondtion4Data(waLoginContext.getWaLoginVO());
+		} else {
+			where = where + " and " + WherePartUtil.getCommonWhereCondtion4Data(waLoginContext.getWaLoginVO());
+		}
+
+		if (caculateTypeVO.getRange().booleanValue()) {
+			String sql = "select pk_psndoc from wa_data where " + where;
+			IUAPQueryBS queryPsn = NCLocator.getInstance().lookup(IUAPQueryBS.class);
+			try {
+				List<String> psns = (List<String>) queryPsn.executeQuery(sql, new ColumnListProcessor());
+				if (psns != null && psns.size() > 0) {
+					pk_psndoclist.addAll(psns);
+				}
+			} catch (BusinessException e) {
+				ExceptionUtils.wrappBusinessException(e.getMessage());
+			}
+		} else {
+			if (!ArrayUtils.isEmpty(payfileVos.toArray(new SuperVO[0]))) {
+				for (int i = 0; i < payfileVos.size(); i++) {
+					pk_psndoclist.add(((DataVO) payfileVos.get(i)).getPk_psndoc());
+				}
+			}
+		}
+		return pk_psndoclist;
+	}
+
+	private void doDaySalary(WaLoginContext waLoginContext, CaculateTypeVO caculateTypeVO, SuperVO... superVOs)
+			throws BusinessException {
+		// 前方高能
+		System.gc();
+		// 清零時間
+		DaySalaryCache.getInstance().setCaculateTime(waLoginContext.getPk_loginUser(), null);
+
+		List<SuperVO> payList = new ArrayList<SuperVO>(superVOs.length);
+		Collections.addAll(payList, superVOs);
+		List<String> psnList = getCalculatePsnList(waLoginContext, caculateTypeVO, payList);
+
+		IWadaysalaryService daySalCalService = NCLocator.getInstance().lookup(IWadaysalaryService.class);
+		// 按薪资方案和人员计算日薪
+		daySalCalService.calculDaySalaryWithWaClass(waLoginContext.getPk_wa_class(), psnList.toArray(new String[0]),
+				waLoginContext.getCyear(), waLoginContext.getCperiod());
+		System.gc();
 	}
 
 	@Override
@@ -696,8 +730,23 @@ public class PaydataServiceImpl implements IPaydataManageService, IPaydataQueryS
 
 		HealthRelationDataCaculateService healthRelationDataCaculateService = new HealthRelationDataCaculateService(
 				loginContext, caculateTypeVO, condition);
+
+		UFDateTime starttime = new UFDateTime();
+		try {
+			doDaySalary(loginContext, caculateTypeVO, superVOs);
+		} catch (BusinessException ex) {
+			throw ex;
+		} catch (Exception e) {
+			throw new BusinessException("日薪計算異常！");
+		}
+
+		UFDateTime endtime = new UFDateTime();
+		long calcutime = (endtime.getMillis() - starttime.getMillis()) / 1000;
+
 		healthRelationDataCaculateService.doCaculate();
 
+		// 日薪计算结束操作
+		clearDaySalary(loginContext, calcutime);
 	}
 
 	/*
@@ -777,66 +826,57 @@ public class PaydataServiceImpl implements IPaydataManageService, IPaydataQueryS
 	 * @return
 	 * @throws BusinessException
 	 */
-	private PsndocWaVO[] convertComputeVO(PsncomputeVO[] psncomputeVOs, Map<String, UFDouble> psnSalaryMap,
-			String pk_wa_item, WaLoginVO waLoginVO) throws BusinessException {
-
-		List<PsndocWaVO> returnList = new ArrayList<>();
-		for (int i = 0; i < psncomputeVOs.length; i++) {
-			PsncomputeVO result = psncomputeVOs[i];
-			if (null == psnSalaryMap || !psnSalaryMap.keySet().contains(result.getPk_psndoc())) {
-				continue;
-			}
-			PsndocWaVO psndocWa = null;
-			if (result.getPk_wa_item() == null || result.getPk_wa_item().equals(pk_wa_item)) {
-				psndocWa = result.getPsndocwavo();
-			} else {
-				continue;
-			}
-
-			if (null == psndocWa) {
-				psndocWa = new PsndocWaVO();
-			}
-			psndocWa.setPk_psndoc_sub(result.getPk_psndoc_sub());
-			psndocWa.setPsnname(result.getPsnname());
-			psndocWa.setPsncode(result.getPsncode());
-			psndocWa.setPk_psndoc(result.getPk_psndoc());
-			psndocWa.setPk_psndoc_wa(result.getPk_psncompute());
-			psndocWa.setPk_wa_item(result.getPk_wa_item());
-			psndocWa.setItemname(result.getItemvname());
-			psndocWa.setOldmoney(UFDouble.ZERO_DBL);
-			psndocWa.setNowmoney(psnSalaryMap.get(result.getPk_psndoc()) == null ? UFDouble.ZERO_DBL : psnSalaryMap
-					.get(result.getPk_psndoc()));
-			psndocWa.setNmoney(psnSalaryMap.get(result.getPk_psndoc()) == null ? UFDouble.ZERO_DBL : psnSalaryMap
-					.get(result.getPk_psndoc()));
-			psndocWa.setCyear(waLoginVO.getCyear());
-			psndocWa.setCperiod(waLoginVO.getCperiod());
-			psndocWa.setPk_wa_class(waLoginVO.getPeriodVO().getPk_wa_class());
-			psndocWa.setWaclassname(waLoginVO.getName());
-			UFLiteralDate startDate = waLoginVO.getPeriodVO().getCstartdate();
-
-			UFLiteralDate endDate = waLoginVO.getPeriodVO().getCenddate();
-
-			psndocWa.setBegindate(startDate);
-			psndocWa.setEnddate(endDate);
-
-			psndocWa.setNceforedays(UFDouble.ZERO_DBL);
-			psndocWa.setNbeforemoney(UFDouble.ZERO_DBL);
-			psndocWa.setNafterdays(UFDouble.ZERO_DBL);
-			psndocWa.setNaftermoney(UFDouble.ZERO_DBL);
-			psndocWa.setDaywage(Integer.valueOf(0));
-			psndocWa.setIwatype(Integer.valueOf(0));
-			psndocWa.setTs(new UFDateTime());
-			psndocWa.setBasedays(UFDouble.ZERO_DBL);
-			psndocWa.setSub_ts(result.getSub_ts());
-			psndocWa.setPre_sub_id(result.getPre_sub_id());
-			psndocWa.setPre_sub_ts(result.getPre_sub_ts());
-			psndocWa.setAssgid(result.getAssgid());
-			result.setPsndocwavo(psndocWa);
-
-			returnList.add(psndocWa);
-		}
-		return returnList.toArray(new PsndocWaVO[0]);
-	}
+	/*
+	 * private PsndocWaVO[] convertComputeVO(PsncomputeVO[] psncomputeVOs,
+	 * Map<String, UFDouble> psnSalaryMap, String pk_wa_item, WaLoginVO
+	 * waLoginVO) throws BusinessException {
+	 * 
+	 * List<PsndocWaVO> returnList = new ArrayList<>(); for (int i = 0; i <
+	 * psncomputeVOs.length; i++) { PsncomputeVO result = psncomputeVOs[i]; if
+	 * (null == psnSalaryMap ||
+	 * !psnSalaryMap.keySet().contains(result.getPk_psndoc())) { continue; }
+	 * PsndocWaVO psndocWa = null; if (result.getPk_wa_item() == null ||
+	 * result.getPk_wa_item().equals(pk_wa_item)) { psndocWa =
+	 * result.getPsndocwavo(); } else { continue; }
+	 * 
+	 * if (null == psndocWa) { psndocWa = new PsndocWaVO(); }
+	 * psndocWa.setPk_psndoc_sub(result.getPk_psndoc_sub());
+	 * psndocWa.setPsnname(result.getPsnname());
+	 * psndocWa.setPsncode(result.getPsncode());
+	 * psndocWa.setPk_psndoc(result.getPk_psndoc());
+	 * psndocWa.setPk_psndoc_wa(result.getPk_psncompute());
+	 * psndocWa.setPk_wa_item(result.getPk_wa_item());
+	 * psndocWa.setItemname(result.getItemvname());
+	 * psndocWa.setOldmoney(UFDouble.ZERO_DBL);
+	 * psndocWa.setNowmoney(psnSalaryMap.get(result.getPk_psndoc()) == null ?
+	 * UFDouble.ZERO_DBL : psnSalaryMap .get(result.getPk_psndoc()));
+	 * psndocWa.setNmoney(psnSalaryMap.get(result.getPk_psndoc()) == null ?
+	 * UFDouble.ZERO_DBL : psnSalaryMap .get(result.getPk_psndoc()));
+	 * psndocWa.setCyear(waLoginVO.getCyear());
+	 * psndocWa.setCperiod(waLoginVO.getCperiod());
+	 * psndocWa.setPk_wa_class(waLoginVO.getPeriodVO().getPk_wa_class());
+	 * psndocWa.setWaclassname(waLoginVO.getName()); UFLiteralDate startDate =
+	 * waLoginVO.getPeriodVO().getCstartdate();
+	 * 
+	 * UFLiteralDate endDate = waLoginVO.getPeriodVO().getCenddate();
+	 * 
+	 * psndocWa.setBegindate(startDate); psndocWa.setEnddate(endDate);
+	 * 
+	 * psndocWa.setNceforedays(UFDouble.ZERO_DBL);
+	 * psndocWa.setNbeforemoney(UFDouble.ZERO_DBL);
+	 * psndocWa.setNafterdays(UFDouble.ZERO_DBL);
+	 * psndocWa.setNaftermoney(UFDouble.ZERO_DBL);
+	 * psndocWa.setDaywage(Integer.valueOf(0));
+	 * psndocWa.setIwatype(Integer.valueOf(0)); psndocWa.setTs(new
+	 * UFDateTime()); psndocWa.setBasedays(UFDouble.ZERO_DBL);
+	 * psndocWa.setSub_ts(result.getSub_ts());
+	 * psndocWa.setPre_sub_id(result.getPre_sub_id());
+	 * psndocWa.setPre_sub_ts(result.getPre_sub_ts());
+	 * psndocWa.setAssgid(result.getAssgid()); result.setPsndocwavo(psndocWa);
+	 * 
+	 * returnList.add(psndocWa); } return returnList.toArray(new PsndocWaVO[0]);
+	 * }
+	 */
 
 	/**
 	 * 获取所有的薪资项目
@@ -844,18 +884,14 @@ public class PaydataServiceImpl implements IPaydataManageService, IPaydataQueryS
 	 * @param vos
 	 * @return
 	 */
-	private String[] getWaItems(PsncomputeVO[] vos) {
-		Set<String> resultSet = new HashSet<>();
-		if (null == vos || vos.length <= 0) {
-			return resultSet.toArray(new String[0]);
-		}
-		for (PsncomputeVO vo : vos) {
-			if (vo != null && vo.getPk_wa_item() != null) {
-				resultSet.add(vo.getPk_wa_item());
-			}
-		}
-		return resultSet.toArray(new String[0]);
-	}
+	/*
+	 * private String[] getWaItems(PsncomputeVO[] vos) { Set<String> resultSet =
+	 * new HashSet<>(); if (null == vos || vos.length <= 0) { return
+	 * resultSet.toArray(new String[0]); } for (PsncomputeVO vo : vos) { if (vo
+	 * != null && vo.getPk_wa_item() != null) {
+	 * resultSet.add(vo.getPk_wa_item()); } } return resultSet.toArray(new
+	 * String[0]); }
+	 */
 
 	/**
 	 * 获取所有的人员
@@ -1545,7 +1581,27 @@ public class PaydataServiceImpl implements IPaydataManageService, IPaydataQueryS
 		// 校验子方案的版本一致性
 		// 版本校验（时间戳校验）
 		BDVersionValidationUtil.validateSuperVO(loginContext.getWaLoginVO());
+
+		UFDateTime starttime = new UFDateTime();
+		try {
+			CaculateTypeVO caculateTypeVO = new CaculateTypeVO();
+			caculateTypeVO.setRange(UFBoolean.TRUE);
+			caculateTypeVO.setType(UFBoolean.TRUE);
+			List<DataVO> superVOs = new ArrayList<DataVO>();
+			doDaySalary(loginContext, caculateTypeVO, superVOs.toArray(new DataVO[0]));
+		} catch (BusinessException ex) {
+			throw ex;
+		} catch (Exception e) {
+			throw new BusinessException("日薪計算異常！");
+		}
+
+		UFDateTime endtime = new UFDateTime();
+		long calcutime = (endtime.getMillis() - starttime.getMillis()) / 1000;
+
 		getService().reCaculate(loginContext, whereCondition);
+
+		// 日薪计算结束操作
+		clearDaySalary(loginContext, calcutime);
 	}
 
 	/**
@@ -2079,34 +2135,87 @@ public class PaydataServiceImpl implements IPaydataManageService, IPaydataQueryS
 			}
 		}
 
-		// 檢查在職員工是否有考勤檔案
-		String sql = "select begindate, enddate from tbm_period where pk_org = '" + loginContext.getPk_org()
-				+ "' and accmonth = '" + loginContext.getCperiod() + "' and accyear = '" + loginContext.getCyear()
-				+ "'";
-		Map tbmPeriod = (Map) dao.executeQuery(sql, new MapProcessor());
-		// 取年資起算日要根據考勤期間與薪資項目疊加後的最大日期範圍查找組織關係
-		// 26號~31號入職的人，如果只按考勤期間取會取不到組織關係
-		UFLiteralDate maxBeginDate = new UFLiteralDate(String.valueOf(tbmPeriod.get("begindate"))).before(loginContext
-				.getWaLoginVO().getPeriodVO().getCstartdate()) ? new UFLiteralDate(String.valueOf(tbmPeriod
-				.get("begindate"))) : loginContext.getWaLoginVO().getPeriodVO().getCstartdate();
-		UFLiteralDate maxEndDate = new UFLiteralDate(String.valueOf(tbmPeriod.get("enddate"))).after(loginContext
-				.getWaLoginVO().getPeriodVO().getCenddate()) ? new UFLiteralDate(String.valueOf(tbmPeriod
-				.get("enddate"))) : loginContext.getWaLoginVO().getPeriodVO().getCenddate();
-
-		Collection<PsnOrgVO> psnorgs = dao.retrieveByClause(PsnOrgVO.class, "pk_psndoc in (" + strSQL
-				+ ") and begindate <= '" + maxEndDate.toString() + "' and isnull(enddate, '9999-12-31') >= '"
-				+ maxBeginDate.toString() + "'");
-		Map<String, UFLiteralDate> psnWorkStartDate = new HashMap<String, UFLiteralDate>();
-		for (PsnOrgVO psnorg : psnorgs) {
-			psnWorkStartDate.put(psnorg.getPk_psndoc(), (UFLiteralDate) psnorg.getAttributeValue("workagestartdate"));
-		}
-
-		for (String pk_psndoc : psndocs) {
-			if (!psnWorkStartDate.containsKey(pk_psndoc) || psnWorkStartDate.get(pk_psndoc) == null) {
-				PsndocVO psndoc = (PsndocVO) dao.retrieveByPK(PsndocVO.class, pk_psndoc);
-				throw new BusinessException("員工  [" + psndoc.getCode() + "] 未找到有效的年資起算日，無法進行薪資計算。");
+		// ssx added on 2020-02-29
+		// 定調資項目檢查
+		String sql = "SELECT psn.code  FROM    wa_data wd "
+				+ "INNER JOIN    hi_psndoc_wadoc wadoc ON    wadoc.pk_psndoc = wd.pk_psndoc "
+				+ " INNER JOIN bd_psndoc psn on wd.pk_psndoc = psn.pk_psndoc "
+				+ "WHERE  "
+				+ (!StringUtils.isEmpty(condition) && !caculateTypeVO.getRange().booleanValue() ? ("wd." + condition + "and")
+						: "") + " wd.checkflag = 'N' AND wd.pk_wa_class = '" + loginContext.getPk_wa_class()
+				+ "' AND wd.cyear = '" + loginContext.getCyear() + "' AND wd.cperiod = '" + loginContext.getCperiod()
+				+ "' AND wd.stopflag = 'N' GROUP BY psn.code having sum(case when least('"
+				+ loginContext.getWaLoginVO().getPeriodVO().getCenddate().toString()
+				+ "',NVL(enddate,'9999-12-31')) >= greatest('"
+				+ loginContext.getWaLoginVO().getPeriodVO().getCstartdate().toString()
+				+ "',begindate) AND pk_wa_item = '1001A110000000000GEF'  then 1 else 0 end) = 0";
+		List<String> psncodes = (List<String>) dao.executeQuery(sql, new ColumnListProcessor());
+		if (psncodes != null && psncodes.size() > 0) {
+			String message = "";
+			for (String psncode : psncodes) {
+				if (StringUtils.isEmpty(message)) {
+					message += psncode;
+				} else {
+					message += "," + psncode;
+				}
 			}
+			throw new BusinessException("下列人員月薪天數為0，請檢查人員定調資數據。\r\n" + message);
 		}
+		// end
+
+		// ssx remarked on 2019-11-05
+		// 为了福委历史数据，暂时不检查年资起算日
+		// // 檢查在職員工是否有考勤檔案
+		// String sql =
+		// "select begindate, enddate from tbm_period where pk_org = '" +
+		// loginContext.getPk_org()
+		// + "' and accmonth = '" + loginContext.getCperiod() +
+		// "' and accyear = '" + loginContext.getCyear()
+		// + "'";
+		// Map tbmPeriod = (Map) dao.executeQuery(sql, new MapProcessor());
+		// // 取年資起算日要根據考勤期間與薪資項目疊加後的最大日期範圍查找組織關係
+		// // 26號~31號入職的人，如果只按考勤期間取會取不到組織關係
+		// UFLiteralDate maxBeginDate = new
+		// UFLiteralDate(String.valueOf(tbmPeriod.get("begindate"))).before(loginContext
+		// .getWaLoginVO().getPeriodVO().getCstartdate()) ? new
+		// UFLiteralDate(String.valueOf(tbmPeriod
+		// .get("begindate"))) :
+		// loginContext.getWaLoginVO().getPeriodVO().getCstartdate();
+		// UFLiteralDate maxEndDate = new
+		// UFLiteralDate(String.valueOf(tbmPeriod.get("enddate"))).after(loginContext
+		// .getWaLoginVO().getPeriodVO().getCenddate()) ? new
+		// UFLiteralDate(String.valueOf(tbmPeriod
+		// .get("enddate"))) :
+		// loginContext.getWaLoginVO().getPeriodVO().getCenddate();
+		//
+		// Collection<PsnOrgVO> psnorgs = dao.retrieveByClause(PsnOrgVO.class,
+		// "pk_psndoc in (" + strSQL
+		// + ") and begindate <= '" + maxEndDate.toString() +
+		// "' and isnull(enddate, '9999-12-31') >= '"
+		// + maxBeginDate.toString() + "'");
+		// Map<String, UFLiteralDate> psnWorkStartDate = new HashMap<String,
+		// UFLiteralDate>();
+		// for (PsnOrgVO psnorg : psnorgs) {
+		// psnWorkStartDate.put(psnorg.getPk_psndoc(), (UFLiteralDate)
+		// psnorg.getAttributeValue("workagestartdate"));
+		// }
+		//
+		// for (String pk_psndoc : psndocs) {
+		// if (!psnWorkStartDate.containsKey(pk_psndoc) ||
+		// psnWorkStartDate.get(pk_psndoc) == null) {
+		// PsndocVO psndoc = (PsndocVO) dao.retrieveByPK(PsndocVO.class,
+		// pk_psndoc);
+		// throw new BusinessException("員工  [" + psndoc.getCode() +
+		// "] 未找到有效的年資起算日，無法進行薪資計算。");
+		// }
+		// }
+		// end
+	}
+
+	@Override
+	public void doEncryptEx(WaLoginContext loginContext) throws BusinessException {
+		DataCaculateService caculateService = new DataCaculateService(loginContext);
+		caculateService.doEncryptBySQL();
 	}
 
 }

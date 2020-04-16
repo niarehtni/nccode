@@ -1,8 +1,10 @@
 package nc.impl.ta.psndoc.listener;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import nc.bs.businessevent.BusinessEvent;
 import nc.bs.businessevent.IBusinessEvent;
@@ -18,10 +20,13 @@ import nc.impl.ta.psncalendar.PsnCalendarDAO;
 import nc.impl.ta.psndoc.TBMPsndocChangeProcessor;
 import nc.impl.ta.psndoc.TBMPsndocMaintainImpl;
 import nc.itf.hi.IPsndocQryService;
+import nc.itf.hr.wa.IPsndocwadocManageService;
 import nc.itf.om.IAOSQueryService;
 import nc.itf.ta.ILeaveBalanceManageMaintain;
+import nc.itf.ta.IPsnCalendarManageService;
 import nc.itf.ta.ITimeRuleQueryService;
 import nc.jdbc.framework.processor.ColumnListProcessor;
+import nc.jdbc.framework.processor.ColumnProcessor;
 import nc.pubitf.bd.team.team01.hr.ITeamQueryServiceForHR;
 import nc.pubitf.para.SysInitQuery;
 import nc.vo.bd.team.team01.entity.TeamItemVO;
@@ -311,8 +316,13 @@ public class PsnChangeEventListener implements IBusinessListener {
 		if (pk_trnstype_TWHR11 == null) {
 			pk_trnstype_TWHR11 = "";
 		}
-		// end MOD
 
+		String pk_trnstype_TWHR12 = SysInitQuery.getParaString(pk_org, "TWHR12");
+		if (pk_trnstype_TWHR12 == null) {
+			pk_trnstype_TWHR12 = "";
+		}
+		// end MOD
+		Map<String, TBMPsndocVO> needSynShift = new HashMap<String, TBMPsndocVO>();
 		for (int i = 0; i < psnjobVOs.length; i++) {
 			PsnJobVO psnjobVO = psnjobVOs[i];
 			// 如果增加的是历史工作记录，不是最新的，则不处理
@@ -329,9 +339,9 @@ public class PsnChangeEventListener implements IBusinessListener {
 			if (psnjobVO.getTrnsevent().intValue() == TrnseventEnum.DISMISSION.toIntValue() || "Y".equals(flag.get(0))
 			// MOD 留职停薪时只结束旧的，不新建新的考勤档案
 			// ssx added on 2019-04-11
-					|| pk_trnstype_TWHR11.equals(psnjobVO.getTrnstype())
+					|| pk_trnstype_TWHR11.equals(psnjobVO.getTrnstype()))
 			// end MOD
-			) {
+			{
 				if (psndocMap == null || psndocMap.size() == 0)
 					continue;
 				if (unFinishPsndoc != null) {// 处理考勤档案中是主职的情况
@@ -378,6 +388,21 @@ public class PsnChangeEventListener implements IBusinessListener {
 				psndocVO.setOvertimecontrol(OvertimecontrolEunm.MANUAL_CHECK.toIntValue());
 				psndocVO.setWeekform(WorkWeekFormEnum.ONEWEEK.toIntValue());
 				// end MOD
+
+				// ssx added on 2020-02-20
+				psndocVO.setPk_team((String) psnjobVO.getAttributeValue("jobglbdef7"));
+
+				if (pk_trnstype_TWHR12.equals(psnjobVO.getTrnstype())) {
+					String timeCard = (String) new BaseDAO()
+							.executeQuery(
+									"select timecardid from tbm_psndoc og where begindate = (select max(begindate) from tbm_psndoc where pk_psndoc = og.pk_psndoc) and pk_psndoc = '"
+											+ psndocVO.getPk_psndoc() + "'", new ColumnProcessor());
+					psndocVO.setTimecardid(timeCard);
+
+					// 加入同步排班
+					needSynShift.put(psndocVO.getPk_psndoc(), psndocVO);
+				}
+				// end
 				insertList.add(psndocVO);
 				continue;
 			}
@@ -416,7 +441,9 @@ public class PsnChangeEventListener implements IBusinessListener {
 			psndocVO.setOvertimecontrol(OvertimecontrolEunm.MANUAL_CHECK.toIntValue());
 			psndocVO.setWeekform(WorkWeekFormEnum.ONEWEEK.toIntValue());
 			// end MOD
-
+			//mod tank 客开字段 "是否同步排班"
+			psndocVO.setNotsyncal(unFinishPsndoc.getNotsyncal());
+			//mod end
 			// 若组织没有发生变化则管理组织也不发生变化,且考勤卡号考勤地点也保持不变,633修改若组织没有发生变化，则不重新排班
 			if (unFinishPsndoc.getPk_org().equals(hrorg.getPk_org())) {
 				insertNotArrangeList.add(psndocVO);
@@ -446,7 +473,6 @@ public class PsnChangeEventListener implements IBusinessListener {
 			// getLeaveBalanceMM().translateLeave(oldPsnjobVOs[i], psnjobVO);
 
 			// V65新增，若组织、部门、岗位都没有变化则班组也不变化（结束原来的，新增个新的）//post 不为空判断 tangcht
-
 			if (StringUtils.isNotBlank(unFinishPsndoc.getPk_team())
 					&& psnjobVO.getPk_org().equalsIgnoreCase(oldPsnJobvo.getPk_org())
 					&& psnjobVO.getPk_dept().equalsIgnoreCase(oldPsnJobvo.getPk_dept())
@@ -459,12 +485,19 @@ public class PsnChangeEventListener implements IBusinessListener {
 								unFinishPsndoc.getBegindate(), unFinishPsndoc.getEnddate());
 				if (null != teamPsns && teamPsns.length > 0) {
 					TeamItemVO newTeamPsn = (TeamItemVO) teamPsns[0].clone();
-					newTeamPsn.setDstartdate(psnjobVO.getBegindate());
-					newTeamPsn.setPk_psnjob(psnjobVO.getPk_psnjob());
-					newTeamPsn.setDr(0);
-					insertTeamItemVOs.add(newTeamPsn);
+					if (newTeamPsn.getDenddate() == null
+							|| newTeamPsn.getDenddate().isSameDate(psnjobVO.getBegindate())
+							|| newTeamPsn.getDenddate().after(psnjobVO.getBegindate())) {
+						newTeamPsn.setDstartdate(psnjobVO.getBegindate());
+						newTeamPsn.setPk_psnjob(psnjobVO.getPk_psnjob());
+						newTeamPsn.setDr(0);
+						//tank 2020年3月23日17:13:39  班组可能变动 WNC客开专门字段存储班组
+						newTeamPsn.setCteamid((String) psnjobVO.getAttributeValue("jobglbdef7"));
+						//mod end
+						insertTeamItemVOs.add(newTeamPsn);
+					}
 				}
-				psndocVO.setPk_team(unFinishPsndoc.getPk_team());
+				psndocVO.setPk_team((String) psnjobVO.getAttributeValue("jobglbdef7"));
 			}
 		}
 		// 保存
@@ -480,6 +513,24 @@ public class PsnChangeEventListener implements IBusinessListener {
 
 		if (CollectionUtils.isNotEmpty(insertTeamItemVOs)) {
 			new BaseDAO().insertVOList(insertTeamItemVOs);
+		}
+
+		if (needSynShift.size() > 0) {
+			IPsnCalendarManageService service = ((IPsnCalendarManageService) NCLocator.getInstance().lookup(
+					IPsnCalendarManageService.class));
+			for (Entry<String, TBMPsndocVO> entry : needSynShift.entrySet()) {
+				String teamEndDate = (String) new BaseDAO().executeQuery(
+						"select max(calendar) from bd_teamcalendar where pk_team='" + entry.getValue().getPk_team()
+								+ "'", new ColumnProcessor());
+				if (!StringUtils.isEmpty(teamEndDate)) {
+					UFLiteralDate endDate = new UFLiteralDate(teamEndDate);
+					if (entry.getValue().getBegindate().before(endDate)) {
+						service.sync2TeamCalendar(entry.getValue().getPk_org(), entry.getValue().getPk_team(),
+								new String[] { entry.getKey() }, entry.getValue().getBegindate(),
+								endDate.before(entry.getValue().getEnddate()) ? endDate : entry.getValue().getEnddate());
+					}
+				}
+			}
 		}
 	}
 
@@ -535,6 +586,9 @@ public class PsnChangeEventListener implements IBusinessListener {
 			// 如果修改的不是有效地考勤档案对应的工作记录，则不作任何处理
 			if (unFinishPsndoc == null || !oldPsnjobVOs[i].getPk_psnjob().equals(unFinishPsndoc.getPk_psnjob()))
 				continue;
+			//mod tank 修改班组
+			unFinishPsndoc.setPk_team((String) psnjobVO.getAttributeValue("jobglbdef7"));
+			//mod end 修改班组
 			if (psnjobVO.getPk_org().equals(oldPsnjobVOs[i].getPk_org())) {// 如果组织没变
 				// 如果修改的是最新的工作记录，并且修改前无结束日期，修改后有结束日期，则结束人员的考勤档案
 				if (oldPsnjobVOs[i].getEnddate() == null && psnjobVO.getEnddate() != null) {
@@ -579,7 +633,9 @@ public class PsnChangeEventListener implements IBusinessListener {
 			unFinishPsndoc.setEnddate(psnjobVO.getEnddate() == null ? UFLiteralDate
 					.getDate(TBMPsndocCommonValue.END_DATA) : psnjobVO.getEnddate());
 			// 组织变化了班组应该清空了
-			unFinishPsndoc.setPk_team(null);
+			//mod tank 注释,同一设置新班组
+			/*unFinishPsndoc.setPk_team(null);*/
+			//mod end
 			updateList.add(unFinishPsndoc);
 			// unFinishPsndoc.setBegindate(psnjobVO.getBegindate());// 使用原来的开始日期
 			// unFinishPsndoc.setTbm_prop(timeRule.getTotbmpsntype().intValue()==1

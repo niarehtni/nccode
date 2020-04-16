@@ -636,7 +636,21 @@ public class PaydataServiceImpl implements IPaydataManageService, IPaydataQueryS
 			if (psnSalaryMap == null || psnSalaryMap.size() == 0) {
 				continue;
 			}
+			// 時點薪資計算問題  by George 20190705 缺陷Bug #28250
+			for (String psndoc : psndocs) {
+				// 刪除員工中薪資項目有計算的员工调薪计算结果表 
+				// 本薪計算公式 update wa_data f_15 = coalesce (日薪，月薪，0)
+				// 日薪改月薪，沒有刪除日薪資料，會找到日薪，所以要先刪除，再比對日薪是否，是日薪，否月薪
+			    String strSQL = "delete from hi_psndoc_wa where hi_psndoc_wa.dr = 0 and"
+					    + " hi_psndoc_wa.pk_wa_item = '" + pk_wa_item + "' and"
+					    + " hi_psndoc_wa.pk_wa_class = '" + waLoginContext.getPk_wa_class() +"' and"
+					    + " hi_psndoc_wa.cyear = '" + waLoginContext.getCyear() +"' and"
+					    + " hi_psndoc_wa.cperiod = '" + waLoginContext.getCperiod() + "' and"
+					    + " pk_psndoc = '" + psndoc + "'";
 
+			    getService().executeSQLs(strSQL);
+			}
+			
 			PsndocWaVO[] psndocWaVOs = convertComputeVO(vos, psnSalaryMap, pk_wa_item, waLoginVO);
 
 			WADelegator.getPsndocWa().updatePsndocWas(psndocWaVOs);

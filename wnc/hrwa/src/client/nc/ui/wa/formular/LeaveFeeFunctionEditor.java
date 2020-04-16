@@ -40,7 +40,6 @@ public class LeaveFeeFunctionEditor extends WaAbstractFunctionEditor {
 
 	@Override
 	public void setModel(AbstractUIAppModel model) {
-		// TODO Auto-generated method stub
 		super.setModel(model);
 		initData();
 	}
@@ -68,7 +67,6 @@ public class LeaveFeeFunctionEditor extends WaAbstractFunctionEditor {
 	// "taxRate";
 	@Override
 	public String getFuncName() {
-		// TODO Auto-generated method stub
 		return funcname;
 	}
 
@@ -267,6 +265,7 @@ public class LeaveFeeFunctionEditor extends WaAbstractFunctionEditor {
 
 		LeaveTypeVO itemVO = (LeaveTypeVO) getItemCBox().getSelectdItemValue();
 		// 考勤月报项目主键
+		// 你他娘的真是个天才 2019年10月15日12:03:46 tank
 		paras[0] = "\"" + itemVO.getPk_timeitem().trim() + "\"";
 
 		// 是否免税 0否 1是
@@ -277,7 +276,6 @@ public class LeaveFeeFunctionEditor extends WaAbstractFunctionEditor {
 		return paras;
 	}
 
-	@SuppressWarnings("unused")
 	private LeaveTypeVO[] getItems(String pk_org) throws BusinessException {
 		// VOQuery<LeaveTypeVO> query = new
 		// VOQuery<LeaveTypeVO>(LeaveTypeVO.class);

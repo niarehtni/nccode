@@ -14,6 +14,7 @@ import nc.bs.dao.DAOException;
 import nc.bs.framework.common.NCLocator;
 import nc.bs.logging.Logger;
 import nc.hr.frame.persistence.AppendBaseDAO;
+import nc.hr.utils.InSQLCreator;
 import nc.hr.utils.MultiLangHelper;
 import nc.hr.utils.ResHelper;
 import nc.hr.utils.StringPiecer;
@@ -26,6 +27,8 @@ import nc.itf.hrwa.IAllocateMaintain;
 import nc.itf.ta.IHRHolidayQueryService;
 import nc.itf.ta.IPsnCalendarQueryService;
 import nc.jdbc.framework.SQLParameter;
+import nc.jdbc.framework.processor.ColumnProcessor;
+import nc.jdbc.framework.processor.MapListProcessor;
 import nc.jdbc.framework.processor.ResultSetProcessor;
 import nc.ui.querytemplate.querytree.IQueryScheme;
 import nc.vo.am.common.util.MapUtils;
@@ -136,6 +139,12 @@ public class AllocateMaintainImpl extends AceAllocatePubServiceImpl implements I
 		parameter.addParam(waLoginVO.getPk_wa_class());
 		parameter.addParam(waLoginVO.getPeriodVO().getCyear() + waLoginVO.getPeriodVO().getCperiod());
 		getAppDao().getBaseDao().executeUpdate(delSql.toString(), parameter);
+		
+		//一次分摊删除
+		getAppDao().getBaseDao()
+			.executeUpdate("delete from wa_allocateout_once where pk_org=? and pk_wa_calss=? and cperiod=?", parameter);
+		
+		
 	}
 
 	@SuppressWarnings("unchecked")
@@ -242,14 +251,19 @@ public class AllocateMaintainImpl extends AceAllocatePubServiceImpl implements I
 		Map<String, UFDouble> psnMonthWkHours = qryMonthWkHoursByOrgCalander(context, periodVO, psndocPks);
 		// 员工休假期间休假信息
 		Map<String, UFDouble> psnLeaveHoursMap = null; // qryPsnLeaveHours(context,periodVO);
+		//
+		Map<String,UFDouble> psnLeaveHohors4TwiceMap = qryPsnLeaveHours4Twice(context,periodVO);
 		// 外部人员专案工时信息
 		Map<String, Map<String, UFDouble>> psnPjWkHoursMap = qryPsnWkHoursOutersys(context, periodVO, psndocPks);
-
+		// 人员工作记录->是否二次分摊
+		Map<String,Boolean> job2isTwiceDevideMap = getisTwiceDevide(payDatas);
 		// 基础信息分摊vo
 		AllocateOutHVO baseHVO = createBaseHVO(context);
 		boolean isTWArea = isTWOrg(context.getPk_org());
 
 		List<AggAllocateOutVO> billList = new ArrayList<AggAllocateOutVO>();
+		// 二次分摊数据 tank 2019年9月22日21:34:59 除全月工时分摊方案且人员类别中勾选'成本是否二次分摊'数据不同,其他都一样
+		List<AggAllocateOutVO> billListtwice = new ArrayList<AggAllocateOutVO>();
 		for (DataVO vo : payDatas) {
 			String pk_psndoc = vo.getPk_psndoc();
 			String pk_costcenter = vo.getPk_liabilityorg();
@@ -272,7 +286,8 @@ public class AllocateMaintainImpl extends AceAllocatePubServiceImpl implements I
 					continue;
 				}
 
-				if (shareVO.getCode().toUpperCase().equals(WaConstant.SHARE_MONTH_WORKHOURS)) {
+				if (shareVO.getCode().toUpperCase().equals(WaConstant.SHARE_MONTH_WORKHOURS)
+						|| shareVO.getCode().toUpperCase().equals(WaConstant.SHARE_LEAVE_SHARED)) {
 					// 全月工时分摊
 					AllocateOutHVO pjbaseHVO = (AllocateOutHVO) baseHVO.clone();
 					pjbaseHVO.setPk_psndoc(pk_psndoc);
@@ -280,11 +295,40 @@ public class AllocateMaintainImpl extends AceAllocatePubServiceImpl implements I
 					pjbaseHVO.setPk_costcenter(pk_costcenter);
 					pjbaseHVO.setPk_psnjob(pk_psnjob);
 					pjbaseHVO.setDef2(itemMny.toString());
+					
+					AllocateOutHVO pjbaseHVO4Twice = (AllocateOutHVO)pjbaseHVO.clone();
 					List<AggAllocateOutVO> aggList = getMonthHoursShare(psnMonthWkHourMap, psnMonthWkHours,
 							psnLeaveHoursMap, psnPjWkHoursMap, pjbaseHVO);
 					if (!aggList.isEmpty()) {
 						billList.addAll(aggList);
+						
+						if(job2isTwiceDevideMap.get(pk_psnjob)!=null
+								&& job2isTwiceDevideMap.get(pk_psnjob).booleanValue()){
+							//进行二次分摊:
+							List<AggAllocateOutVO> aggListTwice = new ArrayList<>();
+							if(shareVO.getCode().toUpperCase().equals(WaConstant.SHARE_LEAVE_SHARED)){
+								//假况扣款
+								aggListTwice = getLeaveShareTwice(psnPjWkHoursMap, pjbaseHVO4Twice);
+							}else{
+								//其他 (本薪等加项)
+								aggListTwice = getMonthHoursShareTwice(psnMonthWkHourMap, psnMonthWkHours,
+										psnLeaveHohors4TwiceMap, psnPjWkHoursMap, pjbaseHVO4Twice);
+							}
+							//如果二次分摊失败,则维持一次分摊结果
+							if(aggListTwice==null || aggListTwice.size() <= 0){
+								aggListTwice = aggList;
+							}
+							for(AggAllocateOutVO aggvo : aggListTwice){
+								billListtwice.add((AggAllocateOutVO)aggvo.clone());
+							}
+						}else{
+							for(AggAllocateOutVO aggvo : aggList){
+								billListtwice.add((AggAllocateOutVO)aggvo.clone());
+							}
+						}
+						
 					}
+					
 				} else if (shareVO.getCode().toUpperCase().equals(WaConstant.SHARE_PROJ_CODE)) {
 					// 专案代码分摊
 					AllocateOutHVO pjCodeHVO = (AllocateOutHVO) baseHVO.clone();
@@ -295,6 +339,9 @@ public class AllocateMaintainImpl extends AceAllocatePubServiceImpl implements I
 					List<AggAllocateOutVO> aggList = getProjSalaryShare(psnProjSaVosMap, pjCodeHVO);
 					if (!aggList.isEmpty()) {
 						billList.addAll(aggList);
+						for(AggAllocateOutVO aggvo : aggList){
+							billListtwice.add((AggAllocateOutVO)aggvo.clone());
+						}
 					}
 				} else if (shareVO.getCode().toUpperCase().equals(WaConstant.SHARE_PROJ_OVERHOURS)) {
 					// 专案加班时数分摊
@@ -307,6 +354,9 @@ public class AllocateMaintainImpl extends AceAllocatePubServiceImpl implements I
 					List<AggAllocateOutVO> aggList = getProjOverTimeShare(psnPjOtHoursMap, pjOtHVO);
 					if (!aggList.isEmpty()) {
 						billList.addAll(aggList);
+						for(AggAllocateOutVO aggvo : aggList){
+							billListtwice.add((AggAllocateOutVO)aggvo.clone());
+						}
 					}
 
 				} else if (shareVO.getCode().toUpperCase().equals(WaConstant.SHARE_FULL_COSTCENTER)) {
@@ -320,6 +370,7 @@ public class AllocateMaintainImpl extends AceAllocatePubServiceImpl implements I
 					AggAllocateOutVO billVO = new AggAllocateOutVO();
 					billVO.setParentVO(fullCostCenterHVO);
 					billList.add(billVO);
+					billListtwice.add((AggAllocateOutVO)billVO.clone());
 				} else if (shareVO.getCode().toUpperCase().equals(WaConstant.SHARE_NOT_SHARED)) {
 					// 不分摊
 					AllocateOutHVO notShareHVO = (AllocateOutHVO) baseHVO.clone();
@@ -331,6 +382,7 @@ public class AllocateMaintainImpl extends AceAllocatePubServiceImpl implements I
 					AggAllocateOutVO billVO = new AggAllocateOutVO();
 					billVO.setParentVO(notShareHVO);
 					billList.add(billVO);
+					billListtwice.add((AggAllocateOutVO)billVO.clone());
 				} else {
 					// 其他
 				}
@@ -344,9 +396,280 @@ public class AllocateMaintainImpl extends AceAllocatePubServiceImpl implements I
 			// UFDouble.ZERO_DBL : new UFDouble(hvo.getDef2()));
 			// hvo.setDef2(getRoundNumber(amt, isTWArea));
 			// }
-			returnBills = insert(billList.toArray(new AggAllocateOutVO[0]), null);
+			//插入第一次分摊的结果
+			AggAllocateOutVO[] firstrs = insert(billList.toArray(new AggAllocateOutVO[0]), null);
+			//把结果备份到第一次分摊表
+			backupOneceDevide(context.getWaLoginVO());
+			//删除第一次分摊结果
+			//deleteOnceByContext(context.getWaLoginVO());
+			delete(firstrs,firstrs);
+			//插入二次分摊结果
+			returnBills = insert(billListtwice.toArray(new AggAllocateOutVO[0]), null);
 		}
 		return returnBills;
+	}
+
+	private Map<String, Boolean> getisTwiceDevide(DataVO[] payDatas) throws BusinessException {
+		Map<String, Boolean> rs = new HashMap<>();
+		if(payDatas!=null && payDatas.length > 0){
+			List<String> jobList = new ArrayList<>();
+			for(DataVO vo : payDatas){
+				jobList.add(vo.getPk_psnjob());
+			}
+			InSQLCreator insql = new InSQLCreator();
+			String jobstr = insql.getInSQL(jobList.toArray(new String[0]));
+			String sql = " select pk_psnjob,isnull(cl.istwicedevide,'N') istwicedevide from hi_psnjob job "
+					+" left join bd_psncl cl on cl.pk_psncl = job.pk_psncl where job.pk_psnjob in ("+jobstr+")";
+			@SuppressWarnings("unchecked")
+			List<Map<String,Object>> rsList = 
+					(List<Map<String,Object>>)getAppDao().getBaseDao().executeQuery(sql, new MapListProcessor());
+			if(rsList!=null && rsList.size() > 0){
+				for(Map<String,Object> rsMap : rsList){
+					if(rsMap!=null && rsMap.get("pk_psnjob")!=null){
+						if("Y".equalsIgnoreCase(String.valueOf(rsMap.get("istwicedevide")))){
+							rs.put(String.valueOf(rsMap.get("pk_psnjob")), true);
+						}else{
+							rs.put(String.valueOf(rsMap.get("pk_psnjob")), false);
+						}
+					}
+				}
+			}
+		}
+
+		return rs;
+	}
+	/**
+	 * 获取请假时数
+	 * @param context
+	 * @param periodVO
+	 * @return
+	 * @throws BusinessException 
+	 */
+	private Map<String, UFDouble> qryPsnLeaveHours4Twice(
+			WaLoginContext context, PeriodVO periodVO) throws BusinessException {
+		String GPL01DbCol = (String) getAppDao().getBaseDao().executeQuery(
+				"select item_db_code from tbm_item where item_code = 'GPL01' "
+				+ " and pk_group = '"+context.getPk_group()+"' and pk_group = pk_org and dr = 0;", new ColumnProcessor());
+		String GPL02DbCol = (String) getAppDao().getBaseDao().executeQuery(
+				"select item_db_code from tbm_item where item_code = 'GPL02' "
+				+ " and pk_group = '"+context.getPk_group()+"' and pk_group = pk_org and dr = 0;", new ColumnProcessor());
+		if(null == GPL01DbCol || null == GPL02DbCol){
+			throw new BusinessException("未找到請假時長/非當月審批時長日薪項目");
+		}
+		String sql = "SELECT tbm_daystat.pk_psndoc pk_psndoc,sum("+GPL01DbCol+")+sum("+GPL02DbCol+") leavehour "
+				+" FROM tbm_daystatb INNER JOIN tbm_daystat ON tbm_daystat.pk_daystat=tbm_daystatb.pk_daystat "
+				+" WHERE tbm_daystat.pk_org='"+context.getPk_org()+"' AND (( "
+				+" tbm_daystat.calendar BETWEEN '"+periodVO.getBegindate().toStdString()
+				+"' AND '"+periodVO.getEnddate().toStdString()+"' "
+				+" AND ISNULL(tbm_daystatb.calcperiod,'1')='1') "
+				+" OR  tbm_daystatb.calcperiod='"+periodVO.getYear()+"'+'"+periodVO.getMonth()+"') "
+				+" group by tbm_daystat.pk_psndoc ";
+		
+		@SuppressWarnings("unchecked")
+		Map<String, UFDouble> psnLeaveHoursMap = (Map<String, UFDouble>) getAppDao().getBaseDao().executeQuery(
+				sql.toString(), new ResultSetProcessor() {
+					/**
+					 * 
+					 */
+					private static final long serialVersionUID = 5237174467741136799L;
+					Map<String, UFDouble> map = new HashMap<String, UFDouble>();
+
+					@Override
+					public Object handleResultSet(ResultSet rs) throws SQLException {
+						while (rs.next()) {
+							map.put(rs.getString(1), new UFDouble(rs.getString(2)));
+						}
+						return map;
+					}
+				});
+		return psnLeaveHoursMap;
+	}
+
+	private void backupOneceDevide(WaLoginVO waLoginVO) throws DAOException {
+
+		String sql = "insert into wa_allocateout_once "
+				+ " select * from wa_allocateout where pk_org='"+waLoginVO.getPk_org()
+				+"' and pk_wa_calss='"+waLoginVO.getPk_wa_class()
+				+"' and cperiod='"+waLoginVO.getPeriodVO().getCyear() + waLoginVO.getPeriodVO().getCperiod()+"' ";
+		getAppDao().getBaseDao().executeUpdate(sql);
+	}
+
+	private List<AggAllocateOutVO> getLeaveShareTwice(Map<String, Map<String, UFDouble>> psnPjWkHoursMap, 
+			AllocateOutHVO baseHVO ) throws BusinessException {
+		List<AggAllocateOutVO> list = new ArrayList<AggAllocateOutVO>();
+		String pk_psndoc = baseHVO.getPk_psndoc();
+		UFDouble itemMny = (StringUtils.isEmpty(baseHVO.getDef2()) ? UFDouble.ZERO_DBL
+				: new UFDouble(baseHVO.getDef2()));
+		baseHVO.setDef2(null);
+		boolean isTWArea = isTWOrg(baseHVO.getPk_org());
+		Map<String, UFDouble> projWkHoursMap = psnPjWkHoursMap.get(pk_psndoc);
+		if (MapUtils.isEmpty(projWkHoursMap)) {
+			// 没有项目工时,不进行二次分摊
+			return null;
+		} else {
+			UFDouble projMny = UFDouble.ZERO_DBL;
+			UFDouble fullMonthWkHours = calculateSum(projWkHoursMap.values()
+					.toArray(new UFDouble[0]));
+
+			int len = projWkHoursMap.keySet().size();
+			for (String projectPK : projWkHoursMap.keySet()) {
+				UFDouble wkHours = projWkHoursMap.get(projectPK);
+				if (null == wkHours) {
+					wkHours = UFDouble.ZERO_DBL;
+				}
+				
+				if(wkHours.compareTo(UFDouble.ZERO_DBL) <= 0){
+					//项目工时为0 ,不分摊
+					continue;
+				}
+				UFDouble shareMny = UFDouble.ZERO_DBL;
+				if(null == fullMonthWkHours || fullMonthWkHours.equals(UFDouble.ZERO_DBL)
+						|| Math.abs(fullMonthWkHours.doubleValue())< 0.000001){
+					shareMny = UFDouble.ZERO_DBL;
+				}else {
+					shareMny = wkHours.multiply(itemMny).div(
+							fullMonthWkHours);
+				}
+				if (len == 1) {
+					shareMny = itemMny.sub(projMny);
+				}
+				shareMny = new UFDouble(getRoundNumber(shareMny, isTWArea));
+				AggAllocateOutVO aggVO = new AggAllocateOutVO();
+				AllocateOutHVO hvo = (AllocateOutHVO) baseHVO.clone();
+				hvo.setPk_project(projectPK);
+				hvo.setDef1(projectPK);
+				hvo.setDef2(shareMny.toString());
+				aggVO.setParentVO(hvo);
+				list.add(aggVO);
+				projMny = projMny.add(shareMny);
+				len--;
+			}
+
+		}
+		return list;
+
+	}
+
+	private List<AggAllocateOutVO> getMonthHoursShareTwice(
+			Map<String, UFDouble> psnMonthWkHourMap,
+			Map<String, UFDouble> psnMonthWkHours, Map<String, UFDouble> psnLeaveHohors4TwiceMap,
+			Map<String, Map<String, UFDouble>> psnPjWkHoursMap, AllocateOutHVO baseHVO ) throws BusinessException {
+		List<AggAllocateOutVO> list = new ArrayList<AggAllocateOutVO>();
+		String pk_psndoc = baseHVO.getPk_psndoc();
+		UFDouble itemMny = (StringUtils.isEmpty(baseHVO.getDef2()) ? UFDouble.ZERO_DBL
+				: new UFDouble(baseHVO.getDef2()));
+		baseHVO.setDef2(null);
+		// 员工日历排班工时
+		UFDouble psnCalMonthWkHours = psnMonthWkHourMap.get(pk_psndoc);
+		if (null == psnCalMonthWkHours || psnCalMonthWkHours.doubleValue() <= 0) {
+			// 组织日历工时
+			psnCalMonthWkHours = psnMonthWkHours.get(pk_psndoc);
+		}
+		if (null == psnCalMonthWkHours) {
+			psnCalMonthWkHours = UFDouble.ZERO_DBL;
+		}
+		boolean isTWArea = isTWOrg(baseHVO.getPk_org());
+		if (null != psnLeaveHohors4TwiceMap) {
+			if (psnCalMonthWkHours.doubleValue() <= 0) {
+				Logger.error("员工[" + pk_psndoc + "]的全月工时为零，存在不正常数据.");
+			}
+			Map<String, UFDouble> projWkHoursMap = psnPjWkHoursMap.get(pk_psndoc);
+			if (MapUtils.isEmpty(projWkHoursMap)) {
+				AggAllocateOutVO aggVO = new AggAllocateOutVO();
+				AllocateOutHVO hvo = (AllocateOutHVO) baseHVO.clone();
+				hvo.setDef2(getRoundNumber(itemMny, isTWArea));
+				aggVO.setParentVO(hvo);
+				list.add(aggVO);
+				Logger.error("员工[" + pk_psndoc + "]的期间项目导入工时无数据.");
+			} else {
+				UFDouble projWkHours = calculateSum(projWkHoursMap.values().toArray(new UFDouble[0]));
+				
+				UFDouble projMny = UFDouble.ZERO_DBL;
+				UFDouble fullMonthWkHours = psnCalMonthWkHours;
+				
+				if (projWkHours.compareTo(psnCalMonthWkHours) < 0) {
+					//请假时数:
+					UFDouble leavehousr = psnLeaveHohors4TwiceMap.get(pk_psndoc)==null?UFDouble.ZERO_DBL:psnLeaveHohors4TwiceMap.get(pk_psndoc);
+					//如果是請假時數+項目時數大於工作日曆的時數,則分母為(請假時數+項目時數)
+					if(leavehousr.add(projWkHours).compareTo(psnCalMonthWkHours) > 0){
+						fullMonthWkHours = leavehousr.add(projWkHours);
+					}
+					//请假成本
+					UFDouble leaveCost = leavehousr.multiply(itemMny).div(fullMonthWkHours);
+					
+					for (String projectPK : projWkHoursMap.keySet()) {
+						UFDouble wkHours = projWkHoursMap.get(projectPK);
+						if (null == wkHours) {
+							wkHours = UFDouble.ZERO_DBL;
+						}
+						UFDouble shareMny = wkHours.multiply(itemMny).div(fullMonthWkHours);
+						//分摊请假成本
+						if(projWkHours!=null && projWkHours.compareTo(UFDouble.ZERO_DBL)!=0){
+							shareMny = shareMny.add(leaveCost.multiply(wkHours).div(projWkHours));
+						}
+						
+						shareMny = new UFDouble(getRoundNumber(shareMny, isTWArea));
+						AggAllocateOutVO aggVO = new AggAllocateOutVO();
+						AllocateOutHVO hvo = (AllocateOutHVO) baseHVO.clone();
+						hvo.setPk_project(projectPK);
+						hvo.setDef1(projectPK);
+						hvo.setDef2(shareMny.toString());
+						aggVO.setParentVO(hvo);
+						list.add(aggVO);
+						projMny = projMny.add(shareMny);
+					}
+					UFDouble costcenterMny = itemMny.sub(projMny);
+					costcenterMny = new UFDouble(getRoundNumber(costcenterMny, isTWArea));
+					// 薪資發放項目 正負數都要顯示列出  by George 20190627 缺陷Bug #28125
+					if (costcenterMny.compareTo(UFDouble.ZERO_DBL) != 0) {
+						AggAllocateOutVO aggVO = new AggAllocateOutVO();
+						AllocateOutHVO hvo = (AllocateOutHVO) baseHVO.clone();
+						hvo.setDef2(costcenterMny.toString());
+						aggVO.setParentVO(hvo);
+						list.add(aggVO);
+					}
+				} else {
+					//专案时长大于工作日历时长
+					if (projWkHours.compareTo(psnCalMonthWkHours) > 0) {
+						fullMonthWkHours = projWkHours;
+					}
+					
+					int len = projWkHoursMap.keySet().size();
+					for (String projectPK : projWkHoursMap.keySet()) {
+						UFDouble wkHours = projWkHoursMap.get(projectPK);
+						if (null == wkHours) {
+							wkHours = UFDouble.ZERO_DBL;
+						}
+						if(wkHours.compareTo(UFDouble.ZERO_DBL) <= 0){
+							//项目工时为0 ,不分摊
+							continue;
+						}
+                        UFDouble shareMny = UFDouble.ZERO_DBL;
+                        if(fullMonthWkHours!=null && fullMonthWkHours.compareTo(UFDouble.ZERO_DBL)!=0){
+                             shareMny = wkHours.multiply(itemMny).div(fullMonthWkHours);
+                        }else{
+                            shareMny = UFDouble.ZERO_DBL;
+                        }
+
+						if (len == 1) {
+							shareMny = itemMny.sub(projMny);
+						}
+						shareMny = new UFDouble(getRoundNumber(shareMny, isTWArea));
+						AggAllocateOutVO aggVO = new AggAllocateOutVO();
+						AllocateOutHVO hvo = (AllocateOutHVO) baseHVO.clone();
+						hvo.setPk_project(projectPK);
+						hvo.setDef1(projectPK);
+						hvo.setDef2(shareMny.toString());
+						aggVO.setParentVO(hvo);
+						list.add(aggVO);
+						projMny = projMny.add(shareMny);
+						len--;
+					}
+				}
+			}
+			return list;
+		}
+		return null;
 	}
 
 	protected List<AggAllocateOutVO> getMonthHoursShare(Map<String, UFDouble> psnMonthWkHourMap,
@@ -402,7 +725,8 @@ public class AllocateMaintainImpl extends AceAllocatePubServiceImpl implements I
 					}
 					UFDouble costcenterMny = itemMny.sub(projMny);
 					costcenterMny = new UFDouble(getRoundNumber(costcenterMny, isTWArea));
-					if (costcenterMny.compareTo(UFDouble.ZERO_DBL) > 0) {
+					// 薪資發放項目 正負數都要顯示列出  by George 20190627 缺陷Bug #28125
+					if (costcenterMny.compareTo(UFDouble.ZERO_DBL) != 0) {
 						AggAllocateOutVO aggVO = new AggAllocateOutVO();
 						AllocateOutHVO hvo = (AllocateOutHVO) baseHVO.clone();
 						hvo.setDef2(costcenterMny.toString());
@@ -469,7 +793,8 @@ public class AllocateMaintainImpl extends AceAllocatePubServiceImpl implements I
 				}
 				UFDouble costcenterMny = itemMny.sub(projMny);
 				costcenterMny = new UFDouble(getRoundNumber(costcenterMny, isTWArea));
-				if (costcenterMny.compareTo(UFDouble.ZERO_DBL) > 0) {
+				// 薪資發放項目 正負數都要顯示列出  by George 20190627 缺陷Bug #28125
+				if (costcenterMny.compareTo(UFDouble.ZERO_DBL) != 0) {
 					AggAllocateOutVO aggVO = new AggAllocateOutVO();
 					AllocateOutHVO hvo = (AllocateOutHVO) baseHVO.clone();
 					hvo.setDef2(costcenterMny.toString());
@@ -614,7 +939,7 @@ public class AllocateMaintainImpl extends AceAllocatePubServiceImpl implements I
 		sqlBuffer.append(" and wa_item.mid = 'N' and wa_classitem.dr <> 1 ");
 		sqlBuffer.append(" and wa_classitem.def1 in (select bd_defdoc.pk_defdoc from bd_defdoc ");
 		sqlBuffer.append(" inner join bd_defdoclist on bd_defdoc.pk_defdoclist=bd_defdoclist.pk_defdoclist ");
-		sqlBuffer.append(" and bd_defdoclist.code='WITSCS' and upper(bd_defdoc.code) in ('A','B','C','D','Z') )");
+		sqlBuffer.append(" and bd_defdoclist.code='WITSCS' and upper(bd_defdoc.code) in ('A','B','C','D','Z','E') )");
 		sqlBuffer.append(" order by icomputeseq");
 
 		SQLParameter parameter = WherePartUtil.getCommonParameter(context.getWaLoginVO());
@@ -1021,14 +1346,20 @@ public class AllocateMaintainImpl extends AceAllocatePubServiceImpl implements I
 			AllocateOutHVO alloHvo = ((AggAllocateOutVO) datas[0]).getParentVO();
 			StringBuilder bmdataBuf = new StringBuilder();
 			bmdataBuf.append(" dr <> 1 and pk_org='").append(alloHvo.getPk_org()).append("' ");
+			//Mod tank 直接用薪资期间去匹配
+			bmdataBuf.append(" and cyear = '"+alloHvo.getCperiod().substring(0, 4)+"' and cperiod = '"+alloHvo.getCperiod().substring(4, 6)+"'  ");
+/*			
+			
 			bmdataBuf.append(" and pk_psnjob in (select pk_psnjob from hi_psnjob where begindate <= '"
 					+ getLastDayOfMonth(alloHvo.getCperiod().substring(0, 4), alloHvo.getCperiod().substring(4, 6))
 							.toString().substring(0, 10)
 					+ "' and isnull(enddate, '9999-12-31') >= '"
 					+ getFirstDayOfMonth(alloHvo.getCperiod().substring(0, 4), alloHvo.getCperiod().substring(4, 6))
 							.toString().substring(0, 10) + "') ");
+			
+			*/
 			Map<String, List<BmDataVO>> bmdataVOMap = queryUnionVOList(BmDataVO.class, bmdataBuf.toString(),
-					new String[] { BmDataVO.PK_PSNDOC, BmDataVO.PK_PSNJOB });
+					new String[] { BmDataVO.PK_PSNDOC});
 			// 险种信息
 			StringBuilder bmClassBuf = new StringBuilder(" pk_bm_class in (select pk_bm_class from bm_data where ");
 			bmClassBuf.append(bmdataBuf).append(" ) ");
@@ -1052,7 +1383,8 @@ public class AllocateMaintainImpl extends AceAllocatePubServiceImpl implements I
 					String orderCode = "";
 					if (shareCode.equals(WaConstant.SHARE_MONTH_WORKHOURS)
 							|| shareCode.equals(WaConstant.SHARE_PROJ_CODE)
-							|| shareCode.equals(WaConstant.SHARE_PROJ_OVERHOURS)) {
+							|| shareCode.equals(WaConstant.SHARE_PROJ_OVERHOURS)
+							|| shareCode.equals(WaConstant.SHARE_LEAVE_SHARED)) {
 						if (StringUtils.isNotEmpty(hvo.getDef1()) && null != projVOMap.get(hvo.getDef1())) {
 							orderCode = projVOMap.get(hvo.getDef1()).getCode();
 						}
@@ -1144,7 +1476,7 @@ public class AllocateMaintainImpl extends AceAllocatePubServiceImpl implements I
 			Map<String, DefdocVO> smvenVOMap, Map<String, BmClassVO> bmClassVOMap) {
 		String retCode = "";
 		BmDataVO bmdataVO = null;
-		List<BmDataVO> bmdataList = bmdataVOMap.get(hvo.getPk_psndoc() + hvo.getPk_psnjob());
+		List<BmDataVO> bmdataList = bmdataVOMap.get(hvo.getPk_psndoc());
 		if (venCode.toUpperCase().equals(WaConstant.VENDER_SIFI)) {
 			bmdataVO = (null != bmdataList && !bmdataList.isEmpty()) ? bmdataList.get(0) : null;
 			if (null != bmdataVO && StringUtils.isNotEmpty(bmdataVO.getDef1())) {

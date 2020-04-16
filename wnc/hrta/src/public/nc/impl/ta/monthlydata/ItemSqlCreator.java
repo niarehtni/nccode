@@ -131,29 +131,29 @@ public class ItemSqlCreator {
 	 */
 	public String getHrOrgPK(String workorg, String tableName) throws DAOException {
 		StringBuilder querySql = new StringBuilder();
-		querySql.append("select hr_orgs1.pk_hrorg  pk_hrorg                                                                                                           ");
-		querySql.append("from (select hr.pk_hrorg,                                                                                                                   ");
-		querySql.append("       a.innercode aos_innercode                                                                                                     ");
-		querySql.append("      from org_adminorg a                                                                                                            ");
-		querySql.append("       inner join org_hrorg hr                                                                                                       ");
-		querySql.append("       on a.pk_adminorg = hr.pk_hrorg                                                                                                ");
-		querySql.append("       inner join org_adminorg b                                                                                                     ");
-		querySql.append("       on (a.innercode=substr(b.innercode, 1, length(a.innercode))) inner join " + tableName
-				+ " on b.pk_adminorg = " + workorg + "							  ");
-		querySql.append("      where hr.enablestate =2                                                                                                        ");
-		querySql.append(" )                                                                                                                                   ");
-		querySql.append(" hr_orgs1                                                                                                                            ");
-		querySql.append("where length(hr_orgs1.aos_innercode) = (select max(length(hr_orgs2.innercode))                                                             ");
-		querySql.append("                                     from (select a.innercode                                                                        ");
-		querySql.append("                                           from org_adminorg a                                                                       ");
-		querySql.append("                                            inner join org_hrorg hr                                                                  ");
-		querySql.append("                                            on a.pk_adminorg = hr.pk_hrorg                                                           ");
-		querySql.append("                                            inner join org_adminorg b                                                                ");
-		querySql.append("                                            on a.innercode=substr(b.innercode, 1, length(a.innercode)) inner join "
-				+ tableName + " on b.pk_adminorg = (" + workorg + ")");
-		querySql.append("                                           where hr.enablestate =2                                                                   ");
-		querySql.append("                                      )                                                                                              ");
-		querySql.append("                                      hr_orgs2 )                                                                                      ");
+		querySql.append("select hr_orgs1.pk_hrorg pk_hrorg ");
+		querySql.append("from (select hr.pk_hrorg, ");
+		querySql.append(" a.innercode aos_innercode ");
+		querySql.append(" from org_adminorg a ");
+		querySql.append(" inner join org_hrorg hr ");
+		querySql.append(" on a.pk_adminorg = hr.pk_hrorg ");
+		querySql.append(" inner join org_adminorg b ");
+		querySql.append(" on (a.innercode=substr(b.innercode, 1, length(a.innercode))) inner join " + tableName
+				+ " on b.pk_adminorg = " + workorg + "							 ");
+		querySql.append(" where hr.enablestate =2 ");
+		querySql.append(" ) ");
+		querySql.append(" hr_orgs1 ");
+		querySql.append("where length(hr_orgs1.aos_innercode) = (select max(length(hr_orgs2.innercode)) ");
+		querySql.append(" from (select a.innercode ");
+		querySql.append(" from org_adminorg a ");
+		querySql.append(" inner join org_hrorg hr ");
+		querySql.append(" on a.pk_adminorg = hr.pk_hrorg ");
+		querySql.append(" inner join org_adminorg b ");
+		querySql.append(" on a.innercode=substr(b.innercode, 1, length(a.innercode)) inner join " + tableName
+				+ " on b.pk_adminorg = (" + workorg + ")");
+		querySql.append(" where hr.enablestate =2 ");
+		querySql.append(" ) ");
+		querySql.append(" hr_orgs2 ) ");
 		return querySql.toString();
 	}
 

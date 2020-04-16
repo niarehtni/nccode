@@ -2,6 +2,7 @@ package nc.impl.ta.psndoc.listener;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -14,6 +15,7 @@ import nc.bs.businessevent.IBusinessListener;
 import nc.bs.businessevent.IEventType;
 import nc.bs.dao.BaseDAO;
 import nc.bs.framework.common.NCLocator;
+import nc.bs.logging.Logger;
 import nc.hr.utils.CommonUtils;
 import nc.hr.utils.PubEnv;
 import nc.hr.utils.ResHelper;
@@ -27,7 +29,9 @@ import nc.itf.ta.ITBMPsndocQueryService;
 import nc.itf.ta.algorithm.DateScopeUtils;
 import nc.itf.ta.algorithm.IDateScope;
 import nc.itf.ta.algorithm.impl.DefaultDateScope;
+import nc.itf.uap.IUAPQueryBS;
 import nc.pubitf.bd.team.team01.hr.ITeamQueryServiceForHR;
+import nc.pubitf.para.SysInitQuery;
 import nc.vo.bd.team.team01.entity.AggTeamVO;
 import nc.vo.bd.team.team01.entity.TeamChangeEventVO;
 import nc.vo.bd.team.team01.entity.TeamHeadVO;
@@ -525,7 +529,8 @@ public class TeamPsnChangeEventListener implements IBusinessListener {
 			psndocVO.setPk_psnjob(psnjobScope.getPk_psnjob());
 			psndocVO.setPk_psnorg(psnjobScope.getPk_psnorg());
 			psndocVO.setTbm_prop(TBMPsndocVO.TBM_PROP_MACHINE);
-
+			psndocVO.setBegindate(psnjobScope.getBegindate());
+			psndocVO.setEnddate(psnjobScope.getEnddate());
 			// MOD(PM26104)新生成的考勤档案自动加入默认的加班管控模式及工时形态
 			// ssx added on 2019-06-14
 			psndocVO.setOvertimecontrol(OvertimecontrolEunm.MANUAL_CHECK.toIntValue());
@@ -592,10 +597,63 @@ public class TeamPsnChangeEventListener implements IBusinessListener {
 	 * @param scopes
 	 * @param psndocList
 	 */
+	@SuppressWarnings("unchecked")
 	private void createTBMPsndocVO(TBMPsndocVO psndocVO, IDateScope[] scopes, List<TBMPsndocVO> psndocList) {
 		if (ArrayUtils.isEmpty(scopes))
 			return;
+
+		IUAPQueryBS query = NCLocator.getInstance().lookup(IUAPQueryBS.class);
+		// ssx added on 2020-02-26
+		// 已存在同一任職記錄，同一開始時間的考勤檔案跳過新增
+		try {
+			Collection<TBMPsndocVO> tbmPsndocs = query.retrieveByClause(TBMPsndocVO.class,
+					"pk_psnjob='" + psndocVO.getPk_psnjob() + "' and begindate='" + psndocVO.getBegindate().toString()
+							+ "'");
+
+			if (tbmPsndocs != null && tbmPsndocs.size() > 0) {
+				return;
+			}
+		} catch (BusinessException e) {
+			Logger.error(e.getMessage());
+		}
+		//
+
+		// ssx added on 2019-11-20
+		// 留停不生成新的考勤檔案：按起始日期檢查工作記錄
+		String leaveType = "";
+		try {
+			leaveType = SysInitQuery.getParaString(psndocVO.getPk_org(), "TWHR11");
+		} catch (BusinessException e1) {
+			Logger.error(e1.getMessage());
+		}
+
 		for (IDateScope scope : scopes) {
+			if (!StringUtils.isEmpty(leaveType)) {
+				boolean existsEndPsnjob = false;
+				try {
+					Collection<PsnJobVO> psnjobs = query.retrieveByClause(PsnJobVO.class,
+							"pk_psndoc = '" + psndocVO.getPk_psndoc() + "' and '" + scope.getBegindate()
+									+ "' between begindate and enddate ");
+
+					if (psnjobs != null && psnjobs.size() > 0) {
+						PsnJobVO jobVO = psnjobs.toArray(new PsnJobVO[0])[0];
+						if (leaveType.equals(jobVO.getTrnstype())) {
+							// 存在留停工作记录
+							existsEndPsnjob = true;
+						}
+					} else {
+						// 不存在工作记录
+						continue;
+					}
+				} catch (BusinessException e) {
+					Logger.error(e.getMessage());
+				}
+
+				if (existsEndPsnjob) {
+					continue;
+				}
+			}
+
 			TBMPsndocVO tmpPsndoc = (TBMPsndocVO) psndocVO.clone();
 			tmpPsndoc.setBegindate(scope.getBegindate());
 			tmpPsndoc.setEnddate(scope.getEnddate());
@@ -714,7 +772,20 @@ public class TeamPsnChangeEventListener implements IBusinessListener {
 		// 构造工作记录的主职和兼职List
 		List<PsnJobDateScope> mainJobList = new ArrayList<PsnJobDateScope>();
 		List<PsnJobDateScope> notMainJobList = new ArrayList<PsnJobDateScope>();
+
+		// MOD 取组织级参数“留职停薪”异动类型
+		// ssx added on 2019-04-11
+		String pk_trnstype_TWHR11 = SysInitQuery.getParaString(psnjobVOs[0].getPk_org(), "TWHR11");
+		if (pk_trnstype_TWHR11 == null) {
+			pk_trnstype_TWHR11 = "";
+		}
+		// end MOD
+
 		for (PsnJobVO psnjobVO : psnjobVOs) {
+			if (pk_trnstype_TWHR11.equals(psnjobVO.getTrnstype())) {
+				continue;
+			}
+
 			PsnJobDateScope scope = new PsnJobDateScope();
 			scope.setPk_psndoc(psnjobVO.getPk_psndoc());
 			scope.setPk_psnjob(psnjobVO.getPk_psnjob());

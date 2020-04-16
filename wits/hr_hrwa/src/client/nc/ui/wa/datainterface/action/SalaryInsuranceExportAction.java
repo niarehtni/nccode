@@ -83,7 +83,11 @@ public class SalaryInsuranceExportAction extends HrAction {
 					+ " case when g2.glbdef2 is null then g3.glbdef16 "
 					+ " else g2.glbdef2 end as salary, "
 					+ " (SELECT top 1 glbdef16 FROM hi_psndoc_glbdef3 "
-					+ " WHERE pk_psndoc = ps.pk_psndoc and glbdef1 = ps.name2 "
+					// 三合一媒體檔保薪調整產出內容錯誤  20190730 George 缺陷Bug #25168
+					// 健保調"前"投保欄位與健保調"後"投保欄位,兩個欄位數值不應皆為調整後級距
+					// 不能以名子做判斷，以防更名，要以"本人"作為判斷依據 
+					+ " WHERE pk_psndoc = ps.pk_psndoc and glbdef2 = '本人' and creationtime not in "
+					+ " (SELECT top 1 creationtime FROM hi_psndoc_glbdef3 WHERE pk_psndoc = ps.pk_psndoc and glbdef2 = '本人' order by creationtime desc)"
 					+ " order by creationtime desc) as oldsalary, "
 					+ " g3.glbdef16 as newsalary, "
 					+ " doc3.code as tssf "

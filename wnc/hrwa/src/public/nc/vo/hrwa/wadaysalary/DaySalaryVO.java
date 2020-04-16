@@ -22,6 +22,10 @@ import nc.vo.pubapp.pattern.model.meta.entity.vo.VOMetaFactory;
 public class DaySalaryVO extends SuperVO {
 
 	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -8377625563019588778L;
+	/**
 	 * 日薪主鍵
 	 */
 	public String pk_daysalary;
@@ -84,6 +88,8 @@ public class DaySalaryVO extends SuperVO {
 	/**
 	 * 是否考勤
 	 */
+	// 考勤日薪已经合并到定调资日薪
+	@Deprecated
 	public UFBoolean isattend;
 	/**
 	 * 是否扣稅
@@ -93,6 +99,19 @@ public class DaySalaryVO extends SuperVO {
 	 * 時間戳
 	 */
 	public UFDateTime ts;
+
+	/**
+	 * hash值
+	 */
+	public Integer hashKey;
+
+	public Integer getHashKey() {
+		return hashKey;
+	}
+
+	public void setHashKey(Integer hashKey) {
+		this.hashKey = hashKey;
+	}
 
 	/**
 	 * 屬性 pk_daysalary的Getter方法.屬性名：日薪主鍵 創建日期:2019/1/28
@@ -383,7 +402,9 @@ public class DaySalaryVO extends SuperVO {
 	 * 屬性 isattend的Getter方法.屬性名：是否考勤 創建日期:2019/1/28
 	 * 
 	 * @return nc.vo.pub.lang.UFBoolean
+	 * @deprecated tank 废弃 考勤日薪已经和定调资日薪合并
 	 */
+	@Deprecated
 	public UFBoolean getIsattend() {
 		return this.isattend;
 	}
@@ -393,7 +414,9 @@ public class DaySalaryVO extends SuperVO {
 	 * 
 	 * @param newIsattend
 	 *            nc.vo.pub.lang.UFBoolean
+	 * @deprecated tank 废弃 考勤日薪已经和定调资日薪合并
 	 */
+	@Deprecated
 	public void setIsattend(UFBoolean isattend) {
 		this.isattend = isattend;
 	}

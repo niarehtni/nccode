@@ -21,6 +21,7 @@ import nc.bs.framework.execute.Executor;
 import nc.bs.logging.Logger;
 import nc.hr.utils.CommonUtils;
 import nc.hr.utils.InSQLCreator;
+import nc.itf.hrta.ILeaveextrarestMaintain;
 import nc.itf.om.IAOSQueryService;
 import nc.itf.ta.IPsnCalendarQueryService;
 import nc.itf.ta.ITBMPsndocQueryService;
@@ -33,6 +34,7 @@ import nc.jdbc.framework.processor.ArrayListProcessor;
 import nc.jdbc.framework.processor.BeanListProcessor;
 import nc.jdbc.framework.processor.ColumnListProcessor;
 import nc.jdbc.framework.processor.ColumnProcessor;
+import nc.jdbc.framework.processor.MapProcessor;
 import nc.md.data.access.NCObject;
 import nc.md.model.MetaDataException;
 import nc.md.persist.framework.IMDPersistenceService;
@@ -41,10 +43,16 @@ import nc.pubitf.para.SysInitQuery;
 import nc.ui.querytemplate.querytree.FromWhereSQL;
 import nc.vo.bd.shift.ShiftVO;
 import nc.vo.bd.workcalendrule.WorkCalendarRuleVO;
+import nc.vo.hi.psndoc.PsnJobVO;
+import nc.vo.hi.psndoc.PsndocVO;
 import nc.vo.pub.BusinessException;
 import nc.vo.pub.lang.UFBoolean;
+import nc.vo.pub.lang.UFDateTime;
+import nc.vo.pub.lang.UFDouble;
 import nc.vo.pub.lang.UFLiteralDate;
 import nc.vo.ta.changeshift.ChangeShiftCommonVO;
+import nc.vo.ta.leaveextrarest.AggLeaveExtraRestVO;
+import nc.vo.ta.leaveextrarest.LeaveExtraRestVO;
 import nc.vo.ta.period.PeriodVO;
 import nc.vo.ta.psncalendar.AggPsnCalendar;
 import nc.vo.ta.psncalendar.PsnCalHoliday;
@@ -58,6 +66,7 @@ import nc.vo.ta.pub.PsnInSQLDateScope;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang.StringUtils;
 
 public class PsnCalendarDAO {
 	/**
@@ -981,4 +990,96 @@ public class PsnCalendarDAO {
 		}
 	}
 
+	public static void generateExtraLeaves(String pk_hrorg, String[] psndocs, UFLiteralDate changeDate,
+			Integer dateType, String changedayorhourStr) throws BusinessException {
+		// 生成外加補休單據
+		List<AggLeaveExtraRestVO> extraRestList = new ArrayList<AggLeaveExtraRestVO>();
+		UFDouble changedayorhour = new UFDouble(0.00);
+		if (!StringUtils.isEmpty(changedayorhourStr) && new Double(changedayorhourStr) > 0) {
+			changedayorhour = new UFDouble(changedayorhourStr);
+		}
+		if (changedayorhour.compareTo(UFDouble.ZERO_DBL) >= 0) {
+			for (String psndocStr : psndocs) {
+				if (null != changeDate) {
+					extraRestList.add(getExtraAggvo(pk_hrorg, new UFLiteralDate(), changeDate, changeDate,
+							changedayorhour, psndocStr));
+				}
+			}
+		}
+
+		NCLocator.getInstance().lookup(ILeaveextrarestMaintain.class)
+				.insert(extraRestList.toArray(new AggLeaveExtraRestVO[0]));
+	}
+
+	public static AggLeaveExtraRestVO getExtraAggvo(String pk_hrorg, UFLiteralDate billDate, UFLiteralDate firstDate,
+			UFLiteralDate secondDate, UFDouble changedayorhour, String psndocStr) throws BusinessException {
+		AggLeaveExtraRestVO saveVO = new AggLeaveExtraRestVO();
+		LeaveExtraRestVO extraRestVO = new LeaveExtraRestVO();
+		extraRestVO.setPk_psndoc(psndocStr);
+		extraRestVO.setPk_org(pk_hrorg);
+		Map<String, String> baseInfo = getPsnBaseInfo(psndocStr, pk_hrorg, firstDate);
+		extraRestVO.setPk_org_v(baseInfo.get("pk_org_v"));
+		extraRestVO.setPk_dept_v(baseInfo.get("pk_dept_v"));
+		extraRestVO.setPk_group(baseInfo.get("pk_group"));
+		extraRestVO.setBilldate(billDate);
+		extraRestVO.setDatebeforechange(firstDate);
+		extraRestVO.setTypebeforechange(getDateTypeByPsnDate(pk_hrorg, psndocStr, firstDate));
+		extraRestVO.setDateafterchange(secondDate);
+		extraRestVO.setTypeafterchange(getDateTypeByPsnDate(pk_hrorg, psndocStr, secondDate));
+		extraRestVO.setChangetype(extraRestVO.getTypebeforechange());
+		extraRestVO.setChangedayorhour(changedayorhour);
+		extraRestVO.setCreationtime(new UFDateTime());
+		extraRestVO.setExpiredate(getExpiredate(psndocStr, firstDate, extraRestVO.getBilldate()));
+		saveVO.setParent(extraRestVO);
+		return saveVO;
+	}
+
+	/**
+	 * 查詢一下基本的信息
+	 * 
+	 * @param psndocStr
+	 * @param pk_hrorg
+	 * @return pk_org_v pk_dept_v pk_group
+	 * @throws BusinessException
+	 */
+	@SuppressWarnings("unchecked")
+	private static Map<String, String> getPsnBaseInfo(String pk_psndoc, String pk_hrorg, UFLiteralDate checkDate)
+			throws BusinessException {
+		Map<String, String> resultMap = new HashMap<>();
+		Collection<PsnJobVO> psnjobvos = new BaseDAO().retrieveByClause(PsnJobVO.class, "pk_psndoc='" + pk_psndoc
+				+ "' and '" + checkDate + "' between begindate and isnull(enddate, '9999-12-31') and trnsevent<>4");
+		if (psnjobvos != null && psnjobvos.size() > 0) {
+			String pk_dept = psnjobvos.toArray(new PsnJobVO[0])[0].getPk_dept();
+			String sqlStr = "select dept.pk_vid pk_dept_v, orgs.pk_vid pk_org_v ,orgs.pk_group pk_group"
+					+ " from org_dept dept " + " left join org_orgs orgs on orgs.pk_org = '" + pk_hrorg
+					+ "' where dept.pk_dept = '" + pk_dept + "'";
+			resultMap = (Map<String, String>) new BaseDAO().executeQuery(sqlStr, new MapProcessor());
+		}
+		return resultMap == null ? new HashMap<String, String>() : resultMap;
+	}
+
+	private static Integer getDateTypeByPsnDate(String pk_hrorg, String pk_psndoc, UFLiteralDate checkDate)
+			throws BusinessException {
+		if (checkDate == null) {
+			return null;
+		}
+
+		// 查出人员工作日历信息
+		PsnCalendarDAO psnCalendarDAO = new PsnCalendarDAO();
+		Map<String, Map<String, PsnCalendarVO>> dateTypeMap = psnCalendarDAO.queryCalendarVOMapByPsndocs(pk_hrorg,
+				new String[] { pk_psndoc }, new UFLiteralDate[] { checkDate });
+		if (dateTypeMap == null) {
+			PsndocVO psndocvo = (PsndocVO) new BaseDAO().retrieveByPK(PsndocVO.class, pk_psndoc);
+			throw new BusinessException("员工 [" + psndocvo.getCode() + "] 在 [" + checkDate.toString() + "] 未找到有效排班。");
+		}
+		PsnCalendarVO psnVo = dateTypeMap.get(pk_psndoc).get(checkDate.toString());
+		return psnVo.getDate_daytype();
+	}
+
+	private static UFLiteralDate getExpiredate(String psndocStr, UFLiteralDate firstDate, UFLiteralDate billDate)
+			throws BusinessException {
+		UFLiteralDate maxLeaveDate = NCLocator.getInstance().lookup(ILeaveextrarestMaintain.class)
+				.calculateExpireDateByWorkAge(psndocStr, firstDate, billDate);
+		return maxLeaveDate;
+	}
 }

@@ -187,14 +187,12 @@ public abstract class AceTwhr_declarationPubServiceImpl {
 			String legalOrgStr = insql.getInSQL(legal_org_tempSet.toArray(new String[0]));
 			whereSql += " and vbdef1 in ( " + legalOrgStr + " ) ";
 		}else{
-			//如果法人组织未选,则选择人力资源组织下的所有法人组织
-			Set<String> pk_legals = LegalOrgUtilsEX.getOrgsByLegal(pk_hrorg_temp);
-			if(null != pk_legals && pk_legals.size() > 0){
-				String legalOrgStr = insql.getInSQL(pk_legals.toArray(new String[0]));
+			//如果法人组织未选,则选择人力资源组织上的所有法人组织
+			Map<String,String> hr2LegalMap = LegalOrgUtilsEX.getLegalOrgByOrgs(new String[]{pk_hrorg_temp});
+			if(null != hr2LegalMap && hr2LegalMap.size() > 0){
+				String legalOrgStr = insql.getInSQL(hr2LegalMap.values().toArray(new String[0]));
 				whereSql += " and vbdef1 in ( " + legalOrgStr + " ) ";
 			}
-			
-			
 		}
 		
 		

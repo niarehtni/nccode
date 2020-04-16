@@ -1141,7 +1141,9 @@ public class TaiwanNHICalculator extends BaseDAOManager {
 		strSQL += " FROM              twhr_nhicalc  nhi INNER JOIN  ";
 		strSQL += "                             bd_psndoc  psndoc ON nhi.pk_psndoc = psndoc.pk_psndoc INNER JOIN ";
 		strSQL += PsndocDefTableUtil.getPsnLaborTablename() + "  def ON def.pk_psndoc = nhi.pk_psndoc ";
-		strSQL += "and ((nhi.begindate >= def.begindate||' 00:00:00' and nhi.enddate <= isnull(def.enddate,'9999-12-31')|| ' 00:00:00') or (nhi.begindate >= def.glbdef14 and nhi.enddate <= isnull(def.glbdef15,'9999-12-31')))";
+		strSQL += "AND ((nhi.begindate <=  NVL(def.enddate,'9999-12-31')||' 00:00:00' AND nhi.enddate >= def.begindate || ' 00:00:00') OR  (nhi.begindate <=  NVL(def.glbdef15,'9999-12-31') AND nhi.enddate >= def.glbdef14))";
+		// strSQL +=
+		// "and ((nhi.begindate >= def.begindate||' 00:00:00' and nhi.enddate <= isnull(def.enddate,'9999-12-31')|| ' 00:00:00') or (nhi.begindate >= def.glbdef14 and nhi.enddate <= isnull(def.glbdef15,'9999-12-31')))";
 		strSQL += " WHERE          (nhi.begindate >= '"
 				+ this.getFirstDayOfMonth(this.getCalcYear(), this.getCalcMonth()).toString()
 				+ "') AND (nhi.enddate <= '"
@@ -1234,14 +1236,16 @@ public class TaiwanNHICalculator extends BaseDAOManager {
 					vo.setLaborDays(UFDouble.ZERO_DBL);
 				} else {
 					// 根据残障程度取政府补助比例
-					// 自缴比例 = 1 - 政府补助比例
+					// ssx modified on 2019-12-01,
+					// 要嚴格按照比例乘，四捨五入再加減的順序，否則會導致某一個方向上的數字產生1塊錢問題
+					// 自缴比例 = 政府补助比例
 					UFDouble disabledRate;
 					if (vo.getDisableType() == null) {
-						disabledRate = new UFDouble(1);
+						disabledRate = UFDouble.ZERO_DBL;
 					} else {
-						disabledRate = new UFDouble(1).sub(((AllowanceVO) getBaseDocValueByKey(
+						disabledRate = ((AllowanceVO) getBaseDocValueByKey(
 								AllowanceVO.class.getName() + "_" + vo.getDisableType(), vo.getPk_legalOrg()))
-								.getAllowanceamount().div(100));
+								.getAllowanceamount().div(100);
 					}
 
 					// 级距表中取出的是普通+就业
@@ -1252,42 +1256,44 @@ public class TaiwanNHICalculator extends BaseDAOManager {
 
 					// 普通事故-个人
 					UFDouble commonAccTotal = vo.getLaborRange().multiply(vo.getCommonAccRate());
-					if (disabledRate.equals(UFDouble.ZERO_DBL)
-							|| commonAccTotal.multiply(vo.getCommonAccRate_Psn())
-									.multiply(vo.getValidLaborDays().div(30)).equals(UFDouble.ZERO_DBL)) {
+					UFDouble tmpAmount = UFDouble.ZERO_DBL;
+					if (commonAccTotal.multiply(vo.getCommonAccRate_Psn()).multiply(vo.getValidLaborDays().div(30))
+							.equals(UFDouble.ZERO_DBL)) {
 						vo.setCommonAccAmount_Psn(UFDouble.ZERO_DBL);
 					} else {
-						vo.setCommonAccAmount_Psn(commonAccTotal.multiply(vo.getCommonAccRate_Psn())
-								.multiply(vo.getValidLaborDays().div(30)).setScale(0, UFDouble.ROUND_HALF_UP)
-								.multiply(disabledRate).sub(0.5).setScale(0, UFDouble.ROUND_HALF_UP));
+						tmpAmount = commonAccTotal.multiply(vo.getCommonAccRate_Psn())
+								.multiply(vo.getValidLaborDays().div(30)).setScale(0, UFDouble.ROUND_HALF_UP);
+
+						vo.setCommonAccAmount_Psn(tmpAmount.sub(tmpAmount.multiply(disabledRate).setScale(0,
+								UFDouble.ROUND_HALF_UP)));
 					}
 					// 普通事故-公司
 					vo.setCommonAccAmount_Org(commonAccTotal.multiply(vo.getCommonAccRate_Org())
 							.multiply(vo.getValidLaborDays()).div(30).setScale(0, UFDouble.ROUND_HALF_UP));
 					// 就业-个人
 					UFDouble empInsTotal = vo.getLaborRange().multiply(vo.getEmpInsRate());
-					if (disabledRate.equals(UFDouble.ZERO_DBL)
-							|| empInsTotal.multiply(vo.getEmpInsRate_Psn()).multiply(vo.getValidLaborDays()).div(30)
-									.equals(UFDouble.ZERO_DBL)) {
+					if (empInsTotal.multiply(vo.getEmpInsRate_Psn()).multiply(vo.getValidLaborDays()).div(30)
+							.equals(UFDouble.ZERO_DBL)) {
 						vo.setEmpInsAmount_Psn(UFDouble.ZERO_DBL);
 					} else {
-						vo.setEmpInsAmount_Psn(empInsTotal.multiply(vo.getEmpInsRate_Psn())
-								.multiply(vo.getValidLaborDays()).div(30).setScale(0, UFDouble.ROUND_HALF_UP)
-								.multiply(disabledRate).sub(0.5).setScale(0, UFDouble.ROUND_HALF_UP));
+						tmpAmount = empInsTotal.multiply(vo.getEmpInsRate_Psn()).multiply(vo.getValidLaborDays())
+								.div(30).setScale(0, UFDouble.ROUND_HALF_UP);
+						vo.setEmpInsAmount_Psn(tmpAmount.sub(tmpAmount.multiply(disabledRate).setScale(0,
+								UFDouble.ROUND_HALF_UP)));
 					}
 					// 就业-公司
 					vo.setEmpInsAmount_Org(empInsTotal.multiply(vo.getEmpInsRate_Org())
 							.multiply(vo.getValidLaborDays()).div(30).setScale(0, UFDouble.ROUND_HALF_UP));
 					// 职灾-个人
 					UFDouble occAccTotal = vo.getLaborRange().multiply(vo.getOccAccRate());
-					if (disabledRate.equals(UFDouble.ZERO_DBL)
-							|| occAccTotal.multiply(vo.getOccAccRate_Psn()).multiply(vo.getValidLaborDays()).div(30)
-									.equals(UFDouble.ZERO_DBL)) {
+					if (occAccTotal.multiply(vo.getOccAccRate_Psn()).multiply(vo.getValidLaborDays()).div(30)
+							.equals(UFDouble.ZERO_DBL)) {
 						vo.setOccAccAmount_Psn(UFDouble.ZERO_DBL);
 					} else {
-						vo.setOccAccAmount_Psn(occAccTotal.multiply(vo.getOccAccRate_Psn())
-								.multiply(vo.getValidLaborDays()).div(30).setScale(0, UFDouble.ROUND_HALF_UP)
-								.multiply(disabledRate).sub(0.5).setScale(0, UFDouble.ROUND_HALF_UP));
+						tmpAmount = occAccTotal.multiply(vo.getOccAccRate_Psn()).multiply(vo.getValidLaborDays())
+								.div(30).setScale(0, UFDouble.ROUND_HALF_UP);
+						vo.setOccAccAmount_Psn(tmpAmount.sub(tmpAmount.multiply(disabledRate).setScale(0,
+								UFDouble.ROUND_HALF_UP)));
 					}
 					// 职灾-公司
 					vo.setOccAccAmount_Org(occAccTotal.multiply(vo.getOccAccRate_Org())

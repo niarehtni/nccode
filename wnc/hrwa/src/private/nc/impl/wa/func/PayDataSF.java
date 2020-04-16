@@ -24,9 +24,8 @@ import nc.vo.wa.pub.YearPeriodSeperatorVO;
  * @修改人:
  * @修改日期:
  */
-public class PayDataSF extends AbstractPreExcutorFormulaParse implements IFormulaAli{
+public class PayDataSF extends AbstractPreExcutorFormulaParse implements IFormulaAli {
 	private static final long serialVersionUID = 1L;
-
 
 	public final static int DB2 = 0;
 	public final static int ORACLE = 1;
@@ -38,7 +37,8 @@ public class PayDataSF extends AbstractPreExcutorFormulaParse implements IFormul
 
 	/**
 	 * @author zhangg on 2010-6-3
-	 * @see nc.vo.wa.paydata.IFormula#excute(java.lang.Object, nc.vo.wa.pub.WaLoginContext)
+	 * @see nc.vo.wa.paydata.IFormula#excute(java.lang.Object,
+	 *      nc.vo.wa.pub.WaLoginContext)
 	 */
 	@Override
 	public void excute(Object formula, WaLoginContext context) throws BusinessException {
@@ -54,19 +54,19 @@ public class PayDataSF extends AbstractPreExcutorFormulaParse implements IFormul
 		YearPeriodSeperatorVO yearPeriodSeperatorVO = trans2YearPeriodSeperatorVO(period);
 
 		String cyear = yearPeriodSeperatorVO.getYear();
-		String	cperiod = yearPeriodSeperatorVO.getPeriod();
+		String cperiod = yearPeriodSeperatorVO.getPeriod();
 
 		String tableName = HRWACommonConstants.WA_TEMP_DATAGROUP;
-		//创建临时表
+		// 创建临时表
 		InSQLCreator isc = new InSQLCreator();
 
 		try {
 
-			String columns= "";
+			String columns = "";
 			if (getDataBaseType() == ORACLE) {
-				columns= "   pk_attribute varchar(20), group_value number(31,8) default 0  ";
-			}else{
-				columns= "   pk_attribute varchar(20), group_value decimal(31,8) default 0  ";
+				columns = "   pk_attribute varchar(20), group_value number(31,8) default 0  ";
+			} else {
+				columns = "   pk_attribute varchar(20), group_value decimal(31,8) default 0  ";
 			}
 
 			String index = "pk_attribute";
@@ -74,71 +74,76 @@ public class PayDataSF extends AbstractPreExcutorFormulaParse implements IFormul
 			getDaoManager().getBaseDao().getDBType();
 			tableName = isc.createTempTable(tableName, columns, index);
 
-			if(refld.equalsIgnoreCase("pk_dept")){
-
+			if (refld.equalsIgnoreCase("pk_dept")) {
 
 				StringBuffer sqlBuffer0 = new StringBuffer();
-				sqlBuffer0.append("     insert into  "+ tableName +"  (pk_attribute,group_value )  select  hi_psnjob.pk_dept  as pk_attribute  ," + type + "(" + itemid + " ) as group_value ");
+				sqlBuffer0.append("     insert into  " + tableName
+						+ "  (pk_attribute,group_value )  select  hi_psnjob.pk_dept  as pk_attribute  ," + type + "("
+						+ itemid + " ) as group_value ");
 				sqlBuffer0.append("          from wa_data, hi_psnjob ");
 				sqlBuffer0.append("         where hi_psnjob.pk_psnjob = wa_data.pk_psnjob ");
-				sqlBuffer0.append("           and pk_wa_class = '"+pk_wa_class+"' ");
-				sqlBuffer0.append("           and cyear ='"+cyear+"' and  cperiod = '"+cperiod+"' and  wa_data.stopflag = 'N' ");
+				sqlBuffer0.append("           and pk_wa_class = '" + pk_wa_class + "' ");
+				sqlBuffer0.append("           and cyear ='" + cyear + "' and  cperiod = '" + cperiod
+						+ "' and  wa_data.stopflag = 'N' ");
 				sqlBuffer0.append("         group by hi_psnjob.pk_dept ");
 				getBaseDao().executeUpdate(sqlBuffer0.toString());
 
 				StringBuffer sqlBuffer = new StringBuffer();
-				sqlBuffer.append("select group_value ");  //   1
+				sqlBuffer.append("select group_value "); // 1
 				sqlBuffer.append("  from wa_data, ");
-				sqlBuffer.append("       hi_psnjob,"+tableName+" ");
+				sqlBuffer.append("       hi_psnjob," + tableName + " ");
 				sqlBuffer.append(" where hi_psnjob.pk_psnjob = wa_data.pk_psnjob ");
-				sqlBuffer.append("   and "+tableName+".pk_attribute = hi_psnjob.pk_dept ");
+				sqlBuffer.append("   and " + tableName + ".pk_attribute = hi_psnjob.pk_dept ");
 				sqlBuffer.append("   and wa_data.pk_wa_data = wa_cacu_data.pk_wa_data ");
 
 				IFormula excutor = new WaOrtherFormulaPreExcutor();
 				excutor.excute(sqlBuffer.toString(), getContext());
 
-			}else if(refld.equalsIgnoreCase("pk_psncl")){
-
+			} else if (refld.equalsIgnoreCase("pk_psncl")) {
 
 				StringBuffer sqlBuffer0 = new StringBuffer();
-				sqlBuffer0.append("     insert into  "+ tableName +"  (pk_attribute,group_value )  select hi_psnjob.pk_psncl  as pk_attribute," + type + "(" + itemid + " ) as group_value ");
+				sqlBuffer0.append("     insert into  " + tableName
+						+ "  (pk_attribute,group_value )  select hi_psnjob.pk_psncl  as pk_attribute," + type + "("
+						+ itemid + " ) as group_value ");
 				sqlBuffer0.append("          from wa_data, hi_psnjob ");
 				sqlBuffer0.append("         where hi_psnjob.pk_psnjob = wa_data.pk_psnjob ");
-				sqlBuffer0.append("           and pk_wa_class = '"+pk_wa_class+"' ");
-				sqlBuffer0.append("           and cyear ='"+cyear+"' and  cperiod = '"+cperiod+"' and  wa_data.stopflag = 'N' ");
+				sqlBuffer0.append("           and pk_wa_class = '" + pk_wa_class + "' ");
+				sqlBuffer0.append("           and cyear ='" + cyear + "' and  cperiod = '" + cperiod
+						+ "' and  wa_data.stopflag = 'N' ");
 				sqlBuffer0.append("         group by hi_psnjob.pk_psncl ");
 
 				getBaseDao().executeUpdate(sqlBuffer0.toString());
 
 				StringBuffer sqlBuffer = new StringBuffer();
-				sqlBuffer.append("select group_value ");  //   1
+				sqlBuffer.append("select group_value "); // 1
 				sqlBuffer.append("  from wa_data, ");
-				sqlBuffer.append("       hi_psnjob,"+tableName+" ");
+				sqlBuffer.append("       hi_psnjob," + tableName + " ");
 				sqlBuffer.append(" where hi_psnjob.pk_psnjob = wa_data.pk_psnjob ");
-				sqlBuffer.append("   and "+tableName+".pk_attribute = hi_psnjob.pk_psncl ");
+				sqlBuffer.append("   and " + tableName + ".pk_attribute = hi_psnjob.pk_psncl ");
 				sqlBuffer.append("   and wa_data.pk_wa_data = wa_cacu_data.pk_wa_data ");
 
 				IFormula excutor = new WaOrtherFormulaPreExcutor();
 				excutor.excute(sqlBuffer.toString(), getContext());
 
-			}else{
+			} else {
 				// 组SQL语句
 
 				StringBuffer sqlBuffer0 = new StringBuffer();
-				sqlBuffer0.append("     insert into  "+ tableName +"  (pk_attribute,group_value )  select "+refld+"  as pk_attribute  ," + type + "(" + itemid + " ) as group_value ");
+				sqlBuffer0.append("     insert into  " + tableName + "  (pk_attribute,group_value )  select " + refld
+						+ "  as pk_attribute  ," + type + "(" + itemid + " ) as group_value ");
 				sqlBuffer0.append("          from wa_data ");
-				sqlBuffer0.append("         where  pk_wa_class = '"+pk_wa_class+"' ");
-				sqlBuffer0.append("           and cyear ='"+cyear+"' and  cperiod = '"+cperiod+"' and  wa_data.stopflag = 'N' ");
-				sqlBuffer0.append("         group by  "+refld );
+				sqlBuffer0.append("         where  pk_wa_class = '" + pk_wa_class + "' ");
+				sqlBuffer0.append("           and cyear ='" + cyear + "' and  cperiod = '" + cperiod
+						+ "' and  wa_data.stopflag = 'N' ");
+				sqlBuffer0.append("         group by  " + refld);
 				getBaseDao().executeUpdate(sqlBuffer0.toString());
 
 				StringBuffer sqlBuffer = new StringBuffer();
-				sqlBuffer.append("select group_value ");                   //   1
-				sqlBuffer.append("  from wa_data, "+tableName+" ");
+				sqlBuffer.append("select group_value "); // 1
+				sqlBuffer.append("  from wa_data, " + tableName + " ");
 
-				sqlBuffer.append(" where "+tableName+".pk_attribute = wa_data. "+refld+" ");
+				sqlBuffer.append(" where " + tableName + ".pk_attribute = wa_data. " + refld + " ");
 				sqlBuffer.append("   and wa_data.pk_wa_data = wa_cacu_data.pk_wa_data ");
-
 
 				IFormula excutor = new WaOrtherFormulaPreExcutor();
 				excutor.excute(sqlBuffer.toString(), getContext());
@@ -147,23 +152,30 @@ public class PayDataSF extends AbstractPreExcutorFormulaParse implements IFormul
 		} catch (Exception e) {
 			Logger.error(e.getMessage(), e);
 			WaClassItemVO vo = (WaClassItemVO) context.getInitData();
-			throw new BusinessException(ResHelper.getString("60130paydata","060130paydata0444")/*@res "薪资项目:"*/ + vo.getMultilangName() + ResHelper.getString("60130paydata","060130paydata0445")/*@res "公式设置错误。 请检查。"*/);
+			throw new BusinessException(ResHelper.getString("60130paydata", "060130paydata0444")/*
+																								 * @
+																								 * res
+																								 * "薪资项目:"
+																								 */
+					+ vo.getMultilangName() + ResHelper.getString("60130paydata", "060130paydata0445")/*
+																									 * @
+																									 * res
+																									 * "公式设置错误。 请检查。"
+																									 */);
 
 		}
 	}
 
-
-
-
-
 	/**
 	 * @author zhangg on 2010-6-10
-	 * @see nc.vo.wa.formula.IFormulaAli#getAliItemKeys(nc.vo.wa.classitem.WaClassItemVO, nc.vo.wa.pub.WaLoginContext, nc.vo.hr.func.FunctionVO)
+	 * @see nc.vo.wa.formula.IFormulaAli#getAliItemKeys(nc.vo.wa.classitem.WaClassItemVO,
+	 *      nc.vo.wa.pub.WaLoginContext, nc.vo.hr.func.FunctionVO)
 	 */
 	@Override
-	public String[] getAliItemKeys(WaClassItemVO itemVO, WaLoginContext context, FunctionVO functionVO) throws BusinessException {
+	public String[] getAliItemKeys(WaClassItemVO itemVO, WaLoginContext context, FunctionVO functionVO)
+			throws BusinessException {
 
-		if(itemVO == null || context == null || functionVO == null || itemVO.getVformula() == null){
+		if (itemVO == null || context == null || functionVO == null || itemVO.getVformula() == null) {
 			return null;
 		}
 
@@ -176,25 +188,16 @@ public class PayDataSF extends AbstractPreExcutorFormulaParse implements IFormul
 		String itemid = arguments[1];
 		String period = arguments[2];
 
-
-		//看薪资类别是否相同
-		if(!pk_wa_class.equalsIgnoreCase(context.getPk_wa_class())){
+		// 看薪资类别是否相同
+		if (!pk_wa_class.equalsIgnoreCase(context.getPk_wa_class())) {
 			return null;
 		}
-		//看薪资期间是本期间
-		if(!period.equals(same_period) && !period.equals(context.getWaYear() + context.getWaPeriod())){
+		// 看薪资期间是本期间
+		if (!period.equals(same_period) && !period.equals(context.getWaYear() + context.getWaPeriod())) {
 			return null;
 		}
 
+		return new String[] { itemid };
 
-		return new String[]{itemid};
-
-	}
-
-	private BaseDAO getBaseDao() {
-		if (baseDao == null) {
-			baseDao = new BaseDAO();
-		}
-		return baseDao;
 	}
 }

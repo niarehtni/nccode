@@ -111,7 +111,7 @@
 				        <ref bean="separatorAction" />
 				
 				        <ref bean="refreshAction" />
-				        <!--<ref bean="printActionGroup" />-->
+				        <ref bean="printActionGroup" />
 			        </list>
 		    </property>
 		    <property name="editActions">
@@ -172,20 +172,27 @@
 		</property>
 	</bean>
 	<!-- Ô¤ÀÀ -->
-	<bean id="printpreviewaction" class="nc.ui.pubapp.uif2app.actions.SingleTablePrintAction">
-		<property name="preview" value="true" />
+	<bean id="printpreviewaction" class="nc.ui.hr.uif2.action.print.TemplatePreviewAction">
 		<property name="model" ref="batchBillTableModel" />
-		<property name="editor" ref="list" />
+		<property name="printDlgParentConatiner" ref="list" />
+		<property name="datasource" ref="datasource" />
+		<property name="nodeKey" value="twhrbasedoc" />
 	</bean>
 	<!-- ´òÓ¡ -->
-	<bean id="printaction" class="nc.ui.pubapp.uif2app.actions.SingleTablePrintAction">
-		<property name="preview" value="false" />
+	<bean id="printaction" class="nc.ui.hr.uif2.action.print.TemplatePrintAction">
 		<property name="model" ref="batchBillTableModel" />
-		<property name="editor" ref="list" />
+		<property name="printDlgParentConatiner" ref="list" />
+		<property name="datasource" ref="datasource" />
+		<property name="nodeKey" value="twhrbasedoc" />
 	</bean>
 	<!-- Êä³ö -->
-    <bean id="outputAction" class="nc.ui.pubapp.uif2app.actions.OutputAction">
-       <property name="model" ref="batchBillTableModel" />
-       <property name="parent" ref="list" />
+    <bean id="outputAction" class="nc.ui.hr.uif2.action.print.ExportCardAction">
+		<property name="model" ref="batchBillTableModel" />
+		<property name="printDlgParentConatiner" ref="list" />
+		<property name="datasource" ref="datasource" />
+		<property name="nodeKey" value="twhrbasedoc" />
 	</bean>	
+	<bean id="datasource" class="nc.ui.bd.pub.actions.print.MetaDataAllDatasSource">
+		<property name="model" ref="batchBillTableModel" />
+	</bean>
 </beans>

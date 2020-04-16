@@ -191,14 +191,15 @@ public class CheckAction extends PayDataBaseAction {
 																											 * "秒内计算完成."
 																											 */,
 							getContext());
+					putValue(MESSAGE_AFTER_ACTION, ResHelper.getString("60130paydata", "060130paydata0522")/*
+																											 * @
+																											 * res
+																											 * "审核成功。"
+																											 */);
 				}
 			}
 		}.execute();
-		putValue(this.MESSAGE_AFTER_ACTION, ResHelper.getString("60130paydata", "060130paydata0522")/*
-																									 * @
-																									 * res
-																									 * "审核成功。"
-																									 */);
+
 	}
 
 	@SuppressWarnings("unchecked")

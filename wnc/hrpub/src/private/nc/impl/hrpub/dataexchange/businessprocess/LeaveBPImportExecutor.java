@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -24,6 +23,7 @@ import nc.itf.ta.ILeaveOffManageMaintain;
 import nc.itf.ta.ILeaveRegisterManageMaintain;
 import nc.itf.ta.ILeaveRegisterQueryMaintain;
 import nc.itf.ta.ITBMPsndocQueryService;
+import nc.itf.ta.algorithm.BillProcessHelper;
 import nc.itf.ta.algorithm.DateScopeUtils;
 import nc.itf.ta.algorithm.IDateScope;
 import nc.pubitf.ta.overtime.ISegDetailService;
@@ -73,7 +73,7 @@ public class LeaveBPImportExecutor extends DataImportExecutor implements IDataEx
 					LeaveRegVO vo = new LeaveRegVO();
 
 					vo.setBillsource(0);
-					vo.setCreationtime(new UFDateTime(getDateString((String) rowNCMap.get(rowNo + ":creationtime"))));
+					vo.setCreationtime(new UFDateTime());
 					vo.setCreator(this.getCuserid());
 					vo.setIslactation(UFBoolean.FALSE);
 					// 去掉\r\n
@@ -81,14 +81,17 @@ public class LeaveBPImportExecutor extends DataImportExecutor implements IDataEx
 					vo.setLeavebegintime(new UFDateTime(getDateString((String) rowNCMap.get(rowNo + ":leavebegintime"))));
 					vo.setLeavebegindate(new UFLiteralDate(getDateString((String) rowNCMap.get(rowNo
 							+ ":leavebegintime"))));
-					String leavebegindate = getDateString((String) rowNCMap.get(rowNo + ":leavebegintime"));
 					vo.setLeaveendtime(new UFDateTime(getDateString((String) rowNCMap.get(rowNo + ":leaveendtime"))));
 					vo.setLeaveenddate(new UFLiteralDate(getDateString((String) rowNCMap.get(rowNo + ":leaveendtime"))));
+					vo.setBacktime(rowNCMap.get(rowNo + ":backtime") == null ? null : new UFDateTime(
+							getDateString((String) rowNCMap.get(rowNo + ":backtime"))));
 					vo.setPk_psndoc((String) rowNCMap.get(rowNo + ":pk_psndoc"));
 					vo.setLeaveindex(1);
 					vo.setFreezedayorhour(UFDouble.ZERO_DBL);
 					vo.setRealdayorhour(UFDouble.ZERO_DBL);
 					vo.setRestdayorhour(UFDouble.ZERO_DBL);
+
+					vo.setEffectivedate(BillProcessHelper.getShiftRegDateByLeave(vo));
 
 					PsndocDismissedValidator dismChecker = new PsndocDismissedValidator(vo.getLeavebegintime());
 					dismChecker.validate(vo.getPk_psndoc(), vo.getLeavebegindate());
@@ -128,6 +131,14 @@ public class LeaveBPImportExecutor extends DataImportExecutor implements IDataEx
 					String leaveType = this.getTimeItemByCode(this.getRowLeaveType().get(rowNo));
 					vo.setPk_leavetype(leaveType);
 
+					//#33336 & #33620 補上哺乳假M11，帶入預設值 By Jimmy20200320
+					if(leaveType != null){
+						if(leaveType.equals("1002Z710000000021ZM3")){
+							vo.setIslactation(UFBoolean.TRUE);
+							vo.setLactationholidaytype(1);
+							vo.setLactationhour(new UFDouble(60.0D));
+						}
+					}
 					// PK_LEAVETYPECOPY
 					String leaveTypeCopy = this.getTimeItemCopyByOrg(leaveType, this.getPk_org());
 					// 通过休假类别查找休假时长的计量单位
@@ -140,9 +151,12 @@ public class LeaveBPImportExecutor extends DataImportExecutor implements IDataEx
 						vo.setLeavehour(new UFDouble((String) rowNCMap.get(rowNo + ":leavehour")));
 					}
 					vo.setLength(vo.getLeavehour());
-					vo.setPk_leavetypecopy(leaveTypeCopy);
+					vo.setPk_leavetypecopy(leaveTypeCopy); 
 
-					Map<String, Object> psnjob = this.getPsnjob(vo.getPk_psndoc(), vo.getLeavebegindate().toString());
+					String startDate = vo.getLeavebegindate().toString();
+					startDate = dismChecker.getShiftRegDateByDateTime(vo.getPk_psndoc(), vo.getLeavebegintime(),
+							new UFLiteralDate(startDate)).toString();
+					Map<String, Object> psnjob = this.getPsnjob(vo.getPk_psndoc(), startDate);
 					if (psnjob != null && psnjob.size() > 0 && !StringUtils.isEmpty((String) psnjob.get("pk_psnjob"))) {
 						vo.setPk_psnjob((String) psnjob.get("pk_psnjob"));
 						vo.setPk_dept_v((String) psnjob.get("pk_dept_v"));
@@ -241,15 +255,29 @@ public class LeaveBPImportExecutor extends DataImportExecutor implements IDataEx
 					// 判断传入的数据是否是销假数据
 					LeaveRegVO lvo = this.getRowNCVO().get(s);
 					if (lvo.getLeavehour().doubleValue() < 0) {
+						//#33695 查詢請假單，需要加入leavebegintime & leaveendtime作條件 By Jimmy20200318
 						Collection<LeaveRegVO> leaveRegvos = this.getBaseDAO().retrieveByClause(LeaveRegVO.class,
-								"pk_psndoc = '" + lvo.getPk_psndoc() + "'");
+								"pk_psndoc = '" + lvo.getPk_psndoc() + "' " + 
+								"AND leavebegintime <= '" + lvo.getLeavebegintime().toString().replace("+", " ") + "' " + 
+								"AND leaveendtime >= '" + lvo.getLeaveendtime().toString().replace("+", " ") + "' " 
+								);
+						//#33695 By Jimmy20200319
+						if(leaveRegvos == null || leaveRegvos.size() == 0 ){
+							throw new BusinessException("未找到期間內的休假登記單");
+						}
 						for (LeaveRegVO lgvo : leaveRegvos) {
-							if ((lgvo.getLeavebegintime().toString().equals(lvo.getLeavebegintime().toString()) || lgvo
-									.getLeavebegintime().before(lvo.getLeavebegintime()))
-									&& (lgvo.getLeaveendtime().toString().equals(lvo.getLeaveendtime().toString()) || lgvo
-											.getLeaveendtime().after(lvo.getLeavebegintime()))
-									&& lgvo.getPk_leavetype().equals(lvo.getPk_leavetype())
-									&& !lgvo.getIsleaveoff().booleanValue()) {
+							if (
+									(
+										lgvo.getLeavebegintime().toString().equals(lvo.getLeavebegintime().toString()) || 
+										lgvo.getLeavebegintime().before(lvo.getLeavebegintime())
+									) && 
+									(
+										lgvo.getLeaveendtime().toString().equals(lvo.getLeaveendtime().toString()) || 
+										lgvo.getLeaveendtime().after(lvo.getLeavebegintime())
+									) && 
+									lgvo.getPk_leavetype().equals(lvo.getPk_leavetype()) && !lgvo.getIsleaveoff().booleanValue()
+								) 
+							{
 								// 先在tbm_leaveoff中生成一张单据
 								AggLeaveoffVO aggvo = new AggLeaveoffVO();
 								aggvo.setIsBillLock(true);
@@ -257,9 +285,7 @@ public class LeaveBPImportExecutor extends DataImportExecutor implements IDataEx
 								//
 								LeaveoffVO leaveoff = new LeaveoffVO();
 								leaveoff.setPk_psnjob(lvo.getPk_psnjob());
-								leaveoff.setBillBeginDate(lvo.getBegindate());
-								leaveoff.setDifferencehour(new UFDouble(0));
-								leaveoff.setApply_date(new UFLiteralDate(new Date()));
+								leaveoff.setApply_date(new UFLiteralDate(lvo.getCreationtime().toString()));
 								leaveoff.setLeaveenddate(lvo.getLeaveenddate());
 								leaveoff.setPk_billtype("6406");
 								leaveoff.setScope_start_datetime(lvo.getLeavebegintime());
@@ -267,9 +293,9 @@ public class LeaveBPImportExecutor extends DataImportExecutor implements IDataEx
 								leaveoff.setRegbegintimecopy(lvo.getLeavebegintime());
 								leaveoff.setRegenddatecopy(lvo.getEnddate());
 								leaveoff.setApprove_state(1);
-								leaveoff.setApprove_time((new UFDateTime(sdf.format(new Date()))));
+								leaveoff.setApprove_time(lvo.getApprove_time());
 								leaveoff.setApprover(lgvo.getCreator());
-								leaveoff.setBillmaker(lgvo.getCreator());
+								leaveoff.setBillmaker("NC_USER0000000000000");
 								leaveoff.setRegendtimecopy(lvo.getLeaveendtime());
 								leaveoff.setPk_group(lvo.getPk_group());
 								leaveoff.setBegindate(lvo.getBegindate());
@@ -277,7 +303,6 @@ public class LeaveBPImportExecutor extends DataImportExecutor implements IDataEx
 								leaveoff.setPk_psndoc(lvo.getPk_psndoc());
 								leaveoff.setPk_leavereg(lgvo.getPk_leavereg());
 								leaveoff.setPk_leavetypecopy(lvo.getPk_leavetypecopy());
-								leaveoff.setLeaveendtime(lvo.getLeaveendtime());
 								leaveoff.setIslactation(UFBoolean.FALSE);
 								leaveoff.setLeaveendtime(lvo.getLeaveendtime());
 								leaveoff.setPk_org(lvo.getPk_org());
@@ -285,7 +310,7 @@ public class LeaveBPImportExecutor extends DataImportExecutor implements IDataEx
 								leaveoff.setDr(0);
 								leaveoff.setAppBill(false);
 								leaveoff.setLeavebegintime(lvo.getLeavebegintime());
-								leaveoff.setRegleavehourcopy(lvo.getLeavehour().abs());
+								leaveoff.setRegleavehourcopy(lgvo.getLeavehour());
 								leaveoff.setLeavebegindate(lvo.getLeavebegindate());
 								leaveoff.setContainsLastSecond(false);
 								leaveoff.setRegbegindatecopy(lvo.getBegindate());
@@ -319,10 +344,8 @@ public class LeaveBPImportExecutor extends DataImportExecutor implements IDataEx
 										ILeaveOffManageMaintain.class);
 								leaveoffService.insertData(aggvo);
 
-								// 销假单--在tbm_leavereg中更新数据
-								lgvo.setLeaveremark(lgvo.getLeaveremark() + ";销假原因：" + lvo.getLeaveremark());
-								// 判断销假时间与休假时间的关系
 								// 销假开始日期=休假开始日期 && 销假结束日期<=休假结束日期
+
 								if (lvo.getLeavebegintime().toString().equals(lgvo.getLeavebegintime().toString())
 										&& ((lvo.getLeaveendtime().before(lgvo.getLeaveendtime()) || lvo
 												.getLeaveendtime().toString().equals(lgvo.getLeaveendtime().toString())))) {
@@ -345,6 +368,15 @@ public class LeaveBPImportExecutor extends DataImportExecutor implements IDataEx
 									throw new BusinessException("销假日期有误");
 								}
 
+								// 销假单--在tbm_leavereg中更新数据
+								lgvo.setLeaveremark(lgvo.getLeaveremark() + ";销假原因：" + lvo.getLeaveremark());
+								lgvo.setBacktime(lvo.getApprove_time());
+								lgvo.setLeavehour(leaveoff.getReallyleavehour());
+								// 判断销假时间与休假时间的关系
+								this.getBaseDAO().updateVO(lgvo);
+							}else {
+								//#33695 By Jimmy20200313
+								throw new BusinessException("未找到對應的休假登記單");
 							}
 						}
 					} else {
@@ -361,22 +393,37 @@ public class LeaveBPImportExecutor extends DataImportExecutor implements IDataEx
 								maxDateScope.getBegindate(), maxDateScope.getEnddate(), false);
 
 						if (MapUtils.isEmpty(psndocMap))
-							break;
+							continue;
 						for (LeaveRegVO vo : vos) {
 							if (vo.getLeaveindex() == null)
 								vo.setLeaveindex(1);
 							if (vo.getIsleaveoff() == null)
 								vo.setIsleaveoff(UFBoolean.FALSE);
 
+							PsndocDismissedValidator dismChecker = new PsndocDismissedValidator(vo.getLeavebegintime());
+							String startDate = vo.getLeavebegindate().toString();
+							startDate = dismChecker.getShiftRegDateByDateTime(vo.getPk_psndoc(),
+									vo.getLeavebegintime(), new UFLiteralDate(startDate)).toString();
+							Map<String, Object> psnjob = this.getPsnjob(vo.getPk_psndoc(), startDate);
+							if (psnjob != null && psnjob.size() > 0
+									&& !StringUtils.isEmpty((String) psnjob.get("pk_psnjob"))) {
+								vo.setPk_psnjob((String) psnjob.get("pk_psnjob"));
+								vo.setPk_dept_v((String) psnjob.get("pk_dept_v"));
+								vo.setPk_psnorg((String) psnjob.get("pk_psnorg"));
+							} else {
+								throw new BusinessException("未找到員工工作記錄");
+							}
+
 							TBMPsndocVO psndocVO = TBMPsndocVO.findIntersectionVO(psndocMap.get(vo.getPk_psndoc()),
 									getShiftRegDateByLeaveReg(vo).toString());
-							if (psndocVO == null)
+							if (psndocVO == null){
 								throw new BusinessException(ResHelper.getString("6017psndoc", "06017psndoc0131",
 										psndocService.getPsnName(vo.getPk_psndoc())));
-							vo.setPk_adminorg(psndocVO.getPk_adminorg());
-							vo.setLeavehour(rowNCVO.get(s).getLeavehour());
+							}else{
+								vo.setPk_adminorg(psndocVO.getPk_adminorg());
+								vo.setLeavehour(rowNCVO.get(s).getLeavehour());
+							}
 						}
-
 						this.getBaseDAO().insertVOArray(vos);
 
 						// insertLeaveRegHistoryVO(vos, VOStatus.UPDATED);// add
@@ -553,5 +600,11 @@ public class LeaveBPImportExecutor extends DataImportExecutor implements IDataEx
 			str = str.replaceAll("\\\\r|\\\\n", "");
 		}
 		return str;
+	}
+
+	@Override
+	public void doQueryByBP() throws BusinessException {
+		// TODO 自動產生的方法 Stub
+
 	}
 }

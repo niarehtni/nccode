@@ -1,6 +1,8 @@
 package nc.impl.om.deptadj;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -8,15 +10,16 @@ import java.util.Random;
 import nc.bs.dao.BaseDAO;
 import nc.bs.dao.DAOException;
 import nc.bs.framework.common.NCLocator;
+import nc.bs.logging.Logger;
 import nc.itf.om.IDeptAdjustService;
 import nc.itf.om.IDeptManageService;
 import nc.itf.om.IDeptQueryService;
 import nc.itf.org.IOrgVersionManageService;
 import nc.jdbc.framework.processor.ArrayListProcessor;
 import nc.jdbc.framework.processor.BeanListProcessor;
-import nc.jdbc.framework.processor.BeanProcessor;
 import nc.jdbc.framework.processor.ColumnProcessor;
 import nc.jdbc.framework.processor.MapListProcessor;
+import nc.vo.hi.psndoc.PsnJobVO;
 import nc.vo.logging.Debug;
 import nc.vo.om.hrdept.AggHRDeptVO;
 import nc.vo.om.hrdept.DeptChangeType;
@@ -32,6 +35,9 @@ import nc.vo.pub.lang.UFBoolean;
 import nc.vo.pub.lang.UFDate;
 import nc.vo.pub.lang.UFDateTime;
 import nc.vo.pub.lang.UFLiteralDate;
+import nc.vo.vorg.DeptVersionVO;
+
+import org.apache.commons.lang.StringUtils;
 
 public class DeptAdjustServiceImpl implements IDeptAdjustService {
 
@@ -46,7 +52,7 @@ public class DeptAdjustServiceImpl implements IDeptAdjustService {
 
 	/** baseDao **/
 	private BaseDAO baseDAO = null;
-	
+
 	/**
 	 * 为新版本部门
 	 */
@@ -96,7 +102,9 @@ public class DeptAdjustServiceImpl implements IDeptAdjustService {
 		try {
 			// ssx MOD 取當前日期生效部門版本 改為 取主檔上指定的最新版本
 			// on 2019-06-28
-			pk_dept_v = ((HRDeptVO) this.getBaseDAO().retrieveByPK(HRDeptVO.class, pk_dept)).getPk_vid();
+			if (!StringUtils.isEmpty(pk_dept)) {
+				pk_dept_v = ((HRDeptVO) this.getBaseDAO().retrieveByPK(HRDeptVO.class, pk_dept)).getPk_vid();
+			}
 			// end
 		} catch (BusinessException e) {
 			e.printStackTrace();
@@ -105,38 +113,46 @@ public class DeptAdjustServiceImpl implements IDeptAdjustService {
 	}
 
 	@Override
-	public String executeDeptVersion(HRDeptAdjustVO[] results, UFLiteralDate date) throws BusinessException {
+	public String executeDeptVersion(HRDeptAdjustVO[] deptAdjVOs, UFLiteralDate date) throws BusinessException {
 		StringBuilder errMsg = new StringBuilder();
 
-		if (results == null || results.length == 0) {
+		if (deptAdjVOs == null || deptAdjVOs.length == 0) {
 			return errMsg.toString();
 		}
 
-		for (HRDeptAdjustVO vo : results) {
-			if (vo == null) {
+		for (HRDeptAdjustVO deptAdjVO : deptAdjVOs) {
+			if (deptAdjVO == null) {
 				continue;
 			}
 			String sqlStr = "";
 			try {
-				AggHRDeptVO saveVO = new AggHRDeptVO();
-				HRDeptVO deptVO = HRDeptAdjust2HRDeptVO(vo);
+				AggHRDeptVO deptAggVO = new AggHRDeptVO();
+				HRDeptVO deptVO = HRDeptAdjust2HRDeptVO(deptAdjVO);
 				// 獲取當前的部門信息
-				sqlStr = "select * from org_dept where pk_dept = '" + deptVO.getPk_dept() + "' ";
-				HRDeptVO curVO = (HRDeptVO) getBaseDAO().executeQuery(sqlStr, new BeanProcessor(HRDeptVO.class));
+				HRDeptVO curVO = (HRDeptVO) getBaseDAO().retrieveByPK(HRDeptVO.class, deptVO.getPk_dept());
+				if (!(deptAdjVO.getEnablestate() == 1 && !PK_VID_FOR_DEPT_VER.equals(deptAdjVO.getPk_dept_v()))) {
+					checkDeptCanceled(curVO, date);
+				}
 
 				// MOD (PM25602：增加部門當前版本開始日期晚於等於生效日期時，不進行版本化)
 				// added on 2019-03-28 by ssx
 				if (curVO.getVstartdate() != null) {
 					if (curVO.getVstartdate().toUFLiteralDate(UFLiteralDate.BASE_TIMEZONE).isSameDate(date)
 							|| curVO.getVstartdate().toUFLiteralDate(UFLiteralDate.BASE_TIMEZONE)
-									.after(vo.getEffectivedate())) {
-						errMsg.append("部門 [" + curVO.getCode() + "] 已存在易於申請單生效日期的版本，不能進行版本化處理。");
+									.after(deptAdjVO.getEffectivedate())) {
+						errMsg.append("部門 [" + curVO.getCode() + "] 已存在早於申請單生效日期的版本，不能進行版本化處理。");
 						continue;
 					}
 				}
 
-				if (date.after(vo.getEffectivedate())) {
-					date = vo.getEffectivedate();
+				if (curVO.getPk_vid() != null && curVO.getPk_vid().trim().equals(PK_VID_FOR_DEPT_VER)
+						&& curVO.getCreatedate() != null && curVO.getCreatedate().after(new UFLiteralDate())) {
+					errMsg.append("部門 [" + curVO.getCode() + "] 未達生效日期，不能進行版本化處理。");
+					continue;
+				}
+
+				if (date.after(deptAdjVO.getEffectivedate())) {
+					date = deptAdjVO.getEffectivedate();
 				}
 				// MOD END
 
@@ -149,21 +165,21 @@ public class DeptAdjustServiceImpl implements IDeptAdjustService {
 				// 設置啟用
 				deptVO.setEnablestate(2);
 				deptVO.setIslastversion(new UFBoolean(true));
-				saveVO.setParentVO(deptVO);
+				deptAggVO.setParentVO(deptVO);
 
 				// 处理撤销标志
-				if (curVO != null && curVO.getHrcanceled() != null && vo.getHrcanceled() != null) {
+				if (curVO != null && curVO.getHrcanceled() != null && deptAdjVO.getHrcanceled() != null) {
 					// 原来是撤销状态,且现在为非撤销状态,先取消撤銷
-					if (curVO.getHrcanceled().booleanValue() && !vo.getHrcanceled().booleanValue()) {
+					if (curVO.getHrcanceled().booleanValue() && !deptAdjVO.getHrcanceled().booleanValue()) {
 						DeptHistoryVO historyVO = buildDeptHistoryVO4UnCancel(deptVO);
 						// 反撤銷
-						AggHRDeptVO[] uncanceledDepts = getDeptManageService().uncancel(saveVO, historyVO, false,
+						AggHRDeptVO[] uncanceledDepts = getDeptManageService().uncancel(deptAggVO, historyVO, false,
 								false, true);
 						// 部门版本化操作完善 王永文 20190502 begin
 						if (uncanceledDepts != null && uncanceledDepts.length > 0) {
-							saveVO = uncanceledDepts[0];
+							deptAggVO = uncanceledDepts[0];
 						}
-						HRDeptVO parentVO = (HRDeptVO) saveVO.getParentVO();
+						HRDeptVO parentVO = (HRDeptVO) deptAggVO.getParentVO();
 						IOrgVersionManageService orgManageService = NCLocator.getInstance().lookup(
 								IOrgVersionManageService.class);
 						String vno = queryNextVersionNO("org_dept_v", "pk_dept", deptVO.getPk_dept(),
@@ -190,7 +206,7 @@ public class DeptAdjustServiceImpl implements IDeptAdjustService {
 							continue;
 						}
 						// 把名称再给update回来,同时把部门表和部门版本表的负责人、副主管、所在地点更新了
-						updateOrgName(vo, hrDptNewVerVO.getPk_vid());
+						updateModifiedInfo(deptAdjVO, hrDptNewVerVO.getPk_vid());
 						/*
 						 * AggHRDeptVO[] newVOs =
 						 * getDeptManageService().createDeptVersion
@@ -206,16 +222,16 @@ public class DeptAdjustServiceImpl implements IDeptAdjustService {
 							hrdeptvo.setApprovenum(parentVO.getApprovenum());
 							hrdeptvo.setDeptduty(parentVO.getDeptduty());
 							hrdeptvo.setManagescope(parentVO.isManagescope());
-							hrdeptvo.setDept_charge(parentVO.getDept_charge());
+							hrdeptvo.setDept_charge(deptAdjVO.getPrincipal());
 							newVO.setParentVO(hrdeptvo);
-							saveVO = getDeptManageService().update(newVO, false);
+							deptAggVO = getDeptManageService().update(newVO, false);
 						}
 						// 部门版本化操作完善 王永文 20190502 end
 						// 回写标志:
-						sqlStr = "update om_deptadj set iseffective = 'Y' where pk_deptadj = '" + vo.getPk_deptadj()
-								+ "'";
+						sqlStr = "update om_deptadj set iseffective = 'Y' where pk_deptadj = '"
+								+ deptAdjVO.getPk_deptadj() + "'";
 						getBaseDAO().executeUpdate(sqlStr);
-						newPkdeptV = ((HRDeptVO) saveVO.getParentVO()).getPk_vid();
+						newPkdeptV = ((HRDeptVO) deptAggVO.getParentVO()).getPk_vid();
 						sqlStr = "update  hi_psnjob set pk_dept_v = '" + newPkdeptV + "'  where begindate <= '"
 								+ date.toStdString() + "' and isnull(enddate,'9999-12-31') > '" + date.toStdString()
 								+ "' and  pk_dept = '" + oldPkDept + "'";
@@ -224,11 +240,17 @@ public class DeptAdjustServiceImpl implements IDeptAdjustService {
 					}
 				}
 
-				if (vo.getPk_dept_v() != null && vo.getPk_dept_v().equals(PK_VID_FOR_DEPT_VER)) {
+				if (curVO.getPk_vid() != null && curVO.getPk_vid().trim().equals(PK_VID_FOR_DEPT_VER)) {
 					// 如果是新增,那麼先刪除主表上的檔案信息
-					getBaseDAO().deleteVO(deptVO);
+					getBaseDAO().deleteVO(curVO);
+					if (StringUtils.isEmpty((String) deptAggVO.getParentVO().getAttributeValue("innercode"))) {
+						deptAggVO.getParentVO().setAttributeValue(
+								"innercode",
+								getInnerCodeByFatherOrg((String) deptAggVO.getParentVO().getAttributeValue(
+										"pk_fatherorg")));
+					}
 					// 執行新增標準平台新增邏輯
-					AggHRDeptVO rtnVO = getDeptManageService().insert(saveVO);
+					AggHRDeptVO rtnVO = getDeptManageService().insert(deptAggVO);
 					String pk_dept = null;
 					if (rtnVO.getParentVO() != null) {
 						pk_dept = rtnVO.getParentVO().getPrimaryKey();
@@ -238,7 +260,7 @@ public class DeptAdjustServiceImpl implements IDeptAdjustService {
 				} else {
 					DeptHistoryVO historyVO = buildDeptHistoryVO4Update(deptVO, date);
 					// 部门版本化操作完善 王永文 20190502 begin
-					HRDeptVO parentVO = (HRDeptVO) saveVO.getParentVO();
+					HRDeptVO parentVO = (HRDeptVO) deptAggVO.getParentVO();
 					IOrgVersionManageService orgManageService = NCLocator.getInstance().lookup(
 							IOrgVersionManageService.class);
 					String vno = queryNextVersionNO("org_dept_v", "pk_dept", deptVO.getPk_dept(),
@@ -256,34 +278,35 @@ public class DeptAdjustServiceImpl implements IDeptAdjustService {
 					// 调用标准产品的标准版本化操作
 					DeptVO hrDptNewVerVO = (DeptVO) orgManageService.createNewVersionVO("nc.vo.org.DeptVO", pvo, "版本更新"
 							+ date.getYear() + vno, date.getYear() + vno, new UFDate(date.toString() + " 00:00:00"),
-							new UFDate(date.getDateBefore(1).toString() + " 23:59:59"));
+							new UFDateTime(date.getDateBefore(1).toString() + " 23:59:59").getDate());
 					if (hrDptNewVerVO == null) {
 						continue;
 					}
 					// 把名称再给update回来,同时把部门表和部门版本表的负责人、副主管、所在地点更新了
-					updateOrgName(vo, hrDptNewVerVO.getPk_vid());
+					updateModifiedInfo(deptAdjVO, hrDptNewVerVO.getPk_vid());
 					AggHRDeptVO newVO = new AggHRDeptVO();
 					parentVO = (HRDeptVO) new BaseDAO().retrieveByPK(HRDeptVO.class, hrDptNewVerVO.getPk_dept());
 					newVO.setParentVO(parentVO);
-					// 如果是修改,直接修改所有信息
-					getBaseDAO().updateVO((HRDeptVO) newVO.getParentVO());
 					newPkdeptV = ((HRDeptVO) newVO.getParentVO()).getPk_vid();
-					newVO.setParentVO((HRDeptVO) getBaseDAO().retrieveByPK(HRDeptVO.class,
-							newVO.getParentVO().getPrimaryKey()));
 					// 插入部门变更历史数据
 					getBaseDAO().insertVO(historyVO);
 					// 如果部門代碼變更或部門名稱變更,則新增人員任職記錄，
 					int renameAndPrincipalChangeFlag = 0;
-					if (vo.getCode() != null && vo.getName() != null) {
-						if (!vo.getCode().equals(curVO.getCode()) || !vo.getName().equals(curVO.getName())) {
+					if (deptAdjVO.getCode() != null && deptAdjVO.getName() != null) {
+						if (!deptAdjVO.getCode().equals(curVO.getCode())
+								|| !deptAdjVO.getName().equals(curVO.getName())) {
 							// 變更了名稱
 							renameAndPrincipalChangeFlag = 1;
 						}
 					}
-					if ((vo.getPrincipal() == null && curVO.getCode() != null)
-							|| (vo.getPrincipal() != null && curVO.getPrincipal() == null)
-							|| (vo.getPrincipal() != null && curVO.getPrincipal() != null && !vo.getPrincipal().equals(
-									curVO.getPrincipal()))) {
+
+					boolean principleChanged = false;
+					if ((deptAdjVO.getPrincipal() == null && curVO.getCode() != null)
+							|| (deptAdjVO.getPrincipal() != null && curVO.getPrincipal() == null)
+							|| (deptAdjVO.getPrincipal() != null && curVO.getPrincipal() != null && !deptAdjVO
+									.getPrincipal().equals(curVO.getPrincipal()))) {
+						principleChanged = true;
+
 						// 變更了負責人
 						if (0 == renameAndPrincipalChangeFlag) {
 							historyVO.setChangetype(DeptChangeType.CHANGEPRINCIPAL);
@@ -292,42 +315,65 @@ public class DeptAdjustServiceImpl implements IDeptAdjustService {
 							renameAndPrincipalChangeFlag = 3;
 						}
 					}
-					//判断是不是修改了上级部门，如果修改了，要修改innercode wangywt 20190711
+					// 判断是不是修改了上级部门，如果修改了，要修改innercode wangywt 20190711
 					String deptIncodesql = "";
 					String randcode = "";
-					if(vo.getPk_fatherorg()==null && curVO.getPk_fatherorg()!=null){
+					if (deptAdjVO.getPk_fatherorg() == null && curVO.getPk_fatherorg() != null) {
 						randcode = get4RandomCode();
-						deptIncodesql = "update org_dept set innercode ='"+randcode+"',pk_fatherorg='~',dept_charge = '"+vo.getDept_charge()+"' where pk_dept = '"+vo.getPk_dept()+"'";
+						deptIncodesql = "update org_dept set innercode ='" + randcode
+								+ "',pk_fatherorg='~',dept_charge = '" + deptAdjVO.getDept_charge()
+								+ "' where pk_dept = '" + deptAdjVO.getPk_dept() + "'";
 						getBaseDAO().executeUpdate(deptIncodesql);
-						this.updateDeptInnercode(randcode, vo.getPk_dept());
-					}else if(vo.getPk_fatherorg()!=null  && !vo.getPk_fatherorg().equals(curVO.getPk_fatherorg())){
+						this.updateDeptInnercode(randcode, deptAdjVO.getPk_dept());
+					} else if (deptAdjVO.getPk_fatherorg() != null
+							&& !deptAdjVO.getPk_fatherorg().equals(curVO.getPk_fatherorg())) {
 						randcode = get4RandomCode();
-						deptIncodesql = "select innercode from org_dept where pk_dept = '"+vo.getPk_fatherorg()+"'";
-						List<Object> list = (List<Object>) getBaseDAO().executeQuery(deptIncodesql, new ArrayListProcessor());
+						deptIncodesql = "select innercode from org_dept where pk_dept = '"
+								+ deptAdjVO.getPk_fatherorg() + "'";
+						List<Object> list = (List<Object>) getBaseDAO().executeQuery(deptIncodesql,
+								new ArrayListProcessor());
 						Object[] obj = (Object[]) list.get(0);
-						deptIncodesql = "update org_dept set innercode ='"+obj[0].toString()+randcode+"',pk_fatherorg='"+vo.getPk_fatherorg()+"' where pk_dept = '"+vo.getPk_dept()+"'";
+						deptIncodesql = "update org_dept set innercode ='" + obj[0].toString() + randcode
+								+ "',pk_fatherorg='" + deptAdjVO.getPk_fatherorg() + "' where pk_dept = '"
+								+ deptAdjVO.getPk_dept() + "'";
 						getBaseDAO().executeUpdate(deptIncodesql);
-						this.updateDeptInnercode(obj[0].toString()+randcode, vo.getPk_dept());
+						this.updateDeptInnercode(obj[0].toString() + randcode, deptAdjVO.getPk_dept());
 					}
-					//更新dept_charge  wangywt 20190711
-					if(vo.getDept_charge()==null && curVO.getDept_charge()!=null){
-						getBaseDAO().executeUpdate("update org_dept set dept_charge = '~'  where pk_dept = '"+vo.getPk_dept()+"'");
-					}else if(vo.getDept_charge() != null && !vo.getDept_charge().equals(curVO.getDept_charge())){
-						getBaseDAO().executeUpdate("update org_dept set dept_charge = '"+vo.getDept_charge()+"' where pk_dept = '"+vo.getPk_dept()+"'");
+					// 更新dept_charge wangywt 20190711
+					if (deptAdjVO.getDept_charge() == null && curVO.getDept_charge() != null) {
+						getBaseDAO().executeUpdate(
+								"update org_dept set dept_charge = '~'  where pk_dept = '" + deptAdjVO.getPk_dept()
+										+ "'");
+					} else if (deptAdjVO.getDept_charge() != null
+							&& !deptAdjVO.getDept_charge().equals(curVO.getDept_charge())) {
+						getBaseDAO().executeUpdate(
+								"update org_dept set dept_charge = '" + deptAdjVO.getDept_charge()
+										+ "' where pk_dept = '" + deptAdjVO.getPk_dept() + "'");
 					}
-					
+
 					newPkdeptV = ((HRDeptVO) newVO.getParentVO()).getPk_vid();
 					// 部门版本化操作完善 王永文 20190502 end
+
+					// ssx added on 2019-10-25
+					// 部門負責人變更時，同步變更下級部門的上級主管
+					if (principleChanged) {
+						updateChildCharger(deptAdjVO.getPk_dept(), deptAdjVO.getPrincipal());
+						updateMemberManager(deptAdjVO.getPk_dept(), deptAdjVO.getPrincipal());
+					}
+					// end
 				}
 				// 回写标志:
-				sqlStr = "update om_deptadj set iseffective = 'Y' where pk_deptadj = '" + vo.getPk_deptadj() + "'";
+				sqlStr = "update om_deptadj set iseffective = 'Y' where pk_deptadj = '" + deptAdjVO.getPk_deptadj()
+						+ "'";
 				getBaseDAO().executeUpdate(sqlStr);
 				sqlStr = "update  hi_psnjob set pk_dept_v = '" + newPkdeptV + "'  where begindate <= '"
 						+ date.toStdString() + "' and isnull(enddate,'9999-12-31') > '" + date.toStdString()
 						+ "' and  pk_dept = '" + oldPkDept + "'";
 				getBaseDAO().executeUpdate(sqlStr);
+
 			} catch (Exception e) {
-				errMsg.append("部門版本化發生錯誤: " + e.getMessage());
+				errMsg.append("部門 [" + deptAdjVO.getCode() + "] 版本化發生錯誤: " + e.getMessage() + "\r\n");
+				Logger.error(e.getMessage());
 				continue;
 			}
 		}
@@ -335,6 +381,44 @@ public class DeptAdjustServiceImpl implements IDeptAdjustService {
 		return errMsg.toString();
 	}
 
+	private String getInnerCodeByFatherOrg(String pk_fatherOrg) throws BusinessException {
+		String fatherInnerCode = (String) this.getBaseDAO().executeQuery(
+				"select innercode from org_dept where pk_dept = '" + pk_fatherOrg + "'", new ColumnProcessor());
+		return fatherInnerCode + this.get4RandomCode();
+	}
+
+	private void updateMemberManager(String pk_dept, String principal) throws BusinessException {
+		Collection<PsnJobVO> psnJobVOs = this.getBaseDAO().retrieveByClause(
+				PsnJobVO.class,
+				"pk_psnorg=(select pk_psnorg from hi_psnorg where pk_psndoc=hi_psnjob.pk_psndoc and lastflag='Y') and pk_dept='"
+						+ pk_dept + "' and trnsevent<>4 and lastflag='Y' and isnull(jobglbdef9, '~')<> "
+						+ (StringUtils.isEmpty(principal) ? "'~'" : "'" + principal + "'"));
+		for (PsnJobVO psnJobVO : psnJobVOs) {
+			psnJobVO.setAttributeValue("jobglbdef9", principal);
+			this.getBaseDAO().updateVO(psnJobVO);
+		}
+	}
+
+	// ssx added on 2019-10-25
+	// 部門負責人變更時，同步變更下級部門的上級主管
+	private void updateChildCharger(String pk_fatherorg, String pk_psndoc) throws BusinessException {
+		Collection<HRDeptVO> childrenVos = this.getBaseDAO().retrieveByClause(HRDeptVO.class,
+				"pk_fatherorg='" + pk_fatherorg + "'");
+
+		if (childrenVos != null && childrenVos.size() > 0) {
+			for (HRDeptVO vo : childrenVos) {
+				if (!pk_psndoc.equals(vo.getAttributeValue("dept_charge"))) {
+					vo.setAttributeValue("dept_charge", pk_psndoc);
+					this.getBaseDAO().updateVO(vo);
+
+					DeptVersionVO lastVersionVo = (DeptVersionVO) this.getBaseDAO().retrieveByPK(DeptVersionVO.class,
+							vo.getPk_vid());
+					lastVersionVo.setAttributeValue("dept_charge", pk_psndoc);
+					this.getBaseDAO().updateVO(lastVersionVo);
+				}
+			}
+		}
+	}// end
 
 	private String queryNextVersionNO(String table, String pkField, String pkValue, String cyear)
 			throws BusinessException {
@@ -384,55 +468,119 @@ public class DeptAdjustServiceImpl implements IDeptAdjustService {
 		// 查询该生效日期的所有单据
 		// MOD(PM25602：修改為早於等於當前日期的所有未執行單據)
 		// added on 2019-03-28 by ssx
+		// mod tank 2020年3月5日 02:43:48 根据时间排序,处理依赖关系
 		String sqlStr = "select * from om_deptadj where effectivedate <= '" + date.toStdString()
-				+ "' and isnull(iseffective, 'N') = 'N' and dr = 0 order by effectivedate";
+				+ "' and isnull(iseffective, 'N') = 'N' and dr = 0 order by effectivedate,om_deptadj.creationtime";
 		// MOD END
 		List<HRDeptAdjustVO> needExecuteVOs = (List<HRDeptAdjustVO>) getBaseDAO().executeQuery(sqlStr,
 				new BeanListProcessor(HRDeptAdjustVO.class));
-		return executeDeptVersion(needExecuteVOs.toArray(new HRDeptAdjustVO[0]), date);
+		HRDeptAdjustVO[] sortedVOs = sortByRely(needExecuteVOs);
+		return executeDeptVersion(sortedVOs, date);
+	}
+
+	/**
+	 * 排序,保證本次執行的單據中,父部門比子部門先執行版本化
+	 * 
+	 * @param needExecuteVOs
+	 */
+	private HRDeptAdjustVO[] sortByRely(List<HRDeptAdjustVO> needExecuteVOs) {
+		if (needExecuteVOs == null || needExecuteVOs.size() < 0) {
+			return new HRDeptAdjustVO[0];
+		}
+		HRDeptAdjustVO[] rtnVOs = needExecuteVOs.toArray(new HRDeptAdjustVO[0]);
+		// 建立索引<主鍵,index>
+		Map<String, Integer> pkIndexMap = new HashMap<>();
+		for (int index = 0; index < rtnVOs.length; index++) {
+			pkIndexMap.put(rtnVOs[index].getPk_dept(), index);
+		}
+		// 循環掃描,將父部門排在子部門的前面
+		for (int index = 0; index < rtnVOs.length; index++) {
+			String pk_father = rtnVOs[index].getPk_fatherorg();
+			if (pk_father != null) {
+				// 查詢父部門是否也在本次版本化之中
+				Integer fatherIndex = pkIndexMap.get(pk_father);
+				if (fatherIndex == null) {
+					continue;
+				}
+				// 如果父部門在子部門後面,則交換
+				if (fatherIndex > index) {
+					// 交換
+					HRDeptAdjustVO temp = rtnVOs[fatherIndex];
+					rtnVOs[fatherIndex] = rtnVOs[index];
+					rtnVOs[index] = temp;
+					// index更新
+					pkIndexMap.put(rtnVOs[fatherIndex].getPk_dept(), fatherIndex);
+					pkIndexMap.put(rtnVOs[index].getPk_dept(), index);
+					// index回退一步
+					index -= 1;
+				}
+			}
+		}
+		return rtnVOs;
 	}
 
 	/**
 	 * 更新组织名称、报表组织名称、部门名称，及对应的版本名称 增加更新负责人、副主管、所在地点
 	 * 
-	 * @param vo
+	 * @param deptAdjVO
 	 * @throws DAOException
 	 */
-	private void updateOrgName(HRDeptAdjustVO vo, String vidPK) throws DAOException {
-		String name = vo.getName();
-		String name2 = vo.getName2();
-		String name3 = vo.getName3();
-		String name4 = vo.getName4();
-		String name5 = vo.getName5();
-		String name6 = vo.getName6();
-		// 更新部门表,更新负责人、副主管、所在地点,上级管理负责人
-		String sql_dept = "update org_dept set code='" + vo.getCode() + "',name = " + getNmF(name) + ", name2 = "
-				+ getNmF(name2) + ",name3=" + getNmF(name3) + ",name4=" + getNmF(name4) + ",name5=" + getNmF(name5)
-				+ ",name6=" + getNmF(name6) + ",PRINCIPAL = '" + vo.getPrincipal() + "',GLBDEF11 = '"
-				+ vo.getGlbdef11() + "', GLBDEF3 = '" + vo.getGlbdef3() + "',dept_charge = '" +vo.getDept_charge()+
-						"' where pk_dept = '" + vo.getPk_dept() + "'";
+	private void updateModifiedInfo(HRDeptAdjustVO deptAdjVO, String vidPK) throws DAOException {
+		String name = deptAdjVO.getName();
+		String name2 = deptAdjVO.getName2();
+		String name3 = deptAdjVO.getName3();
+		String name4 = deptAdjVO.getName4();
+		String name5 = deptAdjVO.getName5();
+		String name6 = deptAdjVO.getName6();
+		// 更新部门表,更新负责人(principal),副主管(glbdef3),所在地点(glbdef11),創建日期(createdate),部門級別(deptlevel),部門主管(dept_charge)
+		String sql_dept = "update org_dept set code='" + deptAdjVO.getCode() + "',name = " + getNmF(name)
+				+ ", name2 = " + getNmF(name2) + ",name3=" + getNmF(name3) + ",name4=" + getNmF(name4) + ",name5="
+				+ getNmF(name5) + ",name6=" + getNmF(name6) + ",DEPTLEVEL='" + deptAdjVO.getDeptlevel()
+				+ "', PRINCIPAL = '" + deptAdjVO.getPrincipal() + "',GLBDEF11 = '" + deptAdjVO.getGlbdef11()
+				+ "', GLBDEF3 = '" + deptAdjVO.getGlbdef3() + "',GLBDEF5=" + getNmF(name3) + ", createdate='"
+				+ deptAdjVO.getEffectivedate() + "', dept_charge = '" + deptAdjVO.getDept_charge()
+				+ "' where pk_dept = '" + deptAdjVO.getPk_dept() + "'";
 		getBaseDAO().executeUpdate(sql_dept);
-		// 更新部门版本表,更新负责人、副主管、所在地点,上级管理负责人
-		String sql_dept_v = "update org_dept_v set code='" + vo.getCode() + "', name=" + getNmF(name) + ", name2 = "
-				+ getNmF(name2) + ",name3=" + getNmF(name3) + ",name4=" + getNmF(name4) + ",name5=" + getNmF(name5)
-				+ ",name6=" + getNmF(name6) + ",PRINCIPAL = '" + vo.getPrincipal() + "',GLBDEF11 = '"
-				+ vo.getGlbdef11() + "', GLBDEF3 = '" + vo.getGlbdef3() + "',dept_charge = '" +vo.getDept_charge()
+		// 更新部门版本表,更新负责人(principal),副主管(glbdef3),所在地点(glbdef11),創建日期(createdate),部門級別(deptlevel),部門主管(dept_charge)
+		String sql_dept_v = "update org_dept_v set code='" + deptAdjVO.getCode() + "', name=" + getNmF(name)
+				+ ", name2 = " + getNmF(name2) + ",name3=" + getNmF(name3) + ",name4=" + getNmF(name4) + ",name5="
+				+ getNmF(name5) + ",name6=" + getNmF(name6) + ",DEPTLEVEL='" + deptAdjVO.getDeptlevel()
+				+ "',PRINCIPAL = '" + deptAdjVO.getPrincipal() + "',GLBDEF11 = '" + deptAdjVO.getGlbdef11()
+				+ "', GLBDEF3 = '" + deptAdjVO.getGlbdef3() + "',GLBDEF5=" + getNmF(name3) + ",createdate='"
+				+ deptAdjVO.getEffectivedate() + "',dept_charge = '" + deptAdjVO.getDept_charge()
 				+ "' where pk_vid = '" + vidPK + "'";
 		getBaseDAO().executeUpdate(sql_dept_v);
 		// 更新报表组织表
 		String sql_report = "update org_reportorg set name=" + getNmF(name) + ", name2 = " + getNmF(name2) + ",name3="
 				+ getNmF(name3) + ",name4=" + getNmF(name4) + ",name5=" + getNmF(name5) + ",name6=" + getNmF(name6)
-				+ " where pk_reportorg = '" + vo.getPk_dept() + "'";
+				+ " where pk_reportorg = '" + deptAdjVO.getPk_dept() + "'";
 		getBaseDAO().executeUpdate(sql_report);
+
+		String sql_create_org_v = "INSERT INTO ORG_ORGS_V (ADDRESS, CODE, COUNTRYZONE, CREATIONTIME, CREATOR, DATAORIGINFLAG, DEF1, DEF10, DEF11, DEF12, DEF13, DEF14, DEF15, DEF16, DEF17, DEF18, DEF19, DEF2, DEF20, DEF3, DEF4, DEF5, DEF6, DEF7, DEF8, DEF9, DR, ENABLESTATE, INNERCODE, ISBUSINESSUNIT, ISLASTVERSION, MEMO, MNECODE, MODIFIEDTIME, MODIFIER, NAME, NAME2, NAME3, NAME4, NAME5, NAME6, NCINDUSTRY, ORGANIZATIONCODE, ORGTYPE1, ORGTYPE10, ORGTYPE11, ORGTYPE12, ORGTYPE13, ORGTYPE14, ORGTYPE15, ORGTYPE16, ORGTYPE17, ORGTYPE18, ORGTYPE19, ORGTYPE2, ORGTYPE20, ORGTYPE21, ORGTYPE22, ORGTYPE23, ORGTYPE24, ORGTYPE25, ORGTYPE26, ORGTYPE27, ORGTYPE28, ORGTYPE29, ORGTYPE3, ORGTYPE30, ORGTYPE31, ORGTYPE32, ORGTYPE33, ORGTYPE34, ORGTYPE35, ORGTYPE36, ORGTYPE37, ORGTYPE38, ORGTYPE39, ORGTYPE4, ORGTYPE40, ORGTYPE41, ORGTYPE42, ORGTYPE43, ORGTYPE44, ORGTYPE45, ORGTYPE46, ORGTYPE47, ORGTYPE48, ORGTYPE49, ORGTYPE5, ORGTYPE50, ORGTYPE6, ORGTYPE7, ORGTYPE8, ORGTYPE9, PK_FATHERORG, PK_FORMAT, PK_GROUP, PK_ORG, PK_OWNORG, PK_TIMEZONE, PK_VID, PRINCIPAL, SHORTNAME, SHORTNAME2, SHORTNAME3, SHORTNAME4, SHORTNAME5, SHORTNAME6, TEL, TS, VENDDATE, VNAME, VNAME2, VNAME3, VNAME4, VNAME5, VNAME6, VNO, VSTARTDATE, CHARGELEADER, ENTITYTYPE, ISBALANCEUNIT, ISRETAIL, PK_ACCPERIODSCHEME, PK_CONTROLAREA, PK_CORP, PK_CURRTYPE, PK_EXRATESCHEME, REPORTCONFIRM, WORKCALENDAR, TAXCODE) "
+				+ " select ADDRESS,CODE,'~',CREATIONTIME,CREATOR,DATAORIGINFLAG,DEF1,DEF10,DEF11,DEF12,DEF13,DEF14,DEF15,DEF16,DEF17,DEF18,DEF19,DEF2,DEF20,DEF3,DEF4,DEF5,DEF6,DEF7,DEF8,DEF9,DR,ENABLESTATE,INNERCODE,'N',ISLASTVERSION,MEMO,MNECODE,MODIFIEDTIME,MODIFIER,NAME,NAME2,NAME3,NAME4,NAME5,NAME6,'~',null,'N', 'N', 'N', 'N', 'Y', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'Y', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', PK_FATHERORG,'~',PK_GROUP,PK_DEPT,PK_ORG,'~', PK_VID,PRINCIPAL, SHORTNAME,SHORTNAME2,SHORTNAME3,SHORTNAME4,SHORTNAME5,SHORTNAME6,TEL,TS,VENDDATE,VNAME,VNAME2,VNAME3,VNAME4,VNAME5,VNAME6,VNO,VSTARTDATE,CHARGELEADER,'~',null,null,'~','~',PK_ORG,'~','~',null,'~',null "
+				+ "from org_dept_v where pk_vid = '"
+				+ vidPK
+				+ "' and '"
+				+ vidPK
+				+ "' not in (select pk_vid from org_orgs_v );";
+		getBaseDAO().executeUpdate(sql_create_org_v);
+
+		String sql_create_report_v = "INSERT INTO ORG_REPORTORG_V (CODE, CREATIONTIME, CREATOR, DATAORIGINFLAG, DEF1, DEF10, DEF11, DEF12, DEF13, DEF14, DEF15, DEF16, DEF17, DEF18, DEF19, DEF2, DEF20, DEF21, DEF22, DEF23, DEF24, DEF25, DEF26, DEF27, DEF28, DEF29, DEF3, DEF30, DEF31, DEF32, DEF33, DEF34, DEF35, DEF36, DEF37, DEF38, DEF39, DEF4, DEF40, DEF5, DEF6, DEF7, DEF8, DEF9, DR, ENABLESTATE, ISLASTVERSION, MNECODE, MODIFIEDTIME, MODIFIER, NAME, NAME2, NAME3, NAME4, NAME5, NAME6, PK_GROUP, PK_ORG, PK_REPORTORG, PK_VID, SHORTNAME, SHORTNAME2, SHORTNAME3, SHORTNAME4, SHORTNAME5, SHORTNAME6, SOURCEORGTYPE, TS, VENDDATE, VNAME, VNO, VSTARTDATE) "
+				+ " select oo.code || '_' || og.code code, og.creationtime, og.creator, og.dataoriginflag,  og.DEF1, og.DEF10, og.DEF11, og.DEF12, og.DEF13, og.DEF14, og.DEF15, og.DEF16, og.DEF17, og.DEF18, og.DEF19, og.DEF2, og.DEF20, '~', '~', '~', '~', '~', '~', '~', '~', '~', og.DEF3, '~', '~', '~', '~', '~', '~', '~', '~', '~', '~', og.DEF4, '~', og.DEF5, og.DEF6, og.DEF7, og.DEF8, og.DEF9, og.DR, og.ENABLESTATE, og.ISLASTVERSION, og.MNECODE, og.MODIFIEDTIME, og.MODIFIER, og.NAME, og.NAME2, og.NAME3, og.NAME4, og.NAME5, og.NAME6, og.PK_GROUP, og.PK_GROUP, og.PK_ORG, og.PK_VID, og.SHORTNAME, og.SHORTNAME2, og.SHORTNAME3, og.SHORTNAME4, og.SHORTNAME5, og.SHORTNAME6, 2 SOURCEORGTYPE, og.TS, og.VENDDATE, og.VNAME, og.VNO, og.VSTARTDATE "
+				+ " from org_orgs_v og inner join org_orgs oo on og.pk_ownorg = oo.pk_org  where og.pk_vid = '"
+				+ vidPK
+				+ "' and og.orgtype13 = 'Y' and og.pk_vid not in (select pk_vid from org_reportorg_v)";
+		getBaseDAO().executeUpdate(sql_create_report_v);
+
 		// 更新报表组织版本表
 		String sql_report_v = "update org_reportorg_v set name=" + getNmF(name) + ", name2 = " + getNmF(name2)
 				+ ",name3=" + getNmF(name3) + ",name4=" + getNmF(name4) + ",name5=" + getNmF(name5) + ",name6="
 				+ getNmF(name6) + " where pk_vid = '" + vidPK + "'";
 		getBaseDAO().executeUpdate(sql_report_v);
 		// 更新组织表
-		String sql_org = "update org_orgs set code='" + vo.getCode() + "', name=" + getNmF(name) + ", name2 = "
+		String sql_org = "update org_orgs set code='" + deptAdjVO.getCode() + "', name=" + getNmF(name) + ", name2 = "
 				+ getNmF(name2) + ",name3=" + getNmF(name3) + ",name4=" + getNmF(name4) + ",name5=" + getNmF(name5)
-				+ ",name6=" + getNmF(name6) + " where pk_org = '" + vo.getPk_dept() + "'";
+				+ ",name6=" + getNmF(name6) + " where pk_org = '" + deptAdjVO.getPk_dept() + "'";
 		getBaseDAO().executeUpdate(sql_org);
 	}
 
@@ -529,12 +677,27 @@ public class DeptAdjustServiceImpl implements IDeptAdjustService {
 			// 设置PK_VID的值不为null才能存储
 			deptVO.setPk_vid(PK_VID_FOR_DEPT_VER);
 			deptVO.setCreationtime(new UFDateTime());
+			deptVO.setOrgtype13(UFBoolean.TRUE);
+			deptVO.setOrgtype17(UFBoolean.FALSE);
 			deptVO.setDr(0);
 			// 在org_dept上新增一條主檔,其他什麼都不幹
 			getBaseDAO().insertVO(deptVO);
 			// 在新節點上新增記錄
 			HRDeptAdjustVO saveVO = HRDeptVO2HRDeptAdjust(deptVO);
 			saveVO.setEffectivedate(deptVO.getCreatedate());
+			saveVO.setOrgtype13(deptVO.getOrgtype13());
+			saveVO.setOrgtype17(deptVO.getOrgtype17());
+			saveVO.setPrincipal(deptVO.getPrincipal());
+			saveVO.setName2(deptVO.getName2());
+			saveVO.setName3(deptVO.getName3());
+			saveVO.setName4(deptVO.getName4());
+			saveVO.setName5(deptVO.getName5());
+			saveVO.setName6(deptVO.getName6());
+			saveVO.setTel(deptVO.getTel());
+			saveVO.setAddress(deptVO.getAddress());
+			saveVO.setGlbdef3((String) deptVO.getAttributeValue("glbdef3"));
+			saveVO.setGlbdef11((String) deptVO.getAttributeValue("glbdef11"));
+			saveVO.setDept_charge((String) deptVO.getAttributeValue("dept_charge"));
 			saveVO.setBilldate(new UFDate());
 			saveVO.setDr(0);
 			saveVO.setDisplayorder(999999);
@@ -567,7 +730,8 @@ public class DeptAdjustServiceImpl implements IDeptAdjustService {
 			throw new BusinessException("請填入生效日期!");
 		}
 
-		HRDeptVO deptVO = (HRDeptVO) aggDeptVO.getParentVO();
+		HRDeptVO deptVO = (HRDeptVO) this.getBaseDAO().retrieveByPK(HRDeptVO.class,
+				aggDeptVO.getParentVO().getPrimaryKey());
 		// 設置狀態為未啟用
 		deptVO.setEnablestate(1);
 		// 处理日期大于当前日期才可以回写
@@ -627,8 +791,7 @@ public class DeptAdjustServiceImpl implements IDeptAdjustService {
 	 */
 	public HRDeptVO HRDeptAdjust2HRDeptVO(HRDeptAdjustVO vo) throws BusinessException {
 		// 先查找当前的部门信息
-		String sqlStr = "select * from org_dept where pk_dept = '" + vo.getPk_dept() + "'";
-		HRDeptVO resultVO = (HRDeptVO) getBaseDAO().executeQuery(sqlStr, new BeanProcessor(HRDeptVO.class));
+		HRDeptVO resultVO = (HRDeptVO) getBaseDAO().retrieveByPK(HRDeptVO.class, vo.getPk_dept());
 		if (null == resultVO) {
 			resultVO = new HRDeptVO();
 		}
@@ -645,6 +808,7 @@ public class DeptAdjustServiceImpl implements IDeptAdjustService {
 			resultVO.setName4(vo.getName4());
 			resultVO.setName5(vo.getName5());
 			resultVO.setName6(vo.getName6());
+			resultVO.setAttributeValue("glbdef5", vo.getName3());
 			// end
 			resultVO.setInnercode(vo.getInnercode());
 			resultVO.setPk_fatherorg(vo.getPk_fatherorg());
@@ -684,6 +848,8 @@ public class DeptAdjustServiceImpl implements IDeptAdjustService {
 			resultVO.setAttributeValue("glbdef3", vo.getGlbdef3());
 			resultVO.setAttributeValue("glbdef11", vo.getGlbdef11());
 			// 增加副主管和工作地点 王永文 20190503 end
+			resultVO.setAttributeValue("dept_charge", vo.getDept_charge());
+			resultVO.setCreatedate(vo.getEffectivedate());
 		}
 		return resultVO;
 	}
@@ -702,6 +868,11 @@ public class DeptAdjustServiceImpl implements IDeptAdjustService {
 			resultVO.setPk_dept(vo.getPk_dept());
 			resultVO.setCode(vo.getCode());
 			resultVO.setName(vo.getName());
+			resultVO.setName2(vo.getName2());
+			resultVO.setName3(vo.getName3());
+			resultVO.setName4(vo.getName4());
+			resultVO.setName5(vo.getName5());
+			resultVO.setName6(vo.getName6());
 			resultVO.setInnercode(vo.getInnercode());
 			resultVO.setPk_fatherorg(vo.getPk_fatherorg());
 			resultVO.setPk_group(vo.getPk_group());
@@ -728,6 +899,9 @@ public class DeptAdjustServiceImpl implements IDeptAdjustService {
 			resultVO.setCreationtime(vo.getCreationtime());
 			resultVO.setModifiedtime(vo.getModifiedtime());
 			resultVO.setModifier(vo.getModifier());
+			resultVO.setGlbdef11((String) vo.getAttributeValue("glbdef11"));
+			resultVO.setGlbdef3((String) vo.getAttributeValue("glbdef3"));
+			resultVO.setDept_charge(vo.getDept_charge());
 			// 获取组织版本
 			String sqlStr = "select pk_vid from org_orgs where pk_org = '" + vo.getPk_org() + "' ";
 			Object pkvid = getSingleDataBySQL(sqlStr);
@@ -816,8 +990,9 @@ public class DeptAdjustServiceImpl implements IDeptAdjustService {
 		if (null == vo) {
 			throw new BusinessException("單據異常!無法判斷當前狀態!");
 		}
-		// 未打勾的,并且生效日期在当前日期之后的
-		if (isAfterToday(vo.getEffectivedate()) && vo.getIseffective() != null && !vo.getIseffective().booleanValue()) {
+
+		if (vo.getIseffective() != null && !vo.getIseffective().booleanValue()) {
+			// 未生效的
 			// 查詢調配記錄中,是否有有引用此部門的單據
 			String sqlStr = "select count(*) from hi_stapply where newpk_dept ='" + vo.getPk_dept() + "' and dr = 0";
 			Integer num = getIntegerDataBySQL(sqlStr);
@@ -831,8 +1006,10 @@ public class DeptAdjustServiceImpl implements IDeptAdjustService {
 				throw new BusinessException("該部門已存在下級部門,無法刪除!");
 			}
 		} else {
-			throw new BusinessException("單據已經被執行或者已過當前日期,不能刪除!");
+			// 已生效的
+			throw new BusinessException("單據已經被執行，不能刪除!");
 		}
+
 		return new UFBoolean(false);
 	}
 
@@ -946,13 +1123,16 @@ public class DeptAdjustServiceImpl implements IDeptAdjustService {
 		if (null == saveVO.getParentVO()) {
 			throw new BusinessException("部門主檔不能為空!");
 		}
+
 		HRDeptVO deptVO = (HRDeptVO) saveVO.getParentVO();
 		deptVO.setName(deptVO.getName() == null ? null : deptVO.getName().replaceAll("'", ""));
 		deptVO.setName2(deptVO.getName2() == null ? null : deptVO.getName2().replaceAll("'", ""));
 		deptVO.setName3(deptVO.getName3() == null ? null : deptVO.getName3().replaceAll("'", ""));
 		// 獲取當前的部門信息
-		String sqlStr = "select * from org_dept where pk_dept = '" + deptVO.getPk_dept() + "' ";
-		HRDeptVO curVO = (HRDeptVO) getBaseDAO().executeQuery(sqlStr, new BeanProcessor(HRDeptVO.class));
+		HRDeptVO curVO = (HRDeptVO) getBaseDAO().retrieveByPK(HRDeptVO.class, deptVO.getPk_dept());
+
+		checkDeptCanceled(curVO, date);
+
 		String newPkdeptV = curVO.getPk_vid();
 
 		if (deptVO.getPk_vid() == null || deptVO.getPk_vid().equals("~") || deptVO.getPk_vid().equals("null")) {
@@ -1017,7 +1197,7 @@ public class DeptAdjustServiceImpl implements IDeptAdjustService {
 				getDeptManageService().update(newVO, false);
 				newPkdeptV = ((HRDeptVO) newVO.getParentVO()).getPk_vid();
 				// 回写工作记录
-				sqlStr = "update  hi_psnjob set pk_dept_v = '" + newPkdeptV + "'  where begindate <= '"
+				String sqlStr = "update  hi_psnjob set pk_dept_v = '" + newPkdeptV + "'  where begindate <= '"
 						+ date.toStdString() + "' and isnull(enddate,'9999-12-31') > '" + date.toStdString()
 						+ "' and  pk_dept = '" + deptVO.getPk_dept() + "'";
 				getBaseDAO().executeUpdate(sqlStr);
@@ -1092,12 +1272,26 @@ public class DeptAdjustServiceImpl implements IDeptAdjustService {
 			getBaseDAO().insertVO(historyVO);
 			newPkdeptV = ((HRDeptVO) newVO.getParentVO()).getPk_vid();
 		}
+
+		// ssx added on 2019-10-25
+		// 部門負責人變更時，同步變更下級部門的上級主管
+		if (renameAndPrincipalChangeFlag == 2) {
+			updateChildCharger(deptVO.getPk_dept(), deptVO.getPrincipal());
+		}
+		// end
+
 		// 回写工作记录表
-		sqlStr = "update  hi_psnjob set pk_dept_v = '" + newPkdeptV + "'  where begindate <= '" + date.toStdString()
-				+ "' and isnull(enddate,'9999-12-31') > '" + date.toStdString() + "' and  pk_dept = '"
-				+ deptVO.getPk_dept() + "'";
+		String sqlStr = "update  hi_psnjob set pk_dept_v = '" + newPkdeptV + "'  where begindate <= '"
+				+ date.toStdString() + "' and isnull(enddate,'9999-12-31') > '" + date.toStdString()
+				+ "' and  pk_dept = '" + deptVO.getPk_dept() + "'";
 		getBaseDAO().executeUpdate(sqlStr);
 
+	}
+
+	private void checkDeptCanceled(HRDeptVO deptVO, UFLiteralDate date) throws BusinessException {
+		if (UFBoolean.TRUE.equals(deptVO.getHrcanceled())) {
+			throw new BusinessException("已撤銷部門無法進行版本作業。");
+		}
 	}
 
 	private void updateOrgName(String name, String name2, String name3, DeptVO vo) throws DAOException {
@@ -1188,20 +1382,19 @@ public class DeptAdjustServiceImpl implements IDeptAdjustService {
 
 		return deptHistoryVO;
 	}
-	
-	
-	private char[] ran = {'A','B','C','D','E','F','G','H','I','J','K','L',
-			'M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z',
-			'0','1','2','3','4','5','6','7','8','9'};
-	
+
+	private char[] ran = { 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R',
+			'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
+
 	/**
 	 * 获得随机四个字符的字符串
+	 * 
 	 * @return
 	 */
-	private String get4RandomCode(){
+	private String get4RandomCode() {
 		Random rom = new Random();
 		StringBuffer sb = new StringBuffer();
-		for (int i = 0; i <4; i++) {
+		for (int i = 0; i < 4; i++) {
 			char r1 = ran[rom.nextInt(35)];
 			sb.append(r1);
 		}
@@ -1210,44 +1403,43 @@ public class DeptAdjustServiceImpl implements IDeptAdjustService {
 
 	/**
 	 * 更新当前部门的innercode
-	 * @param innercode 上级部门的innercode
-	 * @param pk_dept 更新的部门
+	 * 
+	 * @param innercode
+	 *            上级部门的innercode
+	 * @param pk_dept
+	 *            更新的部门
 	 * @return
 	 * @throws DAOException
 	 */
-	private String updateCode(String innercode,String pk_dept) throws DAOException {
+	private String updateCode(String innercode, String pk_dept) throws DAOException {
 		StringBuffer sql = new StringBuffer();
 		String s = get4RandomCode();
-		//更新部门表
-		sql.append("update org_dept set innercode = '")
-			.append(innercode).append(s)
-			.append("' where pk_dept = '")
-			.append(pk_dept)
-			.append("'");
+		// 更新部门表
+		sql.append("update org_dept set innercode = '").append(innercode).append(s).append("' where pk_dept = '")
+				.append(pk_dept).append("'");
 		this.getBaseDAO().executeUpdate(sql.toString());
-		//更新部门版本表
+		// 更新部门版本表
 		sql = new StringBuffer();
-		sql.append("update org_dept_v v set v.innercode = '")
-			.append(innercode).append(s)
-			.append("' where v.pk_vid =(select d.pk_vid from org_dept d where d.pk_dept ='")
-			.append(pk_dept)
-			.append("' )");
+		sql.append("update org_dept_v v set v.innercode = '").append(innercode).append(s)
+				.append("' where v.pk_vid =(select d.pk_vid from org_dept d where d.pk_dept ='").append(pk_dept)
+				.append("' )");
 		this.getBaseDAO().executeUpdate(sql.toString());
-		return innercode+s;
+		return innercode + s;
 	}
-	
+
 	@SuppressWarnings("unchecked")
 	@Override
-	public void updateDeptInnercode(String innercode,String pk_fatherorg) throws DAOException{
-		String sql = "select innercode,pk_dept,pk_fatherorg from org_dept where dr=0 and pk_fatherorg = '"+pk_fatherorg+"'";
-		List<Map<String,String>> list = (List<Map<String, String>>) 
-				this.getBaseDAO().executeQuery(sql,  new MapListProcessor());
-		if(list.size()==0){
-			return ;
+	public void updateDeptInnercode(String innercode, String pk_fatherorg) throws DAOException {
+		String sql = "select innercode,pk_dept,pk_fatherorg from org_dept where dr=0 and pk_fatherorg = '"
+				+ pk_fatherorg + "'";
+		List<Map<String, String>> list = (List<Map<String, String>>) this.getBaseDAO().executeQuery(sql,
+				new MapListProcessor());
+		if (list.size() == 0) {
+			return;
 		}
 		for (Map<String, String> map : list) {
-			String s = updateCode(innercode,map.get("pk_dept"));
-			updateDeptInnercode(s,map.get("pk_dept"));
+			String s = updateCode(innercode, map.get("pk_dept"));
+			updateDeptInnercode(s, map.get("pk_dept"));
 		}
 	}
 }

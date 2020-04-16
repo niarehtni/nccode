@@ -6,7 +6,11 @@ import java.awt.event.ActionListener;
 
 import javax.swing.DefaultComboBoxModel;
 
+import nc.bs.framework.common.NCLocator;
+import nc.itf.ta.IPsnCalendarManageMaintain;
 import nc.ui.pub.beans.UIDialog;
+import nc.vo.pub.BusinessException;
+import nc.vo.pub.lang.UFLiteralDate;
 
 public class QueryDialog extends UIDialog implements ActionListener {
 	private nc.ui.pub.beans.UIButton UIButtonComm = null;// 按钮
@@ -20,12 +24,14 @@ public class QueryDialog extends UIDialog implements ActionListener {
 	private String date = new String();
 	private String pk_psndoc = new String();
 	private String value = null;// 使用value变量来告诉外界是点击什么按钮
+	private String pk_org = null;
 
 	@SuppressWarnings("deprecation")
-	public QueryDialog(String str1, String str2) {
+	public QueryDialog(String psndate, String psnpk, String orgpk) {
 		super();
-		date = str1;
-		pk_psndoc = str2;
+		date = psndate;
+		pk_psndoc = psnpk;
+		pk_org = orgpk;
 		initialize();
 	}
 
@@ -118,29 +124,15 @@ public class QueryDialog extends UIDialog implements ActionListener {
 
 	public void actionPerformed(ActionEvent e) {// 点击按钮时调用
 		if (e.getSource() == getUIButtonComm()) {
+			int daytype = getDateType();
 			value = UIButtonComm.getText();
-			// int type = 0;
-			getDateType();
-			// switch(dateType){
-			// case "平日":
-			// type = 0;
-			// break;
-			// case "休息日":
-			// type=1;
-			// break;
-			// case "例假日":
-			// type =4;
-			// break;
-			// case "国假日":
-			// type=2;
-			// break;
-			// default:
-			// type=3;
-			// break;
-			// }
-			// String sql = "update tbm_psncalendar set date_daytype="+ type +
-			// " where calendar='"+ date + "' and pk_psndoc ='" + pk_psndoc +
-			// "'";
+			IPsnCalendarManageMaintain svc = NCLocator.getInstance().lookup(IPsnCalendarManageMaintain.class);
+			try {
+				svc.changeDateType4OneDay(pk_org, new String[] { pk_psndoc }, new UFLiteralDate(date), daytype);
+			} catch (BusinessException e1) {
+				e1.printStackTrace();
+			}
+
 			this.closeOK();
 		}
 		if (e.getSource() == getUIButtonCanel()) {
@@ -150,9 +142,7 @@ public class QueryDialog extends UIDialog implements ActionListener {
 	}
 
 	public int getDateType() {// 确认是调用
-		String values = new String();
-		String ComboBoxt = ComboBoxto.getSelectdItemValue() == null ? "" : ComboBoxto.getSelectdItemValue().toString();
-		values = ComboBoxt;
+		String values = ComboBoxto.getSelectdItemValue() == null ? "" : ComboBoxto.getSelectdItemValue().toString();
 		int type = 0;
 		switch (values) {
 		case "平日":

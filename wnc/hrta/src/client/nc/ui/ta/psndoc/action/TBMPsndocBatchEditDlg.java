@@ -36,6 +36,7 @@ import nc.vo.cache.ICache;
 import nc.vo.hi.psndoc.PsndocVO;
 import nc.vo.org.OrgVO;
 import nc.vo.pub.BusinessException;
+import nc.vo.pub.lang.UFBoolean;
 import nc.vo.pub.lang.UFLiteralDate;
 import nc.vo.ta.psndoc.TBMPsndocCommonValue;
 import nc.vo.ta.psndoc.TBMPsndocVO;
@@ -81,6 +82,11 @@ public class TBMPsndocBatchEditDlg extends HrDialog implements ActionListener {
 	private UICheckBox chkboxRegion = null;
 	private UIRefPane refRegion = null;
 	private TBMRegionRefModel refRegionModel = null;
+	
+	// 考勤增加不同步班次標識  by George 20200326 特性 #33851
+	// 不同步班組工作日曆
+	private UICheckBox chkboxNotsyncal = null;
+	
 
 	// 环境变量
 	private LoginContext context;
@@ -238,16 +244,28 @@ public class TBMPsndocBatchEditDlg extends HrDialog implements ActionListener {
 				batchEditValue.put(TBMPsndocVO.PK_REGION, pk_region);
 			}
 		}
+		
+		// 考勤增加不同步班次標識  by George 20200326 特性 #33851
+		// 批量修改邏輯欄位為 不同步班組工作日曆(isNotsyncal) 判斷
+		if(getChkboxNotsyncal().isSelected()){
+			batchEditValue.put(TBMPsndocVO.NOTSYNCAL, new UFBoolean(true));
+		} else {
+			batchEditValue.put(TBMPsndocVO.NOTSYNCAL, new UFBoolean(false));
+		}
+		
 		closeOK();
 	}
 
 	private boolean checkOK() {
-		if (!getChkboxTbmotcontrol().isSelected() &&!getChkboxTbmweekform().isSelected() &&!getChkboxTbmprop().isSelected() && !getChkboxEndDate().isSelected()
-				&& !getChkboxAddress().isSelected() && !getChkboxAdminOrg().isSelected()
-				&& !getChkboxRegion().isSelected()) {
-			MessageDialog.showErrorDlg(this, null, ResHelper.getString("6017psndoc","06017psndoc0066")/*@res "没有要修改的内容，请先选择要修改的内容！"*/);
-			return false;
-		}
+		// 考勤增加不同步班次標識  by George 20200326 特性 #33851
+		// 因為增加邏輯欄位為 不同步班組工作日曆(isNotsyncal) 判斷，所以一定有修改的內容，這個判斷先拿掉
+//		if (!getChkboxTbmotcontrol().isSelected() &&!getChkboxTbmweekform().isSelected() &&!getChkboxTbmprop().isSelected() && !getChkboxEndDate().isSelected()
+//				&& !getChkboxAddress().isSelected() && !getChkboxAdminOrg().isSelected()
+//				&& !getChkboxRegion().isSelected()) {
+//			MessageDialog.showErrorDlg(this, null, ResHelper.getString("6017psndoc","06017psndoc0066")/*@res "没有要修改的内容，请先选择要修改的内容！"*/);
+//			return false;
+//		}
+		
 		if (getChkboxTbmprop().isSelected() && getCmboxTbmprop().getSelectedIndex() <= 0) {
 			MessageDialog.showErrorDlg(this, null, ResHelper.getString("6017psndoc","06017psndoc0067")/*@res "请选择考勤方式！"*/);
 			return false;
@@ -377,6 +395,12 @@ public class TBMPsndocBatchEditDlg extends HrDialog implements ActionListener {
 				builder.nextLine();
 				builder.append("", getChkboxRegion());
 				builder.append(getRefRegion());
+				
+				// 考勤增加不同步班次標識  by George 20200326 特性 #33851
+				// 批量修改彈出視窗，新增邏輯欄位為 不同步班組工作日曆(isNotsyncal) 
+				builder.nextLine();
+				builder.append("", getChkboxNotsyncal());
+				
 				if (workplaceflag) {
 					builder.nextLine();
 					builder.append("", getChkboxAddress());
@@ -414,6 +438,18 @@ public class TBMPsndocBatchEditDlg extends HrDialog implements ActionListener {
 //			chkboxTbmprop.setPreferredSize(new Dimension(30, 22));
 		}
 		return chkboxTbmprop;
+	}
+	
+	/** 
+	 * 考勤增加不同步班次標識  by George 20200326 特性 #33851
+	 * 批量修改考勤档案，新增邏輯欄位為 不同步班組工作日曆(isNotsyncal) 
+	 */
+	public UICheckBox getChkboxNotsyncal() {
+		if(chkboxNotsyncal == null) {
+			chkboxNotsyncal = new UICheckBox("不同步班組工作日曆");
+			chkboxNotsyncal.addActionListener(this);
+		}
+		return chkboxNotsyncal;
 	}
 
 	@SuppressWarnings("unchecked")

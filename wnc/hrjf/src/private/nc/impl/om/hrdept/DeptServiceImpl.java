@@ -1310,8 +1310,7 @@ public class DeptServiceImpl extends TreeBaseServiceAggVOAdapter<AggHRDeptVO> im
 		HRDeptVO deptVO = (HRDeptVO) aggVO.getParentVO();
 		// UFDate vstartdate = deptVO.getVstartdate();// 新版本时间
 
-		UFDate vstartdate = new UFDate(((UFLiteralDate) aggVO.getParentVO().getAttributeValue("CREATEDATE")).toString()
-				+ " 00:00:00");// 新版本生效时间
+		UFDate vstartdate = new UFDate(new UFLiteralDate().toString() + " 00:00:00");// 新版本生效时间
 
 		String pk_deptvid = OidGenerator.getInstance().nextOid();// 新版本主键
 
@@ -1326,8 +1325,8 @@ public class DeptServiceImpl extends TreeBaseServiceAggVOAdapter<AggHRDeptVO> im
 		// 查询出需要生成新版本的deptVO的旧版本数据，更新旧版本的venddate字段为新版本生效日期-1
 		HRDeptVersionVO oldDeptVersionVO = deptVersionVOs[0];
 		BDPKLockUtil.lockSuperVO(oldDeptVersionVO);
-		oldDeptVersionVO.setVenddate(new UFDate(((UFLiteralDate) aggVO.getParentVO().getAttributeValue("CREATEDATE"))
-				.getDateBefore(1).toString() + " 23:59:59"));
+		oldDeptVersionVO.setVenddate(new UFDate(new UFLiteralDate().getDateBefore(1).toString(), false));
+		oldDeptVersionVO.setIslastversion(UFBoolean.FALSE);
 		// 审计信息
 		AuditInfoUtil.updateData(oldDeptVersionVO);
 		// 数据库操作
@@ -1340,6 +1339,7 @@ public class DeptServiceImpl extends TreeBaseServiceAggVOAdapter<AggHRDeptVO> im
 		deptVO.setVno(vstartdate.getYear() + vno);
 		deptVO.setVstartdate(vstartdate);
 		deptVO.setVenddate(new UFDate("9999-12-31", false));
+		deptVO.setIslastversion(UFBoolean.TRUE);
 		BDPKLockUtil.lockSuperVO(deptVO);
 		// 版本检查
 		BDVersionValidationUtil.validateSuperVO(deptVO);
@@ -1353,6 +1353,7 @@ public class DeptServiceImpl extends TreeBaseServiceAggVOAdapter<AggHRDeptVO> im
 		HRDeptVO newDeptVO = getOMCommonQueryService().queryByPK(HRDeptVO.class, deptVO.getPk_dept());
 		// 根据HRDeptVO得到HRDeptVersionVO
 		HRDeptVersionVO deptVersionVO = SuperVOHelper.createSuperVOFromSuperVO(newDeptVO, HRDeptVersionVO.class);
+		deptVersionVO.setIslastversion(UFBoolean.TRUE);
 		BDPKLockUtil.lockSuperVO(deptVersionVO);
 		// 数据库操作
 		baseDAO.insertVOWithPK(deptVersionVO);
@@ -1384,7 +1385,8 @@ public class DeptServiceImpl extends TreeBaseServiceAggVOAdapter<AggHRDeptVO> im
 					// 查询出需要生成新版本的deptvo的旧版本数据，更新旧版本的venddate字段为新版本生效日期-1
 					SuperVO oldEachOrgTypeVersionVO = eachTypevc.toArray((SuperVO[]) Array.newInstance(czz,
 							eachTypevc.size()))[0];
-					setOldVersionVOInfo(oldEachOrgTypeVersionVO, vstartdate);
+					setOldVersionVOInfo(oldEachOrgTypeVersionVO, new UFDate(new UFLiteralDate().getDateBefore(1)
+							.toString(), false));
 					new OrgTypeServiceAdapterBasic().execEachOrgVersionUpdateOperate(oldEachOrgTypeVersionVO);
 
 					// 将最新版本组织类型数据插入组织类型版本信息表

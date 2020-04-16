@@ -73,7 +73,7 @@ public class NhiCalcGenerateSrvImpl implements INhiCalcGenerateSrv {
 		String cyear = period.split("-")[0];
 		String cperiod = period.split("-")[1];
 		// 删除之前生成的数据
-		delete(psnList, cyear, cperiod);
+		delete(pk_org, cyear, cperiod);
 		NhiCalcVO[] nhiFinalVOs = getNhiData(pk_org, psnList, cyear, cperiod);
 		// getAdjustNHIData(psnList, pk_org, cyear, cperiod);
 		if (nhiFinalVOs == null || nhiFinalVOs.length == 0) {
@@ -84,11 +84,9 @@ public class NhiCalcGenerateSrvImpl implements INhiCalcGenerateSrv {
 		return nhiFinalVOs;
 	}
 
-	private void delete(List<String> psnList, String cyear, String cperiod) throws BusinessException {
-		InSQLCreator insql = new InSQLCreator();
-		String psndocsInSQL = insql.getInSQL(psnList.toArray(new String[0]));
+	private void delete(String pk_org, String cyear, String cperiod) throws BusinessException {
 		getBaseDao().deleteByClause(NhiCalcVO.class,
-				"pk_psndoc in(" + psndocsInSQL + ")  and cyear='" + cyear + "' and cperiod='" + cperiod + "'");
+				"pk_org='" + pk_org + "'  and cyear='" + cyear + "' and cperiod='" + cperiod + "'");
 		getBaseDao().deleteByClause(EpyfamilyVO.class, "pk_nhicalc not in (select pk_nhicalc from twhr_nhicalc)");
 	}
 
@@ -900,7 +898,7 @@ public class NhiCalcGenerateSrvImpl implements INhiCalcGenerateSrv {
 		if (rangeTables == null) {
 			IRangetablePubQuery qry = (IRangetablePubQuery) NCLocator.getInstance().lookup(IRangetablePubQuery.class);
 
-			rangeTables = qry.queryRangetableByType(pk_org, -1, this.getFirstDayOfMonth(cyear, cperiod));
+			rangeTables = qry.queryRangetableByType(-1, this.getFirstDayOfMonth(cyear, cperiod));
 		}
 		return rangeTables;
 	}
@@ -985,7 +983,9 @@ public class NhiCalcGenerateSrvImpl implements INhiCalcGenerateSrv {
 			strSQL += "        case when (" + wadocBeginDate + " < " + endDateOfMonth + " AND (" + wadocEndDate
 					+ " >= " + endDateOfMonth + " OR " + wadocEndDate + " IS NULL)) then " + endDateOfMonth + " else "
 					+ wadocEndDate + " end " + WadocQueryVO.ENDDATE + " , ";
-			strSQL += "         SUM(wadoc." + WadocQueryVO.NMONEY + ") " + WadocQueryVO.NMONEY;
+			// MOD by ssx on 2020-02-28
+			// 加解密算法变更，不能先sum再解密，只能使用数据库函数解密，再取消原来的解密方法
+			strSQL += "         SUM(SALARY_DECRYPT(wadoc." + WadocQueryVO.NMONEY + ")) " + WadocQueryVO.NMONEY;
 			strSQL += " FROM    hi_psndoc_wadoc wadoc";
 			strSQL += "         INNER JOIN wa_item waitem ON wadoc.pk_wa_item = waitem.pk_wa_item";
 			strSQL += "                                          AND waitem.dr = 0";
@@ -1029,7 +1029,9 @@ public class NhiCalcGenerateSrvImpl implements INhiCalcGenerateSrv {
 					+ " >= " + endDateOfMonth + " OR " + wadocEndDate + " IS NULL)) then to_char(" + endDateOfMonth
 					+ ", 'YYYY-MM-DD HH24:MI:SS') else to_char(" + wadocEndDate + ", 'YYYY-MM-DD HH24:MI:SS') end "
 					+ WadocQueryVO.ENDDATE + " , ";
-			strSQL += "         SUM(wadoc." + WadocQueryVO.NMONEY + ") " + WadocQueryVO.NMONEY;
+			// MOD by ssx on 2020-02-28
+			// 加解密算法变更，不能先sum再解密，只能使用数据库函数解密，再取消原来的解密方法
+			strSQL += "         SUM(SALARY_DECRYPT(wadoc." + WadocQueryVO.NMONEY + ")) " + WadocQueryVO.NMONEY;
 			strSQL += " FROM    hi_psndoc_wadoc wadoc";
 			strSQL += "         INNER JOIN wa_item waitem ON wadoc.pk_wa_item = waitem.pk_wa_item";
 			strSQL += "                                          AND waitem.dr = 0";
@@ -1059,18 +1061,6 @@ public class NhiCalcGenerateSrvImpl implements INhiCalcGenerateSrv {
 		}
 
 		WadocQueryVO[] wadocVOs = this.executeQueryVOs(strSQL, WadocQueryVO.class);
-		// danqiang3 decrypt the data from the result of querysql 2018-6-1
-		// 11:34:15
-		for (WadocQueryVO vo : wadocVOs) {
-			UFDouble result = new UFDouble(0);
-			if (vo.getNmoney() != null) {
-				double d = SalaryDecryptUtil.decrypt(vo.getNmoney().doubleValue());
-				result = new UFDouble(d);
-			}
-			vo.setNmoney(result);
-		}
-		// danqiang3 decrypt the data from the result of querysql 2018-6-1
-		// 11:34:15
 		List<WadocQueryVO> finalQueryVOs = new ArrayList<WadocQueryVO>();
 		if (wadocVOs.length > 0) {
 			for (String pk_psndoc : psnList) {
@@ -1120,6 +1110,7 @@ public class NhiCalcGenerateSrvImpl implements INhiCalcGenerateSrv {
 		return new UFDate(calendar.getTime()).asEnd();
 	}
 
+	@SuppressWarnings("unchecked")
 	private <T> T[] executeQueryVOs(String sql, Class<T> voClass) throws DAOException {
 		List<T> list = (List<T>) this.getBaseDao().executeQuery(sql, new BeanListProcessor(voClass));
 		if (list == null || list.size() == 0) {
@@ -1149,8 +1140,8 @@ public class NhiCalcGenerateSrvImpl implements INhiCalcGenerateSrv {
 			throws BusinessException {
 		int dbType = this.getBaseDao().getDBType();
 		String strSQL = " SELECT pk_psndoc, '" + inDutyDate.toStdString() + "' begindate, null enddate, "
-				+ "    SUM(wadoc.nmoney) nmoney " + " FROM " + "     hi_psndoc_wadoc wadoc " + " INNER JOIN "
-				+ "     wa_item waitem " + " ON " + "     wadoc.pk_wa_item = waitem.pk_wa_item "
+				+ "    SUM(SALARY_DECRYPT(wadoc.nmoney)) nmoney " + " FROM " + "     hi_psndoc_wadoc wadoc "
+				+ " INNER JOIN " + "     wa_item waitem " + " ON " + "     wadoc.pk_wa_item = waitem.pk_wa_item "
 				+ " AND waitem.dr = 0 " + " INNER JOIN " + "     twhr_waitem_30 waitemex " + " ON "
 				+ "     waitem.pk_wa_item = waitemex.pk_wa_item " + " AND waitemex.dr = 0 " + " WHERE "
 				+ "     waitemex.isnhiitem_30 = N'Y' ";
@@ -1173,16 +1164,6 @@ public class NhiCalcGenerateSrvImpl implements INhiCalcGenerateSrv {
 			PsndocVO psnvo = (PsndocVO) this.getBaseDao().retrieveByPK(PsndocVO.class, pk_psndoc);
 			throw new BusinessException("員工 [" + psnvo.getCode() + "] 有效的定調資項目不能為空，勞健保加保需同時滿足以下條件：\r\n"
 					+ "  1.  定調薪資項目是勞健保計算依據；\r\n" + "  2. 入職日期在定調資項目的起迄時間範圍內；\r\n" + "  3. 定調薪資項目發放標記已勾選。");
-		}
-		// danqiang3 decrypt the data from the result of querysql 2018-6-1
-		// 11:34:15
-		for (WadocQueryVO vo : wadocVOs) {
-			UFDouble result = new UFDouble(0);
-			if (vo.getNmoney() != null) {
-				double d = SalaryDecryptUtil.decrypt(vo.getNmoney().doubleValue());
-				result = new UFDouble(d);
-			}
-			vo.setNmoney(result);
 		}
 		List<WadocQueryVO> finalQueryVOs = new ArrayList<WadocQueryVO>();
 		if (wadocVOs.length > 0) {

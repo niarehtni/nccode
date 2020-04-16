@@ -137,7 +137,7 @@ public class PFApproveAction extends PFBaseAction implements IBesideApproveConte
 		if (null != apprRetObj) {
 			AggStapply[] aggvos = (AggStapply[]) apprRetObj.getRetObj();
 
-			NCLocator.getInstance().lookup(IPsndocSubInfoService4JFS.class).rollbackhealthandlabor(aggvos);
+			NCLocator.getInstance().lookup(IPsndocSubInfoService4JFS.class).finishInsurance(aggvos);
 		}
 
 		// 错误信息两部分,审批错误与执行错误

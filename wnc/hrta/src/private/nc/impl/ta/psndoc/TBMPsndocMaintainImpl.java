@@ -44,6 +44,7 @@ import nc.md.persist.framework.MDPersistenceService;
 import nc.pubitf.rbac.IDataPermissionPubService;
 import nc.uap.cpb.baseservice.util.BDVersionValidationUtil;
 import nc.ui.querytemplate.querytree.FromWhereSQL;
+import nc.vo.bd.team.team01.entity.TeamHeadVO;
 import nc.vo.bd.team.team01.entity.TeamItemVO;
 import nc.vo.hi.psndoc.PsnJobVO;
 import nc.vo.hi.psndoc.PsndocVO;
@@ -439,7 +440,30 @@ public class TBMPsndocMaintainImpl implements ITBMPsndocQueryMaintain, ITBMPsndo
 			// 轉入人員檔案時，有班組的不再自動生成考勤檔案
 			// 因為PsndocDAO: HiBatchEventValueObject.fireEvent會生成檔案（非同步事務）
 			if (psnjobVO.getAttributeValue("jobglbdef7") != null) {
-				return null;
+				Collection<TBMPsndocVO> existsPsndocVOs = baseDAO.retrieveByClause(TBMPsndocVO.class, "pk_psndoc='"
+						+ psnjobVO.getPk_psndoc() + "'");
+				// mod 有班组而且这些班组和当前工作记录有交集,才不去生成考勤档案 tank 2020年3月29日10:59:28
+				boolean isInsert = true;
+
+				// mod end
+
+				if (existsPsndocVOs != null && existsPsndocVOs.size() > 0) {
+					UFLiteralDate jobBgDate = psnjobVO.getBegindate();
+					UFLiteralDate jobEdDate = psnjobVO.getEnddate() == null ? new UFLiteralDate("9999-12-31")
+							: psnjobVO.getEnddate();
+					for (TBMPsndocVO tvo : existsPsndocVOs) {
+						UFLiteralDate tbmBgDate = tvo.getBegindate();
+						UFLiteralDate tbmEdDate = tvo.getEnddate() == null ? new UFLiteralDate("9999-12-31") : tvo
+								.getEnddate();
+						// 班组和工作记录有交集,则不新增考勤档案(WNC的班组和工作记录应该是一一对应的.否则可能是脏数据)
+						if (!tbmEdDate.before(jobBgDate) && !jobEdDate.before(tbmBgDate)) {
+							isInsert = false;
+						}
+					}
+				}
+				if (!isInsert) {
+					return null;
+				}
 			}
 			// end
 		}
@@ -523,6 +547,84 @@ public class TBMPsndocMaintainImpl implements ITBMPsndocQueryMaintain, ITBMPsndo
 		// new
 		// nc.impl.ta.monthstat.MonthStatServiceImpl().processAfterInsertTBMPsndoc(vo);
 		return setLatestFlag(new TBMPsndocVO[] { psndocVO })[0];
+	}
+
+	@SuppressWarnings("unchecked")
+	private void generateTeamItem(PsnJobVO newPsnJob, TBMPsndocVO psndocVO) throws BusinessException {
+		BaseDAO baseDAO = new BaseDAO();
+		String newShift = psndocVO.getPk_team();
+		// 新班組為空時，不做開始動作
+		if (!StringUtils.isEmpty(newShift)) {
+			TeamHeadVO headVO = (TeamHeadVO) baseDAO.retrieveByPK(TeamHeadVO.class, newShift);
+
+			Collection<TeamItemVO> itemVOs = baseDAO.retrieveByClause(
+					TeamItemVO.class,
+					"cteamid = '"
+							+ newShift
+							+ "' and cworkmanid='"
+							+ psndocVO.getPk_psndoc()
+							+ "' and denddate >= '"
+							+ psndocVO.getBegindate()
+							+ "' and dstartdate <= '"
+							+ (psndocVO.getEnddate() == null
+									|| psndocVO.getEnddate().isSameDate(new UFLiteralDate("9999-12-01")) ? "9999-12-01"
+									: psndocVO.getEnddate()) + "'");
+
+			if (itemVOs != null && itemVOs.size() > 0) {
+				return;
+			}
+
+			Collection<TeamItemVO> insertItemVOs = new ArrayList<TeamItemVO>();
+
+			// 构造新成员TeamItemVO，加入itemVOs
+			TeamItemVO newMemberVO = new TeamItemVO();
+			newMemberVO.setPk_group(headVO.getPk_group());
+			newMemberVO.setPk_org(headVO.getPk_org());
+			newMemberVO.setPk_org_v(headVO.getPk_org_v());
+			newMemberVO.setPk_dept(newPsnJob.getPk_dept());
+			newMemberVO.setPk_psncl(newPsnJob.getPk_psncl());
+			newMemberVO.setPk_psnjob(newPsnJob.getPk_psnjob());
+			newMemberVO.setCworkmanid(newPsnJob.getPk_psndoc());
+			newMemberVO.setCteamid(headVO.getCteamid());
+			newMemberVO.setBmanager(UFBoolean.FALSE);
+			newMemberVO.setDr(0);
+			newMemberVO.setDstartdate(psndocVO.getBegindate());
+			newMemberVO
+					.setDenddate(psndocVO.getEnddate() == null
+							|| psndocVO.getEnddate().isSameDate(new UFLiteralDate("9999-12-01")) ? null : psndocVO
+							.getEnddate());
+			newMemberVO.setStatus(VOStatus.NEW);
+			insertItemVOs.add(newMemberVO);
+
+			updateShiftGroup(headVO, insertItemVOs);
+
+			String maxTeamDate = (String) baseDAO.executeQuery(
+					"select max(calendar) cl from bd_teamcalendar where pk_team = '" + newShift + "'",
+					new ColumnProcessor());
+			if (!StringUtils.isEmpty(maxTeamDate)) {
+				((IPsnCalendarManageService) NCLocator.getInstance().lookup(IPsnCalendarManageService.class))
+						.sync2TeamCalendar(headVO.getPk_org(), newShift, new String[] { newPsnJob.getPk_psndoc() },
+								psndocVO.getBegindate(), new UFLiteralDate(maxTeamDate));
+			}
+		}
+
+	}
+
+	public void updateShiftGroup(TeamHeadVO headVO, Collection<TeamItemVO> itemVOs) throws BusinessException {
+		BaseDAO baseDAO = new BaseDAO();
+		if (itemVOs != null && itemVOs.size() > 0) {
+			for (TeamItemVO vo : itemVOs) {
+				if (vo.getStatus() == VOStatus.UPDATED) {
+					baseDAO.updateVO(vo);
+					vo.setStatus(VOStatus.UNCHANGED);
+				} else if (vo.getStatus() == VOStatus.NEW) {
+					baseDAO.insertVO(vo);
+					vo.setStatus(VOStatus.UNCHANGED);
+				} else if (vo.getStatus() == VOStatus.DELETED) {
+					baseDAO.deleteVO(vo);
+				}
+			}
+		}
 	}
 
 	/**
@@ -1387,29 +1489,42 @@ public class TBMPsndocMaintainImpl implements ITBMPsndocQueryMaintain, ITBMPsndo
 		// default:
 		// break;
 		// }
-		// // 调班校验 必须满足7天内必有一天是例假日 或者 14天内必有两天是例假日
+		// 调班校验 必须满足7天内必有一天是例假日 或者 14天内必有两天是例假日
 		// boolean oneOT = new TBMPsndocDAO().validateOneOT(date);
 		// if (!oneOT) {
 		// throw new BusinessException("必须满足7天内必有一天是例假日 或者 14天内必有两天是例假日");
 		// }
-		// String sql = "update tbm_psncalendar set date_daytype=" + type
-		// + " where calendar='" + date + "' and pk_psndoc ='" + pk_psndoc
-		// + "'";
-		// int i = new BaseDAO().executeUpdate(sql);
+		String sql = "update tbm_psncalendar set date_daytype=" + type + " where calendar='" + date
+				+ "' and pk_psndoc ='" + pk_psndoc + "'";
+		int i = new BaseDAO().executeUpdate(sql);
 		return 0;
 	}
 
+	/**
+	 * 考勤增加不同步班次標識 by George 20200326 特性 #33851 批量新增考勤档案，新增邏輯參數為
+	 * 不同步班組工作日曆(isNotsyncal)
+	 */
 	@Override
 	public TBMPsndocVO[] batchInsert(LoginContext context, TBMPsndocVO[] vos, int tbm_prop, UFLiteralDate beginDate,
-			String pk_place, int tbm_weekform, int tbm_otcontrol, boolean isUpdatePsnCalendar) throws BusinessException {
+			String pk_place, int tbm_weekform, int tbm_otcontrol, boolean isUpdatePsnCalendar, boolean isNotsyncal)
+			throws BusinessException {
 		if (ArrayUtils.isEmpty(vos))
 			return null;
-		vos = convertTBMPsndocs(context, vos, tbm_prop, beginDate, tbm_weekform, tbm_otcontrol, pk_place);
-		return insert(vos, isUpdatePsnCalendar);
+
+		// 考勤增加不同步班次標識 by George 20200326 特性 #33851
+		// 批量新增考勤档案，新增邏輯參數為 不同步班組工作日曆(isNotsyncal)
+		vos = convertTBMPsndocs(context, vos, tbm_prop, beginDate, tbm_weekform, tbm_otcontrol, pk_place, isNotsyncal);
+
+		return insert(vos, isUpdatePsnCalendar, true);
 	}
 
+	/**
+	 * 考勤增加不同步班次標識 by George 20200326 特性 #33851 批量新增考勤档案，新增邏輯參數為
+	 * 不同步班組工作日曆(isNotsyncal)
+	 */
 	private TBMPsndocVO[] convertTBMPsndocs(LoginContext context, TBMPsndocVO[] vos, int tbm_prop,
-			UFLiteralDate beginDate, int tbm_weekform, int tbm_otcontrol, String pk_place) throws BusinessException {
+			UFLiteralDate beginDate, int tbm_weekform, int tbm_otcontrol, String pk_place, boolean isNotsyncal)
+			throws BusinessException {
 		if (ArrayUtils.isEmpty(vos))
 			return null;
 		for (TBMPsndocVO vo : vos) {
@@ -1422,6 +1537,19 @@ public class TBMPsndocMaintainImpl implements ITBMPsndocQueryMaintain, ITBMPsndo
 			vo.setPk_group(context.getPk_group());
 			vo.setEnddate(UFLiteralDate.getDate(TBMPsndocCommonValue.END_DATA));
 			vo.setStatus(VOStatus.NEW);
+
+			// ssx added on 2020-04-07
+			// 新增考勤档案时将上一笔考勤的班组带入
+			String pk_team = (String) new BaseDAO()
+					.executeQuery(
+							"select pk_team from tbm_psndoc doc where begindate = (select max(begindate) from tbm_psndoc where pk_psndoc = doc.pk_psndoc) and pk_psndoc = '"
+									+ vo.getPk_psndoc() + "'", new ColumnProcessor());
+			vo.setPk_team(pk_team);
+			// ssx end
+
+			// 考勤增加不同步班次標識 by George 20200326 特性 #33851
+			// 批量新增考勤档案，新增邏輯參數為 不同步班組工作日曆(isNotsyncal)
+			vo.setNotsyncal(new UFBoolean(isNotsyncal));
 
 			// 如果是人员变动，则开始日期为变动日期(兼职开始则为兼职开始日期，工作记录开始就是工作记录开始日期)
 			// 如果该人员已有结束的考勤档案，并且变动日期小于最后该人员最后一条结束考勤档案的结束日期，
@@ -1451,4 +1579,26 @@ public class TBMPsndocMaintainImpl implements ITBMPsndocQueryMaintain, ITBMPsndo
 		}
 		return vos;
 	}
+
+	// ssx added on 2020-04-08
+	// 新增考勤档案时同步上一笔班组
+	@Override
+	public TBMPsndocVO insert(TBMPsndocVO vo, boolean isUpdatePsnCalendar, boolean isCreateTeamMember)
+			throws BusinessException {
+		TBMPsndocVO psndocVO = insert(vo, isUpdatePsnCalendar);
+		if (isCreateTeamMember) {
+			generateTeamItem((PsnJobVO) baseDAO.retrieveByPK(PsnJobVO.class, psndocVO.getPk_psnjob()), psndocVO);
+		}
+		return psndocVO;
+	}
+
+	private TBMPsndocVO[] insert(TBMPsndocVO[] vos, boolean isUpdatePsnCalendar, boolean isCreateTeamMember)
+			throws BusinessException {
+		TBMPsndocVO[] psndocVOs = insert(vos, isUpdatePsnCalendar);
+		if (isCreateTeamMember) {
+			for (TBMPsndocVO vo : psndocVOs)
+				generateTeamItem((PsnJobVO) baseDAO.retrieveByPK(PsnJobVO.class, vo.getPk_psnjob()), vo);
+		}
+		return psndocVOs;
+	} //
 }

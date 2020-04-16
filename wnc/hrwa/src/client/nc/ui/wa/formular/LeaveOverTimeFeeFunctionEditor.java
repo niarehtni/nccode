@@ -26,8 +26,10 @@ public class LeaveOverTimeFeeFunctionEditor extends WaAbstractFunctionEditor {
 	 */
 	private static final long serialVersionUID = -4468484862772531470L;
 
-	private UILabel label = null;
+	private UILabel lblIsTaxFree = null;
+	private UILabel lblIsComp = null;
 	private UIComboBox yOrnCBox = null;
+	private UIComboBox cboIsComp = null;
 
 	// 薪资项目分组参照 Ares.Tank 2019年1月20日21:17:47
 	private UILabel groupLabel = null;
@@ -63,11 +65,14 @@ public class LeaveOverTimeFeeFunctionEditor extends WaAbstractFunctionEditor {
 	private void initialize() {
 		try {
 			setLayout(null);
-			setSize(300, 150);
+			setSize(300, 180);
 			setTitle("請選擇參數");
 
-			add(getUILabel(), getUILabel().getName());
-			add(getYOrnCBox(), getYOrnCBox().getName());
+			add(getLblIsComp(), getLblIsComp().getName());
+			add(getCboComp(), getCboComp().getName());
+
+			add(getLblIsTaxFree(), getLblIsTaxFree().getName());
+			add(getCboYesNo(), getCboYesNo().getName());
 
 			add(getGroupLabel(), getGroupLabel().getName());
 			add(getGroupRef(), getGroupRef().getName());
@@ -83,6 +88,101 @@ public class LeaveOverTimeFeeFunctionEditor extends WaAbstractFunctionEditor {
 
 	}
 
+	/**
+	 * 返回 refPeriodItem 特性值。
+	 * 
+	 * @return nc.ui.pub.beans.UIRefPane
+	 */
+	/* 警告：此方法将重新生成。 */
+	private UIComboBox getCboYesNo() {
+		if (yOrnCBox == null) {
+			try {
+				yOrnCBox = new UIComboBox();
+				String[] ml = new String[2];
+				ml[0] = ResHelper.getString("6013commonbasic", "06013commonbasic0270")/*
+																					 * @
+																					 * res
+																					 * "否"
+																					 */;
+				ml[1] = ResHelper.getString("6013commonbasic", "06013commonbasic0271")/*
+																					 * @
+																					 * res
+																					 * "是"
+																					 */;
+
+				Integer[] mlDefault = new Integer[] { 0, 1 };
+				ConstEnumFactory<Integer> mPairFactory = new ConstEnumFactory<Integer>(ml, mlDefault);
+				yOrnCBox.addItems(mPairFactory.getAllConstEnums());
+				yOrnCBox.setBounds(120, 50, 150, 22);
+			} catch (java.lang.Throwable ivjExc) {
+				handleException(ivjExc);
+			}
+		}
+		return yOrnCBox;
+	}
+
+	/**
+	 * 返回 UILabel3 特性值。
+	 * 
+	 * @return nc.ui.pub.beans.UILabel
+	 */
+	/* 警告：此方法将重新生成。 */
+	private UILabel getLblIsTaxFree() {
+		if (lblIsTaxFree == null) {
+			try {
+				lblIsTaxFree = new UILabel();
+				lblIsTaxFree.setName("label");
+				lblIsTaxFree.setText(ResHelper.getString("6013commonbasic", "06013commonbasic0269")/*
+																									 * @
+																									 * res
+																									 * "是否免税"
+																									 */);
+				lblIsTaxFree.setBounds(10, 50, 100, 22);
+				lblIsTaxFree.setHorizontalAlignment(SwingConstants.RIGHT);
+
+			} catch (java.lang.Throwable labExc) {
+				handleException(labExc);
+			}
+		}
+		return lblIsTaxFree;
+	}
+
+	private UILabel getLblIsComp() {
+		if (lblIsComp == null) {
+			try {
+				lblIsComp = new UILabel();
+				lblIsComp.setName("lblIsComp");
+				lblIsComp.setText("加班轉調休");
+				lblIsComp.setBounds(10, 20, 100, 22);
+				lblIsComp.setHorizontalAlignment(SwingConstants.RIGHT);
+
+			} catch (java.lang.Throwable labExc) {
+				handleException(labExc);
+			}
+		}
+		return lblIsComp;
+	}
+
+	private UIComboBox getCboComp() {
+		if (cboIsComp == null) {
+			try {
+				cboIsComp = new UIComboBox();
+				String[] ml = new String[3];
+				ml[0] = "轉調休";
+				ml[1] = "非轉調休";
+				ml[2] = "合計";
+
+				Integer[] mlDefault = new Integer[] { 0, 1, 2 };
+				ConstEnumFactory<Integer> mPairFactory = new ConstEnumFactory<Integer>(ml, mlDefault);
+				cboIsComp.addItems(mPairFactory.getAllConstEnums());
+				cboIsComp.setBounds(120, 20, 150, 22);
+			} catch (java.lang.Throwable ivjExc) {
+				handleException(ivjExc);
+			}
+		}
+		return cboIsComp;
+	}
+
 	public UILabel getGroupLabel() {
 		if (this.groupLabel == null) {
 			try {
@@ -90,7 +190,7 @@ public class LeaveOverTimeFeeFunctionEditor extends WaAbstractFunctionEditor {
 				this.groupLabel.setName("UILabel3");
 				this.groupLabel.setText("薪资项目分组：");
 				this.groupLabel.setHorizontalAlignment(SwingConstants.RIGHT);
-				this.groupLabel.setBounds(10, 50, 100, 22);
+				this.groupLabel.setBounds(10, 80, 100, 22);
 			} catch (Throwable ivjExc) {
 				handleException(ivjExc);
 			}
@@ -114,36 +214,10 @@ public class LeaveOverTimeFeeFunctionEditor extends WaAbstractFunctionEditor {
 			groupRef.setButtonFireEvent(true);
 			groupRef.getUITextField().setShowMustInputHint(true);
 			groupRef.setName("groupRef");
-			groupRef.setBounds(120, 50, 150, 22);
+			groupRef.setBounds(120, 80, 150, 22);
 
 		}
 		return groupRef;
-	}
-
-	/**
-	 * 返回 UILabel3 特性值。
-	 * 
-	 * @return nc.ui.pub.beans.UILabel
-	 */
-	/* 警告：此方法将重新生成。 */
-	private UILabel getUILabel() {
-		if (label == null) {
-			try {
-				label = new UILabel();
-				label.setName("label");
-				label.setText(ResHelper.getString("6013commonbasic", "06013commonbasic0269")/*
-																							 * @
-																							 * res
-																							 * "是否免税"
-																							 */);
-				label.setBounds(10, 20, 100, 22);
-				label.setHorizontalAlignment(SwingConstants.RIGHT);
-
-			} catch (java.lang.Throwable labExc) {
-				handleException(labExc);
-			}
-		}
-		return label;
 	}
 
 	/**
@@ -171,7 +245,7 @@ public class LeaveOverTimeFeeFunctionEditor extends WaAbstractFunctionEditor {
 				Integer[] mlDefault = new Integer[] { 0, 1 };
 				ConstEnumFactory<Integer> mPairFactory = new ConstEnumFactory<Integer>(ml, mlDefault);
 				yOrnCBox.addItems(mPairFactory.getAllConstEnums());
-				yOrnCBox.setBounds(120, 20, 150, 22);
+				yOrnCBox.setBounds(120, 50, 150, 22);
 			} catch (java.lang.Throwable ivjExc) {
 				handleException(ivjExc);
 			}
@@ -191,7 +265,7 @@ public class LeaveOverTimeFeeFunctionEditor extends WaAbstractFunctionEditor {
 		try {
 			// 判断非空
 			String nullstr = "";
-			if (getYOrnCBox().getSelectedIndex() < 0) {
+			if (getCboYesNo().getSelectedIndex() < 0) {
 				if (nullstr.length() > 0)
 					nullstr += ",";
 				nullstr += ResHelper.getString("6013commonbasic", "06013commonbasic0269")/*
@@ -200,6 +274,15 @@ public class LeaveOverTimeFeeFunctionEditor extends WaAbstractFunctionEditor {
 																						 * "是否免税"
 																						 */;
 			}
+
+			if (getCboComp().getSelectedIndex() < 0) {
+				if (nullstr.length() > 0) {
+					nullstr += ",";
+				}
+
+				nullstr += "加班轉調休";
+			}
+
 			if (nullstr.length() > 0)
 				throw new Exception(nullstr + ResHelper.getString("6013commonbasic", "06013commonbasic0021")/*
 																											 * @
@@ -225,17 +308,18 @@ public class LeaveOverTimeFeeFunctionEditor extends WaAbstractFunctionEditor {
 	 * @return java.lang.String
 	 */
 	public String[] getPara() {
-		String[] paras = new String[2];
+		String[] paras = new String[3];
+		paras[0] = getCboComp().getSelectdItemValue().toString();
 		// 是否免税 0否 1是
-		paras[0] = getYOrnCBox().getSelectdItemValue().toString();
-		paras[1] = "\"" + getGroupRef().getRefPK() + "\"";
+		paras[1] = getCboYesNo().getSelectdItemValue().toString();
+		paras[2] = "\"" + getGroupRef().getRefPK() + "\"";
 		return paras;
 	}
 
 	public UIButton getOkButton() {
 		if (okButton == null) {
 			okButton = new UIButton(ResHelper.getString("common", "UC001-0000044"));
-			okButton.setBounds(48, 98, 80, 22);
+			okButton.setBounds(48, 128, 80, 22);
 		}
 		return okButton;
 	}
@@ -243,7 +327,7 @@ public class LeaveOverTimeFeeFunctionEditor extends WaAbstractFunctionEditor {
 	public UIButton getCancelButton() {
 		if (cancelButton == null) {
 			cancelButton = new UIButton(ResHelper.getString("common", "UC001-0000008"));
-			cancelButton.setBounds(172, 98, 80, 22);
+			cancelButton.setBounds(172, 128, 80, 22);
 		}
 		return cancelButton;
 	}

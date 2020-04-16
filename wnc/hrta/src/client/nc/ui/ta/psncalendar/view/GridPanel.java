@@ -266,7 +266,8 @@ public class GridPanel extends AbstractPanel implements BillEditListener2 {
 								if (data2.getDayTypeMap().get(date.toString()) == null) {
 									MessageDialog.showErrorDlg(null, "錯誤", "當天沒有考勤檔案");
 								}
-								QueryDialog dialog = new QueryDialog(date.toString(), data2.getPk_psndoc());
+								QueryDialog dialog = new QueryDialog(date.toString(), data2.getPk_psndoc(), obj
+										.getContext().getPk_org());
 								dialog.showModal();
 								String OkorNo = dialog.getOkCanel() == null ? "" : dialog.getOkCanel();// 按钮点击判断
 								if (OkorNo.equals("") || OkorNo.equals("取消")) { // 如果没有点击或点击取消则退出
@@ -286,9 +287,7 @@ public class GridPanel extends AbstractPanel implements BillEditListener2 {
 								// MOD (一例一休校驗)
 								// ssx added on 2018-06-10
 								try {
-									NCLocator
-											.getInstance()
-											.lookup(ITBMPsndocManageMaintain.class)
+									NCLocator.getInstance().lookup(ITBMPsndocManageMaintain.class)
 											.update(date.toString(), pk_psndoc, type, obj.getContext().getPk_org());
 									getManager().refresh();
 								} catch (BusinessException ex) {

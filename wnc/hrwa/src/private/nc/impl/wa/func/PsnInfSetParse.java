@@ -24,7 +24,7 @@ public class PsnInfSetParse  extends AbstractPreExcutorFormulaParse {
 	private static final long serialVersionUID = 1L;
 
 
-	private UFLiteralDate getDate(String date) throws BusinessException{
+	private String getDate(String date) throws BusinessException{
 		//	l_date += IFormulaConst.splitSymbol + (getcmbDate().getSelectedIndex() == 0 ? "cstartdate" : "cenddate");
 		String[] dates = date.split(IFormulaConst.splitSymbol);
 		if(dates == null || (dates.length != 2 && dates.length != 3) ){
@@ -32,10 +32,16 @@ public class PsnInfSetParse  extends AbstractPreExcutorFormulaParse {
 		}
 		if(dates.length == 2){
 			Integer pre = new Integer(dates[0]);
-			boolean isStart = dates[1].equalsIgnoreCase("cstartdate");
+			Boolean isStart = null;
+			if(dates[1].equalsIgnoreCase("cstartdate")){
+				isStart = true;
+			}else if(dates[1].equalsIgnoreCase("cenddate")){
+				isStart = false;
+			}
+
 			return getAbsPeriod(pre, isStart);
 		}else{
-			return new UFLiteralDate(dates[0] + "-" + dates[1] + "-" + dates[2]);
+			return new UFLiteralDate(dates[0] + "-" + dates[1] + "-" + dates[2]).toStdString();
 		}
 	}
 
@@ -44,7 +50,7 @@ public class PsnInfSetParse  extends AbstractPreExcutorFormulaParse {
 	 * @param i int 相对偏移数（前几期间，》0时有效，否则直接返回当前；若找不到则返回{1900，01}）
 	 * @exception javsql.SQLException 异常说明。
 	 */
-	private UFLiteralDate getAbsPeriod(int i, boolean isStart) throws BusinessException {
+	private String getAbsPeriod(int i, Boolean isStart) throws BusinessException {
 
 
 		StringBuffer sqlB = new StringBuffer();
@@ -60,10 +66,13 @@ public class PsnInfSetParse  extends AbstractPreExcutorFormulaParse {
 		if(periodVOs != null){
 			for (int j = 0; j < periodVOs.length; j++) {
 				if(j == i){//找到啦,则附值、退出
-					if(isStart){
-						return periodVOs[j].getCstartdate();
+					if(null == isStart){
+						//按薪资期间
+						return periodVOs[j].getCstartdate().toStdString() + "_" + periodVOs[j].getCenddate().toStdString();
+					}else if(isStart){
+						return periodVOs[j].getCstartdate().toStdString();
 					}else{
-						return periodVOs[j].getCenddate();
+						return periodVOs[j].getCenddate().toStdString();
 					}
 				}
 			}
@@ -86,12 +95,22 @@ public class PsnInfSetParse  extends AbstractPreExcutorFormulaParse {
 		String date = arguments[3];
 		// String ref_table = arguments[4];
 		// String ref_item_code = arguments[5];
-		
+
 		if(isNull(date)){
 			date = null;
-		}else{
-			UFLiteralDate ufDate = getDate(date);
-			date = ufDate == null? "9999-09-09": ufDate.toString();
+		} else {
+			String ufDate = getDate(date);
+			// hepingyang
+			// mod tank 要考虑偏移量
+			if (ufDate == null) {
+				if (date.contains("_middledate")) {
+					ufDate = "1000-10-01_1000-10-31";
+				} else {
+					date = ufDate == null ? "1000-10-10" : ufDate.toString();
+				}
+			}
+
+			date = ufDate;
 		}
 
 		arguments[3] = date;

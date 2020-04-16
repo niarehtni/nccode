@@ -33,7 +33,7 @@ public class DefaultExportAction extends HrAction {
 	private IModelDataManager dataManager;
 	private ShowUpableBillForm billForm;
 	private ShowTaxDig showTaxDig;
-	private PrimaryOrgPanel primaryOrgPanel = null;
+	private nc.ui.twhr.glb.view.OrgPanel_Org primaryOrgPanel = null;
 
 	public DefaultExportAction() {
 		super();
@@ -186,11 +186,11 @@ public class DefaultExportAction extends HrAction {
 		this.billForm = billForm;
 	}
 
-	public PrimaryOrgPanel getPrimaryOrgPanel() {
+	public nc.ui.twhr.glb.view.OrgPanel_Org getPrimaryOrgPanel() {
 		return primaryOrgPanel;
 	}
 
-	public void setPrimaryOrgPanel(PrimaryOrgPanel primaryOrgPanel) {
+	public void setPrimaryOrgPanel(nc.ui.twhr.glb.view.OrgPanel_Org primaryOrgPanel) {
 		this.primaryOrgPanel = primaryOrgPanel;
 	}
 

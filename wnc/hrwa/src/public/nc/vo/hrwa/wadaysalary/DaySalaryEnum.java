@@ -19,14 +19,21 @@ public abstract interface DaySalaryEnum {
 	  public static final double  DAYSAYSALARYNUM03= 30.0;//固定值30天
 	  
 	  //考勤时薪天数取值方式
-	  public static final int TBMNUMTYPE1 = 0;//固定值30天
-	  public static final int TBMNUMTYPE2 = 1;//固定值21.75天
-	  public static final int TBMNUMTYPE3 = 2;//考勤期间
+	  //public static final int TBMNUMTYPE1 = 0;//固定值30天
+	  //public static final int TBMNUMTYPE2 = 1;//固定值21.75天
+	  //public static final int TBMNUMTYPE3 = 2;//考勤期间
 	  
 	  //日薪计算天数取值方式
-	  public static final int DAYNUMTYPE1 = 0;//薪资期间计薪日天数（节日+平日）
-	  public static final int DAYNUMTYPE2 = 1;//薪资期间天数
-	  public static final int DAYNUMTYPE3 = 2;//固定30天
+	  //public static final int DAYNUMTYPE1 = 0;//薪资期间计薪日天数（节日+平日）
+	  //public static final int DAYNUMTYPE2 = 1;//薪资期间天数
+	  //public static final int DAYNUMTYPE3 = 2;//固定30天
+	  
+	  //日薪计算天数取值方式
+	  public static final int MIX_DAYNUMTYPE1 = 1;//固定30天
+	  public static final int MIX_DAYNUMTYPE2 = 2;//固定21.75天
+	  public static final int MIX_DAYNUMTYPE3 = 3;//薪资期间天数
+	  public static final int MIX_DAYNUMTYPE4 = 4;//薪资期间计薪日天数（节日+平日）
+	  public static final int MIX_DAYNUMTYPE5 = 5;//考勤计薪天数
 	  
 	  //参数注册编码
 	  public static final String DAYSYSINT="HRWA021";//日薪计算天数取值方式

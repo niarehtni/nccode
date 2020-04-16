@@ -788,7 +788,10 @@ public class GetAggIncomeTaxDataImpl implements IGetAggIncomeTaxData {
 				UFDouble expireNum = getBaseDocUFDoubleValue(
 						psndoc.getPk_org(), "TWSP0013");
 				String cyear = cyearperiod.substring(0, 4);
-				String cperiod = cyearperiod.substring(5, 6);
+				// 外籍人員所得申報證號別問題  by George 20191003 特性 #28138 
+				// 在 申報明細檔會總 的證別號數字亂跳錯誤，因為201810只取了個位數，去判斷月份
+				// 修改成以下就行了substring(5, 6) 改成 substring(4, 6)
+				String cperiod = cyearperiod.substring(4, 6);
 				if (isExpire(twhr08, twhr09, expireNum, psndoc, cyear, cperiod)) {
 					return "3";
 				} else {
@@ -815,7 +818,10 @@ public class GetAggIncomeTaxDataImpl implements IGetAggIncomeTaxData {
 				UFDouble expireNum = getBaseDocUFDoubleValue(
 						psndoc.getPk_org(), "TWSP0013");
 				String cyear = cyearperiod.substring(0, 4);
-				String cperiod = cyearperiod.substring(5, 6);
+				// 外籍人員所得申報證號別問題  by George 20190626 特性 #28138 
+				// 在 申報明細檔會總 的證別號數字亂跳錯誤，因為201810只取了個位數，去判斷月份
+				// 修改成以下就行了substring(5, 6) 改成 substring(4, 6)
+				String cperiod = cyearperiod.substring(4, 6);
 				if (isExpire(twhr08, twhr09, expireNum, psndoc, cyear, cperiod)) {
 					return "3";
 				} else {

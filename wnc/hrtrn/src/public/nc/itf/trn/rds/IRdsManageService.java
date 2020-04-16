@@ -212,4 +212,15 @@ public interface IRdsManageService {
 	public void validateAddToBlacklist(PsndocAggVO psn, String pk_org) throws BusinessException;
 	
 	public String checkCtrt(AggStapply[] bill) throws BusinessException;
+	
+	/**
+	 * 啟基客開,插入工作記錄
+	 * 2020年3月26日11:13:43
+	 * tank
+	 * @param nextjob 
+	 * @param psnjob 
+	 * @param prejob 
+	 * @throws BusinessException
+	 */
+	void doAfterInsertPsnjob(PsnJobVO prejob, PsnJobVO psnjob) throws BusinessException;
 }

@@ -28,7 +28,6 @@ import nc.hr.utils.SQLHelper;
 import nc.hr.utils.StringPiecer;
 import nc.impl.ta.calendar.CalendarShiftMutexChecker;
 import nc.impl.ta.calendar.TACalendarUtils;
-import nc.itf.bd.psn.psndoc.IPsndocQueryService;
 import nc.itf.bd.shift.IShiftQueryService;
 import nc.itf.bd.shift.ShiftServiceFacade;
 import nc.itf.bd.timezone.TimezoneUtil;
@@ -51,14 +50,12 @@ import nc.jdbc.framework.SQLParameter;
 import nc.jdbc.framework.processor.BeanListProcessor;
 import nc.jdbc.framework.processor.ColumnProcessor;
 import nc.jdbc.framework.processor.MapListProcessor;
-import nc.jdbc.framework.processor.MapProcessor;
 import nc.md.model.MetaDataException;
 import nc.md.persist.framework.IMDPersistenceService;
 import nc.md.persist.framework.MDPersistenceService;
 import nc.ui.querytemplate.querytree.FromWhereSQL;
 import nc.vo.bd.holiday.HolidayInfo;
 import nc.vo.bd.holiday.HolidayVO;
-import nc.vo.bd.psn.PsnjobVO;
 import nc.vo.bd.pub.EnableStateEnum;
 import nc.vo.bd.shift.AggShiftVO;
 import nc.vo.bd.shift.ShiftVO;
@@ -79,7 +76,6 @@ import nc.vo.pub.lang.UFLiteralDate;
 import nc.vo.ta.holiday.HRHolidayVO;
 import nc.vo.ta.leave.LeaveRegVO;
 import nc.vo.ta.leaveextrarest.AggLeaveExtraRestVO;
-import nc.vo.ta.leaveextrarest.LeaveExtraRestVO;
 import nc.vo.ta.log.TaBusilogUtil;
 import nc.vo.ta.psncalendar.AggPsnCalendar;
 import nc.vo.ta.psncalendar.PsnCalHoliday;
@@ -216,11 +212,21 @@ public class PsnCalendarMaintainImpl implements IPsnCalendarQueryMaintain, IPsnC
 			for (UFLiteralDate date : dateScope) {
 				String dateStr = date.toString();
 				if (TBMPsndocVO.isIntersect(psndocList, dateStr)) {
+					TBMPsndocVO tbvo = TBMPsndocVO.getvoForTeam(psndocList, date.toString());
 					vo.getPsndocEffectiveDateSet().add(dateStr);
 					vo.getOrgMap().put(dateStr, TBMPsndocVO.findIntersectionVO(psndocList, dateStr).getPk_joborg());
+					// 填入班组 tank 2020年3月30日02:55:13
+					vo.setAttributeValue("jobglbdef7", tbvo.getPk_team());
+
 				}
-				if (is4Mgr && TBMPsndocVO.isIntersect(psndocsInHrOrgAndDept, dateStr))// 如果是经理自助，则还要装入在hr组织内、在部门管辖范围内的人员
+				if (is4Mgr && TBMPsndocVO.isIntersect(psndocsInHrOrgAndDept, dateStr)) {
+					TBMPsndocVO tbvo = TBMPsndocVO.getvoForTeam(Arrays.asList(psndocsInHrOrgAndDept), date.toString());
+					// 如果是经理自助，则还要装入在hr组织内、在部门管辖范围内的人员
 					vo.getPsndocEffectiveDateSetInHROrgAndDept().add(dateStr);
+					// 填入班组 tank 2020年3月30日02:55:19
+					vo.setAttributeValue("jobglbdef7", tbvo.getPk_team());
+				}
+
 			}
 			// 装入班次
 			if (calendarMap != null) {
@@ -761,6 +767,8 @@ public class PsnCalendarMaintainImpl implements IPsnCalendarQueryMaintain, IPsnC
 		if (psndocMap == null) {
 			return;
 		}
+		Map<String, Map<String, String>> existsPsnCalendarMap = new PsnCalendarDAO().queryPkShiftMapByPsndocs(pk_hrorg,
+				pk_psndocs, beginDate, endDate);
 		for (int i = 0; i < pk_psndocs.length; i++) {
 			Map<String, String> cloneDatePkShiftMap = new HashMap<String, String>(originalExpandedDatePkShiftMap);// 每个人单独复制一份，因为虽然是循环排班，但是最后排班的情况可能每个人都不同
 			Map<String, String> beforeExgPkShiftMap = new HashMap<String, String>();
@@ -772,6 +780,14 @@ public class PsnCalendarMaintainImpl implements IPsnCalendarQueryMaintain, IPsnC
 			// 循环处理用户设置的循环班次
 			for (int dateIndex = 0; dateIndex < dateArea.length; dateIndex++) {
 				String date = dateArea[dateIndex].toString();// 日期
+				// mod tank 考勤档案如果设定了 "不同步班組工作日曆"且排过班,则不同步
+				TBMPsndocVO vo = TBMPsndocVO.getvoForTeam(psndocList, date.toString());
+				if (vo.getNotsyncal() != null && vo.getNotsyncal().booleanValue()) {
+					if (existsPsnCalendarMap != null && existsPsnCalendarMap.containsKey(pk_psndocs[i])
+							&& existsPsnCalendarMap.get(pk_psndocs[i]).containsKey(date.toString()))
+						continue;
+				}
+				// mod end
 				if (processedDateSet.contains(date))// 处理过则不再处理
 					continue;
 				processedDateSet.add(date);
@@ -1538,11 +1554,14 @@ public class PsnCalendarMaintainImpl implements IPsnCalendarQueryMaintain, IPsnC
 				if (!TBMPsndocVO.isIntersect(psndocList, date.toString()))// 如果当日不在考勤档案范围内，则不insert
 					continue;
 				// 如果用户选择不覆盖，且当日已有工作日历，则也不insert
-				if (!overrideExistCalendar) {
+				// mod tank 考勤档案如果设定了 "不同步班組工作日曆",且当日已有工作日历,则不insert
+				TBMPsndocVO vo = TBMPsndocVO.getvoForTeam(psndocList, date.toString());
+				if (!overrideExistCalendar || (vo.getNotsyncal() != null && vo.getNotsyncal().booleanValue())) {
 					if (existsPsnCalendarMap != null && existsPsnCalendarMap.containsKey(pk_psndoc)
 							&& existsPsnCalendarMap.get(pk_psndoc).containsKey(date.toString()))
 						continue;
 				}
+				// mod end
 				AggPsnCalendar calendarVO = PsnCalendarUtils.createAggVOByShiftVO(pk_psndoc, pk_group, pk_org,
 						date.toString(), pkMap.get(date.toString()), shiftMap, isHolidayCancel);
 				insertList.add(calendarVO);
@@ -3108,28 +3127,17 @@ public class PsnCalendarMaintainImpl implements IPsnCalendarQueryMaintain, IPsnC
 			}
 
 			if (null != firstDate && null != secondDate && changedayorhour.compareTo(UFDouble.ZERO_DBL) > 0) {
-				AggLeaveExtraRestVO saveVO = new AggLeaveExtraRestVO();
-				LeaveExtraRestVO extraRestVO = new LeaveExtraRestVO();
-				extraRestVO.setPk_psndoc(psndocStr);
-				extraRestVO.setPk_org(pk_hrorg);
-				Map<String, String> baseInfo = getPsnBaseInfo(psndocStr, pk_hrorg);
-				extraRestVO.setPk_org_v(baseInfo.get("pk_org_v"));
-				extraRestVO.setPk_dept_v(baseInfo.get("pk_dept_v"));
-				extraRestVO.setPk_group(baseInfo.get("pk_group"));
-				extraRestVO.setBilldate(new UFLiteralDate());
-				extraRestVO.setDatebeforechange(firstDate);
-				extraRestVO.setTypebeforechange(getDateTypeByPsnDate(pk_hrorg, psndocStr, firstDate));
-				extraRestVO.setDateafterchange(secondDate);
-				extraRestVO.setTypeafterchange(getDateTypeByPsnDate(pk_hrorg, psndocStr, secondDate));
-				extraRestVO.setChangetype(extraRestVO.getTypebeforechange());
-				extraRestVO.setChangedayorhour(changedayorhour);
-				extraRestVO.setCreationtime(new UFDateTime());
-				extraRestVO.setExpiredate(getExpiredate(psndocStr, firstDate, extraRestVO.getBilldate()));
-				saveVO.setParent(extraRestVO);
-				extraRestList.add(saveVO);
+				extraRestList.add(PsnCalendarDAO.getExtraAggvo(pk_hrorg, new UFLiteralDate(), firstDate, secondDate,
+						changedayorhour, psndocStr));
 			}
 
 		}
+		// MOD 张恒 {21997} 将外加补休单据新增到数据库 2018/9/12
+		if (extraRestList != null && extraRestList.size() > 0) {
+			NCLocator.getInstance().lookup(ILeaveextrarestMaintain.class)
+					.insert(extraRestList.toArray(new AggLeaveExtraRestVO[0]));
+		}
+
 		IMDPersistenceService service = MDPersistenceService.lookupPersistenceService();
 		/*
 		 * if (resultList.size() > 0){
@@ -3184,59 +3192,10 @@ public class PsnCalendarMaintainImpl implements IPsnCalendarQueryMaintain, IPsnC
 		service.updateBillWithAttrs(firstDaySet.toArray(new AggPsnCalendar[0]), attrs);
 		service.updateBillWithAttrs(secondDaySet.toArray(new AggPsnCalendar[0]), attrs);
 
-		// MOD 张恒 {21997} 将外加补休单据新增到数据库 2018/9/12
-		if (extraRestList != null && extraRestList.size() > 0) {
-			NCLocator.getInstance().lookup(ILeaveextrarestMaintain.class)
-					.insert(extraRestList.toArray(new AggLeaveExtraRestVO[0]));
-		}
-
 		// psnCalendarDAO.insert(resultList.toArray(new AggPsnCalendar[0]));
 		// int i = new BaseDAO().updateVOArray(resultList.toArray(new
 		// PsnCalendarVO[0]));
 		// Debug.print(i);
-	}
-
-	private UFLiteralDate getExpiredate(String psndocStr, UFLiteralDate firstDate, UFLiteralDate billDate)
-			throws BusinessException {
-		UFLiteralDate maxLeaveDate = NCLocator.getInstance().lookup(ILeaveextrarestMaintain.class)
-				.calculateExpireDateByWorkAge(psndocStr, firstDate, billDate);
-		return maxLeaveDate;
-	}
-
-	/**
-	 * 查詢一下基本的信息
-	 * 
-	 * @param psndocStr
-	 * @param pk_hrorg
-	 * @return pk_org_v pk_dept_v pk_group
-	 * @throws BusinessException
-	 */
-	@SuppressWarnings("unchecked")
-	private Map<String, String> getPsnBaseInfo(String psndocStr, String pk_hrorg) throws BusinessException {
-		Map<String, String> resultMap = new HashMap<>();
-		IPsndocQueryService psnQuery = NCLocator.getInstance().lookup(IPsndocQueryService.class);
-		PsnjobVO psnjobvo = psnQuery.queryPsnJobVOByPsnDocPK(psndocStr);
-		String pk_dept = psnjobvo.getPk_dept();
-		String sqlStr = "select dept.pk_vid pk_dept_v, orgs.pk_vid pk_org_v ,orgs.pk_group pk_group"
-				+ " from org_dept dept " + " left join org_orgs orgs on orgs.pk_org = '" + pk_hrorg
-				+ "' where dept.pk_dept = '" + pk_dept + "'";
-		resultMap = (Map<String, String>) getBaseDAO().executeQuery(sqlStr, new MapProcessor());
-
-		return resultMap == null ? new HashMap<String, String>() : resultMap;
-	}
-
-	private Integer getDateTypeByPsnDate(String pk_hrorg, String pk_psndoc, UFLiteralDate checkDate)
-			throws BusinessException {
-		// 查出人员工作日历信息
-		PsnCalendarDAO psnCalendarDAO = new PsnCalendarDAO();
-		Map<String, Map<String, PsnCalendarVO>> dateTypeMap = psnCalendarDAO.queryCalendarVOMapByPsndocs(pk_hrorg,
-				new String[] { pk_psndoc }, new UFLiteralDate[] { checkDate });
-		if (dateTypeMap == null) {
-			PsndocVO psndocvo = (PsndocVO) this.getBaseDAO().retrieveByPK(PsndocVO.class, pk_psndoc);
-			throw new BusinessException("员工 [" + psndocvo.getCode() + "] 在 [" + checkDate.toString() + "] 未找到有效排班。");
-		}
-		PsnCalendarVO psnVo = dateTypeMap.get(pk_psndoc).get(checkDate.toString());
-		return psnVo.getDate_daytype();
 	}
 
 	/**
@@ -3274,50 +3233,12 @@ public class PsnCalendarMaintainImpl implements IPsnCalendarQueryMaintain, IPsnC
 				// resultPkList.add(forChangeMap.get(psndocStr).get(changeDate).getPk_psncalendar());
 			}
 		}
-		// 生成外加補休單據
-		List<AggLeaveExtraRestVO> extraRestList = new ArrayList<AggLeaveExtraRestVO>();
-		UFDouble changedayorhour = new UFDouble(0.00);
-		if (!StringUtils.isEmpty(changedayorhourStr) && new Double(changedayorhourStr) > 0) {
-			changedayorhour = new UFDouble(changedayorhourStr);
-		}
-		if (changedayorhour.compareTo(UFDouble.ZERO_DBL) >= 0) {
-			for (String psndocStr : psndocs) {
-				if (null != changeDate) {
-					AggLeaveExtraRestVO saveVO = new AggLeaveExtraRestVO();
-					LeaveExtraRestVO extraRestVO = new LeaveExtraRestVO();
-					extraRestVO.setPk_psndoc(psndocStr);
-					extraRestVO.setPk_org(pk_hrorg);
-					Map<String, String> baseInfo = getPsnBaseInfo(psndocStr, pk_hrorg);
-					extraRestVO.setPk_org_v(baseInfo.get("pk_org_v"));
-					extraRestVO.setPk_dept_v(baseInfo.get("pk_dept_v"));
-					extraRestVO.setPk_group(baseInfo.get("pk_group"));
-					extraRestVO.setBilldate(new UFLiteralDate());
-					extraRestVO.setDatebeforechange(changeDate);
-					extraRestVO.setTypebeforechange(getDateTypeByPsnDate(pk_hrorg, psndocStr, changeDate));
-					extraRestVO.setDateafterchange(changeDate);
-					extraRestVO.setTypeafterchange(dateType);
-					extraRestVO.setChangetype(extraRestVO.getTypebeforechange());
-					extraRestVO.setChangedayorhour(changedayorhour);
-					extraRestVO.setCreationtime(new UFDateTime());
-					extraRestVO.setExpiredate(getExpiredate(psndocStr, changeDate, extraRestVO.getBilldate()));
-					saveVO.setParent(extraRestVO);
-					extraRestList.add(saveVO);
-				}
-			}
-		}
-
-		/*
-		 * if (resultList.size() > 0){
-		 * psnCalendarDAO.deleteByPkArray(resultPkList.toArray(new String[0]));
-		 * }
-		 */
 
 		IMDPersistenceService service = MDPersistenceService.lookupPersistenceService();
 		String[] attrs = { PsnCalendarVO.DATE_DAYTYPE };
 		service.updateBillWithAttrs(resultList.toArray(new AggPsnCalendar[0]), attrs);
-		NCLocator.getInstance().lookup(ILeaveextrarestMaintain.class)
-				.insert(extraRestList.toArray(new AggLeaveExtraRestVO[0]));
-		// psnCalendarDAO.insert(resultList.toArray(new AggPsnCalendar[0]));
+
+		PsnCalendarDAO.generateExtraLeaves(pk_hrorg, psndocs, changeDate, dateType, changedayorhourStr);
 
 	}
 
@@ -3405,7 +3326,7 @@ public class PsnCalendarMaintainImpl implements IPsnCalendarQueryMaintain, IPsnC
 				forChangeMap.get(psndocStr).get(changeDate.toString()).setDate_daytype(dateType);
 				temp.setParentVO(forChangeMap.get(psndocStr).get(changeDate.toString()));
 				resultList.add(temp);
-				// resultPkList.add(forChangeMap.get(psndocStr).get(changeDate).getPk_psncalendar());
+				// this.getBaseDAO().updateVO(forChangeMap.get(psndocStr).get(changeDate.toString()));
 			}
 		}
 		return resultList;

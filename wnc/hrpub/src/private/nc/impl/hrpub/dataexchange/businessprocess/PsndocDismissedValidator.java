@@ -85,6 +85,7 @@ public class PsndocDismissedValidator {
 						// end mod
 						if (checkTime.before(endDT) && checkTime.after(startDT)) {
 							rtnDate = psncal.getCalendar();
+							break;
 						}
 					}
 				}

@@ -3,17 +3,21 @@ package nc.ui.wa.psndocwadoc.view;
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
-import javax.swing.JPopupMenu;
 import javax.swing.table.TableColumnModel;
 
+import nc.bs.framework.common.NCLocator;
 import nc.bs.logging.Logger;
 import nc.hr.utils.ResHelper;
+import nc.itf.uap.IUAPQueryBS;
 import nc.pub.encryption.util.SalaryDecryptUtil;
+import nc.pubitf.para.SysInitQuery;
 import nc.ui.pub.beans.MessageDialog;
 import nc.ui.pub.beans.UIPanel;
 import nc.ui.pub.beans.table.ColumnGroup;
@@ -24,7 +28,6 @@ import nc.ui.pub.bill.BillItem;
 import nc.ui.pub.bill.BillModel;
 import nc.ui.pub.bill.BillScrollPane;
 import nc.ui.pub.bill.IBillItem;
-import nc.ui.pub.bill.tableaction.CancelSelectAllRowLineAction;
 import nc.ui.uif2.AppEvent;
 import nc.ui.uif2.AppEventListener;
 import nc.ui.uif2.UIState;
@@ -117,7 +120,7 @@ public class PsnWadocMainPane extends UIPanel implements BillEditListener, AppEv
 		billItem.setDataType(BillItem.STRING);
 		billItem.setEdit(false);
 		billItem.setWidth(70);
-		billItem.setShow(true); 
+		billItem.setShow(true);
 		billItem.setNull(false);
 		listBillItems.add(billItem);
 
@@ -287,6 +290,21 @@ public class PsnWadocMainPane extends UIPanel implements BillEditListener, AppEv
 
 		}
 
+		// ssx added on 2019-11-13
+		// 定調資合計金額
+		billItem = new BillItem();
+		billItem.setName("合計");
+		billItem.setKey(PsndocWadocMainVO.TOTALSALARY);
+		billItem.setDataType(BillItem.DECIMAL);
+		billItem.setEdit(false);
+		billItem.setWidth(70);
+		billItem.setDecimalDigits(IBillItem.DEFAULT_DECIMAL_DIGITS);
+		billItem.setLength(31);
+		billItem.setShow(true);
+		billItem.setNull(false);
+		listBillItems.add(billItem);
+		// end
+
 		billItem = new BillItem();
 		billItem.setName(PsndocWadocMainVO.PK_PSNDOC);
 		billItem.setKey(PsndocWadocMainVO.PK_PSNDOC);
@@ -399,11 +417,16 @@ public class PsnWadocMainPane extends UIPanel implements BillEditListener, AppEv
 		add(getBillPane(), "Center");
 	}
 
+	IUAPQueryBS query = NCLocator.getInstance().lookup(IUAPQueryBS.class);
+
 	public void setWadocData(PsndocWadocMainVO[] mainVOs) {
 		// 2016-12-2 zhousze 薪资加密：这里处理定调资信息维护节点查询刷新解密 begin
 		if (mainVOs != null) {
 			for (PsndocWadocMainVO vo : mainVOs) {
 				Hashtable<String, PsndocWadocVO> obj = vo.getValues();
+				// ssx added on 2019-11-18
+				// 表頭增加合計金額
+				UFDouble totalsalary = UFDouble.ZERO_DBL;
 				if (obj.size() != 0) {
 					Set<String> pk = obj.keySet();
 					Object[] pkArray = (Object[]) pk.toArray();
@@ -416,14 +439,51 @@ public class PsnWadocMainPane extends UIPanel implements BillEditListener, AppEv
 								new UFDouble(SalaryDecryptUtil
 										.decrypt((obj.get(pkArray[i]).getNmoney() == null ? new UFDouble(0) : obj.get(
 												pkArray[i]).getNmoney()).toDouble())));
+
+						PsndocWadocVO wadocVO = obj.get(pkArray[i]);
+						WaItemVO itemvo = null;
+						String excludeItems = "";
+						try {
+							itemvo = getWaItemVOByPK(wadocVO.getPk_wa_item());
+							excludeItems = getExcludeItemsByOrg(this.getModel().getContext().getPk_org());
+							excludeItems = excludeItems == null ? "" : excludeItems;
+						} catch (BusinessException e) {
+							Logger.error(e.getMessage());
+						}
+
+						if (itemvo != null
+								&& !excludeItems.toUpperCase().contains(itemvo.getCode().toUpperCase().trim())) {
+							totalsalary = totalsalary.add(obj.get(pkArray[i]).getNmoney());
+						}
 					}
 				}
+				vo.setTotalsalary(totalsalary);
+				// end
 			}
 		}
 		// end
 
 		getBillPane().getTableModel().setBodyDataVO(mainVOs);
 		// TableColResize.reSizeTable(getBillPane());
+	}
+
+	Map<String, WaItemVO> waItemMap = new HashMap<String, WaItemVO>();
+	Map<String, String> orgExcludeItemMap = new HashMap<String, String>();
+
+	private WaItemVO getWaItemVOByPK(String pk_wa_item) throws BusinessException {
+		if (!waItemMap.containsKey(pk_wa_item)) {
+			waItemMap.put(pk_wa_item, (WaItemVO) query.retrieveByPK(WaItemVO.class, pk_wa_item));
+		}
+
+		return waItemMap.get(pk_wa_item);
+	}
+
+	public String getExcludeItemsByOrg(String pk_org) throws BusinessException {
+		if (!orgExcludeItemMap.containsKey(pk_org)) {
+			orgExcludeItemMap.put(pk_org, SysInitQuery.getParaString(pk_org, "HRWAWNC02"));
+		}
+
+		return orgExcludeItemMap.get(pk_org);
 	}
 
 	/**
@@ -510,7 +570,7 @@ public class PsnWadocMainPane extends UIPanel implements BillEditListener, AppEv
 			}
 
 			for (int i = 0; i < getBillPane().getTableModel().getRowCount(); i++) {
-				getBillPane().getTableModel().setValueAt(false, i, 0); 
+				getBillPane().getTableModel().setValueAt(false, i, 0);
 			}
 
 			getBillPane().setEnabled(true);
@@ -633,35 +693,36 @@ public class PsnWadocMainPane extends UIPanel implements BillEditListener, AppEv
 	// ssx added on 2018-11-14
 	// for multi-selection for wadoc
 	private BatchOperateAction batchOperateAction;
-	
+
 	public BatchOperateAction getBatchOperateAction() {
-		//人员列表右键增加全取和全消按钮   wangywt 20190428 begin
+		// 人员列表右键增加全取和全消按钮 wangywt 20190428 begin
 		Component[] components = getBillPane().getTable().getHeaderPopupMenu().getComponents();
-		if(components.length<6){
+		if (components.length < 6) {
 			this.addPopupAction();
 			components = getBillPane().getTable().getHeaderPopupMenu().getComponents();
 		}
-		//批量作业全选和全消按钮可用
-		if(this.batchOperateAction.isBatch()){
+		// 批量作业全选和全消按钮可用
+		if (this.batchOperateAction.isBatch()) {
 			components[4].setEnabled(true);
 			components[5].setEnabled(true);
-		}else{//非批量作业全选和全消按钮不可用
+		} else {// 非批量作业全选和全消按钮不可用
 			components[4].setEnabled(false);
 			components[5].setEnabled(false);
 		}
-		//人员列表右键增加全取和全消按钮   wangywt 20190428 end
+		// 人员列表右键增加全取和全消按钮 wangywt 20190428 end
 		return this.batchOperateAction;
 	}
 
 	public void setBatchOperateAction(BatchOperateAction batchOperateAction) {
 		this.batchOperateAction = batchOperateAction;
 	}
-	public void addPopupAction(){
-		//分割线
+
+	public void addPopupAction() {
+		// 分割线
 		getBillPane().getTable().getHeaderPopupMenu().addSeparator();
-		//全选按钮
+		// 全选按钮
 		getBillPane().getTable().getHeaderPopupMenu().add(new PsnDocSelectAllAction(getBillPane()));
-		//全消按钮
+		// 全消按钮
 		getBillPane().getTable().getHeaderPopupMenu().add(new PsnDocCancelSelectAllAction(getBillPane()));
 	}
 	//

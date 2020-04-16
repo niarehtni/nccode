@@ -63,7 +63,8 @@
 				<ref bean="EditAction" />
 				<ref bean="nullaction" />
 				<ref bean="RefreshAction" />
-
+				<ref bean="nullaction" />
+				<ref bean="SearchAction" />
 			</list>
 		</property>
 		<property name="editActions">
@@ -206,7 +207,10 @@
 		 <property name="formEditor" ref="billFormEditor" />
 	</bean>
 	
-
+	<bean id="SearchAction" class="nc.ui.wa.paydata.action.SearchAction">
+		 <property name="formEditor" ref="billFormEditor" />
+	</bean>
+	
 	<!--
 		<bean id="ExportAction" class="nc.ui.wa.paydata.action.ExportAction">
 		<property name="model" ref="ManageAppModel" /> <property
@@ -574,7 +578,7 @@
 		</property>
 	</bean>
 
-	<bean id="orgpanel" class="nc.ui.wa.pub.WaOrgHeadPanel"
+	<bean id="orgpanel" class="nc.ui.wa.paydata.view.WaOrgHeadPanelForWa"
 		init-method="initUI">
 		<constructor-arg>
 			<ref bean="mainListPanel" />

@@ -9,6 +9,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -1395,7 +1396,7 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain, IL
 			FromWhereSQL fromWhereSQL) throws BusinessException {
 		// 首先，按照入职年的最大日期范围，查出一个大概的人员范围：
 		UFLiteralDate yearEarliestDay = UFLiteralDate.getDate(year + "-01-01");
-		UFLiteralDate yearLatesDay = UFLiteralDate.getDate(Integer.toString(Integer.parseInt(year) + 1) + "-12-30");
+		UFLiteralDate yearLatesDay = UFLiteralDate.getDate(Integer.toString(Integer.parseInt(year) + 1) + "-12-31");
 		ITBMPsndocQueryService tbmpsndocService = NCLocator.getInstance().lookup(ITBMPsndocQueryService.class);
 		// 以pk_psnorg分组，查询每组中最新的
 		TBMPsndocVO[] psndocVOs = tbmpsndocService.queryPsnorgLatestByCondition(pk_org, fromWhereSQL, yearEarliestDay,
@@ -1518,7 +1519,7 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain, IL
 	// for reset hirebegindate, hireenddate, periodbegindate, periodenddate,
 	// periodextendenddate of LeaveBalanceVO
 	public void resetHirePeriodDates(String year, LeaveBalanceVO vo) throws BusinessException {
-		UFLiteralDate[] beginenddates = getSpecialBeginEnd(vo.getPk_psndoc(), year);
+		UFLiteralDate[] beginenddates = getSpecialBeginEnd(vo.getPk_psndoc(), year, vo.getPk_psnorg());
 		vo.setHirebegindate(beginenddates[0]);
 		vo.setHireenddate(beginenddates[1]);
 		int days = UFLiteralDate.getDaysBetween(vo.getPeriodenddate(), vo.getPeriodextendenddate());
@@ -1617,11 +1618,11 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain, IL
 					/* @res "{0}年考勤期间未定义!" */, year), "perioderror");
 				return null;
 			}
-			// MOD 按自然年结算 James
-			periodBeginDate = new UFLiteralDate(year + "-01-01");
-			periodEndDate = new UFLiteralDate(year + "-12-31");
-			// periodBeginDate = periodVOs[0].getBegindate();
-			// periodEndDate = periodVOs[periodVOs.length-1].getEnddate();
+			// // MOD 按自然年结算 James
+			// periodBeginDate = new UFLiteralDate(year + "-01-01");
+			// periodEndDate = new UFLiteralDate(year + "-12-31");
+			periodBeginDate = periodVOs[0].getBegindate();
+			periodEndDate = periodVOs[periodVOs.length - 1].getEnddate();
 		}
 		return new UFLiteralDate[] { periodBeginDate, periodEndDate };
 	}
@@ -1939,7 +1940,8 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain, IL
 
 					// MOD 张恒 如果按照年资起算日结算，需要取到年资的起始日期
 					if (leaveSetPeriod == LeaveTypeCopyVO.LEAVESETPERIOD_STARTDATE) {
-						UFLiteralDate[] specialBeginEnd = getSpecialBeginEnd(psnOrgVO.getPk_psndoc(), year);
+						UFLiteralDate[] specialBeginEnd = getSpecialBeginEnd(psnOrgVO.getPk_psndoc(), year,
+								psnOrgVO.getPk_psnorg());
 						UFLiteralDate beginDate = specialBeginEnd[0];
 						psnOrgDateMap.put(psnOrgVO.getPk_psnorg(), beginDate);
 					} else {
@@ -1977,7 +1979,7 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain, IL
 			UFLiteralDate beginDate = null;
 			UFLiteralDate endDate = null;
 			if (leaveSetPeriod == LeaveTypeCopyVO.LEAVESETPERIOD_STARTDATE) {
-				specialBeginEnd = getSpecialBeginEnd(vo.getPk_psndoc(), year);
+				specialBeginEnd = getSpecialBeginEnd(vo.getPk_psndoc(), year, vo.getPk_psnorg());
 			}
 			if (!ArrayUtils.isEmpty(specialBeginEnd)) {
 				if (null != specialBeginEnd[0] && null != specialBeginEnd[1]) {
@@ -2086,11 +2088,13 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain, IL
 						// MOD 张恒 按照年资起算日来计算 2018/8/23
 					} else if (leaveSetPeriod == LeaveTypeCopyVO.LEAVESETPERIOD_STARTDATE) {
 						// typeVO.getLeaveextendcount() 为有限延长期限
-						if (psnOrgDateMap.get(vo.getPk_psnorg()) == null
-								|| !psnOrgDateMap.get(vo.getPk_psnorg()).equals(beginDate)) {
-							existsTBMPsndoc = psndocService.existsTBMPsndoc(pk_org, vo.getPk_psnorg(),
-									getHireBeginDate(previousPeriod.getYear(), beginDate), beginDate.getDateBefore(1));
-						}
+						// if (psnOrgDateMap.get(vo.getPk_psnorg()) == null
+						// ||
+						// !psnOrgDateMap.get(vo.getPk_psnorg()).equals(beginDate))
+						// {
+						existsTBMPsndoc = psndocService.existsTBMPsndoc(pk_org, vo.getPk_psnorg(),
+								getHireBeginDate(previousPeriod.getYear(), beginDate), beginDate.getDateBefore(1));
+						// }
 					}
 					// END 张恒｛21481｝ 将入职和年资分开计算 2018/8/21
 
@@ -2466,7 +2470,11 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain, IL
 		// //END 张恒｛21481｝ 满足特休假的员工，可以结算 2018/8/21
 
 		ITBMPsndocQueryService tbmpsndocService = NCLocator.getInstance().lookup(ITBMPsndocQueryService.class);
-		int extendCount = typeVO.getExtendDaysCount();// 有效期能延长多少天
+		// MOD by ssx on 2020-03-25
+		// 判斷有效期遞延時，應先判斷是否允許有效期遞延，以免不允許時天數有值，造成錯誤
+		int extendCount = typeVO.getIsleave() == null || !typeVO.getIsleave().booleanValue() ? 0 : typeVO
+				.getExtendDaysCount();// 有效期能延长多少天
+		// end ssx
 		SettlementGroupVO retVO = new SettlementGroupVO();
 		String pk_user = InvocationInfoProxy.getInstance().getUserId();
 		String pk_group = InvocationInfoProxy.getInstance().getGroupId();
@@ -2507,7 +2515,7 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain, IL
 				// 按照年资起算日
 			} else if (typeVO.getLeavesetperiod() == LeaveTypeCopyVO.LEAVESETPERIOD_STARTDATE) {
 				// 获取年资起算日，年资结算日
-				UFLiteralDate[] specialBeginEnd = getSpecialBeginEnd(vo.getPk_psndoc(), year);
+				UFLiteralDate[] specialBeginEnd = getSpecialBeginEnd(vo.getPk_psndoc(), year, vo.getPk_psnorg());
 				if (!ArrayUtils.isEmpty(specialBeginEnd)) {
 					UFLiteralDate beginDate = specialBeginEnd[0];
 					UFLiteralDate endDate = specialBeginEnd[1];
@@ -2526,6 +2534,19 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain, IL
 						notToEffectiveDateNoTbmPsndocList.add(vo);
 						continue;
 					}
+					// MOD by ssx for #33982
+					// 未到到期日或未到有效日，且結算日到有效日之間有考勤檔案的，需要提示是否結算
+					else if (settlementDate.before(endDate.getDateAfter(1))
+							|| settlementDate.before(effectiveDate.getDateAfter(1))) {
+						boolean existPsndoc = tbmpsndocService.existsTBMPsndoc(pk_org, vo.getPk_psnorg(),
+								settlementDate.getDateAfter(1), effectiveDate);
+						if (existPsndoc) {
+							notToEffectiveDateExistTbmPsndocList.add(vo);
+							continue;
+						}
+					}
+					// end #33982
+
 					// 離職留停人員可以結算本年假結算 wangywt 20190424 begin
 					if (settlementDate.after(effectiveDate) || getPsnStateFlag(vo))
 						exceedEffectiveDateList.add(vo);
@@ -2579,20 +2600,21 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain, IL
 	 * @return
 	 * @throws BusinessException
 	 */
+	@SuppressWarnings("unchecked")
 	private boolean getPsnStateFlag(LeaveBalanceVO vo) throws BusinessException {
 		BaseDAO baseDao = new BaseDAO();
+		// MOD by ssx #33564
 		// 離職人員可以結算
-		String orgsql = " select ENDFLAG,LASTFLAG from hi_psnorg where pk_psndoc = '" + vo.getPk_psndoc() + "'";
-		List<Object[]> orgList = (List<Object[]>) baseDao.executeQuery(orgsql, new ArrayListProcessor());
-		if (!CollectionUtils.isEmpty(orgList)) {
-			for (Object[] objs : orgList) {
-				if ("Y".equals(objs[0]) && "Y".equals(objs[1])) {
-					return true;
-				}
-			}
+		Collection<PsnOrgVO> psnorgvos = baseDao.retrieveByClause(PsnOrgVO.class, "pk_psnorg = '" + vo.getPk_psnorg()
+				+ "' ");
+		if (psnorgvos.toArray(new PsnOrgVO[0])[0].getEndflag().booleanValue()) {
+			return true;
 		}
+
 		// 留停人員可以結算
-		String jobsql = "select TRNSTYPE from hi_psnjob where pk_psndoc = '" + vo.getPk_psndoc() + "'";
+		String jobsql = "select TRNSTYPE from hi_psnjob where pk_psndoc = '" + vo.getPk_psndoc() + "' and pk_psnorg='"
+				+ psnorgvos.toArray(new PsnOrgVO[0])[0].getPk_psnorg() + "'";
+		// end #33564
 		List<Object[]> jobList = (List<Object[]>) baseDao.executeQuery(jobsql, new ArrayListProcessor());
 		// 留停異動類型
 		String refTransType = SysInitQuery.getParaString(vo.getPk_org(), "TWHR11").toString();
@@ -3141,11 +3163,12 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain, IL
 	}
 
 	// BEGIN 张恒{21746} 特休假薪資計算 2018/8/29
-	public UFLiteralDate[] getSpecialBeginEnd(String pk_psndoc, String year) throws BusinessException {
+	// mod tank 加入组织关系过滤
+	public UFLiteralDate[] getSpecialBeginEnd(String pk_psndoc, String year, String pk_psnorg) throws BusinessException {
 
 		BaseDAO baseDao = new BaseDAO();
 		// 获取员工维护里面组织关系hi_psnorg里面的年资起算日
-		String specialSql = " select workagestartdate,begindate from hi_psnorg where pk_psndoc = '" + pk_psndoc + "'";
+		String specialSql = " select workagestartdate,begindate from hi_psnorg where pk_psnorg = '" + pk_psnorg + "' ";
 		List<Object[]> specialList = (List<Object[]>) baseDao.executeQuery(specialSql, new ArrayListProcessor());
 		UFLiteralDate[] specialBeginEnd = new UFLiteralDate[2];
 		if (!CollectionUtils.isEmpty(specialList)) {
@@ -3163,6 +3186,14 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain, IL
 				}
 				// 获取当前年资起算日
 				UFLiteralDate beginCalculateDate = new UFLiteralDate(year + calculateDate);
+
+				if ("-02-29".equals(calculateDate)) {
+					int yearf = Integer.valueOf(year) + 1;
+					if (!((yearf % 4 == 0 && yearf % 100 != 0) || yearf % 400 == 0)) {
+						// 如果不是闰年 calculateDate 置为 28 号 yejk 181228 #23932
+						calculateDate = "-02-28";
+					}
+				}
 				// 获取当前年资起算日结束日期
 				UFLiteralDate endCalculateDate = new UFLiteralDate(String.valueOf(Integer.valueOf(year) + 1)
 						+ calculateDate).getDateBefore(1);

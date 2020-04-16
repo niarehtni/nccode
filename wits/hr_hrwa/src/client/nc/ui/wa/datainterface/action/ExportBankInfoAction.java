@@ -76,8 +76,9 @@ public class ExportBankInfoAction extends HrAction {
 
 		String[] textArr = getService().getBankReportText(getPk_org(),
 				getYear() + getPeriod(), getPk_wa_class());
-
-		if (textArr != null && textArr.length > 2) {
+        // 銀行媒體檔產出問題  20190801 George 缺陷Bug #29229 
+		// 當產出人員只有一筆時,無法產出媒體檔
+		if (textArr != null && textArr.length >= 2) {
 			UIFileChooser fileChooser = new UIFileChooser();
 			fileChooser.setDialogTitle("請指定要匯出的文檔名稱");
 			TextFileFilter4TW filter = new TextFileFilter4TW();

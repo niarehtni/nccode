@@ -8,7 +8,10 @@ import java.util.Iterator;
 import java.util.List;
 
 import nc.bs.dao.BaseDAO;
+import nc.bs.framework.common.NCLocator;
 import nc.bs.logging.Logger;
+import nc.hr.frame.persistence.SimpleDocServiceTemplate;
+import nc.itf.hi.IPersonRecordService;
 import nc.itf.wa.psndocwadoc.IPsndocBOISGenerateService;
 import nc.jdbc.framework.processor.ColumnListProcessor;
 import nc.jdbc.framework.processor.ResultSetProcessor;
@@ -19,6 +22,7 @@ import nc.vo.hi.psndoc.Glbdef1VO;
 import nc.vo.hi.psndoc.Glbdef2VO;
 import nc.vo.hi.psndoc.PsndocDefVO;
 import nc.vo.pub.BusinessException;
+import nc.vo.pub.SuperVO;
 import nc.vo.pub.lang.UFBoolean;
 import nc.vo.pub.lang.UFDouble;
 import nc.vo.pub.lang.UFLiteralDate;
@@ -55,7 +59,7 @@ public class PsndocBOISGenerateImpl implements IPsndocBOISGenerateService {
 			+ " where dr=0 and (enddate is null or enddate = '9999-12-31') and " + isLabor
 			+ " = 'Y' and pk_psndoc in #psns#";
 	private final String sql4PsnLaborExit = " select " + pk + " from " + LABOR_EXIT_TABLE
-			+ " where dr=0 and (glbdef15 is null or glbdef15 = '9999-12-31') and " + isLaborExit
+			+ " where dr=0 and isnull(glbdef15,'9999-12-31')='9999-12-31' and " + isLaborExit
 			+ " = 'Y' and pk_psndoc in #psns#";
 	// 查询本人投保的人员名单
 	private final String sql4PsnHealth_PSNDOC = " select pk_psndoc from " + HEALTH_TABLE
@@ -197,6 +201,7 @@ public class PsndocBOISGenerateImpl implements IPsndocBOISGenerateService {
 			UFLiteralDate lastEndDate = new UFLiteralDate(effectiveDate).getDateBefore(1);
 			// step5產生需要新增的記錄及修改歷史記錄
 			for (int cnt = 1; cnt < 4; cnt++) {
+				int rn = -1;
 				List tmpList = map.get(cnt);
 				Iterator itr = tmpList.iterator();
 				List<nc.vo.hi.psndoc.PsndocDefVO> mod = new ArrayList<nc.vo.hi.psndoc.PsndocDefVO>();
@@ -210,22 +215,24 @@ public class PsndocBOISGenerateImpl implements IPsndocBOISGenerateService {
 							if (needInsertRecord(vo, psnRangeArr[cnt - 1], cnt)) {
 								PsndocDefVO newAddLabor = (PsndocDefVO) vo.clone();
 								vo.setEnddate(lastEndDate);
-								if (LABOR_EXIT_TYPE == cnt) {
+								if (UFBoolean.TRUE.equals(vo.getAttributeValue(isLaborExit)) && LABOR_TYPE == cnt) {
 									vo.setAttributeValue("glbdef15", lastEndDate);
 								}
 								vo.setLastflag(UFBoolean.FALSE);
 								mod.add(vo);
 								newAddLabor.setBegindate(beginDate);
-								if (LABOR_EXIT_TYPE == cnt) {
+								if (UFBoolean.TRUE.equals(vo.getAttributeValue(isLaborExit)) && LABOR_TYPE == cnt) {
 									newAddLabor.setAttributeValue("glbdef14", beginDate);
 									newAddLabor.setAttributeValue("glbdef15", new UFLiteralDate("9999-12-31"));
+									newAddLabor.setAttributeValue(rangeColumnList.get(cnt), new UFDouble(
+											SalaryEncryptionUtil.encryption(psnRangeArr[cnt])));
 								} else if (HEALTH_TYPE == cnt) {
 									// clear the reasons
 									newAddLabor.setAttributeValue("glbdef17", null);
 									newAddLabor.setAttributeValue("glbdef18", null);
 									newAddLabor.setAttributeValue("glbdef19", null);
 								}
-								newAddLabor.setRecordnum(0);
+								newAddLabor.setRecordnum(rn--);
 								newAddLabor.setLastflag(UFBoolean.TRUE);
 								newAddLabor.setEnddate(new UFLiteralDate("9999-12-31"));
 								newAddLabor.setAttributeValue(salaryColumnList.get(cnt - 1),
@@ -238,26 +245,19 @@ public class PsndocBOISGenerateImpl implements IPsndocBOISGenerateService {
 						}
 					}
 				}
-				modMap.put(cnt, mod);
-				insertMap.put(cnt, insert);
+
+				if (mod.size() > 0) {
+					modMap.put(cnt, mod);
+				}
+
+				if (insert.size() > 0) {
+					insertMap.put(cnt, insert);
+				}
 			}
 
 			// combine labor and labor exit 合并劳保与劳退
 			List insertLabor = insertMap.get(LABOR_TYPE);
-			List insertLaborExit = insertMap.get(LABOR_EXIT_TYPE);
 			List combineInsertLabor = new ArrayList();
-			for (Object laborExit : insertLaborExit) {
-				String pk_psndoc = ((PsndocDefVO) laborExit).getPk_psndoc();
-				for (Object labor : insertLabor) {
-					if (pk_psndoc.equals(((PsndocDefVO) labor).getPk_psndoc())) {
-						((PsndocDefVO) laborExit).setAttributeValue(salaryColumnList.get(LABOR_TYPE - 1),
-								((PsndocDefVO) labor).getAttributeValue(salaryColumnList.get(LABOR_TYPE - 1)));
-						((PsndocDefVO) laborExit).setAttributeValue(rangeColumnList.get(LABOR_TYPE - 1),
-								((PsndocDefVO) labor).getAttributeValue(rangeColumnList.get(LABOR_TYPE - 1)));
-					}
-				}
-				combineInsertLabor.add(laborExit);
-			}
 			for (Object labor : insertLabor) {
 				String pk_psndoc = ((PsndocDefVO) labor).getPk_psndoc();
 				boolean flag = false;
@@ -299,15 +299,28 @@ public class PsndocBOISGenerateImpl implements IPsndocBOISGenerateService {
 					continue;
 				}
 				dao.insertVOList(voLists);
-
-				// step7 reset record num
-				for (Object vo : voLists) {
-					reRangeOrderByPsn((String) ((PsndocDefVO) vo).getAttributeValue("pk_psndoc"), LABOR_TABLE);
-					reRangeOrderByPsn((String) ((PsndocDefVO) vo).getAttributeValue("pk_psndoc"), HEALTH_TABLE);
-				}
 			}
 		}
+		// step7 reset record num
+		updateLastFlag(PsndocDefTableUtil.getPsnLaborClass(), rangePsns);
+		updateLastFlag(PsndocDefTableUtil.getPsnHealthClass(), rangePsns);
+	}
 
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	private void updateLastFlag(Class voclass, String[] pk_psndocs) throws BusinessException {
+		if (pk_psndocs != null && pk_psndocs.length > 0) {
+			for (String pk_psndoc : pk_psndocs) {
+				SuperVO[] dbVOs = getServiceTemplate().queryByCondition(voclass,
+						"pk_psndoc='" + pk_psndoc + "' order by recordnum ");
+				NCLocator.getInstance().lookup(IPersonRecordService.class).updateAllRecordnumAndLastflag(dbVOs);
+			}
+		}
+	}
+
+	private SimpleDocServiceTemplate getServiceTemplate() {
+		SimpleDocServiceTemplate service = new SimpleDocServiceTemplate("psndocwa");
+		service.setLazyLoad(true);
+		return service;
 	}
 
 	private static String getHealthTable() {

@@ -10,6 +10,7 @@ import java.util.Set;
 
 import nc.bs.logging.Logger;
 import nc.itf.hrpub.IDataExchangeExternalExecutor;
+import nc.itf.hrpub.util.JsonUtil;
 import nc.jdbc.framework.processor.MapListProcessor;
 import nc.md.model.IAttribute;
 import nc.md.model.type.IType;
@@ -30,17 +31,18 @@ public class DataExportExecutor extends AbstractExecutor {
 	private UFDateTime lastTime;
 	private String condition;
 	private Map<String, String> loadKVMap;
+	private boolean isQueryByBP;
 	private boolean extendClassLoaded = false;
+	private List<Map<String, Object>> resultRows;
+	private Map<String, Object> bpQueryConditions;
 
 	public DataExportExecutor() throws BusinessException {
 		super();
 	}
 
 	public String getDataRange() {
-		if (this.getJsonValueObjects() != null
-				&& this.getJsonValueObjects().size() > 0) {
-			dataRange = (String) ((Map<String, Object>) this
-					.getJsonValueObjects().get(0).get("EXPORTDATA"))
+		if (this.getJsonValueObjects() != null && this.getJsonValueObjects().size() > 0) {
+			dataRange = (String) ((Map<String, Object>) this.getJsonValueObjects().get(0).get("EXPORTDATA"))
 					.get("DATARANGE");
 		}
 		return dataRange;
@@ -51,10 +53,8 @@ public class DataExportExecutor extends AbstractExecutor {
 	}
 
 	public UFDateTime getLastTime() {
-		if (this.getJsonValueObjects() != null
-				&& this.getJsonValueObjects().size() > 0) {
-			lastTime = new UFDateTime((String) this.getJsonValueObjects()
-					.get(0).get("LASTTIME"));
+		if (this.getJsonValueObjects() != null && this.getJsonValueObjects().size() > 0) {
+			lastTime = new UFDateTime((String) this.getJsonValueObjects().get(0).get("LASTTIME"));
 		}
 		return lastTime;
 	}
@@ -65,10 +65,8 @@ public class DataExportExecutor extends AbstractExecutor {
 
 	public String getCondition() throws BusinessException {
 		if (StringUtils.isEmpty(condition)) {
-			if (this.getJsonValueObjects() != null
-					&& this.getJsonValueObjects().size() > 0) {
-				condition = (String) ((Map<String, Object>) this
-						.getJsonValueObjects().get(0).get("EXPORTDATA"))
+			if (this.getJsonValueObjects() != null && this.getJsonValueObjects().size() > 0) {
+				condition = (String) ((Map<String, Object>) this.getJsonValueObjects().get(0).get("EXPORTDATA"))
 						.get("CONDITION");
 			}
 		}
@@ -91,7 +89,7 @@ public class DataExportExecutor extends AbstractExecutor {
 	public void execute() throws BusinessException {
 		super.execute();
 
-		if (findLoadedExtendClass()) {
+		if (!this.isQueryByBP() && findLoadedExtendClass()) {
 			extendClassLoaded = true;
 		} else {
 			if (this instanceof IDataExchangeExternalExecutor) {
@@ -100,25 +98,48 @@ public class DataExportExecutor extends AbstractExecutor {
 			}
 		}
 
+		Logger.error("--- Data Exchange Log ---");
+		Logger.error("Biz handler Class found: " + String.valueOf(extendClassLoaded));
+
 		dealCondition();
 
 		if (extendClassLoaded) {
-			synClassProperties();
+			Logger.error("Biz handler Class: syn public 2 handler.");
+			synClassProperties(this, this.extendBizClass);
+			Logger.error("Biz handler Class: beforeQuery");
 			extendBizClass.beforeQuery();
-			reverseSynClassProperties();
+			Logger.error("Biz handler Class: syn handler 2 public.");
+			synClassProperties(this.extendBizClass, this);
 		}
-		doQuery();
+
+		if (isQueryByBP()) {
+			if (extendClassLoaded) {
+				Logger.error("Biz handler Class: doUpdateByBP");
+				this.Logging("IMPORT:DOBPCONVERT");
+				extendBizClass.doQueryByBP();
+			}
+		} else {
+			this.Logging("IMPORT:DOQUERY");
+			doQuery();
+		}
+
 		if (extendClassLoaded) {
+			Logger.error("Biz handler Class: afterQuery");
 			extendBizClass.afterQuery();
 		}
 
 		if (extendClassLoaded) {
-			synClassProperties();
+			Logger.error("Biz handler Class: syn public 2 handler.");
+			synClassProperties(this, this.extendBizClass);
+			Logger.error("Biz handler Class: beforeConvert");
 			extendBizClass.beforeConvert();
-			reverseSynClassProperties();
+			Logger.error("Biz handler Class: syn handler 2 public.");
+			synClassProperties(this.extendBizClass, this);
 		}
+		this.Logging("IMPORT:DOCONVERT");
 		doConvert();
 		if (extendClassLoaded) {
+			Logger.error("Biz handler Class: afterConvert");
 			extendBizClass.afterConvert();
 		}
 
@@ -164,33 +185,25 @@ public class DataExportExecutor extends AbstractExecutor {
 	 * @throws BusinessException
 	 */
 	private boolean findLoadedExtendClass() throws BusinessException {
-		ClassPathScanningCandidateComponentProvider provider = new ClassPathScanningCandidateComponentProvider(
-				true);
-		provider.addIncludeFilter(new AssignableTypeFilter(
-				DataExportExecutor.class));
-		Set<BeanDefinition> components = provider
-				.findCandidateComponents("nc/impl/hrpub/dataexchange/businessprocess");
+		ClassPathScanningCandidateComponentProvider provider = new ClassPathScanningCandidateComponentProvider(true);
+		provider.addIncludeFilter(new AssignableTypeFilter(DataExportExecutor.class));
+		Set<BeanDefinition> components = provider.findCandidateComponents("nc/impl/hrpub/dataexchange/businessprocess");
 		Logger.error("--- Data Export External Class Check Log ---");
-		Logger.error("Components found: "
-				+ (components == null ? "0" : String.valueOf(components.size())));
+		Logger.error("Components found: " + (components == null ? "0" : String.valueOf(components.size())));
 		try {
 			for (BeanDefinition component : components) {
-				Logger.error("Compnents bean class name: "
-						+ component.getBeanClassName());
+				Logger.error("Compnents bean class name: " + component.getBeanClassName());
 				Class loadedClass = Class.forName(component.getBeanClassName());
-				IDataExchangeExternalExecutor classImpl = (IDataExchangeExternalExecutor) loadedClass
-						.newInstance();
+				IDataExchangeExternalExecutor classImpl = (IDataExchangeExternalExecutor) loadedClass.newInstance();
 
 				// 加載類實現實體ID = 當前類處理實體ID
 				if (classImpl.getBizEntityID() instanceof List) {
-					if (((List<String>) classImpl.getBizEntityID())
-							.contains(this.getBusinessEntity().getID())) {
+					if (((List<String>) classImpl.getBizEntityID()).contains(this.getBusinessEntity().getID())) {
 						this.extendBizClass = classImpl;
 						return true;
 					}
 				} else if (classImpl.getBizEntityID() instanceof String) {
-					if (classImpl.getBizEntityID().equals(
-							this.getBusinessEntity().getID())) {
+					if (classImpl.getBizEntityID().equals(this.getBusinessEntity().getID())) {
 						this.extendBizClass = classImpl;
 						return true;
 					}
@@ -203,24 +216,20 @@ public class DataExportExecutor extends AbstractExecutor {
 		return false;
 	}
 
-	private void synClassProperties() {
-		if (this.extendBizClass != null) {
-			Method[] methods = this.extendBizClass.getClass().getMethods();
-			for (Method method : methods) {
-				if (method.getName().indexOf("set") == 0) {
-					String propName = method.getName().substring(
-							method.getName().indexOf("set") + 3);
+	private void synClassProperties(DataExportExecutor source, IDataExchangeExternalExecutor target) {
+		if (target != null) {
+			Method[] methods = target.getClass().getMethods();
+			for (Method setMethod : methods) {
+				if (setMethod.getName().indexOf("set") == 0) {
+					String propName = setMethod.getName().substring(setMethod.getName().indexOf("set") + 3);
 					try {
-						Method thisMethod = this.getClass().getMethod(
-								"get" + propName, null);
-						if (thisMethod == null) {
-							thisMethod = this.getClass().getMethod(
-									"is" + propName, null);
+						Method getMethod = source.getClass().getMethod("get" + propName, null);
+						if (getMethod == null) {
+							getMethod = source.getClass().getMethod("is" + propName, null);
 						}
 
-						if (thisMethod != null) {
-							method.invoke(this.extendBizClass,
-									thisMethod.invoke(this, null));
+						if (getMethod != null) {
+							setMethod.invoke(target, getMethod.invoke(source, null));
 						}
 					} catch (Exception e) {
 						Logger.error(e.getMessage());
@@ -230,23 +239,20 @@ public class DataExportExecutor extends AbstractExecutor {
 		}
 	}
 
-	private void reverseSynClassProperties() {
-		if (this.extendBizClass != null) {
-			Method[] methods = this.getClass().getMethods();
-			for (Method method : methods) {
-				if (method.getName().indexOf("set") == 0) {
-					String propName = method.getName().substring(
-							method.getName().indexOf("set") + 3);
+	private void synClassProperties(IDataExchangeExternalExecutor source, DataExportExecutor target) {
+		if (target != null) {
+			Method[] methods = target.getClass().getMethods();
+			for (Method setMethod : methods) {
+				if (setMethod.getName().indexOf("set") == 0) {
+					String propName = setMethod.getName().substring(setMethod.getName().indexOf("set") + 3);
 					try {
-						Method implMethod = this.extendBizClass.getClass()
-								.getMethod("get" + propName, null);
-						if (implMethod == null) {
-							implMethod = this.extendBizClass.getClass()
-									.getMethod("is" + propName, null);
+						Method getMethod = source.getClass().getMethod("get" + propName, null);
+						if (getMethod == null) {
+							getMethod = source.getClass().getMethod("is" + propName, null);
 						}
 
-						if (implMethod != null) {
-							method.invoke(this, implMethod.invoke(this, null));
+						if (getMethod != null) {
+							setMethod.invoke(target, getMethod.invoke(source, null));
 						}
 					} catch (Exception e) {
 						Logger.error(e.getMessage());
@@ -257,20 +263,26 @@ public class DataExportExecutor extends AbstractExecutor {
 	}
 
 	private void dealCondition() throws BusinessException {
-		if (this.getDataRange().toUpperCase().equals("ALL")) {
-			this.setCondition("1=1");
-		} else if (this.getDataRange().toUpperCase().equals("LAST")) {
-			this.setCondition("ts >= '" + this.getLastTime().toString() + "'");
-		} else {
-			this.setCondition(convertRefValues(this.getCondition()));
-		}
+		if (this.isQueryByBP()) {
+			this.setBpQueryConditions(JsonUtil.json2Map(this.getCondition().replace("\\", "")));
 
-		if (this.getBusinessEntity().getName().toUpperCase()
-				.startsWith("DEFDOC-")) {
-			String defDocCode = this.getBusinessEntity().getName().substring(7);
-			this.setCondition(this.getCondition()
-					+ " and pk_defdoclist = (select pk_defdoclist from bd_defdoclist where code = '"
-					+ defDocCode + "')");
+			String strTablename = this.getBusinessEntity().getTable().getName();
+			getSelectFields(strTablename);
+		} else {
+			if (this.getDataRange().toUpperCase().equals("ALL")) {
+				this.setCondition("1=1");
+			} else if (this.getDataRange().toUpperCase().equals("LAST")) {
+				this.setCondition("ts >= '" + this.getLastTime().toString() + "'");
+			} else {
+				this.setCondition(convertRefValues(this.getCondition()));
+			}
+
+			if (this.getBusinessEntity().getName().toUpperCase().startsWith("DEFDOC-")) {
+				String defDocCode = this.getBusinessEntity().getName().substring(7);
+				this.setCondition(this.getCondition()
+						+ " and pk_defdoclist = (select pk_defdoclist from bd_defdoclist where code = '" + defDocCode
+						+ "')");
+			}
 		}
 	}
 
@@ -286,40 +298,26 @@ public class DataExportExecutor extends AbstractExecutor {
 		if (!StringUtils.isEmpty(strSelect)) {
 			sql.append("select ");
 			sql.append(strSelect);
-			sql.append(", "
-					+ this.getBusinessEntity().getPrimaryKey().getPKColumn()
-							.getName() + " ROWNO");
+			sql.append(", " + this.getBusinessEntity().getPrimaryKey().getPKColumn().getName() + " ROWNO");
 			sql.append(" from ");
 			sql.append(strTablename);
 			sql.append(" where ");
 			sql.append(this.getCondition());
 
 			if (this.getBusinessEntity().getAttributeByName("pk_org") != null) {
-				sql.append(" and (pk_org='"
-						+ this.getPk_org()
-						+ "' or pk_org in (select pk_group from org_group) "
+				sql.append(" and (pk_org='" + this.getPk_org() + "' or pk_org in (select pk_group from org_group) "
 						+ " or pk_org in (select pk_org from org_orgs where code='global'))");
 			}
 
-			List<Map<String, Object>> valueRows = (List<Map<String, Object>>) this
-					.getBaseDAO().executeQuery(sql.toString(),
-							new MapListProcessor());
-
-			if (valueRows != null && valueRows.size() > 0) {
-				for (Map<String, Object> valueRow : valueRows) {
-					if (valueRow != null && valueRow.size() > 0) {
-						this.getNcValueObjects().add(valueRow);
-					}
-				}
-			}
+			this.setResultRows((List<Map<String, Object>>) this.getBaseDAO().executeQuery(sql.toString(),
+					new MapListProcessor()));
 		}
 		this.Logging("EXPORT:DOQUERY");
 	}
 
 	private String getSelectFields(String tablename) throws BusinessException {
 		AggMDClassVO mapping = this.getMdmappingVO();
-		MDPropertyVO[] props = (MDPropertyVO[]) mapping
-				.getChildren(MDPropertyVO.class);
+		MDPropertyVO[] props = (MDPropertyVO[]) mapping.getChildren(MDPropertyVO.class);
 		StringBuffer strSelect = new StringBuffer();
 		if (props != null && props.length > 0) {
 			for (MDPropertyVO prop : props) {
@@ -331,13 +329,10 @@ public class DataExportExecutor extends AbstractExecutor {
 					String propName = findPropertyName(prop.getPk_property());
 					String propMultiName = findPropertyMultiName(propName);
 
-					if (!this.getBizCodeMap()
-							.containsKey(prop.getPk_property())) {
+					if (!this.getBizCodeMap().containsKey(prop.getPk_property())) {
 						strSelect.append(propMultiName + " " + propName);
 					} else {
-						strSelect.append(this.getCodeFromPKSQL(
-								prop.getPk_property(), tablename + "."
-										+ propMultiName));
+						strSelect.append(this.getCodeFromPKSQL(prop.getPk_property(), tablename + "." + propMultiName));
 						strSelect.append(" " + propName);
 					}
 				}
@@ -346,8 +341,7 @@ public class DataExportExecutor extends AbstractExecutor {
 		return strSelect.toString();
 	}
 
-	private String findPropertyMultiName(String propName)
-			throws BusinessException {
+	private String findPropertyMultiName(String propName) throws BusinessException {
 		IAttribute att = this.getBusinessEntity().getAttributeByName(propName);
 		if (att.getDataType().getTypeType() == IType.MULTILANGUAGE) {
 			return propName + this.getMultiLangMap().get(this.getLanguage());
@@ -373,8 +367,7 @@ public class DataExportExecutor extends AbstractExecutor {
 	@Override
 	public void doConvert() throws BusinessException {
 		// Export.doConvert: NCObject -> JsonObject，結果轉換
-		if (this.getNcValueObjects() != null
-				&& this.getNcValueObjects().size() > 0) {
+		if (this.getNcValueObjects() != null && this.getNcValueObjects().size() > 0) {
 			this.setJsonValueObjects(new ArrayList<Map<String, Object>>());
 			Map<String, Object> jsonMap = new HashMap<String, Object>();
 			jsonMap.put("METADATA", this.getBusinessEntity().getName());
@@ -383,8 +376,10 @@ public class DataExportExecutor extends AbstractExecutor {
 				Map<String, Object> record = new HashMap<String, Object>();
 				if (ncobj != null && ncobj.size() > 0) {
 					for (Entry<String, Object> kv : ncobj.entrySet()) {
-						record.put(getMappingName(kv.getKey()).toUpperCase(),
-								convertBLOBValue(kv.getValue()));
+						String key = getMappingName(kv.getKey());
+						if (!StringUtils.isEmpty(key)) {
+							record.put(key.toUpperCase(), convertBLOBValue(kv.getValue()));
+						}
 					}
 				}
 				((List) jsonMap.get("RECORD")).add(record);
@@ -392,6 +387,26 @@ public class DataExportExecutor extends AbstractExecutor {
 			this.getJsonValueObjects().add(jsonMap);
 		}
 		this.Logging("EXPORT:DOCONVERT");
+	}
+
+	private String getPropIDMappingName(String mapName) throws BusinessException {
+		AggMDClassVO mapping = this.getMdmappingVO();
+
+		if (mapping != null) {
+			MDPropertyVO[] props = (MDPropertyVO[]) mapping.getChildren(MDPropertyVO.class);
+			if (props != null && props.length > 0) {
+				for (MDPropertyVO prop : props) {
+					// ssx modified on 2019-01-08
+					if (mapName.toLowerCase().equals(
+							prop.getMapfieldname() == null ? null : prop.getMapfieldname().toLowerCase())) // 与元数据对比一律使用小写做匹配
+					{
+						return prop.getPk_property();
+					}
+				}
+			}
+		}
+
+		return "";
 	}
 
 	private Object convertBLOBValue(Object value) {
@@ -411,17 +426,48 @@ public class DataExportExecutor extends AbstractExecutor {
 
 	private String getMappingName(String key) throws BusinessException {
 		AggMDClassVO mapping = this.getMdmappingVO();
-		MDPropertyVO[] props = (MDPropertyVO[]) mapping
-				.getChildren(MDPropertyVO.class);
+		MDPropertyVO[] props = (MDPropertyVO[]) mapping.getChildren(MDPropertyVO.class);
 		if (props != null && props.length > 0) {
 			for (MDPropertyVO prop : props) {
-				if (prop.getPk_property().equals(propertyIDNameMap.get(key))) {
-					return prop.getMapfieldname();
+				if (!StringUtils.isEmpty(prop.getMapfieldname())) {
+					if (prop.getPk_property().equals(propertyIDNameMap.get(key))) {
+						return prop.getMapfieldname();
+					}
 				}
 			}
 		}
 
-		return key;
+		return "";
+	}
+
+	public boolean isQueryByBP() {
+		return isQueryByBP;
+	}
+
+	public void setQueryByBP(boolean isQueryByBP) {
+		this.isQueryByBP = isQueryByBP;
+	}
+
+	public List<Map<String, Object>> getResultRows() {
+		return resultRows;
+	}
+
+	public void setResultRows(List<Map<String, Object>> resultRows) {
+		if (resultRows != null && resultRows.size() > 0) {
+			for (Map<String, Object> valueRow : resultRows) {
+				if (valueRow != null && valueRow.size() > 0) {
+					this.getNcValueObjects().add(valueRow);
+				}
+			}
+		}
+	}
+
+	public Map<String, Object> getBpQueryConditions() {
+		return bpQueryConditions;
+	}
+
+	public void setBpQueryConditions(Map<String, Object> bpQueryConditions) {
+		this.bpQueryConditions = bpQueryConditions;
 	}
 
 }

@@ -13,10 +13,10 @@ import nc.bs.framework.common.NCLocator;
 import nc.bs.logging.Logger;
 import nc.hr.utils.InSQLCreator;
 import nc.itf.hi.IPsndocQryService;
+import nc.itf.hr.wa.IPaydataManageService;
 import nc.jdbc.framework.processor.ColumnListProcessor;
 import nc.pub.encryption.util.SalaryDecryptUtil;
 import nc.pub.encryption.util.SalaryEncryptionUtil;
-import nc.vo.hi.wadoc.PsndocWadocVO;
 import nc.vo.pub.BusinessException;
 import nc.vo.pub.SuperVO;
 import nc.vo.pub.lang.UFDouble;
@@ -40,11 +40,6 @@ import nc.vo.wa.pub.WaLoginVO;
  */
 public class CalculatingDataDEUtil {
 	/**
-	 * 薪資解密臨時表：已解密wa_data行
-	 */
-	public static String DECRYPTEDPKTABLENAME = "wa_cacu_decryptedpk";
-
-	/**
 	 * 檢查checkedList中的PK是否存在於已解密表中
 	 * 
 	 * @param checkedList
@@ -57,7 +52,7 @@ public class CalculatingDataDEUtil {
 			InSQLCreator parms = new InSQLCreator();
 			String wherePart = " pk_wa_data in (" + parms.getInSQL(checkedList.toArray(new String[0])) + ")";
 			List<String> existsList = (List<String>) new BaseDAO().executeQuery("select pk_wa_data from "
-					+ CalculatingDataDEUtil.DECRYPTEDPKTABLENAME + " where " + wherePart, new ColumnListProcessor());
+					+ IPaydataManageService.DECRYPTEDPKTABLENAME + " where " + wherePart, new ColumnListProcessor());
 			return existsList;
 		}
 
@@ -104,9 +99,10 @@ public class CalculatingDataDEUtil {
 		// 團保投保
 		this.addCalculateSettings(DataSourceTypeEnum.GROUPINS, null, PsndocDefTableUtil.getGroupInsuranceClass(),
 				NhiCalcUtils.getGroupInsEncryptionAttributes());
-		// 定調資
-		this.addCalculateSettings(DataSourceTypeEnum.WADOC, null, PsndocWadocVO.class,
-				NhiCalcUtils.getWaDocEncryptionAttributes());
+		// // 定調資
+		// this.addCalculateSettings(DataSourceTypeEnum.WADOC, null,
+		// PsndocWadocVO.class,
+		// NhiCalcUtils.getWaDocEncryptionAttributes());
 	}
 
 	/**
@@ -149,8 +145,7 @@ public class CalculatingDataDEUtil {
 		String key = this.getKey(pk_wa_class, cyear, cperiod);
 
 		if (!this.getDecryptScopeMap().containsKey(key)) {
-			this.getDecryptScopeMap().put(this.getKey(pk_wa_class, cyear, cperiod),
-					new String[] { pk_wa_class, cyear, cperiod });
+			this.getDecryptScopeMap().put(key, new String[] { pk_wa_class, cyear, cperiod });
 		}
 
 		if (!this.getDecryptPsndocTempTableMap().containsKey(key)) {
@@ -338,7 +333,7 @@ public class CalculatingDataDEUtil {
 		// 插入數據
 		for (String pk : decryptedPKs) {
 			this.getBaseDAO().executeUpdate(
-					"insert into " + CalculatingDataDEUtil.DECRYPTEDPKTABLENAME
+					"insert into " + IPaydataManageService.DECRYPTEDPKTABLENAME
 							+ "(pk_wa_data, srctype, creator) values ('" + pk + "','" + srcType.toString() + "', '"
 							+ this.getLoginContext().getPk_loginUser() + "');");
 		}
@@ -346,21 +341,21 @@ public class CalculatingDataDEUtil {
 
 	private void createDecryptedPKTable() throws BusinessException {
 		// 如果表不存在則創建表
-		if (!this.getBaseDAO().isTableExisted(CalculatingDataDEUtil.DECRYPTEDPKTABLENAME)) {
+		if (!this.getBaseDAO().isTableExisted(IPaydataManageService.DECRYPTEDPKTABLENAME)) {
 			this.getBaseDAO()
 					.executeUpdate(
 							"create table "
-									+ CalculatingDataDEUtil.DECRYPTEDPKTABLENAME
+									+ IPaydataManageService.DECRYPTEDPKTABLENAME
 									+ " (pk_wa_data varchar2(20) not null, srctype varchar2(20), creator varchar2(20), ts char(19) not null);");
 		} else {
 			// 刪除可能存在的髒數據
-			deleteDecryptedPKFromTable(null);
+			// deleteDecryptedPKFromTable(null);
 		}
 	}
 
 	private void deleteDecryptedPKFromTable(DataSourceTypeEnum srcType) throws DAOException {
 		this.getBaseDAO().executeUpdate(
-				"delete from " + CalculatingDataDEUtil.DECRYPTEDPKTABLENAME + " where creator='"
+				"delete from " + IPaydataManageService.DECRYPTEDPKTABLENAME + " where creator='"
 						+ this.getLoginContext().getPk_loginUser() + "' "
 						+ (srcType == null ? "" : (" and srctype='" + srcType.toString() + "'"))); // 從物理臨時表中清除已解密數據
 	}
@@ -446,10 +441,11 @@ public class CalculatingDataDEUtil {
 			this.getDataDecryptedMap().put(DataSourceTypeEnum.LABORSUM, decryptedPKList);
 		}
 
-		decryptedPKList = getDecryptedPKByType(DataSourceTypeEnum.WADOC);
-		if (decryptedPKList != null && decryptedPKList.size() > 0) {
-			this.getDataDecryptedMap().put(DataSourceTypeEnum.WADOC, decryptedPKList);
-		}
+		// decryptedPKList = getDecryptedPKByType(DataSourceTypeEnum.WADOC);
+		// if (decryptedPKList != null && decryptedPKList.size() > 0) {
+		// this.getDataDecryptedMap().put(DataSourceTypeEnum.WADOC,
+		// decryptedPKList);
+		// }
 
 		decryptedPKList = getDecryptedPKByType(DataSourceTypeEnum.WADATA);
 		if (decryptedPKList != null && decryptedPKList.size() > 0) {
@@ -459,11 +455,10 @@ public class CalculatingDataDEUtil {
 
 	@SuppressWarnings("unchecked")
 	private List<String> getDecryptedPKByType(DataSourceTypeEnum srcType) throws BusinessException {
-		List<String> decryptedPKList = (List<String>) this.getBaseDAO()
-				.executeQuery(
-						"select pk_wa_data from " + DECRYPTEDPKTABLENAME + " where srctype='" + srcType.toString()
-								+ "' and creator='" + this.getLoginContext().getPk_loginUser() + "'",
-						new ColumnListProcessor());
+		List<String> decryptedPKList = (List<String>) this.getBaseDAO().executeQuery(
+				"select pk_wa_data from " + IPaydataManageService.DECRYPTEDPKTABLENAME + " where srctype='"
+						+ srcType.toString() + "' and creator='" + this.getLoginContext().getPk_loginUser() + "'",
+				new ColumnListProcessor());
 
 		return decryptedPKList;
 	}
@@ -583,6 +578,10 @@ public class CalculatingDataDEUtil {
 		return dataDecryptedMap;
 	}
 
+	public void setBaseDAO(BaseDAO basedao) {
+		baseDAO = basedao;
+	}
+
 	public BaseDAO getBaseDAO() {
 		if (baseDAO == null) {
 			baseDAO = new BaseDAO();
@@ -618,5 +617,112 @@ public class CalculatingDataDEUtil {
 
 	public WaLoginContext getLoginContext() {
 		return loginContext;
+	}
+
+	@SuppressWarnings("unchecked")
+	public void decryptAllBySQL() throws BusinessException {
+		List<String> typeList = (List<String>) this.getBaseDAO().executeQuery(
+				"select distinct srctype from " + IPaydataManageService.DECRYPTEDPKTABLENAME + " where creator='"
+						+ this.getLoginContext().getPk_loginUser() + "'", new ColumnListProcessor());
+
+		if (typeList != null && typeList.size() > 0) {
+			DataSourceTypeEnum srcType = null;
+			for (String typeName : typeList) {
+				Logger.error("-----------------WA-CALCULATE-ENCRYPT-" + typeName + "-START------------------");
+				String tableName = "";
+				switch (typeName) {
+				case "WADATA":
+					srcType = DataSourceTypeEnum.WADATA;
+					tableName = "wa_data";
+					break;
+				case "LABORINS":
+					srcType = DataSourceTypeEnum.LABORINS;
+					tableName = PsndocDefTableUtil.getPsnLaborTablename();
+					break;
+				case "HEALTHINS":
+					srcType = DataSourceTypeEnum.HEALTHINS;
+					tableName = PsndocDefTableUtil.getPsnHealthTablename();
+					break;
+				case "LABORDETAIL":
+					srcType = DataSourceTypeEnum.LABORDETAIL;
+					tableName = PsndocDefTableUtil.getPsnNHIDetailTablename();
+					break;
+				case "LABORSUM":
+					srcType = DataSourceTypeEnum.LABORSUM;
+					tableName = PsndocDefTableUtil.getPsnNHISumTablename();
+					break;
+				case "GROUPINS":
+					srcType = DataSourceTypeEnum.GROUPINS;
+					tableName = PsndocDefTableUtil.getGroupInsuranceTablename();
+					break;
+				}
+
+				String pkFieldname = srcType.equals(DataSourceTypeEnum.WADATA) ? "pk_wa_data" : "pk_psndoc_sub";
+				String[] fieldNames = srcType.equals(DataSourceTypeEnum.WADATA) ? getWaDataFloatFieldNames() : this
+						.getDataTableFieldMap().get(srcType);
+
+				String wherePart = pkFieldname + " in (";
+				wherePart += "select pk_wa_data from " + IPaydataManageService.DECRYPTEDPKTABLENAME
+						+ " where creator='" + this.getLoginContext().getPk_loginUser() + "' and srctype = '"
+						+ typeName + "')";
+
+				if (srcType.equals(DataSourceTypeEnum.WADATA)) {
+					// 加密wa_data
+					Collection<DataVO> voList = this.getBaseDAO().retrieveByClause(DataVO.class, wherePart);
+					DataVO[] vos = SalaryEncryptionUtil.encryption4Array(voList.toArray(new DataVO[0]));
+					this.getBaseDAO().updateVOArray(vos);
+				} else {
+					Class dataClass = this.getDataClassMap().get(srcType);
+					SuperVO[] vos = this.getPsnQueryService().querySubVOWithoutS(dataClass, wherePart, null);
+					if (vos != null && vos.length > 0) {
+						for (SuperVO vo : vos) {
+							for (String fn : fieldNames) {
+								UFDouble value = getUFDouble(vo.getAttributeValue(fn));
+								double encryptedValue = SalaryEncryptionUtil.encryption(value.doubleValue());
+								vo.setAttributeValue(fn, new UFDouble(encryptedValue));
+							}
+						}
+
+						this.getBaseDAO().updateVOArray(vos);
+					}
+					// String strSQL = "update " + tableName + " set ";
+					// for (String fieldname : fieldNames) {
+					// strSQL += fieldname + "=SALARY_ENCRYPT(" + fieldname +
+					// "),";
+					// }
+					// strSQL += "ts='" + (new UFDateTime()).toString() + "'";
+					// strSQL += " where " + pkFieldname + " in (";
+					// strSQL += "select pk_wa_data from " +
+					// IPaydataManageService.DECRYPTEDPKTABLENAME
+					// + " where creator='" +
+					// this.getLoginContext().getPk_loginUser() +
+					// "' and srctype = '"
+					// + typeName + "')";
+					// this.getBaseDAO().executeUpdate(strSQL);
+				}
+
+				String strSQL = "delete from " + IPaydataManageService.DECRYPTEDPKTABLENAME + " where creator='"
+						+ this.getLoginContext().getPk_loginUser() + "' and srctype='" + typeName + "'";
+				this.getBaseDAO().executeUpdate(strSQL);
+				Logger.error("-----------------WA-CALCULATE-ENCRYPT-" + typeName + "-END------------------");
+			}
+		}
+	}
+
+	private String[] getWaDataFloatFieldNames() throws BusinessException {
+		Collection<DataVO> datavo = this.getBaseDAO().retrieveByClause(DataVO.class, "rownum=1");
+
+		if (datavo != null) {
+			HashMap<String, Object> map = datavo.toArray(new DataVO[0])[0].appValueHashMap;
+			Object[] pks = map.keySet().toArray();
+			ArrayList<String> itemPks = new ArrayList<String>();
+			for (int j = 0; j < pks.length; j++) {
+				if (pks[j].toString().startsWith("f_")) {
+					itemPks.add(pks[j].toString());
+				}
+			}
+			return itemPks.toArray(new String[0]);
+		}
+		return new String[0];
 	}
 }

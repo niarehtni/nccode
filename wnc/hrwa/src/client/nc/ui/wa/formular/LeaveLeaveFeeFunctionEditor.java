@@ -37,10 +37,10 @@ public class LeaveLeaveFeeFunctionEditor extends WaAbstractFunctionEditor {
 	private UILabel groupLabel = null;
 	private UIRefPane groupRef = null;
 
-	// 返回时数还是返回金额*时数  wangywt 20190705
+	// 返回时数还是返回金额*时数 wangywt 20190705
 	private UILabel isTiMnyLabel = null;
 	private UIComboBox yTiMnyBox = null;
-	
+
 	@Override
 	public void setModel(AbstractUIAppModel model) {
 		// TODO Auto-generated method stub
@@ -85,10 +85,10 @@ public class LeaveLeaveFeeFunctionEditor extends WaAbstractFunctionEditor {
 			setSize(300, 180);
 			setTitle("請選擇參數");
 
-			//是否返回时数
+			// 是否返回时数
 			add(this.getTiMnyLabel(), this.getTiMnyLabel().getName());
-			add(this.getYTiMnyBox(),this.getYTiMnyBox().getName());
-			
+			add(this.getYTiMnyBox(), this.getYTiMnyBox().getName());
+
 			add(getItemLabel(), getItemLabel().getName());
 			add(getItemCBox(), getItemCBox().getName());
 
@@ -97,7 +97,7 @@ public class LeaveLeaveFeeFunctionEditor extends WaAbstractFunctionEditor {
 
 			add(getGroupLabel(), getGroupLabel().getName());
 			add(getGroupRef(), getGroupRef().getName());
-			
+
 			add(getOkButton(), getOkButton().getName());
 			add(getCancelButton(), getCancelButton().getName());
 
@@ -143,8 +143,8 @@ public class LeaveLeaveFeeFunctionEditor extends WaAbstractFunctionEditor {
 		return groupRef;
 	}
 
-	private UILabel getTiMnyLabel(){
-		if(isTiMnyLabel==null){
+	private UILabel getTiMnyLabel() {
+		if (isTiMnyLabel == null) {
 			try {
 				isTiMnyLabel = new UILabel();
 				isTiMnyLabel.setName("isTiMnyLabel");
@@ -157,15 +157,14 @@ public class LeaveLeaveFeeFunctionEditor extends WaAbstractFunctionEditor {
 		}
 		return isTiMnyLabel;
 	}
-	
-	
+
 	/* 警告：此方法将重新生成。 */
 	private UILabel getUILabel() {
 		if (islabel == null) {
 			try {
 				islabel = new UILabel();
 				islabel.setName("islabel");
-				islabel.setText(ResHelper.getString("6013commonbasic", "06013commonbasic0269"));//是否免税
+				islabel.setText(ResHelper.getString("6013commonbasic", "06013commonbasic0269"));// 是否免税
 				islabel.setBounds(10, 80, 100, 22);
 				islabel.setHorizontalAlignment(SwingConstants.RIGHT);
 			} catch (java.lang.Throwable labExc) {
@@ -194,14 +193,13 @@ public class LeaveLeaveFeeFunctionEditor extends WaAbstractFunctionEditor {
 		return itemlabel;
 	}
 
-	
-	private UIComboBox getYTiMnyBox(){
-		if(yTiMnyBox==null){
+	private UIComboBox getYTiMnyBox() {
+		if (yTiMnyBox == null) {
 			try {
 				yTiMnyBox = new UIComboBox();
 				String[] ml = new String[2];
-				ml[0] = ResHelper.getString("6013commonbasic", "06013commonbasic0270");//否
-				ml[1] = ResHelper.getString("6013commonbasic", "06013commonbasic0271");//是
+				ml[0] = ResHelper.getString("6013commonbasic", "06013commonbasic0270");// 否
+				ml[1] = ResHelper.getString("6013commonbasic", "06013commonbasic0271");// 是
 				Integer[] mlDefault = new Integer[] { 0, 1 };
 				ConstEnumFactory<Integer> mPairFactory = new ConstEnumFactory<Integer>(ml, mlDefault);
 				yTiMnyBox.addItems(mPairFactory.getAllConstEnums());
@@ -212,15 +210,15 @@ public class LeaveLeaveFeeFunctionEditor extends WaAbstractFunctionEditor {
 		}
 		return yTiMnyBox;
 	}
-	
+
 	/* 警告：此方法将重新生成。 */
 	private UIComboBox getYOrnCBox() {
 		if (yOrnCBox == null) {
 			try {
 				yOrnCBox = new UIComboBox();
 				String[] ml = new String[2];
-				ml[0] = ResHelper.getString("6013commonbasic", "06013commonbasic0270");//否
-				ml[1] = ResHelper.getString("6013commonbasic", "06013commonbasic0271");//是
+				ml[0] = ResHelper.getString("6013commonbasic", "06013commonbasic0270");// 否
+				ml[1] = ResHelper.getString("6013commonbasic", "06013commonbasic0271");// 是
 
 				Integer[] mlDefault = new Integer[] { 0, 1 };
 				ConstEnumFactory<Integer> mPairFactory = new ConstEnumFactory<Integer>(ml, mlDefault);
@@ -262,10 +260,10 @@ public class LeaveLeaveFeeFunctionEditor extends WaAbstractFunctionEditor {
 			if (getYOrnCBox().getSelectedIndex() < 0) {
 				if (nullstr.length() > 0)
 					nullstr += ",";
-				nullstr += ResHelper.getString("6013commonbasic", "06013commonbasic0269")/*"是否免税"*/;
+				nullstr += ResHelper.getString("6013commonbasic", "06013commonbasic0269")/* "是否免税" */;
 			}
 			if (nullstr.length() > 0)
-				throw new Exception(nullstr + ResHelper.getString("6013commonbasic", "06013commonbasic0021")/*"不能为空！"*/);
+				throw new Exception(nullstr + ResHelper.getString("6013commonbasic", "06013commonbasic0021")/* "不能为空！" */);
 			if (getGroupRef().getRefPK() == null) {
 				throw new Exception("請選擇一個薪資項目分組!");
 			}
@@ -293,11 +291,10 @@ public class LeaveLeaveFeeFunctionEditor extends WaAbstractFunctionEditor {
 
 		// 是否免税 0否 1是
 		paras[1] = "\"" + getYOrnCBox().getSelectdItemValue().toString() + "\"";
-		
-		//是否返回时数
-		paras[2] = "\"" +this.getYTiMnyBox().getSelectdItemValue().toString()+ "\"";
-		
-		
+
+		// 是否返回时数
+		paras[2] = "\"" + this.getYTiMnyBox().getSelectdItemValue().toString() + "\"";
+
 		paras[3] = "\"" + getGroupRef().getRefPK() + "\"";
 
 		return paras;

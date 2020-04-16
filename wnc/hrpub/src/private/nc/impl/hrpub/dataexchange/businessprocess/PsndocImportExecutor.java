@@ -21,8 +21,7 @@ import nc.vo.pub.lang.UFDateTime;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 
-public class PsndocImportExecutor extends DataImportExecutor implements
-		IDataExchangeExternalExecutor {
+public class PsndocImportExecutor extends DataImportExecutor implements IDataExchangeExternalExecutor {
 
 	private Map<String, Map<String, String>> regionMap;
 	String newPsndocPK = "'$NEWID$'";
@@ -58,47 +57,36 @@ public class PsndocImportExecutor extends DataImportExecutor implements
 		// 增加额外的唯一性检查条件，基類在插入數據之前，增加該條件的檢查，以確保業務主鍵不重複
 		this.setUniqueCheckExtraCondition("id='$id$'");
 		// 增加排他的唯一性检查条件，基類在插入數據之前，用此條件替換檢查條件，不再以基類的按Code轉PK加額外條件檢查
-		this.setUniqueCheckExclusiveCondition(this
-				.getUniqueCheckExtraCondition());
+		this.setUniqueCheckExclusiveCondition(this.getUniqueCheckExtraCondition());
 
-		if (this.getNcValueObjects() != null
-				&& this.getNcValueObjects().size() > 0) {
+		if (this.getNcValueObjects() != null && this.getNcValueObjects().size() > 0) {
 			String rowNo = "";
 			try {
 				loadCountryRegion();
 				for (Map<String, Object> rowNCMap : this.getNcValueObjects()) {
-					rowNo = rowNCMap.keySet().toArray(new String[0])[0]
-							.split(":")[0];
+					rowNo = rowNCMap.keySet().toArray(new String[0])[0].split(":")[0];
 
 					// 资料为空检查
 					checkNull(rowNo, rowNCMap);
 
 					if (isNew) {
 						if (!this.getExtendSQLs().containsKey(rowNo)) {
-							this.getExtendSQLs().put(rowNo,
-									new ArrayList<String>());
+							this.getExtendSQLs().put(rowNo, new ArrayList<String>());
 						}
 
 						// 补充员工信息主档
 						dealPsndocInfo(rowNo, rowNCMap);
 
 						String code = (String) rowNCMap.get(rowNo + ":code");
-						String pk_org = (String) rowNCMap
-								.get(rowNo + ":pk_org");
+						String pk_org = (String) rowNCMap.get(rowNo + ":pk_org");
 						String startdate = getDateString(
-								(String) rowNCMap.get(rowNo
-										+ ":"
-										+ this.getReservedPropertyName("HI_PSNORG.WDAT")))
+								(String) rowNCMap.get(rowNo + ":" + this.getReservedPropertyName("HI_PSNORG.WDAT")))
 								.substring(0, 10);
-						String enddate = getDateString((String) rowNCMap
-								.get(rowNo
-										+ ":"
-										+ this.getReservedPropertyName("HI_PSNORG.ODAT")));
+						String enddate = getDateString((String) rowNCMap.get(rowNo + ":"
+								+ this.getReservedPropertyName("HI_PSNORG.ODAT")));
 
-						String deptCode = (String) rowNCMap
-								.get(rowNo
-										+ ":"
-										+ this.getReservedPropertyName("HI_PSNJOB.DEPNO"));
+						String deptCode = (String) rowNCMap.get(rowNo + ":"
+								+ this.getReservedPropertyName("HI_PSNJOB.DEPNO"));
 
 						String pk_dept_dutyin = "~";
 						String pk_dept_dutyin_v = "~";
@@ -108,83 +96,54 @@ public class PsndocImportExecutor extends DataImportExecutor implements
 							pk_dept_leave = getPk_dept("A99999", "9999-12-31");
 						}
 
-						String pk_dept_leave_v = getPk_dept_v(pk_dept_leave,
-								enddate);
+						String pk_dept_leave_v = getPk_dept_v(pk_dept_leave, enddate);
 
 						String deptName = getDeptNameByVID(pk_dept_dutyin_v);
 
-						String pk_jobtype = getPk_jobtype((String) rowNCMap
-								.get(rowNo
-										+ ":"
-										+ this.getReservedPropertyName("HI_PSNJOB.BTYPNO")));
-						String pk_jobrank = getPk_jobrank((String) rowNCMap
-								.get(rowNo
-										+ ":"
-										+ this.getReservedPropertyName("HI_PSNJOB.CLASS1")));
+						String pk_jobtype = getPk_jobtype((String) rowNCMap.get(rowNo + ":"
+								+ this.getReservedPropertyName("HI_PSNJOB.BTYPNO")));
+						String pk_jobrank = getPk_jobrank((String) rowNCMap.get(rowNo + ":"
+								+ this.getReservedPropertyName("HI_PSNJOB.CLASS1")));
 						String pk_org_v = getPk_org_vid(pk_org);
-						String pk_psncl = getPk_psncl((String) rowNCMap
-								.get(rowNo
-										+ ":"
-										+ this.getReservedPropertyName("HI_PSNJOB.PEONO")));
-						String pk_shift = getPk_shift(
-								pk_org,
-								(String) rowNCMap.get(rowNo
-										+ ":"
-										+ this.getReservedPropertyName("HI_PSNJOB.CLSNO")));
-						String pk_post = getPk_post((String) rowNCMap
-								.get(rowNo
-										+ ":"
-										+ this.getReservedPropertyName("HI_PSNJOB.TILNO")));
-						String pk_place = getPk_place((String) rowNCMap
-								.get(rowNo
-										+ ":"
-										+ this.getReservedPropertyName("HI_PSNJOB.PLACENO")));
+						String pk_psncl = getPk_psncl((String) rowNCMap.get(rowNo + ":"
+								+ this.getReservedPropertyName("HI_PSNJOB.PEONO")));
+						String pk_shift = getPk_shift(pk_org,
+								(String) rowNCMap.get(rowNo + ":" + this.getReservedPropertyName("HI_PSNJOB.CLSNO")));
+						String pk_post = getPk_post((String) rowNCMap.get(rowNo + ":"
+								+ this.getReservedPropertyName("HI_PSNJOB.TILNO")));
+						String pk_place = getPk_place((String) rowNCMap.get(rowNo + ":"
+								+ this.getReservedPropertyName("HI_PSNJOB.PLACENO")));
 						String ts = getDateString(new UFDateTime().toString());
 
-						String empform = getPk_empform((String) rowNCMap
-								.get(rowNo
-										+ ":"
-										+ this.getReservedPropertyName("HI_PSNJOB.PEONO1")));
-						String companyYear = (String) rowNCMap.get(rowNo + ":"
-								+ this.getReservedPropertyName("YEARS"));
+						String empform = getPk_empform((String) rowNCMap.get(rowNo + ":"
+								+ this.getReservedPropertyName("HI_PSNJOB.PEONO1")));
+						String companyYear = (String) rowNCMap.get(rowNo + ":" + this.getReservedPropertyName("YEARS"));
 						String orgName = getOrgNameByPK(pk_org);
 
 						// 处理银行账户（暂不处理）
 
 						// 处理组织关系
-						String pk_psnorg = dealPsnOrgInfo(rowNo, startdate, ts,
-								enddate, pk_org);
+						String pk_psnorg = dealPsnOrgInfo(rowNo, startdate, ts, enddate, pk_org);
 
 						// 处理紧急联系人
-						this.getExtendSQLs()
-								.get(rowNo)
-								.addAll(dealLinkManInfo(rowNCMap, rowNo, ts,
-										pk_org, pk_psnorg));
+						this.getExtendSQLs().get(rowNo).addAll(dealLinkManInfo(rowNCMap, rowNo, ts, pk_org, pk_psnorg));
 
 						// 处理试用信息（暂不处理）
 
 						// 处理流动记录
-						this.getExtendSQLs()
-								.get(rowNo)
-								.addAll(dealPsnChgInfo(startdate, ts, enddate,
-										pk_org, pk_psnorg, companyYear));
+						this.getExtendSQLs().get(rowNo)
+								.addAll(dealPsnChgInfo(startdate, ts, enddate, pk_org, pk_psnorg, companyYear));
 
 						// 处理工作记录
 						this.getExtendSQLs()
 								.get(rowNo)
-								.addAll(dealPsnJobInfo(pk_psnorg, code, pk_org,
-										pk_org_v, startdate, enddate,
-										pk_dept_dutyin, pk_dept_dutyin_v,
-										pk_dept_leave, pk_dept_leave_v,
-										pk_jobtype, pk_jobrank, pk_psncl,
-										pk_shift, pk_post, pk_place, empform,
-										ts));
+								.addAll(dealPsnJobInfo(pk_psnorg, code, pk_org, pk_org_v, startdate, enddate,
+										pk_dept_dutyin, pk_dept_dutyin_v, pk_dept_leave, pk_dept_leave_v, pk_jobtype,
+										pk_jobrank, pk_psncl, pk_shift, pk_post, pk_place, empform, ts));
 
 						// 处理人员履历
-						this.getExtendSQLs()
-								.get(rowNo)
-								.addAll(dealPsnWork(pk_org, startdate, enddate,
-										pk_psnorg, orgName, deptName, ts));
+						this.getExtendSQLs().get(rowNo)
+								.addAll(dealPsnWork(pk_org, startdate, enddate, pk_psnorg, orgName, deptName, ts));
 					}
 				}
 			} catch (Exception e) {
@@ -194,11 +153,9 @@ public class PsndocImportExecutor extends DataImportExecutor implements
 	}
 
 	private String getDeptNameByVID(String pk_dept_v) throws BusinessException {
-		String strSQL = "select name from org_dept_v where pk_vid = "
-				+ getStringValue(pk_dept_v);
+		String strSQL = "select name from org_dept_v where pk_vid = " + getStringValue(pk_dept_v);
 
-		String orgName = (String) this.getBaseDAO().executeQuery(strSQL,
-				new ColumnProcessor());
+		String orgName = (String) this.getBaseDAO().executeQuery(strSQL, new ColumnProcessor());
 
 		return orgName;
 	}
@@ -212,13 +169,11 @@ public class PsndocImportExecutor extends DataImportExecutor implements
 
 	}
 
-	private List<String> dealPsnWork(String pk_org, String startdate,
-			String enddate, String pk_psnorg, String orgName, String deptName,
-			String ts) {
+	private List<String> dealPsnWork(String pk_org, String startdate, String enddate, String pk_psnorg, String orgName,
+			String deptName, String ts) {
 		List<String> sqls = new ArrayList<String>();
 
-		sqls.add("INSERT INTO HI_PSNDOC_WORK ("
-				+ "BEGINDATE, BG_CHECK, CERTIFIER, CERTIPHONE, CREATIONTIME, CREATOR, "
+		sqls.add("INSERT INTO HI_PSNDOC_WORK (" + "BEGINDATE, BG_CHECK, CERTIFIER, CERTIPHONE, CREATIONTIME, CREATOR, "
 				+ "DIMISSION_REASON, DR, ENDDATE, LASTFLAG, LINKPHONE, MEMO, MODIFIEDTIME, "
 				+ "MODIFIER, PK_GROUP, PK_ORG, PK_PSNDOC, PK_PSNDOC_SUB, PK_PSNJOB, "
 				+ "PK_PSNORG, RECORDNUM, TS, WORK_ADDR, WORKACHIVE, WORKCORP, "
@@ -247,13 +202,9 @@ public class PsndocImportExecutor extends DataImportExecutor implements
 				+ ", "
 				+ getStringValue(pk_psnorg)
 				+ ", "
-				+ getStringValue(OidGenerator.getInstance().nextOid())
-				+ ", "
+				+ getStringValue(OidGenerator.getInstance().nextOid()) + ", "
 				// PK_PSNORG, RECORDNUM, TS, WORK_ADDR, WORKACHIVE, WORKCORP
-				+ "'~', 0, "
-				+ getStringValue(ts)
-				+ ", null, null, "
-				+ getStringValue(orgName) + ", "
+				+ "'~', 0, " + getStringValue(ts) + ", null, null, " + getStringValue(orgName) + ", "
 				// WORKDEPT, WORKDUTY, WORKJOB, WORKPOST
 				+ getStringValue(deptName) + ", null, null, null);");
 
@@ -267,28 +218,23 @@ public class PsndocImportExecutor extends DataImportExecutor implements
 		rowNCMap.put(rowNo + ":pk_group", this.getPk_group());
 
 		// 处理家庭地址
-		if (rowNCMap.containsKey(rowNo + ":"
-				+ this.getReservedPropertyName("ADDN"))
-				&& !StringUtils.isEmpty((String) rowNCMap.get(rowNo + ":"
-						+ this.getReservedPropertyName("ADDN")))) {
-			String pk_address = analyzeHomeAddress(
-					rowNo,
-					(String) rowNCMap.get(rowNo + ":"
-							+ this.getReservedPropertyName("ADDN")));
+		if (rowNCMap.containsKey(rowNo + ":" + this.getReservedPropertyName("ADDN"))
+				&& !StringUtils.isEmpty((String) rowNCMap.get(rowNo + ":" + this.getReservedPropertyName("ADDN")))) {
+			String pk_address = analyzeHomeAddress(rowNo,
+					(String) rowNCMap.get(rowNo + ":" + this.getReservedPropertyName("ADDN")));
 			rowNCMap.put(rowNo + ":addr", pk_address);
 		}
 	}
 
-	private List<String> dealPsnChgInfo(String startdate, String ts,
-			String enddate, String pk_org, String pk_psnorg, String companyYear) {
+	private List<String> dealPsnChgInfo(String startdate, String ts, String enddate, String pk_org, String pk_psnorg,
+			String companyYear) {
 		List<String> sqls = new ArrayList<String>();
 		// hi_psndoc_psnchg
 		sqls.add("INSERT INTO HI_PSNDOC_PSNCHG ("
 				+ "ASSGID, BEGINDATE, COMECORPADDR, COMECORPNAME, COMECORPPRP, COMETYPE, "
 				+ "CREATIONTIME, CREATOR, DR, ENDDATE, LASTFLAG, MEMO, MODIFIEDTIME, MODIFIER, "
 				+ "ORG_WORKAGE, PK_CORP, PK_GROUP, PK_ORG, PK_PSNDOC, PK_PSNDOC_SUB, PK_PSNORG, "
-				+ "RECORDNUM, TOCORPADDR, TOCORPNAME, TOCORPPRP, TOTYPE, TS, ORGAGE) "
-				+ "VALUES ("
+				+ "RECORDNUM, TOCORPADDR, TOCORPNAME, TOCORPPRP, TOTYPE, TS, ORGAGE) " + "VALUES ("
 				// ASSGID, BEGINDATE, COMECORPADDR, COMECORPNAME, COMECORPPRP,
 				// COMETYPE
 				+ "1, "
@@ -313,30 +259,21 @@ public class PsndocImportExecutor extends DataImportExecutor implements
 				+ ", "
 				+ this.newPsndocPK
 				+ ", "
-				+ getStringValue(OidGenerator.getInstance().nextOid())
-				+ ", "
-				+ getStringValue(pk_psnorg)
-				+ ", "
+				+ getStringValue(OidGenerator.getInstance().nextOid()) + ", " + getStringValue(pk_psnorg) + ", "
 				// RECORDNUM, TOCORPADDR, TOCORPNAME, TOCORPPRP, TOTYPE, TS,
 				// ORGAGE
-				+ "0, '~', null, '~', '~', "
-				+ getStringValue(ts)
-				+ ", "
-				+ getStringValue(companyYear) + ");");
+				+ "0, '~', null, '~', '~', " + getStringValue(ts) + ", " + getStringValue(companyYear) + ");");
 		return sqls;
 	}
 
-	private String dealPsnOrgInfo(String rowNo, String startdate, String ts,
-			String enddate, String pk_org) {
+	private String dealPsnOrgInfo(String rowNo, String startdate, String ts, String enddate, String pk_org) {
 		String pk_psnorg = OidGenerator.getInstance().nextOid();
 		List<String> sqls = new ArrayList<String>();
 		// hi_psnorg
-		sqls.add("INSERT INTO HI_PSNORG ("
-				+ "ADJUSTCORPAGE, BEGINDATE, CREATIONTIME, CREATOR, DR, EMPFORMS, ENDDATE, "
+		sqls.add("INSERT INTO HI_PSNORG (" + "ADJUSTCORPAGE, BEGINDATE, CREATIONTIME, CREATOR, DR, EMPFORMS, ENDDATE, "
 				+ "ENDFLAG, INDOC_SOURCE, INDOCFLAG, JOINSYSDATE, LASTFLAG, MODIFIEDTIME, "
 				+ "MODIFIER, ORGRELAID, PK_GROUP, PK_HRORG, PK_ORG, PK_PSNDOC, PK_PSNORG, "
-				+ "PSNTYPE, STARTPAYDATE, STOPPAYDATE, TS, CORPWORKAGE, ORGGLBDEF1) "
-				+ "VALUES ("
+				+ "PSNTYPE, STARTPAYDATE, STOPPAYDATE, TS, CORPWORKAGE, ORGGLBDEF1) " + "VALUES ("
 				// ADJUSTCORPAGE, BEGINDATE, CREATIONTIME, CREATOR, DR,
 				// EMPFORMS, ENDDATE
 				+ "null, "
@@ -382,13 +319,10 @@ public class PsndocImportExecutor extends DataImportExecutor implements
 		return pk_psnorg;
 	}
 
-	private List<String> dealPsnJobInfo(String pk_psnorg, String code,
-			String pk_org, String pk_org_v, String startdate, String enddate,
-			String pk_dept_dutyin, String pk_dept_dutyin_v,
-			String pk_dept_leave, String pk_dept_leave_v, String pk_jobtype,
-			String pk_jobrank, String pk_psncl, String pk_shift,
-			String pk_post, String pk_place, String empform, String ts)
-			throws BusinessException {
+	private List<String> dealPsnJobInfo(String pk_psnorg, String code, String pk_org, String pk_org_v,
+			String startdate, String enddate, String pk_dept_dutyin, String pk_dept_dutyin_v, String pk_dept_leave,
+			String pk_dept_leave_v, String pk_jobtype, String pk_jobrank, String pk_psncl, String pk_shift,
+			String pk_post, String pk_place, String empform, String ts) throws BusinessException {
 		List<String> sqls = new ArrayList<String>();
 		// hi_psnjob 入职（2018-01-25
 		// 取消生成入职记录，因为主档上未记录入职信息，给出的部门也都是离职时的，经讨论通过增加一笔入职异动记录实现）
@@ -474,8 +408,7 @@ public class PsndocImportExecutor extends DataImportExecutor implements
 		// + ", null, null, null);");
 
 		// hi_psnjob 离职
-		sqls.add("INSERT INTO HI_PSNJOB "
-				+ "(ASSGID, BEGINDATE, CLERKCODE, CREATIONTIME, CREATOR, "
+		sqls.add("INSERT INTO HI_PSNJOB " + "(ASSGID, BEGINDATE, CLERKCODE, CREATIONTIME, CREATOR, "
 				+ "DATAORIGINFLAG, DEPOSEMODE, DR, ENDDATE, ENDFLAG, ISMAINJOB, JOBMODE, "
 				+ "LASTFLAG, MEMO, MODIFIEDTIME, MODIFIER, OCCUPATION, ORIBILLPK, ORIBILLTYPE, "
 				+ "PK_DEPT, PK_DEPT_V, PK_GROUP, PK_HRGROUP, PK_HRORG, PK_JOB, PK_JOB_TYPE, PK_JOBGRADE, "
@@ -485,9 +418,7 @@ public class PsndocImportExecutor extends DataImportExecutor implements
 				+ "JOBGLBDEF4, JOBGLBDEF5) " + "VALUES " + "("
 				// ASSGID, BEGINDATE, CLERKCODE, CREATIONTIME, CREATOR
 				+ "1, "
-				+ getStringValue(getDateString(
-						new UFDate(enddate).getDateAfter(1).toString())
-						.substring(0, 10))
+				+ getStringValue(getDateString(new UFDate(enddate).getDateAfter(1).toString()).substring(0, 10))
 				+ ", "
 				+ getStringValue(code)
 				+ ", "
@@ -540,13 +471,9 @@ public class PsndocImportExecutor extends DataImportExecutor implements
 				+ ", '~', "
 				+ getStringValue(ts)
 				+ ", '~', "
-				+ getStringValue(pk_shift)
-				+ ", null, null, "
+				+ getStringValue(pk_shift) + ", null, null, "
 				// JOBGLBDEF4, JOBGLBDEF5
-				+ getStringValue(pk_post)
-				+ ", "
-				+ getStringValue(pk_place)
-				+ ");");
+				+ getStringValue(pk_post) + ", " + getStringValue(pk_place) + ");");
 		// bd_psnjob
 		sqls.add("INSERT INTO BD_PSNJOB ("
 				+ "DATAORIGINFLAG, DEF1, DEF10, DEF11, DEF12, DEF13, DEF14, DEF15, "
@@ -562,20 +489,16 @@ public class PsndocImportExecutor extends DataImportExecutor implements
 				+ "'~', '~', '~', '~', '~', '~', '~', '~', '~', '~', '~', '~', '~', 0, "
 				// ENDDUTYDATE, INDUTYDATE, ISMAINJOB, JOBNAME, PK_DEPT,
 				// PK_GROUP, PK_JOB, PK_ORG
-				+ getStringValue(enddate) + ", "
-				+ getStringValue(startdate)
-				+ ", 'Y', null, "
-				+ getStringValue(pk_dept_dutyin)
-				+ ", "
+				+ getStringValue(enddate) + ", " + getStringValue(startdate) + ", 'Y', null, "
+				+ getStringValue(pk_dept_dutyin) + ", "
 				+ getStringValue(this.getPk_group())
 				+ ", '~', "
 				+ getStringValue(pk_org)
 				+ ", "
 				// PK_POST, PK_PSNCL, PK_PSNDOC, PK_PSNJOB, PSNCODE, SHOWORDER,
 				// TS, WORKTYPE
-				+ "'~', " + getStringValue(pk_psncl) + ", " + this.newPsndocPK
-				+ ", " + getStringValue(OidGenerator.getInstance().nextOid())
-				+ ", " + getStringValue(code) + ", 9999999, "
+				+ "'~', " + getStringValue(pk_psncl) + ", " + this.newPsndocPK + ", "
+				+ getStringValue(OidGenerator.getInstance().nextOid()) + ", " + getStringValue(code) + ", 9999999, "
 				+ getStringValue(ts) + ", '~');");
 		return sqls;
 	}
@@ -597,115 +520,93 @@ public class PsndocImportExecutor extends DataImportExecutor implements
 	private String getPk_place(String placeCode) throws BusinessException {
 		String key = getCacheKey("PLACE", this.getPk_group(), placeCode);
 		String strSQL = "select pk_defdoc from bd_defdoc where pk_defdoclist = (select pk_defdoclist from bd_defdoclist where code = 'WNC02') and code = "
-				+ getStringValue(placeCode)
-				+ " and pk_org = "
-				+ getStringValue(this.getPk_group());
+				+ getStringValue(placeCode) + " and pk_org = " + getStringValue(this.getPk_group());
 		return getKeyValue(key, strSQL);
 	}
 
 	private String getPk_post(String postCode) throws BusinessException {
 		String key = getCacheKey("POST", this.getPk_group(), postCode);
-		String strSQL = "select pk_post from om_post where postcode = "
-				+ getStringValue(postCode) + " and pk_org="
+		String strSQL = "select pk_post from om_post where postcode = " + getStringValue(postCode) + " and pk_org="
 				+ getStringValue(this.getPk_group());
 		return getKeyValue(key, strSQL);
 	}
 
-	private String getPk_shift(String pk_org, String shiftCode)
-			throws BusinessException {
+	private String getPk_shift(String pk_org, String shiftCode) throws BusinessException {
 		String key = getCacheKey("SHIFT", pk_org, shiftCode);
-		String strSQL = "select pk_shift from bd_shift where code = "
-				+ getStringValue(shiftCode) + " and pk_org="
+		String strSQL = "select pk_shift from bd_shift where code = " + getStringValue(shiftCode) + " and pk_org="
 				+ getStringValue(pk_org);
 		return getKeyValue(key, strSQL);
 	}
 
 	private String getPk_psncl(String psnclCode) throws BusinessException {
 		String key = getCacheKey("PSNCL", "NULL", psnclCode);
-		String strSQL = "select pk_psncl from bd_psncl where code="
-				+ getStringValue(psnclCode);
+		String strSQL = "select pk_psncl from bd_psncl where code=" + getStringValue(psnclCode);
 		return getKeyValue(key, strSQL);
 	}
 
 	private String getPk_org_vid(String pk_org) throws BusinessException {
 		String key = getCacheKey("ORGV", "NULL", pk_org);
-		String strSQL = "select pk_vid from org_orgs where pk_org="
-				+ getStringValue(pk_org);
+		String strSQL = "select pk_vid from org_orgs where pk_org=" + getStringValue(pk_org);
 		return getKeyValue(key, strSQL);
 	}
 
 	private String getPk_jobrank(String jobGradeCode) throws BusinessException {
 		String key = getCacheKey("JOBRANK", this.getPk_group(), jobGradeCode);
-		String strSQL = "select pk_jobrank from om_jobrank where pk_org = "
-				+ getStringValue(this.getPk_group()) + " and jobrankcode= "
-				+ getStringValue(jobGradeCode);
+		String strSQL = "select pk_jobrank from om_jobrank where pk_org = " + getStringValue(this.getPk_group())
+				+ " and jobrankcode= " + getStringValue(jobGradeCode);
 		return getKeyValue(key, strSQL);
 	}
 
 	private String getPk_jobtype(String jobTypeCode) throws BusinessException {
 		String key = getCacheKey("JOBTYPE", this.getPk_group(), jobTypeCode);
-		String strSQL = "select pk_jobtype from om_jobtype where pk_org = "
-				+ getStringValue(this.getPk_group()) + " and jobtypecode= "
-				+ getStringValue(jobTypeCode);
+		String strSQL = "select pk_jobtype from om_jobtype where pk_org = " + getStringValue(this.getPk_group())
+				+ " and jobtypecode= " + getStringValue(jobTypeCode);
 		return getKeyValue(key, strSQL);
 	}
 
-	private String getPk_dept_v(String pk_dept, String checkDate)
-			throws BusinessException {
-		String strSQL = "select pk_vid from org_dept_v where pk_dept = "
-				+ getStringValue(pk_dept) + " and " + getStringValue(checkDate)
-				+ " between vstartdate and venddate";
+	private String getPk_dept_v(String pk_dept, String checkDate) throws BusinessException {
+		String strSQL = "select pk_vid from org_dept_v where pk_dept = " + getStringValue(pk_dept) + " and "
+				+ getStringValue(checkDate) + " between vstartdate and venddate";
 
-		String pk_vid = (String) this.getBaseDAO().executeQuery(strSQL,
-				new ColumnProcessor());
+		String pk_vid = (String) this.getBaseDAO().executeQuery(strSQL, new ColumnProcessor());
 		return pk_vid;
 	}
 
-	private String getPk_dept(String deptCode, String effectDate)
-			throws BusinessException {
-		String strSQL = "select pk_dept from om_depthistory where code = "
-				+ getStringValue(deptCode)
-				+ " and changetype=1 and effectdate<="
-				+ getStringValue(effectDate) + ";";
-		String pk_dept = (String) this.getBaseDAO().executeQuery(strSQL,
-				new ColumnProcessor());
+	private String getPk_dept(String deptCode, String effectDate) throws BusinessException {
+		String strSQL = "select pk_dept from om_depthistory where code = " + getStringValue(deptCode)
+				+ " and changetype=1 and effectdate<=" + getStringValue(effectDate) + ";";
+		String pk_dept = (String) this.getBaseDAO().executeQuery(strSQL, new ColumnProcessor());
 
 		if (StringUtils.isEmpty(pk_dept)) {
-			strSQL = "select pk_dept from om_depthistory where code = "
-					+ getStringValue(deptCode) + " and effectdate<="
-					+ getStringValue(effectDate) + ";";
-			pk_dept = (String) this.getBaseDAO().executeQuery(strSQL,
-					new ColumnProcessor());
+			strSQL = "select pk_dept from om_depthistory where code = " + getStringValue(deptCode)
+					+ " and effectdate<=" + getStringValue(effectDate) + ";";
+			pk_dept = (String) this.getBaseDAO().executeQuery(strSQL, new ColumnProcessor());
 		}
 
 		if (StringUtils.isEmpty(pk_dept)) {
-			strSQL = "select pk_dept from org_dept where code = "
-					+ getStringValue(deptCode) + " and createdate<="
+			strSQL = "select pk_dept from org_dept where code = " + getStringValue(deptCode) + " and createdate<="
 					+ getStringValue(effectDate) + ";";
-			pk_dept = (String) this.getBaseDAO().executeQuery(strSQL,
-					new ColumnProcessor());
+			pk_dept = (String) this.getBaseDAO().executeQuery(strSQL, new ColumnProcessor());
 		}
 		return pk_dept;
 	}
 
-	private List<String> dealLinkManInfo(Map<String, Object> rowNCMap,
-			String rowno, String ts, String pk_org, String pk_psnorg) {
+	private List<String> dealLinkManInfo(Map<String, Object> rowNCMap, String rowno, String ts, String pk_org,
+			String pk_psnorg) {
 		List<String> sqls = new ArrayList<String>();
 		sqls.add("INSERT INTO HI_PSNDOC_LINKMAN ("
 				+ "CREATIONTIME, CREATOR, DR, EMAIL, FAX, HOMEPHONE, ISMAIN, LASTFLAG, "
 				+ "LINKADDR, LINKMAN, MOBILE, MODIFIEDTIME, MODIFIER, OFFICEPHONE, PK_GROUP, "
-				+ "PK_ORG, PK_PSNDOC, PK_PSNDOC_SUB, PK_PSNORG, POSTALCODE, RECORDNUM, "
-				+ "RELATION, TS) " + "VALUES ("
+				+ "PK_ORG, PK_PSNDOC, PK_PSNDOC_SUB, PK_PSNORG, POSTALCODE, RECORDNUM, " + "RELATION, TS) "
+				+ "VALUES ("
 				+ getStringValue(ts)
 				+ ", "
 				+ getStringValue(this.getCuserid())
 				+ ", 0, null, null, "
-				+ getStringValue((String) rowNCMap.get(rowno + ":"
-						+ this.getReservedPropertyName("HELP_TEL")))
+				+ getStringValue((String) rowNCMap.get(rowno + ":" + this.getReservedPropertyName("HELP_TEL")))
 				+ ", null, 'Y', "
 				+ "null, "
-				+ getStringValue((String) rowNCMap.get(rowno + ":"
-						+ this.getReservedPropertyName("HELP_MAN")))
+				+ getStringValue((String) rowNCMap.get(rowno + ":" + this.getReservedPropertyName("HELP_MAN")))
 				+ ", null, null, '~', null, "
 				+ getStringValue(this.getPk_group())
 				+ ", "
@@ -717,36 +618,29 @@ public class PsndocImportExecutor extends DataImportExecutor implements
 				+ ", "
 				+ getStringValue(pk_psnorg)
 				+ ", '~', 0, "
-				+ getStringValue(rowNCMap.get(rowno + ":"
-						+ this.getReservedPropertyName("HELP_CALL")))
+				+ getStringValue(rowNCMap.get(rowno + ":" + this.getReservedPropertyName("HELP_CALL")))
 				+ ", "
 				+ getStringValue(ts) + ");");
 		return sqls;
 	}
 
-	private void checkNull(String rowNo, Map<String, Object> rowNCMap)
-			throws BusinessException {
-		if (!rowNCMap.containsKey(rowNo + ":code")
-				|| StringUtils.isEmpty((String) rowNCMap.get(rowNo + ":code"))) {
+	private void checkNull(String rowNo, Map<String, Object> rowNCMap) throws BusinessException {
+		if (!rowNCMap.containsKey(rowNo + ":code") || StringUtils.isEmpty((String) rowNCMap.get(rowNo + ":code"))) {
 			throw new BusinessException("員工编号不能為空。");
 		}
 
 		// 处理证件
-		if (!rowNCMap.containsKey(rowNo + ":id")
-				|| StringUtils.isEmpty((String) rowNCMap.get(rowNo + ":id"))) {
+		if (!rowNCMap.containsKey(rowNo + ":id") || StringUtils.isEmpty((String) rowNCMap.get(rowNo + ":id"))) {
 			throw new BusinessException("員工身份證件號碼不能為空。");
 		}
 
-		if (!rowNCMap.containsKey(rowNo + ":idtype")
-				|| StringUtils
-						.isEmpty((String) rowNCMap.get(rowNo + ":idtype"))) {
+		if (!rowNCMap.containsKey(rowNo + ":idtype") || StringUtils.isEmpty((String) rowNCMap.get(rowNo + ":idtype"))) {
 			throw new BusinessException("員工身份證件类型不能為空。");
 		}
 
 		String strSQL = "select count(pk_psndoc) from bd_psndoc where id = "
 				+ getStringValue((String) rowNCMap.get(rowNo + ":id")) + ";";
-		int cnt = (int) this.getBaseDAO().executeQuery(strSQL,
-				new ColumnProcessor());
+		int cnt = (int) this.getBaseDAO().executeQuery(strSQL, new ColumnProcessor());
 		isNew = cnt == 0;
 	}
 
@@ -767,14 +661,11 @@ public class PsndocImportExecutor extends DataImportExecutor implements
 			homeAddr = homeAddr.replace("日本國", "").replace("日本", "");
 		}
 
-		for (Entry<String, Map<String, String>> countryEntry : this
-				.getRegionMap().entrySet()) {
+		for (Entry<String, Map<String, String>> countryEntry : this.getRegionMap().entrySet()) {
 			if (countryEntry != null) {
-				for (Entry<String, String> regionEntry : countryEntry
-						.getValue().entrySet()) {
+				for (Entry<String, String> regionEntry : countryEntry.getValue().entrySet()) {
 					if (regionEntry.getKey().contains(homeAddr.substring(0, 3))) {
-						if (StringUtils.isEmpty(pk_province)
-								&& !homeAddr.substring(0, 3).contains("市")
+						if (StringUtils.isEmpty(pk_province) && !homeAddr.substring(0, 3).contains("市")
 								&& !homeAddr.substring(0, 3).contains("縣")) {
 							pk_province = regionEntry.getValue();
 						} else {
@@ -785,17 +676,13 @@ public class PsndocImportExecutor extends DataImportExecutor implements
 							pk_city = regionEntry.getValue();
 						}
 
-						homeAddr = homeAddr.replace(homeAddr.substring(0, 3),
-								"");
+						homeAddr = homeAddr.replace(homeAddr.substring(0, 3), "");
 
 						if (StringUtils.isEmpty(pk_city)) {
-							for (Entry<String, String> cityRegionEntry : countryEntry
-									.getValue().entrySet()) {
-								if (cityRegionEntry.getKey().contains(
-										homeAddr.substring(0, 3))) {
+							for (Entry<String, String> cityRegionEntry : countryEntry.getValue().entrySet()) {
+								if (cityRegionEntry.getKey().contains(homeAddr.substring(0, 3))) {
 									pk_city = cityRegionEntry.getValue();
-									homeAddr = homeAddr.replace(
-											homeAddr.substring(0, 3), "");
+									homeAddr = homeAddr.replace(homeAddr.substring(0, 3), "");
 								}
 							}
 						}
@@ -809,47 +696,29 @@ public class PsndocImportExecutor extends DataImportExecutor implements
 				.get(rowno)
 				.add("INSERT INTO BD_ADDRESS (CITY, CODE, COUNTRY, CREATIONTIME, CREATOR, DATAORIGINFLAG, "
 						+ "DETAILINFO, DR, MODIFIEDTIME, MODIFIER, PK_ADDRESS, POSTCODE, PROVINCE, TS, VSECTION) "
-						+ "VALUES ("
-						+ getStringValue(pk_city)
-						+ ", null, "
-						+ getStringValue(pk_country)
-						+ ", "
-						+ getStringValue(getDateString(new UFDateTime()
-								.toString()))
-						+ ", "
-						+ getStringValue(this.getCuserid())
-						+ ", 0, "
-						+ getStringValue(homeAddr)
-						+ ", 0, "
-						+ getStringValue(getDateString(new UFDateTime()
-								.toString()))
-						+ ", "
-						+ getStringValue(this.getCuserid())
-						+ ", "
-						+ getStringValue(pk_address)
-						+ ", null, "
-						+ getStringValue(pk_province)
-						+ ", "
-						+ getStringValue(getDateString(new UFDateTime()
-								.toString())) + ", null);");
+						+ "VALUES (" + getStringValue(pk_city) + ", null, " + getStringValue(pk_country) + ", "
+						+ getStringValue(getDateString(new UFDateTime().toString())) + ", "
+						+ getStringValue(this.getCuserid()) + ", 0, " + getStringValue(homeAddr) + ", 0, "
+						+ getStringValue(getDateString(new UFDateTime().toString())) + ", "
+						+ getStringValue(this.getCuserid()) + ", " + getStringValue(pk_address) + ", null, "
+						+ getStringValue(pk_province) + ", "
+						+ getStringValue(getDateString(new UFDateTime().toString())) + ", null);");
 		return pk_address;
 	}
 
 	private void loadCountryRegion() throws BusinessException {
 		String strSQL = "select code, replace(name, '　', '') name, replace(name2,'　','') name2, pk_region, pk_country from bd_region;";
-		List<Map<String, Object>> regions = (List<Map<String, Object>>) this
-				.getBaseDAO().executeQuery(strSQL, new MapListProcessor());
+		List<Map<String, Object>> regions = (List<Map<String, Object>>) this.getBaseDAO().executeQuery(strSQL,
+				new MapListProcessor());
 		if (regions != null && regions.size() > 0) {
 			for (Map<String, Object> region : regions) {
 				String pk_country = (String) region.get("pk_country");
 				if (!this.getRegionMap().containsKey(pk_country)) {
-					this.getRegionMap().put(pk_country,
-							new HashMap<String, String>());
+					this.getRegionMap().put(pk_country, new HashMap<String, String>());
 				}
 				this.getRegionMap()
 						.get(pk_country)
-						.put(region.get("code") + ":" + region.get("name")
-								+ ":" + region.get("name2"),
+						.put(region.get("code") + ":" + region.get("name") + ":" + region.get("name2"),
 								(String) region.get("pk_region"));
 			}
 		}
@@ -871,20 +740,16 @@ public class PsndocImportExecutor extends DataImportExecutor implements
 	@Override
 	public void beforeConvert() throws BusinessException {
 		// 数据预处理：去掉值的首尾空格
-		if (this.getJsonValueObjects() != null
-				&& this.getJsonValueObjects().size() > 0) {
+		if (this.getJsonValueObjects() != null && this.getJsonValueObjects().size() > 0) {
 
 			for (Map<String, Object> jsonobj : this.getJsonValueObjects()) {
 				Map<String, Object> newJsonobj = new HashMap<String, Object>();
 				for (Entry<String, Object> entry : jsonobj.entrySet()) {
 					if (entry.getKey().toLowerCase().contains("bd_psndoc.")) {
-						newJsonobj.put(
-								entry.getKey().toLowerCase()
-										.replace("bd_psndoc.", ""),
+						newJsonobj.put(entry.getKey().toLowerCase().replace("bd_psndoc.", ""),
 								((String) entry.getValue()).trim());
 					} else {
-						newJsonobj.put(entry.getKey(),
-								((String) entry.getValue()).trim());
+						newJsonobj.put(entry.getKey(), ((String) entry.getValue()).trim());
 					}
 				}
 
@@ -909,20 +774,24 @@ public class PsndocImportExecutor extends DataImportExecutor implements
 	}
 
 	@Override
-	public void beforeInsertOperation(Map<String, Object> rowMap)
-			throws BusinessException {
+	public void beforeInsertOperation(Map<String, Object> rowMap) throws BusinessException {
 		// TODO 自动生成的方法存根
 	}
 
 	@Override
-	public void beforeUpdateOperation(Map<String, Object> rowMap)
-			throws BusinessException {
+	public void beforeUpdateOperation(Map<String, Object> rowMap) throws BusinessException {
 		// TODO 自动生成的方法存根
 	}
 
 	@Override
 	public void doUpdateByBP() throws BusinessException {
 		// TODO 自动生成的方法存根
+
+	}
+
+	@Override
+	public void doQueryByBP() throws BusinessException {
+		// TODO 自動產生的方法 Stub
 
 	}
 

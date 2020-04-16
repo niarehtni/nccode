@@ -386,7 +386,7 @@ public class PeriodServiceImpl implements IPeriodQueryService, IPeriodManageServ
 
 		if (noPeriodPsnList.size() > 0) {
 			String name = null;
-			if (psndocvos.length > 0) {
+			if (psndocvos != null && psndocvos.length > 0) {
 				StringBuilder builder = new StringBuilder();
 				for (String pk : noPeriodPsnList) {
 					builder.append(nameMap.get(pk)).append(",");
@@ -403,7 +403,7 @@ public class PeriodServiceImpl implements IPeriodQueryService, IPeriodManageServ
 		String sealedPeriodMessage = null;
 		if (sealedPeriodPsnList.size() > 0) {
 			String name = null;
-			if (psndocvos.length > 0) {
+			if (psndocvos != null && psndocvos.length > 0) {
 				StringBuilder builder = new StringBuilder();
 				for (String pk : sealedPeriodPsnList) {
 					builder.append(nameMap.get(pk)).append(",");

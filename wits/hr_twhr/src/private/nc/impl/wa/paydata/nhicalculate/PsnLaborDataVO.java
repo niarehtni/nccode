@@ -64,6 +64,7 @@ public class PsnLaborDataVO extends SuperVO {
 	private UFDate retireBegin; // 勞退投保開始日期
 	private UFDate retireEnd; // 勞退投保結束日期
 
+
 	public UFDate getRetireBegin() {
 		return retireBegin;
 	}

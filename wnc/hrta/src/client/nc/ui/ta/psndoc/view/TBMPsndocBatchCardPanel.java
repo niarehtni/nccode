@@ -51,6 +51,10 @@ public class TBMPsndocBatchCardPanel extends UIPanel implements ActionListener {
 	//by he
 	private UIComboBox tbmWeekFormComboBox;	//工时形态
 	private UIComboBox tbmOtControComboBox;	//加班控管
+	
+	// 考勤增加不同步班次標識  by George 20200326 特性 #33851
+	private UICheckBox notsyncalDateChcBx;	//不同步班組工作日曆
+	
 	public void init() {
 		 UIPanel mainPanel = new UIPanel();
         setLayout(new BorderLayout());
@@ -81,6 +85,11 @@ public class TBMPsndocBatchCardPanel extends UIPanel implements ActionListener {
         builder.append(new UILabel(ResHelper.getString("6017psndoc","2psndoc-00002012")
         		/*@res "加班控管"*/));
         		        builder.append(getTbmOtControComboBox());
+        		        
+        // 考勤增加不同步班次標識  by George 20200326 特性 #33851
+        // 批量新增彈出視窗，新增邏輯欄位為 不同步班組工作日曆(isNotsyncal) 
+        builder.append(getNotsyncalDateChcBx());
+        		        
         //如果启用考勤地点异常，则加入考勤地点
         if(isCheckinPermit()) {
         	builder.append(new UILabel(ResHelper.getString("6017psndoc","06017psndoc0071")
@@ -198,6 +207,18 @@ public class TBMPsndocBatchCardPanel extends UIPanel implements ActionListener {
 			postDateChcBx.addActionListener(this);
 		}
 		return postDateChcBx;
+	}
+	
+	/** 
+	 * 考勤增加不同步班次標識  by George 20200326 特性 #33851
+	 * 批量新增考勤档案，新增邏輯欄位為 不同步班組工作日曆(isNotsyncal) 
+	 */
+	public UICheckBox getNotsyncalDateChcBx() {
+		if(notsyncalDateChcBx == null) {
+			notsyncalDateChcBx = new UICheckBox("不同步班組工作日曆");
+			notsyncalDateChcBx.addActionListener(this);
+		}
+		return notsyncalDateChcBx;
 	}
 
 	private UFLiteralDate getBusDate() {

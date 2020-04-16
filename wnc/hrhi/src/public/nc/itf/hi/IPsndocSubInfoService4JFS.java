@@ -331,5 +331,5 @@ public interface IPsndocSubInfoService4JFS {
 	/**
 	 * 离职审核后回写劳健保子集结束日期
 	 */
-	void rollbackhealthandlabor(AggStapply[] aggvos) throws BusinessException;
+	void finishInsurance(AggStapply[] aggvos) throws BusinessException;
 }

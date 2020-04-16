@@ -20,6 +20,9 @@ import nc.pub.smart.context.SmartContext;
 import nc.vo.pub.BusinessException;
 import nc.vo.pub.lang.UFDouble;
 import nc.vo.wa.item.WaItemVO;
+
+
+//20200106	by Jimmy	wnc0001	薪資條查詢條件不看工資卡有無。
 public class SalaryScalesSmartQuaryImpl implements ISalaryScalesSmartQuary {
 	//固定薪资项:順序-公共薪资项目编码
 	public static Map<Integer,String> FIXED_SALARY_MAP = new HashMap();
@@ -109,7 +112,7 @@ public class SalaryScalesSmartQuaryImpl implements ISalaryScalesSmartQuary {
 		DEL_SALARY_MAP.put(15,"4119");
 		DEL_SALARY_MAP.put(16,"4108");
 		DEL_SALARY_MAP.put(17,"4120");
-		DEL_SALARY_MAP.put(18,"4109");
+		DEL_SALARY_MAP.put(18,"4109"); 
 		DEL_SALARY_MAP.put(19,"4121");
 		DEL_SALARY_MAP.put(20,"4110");
 		DEL_SALARY_MAP.put(21,"4122");
@@ -342,8 +345,9 @@ public class SalaryScalesSmartQuaryImpl implements ISalaryScalesSmartQuary {
 				.append ( " left join bd_psnbankacc acc on acc.pk_psndoc = wa_data.pk_psndoc ")
 				.append ( " left join bd_bankaccbas bas on bas.pk_bankaccbas=acc.pk_bankaccbas ")
 				.append ( " WHERE	")
-				.append ( " acc.payacc =1 ")
-				.append ( " AND ( wa_waclass.code = 'TWMONTH'	")
+//				.append ( " acc.payacc =1 ")							//wnc0001	mark
+//				.append ( " AND ( wa_waclass.code = 'TWMONTH'	")		//wnc0001	mark
+				.append ( " ( wa_waclass.code = 'TWMONTH'	")			//wnc0001	add
 				.append ( " AND wa_data.pk_org = '"+org+"' ")
 				.append ( " AND wa_data.cyear = '"+year+"'	")
 				.append ( " AND wa_data.cperiod = '"+month+"' ) ");
@@ -371,6 +375,7 @@ public class SalaryScalesSmartQuaryImpl implements ISalaryScalesSmartQuary {
 	     + " ( wa_item.pk_org = 'GLOBLE00000000000000' OR  "
 	     + " wa_item.pk_org = (select distinct pk_group from org_orgs "
 	     + " where pk_org = '"+pk_org+"' and dr = 0 ))"
+	     + " and wa_item.iitemtype = '0' "
 	     + " and wa_item.code in ("+colInSQL+")";
 		List<WaItemVO> colList = 
 				(List<WaItemVO>)baseDAO.executeQuery(sql, new BeanListProcessor(WaItemVO.class));
@@ -421,6 +426,7 @@ public class SalaryScalesSmartQuaryImpl implements ISalaryScalesSmartQuary {
 	     + " ( wa_item.pk_org = 'GLOBLE00000000000000' OR  "
 	     + " wa_item.pk_org = (select distinct pk_group from org_orgs "
 	     + " where pk_org = '"+pk_org+"' and dr = 0 ))"
+	     + " and wa_item.iitemtype = '0' "
 	     + " and wa_item.code in ("+colInSQL+")";
 		List<WaItemVO> colList = 
 				(List<WaItemVO>)baseDAO.executeQuery(sql, new BeanListProcessor(WaItemVO.class));

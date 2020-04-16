@@ -127,6 +127,8 @@ public class OTSChainUtils {
 	 * 
 	 * @param pk_psndocs
 	 *            人員PKs
+	 * @param startDate
+	 *            起始日期
 	 * @param endDate
 	 *            截止日期
 	 * @param pk_overtimereg
@@ -145,12 +147,13 @@ public class OTSChainUtils {
 	 * 
 	 * @throws BusinessException
 	 */
-	public static Map<String, OTSChainNode> buildChainPsnNodeMap(String[] pk_psndocs, UFLiteralDate endDate,
-			String pk_overtimereg, boolean isForceComp, boolean isNoComp, boolean isForceNotCancel,
-			boolean isForceNotConsumeFinished, boolean isForceSettled) throws BusinessException {
+	public static Map<String, OTSChainNode> buildChainPsnNodeMap(String[] pk_psndocs, UFLiteralDate startDate,
+			UFLiteralDate endDate, String pk_overtimereg, boolean isForceComp, boolean isNoComp,
+			boolean isForceNotCancel, boolean isForceNotConsumeFinished, boolean isForceSettled)
+			throws BusinessException {
 
 		// 按人員取全節點
-		List<Map<String, Object>> vodataList = retrieveSegDetailData(pk_psndocs, endDate, pk_overtimereg);
+		List<Map<String, Object>> vodataList = retrieveSegDetailData(pk_psndocs, startDate, endDate, pk_overtimereg);
 
 		Map<String, List<OTSChainNode>> psnNodes = null;
 		Map<String, OTSChainNode> psnFirstNode = new HashMap<String, OTSChainNode>();
@@ -197,7 +200,8 @@ public class OTSChainUtils {
 					// 構建鏈表
 					for (OTSChainNode vo : psnNodes.get(pk_psndoc).toArray(new OTSChainNode[0])) {
 						SegDetailVO childVO = getChildVOByCode(psnNodes.get(pk_psndoc).toArray(new OTSChainNode[0]),
-								curNode.getNodeData().getNodecode(), curNode.getNodeData().getPk_segdetail());
+								curNode.getNodeData().getNodecode(), curNode.getNodeData().getApproveddate()
+										.toStdString());
 						if (childVO != null) {
 							OTSChainNode newNode = new OTSChainNode();
 							newNode.setNodeData(childVO);
@@ -242,12 +246,12 @@ public class OTSChainUtils {
 								+ "' "
 								+ (otDate == null ? "" : " and regdate='" + otDate.toString() + "'")
 								+ (StringUtils.isEmpty(pk_overtimereg) ? "" : " and pk_overtimereg='" + pk_overtimereg
-										+ "'"), new MapListProcessor());
+										+ "' "), new MapListProcessor());
 	}
 
 	@SuppressWarnings("unchecked")
-	public static List<Map<String, Object>> retrieveSegDetailData(String[] pk_psndocs, UFLiteralDate endDate,
-			String pk_overtimereg) throws BusinessException {
+	public static List<Map<String, Object>> retrieveSegDetailData(String[] pk_psndocs, UFLiteralDate startDate,
+			UFLiteralDate endDate, String pk_overtimereg) throws BusinessException {
 		return (List<Map<String, Object>>) getBaseDAO()
 				.executeQuery(
 						"select pk_segdetail,pk_group,pk_org,pk_org_v,creator,creationtime,modifier,modifiedtime,maketime,"
@@ -261,7 +265,8 @@ public class OTSChainUtils {
 								+ " where dr=0 and (iscompensation = 'Y' or issettled = 'N') and pk_psndoc in ("
 								+ (new InSQLCreator().getInSQL(pk_psndocs))
 								+ ") "
-								+ (endDate == null ? "" : " and regdate<='" + endDate.toString() + "'")
+								+ (startDate == null ? "" : " and regdate >= '" + startDate.toString() + "' ")
+								+ (endDate == null ? "" : " and regdate <= '" + endDate.toString() + "' ")
 								+ (StringUtils.isEmpty(pk_overtimereg) ? "" : " and pk_overtimereg='" + pk_overtimereg
 										+ "'"), new MapListProcessor());
 	}
@@ -435,13 +440,21 @@ public class OTSChainUtils {
 	}
 
 	private static SegDetailVO getChildVOByCode(OTSChainNode[] psnNodes, String parentNodeCode,
-			String pk_parentsegdetail) {
+			String parentApproveddateStr) {
 		String minCode = null;
 		SegDetailVO minSeg = null;
 		if (psnNodes != null && psnNodes.length > 0) {
+			// mod 用code和审批日期为key的方式区分分段的顺序 tank 2020年3月9日 00:11:28
+			// TODO :同一個人，同一天，同一分段，審核日期都一樣场景下,分段顺序的区分
+			String key = parentNodeCode + parentApproveddateStr;
+			StringBuilder comparetorSB = new StringBuilder();
+
 			for (OTSChainNode curNode : psnNodes) {
-				if (curNode.getNodeData().getNodecode().compareTo(parentNodeCode) >= 0
-						&& curNode.getNodeData().getPk_segdetail().compareTo(pk_parentsegdetail) > 0) {
+
+				comparetorSB.append(curNode.getNodeData().getNodecode()).append(
+						curNode.getNodeData().getApproveddate().toStdString());
+				if (comparetorSB.toString().compareTo(key) > 0) {
+					// mod end 用code和审批日期为key的方式区分分段的顺序 tank 2020年3月9日 00:11:32
 					if (StringUtils.isEmpty(minCode)) {
 						minCode = curNode.getNodeData().getNodecode();
 						minSeg = curNode.getNodeData();
@@ -452,6 +465,7 @@ public class OTSChainUtils {
 						}
 					}
 				}
+				comparetorSB.delete(0, comparetorSB.length());
 			}
 		}
 		return minSeg;
@@ -696,6 +710,9 @@ public class OTSChainUtils {
 			aggvo.setParent(vo);
 			AggSegDetailVO[] ret = new SegdetailMaintainImpl().insert(new AggSegDetailVO[] { aggvo });
 			vo.setPk_segdetail(ret[0].getPrimaryKey());
+			// 修改flag,ts tank 2020年1月13日17:53:04
+			vo.setStatus(VOStatus.UNCHANGED);
+			vo.setTs(ret[0].getParentVO().getTs());
 		} else if (vo.getPk_segdetail() != null && VOStatus.UPDATED == vo.getStatus()) {
 			// 修改
 			AggSegDetailVO aggvo = new AggSegDetailVO();
@@ -704,7 +721,10 @@ public class OTSChainUtils {
 			Collection<SegDetailConsumeVO> lstChildVOs = getBaseDAO().retrieveByClause(SegDetailConsumeVO.class,
 					"pk_segdetail='" + vo.getPk_segdetail() + "'");
 			aggvo.setChildrenVO(lstChildVOs.toArray(new SegDetailConsumeVO[0]));
-			new SegdetailMaintainImpl().update(new AggSegDetailVO[] { aggvo });
+			AggSegDetailVO[] ret = new SegdetailMaintainImpl().update(new AggSegDetailVO[] { aggvo });
+			// 修改flag,ts tank 2020年1月13日17:53:04
+			vo.setStatus(VOStatus.UNCHANGED);
+			vo.setTs(ret[0].getParentVO().getTs());
 		}
 	}
 

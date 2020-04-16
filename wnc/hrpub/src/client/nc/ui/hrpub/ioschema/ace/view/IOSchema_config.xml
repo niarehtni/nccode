@@ -110,9 +110,6 @@
 			<list>
 				<ref bean="batchSaveAction" />
 				<ref bean="batchCancelAction" />
-				<ref bean="batchAddLineActiona" />
-				<ref bean="batchDelLineActiona" />
-				
 			</list>
 		</property>
 
@@ -193,20 +190,6 @@
 	<bean id="batchCancelAction" class="nc.ui.pubapp.uif2app.actions.batch.BatchCancelAction">
 		<property name="model"><ref bean="batchModel"/></property>
 		<property name="editor"><ref bean="batchBillTable"/></property>
-		<property name="exceptionHandler"><ref bean="exceptionHandler" /></property>
-	</bean>
-
-	<!--======= 动作：[newActions] [新增] ===========-->
-	<bean id="batchAddLineActiona" class="nc.ui.hrpub.ioschema.action.IOSchemaAddLineActiona">
-		<property name="model"><ref bean="batchModel"/></property>
-		<property name="voClassName" value="nc.vo.hrpub.mdmapping.IOSchemaVO" />
-		<property name="exceptionHandler"><ref bean="exceptionHandler" /></property>
-	</bean>
-
-	<!--======= 动作：[newActions] [删除] ===========-->
-	<bean id="batchDelLineActiona" class="nc.ui.pubapp.uif2app.actions.batch.BatchDelLineAction">
-		<property name="model"><ref bean="batchModel"/></property>
-		<property name="batchBillTable"><ref bean="batchBillTable"/></property>
 		<property name="exceptionHandler"><ref bean="exceptionHandler" /></property>
 	</bean>
 

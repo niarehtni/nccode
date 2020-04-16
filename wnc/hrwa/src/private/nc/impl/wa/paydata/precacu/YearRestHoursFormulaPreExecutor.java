@@ -8,9 +8,11 @@ import nc.bs.framework.common.NCLocator;
 import nc.impl.wa.func.AbstractPreExcutorFormulaParse;
 import nc.jdbc.framework.JdbcSession;
 import nc.jdbc.framework.PersistenceManager;
+import nc.jdbc.framework.SQLParameter;
 import nc.jdbc.framework.exception.DbException;
 import nc.jdbc.framework.processor.ArrayListProcessor;
 import nc.jdbc.framework.processor.ColumnListProcessor;
+import nc.jdbc.framework.processor.ColumnProcessor;
 import nc.pubitf.para.SysInitQuery;
 import nc.pubitf.ta.leaveextrarest.ILeaveExtraRestService;
 import nc.vo.pub.BusinessException;
@@ -34,14 +36,25 @@ public class YearRestHoursFormulaPreExecutor extends AbstractPreExcutorFormulaPa
 	@Override
 	public void excute(Object formula, WaLoginContext context) throws BusinessException {
 		// 先清空數據
-		String sql = "update wa_cacu_data set cacu_value = 0 where  " + "pk_wa_class = '" + context.getPk_wa_class()
-				+ "' and creator = '" + context.getPk_loginUser() + "'";
-		getBaseDao().executeUpdate(sql);
+		// String sql = "update wa_cacu_data set cacu_value = 0 where  " +
+		// "pk_wa_class = '" + context.getPk_wa_class()
+		// + "' and creator = '" + context.getPk_loginUser() + "'";
+		// getBaseDao().executeUpdate(sql);
 
 		// 取本次計算的人員列表
-		sql = "select DISTINCT pk_psndoc from wa_cacu_data where pk_wa_class= '" + context.getPk_wa_class()
+		String psnsql = "select DISTINCT pk_psndoc from wa_cacu_data where pk_wa_class= '" + context.getPk_wa_class()
 				+ "' and creator = '" + context.getPk_loginUser() + "'";
-		ArrayList<String> pk_psndocs = (ArrayList<String>) getBaseDao().executeQuery(sql, new ColumnListProcessor());
+		ArrayList<String> pk_psndocs = (ArrayList<String>) getBaseDao().executeQuery(psnsql, new ColumnListProcessor());
+
+		// ssx added on 2020-02-11, 已存在的直接返回取值
+		String sql = "select count(*) from wa_cacu_yearresthour where pk_psndoc in (" + psnsql + ") and pk_wa_class='"
+				+ context.getPk_wa_class() + "' and creator='" + context.getPk_loginUser() + "' and isleave='"
+				+ (this.isLeave() ? "Y" : "N") + "'";
+		int rows = (int) getBaseDao().executeQuery(sql, new ColumnProcessor());
+		if (rows > 0) {
+			return;
+		}
+		//
 
 		// 根據薪資期間取考勤期間起迄日期
 		String cyear = context.getCyear();
@@ -63,17 +76,21 @@ public class YearRestHoursFormulaPreExecutor extends AbstractPreExcutorFormulaPa
 
 			// 根據人員、起迄日期、休假類型
 			ILeaveExtraRestService service = NCLocator.getInstance().lookup(ILeaveExtraRestService.class);
-			OTLeaveBalanceVO[] results = service.getLeaveExtHoursByType_MT(context.getPk_org(),
-					pk_psndocs.toArray(new String[0]), new UFLiteralDate(String.valueOf(periodDates[0])),
+			OTLeaveBalanceVO[] results = service.getLeaveExtHoursByType(context.getPk_org(),
+					pk_psndocs.toArray(new String[0]), null, null, new UFLiteralDate(String.valueOf(periodDates[0])),
 					new UFLiteralDate(String.valueOf(periodDates[1])), initexleavetype, true, this.isLeave());
 
 			if (results != null && results.length > 0) {
 				for (OTLeaveBalanceVO vo : results) {
 					if (vo != null) {
-						sql = "update wa_cacu_data set cacu_value = " + vo.getRemainhours().toString() + " where  "
-								+ "pk_wa_class = '" + context.getPk_wa_class() + "' and creator = '"
-								+ context.getPk_loginUser() + "'  and pk_psndoc = '" + vo.getPk_psndoc() + "'";
-						session.addBatch(sql);
+						String updateSql = "insert into wa_cacu_yearresthour (isleave, hours, pk_wa_class, creator, pk_psndoc) values (?,?,?,?,?)";
+						SQLParameter parameter = new SQLParameter();
+						parameter.addParam(this.isLeave() ? "Y" : "N");
+						parameter.addParam(vo.getRemainhours().doubleValue());
+						parameter.addParam(context.getPk_wa_class());
+						parameter.addParam(context.getPk_loginUser());
+						parameter.addParam(vo.getPk_psndoc());
+						session.addBatch(updateSql, parameter);
 					}
 				}
 

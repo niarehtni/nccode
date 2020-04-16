@@ -284,10 +284,9 @@ public class PsndocSubInfoService4JFSImpl implements IPsndocSubInfoService4JFS {
 					// UFLiteralDate(cstartdate);
 					UFLiteralDate curMonthEnd = new UFLiteralDate(cenddate);
 					// 2017-12新規：只要包含本月最後一天就計算全月保費
+					// 刪除結束日期判斷  只要開始日期包含在本月最後一天之前   by George 20190620  缺陷Bug #27974
 					boolean isCalc = (psnSet.getValue().getdStartDate().isSameDate(curMonthEnd) || psnSet.getValue()
-							.getdStartDate().before(curMonthEnd))
-							&& (psnSet.getValue().getdEndDate().isSameDate(curMonthEnd) || psnSet.getValue()
-									.getdEndDate().after(curMonthEnd));
+							.getdStartDate().before(curMonthEnd));
 
 					if (isCalc) // 計算全月start
 					{
@@ -335,11 +334,11 @@ public class PsndocSubInfoService4JFSImpl implements IPsndocSubInfoService4JFS {
 							if (setting.getBselfpay().booleanValue()) {
 								calcRst.get(pk_psndoc).setiStuffPay(
 										calcRst.get(pk_psndoc).getiStuffPay()
-												.add(psn_sub_amount.setScale(0, UFDouble.ROUND_HALF_UP))); // 個人負擔
+												.add(psn_sub_amount.setScale(0, UFDouble.ROUND_HALF_UP))); // 個人負擔, MOD 增加四捨五入 by ssx on 2019-06-05
 							} else {
 								calcRst.get(pk_psndoc).setiCompanyPay(
 										calcRst.get(pk_psndoc).getiCompanyPay()
-												.add(psn_sub_amount.setScale(0, UFDouble.ROUND_HALF_UP))); // 公司負擔
+												.add(psn_sub_amount.setScale(0, UFDouble.ROUND_HALF_UP))); // 公司負擔, MOD 增加四捨五入 by ssx on 2019-06-05
 							}
 						} else {
 							throw new BusinessException(nc.vo.ml.NCLangRes4VoTransl.getNCLangRes().getStrByID(
@@ -627,15 +626,17 @@ public class PsndocSubInfoService4JFSImpl implements IPsndocSubInfoService4JFS {
 		strSQL += " 	AND e.orgrelaid = tmp.orgrelaid ";
 		strSQL += " INNER JOIN hi_psnjob a ON a.pk_psnorg = e.pk_psnorg ";
 		strSQL += " 	AND a.lastflag = 'Y' ";
-		// 團保費計算判斷 是否 正職人員
+		// 判斷是否正職  by George  20190531  缺陷Bug #27249
 		// strSQL += " 	AND a.ismainjob = 'Y' ";
 		strSQL += " INNER JOIN org_admin_enable o ON o.pk_adminorg = a.pk_org ";
 		// strSQL +=
 		// " INNER JOIN om_jobrank jr ON a.jobglbdef1 = jr.pk_jobrank ";
 		strSQL += " WHERE (e.indocflag = 'Y') ";
 		strSQL += " 	AND (e.psntype = 0) ";
-		strSQL += " 	AND (e.endflag = 'N') ";
-		strSQL += " 	AND (a.endflag = 'N') ";
+		// 判斷 hi_psnorg組織關西 是否結束  by George  20190619  缺陷Bug #27943
+		// strSQL += " 	AND (e.endflag = 'N') ";
+		// 判斷 hi_psnorg工作紀錄 是否結束  by George  20190619  缺陷Bug #27943
+		// strSQL += " 	AND (a.endflag = 'N') ";
 		strSQL += " 	AND (a.pk_hrorg = '" + pk_org + "') ";
 		List psnlist = (List) this.getBaseDao().executeQuery(strSQL, new ColumnListProcessor("pk_psndoc"));
 		return psnlist;
@@ -1218,11 +1219,27 @@ public class PsndocSubInfoService4JFSImpl implements IPsndocSubInfoService4JFS {
 		// 检查人员是否有團保设定
 		SimpleDocServiceTemplate service = new SimpleDocServiceTemplate("TWHRGLBDEF");
 		for (String pk_psndoc : pk_psndocs) {
+			// 查詢 hi_psndoc_glbdef7團保信息 是否有值  by George  20190614  缺陷Bug #27378
 			PsndocDefVO[] vos = service.queryByCondition(PsndocDefUtil.getGroupInsuranceVO().getClass(), " pk_psndoc='"
 					+ pk_psndoc + "' ");
-			if (vos != null && vos.length > 0) {
+			// 查詢 hi_psnorg組織關係 是否 第一家任職公司  by George  20190614  缺陷Bug #27378
+			String strSQL = "select max(orgrelaid)-1 from hi_psnorg where  pk_psndoc='" + pk_psndoc + "' ";
+			
+			if (vos != null && vos.length > 0 && Integer.parseInt(String.valueOf(this.getBaseDao().executeQuery(strSQL, new ColumnProcessor()))) < 1) {
 				throw new BusinessException("已存在團保投保設定");
 			}
+			// 如果不是第一家任職公司  by George
+			if (Integer.parseInt(String.valueOf(this.getBaseDao().executeQuery(strSQL, new ColumnProcessor()))) >= 1) {
+				// 查詢 上一家任職公司結束日期之後 hi_psndoc_glbdef7團保信息 是否有值  by George  20190614  缺陷Bug #27378
+				PsndocDefVO[] vos2 = service.queryByCondition(PsndocDefUtil.getGroupInsuranceVO().getClass(), " pk_psndoc='"
+						+ pk_psndoc + "' and (enddate is NULL or enddate > (select enddate from hi_psnorg where pk_psndoc='" + pk_psndoc + 
+						"' and orgrelaid = '" + String.valueOf(this.getBaseDao().executeQuery(strSQL, new ColumnProcessor())) + "'))");
+				
+				if (vos2 != null && vos2.length > 0) {
+					throw new BusinessException("已存在團保投保設定");
+				}
+			}
+			
 		}
 
 		// 取團保費率表
@@ -1256,7 +1273,7 @@ public class PsndocSubInfoService4JFSImpl implements IPsndocSubInfoService4JFS {
 			UFDouble psnSum = grpSum;// .div(1000)
 			// .setScale(0, UFDouble.ROUND_HALF_UP).multiply(1000);
 
-			// 新建團保資料
+			// 新建團保資料(信息)
 			PsndocDefVO[] savedVOs = getNewGroupInsVO(pk_psndoc, pk_org, psnSum, setting, psnVO);
 
 			if (savedVOs != null && savedVOs.length > 0) {
@@ -1264,6 +1281,11 @@ public class PsndocSubInfoService4JFSImpl implements IPsndocSubInfoService4JFS {
 					vo.setBegindate(earlist);
 					vo.setEnddate(null);
 					service.insert(vo);
+					
+					// 不是第一次任職公司 之前公司保險信息的 recordnum紀錄序號 依照新建團保信息數增加序號號碼  by George  20190614  缺陷Bug #27378
+					String strSQL = "update " + PsndocDefTableUtil.getGroupInsuranceTablename()
+							+ " set recordnum=isnull(recordnum,0)+1 where pk_psndoc = '" + pk_psndoc + "' and enddate is not null";
+					this.getBaseDao().executeUpdate(strSQL);
 				}
 			}
 		}

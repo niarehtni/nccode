@@ -1,10 +1,13 @@
 package nc.impl.wa.paydata.nhicalculate;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import nc.bs.bd.util.DBAUtil;
 import nc.bs.framework.common.InvocationInfoProxy;
@@ -18,6 +21,7 @@ import nc.itf.bd.defdoc.IDefdoclistQryService;
 import nc.itf.twhr.INhicalcMaintain;
 import nc.jdbc.framework.processor.ColumnListProcessor;
 import nc.jdbc.framework.processor.MapListProcessor;
+import nc.jdbc.framework.processor.ResultSetProcessor;
 import nc.pubitf.twhr.IAllowancePubQuery;
 import nc.pubitf.twhr.IBasedocPubQuery;
 import nc.pubitf.twhr.IRangetablePubQuery;
@@ -31,6 +35,7 @@ import nc.vo.pub.lang.ICalendar;
 import nc.vo.pub.lang.UFBoolean;
 import nc.vo.pub.lang.UFDate;
 import nc.vo.pub.lang.UFDouble;
+import nc.vo.pub.lang.UFLiteralDate;
 import nc.vo.pubapp.pattern.exception.ExceptionUtils;
 import nc.vo.twhr.allowance.AllowanceTypeEnum;
 import nc.vo.twhr.allowance.AllowanceVO;
@@ -54,6 +59,8 @@ import org.apache.commons.lang.StringUtils;
  * 
  */
 public class TaiwanNHICalculator extends BaseDAOManager {
+	//纬创雇主劳保身份
+	private static final String ORG_LABOR_TYPE = "LT01";
 	// 参数列表
 	private Map<String, Object> refList;
 	// 人员列表
@@ -74,6 +81,17 @@ public class TaiwanNHICalculator extends BaseDAOManager {
 	private List<RangeTableAggVO> rangetables;
 	// 当前对象是否上月
 	private UFBoolean isLastMonth;
+	//健保本人身份证号对应的投保身份
+	private Map<String,String> psn2TypeMap;
+	
+
+	public Map<String, String> getPsn2TypeMap() {
+		return psn2TypeMap;
+	}
+
+	public void setPsn2TypeMap(Map<String, String> psn2TypeMap) {
+		this.psn2TypeMap = psn2TypeMap;
+	}
 
 	public Map<String, Object> getRefList() {
 		return refList;
@@ -475,7 +493,75 @@ public class TaiwanNHICalculator extends BaseDAOManager {
 		strSQL += " (nhi.dr=0) AND (nhi.pk_psndoc IN (SELECT pk_psndoc FROM " + psnTmpTableName + "))";
 
 		List<Map> healthData = (List<Map>) this.getBaseDao().executeQuery(strSQL, new MapListProcessor());
+		//获取本人健保身份信息
+		initPsnTypeInfo(psnTmpTableName);
 		return generateHealthVOs(healthData, laborData);
+	}
+
+	@SuppressWarnings("unchecked")
+	private void initPsnTypeInfo(String psnTmpTableName) throws BusinessException {
+		String strSQL = "";
+		strSQL += " SELECT DISTINCT  nhi.pk_psndoc,  def.glbdef5 AS psntype, isnull(def.enddate, '9999-12-31') AS healthenddate ";
+		strSQL += " FROM twhr_nhicalc AS nhi INNER JOIN ";
+		strSQL += " bd_psndoc AS psndoc ON nhi.pk_psndoc = psndoc.pk_psndoc LEFT OUTER JOIN ";
+		strSQL += PsndocDefTableUtil.getPsnHealthTablename()
+				+ " AS def ON def.pk_psndoc = nhi.pk_psndoc AND nhi.begindate <= isnull(def.enddate, '9999-12-31') AND ";
+		strSQL += " nhi.enddate >= def.begindate and def.glbdef3 = psndoc.id";
+		strSQL += " WHERE (nhi.begindate >= '"
+				+ this.getFirstDayOfMonth(this.getCalcYear(), this.getCalcMonth()).toString()
+				+ "') AND (nhi.enddate <= '"
+				+ this.getLastDayOfMonth(this.getCalcYear(), this.getCalcMonth()).toString()
+				+ "') AND (def.glbdef14 IS NOT NULL AND def.glbdef14 = N'Y') AND ";
+		strSQL += " (nhi.dr=0) AND (nhi.pk_psndoc IN (SELECT pk_psndoc FROM " + psnTmpTableName + "))";
+		
+		psn2TypeMap = (Map<String, String>) this.getBaseDao().executeQuery(strSQL, new ResultSetProcessor() {
+			private static final long serialVersionUID = -2638415123229261815L;
+			//<pk_psndoc,<date,type>>
+			Map<String,Map<String,String>> psnEnddate2TypeMap = new HashMap<>();
+			//<pk_psndoc,type>
+			Map<String,String> psn2TypeRs =  new HashMap<>();
+			@Override
+			public Object handleResultSet(ResultSet rs) throws SQLException {
+				while(rs.next()){
+					Map<String, String> date2TypeMap = psnEnddate2TypeMap.get(rs.getString(1));
+					if(date2TypeMap==null){
+						date2TypeMap = new HashMap<>();
+						date2TypeMap.put(rs.getString(3), rs.getString(2));
+						psnEnddate2TypeMap.put(rs.getString(1), date2TypeMap);
+					}else{
+						String current = rs.getString(3);
+						if(rs.getString(3)==null){
+							continue;
+						}
+						UFLiteralDate currentDate = new UFLiteralDate(current);
+						for(String lastdate : date2TypeMap.keySet()){
+							UFLiteralDate lastDate = new UFLiteralDate(lastdate);
+							//只取最新的
+							if(currentDate.after(lastDate)){
+								date2TypeMap.remove(lastdate);
+								date2TypeMap.put(rs.getString(3), rs.getString(2));
+							}
+							break;
+						}
+					}
+				}
+				//整理一下map
+				if(psnEnddate2TypeMap!=null && psnEnddate2TypeMap.size() > 0){
+					Set<String> psnSet = psnEnddate2TypeMap.keySet();
+					for(String psn :psnSet){
+						Map<String, String> date2type = psnEnddate2TypeMap.get(psn);
+						if(date2type!=null && date2type.size() > 0){
+							for(String type : date2type.values()){
+								psn2TypeRs.put(psn, type);
+							}
+						}else{
+							psn2TypeRs.put(psn, null);
+						}
+					}
+				}
+				return psn2TypeRs;
+			}
+		});
 	}
 
 	private PsnHealthDataVO[] generateHealthVOs(List<Map> healthData, List<PsnLaborDataVO> laborData)
@@ -549,6 +635,12 @@ public class TaiwanNHICalculator extends BaseDAOManager {
 				for (Map data : healDataByPsn) {
 					if (ifHealthByDate(data)) {
 						String psnType = (String) data.get("psntype");
+						if(psnType==null && (!((String) data.get("psndocid")).equals((String) data.get("healthid"))) ){
+							//tank 2019年10月21日19:44:16 如果投保类型为空,而且是非本人,要跟本人一致
+							psnType = getPsn2TypeMap().get(pk_psndoc);
+						}
+						
+						
 						if (!((String) data.get("psndocid")).equals((String) data.get("healthid"))) {
 							// 非投保人本人
 							healVO.setPersonCount(healVO.getPersonCount().add(1));
@@ -1082,9 +1174,13 @@ public class TaiwanNHICalculator extends BaseDAOManager {
 										.div(30).setScale(0, UFDouble.ROUND_HALF_UP));
 							}
 						}
-
-						vo.setRetireWthAmount_Org(vo.getRetireRange().multiply(vo.getRetireWthRate_Org())
-								.multiply(vo.getRetireDays()).div(30).setScale(0, UFDouble.ROUND_HALF_UP));
+						//雇主的劳退自提(雇主)为0 tank 2019年10月21日19:28:52
+						if("LT01".equals(this.getRefList().get(getKey(new DefdocVO(), vo.getNhiPsnType())))){
+							vo.setRetireWthAmount_Org(UFDouble.ZERO_DBL);
+						}else{
+							vo.setRetireWthAmount_Org(vo.getRetireRange().multiply(vo.getRetireWthRate_Org())
+									.multiply(vo.getRetireDays()).div(30).setScale(0, UFDouble.ROUND_HALF_UP));
+						}
 					}
 				}
 			}

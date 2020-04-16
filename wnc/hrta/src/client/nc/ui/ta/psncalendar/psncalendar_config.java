@@ -7,693 +7,607 @@ import java.util.Map;
 
 import nc.ui.uif2.factory.AbstractJavaBeanDefinition;
 
-public class psncalendar_config extends AbstractJavaBeanDefinition {
+public class psncalendar_config extends AbstractJavaBeanDefinition{
 	private Map<String, Object> context = new HashMap();
+public nc.vo.ta.pub.TALoginContext getContext(){
+ if(context.get("context")!=null)
+ return (nc.vo.ta.pub.TALoginContext)context.get("context");
+  nc.vo.ta.pub.TALoginContext bean = new nc.vo.ta.pub.TALoginContext();
+  context.put("context",bean);
+setBeanFacotryIfBeanFacatoryAware(bean);
+invokeInitializingBean(bean);
+return bean;
+}
 
-	public nc.vo.ta.pub.TALoginContext getContext() {
-		if (context.get("context") != null)
-			return (nc.vo.ta.pub.TALoginContext) context.get("context");
-		nc.vo.ta.pub.TALoginContext bean = new nc.vo.ta.pub.TALoginContext();
-		context.put("context", bean);
-		setBeanFacotryIfBeanFacatoryAware(bean);
-		invokeInitializingBean(bean);
-		return bean;
-	}
+public nc.vo.bd.meta.BDObjectAdpaterFactory getBoadatorfactory(){
+ if(context.get("boadatorfactory")!=null)
+ return (nc.vo.bd.meta.BDObjectAdpaterFactory)context.get("boadatorfactory");
+  nc.vo.bd.meta.BDObjectAdpaterFactory bean = new nc.vo.bd.meta.BDObjectAdpaterFactory();
+  context.put("boadatorfactory",bean);
+setBeanFacotryIfBeanFacatoryAware(bean);
+invokeInitializingBean(bean);
+return bean;
+}
 
-	public nc.vo.bd.meta.BDObjectAdpaterFactory getBoadatorfactory() {
-		if (context.get("boadatorfactory") != null)
-			return (nc.vo.bd.meta.BDObjectAdpaterFactory) context.get("boadatorfactory");
-		nc.vo.bd.meta.BDObjectAdpaterFactory bean = new nc.vo.bd.meta.BDObjectAdpaterFactory();
-		context.put("boadatorfactory", bean);
-		setBeanFacotryIfBeanFacatoryAware(bean);
-		invokeInitializingBean(bean);
-		return bean;
-	}
+public nc.ui.ta.psncalendar.model.PsnCalendarAppModel getModel(){
+ if(context.get("model")!=null)
+ return (nc.ui.ta.psncalendar.model.PsnCalendarAppModel)context.get("model");
+  nc.ui.ta.psncalendar.model.PsnCalendarAppModel bean = new nc.ui.ta.psncalendar.model.PsnCalendarAppModel();
+  context.put("model",bean);
+  bean.setContext(getContext());
+setBeanFacotryIfBeanFacatoryAware(bean);
+invokeInitializingBean(bean);
+return bean;
+}
 
-	public nc.ui.ta.psncalendar.model.PsnCalendarAppModel getModel() {
-		if (context.get("model") != null)
-			return (nc.ui.ta.psncalendar.model.PsnCalendarAppModel) context.get("model");
-		nc.ui.ta.psncalendar.model.PsnCalendarAppModel bean = new nc.ui.ta.psncalendar.model.PsnCalendarAppModel();
-		context.put("model", bean);
-		bean.setContext(getContext());
-		setBeanFacotryIfBeanFacatoryAware(bean);
-		invokeInitializingBean(bean);
-		return bean;
-	}
+public nc.ui.ta.pub.QueryEditorListener getQueryEditorListener(){
+ if(context.get("queryEditorListener")!=null)
+ return (nc.ui.ta.pub.QueryEditorListener)context.get("queryEditorListener");
+  nc.ui.ta.pub.QueryEditorListener bean = new nc.ui.ta.pub.QueryEditorListener();
+  context.put("queryEditorListener",bean);
+setBeanFacotryIfBeanFacatoryAware(bean);
+invokeInitializingBean(bean);
+return bean;
+}
 
-	public nc.ui.ta.pub.QueryEditorListener getQueryEditorListener() {
-		if (context.get("queryEditorListener") != null)
-			return (nc.ui.ta.pub.QueryEditorListener) context.get("queryEditorListener");
-		nc.ui.ta.pub.QueryEditorListener bean = new nc.ui.ta.pub.QueryEditorListener();
-		context.put("queryEditorListener", bean);
-		setBeanFacotryIfBeanFacatoryAware(bean);
-		invokeInitializingBean(bean);
-		return bean;
-	}
+public nc.ui.uif2.actions.ActionContributors getToftpanelActionContributors(){
+ if(context.get("toftpanelActionContributors")!=null)
+ return (nc.ui.uif2.actions.ActionContributors)context.get("toftpanelActionContributors");
+  nc.ui.uif2.actions.ActionContributors bean = new nc.ui.uif2.actions.ActionContributors();
+  context.put("toftpanelActionContributors",bean);
+  bean.setContributors(getManagedList0());
+setBeanFacotryIfBeanFacatoryAware(bean);
+invokeInitializingBean(bean);
+return bean;
+}
 
-	public nc.ui.uif2.actions.ActionContributors getToftpanelActionContributors() {
-		if (context.get("toftpanelActionContributors") != null)
-			return (nc.ui.uif2.actions.ActionContributors) context.get("toftpanelActionContributors");
-		nc.ui.uif2.actions.ActionContributors bean = new nc.ui.uif2.actions.ActionContributors();
-		context.put("toftpanelActionContributors", bean);
-		bean.setContributors(getManagedList0());
-		setBeanFacotryIfBeanFacatoryAware(bean);
-		invokeInitializingBean(bean);
-		return bean;
-	}
+private List getManagedList0(){  List list = new ArrayList();  list.add(getCalendarActions());  list.add(getGridActions());  return list;}
 
-	private List getManagedList0() {
-		List list = new ArrayList();
-		list.add(getCalendarActions());
-		list.add(getGridActions());
-		return list;
-	}
+public nc.ui.uif2.actions.StandAloneToftPanelActionContainer getCalendarActions(){
+ if(context.get("calendarActions")!=null)
+ return (nc.ui.uif2.actions.StandAloneToftPanelActionContainer)context.get("calendarActions");
+  nc.ui.uif2.actions.StandAloneToftPanelActionContainer bean = new nc.ui.uif2.actions.StandAloneToftPanelActionContainer(getCalendarView());  context.put("calendarActions",bean);
+  bean.setActions(getManagedList1());
+  bean.setEditActions(getManagedList2());
+  bean.setModel(getModel());
+setBeanFacotryIfBeanFacatoryAware(bean);
+invokeInitializingBean(bean);
+return bean;
+}
 
-	public nc.ui.uif2.actions.StandAloneToftPanelActionContainer getCalendarActions() {
-		if (context.get("calendarActions") != null)
-			return (nc.ui.uif2.actions.StandAloneToftPanelActionContainer) context.get("calendarActions");
-		nc.ui.uif2.actions.StandAloneToftPanelActionContainer bean = new nc.ui.uif2.actions.StandAloneToftPanelActionContainer(
-				getCalendarView());
-		context.put("calendarActions", bean);
-		bean.setActions(getManagedList1());
-		bean.setEditActions(getManagedList2());
-		bean.setModel(getModel());
-		setBeanFacotryIfBeanFacatoryAware(bean);
-		invokeInitializingBean(bean);
-		return bean;
-	}
+private List getManagedList1(){  List list = new ArrayList();  list.add(getEditAction());  list.add(getQueryAction());  list.add(getRefreshAction());  list.add(getNullaction());  list.add(getViewDetailAction());  return list;}
 
-	private List getManagedList1() {
-		List list = new ArrayList();
-		list.add(getEditAction());
-		list.add(getQueryAction());
-		list.add(getRefreshAction());
-		list.add(getNullaction());
-		list.add(getViewDetailAction());
-		return list;
-	}
+private List getManagedList2(){  List list = new ArrayList();  list.add(getSaveAction());  list.add(getNullaction());  list.add(getCancelAction());  return list;}
 
-	private List getManagedList2() {
-		List list = new ArrayList();
-		list.add(getSaveAction());
-		list.add(getNullaction());
-		list.add(getCancelAction());
-		return list;
-	}
+public nc.ui.uif2.actions.StandAloneToftPanelActionContainer getGridActions(){
+ if(context.get("gridActions")!=null)
+ return (nc.ui.uif2.actions.StandAloneToftPanelActionContainer)context.get("gridActions");
+  nc.ui.uif2.actions.StandAloneToftPanelActionContainer bean = new nc.ui.uif2.actions.StandAloneToftPanelActionContainer(getGridView());  context.put("gridActions",bean);
+  bean.setActions(getManagedList3());
+  bean.setEditActions(getManagedList4());
+  bean.setModel(getModel());
+setBeanFacotryIfBeanFacatoryAware(bean);
+invokeInitializingBean(bean);
+return bean;
+}
 
-	public nc.ui.uif2.actions.StandAloneToftPanelActionContainer getGridActions() {
-		if (context.get("gridActions") != null)
-			return (nc.ui.uif2.actions.StandAloneToftPanelActionContainer) context.get("gridActions");
-		nc.ui.uif2.actions.StandAloneToftPanelActionContainer bean = new nc.ui.uif2.actions.StandAloneToftPanelActionContainer(
-				getGridView());
-		context.put("gridActions", bean);
-		bean.setActions(getManagedList3());
-		bean.setEditActions(getManagedList4());
-		bean.setModel(getModel());
-		setBeanFacotryIfBeanFacatoryAware(bean);
-		invokeInitializingBean(bean);
-		return bean;
-	}
+private List getManagedList3(){  List list = new ArrayList();  list.add(getEditActionGroup());  list.add(getNullaction());  list.add(getQueryAction());  list.add(getRefreshAction());  list.add(getNullaction());  list.add(getArrangeCalendarActionGroup());  list.add(getViewDetailAction());  list.add(getNullaction());  list.add(getExOrImpActionGroup());  list.add(getPrintActiongroup());  return list;}
 
-	private List getManagedList3() {
-		List list = new ArrayList();
-		list.add(getEditActionGroup());
-		list.add(getNullaction());
-		list.add(getQueryAction());
-		list.add(getRefreshAction());
-		list.add(getNullaction());
-		list.add(getArrangeCalendarActionGroup());
-		list.add(getViewDetailAction());
-		list.add(getNullaction());
-		list.add(getExOrImpActionGroup());
-		list.add(getPrintActiongroup());
-		return list;
-	}
+private List getManagedList4(){  List list = new ArrayList();  list.add(getSaveAction());  list.add(getNullaction());  list.add(getCancelAction());  return list;}
 
-	private List getManagedList4() {
-		List list = new ArrayList();
-		list.add(getSaveAction());
-		list.add(getNullaction());
-		list.add(getCancelAction());
-		return list;
-	}
+public nc.ui.ta.psncalendar.model.PsnCalendarAppModelDataManager getModelDataManager(){
+ if(context.get("modelDataManager")!=null)
+ return (nc.ui.ta.psncalendar.model.PsnCalendarAppModelDataManager)context.get("modelDataManager");
+  nc.ui.ta.psncalendar.model.PsnCalendarAppModelDataManager bean = new nc.ui.ta.psncalendar.model.PsnCalendarAppModelDataManager();
+  context.put("modelDataManager",bean);
+  bean.setContext(getContext());
+  bean.setModel(getModel());
+setBeanFacotryIfBeanFacatoryAware(bean);
+invokeInitializingBean(bean);
+return bean;
+}
 
-	public nc.ui.ta.psncalendar.model.PsnCalendarAppModelDataManager getModelDataManager() {
-		if (context.get("modelDataManager") != null)
-			return (nc.ui.ta.psncalendar.model.PsnCalendarAppModelDataManager) context.get("modelDataManager");
-		nc.ui.ta.psncalendar.model.PsnCalendarAppModelDataManager bean = new nc.ui.ta.psncalendar.model.PsnCalendarAppModelDataManager();
-		context.put("modelDataManager", bean);
-		bean.setContext(getContext());
-		bean.setModel(getModel());
-		setBeanFacotryIfBeanFacatoryAware(bean);
-		invokeInitializingBean(bean);
-		return bean;
-	}
+public nc.ui.ta.psncalendar.view.GridPanel getGridView(){
+ if(context.get("gridView")!=null)
+ return (nc.ui.ta.psncalendar.view.GridPanel)context.get("gridView");
+  nc.ui.ta.psncalendar.view.GridPanel bean = new nc.ui.ta.psncalendar.view.GridPanel();
+  context.put("gridView",bean);
+  bean.setModel(getModel());
+  bean.setManager(getModelDataManager());
+  bean.initUI();
+setBeanFacotryIfBeanFacatoryAware(bean);
+invokeInitializingBean(bean);
+return bean;
+}
 
-	public nc.ui.ta.psncalendar.view.GridPanel getGridView() {
-		if (context.get("gridView") != null)
-			return (nc.ui.ta.psncalendar.view.GridPanel) context.get("gridView");
-		nc.ui.ta.psncalendar.view.GridPanel bean = new nc.ui.ta.psncalendar.view.GridPanel();
-		context.put("gridView", bean);
-		bean.setModel(getModel());
-		bean.initUI();
-		setBeanFacotryIfBeanFacatoryAware(bean);
-		invokeInitializingBean(bean);
-		return bean;
-	}
+public nc.ui.ta.psncalendar.view.CalendarPanel getCalendarView(){
+ if(context.get("calendarView")!=null)
+ return (nc.ui.ta.psncalendar.view.CalendarPanel)context.get("calendarView");
+  nc.ui.ta.psncalendar.view.CalendarPanel bean = new nc.ui.ta.psncalendar.view.CalendarPanel();
+  context.put("calendarView",bean);
+  bean.setModel(getModel());
+  bean.initUI();
+setBeanFacotryIfBeanFacatoryAware(bean);
+invokeInitializingBean(bean);
+return bean;
+}
 
-	public nc.ui.ta.psncalendar.view.CalendarPanel getCalendarView() {
-		if (context.get("calendarView") != null)
-			return (nc.ui.ta.psncalendar.view.CalendarPanel) context.get("calendarView");
-		nc.ui.ta.psncalendar.view.CalendarPanel bean = new nc.ui.ta.psncalendar.view.CalendarPanel();
-		context.put("calendarView", bean);
-		bean.setModel(getModel());
-		bean.initUI();
-		setBeanFacotryIfBeanFacatoryAware(bean);
-		invokeInitializingBean(bean);
-		return bean;
-	}
+public nc.funcnode.ui.action.SeparatorAction getNullaction(){
+ if(context.get("nullaction")!=null)
+ return (nc.funcnode.ui.action.SeparatorAction)context.get("nullaction");
+  nc.funcnode.ui.action.SeparatorAction bean = new nc.funcnode.ui.action.SeparatorAction();
+  context.put("nullaction",bean);
+setBeanFacotryIfBeanFacatoryAware(bean);
+invokeInitializingBean(bean);
+return bean;
+}
 
-	public nc.funcnode.ui.action.SeparatorAction getNullaction() {
-		if (context.get("nullaction") != null)
-			return (nc.funcnode.ui.action.SeparatorAction) context.get("nullaction");
-		nc.funcnode.ui.action.SeparatorAction bean = new nc.funcnode.ui.action.SeparatorAction();
-		context.put("nullaction", bean);
-		setBeanFacotryIfBeanFacatoryAware(bean);
-		invokeInitializingBean(bean);
-		return bean;
-	}
+public nc.funcnode.ui.action.MenuAction getArrangeCalendarActionGroup(){
+ if(context.get("arrangeCalendarActionGroup")!=null)
+ return (nc.funcnode.ui.action.MenuAction)context.get("arrangeCalendarActionGroup");
+  nc.funcnode.ui.action.MenuAction bean = new nc.funcnode.ui.action.MenuAction();
+  context.put("arrangeCalendarActionGroup",bean);
+  bean.setCode("arrangeClass");
+  bean.setName(getI18nFB_1cf84e0());
+  bean.setActions(getManagedList5());
+setBeanFacotryIfBeanFacatoryAware(bean);
+invokeInitializingBean(bean);
+return bean;
+}
 
-	public nc.funcnode.ui.action.MenuAction getArrangeCalendarActionGroup() {
-		if (context.get("arrangeCalendarActionGroup") != null)
-			return (nc.funcnode.ui.action.MenuAction) context.get("arrangeCalendarActionGroup");
-		nc.funcnode.ui.action.MenuAction bean = new nc.funcnode.ui.action.MenuAction();
-		context.put("arrangeCalendarActionGroup", bean);
-		bean.setCode("arrangeClass");
-		bean.setName(getI18nFB_4476e1());
-		bean.setActions(getManagedList5());
-		setBeanFacotryIfBeanFacatoryAware(bean);
-		invokeInitializingBean(bean);
-		return bean;
-	}
+private java.lang.String getI18nFB_1cf84e0(){
+ if(context.get("nc.ui.uif2.I18nFB#1cf84e0")!=null)
+ return (java.lang.String)context.get("nc.ui.uif2.I18nFB#1cf84e0");
+  nc.ui.uif2.I18nFB bean = new nc.ui.uif2.I18nFB();
+    context.put("&nc.ui.uif2.I18nFB#1cf84e0",bean);  bean.setResDir("6017psncalendar");
+  bean.setDefaultValue("排班");
+  bean.setResId("X6017psncal01");
+setBeanFacotryIfBeanFacatoryAware(bean);
+invokeInitializingBean(bean);
+ try {
+     Object product = bean.getObject();
+    context.put("nc.ui.uif2.I18nFB#1cf84e0",product);
+     return (java.lang.String)product;
+}
+catch(Exception e) { throw new RuntimeException(e);}}
 
-	private java.lang.String getI18nFB_4476e1() {
-		if (context.get("nc.ui.uif2.I18nFB#4476e1") != null)
-			return (java.lang.String) context.get("nc.ui.uif2.I18nFB#4476e1");
-		nc.ui.uif2.I18nFB bean = new nc.ui.uif2.I18nFB();
-		context.put("&nc.ui.uif2.I18nFB#4476e1", bean);
-		bean.setResDir("6017psncalendar");
-		bean.setDefaultValue("排班");
-		bean.setResId("X6017psncal01");
-		setBeanFacotryIfBeanFacatoryAware(bean);
-		invokeInitializingBean(bean);
-		try {
-			Object product = bean.getObject();
-			context.put("nc.ui.uif2.I18nFB#4476e1", product);
-			return (java.lang.String) product;
-		} catch (Exception e) {
-			throw new RuntimeException(e);
-		}
-	}
+private List getManagedList5(){  List list = new ArrayList();  list.add(getCircularlyArrangeAction());  list.add(getUseDefaultAction());  return list;}
 
-	private List getManagedList5() {
-		List list = new ArrayList();
-		list.add(getCircularlyArrangeAction());
-		list.add(getUseDefaultAction());
-		return list;
-	}
+public nc.ui.ta.psncalendar.action.CircularlyArrangeAction getCircularlyArrangeAction(){
+ if(context.get("CircularlyArrangeAction")!=null)
+ return (nc.ui.ta.psncalendar.action.CircularlyArrangeAction)context.get("CircularlyArrangeAction");
+  nc.ui.ta.psncalendar.action.CircularlyArrangeAction bean = new nc.ui.ta.psncalendar.action.CircularlyArrangeAction();
+  context.put("CircularlyArrangeAction",bean);
+  bean.setModel(getModel());
+  bean.setNcActionStatusJudge(getEnableJudge());
+setBeanFacotryIfBeanFacatoryAware(bean);
+invokeInitializingBean(bean);
+return bean;
+}
 
-	public nc.ui.ta.psncalendar.action.CircularlyArrangeAction getCircularlyArrangeAction() {
-		if (context.get("CircularlyArrangeAction") != null)
-			return (nc.ui.ta.psncalendar.action.CircularlyArrangeAction) context.get("CircularlyArrangeAction");
-		nc.ui.ta.psncalendar.action.CircularlyArrangeAction bean = new nc.ui.ta.psncalendar.action.CircularlyArrangeAction();
-		context.put("CircularlyArrangeAction", bean);
-		bean.setModel(getModel());
-		bean.setNcActionStatusJudge(getEnableJudge());
-		setBeanFacotryIfBeanFacatoryAware(bean);
-		invokeInitializingBean(bean);
-		return bean;
-	}
+public nc.ui.ta.psncalendar.action.UseDefaultAction getUseDefaultAction(){
+ if(context.get("UseDefaultAction")!=null)
+ return (nc.ui.ta.psncalendar.action.UseDefaultAction)context.get("UseDefaultAction");
+  nc.ui.ta.psncalendar.action.UseDefaultAction bean = new nc.ui.ta.psncalendar.action.UseDefaultAction();
+  context.put("UseDefaultAction",bean);
+  bean.setModel(getModel());
+  bean.setNcActionStatusJudge(getEnableJudge());
+setBeanFacotryIfBeanFacatoryAware(bean);
+invokeInitializingBean(bean);
+return bean;
+}
 
-	public nc.ui.ta.psncalendar.action.UseDefaultAction getUseDefaultAction() {
-		if (context.get("UseDefaultAction") != null)
-			return (nc.ui.ta.psncalendar.action.UseDefaultAction) context.get("UseDefaultAction");
-		nc.ui.ta.psncalendar.action.UseDefaultAction bean = new nc.ui.ta.psncalendar.action.UseDefaultAction();
-		context.put("UseDefaultAction", bean);
-		bean.setModel(getModel());
-		bean.setNcActionStatusJudge(getEnableJudge());
-		setBeanFacotryIfBeanFacatoryAware(bean);
-		invokeInitializingBean(bean);
-		return bean;
-	}
+public nc.funcnode.ui.action.GroupAction getEditActionGroup(){
+ if(context.get("editActionGroup")!=null)
+ return (nc.funcnode.ui.action.GroupAction)context.get("editActionGroup");
+  nc.funcnode.ui.action.GroupAction bean = new nc.funcnode.ui.action.GroupAction();
+  context.put("editActionGroup",bean);
+  bean.setCode("edit");
+  bean.setName(getI18nFB_11cc04a());
+  bean.setActions(getManagedList6());
+setBeanFacotryIfBeanFacatoryAware(bean);
+invokeInitializingBean(bean);
+return bean;
+}
 
-	public nc.funcnode.ui.action.GroupAction getEditActionGroup() {
-		if (context.get("editActionGroup") != null)
-			return (nc.funcnode.ui.action.GroupAction) context.get("editActionGroup");
-		nc.funcnode.ui.action.GroupAction bean = new nc.funcnode.ui.action.GroupAction();
-		context.put("editActionGroup", bean);
-		bean.setCode("edit");
-		bean.setName(getI18nFB_3e25d7());
-		bean.setActions(getManagedList6());
-		setBeanFacotryIfBeanFacatoryAware(bean);
-		invokeInitializingBean(bean);
-		return bean;
-	}
+private java.lang.String getI18nFB_11cc04a(){
+ if(context.get("nc.ui.uif2.I18nFB#11cc04a")!=null)
+ return (java.lang.String)context.get("nc.ui.uif2.I18nFB#11cc04a");
+  nc.ui.uif2.I18nFB bean = new nc.ui.uif2.I18nFB();
+    context.put("&nc.ui.uif2.I18nFB#11cc04a",bean);  bean.setResDir("common");
+  bean.setDefaultValue("修改");
+  bean.setResId("UC001-0000045");
+setBeanFacotryIfBeanFacatoryAware(bean);
+invokeInitializingBean(bean);
+ try {
+     Object product = bean.getObject();
+    context.put("nc.ui.uif2.I18nFB#11cc04a",product);
+     return (java.lang.String)product;
+}
+catch(Exception e) { throw new RuntimeException(e);}}
 
-	private java.lang.String getI18nFB_3e25d7() {
-		if (context.get("nc.ui.uif2.I18nFB#3e25d7") != null)
-			return (java.lang.String) context.get("nc.ui.uif2.I18nFB#3e25d7");
-		nc.ui.uif2.I18nFB bean = new nc.ui.uif2.I18nFB();
-		context.put("&nc.ui.uif2.I18nFB#3e25d7", bean);
-		bean.setResDir("common");
-		bean.setDefaultValue("修改");
-		bean.setResId("UC001-0000045");
-		setBeanFacotryIfBeanFacatoryAware(bean);
-		invokeInitializingBean(bean);
-		try {
-			Object product = bean.getObject();
-			context.put("nc.ui.uif2.I18nFB#3e25d7", product);
-			return (java.lang.String) product;
-		} catch (Exception e) {
-			throw new RuntimeException(e);
-		}
-	}
+private List getManagedList6(){  List list = new ArrayList();  list.add(getEditAction());  list.add(getBatchChangeAction());  list.add(getBatchChangeCalendarDayTypeAction());  return list;}
 
-	private List getManagedList6() {
-		List list = new ArrayList();
-		list.add(getEditAction());
-		list.add(getBatchChangeAction());
-		list.add(getBatchChangeCalendarDayTypeAction());
-		return list;
-	}
+public nc.ui.ta.psncalendar.action.EditCalendarAction getEditAction(){
+ if(context.get("EditAction")!=null)
+ return (nc.ui.ta.psncalendar.action.EditCalendarAction)context.get("EditAction");
+  nc.ui.ta.psncalendar.action.EditCalendarAction bean = new nc.ui.ta.psncalendar.action.EditCalendarAction();
+  context.put("EditAction",bean);
+  bean.setModel(getModel());
+setBeanFacotryIfBeanFacatoryAware(bean);
+invokeInitializingBean(bean);
+return bean;
+}
 
-	public nc.ui.ta.psncalendar.action.EditCalendarAction getEditAction() {
-		if (context.get("EditAction") != null)
-			return (nc.ui.ta.psncalendar.action.EditCalendarAction) context.get("EditAction");
-		nc.ui.ta.psncalendar.action.EditCalendarAction bean = new nc.ui.ta.psncalendar.action.EditCalendarAction();
-		context.put("EditAction", bean);
-		bean.setModel(getModel());
-		setBeanFacotryIfBeanFacatoryAware(bean);
-		invokeInitializingBean(bean);
-		return bean;
-	}
+public nc.ui.ta.psncalendar.action.BatchChangeCalendarAction getBatchChangeAction(){
+ if(context.get("BatchChangeAction")!=null)
+ return (nc.ui.ta.psncalendar.action.BatchChangeCalendarAction)context.get("BatchChangeAction");
+  nc.ui.ta.psncalendar.action.BatchChangeCalendarAction bean = new nc.ui.ta.psncalendar.action.BatchChangeCalendarAction();
+  context.put("BatchChangeAction",bean);
+  bean.setModel(getModel());
+  bean.setNcActionStatusJudge(getEnableJudge());
+setBeanFacotryIfBeanFacatoryAware(bean);
+invokeInitializingBean(bean);
+return bean;
+}
 
-	public nc.ui.ta.psncalendar.action.BatchChangeCalendarAction getBatchChangeAction() {
-		if (context.get("BatchChangeAction") != null)
-			return (nc.ui.ta.psncalendar.action.BatchChangeCalendarAction) context.get("BatchChangeAction");
-		nc.ui.ta.psncalendar.action.BatchChangeCalendarAction bean = new nc.ui.ta.psncalendar.action.BatchChangeCalendarAction();
-		context.put("BatchChangeAction", bean);
-		bean.setModel(getModel());
-		bean.setNcActionStatusJudge(getEnableJudge());
-		setBeanFacotryIfBeanFacatoryAware(bean);
-		invokeInitializingBean(bean);
-		return bean;
-	}
+public nc.ui.ta.psncalendar.action.BatchChangeCalendarDayTypeAction getBatchChangeCalendarDayTypeAction(){
+ if(context.get("BatchChangeCalendarDayTypeAction")!=null)
+ return (nc.ui.ta.psncalendar.action.BatchChangeCalendarDayTypeAction)context.get("BatchChangeCalendarDayTypeAction");
+  nc.ui.ta.psncalendar.action.BatchChangeCalendarDayTypeAction bean = new nc.ui.ta.psncalendar.action.BatchChangeCalendarDayTypeAction();
+  context.put("BatchChangeCalendarDayTypeAction",bean);
+  bean.setModel(getModel());
+  bean.setNcActionStatusJudge(getEnableJudge());
+setBeanFacotryIfBeanFacatoryAware(bean);
+invokeInitializingBean(bean);
+return bean;
+}
 
-	public nc.ui.ta.psncalendar.action.BatchChangeCalendarDayTypeAction getBatchChangeCalendarDayTypeAction() {
-		if (context.get("BatchChangeCalendarDayTypeAction") != null)
-			return (nc.ui.ta.psncalendar.action.BatchChangeCalendarDayTypeAction) context
-					.get("BatchChangeCalendarDayTypeAction");
-		nc.ui.ta.psncalendar.action.BatchChangeCalendarDayTypeAction bean = new nc.ui.ta.psncalendar.action.BatchChangeCalendarDayTypeAction();
-		context.put("BatchChangeCalendarDayTypeAction", bean);
-		bean.setModel(getModel());
-		bean.setNcActionStatusJudge(getEnableJudge());
-		setBeanFacotryIfBeanFacatoryAware(bean);
-		invokeInitializingBean(bean);
-		return bean;
-	}
+public nc.ui.ta.psncalendar.action.QueryCalendarAction getQueryAction(){
+ if(context.get("QueryAction")!=null)
+ return (nc.ui.ta.psncalendar.action.QueryCalendarAction)context.get("QueryAction");
+  nc.ui.ta.psncalendar.action.QueryCalendarAction bean = new nc.ui.ta.psncalendar.action.QueryCalendarAction();
+  context.put("QueryAction",bean);
+  bean.setModel(getModel());
+  bean.setDataManager(getModelDataManager());
+  bean.setPsnCalendarAppModelDataManager(getModelDataManager());
+  bean.setQueryDelegator(getPsnCalendarQueryDelegator_947b78());
+  bean.setNcActionStatusJudge(getEnableJudge());
+setBeanFacotryIfBeanFacatoryAware(bean);
+invokeInitializingBean(bean);
+return bean;
+}
 
-	public nc.ui.ta.psncalendar.action.QueryCalendarAction getQueryAction() {
-		if (context.get("QueryAction") != null)
-			return (nc.ui.ta.psncalendar.action.QueryCalendarAction) context.get("QueryAction");
-		nc.ui.ta.psncalendar.action.QueryCalendarAction bean = new nc.ui.ta.psncalendar.action.QueryCalendarAction();
-		context.put("QueryAction", bean);
-		bean.setModel(getModel());
-		bean.setDataManager(getModelDataManager());
-		bean.setPsnCalendarAppModelDataManager(getModelDataManager());
-		bean.setQueryDelegator(getPsnCalendarQueryDelegator_2654bd());
-		bean.setNcActionStatusJudge(getEnableJudge());
-		setBeanFacotryIfBeanFacatoryAware(bean);
-		invokeInitializingBean(bean);
-		return bean;
-	}
+private nc.ui.ta.psncalendar.action.PsnCalendarQueryDelegator getPsnCalendarQueryDelegator_947b78(){
+ if(context.get("nc.ui.ta.psncalendar.action.PsnCalendarQueryDelegator#947b78")!=null)
+ return (nc.ui.ta.psncalendar.action.PsnCalendarQueryDelegator)context.get("nc.ui.ta.psncalendar.action.PsnCalendarQueryDelegator#947b78");
+  nc.ui.ta.psncalendar.action.PsnCalendarQueryDelegator bean = new nc.ui.ta.psncalendar.action.PsnCalendarQueryDelegator();
+  context.put("nc.ui.ta.psncalendar.action.PsnCalendarQueryDelegator#947b78",bean);
+  bean.setNodeKey("psnquery");
+  bean.setContext(getContext());
+  bean.setModel(getModel());
+  bean.setQueryEditorListener(getQueryEditorListener());
+  bean.getQueryDlg();
+setBeanFacotryIfBeanFacatoryAware(bean);
+invokeInitializingBean(bean);
+return bean;
+}
 
-	private nc.ui.ta.psncalendar.action.PsnCalendarQueryDelegator getPsnCalendarQueryDelegator_2654bd() {
-		if (context.get("nc.ui.ta.psncalendar.action.PsnCalendarQueryDelegator#2654bd") != null)
-			return (nc.ui.ta.psncalendar.action.PsnCalendarQueryDelegator) context
-					.get("nc.ui.ta.psncalendar.action.PsnCalendarQueryDelegator#2654bd");
-		nc.ui.ta.psncalendar.action.PsnCalendarQueryDelegator bean = new nc.ui.ta.psncalendar.action.PsnCalendarQueryDelegator();
-		context.put("nc.ui.ta.psncalendar.action.PsnCalendarQueryDelegator#2654bd", bean);
-		bean.setNodeKey("psnquery");
-		bean.setContext(getContext());
-		bean.setModel(getModel());
-		bean.setQueryEditorListener(getQueryEditorListener());
-		bean.getQueryDlg();
-		setBeanFacotryIfBeanFacatoryAware(bean);
-		invokeInitializingBean(bean);
-		return bean;
-	}
+public nc.ui.ta.psncalendar.action.RefreshCalendarAction getRefreshAction(){
+ if(context.get("RefreshAction")!=null)
+ return (nc.ui.ta.psncalendar.action.RefreshCalendarAction)context.get("RefreshAction");
+  nc.ui.ta.psncalendar.action.RefreshCalendarAction bean = new nc.ui.ta.psncalendar.action.RefreshCalendarAction();
+  context.put("RefreshAction",bean);
+  bean.setModel(getModel());
+  bean.setDataManager(getModelDataManager());
+  bean.setNcActionStatusJudge(getEnableJudge());
+setBeanFacotryIfBeanFacatoryAware(bean);
+invokeInitializingBean(bean);
+return bean;
+}
 
-	public nc.ui.ta.psncalendar.action.RefreshCalendarAction getRefreshAction() {
-		if (context.get("RefreshAction") != null)
-			return (nc.ui.ta.psncalendar.action.RefreshCalendarAction) context.get("RefreshAction");
-		nc.ui.ta.psncalendar.action.RefreshCalendarAction bean = new nc.ui.ta.psncalendar.action.RefreshCalendarAction();
-		context.put("RefreshAction", bean);
-		bean.setModel(getModel());
-		bean.setDataManager(getModelDataManager());
-		bean.setNcActionStatusJudge(getEnableJudge());
-		setBeanFacotryIfBeanFacatoryAware(bean);
-		invokeInitializingBean(bean);
-		return bean;
-	}
+public nc.ui.ta.psncalendar.action.SaveCalendarAction getSaveAction(){
+ if(context.get("SaveAction")!=null)
+ return (nc.ui.ta.psncalendar.action.SaveCalendarAction)context.get("SaveAction");
+  nc.ui.ta.psncalendar.action.SaveCalendarAction bean = new nc.ui.ta.psncalendar.action.SaveCalendarAction();
+  context.put("SaveAction",bean);
+  bean.setModel(getModel());
+  bean.setEditor(getEditor());
+setBeanFacotryIfBeanFacatoryAware(bean);
+invokeInitializingBean(bean);
+return bean;
+}
 
-	public nc.ui.ta.psncalendar.action.SaveCalendarAction getSaveAction() {
-		if (context.get("SaveAction") != null)
-			return (nc.ui.ta.psncalendar.action.SaveCalendarAction) context.get("SaveAction");
-		nc.ui.ta.psncalendar.action.SaveCalendarAction bean = new nc.ui.ta.psncalendar.action.SaveCalendarAction();
-		context.put("SaveAction", bean);
-		bean.setModel(getModel());
-		bean.setEditor(getEditor());
-		setBeanFacotryIfBeanFacatoryAware(bean);
-		invokeInitializingBean(bean);
-		return bean;
-	}
+public nc.ui.ta.pub.action.CancelAction getCancelAction(){
+ if(context.get("CancelAction")!=null)
+ return (nc.ui.ta.pub.action.CancelAction)context.get("CancelAction");
+  nc.ui.ta.pub.action.CancelAction bean = new nc.ui.ta.pub.action.CancelAction();
+  context.put("CancelAction",bean);
+  bean.setModel(getModel());
+setBeanFacotryIfBeanFacatoryAware(bean);
+invokeInitializingBean(bean);
+return bean;
+}
 
-	public nc.ui.ta.pub.action.CancelAction getCancelAction() {
-		if (context.get("CancelAction") != null)
-			return (nc.ui.ta.pub.action.CancelAction) context.get("CancelAction");
-		nc.ui.ta.pub.action.CancelAction bean = new nc.ui.ta.pub.action.CancelAction();
-		context.put("CancelAction", bean);
-		bean.setModel(getModel());
-		setBeanFacotryIfBeanFacatoryAware(bean);
-		invokeInitializingBean(bean);
-		return bean;
-	}
+public nc.ui.ta.psncalendar.action.ViewDetailAction getViewDetailAction(){
+ if(context.get("ViewDetailAction")!=null)
+ return (nc.ui.ta.psncalendar.action.ViewDetailAction)context.get("ViewDetailAction");
+  nc.ui.ta.psncalendar.action.ViewDetailAction bean = new nc.ui.ta.psncalendar.action.ViewDetailAction();
+  context.put("ViewDetailAction",bean);
+  bean.setModel(getModel());
+setBeanFacotryIfBeanFacatoryAware(bean);
+invokeInitializingBean(bean);
+return bean;
+}
 
-	public nc.ui.ta.psncalendar.action.ViewDetailAction getViewDetailAction() {
-		if (context.get("ViewDetailAction") != null)
-			return (nc.ui.ta.psncalendar.action.ViewDetailAction) context.get("ViewDetailAction");
-		nc.ui.ta.psncalendar.action.ViewDetailAction bean = new nc.ui.ta.psncalendar.action.ViewDetailAction();
-		context.put("ViewDetailAction", bean);
-		bean.setModel(getModel());
-		setBeanFacotryIfBeanFacatoryAware(bean);
-		invokeInitializingBean(bean);
-		return bean;
-	}
+public nc.funcnode.ui.action.MenuAction getExOrImpActionGroup(){
+ if(context.get("exOrImpActionGroup")!=null)
+ return (nc.funcnode.ui.action.MenuAction)context.get("exOrImpActionGroup");
+  nc.funcnode.ui.action.MenuAction bean = new nc.funcnode.ui.action.MenuAction();
+  context.put("exOrImpActionGroup",bean);
+  bean.setCode("exOrImp");
+  bean.setName(getI18nFB_36204d());
+  bean.setActions(getManagedList7());
+setBeanFacotryIfBeanFacatoryAware(bean);
+invokeInitializingBean(bean);
+return bean;
+}
 
-	public nc.funcnode.ui.action.MenuAction getExOrImpActionGroup() {
-		if (context.get("exOrImpActionGroup") != null)
-			return (nc.funcnode.ui.action.MenuAction) context.get("exOrImpActionGroup");
-		nc.funcnode.ui.action.MenuAction bean = new nc.funcnode.ui.action.MenuAction();
-		context.put("exOrImpActionGroup", bean);
-		bean.setCode("exOrImp");
-		bean.setName(getI18nFB_855f0a());
-		bean.setActions(getManagedList7());
-		setBeanFacotryIfBeanFacatoryAware(bean);
-		invokeInitializingBean(bean);
-		return bean;
-	}
+private java.lang.String getI18nFB_36204d(){
+ if(context.get("nc.ui.uif2.I18nFB#36204d")!=null)
+ return (java.lang.String)context.get("nc.ui.uif2.I18nFB#36204d");
+  nc.ui.uif2.I18nFB bean = new nc.ui.uif2.I18nFB();
+    context.put("&nc.ui.uif2.I18nFB#36204d",bean);  bean.setResDir("6017basedoc");
+  bean.setDefaultValue("?入?出");
+  bean.setResId("06017basedoc1818");
+setBeanFacotryIfBeanFacatoryAware(bean);
+invokeInitializingBean(bean);
+ try {
+     Object product = bean.getObject();
+    context.put("nc.ui.uif2.I18nFB#36204d",product);
+     return (java.lang.String)product;
+}
+catch(Exception e) { throw new RuntimeException(e);}}
 
-	private java.lang.String getI18nFB_855f0a() {
-		if (context.get("nc.ui.uif2.I18nFB#855f0a") != null)
-			return (java.lang.String) context.get("nc.ui.uif2.I18nFB#855f0a");
-		nc.ui.uif2.I18nFB bean = new nc.ui.uif2.I18nFB();
-		context.put("&nc.ui.uif2.I18nFB#855f0a", bean);
-		bean.setResDir("6017basedoc");
-		bean.setDefaultValue("?入?出");
-		bean.setResId("06017basedoc1818");
-		setBeanFacotryIfBeanFacatoryAware(bean);
-		invokeInitializingBean(bean);
-		try {
-			Object product = bean.getObject();
-			context.put("nc.ui.uif2.I18nFB#855f0a", product);
-			return (java.lang.String) product;
-		} catch (Exception e) {
-			throw new RuntimeException(e);
-		}
-	}
+private List getManagedList7(){  List list = new ArrayList();  list.add(getImportAction());  list.add(getExportAction());  return list;}
 
-	private List getManagedList7() {
-		List list = new ArrayList();
-		list.add(getImportAction());
-		list.add(getExportAction());
-		return list;
-	}
+public nc.ui.ta.psncalendar.action.ImportAction getImportAction(){
+ if(context.get("ImportAction")!=null)
+ return (nc.ui.ta.psncalendar.action.ImportAction)context.get("ImportAction");
+  nc.ui.ta.psncalendar.action.ImportAction bean = new nc.ui.ta.psncalendar.action.ImportAction();
+  context.put("ImportAction",bean);
+  bean.setModel(getModel());
+  bean.setDataManager(getModelDataManager());
+  bean.setNcActionStatusJudge(getEnableJudge());
+setBeanFacotryIfBeanFacatoryAware(bean);
+invokeInitializingBean(bean);
+return bean;
+}
 
-	public nc.ui.ta.psncalendar.action.ImportAction getImportAction() {
-		if (context.get("ImportAction") != null)
-			return (nc.ui.ta.psncalendar.action.ImportAction) context.get("ImportAction");
-		nc.ui.ta.psncalendar.action.ImportAction bean = new nc.ui.ta.psncalendar.action.ImportAction();
-		context.put("ImportAction", bean);
-		bean.setModel(getModel());
-		bean.setDataManager(getModelDataManager());
-		bean.setNcActionStatusJudge(getEnableJudge());
-		setBeanFacotryIfBeanFacatoryAware(bean);
-		invokeInitializingBean(bean);
-		return bean;
-	}
+public nc.ui.ta.psncalendar.action.ExportAction getExportAction(){
+ if(context.get("ExportAction")!=null)
+ return (nc.ui.ta.psncalendar.action.ExportAction)context.get("ExportAction");
+  nc.ui.ta.psncalendar.action.ExportAction bean = new nc.ui.ta.psncalendar.action.ExportAction();
+  context.put("ExportAction",bean);
+  bean.setModel(getModel());
+setBeanFacotryIfBeanFacatoryAware(bean);
+invokeInitializingBean(bean);
+return bean;
+}
 
-	public nc.ui.ta.psncalendar.action.ExportAction getExportAction() {
-		if (context.get("ExportAction") != null)
-			return (nc.ui.ta.psncalendar.action.ExportAction) context.get("ExportAction");
-		nc.ui.ta.psncalendar.action.ExportAction bean = new nc.ui.ta.psncalendar.action.ExportAction();
-		context.put("ExportAction", bean);
-		bean.setModel(getModel());
-		setBeanFacotryIfBeanFacatoryAware(bean);
-		invokeInitializingBean(bean);
-		return bean;
-	}
+public nc.funcnode.ui.action.GroupAction getPrintActiongroup(){
+ if(context.get("PrintActiongroup")!=null)
+ return (nc.funcnode.ui.action.GroupAction)context.get("PrintActiongroup");
+  nc.funcnode.ui.action.GroupAction bean = new nc.funcnode.ui.action.GroupAction();
+  context.put("PrintActiongroup",bean);
+  bean.setActions(getManagedList8());
+setBeanFacotryIfBeanFacatoryAware(bean);
+invokeInitializingBean(bean);
+return bean;
+}
 
-	public nc.funcnode.ui.action.GroupAction getPrintActiongroup() {
-		if (context.get("PrintActiongroup") != null)
-			return (nc.funcnode.ui.action.GroupAction) context.get("PrintActiongroup");
-		nc.funcnode.ui.action.GroupAction bean = new nc.funcnode.ui.action.GroupAction();
-		context.put("PrintActiongroup", bean);
-		bean.setActions(getManagedList8());
-		setBeanFacotryIfBeanFacatoryAware(bean);
-		invokeInitializingBean(bean);
-		return bean;
-	}
+private List getManagedList8(){  List list = new ArrayList();  list.add(getPrintDirectAction());  list.add(getPrintPreviewAction());  list.add(getExportListAction());  return list;}
 
-	private List getManagedList8() {
-		List list = new ArrayList();
-		list.add(getPrintDirectAction());
-		list.add(getPrintPreviewAction());
-		list.add(getExportListAction());
-		return list;
-	}
+public nc.ui.ta.psncalendar.action.PrintPsnCalendarPreviewAction getPrintPreviewAction(){
+ if(context.get("printPreviewAction")!=null)
+ return (nc.ui.ta.psncalendar.action.PrintPsnCalendarPreviewAction)context.get("printPreviewAction");
+  nc.ui.ta.psncalendar.action.PrintPsnCalendarPreviewAction bean = new nc.ui.ta.psncalendar.action.PrintPsnCalendarPreviewAction();
+  context.put("printPreviewAction",bean);
+  bean.setModel(getModel());
+  bean.setPanel(getGridView());
+setBeanFacotryIfBeanFacatoryAware(bean);
+invokeInitializingBean(bean);
+return bean;
+}
 
-	public nc.ui.ta.psncalendar.action.PrintPsnCalendarPreviewAction getPrintPreviewAction() {
-		if (context.get("printPreviewAction") != null)
-			return (nc.ui.ta.psncalendar.action.PrintPsnCalendarPreviewAction) context.get("printPreviewAction");
-		nc.ui.ta.psncalendar.action.PrintPsnCalendarPreviewAction bean = new nc.ui.ta.psncalendar.action.PrintPsnCalendarPreviewAction();
-		context.put("printPreviewAction", bean);
-		bean.setModel(getModel());
-		bean.setPanel(getGridView());
-		setBeanFacotryIfBeanFacatoryAware(bean);
-		invokeInitializingBean(bean);
-		return bean;
-	}
+public nc.ui.ta.psncalendar.action.PrintPsnCalendarAction getPrintDirectAction(){
+ if(context.get("printDirectAction")!=null)
+ return (nc.ui.ta.psncalendar.action.PrintPsnCalendarAction)context.get("printDirectAction");
+  nc.ui.ta.psncalendar.action.PrintPsnCalendarAction bean = new nc.ui.ta.psncalendar.action.PrintPsnCalendarAction();
+  context.put("printDirectAction",bean);
+  bean.setModel(getModel());
+  bean.setPanel(getGridView());
+setBeanFacotryIfBeanFacatoryAware(bean);
+invokeInitializingBean(bean);
+return bean;
+}
 
-	public nc.ui.ta.psncalendar.action.PrintPsnCalendarAction getPrintDirectAction() {
-		if (context.get("printDirectAction") != null)
-			return (nc.ui.ta.psncalendar.action.PrintPsnCalendarAction) context.get("printDirectAction");
-		nc.ui.ta.psncalendar.action.PrintPsnCalendarAction bean = new nc.ui.ta.psncalendar.action.PrintPsnCalendarAction();
-		context.put("printDirectAction", bean);
-		bean.setModel(getModel());
-		bean.setPanel(getGridView());
-		setBeanFacotryIfBeanFacatoryAware(bean);
-		invokeInitializingBean(bean);
-		return bean;
-	}
+public nc.ui.ta.psncalendar.action.OutputPsnCalendarAction getExportListAction(){
+ if(context.get("exportListAction")!=null)
+ return (nc.ui.ta.psncalendar.action.OutputPsnCalendarAction)context.get("exportListAction");
+  nc.ui.ta.psncalendar.action.OutputPsnCalendarAction bean = new nc.ui.ta.psncalendar.action.OutputPsnCalendarAction();
+  context.put("exportListAction",bean);
+  bean.setModel(getModel());
+  bean.setPanel(getGridView());
+setBeanFacotryIfBeanFacatoryAware(bean);
+invokeInitializingBean(bean);
+return bean;
+}
 
-	public nc.ui.ta.psncalendar.action.OutputPsnCalendarAction getExportListAction() {
-		if (context.get("exportListAction") != null)
-			return (nc.ui.ta.psncalendar.action.OutputPsnCalendarAction) context.get("exportListAction");
-		nc.ui.ta.psncalendar.action.OutputPsnCalendarAction bean = new nc.ui.ta.psncalendar.action.OutputPsnCalendarAction();
-		context.put("exportListAction", bean);
-		bean.setModel(getModel());
-		bean.setPanel(getGridView());
-		setBeanFacotryIfBeanFacatoryAware(bean);
-		invokeInitializingBean(bean);
-		return bean;
-	}
+public nc.ui.uif2.FunNodeClosingHandler getClosingListener(){
+ if(context.get("ClosingListener")!=null)
+ return (nc.ui.uif2.FunNodeClosingHandler)context.get("ClosingListener");
+  nc.ui.uif2.FunNodeClosingHandler bean = new nc.ui.uif2.FunNodeClosingHandler();
+  context.put("ClosingListener",bean);
+  bean.setModel(getModel());
+  bean.setSaveaction(getSaveAction());
+  bean.setCancelaction(getCancelAction());
+setBeanFacotryIfBeanFacatoryAware(bean);
+invokeInitializingBean(bean);
+return bean;
+}
 
-	public nc.ui.uif2.FunNodeClosingHandler getClosingListener() {
-		if (context.get("ClosingListener") != null)
-			return (nc.ui.uif2.FunNodeClosingHandler) context.get("ClosingListener");
-		nc.ui.uif2.FunNodeClosingHandler bean = new nc.ui.uif2.FunNodeClosingHandler();
-		context.put("ClosingListener", bean);
-		bean.setModel(getModel());
-		bean.setSaveaction(getSaveAction());
-		bean.setCancelaction(getCancelAction());
-		setBeanFacotryIfBeanFacatoryAware(bean);
-		invokeInitializingBean(bean);
-		return bean;
-	}
+public nc.ui.ta.psncalendar.view.PsnCalendarShiftDetailHandler getShowDetailpreprocessor(){
+ if(context.get("ShowDetailpreprocessor")!=null)
+ return (nc.ui.ta.psncalendar.view.PsnCalendarShiftDetailHandler)context.get("ShowDetailpreprocessor");
+  nc.ui.ta.psncalendar.view.PsnCalendarShiftDetailHandler bean = new nc.ui.ta.psncalendar.view.PsnCalendarShiftDetailHandler();
+  context.put("ShowDetailpreprocessor",bean);
+  bean.setModel(getModel());
+setBeanFacotryIfBeanFacatoryAware(bean);
+invokeInitializingBean(bean);
+return bean;
+}
 
-	public nc.ui.ta.psncalendar.view.PsnCalendarShiftDetailHandler getShowDetailpreprocessor() {
-		if (context.get("ShowDetailpreprocessor") != null)
-			return (nc.ui.ta.psncalendar.view.PsnCalendarShiftDetailHandler) context.get("ShowDetailpreprocessor");
-		nc.ui.ta.psncalendar.view.PsnCalendarShiftDetailHandler bean = new nc.ui.ta.psncalendar.view.PsnCalendarShiftDetailHandler();
-		context.put("ShowDetailpreprocessor", bean);
-		bean.setModel(getModel());
-		setBeanFacotryIfBeanFacatoryAware(bean);
-		invokeInitializingBean(bean);
-		return bean;
-	}
+public nc.ui.uif2.TangramContainer getContainer(){
+ if(context.get("container")!=null)
+ return (nc.ui.uif2.TangramContainer)context.get("container");
+  nc.ui.uif2.TangramContainer bean = new nc.ui.uif2.TangramContainer();
+  context.put("container",bean);
+  bean.setTangramLayoutRoot(getVSNode_6aba14());
+  bean.initUI();
+setBeanFacotryIfBeanFacatoryAware(bean);
+invokeInitializingBean(bean);
+return bean;
+}
 
-	public nc.ui.uif2.TangramContainer getContainer() {
-		if (context.get("container") != null)
-			return (nc.ui.uif2.TangramContainer) context.get("container");
-		nc.ui.uif2.TangramContainer bean = new nc.ui.uif2.TangramContainer();
-		context.put("container", bean);
-		bean.setTangramLayoutRoot(getVSNode_17aca1b());
-		bean.initUI();
-		setBeanFacotryIfBeanFacatoryAware(bean);
-		invokeInitializingBean(bean);
-		return bean;
-	}
+private nc.ui.uif2.tangramlayout.node.VSNode getVSNode_6aba14(){
+ if(context.get("nc.ui.uif2.tangramlayout.node.VSNode#6aba14")!=null)
+ return (nc.ui.uif2.tangramlayout.node.VSNode)context.get("nc.ui.uif2.tangramlayout.node.VSNode#6aba14");
+  nc.ui.uif2.tangramlayout.node.VSNode bean = new nc.ui.uif2.tangramlayout.node.VSNode();
+  context.put("nc.ui.uif2.tangramlayout.node.VSNode#6aba14",bean);
+  bean.setUp(getCNode_182adb3());
+  bean.setDown(getTBNode_1c627fa());
+  bean.setDividerLocation(30f);
+setBeanFacotryIfBeanFacatoryAware(bean);
+invokeInitializingBean(bean);
+return bean;
+}
 
-	private nc.ui.uif2.tangramlayout.node.VSNode getVSNode_17aca1b() {
-		if (context.get("nc.ui.uif2.tangramlayout.node.VSNode#17aca1b") != null)
-			return (nc.ui.uif2.tangramlayout.node.VSNode) context.get("nc.ui.uif2.tangramlayout.node.VSNode#17aca1b");
-		nc.ui.uif2.tangramlayout.node.VSNode bean = new nc.ui.uif2.tangramlayout.node.VSNode();
-		context.put("nc.ui.uif2.tangramlayout.node.VSNode#17aca1b", bean);
-		bean.setUp(getCNode_22aa9d());
-		bean.setDown(getTBNode_17d6522());
-		bean.setDividerLocation(30f);
-		setBeanFacotryIfBeanFacatoryAware(bean);
-		invokeInitializingBean(bean);
-		return bean;
-	}
+private nc.ui.uif2.tangramlayout.node.CNode getCNode_182adb3(){
+ if(context.get("nc.ui.uif2.tangramlayout.node.CNode#182adb3")!=null)
+ return (nc.ui.uif2.tangramlayout.node.CNode)context.get("nc.ui.uif2.tangramlayout.node.CNode#182adb3");
+  nc.ui.uif2.tangramlayout.node.CNode bean = new nc.ui.uif2.tangramlayout.node.CNode();
+  context.put("nc.ui.uif2.tangramlayout.node.CNode#182adb3",bean);
+  bean.setComponent(getOrgpanel());
+setBeanFacotryIfBeanFacatoryAware(bean);
+invokeInitializingBean(bean);
+return bean;
+}
 
-	private nc.ui.uif2.tangramlayout.node.CNode getCNode_22aa9d() {
-		if (context.get("nc.ui.uif2.tangramlayout.node.CNode#22aa9d") != null)
-			return (nc.ui.uif2.tangramlayout.node.CNode) context.get("nc.ui.uif2.tangramlayout.node.CNode#22aa9d");
-		nc.ui.uif2.tangramlayout.node.CNode bean = new nc.ui.uif2.tangramlayout.node.CNode();
-		context.put("nc.ui.uif2.tangramlayout.node.CNode#22aa9d", bean);
-		bean.setComponent(getOrgpanel());
-		setBeanFacotryIfBeanFacatoryAware(bean);
-		invokeInitializingBean(bean);
-		return bean;
-	}
+private nc.ui.uif2.tangramlayout.node.TBNode getTBNode_1c627fa(){
+ if(context.get("nc.ui.uif2.tangramlayout.node.TBNode#1c627fa")!=null)
+ return (nc.ui.uif2.tangramlayout.node.TBNode)context.get("nc.ui.uif2.tangramlayout.node.TBNode#1c627fa");
+  nc.ui.uif2.tangramlayout.node.TBNode bean = new nc.ui.uif2.tangramlayout.node.TBNode();
+  context.put("nc.ui.uif2.tangramlayout.node.TBNode#1c627fa",bean);
+  bean.setTabs(getManagedList9());
+setBeanFacotryIfBeanFacatoryAware(bean);
+invokeInitializingBean(bean);
+return bean;
+}
 
-	private nc.ui.uif2.tangramlayout.node.TBNode getTBNode_17d6522() {
-		if (context.get("nc.ui.uif2.tangramlayout.node.TBNode#17d6522") != null)
-			return (nc.ui.uif2.tangramlayout.node.TBNode) context.get("nc.ui.uif2.tangramlayout.node.TBNode#17d6522");
-		nc.ui.uif2.tangramlayout.node.TBNode bean = new nc.ui.uif2.tangramlayout.node.TBNode();
-		context.put("nc.ui.uif2.tangramlayout.node.TBNode#17d6522", bean);
-		bean.setTabs(getManagedList9());
-		setBeanFacotryIfBeanFacatoryAware(bean);
-		invokeInitializingBean(bean);
-		return bean;
-	}
+private List getManagedList9(){  List list = new ArrayList();  list.add(getCNode_1f130f9());  list.add(getCNode_58286d());  return list;}
 
-	private List getManagedList9() {
-		List list = new ArrayList();
-		list.add(getCNode_1cee490());
-		list.add(getCNode_1f45320());
-		return list;
-	}
+private nc.ui.uif2.tangramlayout.node.CNode getCNode_1f130f9(){
+ if(context.get("nc.ui.uif2.tangramlayout.node.CNode#1f130f9")!=null)
+ return (nc.ui.uif2.tangramlayout.node.CNode)context.get("nc.ui.uif2.tangramlayout.node.CNode#1f130f9");
+  nc.ui.uif2.tangramlayout.node.CNode bean = new nc.ui.uif2.tangramlayout.node.CNode();
+  context.put("nc.ui.uif2.tangramlayout.node.CNode#1f130f9",bean);
+  bean.setName(getI18nFB_59d602());
+  bean.setComponent(getGridView());
+setBeanFacotryIfBeanFacatoryAware(bean);
+invokeInitializingBean(bean);
+return bean;
+}
 
-	private nc.ui.uif2.tangramlayout.node.CNode getCNode_1cee490() {
-		if (context.get("nc.ui.uif2.tangramlayout.node.CNode#1cee490") != null)
-			return (nc.ui.uif2.tangramlayout.node.CNode) context.get("nc.ui.uif2.tangramlayout.node.CNode#1cee490");
-		nc.ui.uif2.tangramlayout.node.CNode bean = new nc.ui.uif2.tangramlayout.node.CNode();
-		context.put("nc.ui.uif2.tangramlayout.node.CNode#1cee490", bean);
-		bean.setName(getI18nFB_1ef64fc());
-		bean.setComponent(getGridView());
-		setBeanFacotryIfBeanFacatoryAware(bean);
-		invokeInitializingBean(bean);
-		return bean;
-	}
+private java.lang.String getI18nFB_59d602(){
+ if(context.get("nc.ui.uif2.I18nFB#59d602")!=null)
+ return (java.lang.String)context.get("nc.ui.uif2.I18nFB#59d602");
+  nc.ui.uif2.I18nFB bean = new nc.ui.uif2.I18nFB();
+    context.put("&nc.ui.uif2.I18nFB#59d602",bean);  bean.setResDir("6017psncalendar");
+  bean.setDefaultValue("??段");
+  bean.setResId("X6017psncal03");
+setBeanFacotryIfBeanFacatoryAware(bean);
+invokeInitializingBean(bean);
+ try {
+     Object product = bean.getObject();
+    context.put("nc.ui.uif2.I18nFB#59d602",product);
+     return (java.lang.String)product;
+}
+catch(Exception e) { throw new RuntimeException(e);}}
 
-	private java.lang.String getI18nFB_1ef64fc() {
-		if (context.get("nc.ui.uif2.I18nFB#1ef64fc") != null)
-			return (java.lang.String) context.get("nc.ui.uif2.I18nFB#1ef64fc");
-		nc.ui.uif2.I18nFB bean = new nc.ui.uif2.I18nFB();
-		context.put("&nc.ui.uif2.I18nFB#1ef64fc", bean);
-		bean.setResDir("6017psncalendar");
-		bean.setDefaultValue("??段");
-		bean.setResId("X6017psncal03");
-		setBeanFacotryIfBeanFacatoryAware(bean);
-		invokeInitializingBean(bean);
-		try {
-			Object product = bean.getObject();
-			context.put("nc.ui.uif2.I18nFB#1ef64fc", product);
-			return (java.lang.String) product;
-		} catch (Exception e) {
-			throw new RuntimeException(e);
-		}
-	}
+private nc.ui.uif2.tangramlayout.node.CNode getCNode_58286d(){
+ if(context.get("nc.ui.uif2.tangramlayout.node.CNode#58286d")!=null)
+ return (nc.ui.uif2.tangramlayout.node.CNode)context.get("nc.ui.uif2.tangramlayout.node.CNode#58286d");
+  nc.ui.uif2.tangramlayout.node.CNode bean = new nc.ui.uif2.tangramlayout.node.CNode();
+  context.put("nc.ui.uif2.tangramlayout.node.CNode#58286d",bean);
+  bean.setName(getI18nFB_1c6567c());
+  bean.setComponent(getCalendarView());
+setBeanFacotryIfBeanFacatoryAware(bean);
+invokeInitializingBean(bean);
+return bean;
+}
 
-	private nc.ui.uif2.tangramlayout.node.CNode getCNode_1f45320() {
-		if (context.get("nc.ui.uif2.tangramlayout.node.CNode#1f45320") != null)
-			return (nc.ui.uif2.tangramlayout.node.CNode) context.get("nc.ui.uif2.tangramlayout.node.CNode#1f45320");
-		nc.ui.uif2.tangramlayout.node.CNode bean = new nc.ui.uif2.tangramlayout.node.CNode();
-		context.put("nc.ui.uif2.tangramlayout.node.CNode#1f45320", bean);
-		bean.setName(getI18nFB_1ffc16e());
-		bean.setComponent(getCalendarView());
-		setBeanFacotryIfBeanFacatoryAware(bean);
-		invokeInitializingBean(bean);
-		return bean;
-	}
+private java.lang.String getI18nFB_1c6567c(){
+ if(context.get("nc.ui.uif2.I18nFB#1c6567c")!=null)
+ return (java.lang.String)context.get("nc.ui.uif2.I18nFB#1c6567c");
+  nc.ui.uif2.I18nFB bean = new nc.ui.uif2.I18nFB();
+    context.put("&nc.ui.uif2.I18nFB#1c6567c",bean);  bean.setResDir("6017basedoc");
+  bean.setDefaultValue("日?");
+  bean.setResId("06017basedoc1768");
+setBeanFacotryIfBeanFacatoryAware(bean);
+invokeInitializingBean(bean);
+ try {
+     Object product = bean.getObject();
+    context.put("nc.ui.uif2.I18nFB#1c6567c",product);
+     return (java.lang.String)product;
+}
+catch(Exception e) { throw new RuntimeException(e);}}
 
-	private java.lang.String getI18nFB_1ffc16e() {
-		if (context.get("nc.ui.uif2.I18nFB#1ffc16e") != null)
-			return (java.lang.String) context.get("nc.ui.uif2.I18nFB#1ffc16e");
-		nc.ui.uif2.I18nFB bean = new nc.ui.uif2.I18nFB();
-		context.put("&nc.ui.uif2.I18nFB#1ffc16e", bean);
-		bean.setResDir("6017basedoc");
-		bean.setDefaultValue("日?");
-		bean.setResId("06017basedoc1768");
-		setBeanFacotryIfBeanFacatoryAware(bean);
-		invokeInitializingBean(bean);
-		try {
-			Object product = bean.getObject();
-			context.put("nc.ui.uif2.I18nFB#1ffc16e", product);
-			return (java.lang.String) product;
-		} catch (Exception e) {
-			throw new RuntimeException(e);
-		}
-	}
+public nc.ui.ta.psncalendar.view.Editor getEditor(){
+ if(context.get("editor")!=null)
+ return (nc.ui.ta.psncalendar.view.Editor)context.get("editor");
+  nc.ui.ta.psncalendar.view.Editor bean = new nc.ui.ta.psncalendar.view.Editor();
+  context.put("editor",bean);
+  bean.setGridPanel(getGridView());
+  bean.setCalendarPanel(getCalendarView());
+setBeanFacotryIfBeanFacatoryAware(bean);
+invokeInitializingBean(bean);
+return bean;
+}
 
-	public nc.ui.ta.psncalendar.view.Editor getEditor() {
-		if (context.get("editor") != null)
-			return (nc.ui.ta.psncalendar.view.Editor) context.get("editor");
-		nc.ui.ta.psncalendar.view.Editor bean = new nc.ui.ta.psncalendar.view.Editor();
-		context.put("editor", bean);
-		bean.setGridPanel(getGridView());
-		bean.setCalendarPanel(getCalendarView());
-		setBeanFacotryIfBeanFacatoryAware(bean);
-		invokeInitializingBean(bean);
-		return bean;
-	}
+public nc.ui.ta.pub.view.TAParamOrgPanel getOrgpanel(){
+ if(context.get("orgpanel")!=null)
+ return (nc.ui.ta.pub.view.TAParamOrgPanel)context.get("orgpanel");
+  nc.ui.ta.pub.view.TAParamOrgPanel bean = new nc.ui.ta.pub.view.TAParamOrgPanel();
+  context.put("orgpanel",bean);
+  bean.setModel(getModel());
+  bean.setDataManager(getModelDataManager());
+  bean.setPk_orgtype("HRORGTYPE00000000000");
+  bean.initUI();
+setBeanFacotryIfBeanFacatoryAware(bean);
+invokeInitializingBean(bean);
+return bean;
+}
 
-	public nc.ui.ta.pub.view.TAParamOrgPanel getOrgpanel() {
-		if (context.get("orgpanel") != null)
-			return (nc.ui.ta.pub.view.TAParamOrgPanel) context.get("orgpanel");
-		nc.ui.ta.pub.view.TAParamOrgPanel bean = new nc.ui.ta.pub.view.TAParamOrgPanel();
-		context.put("orgpanel", bean);
-		bean.setModel(getModel());
-		bean.setDataManager(getModelDataManager());
-		bean.setPk_orgtype("HRORGTYPE00000000000");
-		bean.initUI();
-		setBeanFacotryIfBeanFacatoryAware(bean);
-		invokeInitializingBean(bean);
-		return bean;
-	}
-
-	public nc.ui.ta.pub.action.EnableJudge getEnableJudge() {
-		if (context.get("enableJudge") != null)
-			return (nc.ui.ta.pub.action.EnableJudge) context.get("enableJudge");
-		nc.ui.ta.pub.action.EnableJudge bean = new nc.ui.ta.pub.action.EnableJudge();
-		context.put("enableJudge", bean);
-		bean.setModel(getModel());
-		setBeanFacotryIfBeanFacatoryAware(bean);
-		invokeInitializingBean(bean);
-		return bean;
-	}
+public nc.ui.ta.pub.action.EnableJudge getEnableJudge(){
+ if(context.get("enableJudge")!=null)
+ return (nc.ui.ta.pub.action.EnableJudge)context.get("enableJudge");
+  nc.ui.ta.pub.action.EnableJudge bean = new nc.ui.ta.pub.action.EnableJudge();
+  context.put("enableJudge",bean);
+  bean.setModel(getModel());
+setBeanFacotryIfBeanFacatoryAware(bean);
+invokeInitializingBean(bean);
+return bean;
+}
 
 }

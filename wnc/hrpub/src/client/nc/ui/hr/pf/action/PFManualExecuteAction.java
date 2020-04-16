@@ -9,10 +9,8 @@ import java.util.HashMap;
 import javax.swing.Action;
 import javax.swing.KeyStroke;
 
-import nc.bs.framework.common.NCLocator;
 import nc.funcnode.ui.action.INCAction;
 import nc.hr.utils.ResHelper;
-import nc.itf.hi.IPsndocSubInfoService4JFS;
 import nc.ui.hr.uif2.view.ManualExecuteDialog;
 import nc.ui.pub.beans.UIDialog;
 import nc.vo.pub.AggregatedValueObject;
@@ -67,11 +65,7 @@ public abstract class PFManualExecuteAction extends PFBaseAction {
 
 		// 刷新界面
 		ArrayList<AggStapply> aggList = (ArrayList<AggStapply>) result.get(TRNConst.RESULT_BILLS);
-		// 如果apprRetObj不为空，则回写结束日期到人员信息子集健保信息和劳健退子集 he
-		if (aggList.size() > 0) {
-			AggStapply[] aggvos = aggList.toArray(new AggStapply[0]);
-			NCLocator.getInstance().lookup(IPsndocSubInfoService4JFS.class).rollbackhealthandlabor(aggvos);
-		}
+
 		// modify start: yunana 2013-5-10
 		// 这个异常在在前台抛，避免超编通知NC消息发送之后回滚（本来在接口实现的方法manualExecBills（）中抛出）
 		String msg = (String) result.get(TRNConst.RESULT_MSG);

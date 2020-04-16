@@ -26,19 +26,17 @@ import org.apache.commons.lang.StringUtils;
 
 public class ReportExportServiceImpl implements IReportExportService {
 
-	public String[] getIITXTextReport(String[] dataPKs, int iYear,
-			String applyFormat, String applyCount, String applyReason,
-			String vatNumber, String grantType, String comLinkMan,
-			String comLinkTel, String comLinkEmail) throws BusinessException {
+	public String[] getIITXTextReport(String[] dataPKs, int iYear, String applyFormat, String applyCount,
+			String applyReason, String vatNumber, String grantType, String comLinkMan, String comLinkTel,
+			String comLinkEmail) throws BusinessException {
 		Map<String, Object> refList = getRefListByVatNumber(vatNumber);
 		InSQLCreator creator = new InSQLCreator();
 		String tempTableName = creator.getInSQL(dataPKs);
-		DataFormatter formatter = new DataFormatter("IITR_FMT_TW_2018");
+		DataFormatter formatter = new DataFormatter("IITR_FMT_TW_2018_MF");
 		formatter.setiYear(iYear);
 		formatter.getRefsMap().putAll(refList);
 		formatter.getRefsMap().put("APPLYCOUNT", applyCount);
-		formatter.getRefsMap().put("APPLYREASON",
-				applyReason == null ? "" : applyReason);
+		formatter.getRefsMap().put("APPLYREASON", applyReason == null ? "" : applyReason);
 		formatter.getRefsMap().put("GRANTTYPE", grantType);
 		formatter.getRefsMap().put("FORMAT", applyFormat);
 		formatter.getRefsMap().put("TEMPTABLENAME", tempTableName);
@@ -64,8 +62,7 @@ public class ReportExportServiceImpl implements IReportExportService {
 	// COMISBANKDS 金融機構註記
 	// COMISAGENTDS 事務所代理註記
 	// COMHOUSETAXNODS 房屋稅籍編號
-	private Map<String, Object> getRefListByVatNumber(String vatNumber)
-			throws BusinessException {
+	private Map<String, Object> getRefListByVatNumber(String vatNumber) throws BusinessException {
 		Map<String, Object> ret = new HashMap<String, Object>();
 		if (!StringUtils.isEmpty(vatNumber)) {
 			BaseDAO baseDao = new BaseDAO();
@@ -73,85 +70,60 @@ public class ReportExportServiceImpl implements IReportExportService {
 					.retrieveByClause(
 							DefdocVO.class,
 							"pk_defdoc = (select bd_defdoc.pid from bd_defdoc inner join bd_defdoclist on bd_defdoc.pk_defdoclist=bd_defdoclist.pk_defdoclist where bd_defdoc.code = '"
-									+ vatNumber
-									+ "' and bd_defdoclist.code='TWHR013')");
+									+ vatNumber + "' and bd_defdoclist.code='TWHR013')");
 
 			if (vo.get(0).getCode().contains("(FUWEI)")) {
 				// 福委
 				// TWHRLORG13 縣市別(福委)
-				ret.put("COUNTYDS", SysInitQuery.getParaString(
-						"GLOBLE00000000000000", "TWHRLORG13"));
+				ret.put("COUNTYDS", SysInitQuery.getParaString("GLOBLE00000000000000", "TWHRLORG13"));
 				// TWHRLORG14 機關別(福委)
-				ret.put("DEPTDS", SysInitQuery.getParaString(
-						"GLOBLE00000000000000", "TWHRLORG14"));
+				ret.put("DEPTDS", SysInitQuery.getParaString("GLOBLE00000000000000", "TWHRLORG14"));
 				// TWHRLORG15 申報統一編號(福委)
-				ret.put("VATNUMBERDS", SysInitQuery.getParaString(
-						"GLOBLE00000000000000", "TWHRLORG15"));
+				ret.put("VATNUMBERDS", SysInitQuery.getParaString("GLOBLE00000000000000", "TWHRLORG15"));
 				// TWHRLORG16 申報單位名稱(福委)
-				ret.put("COMNAMEDS", SysInitQuery.getParaString(
-						"GLOBLE00000000000000", "TWHRLORG16"));
+				ret.put("COMNAMEDS", SysInitQuery.getParaString("GLOBLE00000000000000", "TWHRLORG16"));
 				// TWHRLORG17 申報單位地址(福委)
-				ret.put("COMADDRESSDS", SysInitQuery.getParaString(
-						"GLOBLE00000000000000", "TWHRLORG17"));
+				ret.put("COMADDRESSDS", SysInitQuery.getParaString("GLOBLE00000000000000", "TWHRLORG17"));
 				// TWHRLORG18 扣稅義務人名稱(福委)
-				ret.put("COMPRINCIPALDS", SysInitQuery.getParaString(
-						"GLOBLE00000000000000", "TWHRLORG18"));
+				ret.put("COMPRINCIPALDS", SysInitQuery.getParaString("GLOBLE00000000000000", "TWHRLORG18"));
 				// TWHRLORG19 申報單位稅籍編號(福委)
-				ret.put("COMTAXNODS", SysInitQuery.getParaString(
-						"GLOBLE00000000000000", "TWHRLORG19"));
+				ret.put("COMTAXNODS", SysInitQuery.getParaString("GLOBLE00000000000000", "TWHRLORG19"));
 				// TWHRLORG20 總分支機構註記(福委)
-				ret.put("COMISHQDS", SysInitQuery.getParaString(
-						"GLOBLE00000000000000", "TWHRLORG20"));
+				ret.put("COMISHQDS", SysInitQuery.getParaString("GLOBLE00000000000000", "TWHRLORG20"));
 				// TWHRLORG21 上市公司註記(福委)
-				ret.put("COMINSTOCKDS", SysInitQuery.getParaString(
-						"GLOBLE00000000000000", "TWHRLORG21"));
+				ret.put("COMINSTOCKDS", SysInitQuery.getParaString("GLOBLE00000000000000", "TWHRLORG21"));
 				// TWHRLORG22 金融機構註記(福委)
-				ret.put("COMISBANKDS", SysInitQuery.getParaString(
-						"GLOBLE00000000000000", "TWHRLORG22"));
+				ret.put("COMISBANKDS", SysInitQuery.getParaString("GLOBLE00000000000000", "TWHRLORG22"));
 				// TWHRLORG23 事務所代理註記(福委)
-				ret.put("COMISAGENTDS", SysInitQuery.getParaString(
-						"GLOBLE00000000000000", "TWHRLORG23"));
+				ret.put("COMISAGENTDS", SysInitQuery.getParaString("GLOBLE00000000000000", "TWHRLORG23"));
 				// TWHRLORG24 房屋稅籍編號(福委)
-				ret.put("COMHOUSETAXNODS", SysInitQuery.getParaString(
-						"GLOBLE00000000000000", "TWHRLORG24"));
+				ret.put("COMHOUSETAXNODS", SysInitQuery.getParaString("GLOBLE00000000000000", "TWHRLORG24"));
 			} else {
 				// 公司
 				// TWHRLORG01 縣市別
-				ret.put("COUNTYDS", SysInitQuery.getParaString(
-						"GLOBLE00000000000000", "TWHRLORG01"));
+				ret.put("COUNTYDS", SysInitQuery.getParaString("GLOBLE00000000000000", "TWHRLORG01"));
 				// TWHRLORG02 機關別
-				ret.put("DEPTDS", SysInitQuery.getParaString(
-						"GLOBLE00000000000000", "TWHRLORG02"));
+				ret.put("DEPTDS", SysInitQuery.getParaString("GLOBLE00000000000000", "TWHRLORG02"));
 				// TWHRLORG03 申報統一編號
-				ret.put("VATNUMBERDS", SysInitQuery.getParaString(
-						"GLOBLE00000000000000", "TWHRLORG03"));
+				ret.put("VATNUMBERDS", SysInitQuery.getParaString("GLOBLE00000000000000", "TWHRLORG03"));
 				// TWHRLORG04 申報單位名稱
-				ret.put("COMNAMEDS", SysInitQuery.getParaString(
-						"GLOBLE00000000000000", "TWHRLORG04"));
+				ret.put("COMNAMEDS", SysInitQuery.getParaString("GLOBLE00000000000000", "TWHRLORG04"));
 				// TWHRLORG05 申報單位地址
-				ret.put("COMADDRESSDS", SysInitQuery.getParaString(
-						"GLOBLE00000000000000", "TWHRLORG05"));
+				ret.put("COMADDRESSDS", SysInitQuery.getParaString("GLOBLE00000000000000", "TWHRLORG05"));
 				// TWHRLORG06 扣稅義務人名稱
-				ret.put("COMPRINCIPALDS", SysInitQuery.getParaString(
-						"GLOBLE00000000000000", "TWHRLORG06"));
+				ret.put("COMPRINCIPALDS", SysInitQuery.getParaString("GLOBLE00000000000000", "TWHRLORG06"));
 				// TWHRLORG07 申報單位稅籍編號
-				ret.put("COMTAXNODS", SysInitQuery.getParaString(
-						"GLOBLE00000000000000", "TWHRLORG07"));
+				ret.put("COMTAXNODS", SysInitQuery.getParaString("GLOBLE00000000000000", "TWHRLORG07"));
 				// TWHRLORG08 總分支機構註記
-				ret.put("COMISHQDS", SysInitQuery.getParaString(
-						"GLOBLE00000000000000", "TWHRLORG08"));
+				ret.put("COMISHQDS", SysInitQuery.getParaString("GLOBLE00000000000000", "TWHRLORG08"));
 				// TWHRLORG09 上市公司註記
-				ret.put("COMINSTOCKDS", SysInitQuery.getParaString(
-						"GLOBLE00000000000000", "TWHRLORG09"));
+				ret.put("COMINSTOCKDS", SysInitQuery.getParaString("GLOBLE00000000000000", "TWHRLORG09"));
 				// TWHRLORG10 金融機構註記
-				ret.put("COMISBANKDS", SysInitQuery.getParaString(
-						"GLOBLE00000000000000", "TWHRLORG10"));
+				ret.put("COMISBANKDS", SysInitQuery.getParaString("GLOBLE00000000000000", "TWHRLORG10"));
 				// TWHRLORG11 事務所代理註記
-				ret.put("COMISAGENTDS", SysInitQuery.getParaString(
-						"GLOBLE00000000000000", "TWHRLORG11"));
+				ret.put("COMISAGENTDS", SysInitQuery.getParaString("GLOBLE00000000000000", "TWHRLORG11"));
 				// TWHRLORG12 房屋稅籍編號
-				ret.put("COMHOUSETAXNODS", SysInitQuery.getParaString(
-						"GLOBLE00000000000000", "TWHRLORG12"));
+				ret.put("COMHOUSETAXNODS", SysInitQuery.getParaString("GLOBLE00000000000000", "TWHRLORG12"));
 			}
 		}
 		return ret;
@@ -163,16 +135,15 @@ public class ReportExportServiceImpl implements IReportExportService {
 		String tempTableName = creator.getInSQL(dataPKs);
 
 		BaseDAO baseDao = new BaseDAO();
-		String strSQL = "update hrwa_sumincometax set isdeclare='Y', dr=0 where pk_sumincometax in ("
-				+ tempTableName + ");";
+		String strSQL = "update hrwa_sumincometax set isdeclare='Y', dr=0 where pk_sumincometax in (" + tempTableName
+				+ ");";
 		baseDao.executeUpdate(strSQL);
-		strSQL = "update hrwa_incometaxdetail set isdeclare='Y', dr=0 where pk_sumincometax in ("
-				+ tempTableName + ");";
+		strSQL = "update hrwa_incometaxdetail set isdeclare='Y', dr=0 where pk_sumincometax in (" + tempTableName
+				+ ");";
 		baseDao.executeUpdate(strSQL);
 	}
 
-	public String[] getBankReportText(String pk_org, String offerPeriod,
-			String pk_wa_class) throws BusinessException {
+	public String[] getBankReportText(String pk_org, String offerPeriod, String pk_wa_class) throws BusinessException {
 		DataFormatter formatter = new DataFormatter("FUBON_FMT_TW_2017");
 		formatter.setPk_org(pk_org);
 		formatter.setiYear(Integer.valueOf(offerPeriod.substring(0, 4)));
@@ -201,8 +172,7 @@ public class ReportExportServiceImpl implements IReportExportService {
 		String strSQL = "SELECT DISTINCT glbdef30 FROM org_hrorg WHERE glbdef30 IS NOT NULL ORDER BY glbdef30";
 
 		BaseDAO dao = new BaseDAO();
-		List vatNos = (List) dao
-				.executeQuery(strSQL, new ColumnListProcessor());
+		List vatNos = (List) dao.executeQuery(strSQL, new ColumnListProcessor());
 
 		if (vatNos != null && vatNos.size() > 0) {
 			List<String> retVals = new ArrayList<String>();
@@ -216,14 +186,12 @@ public class ReportExportServiceImpl implements IReportExportService {
 	}
 
 	@Override
-	public String[] getAllOrgByVATNumber(String strVATNumber)
-			throws BusinessException {
+	public String[] getAllOrgByVATNumber(String strVATNumber) throws BusinessException {
 		String strSQL = "SELECT DISTINCT pk_hrorg FROM org_hrorg org inner join bd_defdoc def on org.glbdef30 = def.pk_defdoc WHERE def.code='"
 				+ strVATNumber + "'";
 
 		BaseDAO dao = new BaseDAO();
-		List vatNos = (List) dao
-				.executeQuery(strSQL, new ColumnListProcessor());
+		List vatNos = (List) dao.executeQuery(strSQL, new ColumnListProcessor());
 
 		if (vatNos != null && vatNos.size() > 0) {
 			List<String> retVals = new ArrayList<String>();
@@ -237,8 +205,8 @@ public class ReportExportServiceImpl implements IReportExportService {
 	}
 
 	@Override
-	public int checkPeriodWaDataExists(String[] wa_classes, String startPeriod,
-			String endPeriod) throws BusinessException {
+	public int checkPeriodWaDataExists(String[] wa_classes, String startPeriod, String endPeriod)
+			throws BusinessException {
 		int foundCount = 0;
 		if (wa_classes != null && wa_classes.length > 0) {
 			String clsString = "";
@@ -269,8 +237,7 @@ public class ReportExportServiceImpl implements IReportExportService {
 			strSQL += "                    AND     '" + endPeriod + "' ";
 
 			BaseDAO basDAO = new BaseDAO();
-			List<Map> results = (List<Map>) basDAO.executeQuery(strSQL,
-					new MapListProcessor());
+			List<Map> results = (List<Map>) basDAO.executeQuery(strSQL, new MapListProcessor());
 
 			for (Map result : results) {
 				for (int i = 0; i < wa_classes.length; i++) {
@@ -297,43 +264,33 @@ public class ReportExportServiceImpl implements IReportExportService {
 				}
 
 				strSQL = "SELECT hrorg.pk_hrorg, hrorg.code AS orgcode, cls.pk_wa_class, cls.code AS classcode "
-						+ " FROM wa_waclass cls "
-						+ " INNER JOIN org_hrorg hrorg ON hrorg.pk_hrorg = cls.pk_org "
+						+ " FROM wa_waclass cls " + " INNER JOIN org_hrorg hrorg ON hrorg.pk_hrorg = cls.pk_org "
 						+ " WHERE cls.pk_wa_class IN (" + clsString + " )";
 
-				results = (List<Map>) basDAO.executeQuery(strSQL,
-						new MapListProcessor());
+				results = (List<Map>) basDAO.executeQuery(strSQL, new MapListProcessor());
 				List<String> pk_hrorgs = new ArrayList<String>();
 				String strMessage = "";
 				for (Map result : results) {
 					pk_hrorgs.add((String) result.get("pk_hrorg"));
 
 					// 取薪資方案VO
-					WaClassVO classVO = (WaClassVO) basDAO
-							.retrieveByPK(WaClassVO.class,
-									(String) result.get("pk_wa_class"));
+					WaClassVO classVO = (WaClassVO) basDAO.retrieveByPK(WaClassVO.class,
+							(String) result.get("pk_wa_class"));
 					// 取薪資方案多語名稱
-					String strName = MultiLangUtil.getSuperVONameOfCurrentLang(
-							classVO, "name", classVO.getName());
-					strMessage += (String) result.get("pk_hrorg") + " ["
-							+ (String) result.get("orgcode") + "]: " + strName
-							+ " [" + result.get("classcode") + "]\r\n";
+					String strName = MultiLangUtil.getSuperVONameOfCurrentLang(classVO, "name", classVO.getName());
+					strMessage += (String) result.get("pk_hrorg") + " [" + (String) result.get("orgcode") + "]: "
+							+ strName + " [" + result.get("classcode") + "]\r\n";
 				}
 
 				// 取人力資源組織VO
-				IOrgPubQryService orgsrv = NCLocator.getInstance().lookup(
-						IOrgPubQryService.class);
-				List<HROrgVO> orgVOs = orgsrv.getVOListByClause(HROrgVO.class,
-						"pk_hrorg", pk_hrorgs, null);
+				IOrgPubQryService orgsrv = NCLocator.getInstance().lookup(IOrgPubQryService.class);
+				List<HROrgVO> orgVOs = orgsrv.getVOListByClause(HROrgVO.class, "pk_hrorg", pk_hrorgs, null);
 
 				if (orgVOs != null && orgVOs.size() > 0) {
 					for (HROrgVO orgvo : orgVOs) {
 						// 取人力資源組織多語名稱
-						String strName = MultiLangUtil
-								.getSuperVONameOfCurrentLang(orgvo, "name",
-										orgvo.getName());
-						strMessage = strMessage.replace(orgvo.getPk_hrorg(),
-								strName);
+						String strName = MultiLangUtil.getSuperVONameOfCurrentLang(orgvo, "name", orgvo.getName());
+						strMessage = strMessage.replace(orgvo.getPk_hrorg(), strName);
 					}
 
 					throw new BusinessException(strMessage);
@@ -356,47 +313,38 @@ public class ReportExportServiceImpl implements IReportExportService {
 		}
 
 		BaseDAO baseDAO = new BaseDAO();
-		List<Map> results = (List<Map>) baseDAO
-				.executeQuery("SELECT * FROM org_hrorg WHERE pk_hrorg IN ("
-						+ orgString + ")", new MapListProcessor());
+		List<Map> results = (List<Map>) baseDAO.executeQuery("SELECT * FROM org_hrorg WHERE pk_hrorg IN (" + orgString
+				+ ")", new MapListProcessor());
 
 		if (results != null) {
 			for (Map result : results) {
 				if (result.get("glbdef27") == null) {
-					throw new BusinessException(ResHelper.getString(
-							"twhr_datainterface", "DataInterface-00076")
-							+ result.get("name")
-							+ "["
-							+ result.get("code")
-							+ "] "
-							+ ResHelper.getString("twhr_datainterface",
-									"DataInterface-00077"));
+					throw new BusinessException(ResHelper.getString("twhr_datainterface", "DataInterface-00076")
+							+ result.get("name") + "[" + result.get("code") + "] "
+							+ ResHelper.getString("twhr_datainterface", "DataInterface-00077"));
 				}
 			}
 		} else {
-			throw new BusinessException(ResHelper.getString(
-					"twhr_datainterface", "DataInterface-00077"));
+			throw new BusinessException(ResHelper.getString("twhr_datainterface", "DataInterface-00077"));
 		}
 	}
 
 	@Override
-	public String[] getIITXTInfo(String vatNumber, String declareType,
-			String grantType, String declareReason) throws BusinessException {
+	public String[] getIITXTInfo(String vatNumber, String declareType, String grantType, String declareReason)
+			throws BusinessException {
 		BaseDAO dao = new BaseDAO();
 		String[] rtn = new String[4];
 
 		// 根據vatNumber取統編
 		if (!StringUtils.isEmpty(vatNumber)) {
-			DefdocVO vo = (DefdocVO) dao
-					.retrieveByPK(DefdocVO.class, vatNumber);
+			DefdocVO vo = (DefdocVO) dao.retrieveByPK(DefdocVO.class, vatNumber);
 			if (vo != null) {
 				rtn[0] = vo.getCode();
 			}
 		}
 		// 根據declareType取申報類型編號
 		if (!StringUtils.isEmpty(declareType)) {
-			DefdocVO vo = (DefdocVO) dao.retrieveByPK(DefdocVO.class,
-					declareType);
+			DefdocVO vo = (DefdocVO) dao.retrieveByPK(DefdocVO.class, declareType);
 			if (vo != null) {
 				rtn[1] = vo.getCode();
 			}
@@ -404,8 +352,7 @@ public class ReportExportServiceImpl implements IReportExportService {
 
 		// 根據grantType取申報填發類型編號
 		if (!StringUtils.isEmpty(grantType)) {
-			DefdocVO vo = (DefdocVO) dao
-					.retrieveByPK(DefdocVO.class, grantType);
+			DefdocVO vo = (DefdocVO) dao.retrieveByPK(DefdocVO.class, grantType);
 			if (vo != null) {
 				rtn[2] = vo.getCode();
 			}
@@ -413,8 +360,7 @@ public class ReportExportServiceImpl implements IReportExportService {
 
 		// 根據declareReason取重複申報原因編號
 		if (!StringUtils.isEmpty(declareReason)) {
-			DefdocVO vo = (DefdocVO) dao.retrieveByPK(DefdocVO.class,
-					declareReason);
+			DefdocVO vo = (DefdocVO) dao.retrieveByPK(DefdocVO.class, declareReason);
 			if (vo != null) {
 				rtn[3] = vo.getCode();
 			} else {

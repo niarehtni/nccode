@@ -5,14 +5,13 @@ import java.util.concurrent.ExecutionException;
 
 import javax.swing.SwingWorker;
 
+import nc.bs.bank_cvp.compile.registry.BussinessMethods;
 import nc.bs.framework.common.NCLocator;
 import nc.bs.logging.Logger;
 import nc.desktop.ui.WorkbenchEnvironment;
 import nc.hr.utils.ResHelper;
 import nc.itf.ta.ILeaveBalanceManageMaintain;
-import nc.itf.ta.ILeaveBalanceQueryMaintain;
 import nc.itf.ta.IPeriodQueryService;
-import nc.pubitf.para.SysInitQuery;
 import nc.ui.hr.uif2.action.HrAsynAction;
 import nc.ui.pub.beans.MessageDialog;
 import nc.ui.pub.beans.UIDialog;
@@ -21,6 +20,7 @@ import nc.ui.ta.leave.balance.view.BalanceQueryDialog;
 import nc.ui.ta.leave.balance.view.SettleToPeriodDialog;
 import nc.ui.uif2.AppEvent;
 import nc.ui.uif2.IShowMsgConstant;
+import nc.ui.uif2.ShowStatusBarMsgUtil;
 import nc.ui.uif2.UIState;
 import nc.ui.uif2.model.AbstractAppModel;
 import nc.ui.uif2.model.AppEventConst;
@@ -28,6 +28,7 @@ import nc.ui.uif2.model.IAppModelDataManagerEx;
 import nc.vo.pub.BusinessException;
 import nc.vo.pub.lang.UFDate;
 import nc.vo.pub.lang.UFLiteralDate;
+import nc.vo.pubapp.pattern.exception.ExceptionUtils;
 import nc.vo.ta.leavebalance.LeaveBalanceVO;
 import nc.vo.ta.leavebalance.SettlementResult;
 import nc.vo.ta.period.PeriodVO;
@@ -71,7 +72,7 @@ public class LeaveBalanceAction extends HrAsynAction{
 
 	@Override
 	public void doAction(ActionEvent e) throws Exception {
-//		LeaveBalanceAppModel model = (LeaveBalanceAppModel)getModel();
+		LeaveBalanceAppModel model = (LeaveBalanceAppModel)getModel();
 //		LeaveBalanceCalcDialog dlg = new LeaveBalanceCalcDialog(this.getEntranceUI(),getSealStr(),false);
 //		dlg.initUI();
 //		Object data = getHierachicalModel().getSelectedData();
@@ -86,6 +87,10 @@ public class LeaveBalanceAction extends HrAsynAction{
 //		dlg.showModal();
 		//v63修改，不再弹出结算日期选择框，按当前日期结算
 		LeaveTypeCopyVO typevo = (LeaveTypeCopyVO) getHierachicalModel().getSelectedData();
+		if(model.getSelectedOperaDatas()==null || model.getSelectedOperaDatas().length <= 0){
+		    ShowStatusBarMsgUtil.showErrorMsg("無法結算", "請選擇操作資料行!", getContext());
+		    return;
+		}
 		//华衍水务，转工资的类别需要提示结算到哪个期间（薪资取数时使用）
 //		if(TimeItemCopyVO.LEAVESETTLEMENT_MONEY == typevo.getLeavesettlement()){
 		//MOD 张恒 {21860}  按照年资起算日的也要弹出框选择期间    2018/8/27
@@ -231,11 +236,22 @@ public class LeaveBalanceAction extends HrAsynAction{
 		return ResHelper.getString("6017leave","06017leave0166")/*@res "结算"*/;
 	}
 
-	@SuppressWarnings("unchecked")
 	private void settlement(String pk_period) throws BusinessException{
 		LeaveBalanceAppModel model = (LeaveBalanceAppModel)getModel();
 		LeaveTypeCopyVO typevo = (LeaveTypeCopyVO) getHierachicalModel().getSelectedData();
-		LeaveBalanceVO[] vos = (LeaveBalanceVO[]) (CollectionUtils.isEmpty(model.getData())?null:model.getData().toArray(new LeaveBalanceVO[0]));
+		Object[] selectObjs = model.getSelectedOperaDatas();
+		LeaveBalanceVO[] vos = null;
+		if(selectObjs !=null && selectObjs.length > 0){
+		    vos = new LeaveBalanceVO[selectObjs.length];
+		    for(int i = 0 ; i < selectObjs.length ;i++){
+			vos[i] =  (LeaveBalanceVO)selectObjs[i];
+		    }
+		}else{
+		    return ;
+		}
+		
+		//LeaveBalanceVO[] vos = (LeaveBalanceVO[]) (CollectionUtils.isEmpty(model.getSelectedOperaDatas())?null:model.getSelectedOperaDatas());
+		
 		String year = model.getYear();
 		String month = model.getMonth();
 		

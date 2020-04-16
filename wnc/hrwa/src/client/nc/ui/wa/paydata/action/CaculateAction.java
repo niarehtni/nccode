@@ -3,7 +3,6 @@ package nc.ui.wa.paydata.action;
 import java.awt.Event;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -14,29 +13,23 @@ import javax.swing.SwingWorker;
 
 import nc.bs.framework.common.NCLocator;
 import nc.bs.uif2.LockFailedException;
-import nc.bs.uif2.VersionConflictException;
 import nc.funcnode.ui.action.INCAction;
 import nc.hr.utils.ResHelper;
 import nc.itf.hr.wa.IHRWAActionCode;
-import nc.itf.hrwa.IWadaysalaryService;
+import nc.itf.hr.wa.IPaydataManageService;
+import nc.itf.hrwa.IWadaysalaryQueryService;
 import nc.itf.twhr.ICalculateTWNHI;
 import nc.itf.uap.IUAPQueryBS;
-import nc.jdbc.framework.processor.ColumnListProcessor;
+import nc.jdbc.framework.processor.ColumnProcessor;
 import nc.ui.hr.caculate.view.BannerTimerDialog;
 import nc.ui.hr.caculate.view.RecacuTypeChooseDialog;
 import nc.ui.pub.beans.UIDialog;
 import nc.ui.uif2.ShowStatusBarMsgUtil;
 import nc.vo.hr.caculate.CaculateTypeVO;
-import nc.vo.pfxx.util.ArrayUtils;
-import nc.vo.pub.BusinessException;
 import nc.vo.pub.SuperVO;
 import nc.vo.pub.lang.UFDouble;
-import nc.vo.pubapp.pattern.exception.ExceptionUtils;
-import nc.vo.wa.func.WherePartUtil;
 import nc.vo.wa.paydata.DataVO;
 import nc.vo.wa.pub.WaState;
-
-import org.apache.commons.lang.StringUtils;
 
 /**
  * 计算
@@ -53,7 +46,6 @@ public class CaculateAction extends PayDataBaseAction {
 
 	private static final long serialVersionUID = 1L;
 	private static final String WA = "wa";
-	String errorMessage = "";
 
 	public CaculateAction() {
 		super();
@@ -92,16 +84,13 @@ public class CaculateAction extends PayDataBaseAction {
 
 				@Override
 				protected Boolean doInBackground() throws Exception {
-					Boolean rtn = Boolean.TRUE;
 					try {
-
 						dialog.setStartText(ResHelper.getString("60130paydata", "060130paydata0333")/*
 																									 * @
 																									 * res
 																									 * "薪资计算过程中，请稍等..."
 																									 */);
 						dialog.start();
-
 						CaculateTypeVO caculateTypeVO = chooseDialog.getValue();
 						List<SuperVO> payfileVos = getPaydataModel().getData();
 						long start = 0;
@@ -128,22 +117,6 @@ public class CaculateAction extends PayDataBaseAction {
 								+ new UFDouble((end - start) / 1000).setScale(2, UFDouble.ROUND_UP).toString() + "秒",
 								getContext());
 
-						// MOD(由于薪资加密影响TS，不能在薪资计算过程中进行日薪计算)
-						// 将日薪计算提到薪资计算前统一进行，公式中已改为只取结果不计算
-						// by ssx on 20190212
-						dialog.setStartText("預處理日薪數據，請稍等...");
-						start = System.currentTimeMillis();
-						List<String> pk_psndoclist = getCalculatePsnList(caculateTypeVO, payfileVos);
-						IWadaysalaryService daySalCalService = NCLocator.getInstance()
-								.lookup(IWadaysalaryService.class);
-						daySalCalService.checkDaySalaryAndCalculSalary(getWaContext().getPk_wa_class(), pk_psndoclist
-								.toArray(new String[0]), getWaContext().getCyear(), getWaContext().getCperiod());
-						end = System.currentTimeMillis();
-						ShowStatusBarMsgUtil.showStatusBarMsg(
-								"日薪預處理耗時："
-										+ new UFDouble((end - start) / 1000).setScale(2, UFDouble.ROUND_UP).toString()
-										+ "秒", getContext());
-						// end
 						dialog.setStartText(ResHelper.getString("60130paydata", "060130paydata0333")/*
 																									 * @
 																									 * res
@@ -153,71 +126,29 @@ public class CaculateAction extends PayDataBaseAction {
 						// 解决思路将refresh拿到该线程执行完毕后。
 						getPaydataManager().onCaculate(caculateTypeVO, payfileVos.toArray(new SuperVO[0]));
 					} catch (LockFailedException le) {
-						errorMessage = ResHelper.getString("60130paydata", "060130paydata0334")/*
-																								 * @
-																								 * res
-																								 * "你操作的数据正被他人修改！"
-																								 */;
-						rtn = Boolean.FALSE;
-						throw new Exception(errorMessage);
-					} catch (VersionConflictException le) {
-						rtn = Boolean.FALSE;
-						throw new Exception(le.getBusiObject().toString(), le);
-					} catch (Exception e) {
-						errorMessage = e.getMessage();
-						rtn = Boolean.FALSE;
-						throw new Exception(errorMessage);
+						error = ResHelper.getString("60130paydata", "060130paydata0334")/*
+																						 * @
+																						 * res
+																						 * "你操作的数据正被他人修改！"
+																						 */;
+					} catch (Throwable e) {
+						error = e.getMessage();
 					} finally {
+						IUAPQueryBS query = NCLocator.getInstance().lookup(IUAPQueryBS.class);
+						Integer count = (Integer) query.executeQuery("select count(*) from "
+								+ IPaydataManageService.DECRYPTEDPKTABLENAME + " where creator='"
+								+ getContext().getPk_loginUser() + "'", new ColumnProcessor());
+
+						if (count > 0) {
+							dialog.setStartText("正在清理加密數據，請稍等...");
+							IPaydataManageService encryptSrv = NCLocator.getInstance().lookup(
+									IPaydataManageService.class);
+							encryptSrv.doEncryptEx(getWaContext());
+						}
+
 						dialog.end();
 					}
-					return rtn;
-				}
-
-				@SuppressWarnings("unchecked")
-				private List<String> getCalculatePsnList(CaculateTypeVO caculateTypeVO, List<SuperVO> payfileVos) {
-					List<String> pk_psndoclist = new ArrayList<String>();
-					String where = null;
-					// 计算范围
-					boolean all = caculateTypeVO.getRange().booleanValue();
-					if (where == null || all) {
-						where = null;
-					}
-
-					// 计算方式
-					boolean type = caculateTypeVO.getType().booleanValue();
-					if (type) {
-						String addWhere = "  wa_data.checkflag = 'N'  ";
-						where = where == null ? addWhere : (where + " and   " + addWhere);
-					} else {
-						String addWhere = "  wa_data.checkflag = 'N' and wa_data.caculateflag = 'N'   ";
-						where = where == null ? addWhere : (where + " and   " + addWhere);
-					}
-					if (StringUtils.isBlank(where)) {
-						where = WherePartUtil.getCommonWhereCondtion4Data(getWaContext().getWaLoginVO());
-					} else {
-						where = where + " and "
-								+ WherePartUtil.getCommonWhereCondtion4Data(getWaContext().getWaLoginVO());
-					}
-
-					if (caculateTypeVO.getRange().booleanValue()) {
-						String sql = "select pk_psndoc from wa_data where " + where;
-						IUAPQueryBS queryPsn = NCLocator.getInstance().lookup(IUAPQueryBS.class);
-						try {
-							List<String> psns = (List<String>) queryPsn.executeQuery(sql, new ColumnListProcessor());
-							if (psns != null && psns.size() > 0) {
-								pk_psndoclist.addAll(psns);
-							}
-						} catch (BusinessException e) {
-							ExceptionUtils.wrappBusinessException(e.getMessage());
-						}
-					} else {
-						if (!ArrayUtils.isEmpty(payfileVos.toArray(new SuperVO[0]))) {
-							for (int i = 0; i < payfileVos.size(); i++) {
-								pk_psndoclist.add(((DataVO) payfileVos.get(i)).getPk_psndoc());
-							}
-						}
-					}
-					return pk_psndoclist;
+					return Boolean.TRUE;
 				}
 
 				/**
@@ -226,31 +157,34 @@ public class CaculateAction extends PayDataBaseAction {
 				 */
 				@Override
 				protected void done() {
-					if (!StringUtils.isEmpty(errorMessage)) {
+					if (error != null) {
 						ShowStatusBarMsgUtil.showErrorMsg(ResHelper.getString("60130paydata", "060130paydata0335")/*
 																												 * @
 																												 * res
 																												 * "计算过程存在错误"
 																												 */,
-								errorMessage, getContext());
-						// MessageDialog.showErrorDlg(getParentContainer(),
-						// null, error);
-
+								error, getContext());
 					} else {
-						ShowStatusBarMsgUtil.showStatusBarMsg(ResHelper.getString("60130paydata", "060130paydata0336")/*
-																													 * @
-																													 * res
-																													 * "在"
-																													 */
-								+ dialog.getSecond() + ResHelper.getString("60130paydata", "060130paydata0337")/*
-																												 * @
-																												 * res
-																												 * "秒内计算完成."
-																												 */,
+						ShowStatusBarMsgUtil.showStatusBarMsg(
+								ResHelper.getString("60130paydata", "060130paydata0336")/*
+																						 * @
+																						 * res
+																						 * "在"
+																						 */
+										+ dialog.getSecond()
+										+ ResHelper.getString("60130paydata", "060130paydata0337")/*
+																								 * @
+																								 * res
+																								 * "秒内计算完成."
+																								 */
+										+ "含日薪計算（"
+										+ NCLocator.getInstance().lookup(IWadaysalaryQueryService.class)
+												.getCalcuTime(getPaydataModel().getContext().getPk_loginUser()) + "秒）",
 								getContext());
 					}
 				}
 			}.execute();
+
 			// 薪资项目预警
 			String keyName = ResHelper.getString("60130paydata", "060130paydata0331")/*
 																					 * @

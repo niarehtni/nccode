@@ -14,6 +14,7 @@ import javax.naming.NamingException;
 import nc.bs.bd.baseservice.md.SingleBaseService;
 import nc.bs.businessevent.IEventType;
 import nc.bs.dao.BaseDAO;
+import nc.bs.dao.DAOException;
 import nc.bs.framework.common.NCLocator;
 import nc.bs.logging.Logger;
 import nc.bs.pub.SystemException;
@@ -33,6 +34,7 @@ import nc.itf.hr.frame.IHrBillCode;
 import nc.itf.hr.frame.IPersistenceHome;
 import nc.itf.hr.frame.IPersistenceRetrieve;
 import nc.itf.hr.frame.IPersistenceUpdate;
+import nc.itf.hr.wa.IPsndocwadocManageService;
 import nc.itf.trn.TrnDelegator;
 import nc.itf.trn.rds.IRdsManageService;
 import nc.itf.trn.rds.IRdsQueryService;
@@ -56,9 +58,9 @@ import nc.pub.tools.VOUtils;
 import nc.ui.bd.ref.IRefConst;
 import nc.ui.pub.bill.IBillItem;
 import nc.vo.bd.psnid.PsnIdtypeVO;
+import nc.vo.bd.team.team01.entity.TeamItemVO;
 import nc.vo.hi.blacklist.AggBlacklistVO;
 import nc.vo.hi.blacklist.BlacklistVO;
-import nc.vo.hi.entrymng.HiSendMsgHelper;
 import nc.vo.hi.psndoc.CertVO;
 import nc.vo.hi.psndoc.CtrtVO;
 import nc.vo.hi.psndoc.KeyPsnVO;
@@ -90,6 +92,7 @@ import nc.vo.pub.ValidationException;
 import nc.vo.pub.lang.UFBoolean;
 import nc.vo.pub.lang.UFLiteralDate;
 import nc.vo.pub.pf.IPfRetCheckInfo;
+import nc.vo.ta.psndoc.TBMPsndocVO;
 import nc.vo.trn.pub.TRNConst;
 import nc.vo.trn.regmng.RegapplyVO;
 import nc.vo.trn.transitem.TrnTransItemVO;
@@ -2640,6 +2643,208 @@ public class DimissionrdsServiceImpl extends SingleBaseService<PsndocVO> impleme
 		// 人员变动时，如果人员编码设置了后编码规则，根据参数更新人员编码
 		updatePsncode(aggVO, saveData.getPk_hrorg(), TRNConst.Table_NAME_DIMISSION);
 
+	}
+
+	/**
+	 * 此方法是在客戶發現有未錄入的工作記錄數據後,手工在調配記錄上插入.然後通過SQL的方式手工去修改考勤檔案和班組. 触发:调配记录插入 (手工)
+	 * ->修改上一筆工作記錄結束日期
+	 * 
+	 * ->修改上一笔班组定义结束日期 ->插入当前记录的班组定义(开始和结束日期)
+	 * 
+	 * ->拆分考勤档案(按当前的工作记录拆分)
+	 * 
+	 * ->同步当前记录的排班
+	 */
+	@Override
+	public void doAfterInsertPsnjob(PsnJobVO prejob, PsnJobVO psnjob) throws BusinessException {
+		// ->修改上一筆工作記錄結束日期
+		updatePreJob(prejob, psnjob);
+
+		// ->拆分考勤档案(按当前的工作记录拆分)
+		updateTbmPsndoc(prejob, psnjob);
+
+		// ->修改上一笔班组定义结束日期
+		// ->插入当前记录的班组定义(开始和结束日期)
+		updateTeamInfo(prejob, psnjob);
+
+		// ->同步当前记录的排班
+		// syncShift(psnjob);
+
+	}
+
+	/**
+	 * 同步排班
+	 * 
+	 * @param psnjob
+	 */
+	/*
+	 * private void syncShift(PsnJobVO psnjob) { // TODO 自动生成的方法存根
+	 * 
+	 * }
+	 */
+
+	/**
+	 * 拆分和此條工作記錄有交集的考勤檔案 填上新的班組信息和工作記錄基本信息,其他不變
+	 * 
+	 * @param psnjob
+	 * @param psnjob
+	 * @throws DAOException
+	 */
+	private void updateTbmPsndoc(PsnJobVO prejob, PsnJobVO psnjob) throws DAOException {
+		if (prejob != null && prejob.getPk_psnjob() != null) {
+			UFLiteralDate beginDate = psnjob.getBegindate();
+			// 查询所有和当前记录有交集的考勤檔案
+			String sql = "select * from tbm_psndoc where pk_psnjob = '" + prejob.getPk_psnjob() + "'"
+					+ " and dr = 0 and begindate <= '"
+					+ (psnjob.getEnddate() == null ? "9999-12-01" : psnjob.getEnddate().toStdString())
+					+ "' and enddate >= '" + beginDate.toStdString() + "'";
+			@SuppressWarnings("unchecked")
+			List<TBMPsndocVO> toDealTbmList = (List<TBMPsndocVO>) getBaseDAO().executeQuery(sql,
+					new BeanListProcessor(TBMPsndocVO.class));
+
+			if (toDealTbmList != null) {
+				List<SuperVO> newVOList = new ArrayList<>();
+				for (TBMPsndocVO tvo : toDealTbmList) {
+					UFLiteralDate tbmBgdate = tvo.getBegindate();
+					UFLiteralDate tbmEnddate = tvo.getEnddate() == null ? new UFLiteralDate("9999-12-31") : tvo
+							.getEnddate();
+
+					// 如果 "考勤檔案開始日期<工作記錄的開始日期<=考勤檔案的結束日期" 就需要拆分
+					if (tbmBgdate.before(beginDate) && !beginDate.after(tbmEnddate)) {
+						// 拆分為: 1.考勤檔案開始日期~(工作記錄的開始日期-1天) 2.工作記錄的結束日期~考勤檔案的結束日期
+						newVOList.addAll(doSplit(tvo, psnjob));
+					} else {
+						// 其他的需要修改班組信息和工作紀律基本信息
+						newVOList.add(doRenewTbm(tvo, psnjob));
+					}
+				}
+				doSave(newVOList);
+			}
+		}
+	}
+
+	/**
+	 * 更新班組和工作記錄信息
+	 * 
+	 * @param tvo
+	 * @param psnjob
+	 * @return
+	 */
+	private TBMPsndocVO doRenewTbm(TBMPsndocVO tvo, PsnJobVO job) {
+
+		tvo.setPk_psnjob(job.getPk_psnjob());
+		tvo.setPk_adminorg(job.getPk_hrorg());
+		tvo.setPk_dept_v(job.getPk_dept_v());
+		tvo.setPk_group(job.getPk_group());
+		tvo.setPk_org(job.getPk_org());
+		tvo.setPk_org_v(job.getPk_org_v());
+		tvo.setPk_psndoc(job.getPk_psndoc());
+		tvo.setPk_psnorg(job.getPk_psnorg());
+		tvo.setPk_team((String) job.getAttributeValue("jobglbdef7"));
+		tvo.setStatus(VOStatus.UPDATED);
+
+		return tvo;
+	}
+
+	/**
+	 * 拆分為: 1.考勤檔案開始日期~(工作記錄的開始日期-1天) 2.工作記錄的結束日期~考勤檔案的結束日期
+	 * 
+	 * @param tvo
+	 * @param splitDate
+	 * @return
+	 */
+	private List<SuperVO> doSplit(TBMPsndocVO tvo, PsnJobVO job) {
+		List<SuperVO> rtnList = new ArrayList<>();
+
+		TBMPsndocVO newVO = (TBMPsndocVO) tvo.clone();
+		newVO.setBegindate(job.getBegindate());
+		newVO.setPk_psnjob(job.getBegindate().after(tvo.getEnddate()) ? job.getPk_psnjob() : tvo.getPk_psnjob());
+		newVO.setPk_adminorg(job.getPk_hrorg());
+		newVO.setPk_dept_v(job.getPk_dept_v());
+		newVO.setPk_group(job.getPk_group());
+		newVO.setPk_org(job.getPk_org());
+		newVO.setPk_org_v(job.getPk_org_v());
+		newVO.setPk_psndoc(job.getPk_psndoc());
+		newVO.setPk_psnorg(job.getPk_psnorg());
+		newVO.setPk_tbm_psndoc(null);
+		newVO.setPk_team(job.getBegindate().after(tvo.getEnddate()) ? (String) job.getAttributeValue("jobglbdef7")
+				: tvo.getPk_team());
+		newVO.setNotsyncal(tvo.getNotsyncal());
+		newVO.setStatus(VOStatus.NEW);
+		rtnList.add(newVO);
+
+		tvo.setStatus(VOStatus.UPDATED);
+		tvo.setEnddate(job.getBegindate().getDateBefore(1));
+		rtnList.add(tvo);
+
+		return rtnList;
+	}
+
+	private void doSave(List<SuperVO> newVOList) throws DAOException {
+		if (newVOList != null && newVOList.size() > 0) {
+			for (SuperVO vo : newVOList) {
+				if (vo.getStatus() == VOStatus.NEW) {
+					getBaseDAO().insertVO(vo);
+				} else if (vo.getStatus() == VOStatus.UPDATED) {
+					getBaseDAO().updateVO(vo);
+				}
+
+			}
+		}
+
+	}
+
+	/**
+	 * ->修改上一笔班组定义结束日期 ->插入当前记录的班组定义(开始和结束日期) 班組和工作記錄是一一對應的
+	 * 
+	 * @param prejob
+	 * @param psnjob
+	 * @throws BusinessException
+	 */
+	private void updateTeamInfo(PsnJobVO prejob, PsnJobVO psnjob) throws BusinessException {
+		// 修改上一筆記錄
+		if (prejob != null) {
+			String pk_prejob = prejob.getPk_psnjob();
+			String pk_preTeamid = (String) prejob.getAttributeValue("jobglbdef7");
+			if (pk_prejob != null && pk_preTeamid != null) {
+				String sql = "select * from bd_team_b " + " where pk_psnjob = '" + pk_prejob + "' and cteamid = '"
+						+ pk_preTeamid + "' and dr =0";
+				@SuppressWarnings("unchecked")
+				List<TeamItemVO> toDealList = (List<TeamItemVO>) getBaseDAO().executeQuery(sql,
+						new BeanListProcessor(TeamItemVO.class));
+				// 啟基的每條班組信息和調配記錄是一一對應的
+				if (toDealList != null && toDealList.size() > 0) {
+					List<SuperVO> updateList = new ArrayList<>();
+					for (TeamItemVO vo : toDealList) {
+						if (vo.getDstartdate().isSameDate(prejob.getBegindate())) {
+							vo.setDenddate(psnjob.getBegindate().getDateBefore(1));
+							vo.setStatus(VOStatus.UPDATED);
+							updateList.add(vo);
+						}
+					}
+					doSave(updateList);
+				}
+			}
+		}
+		// 插入當前紀律的班組定義
+		if (psnjob.getEnddate() != null) {
+			NCLocator.getInstance().lookup(IPsndocwadocManageService.class).generateTeamItemForInsertPsn(psnjob);
+		} else {
+			NCLocator.getInstance().lookup(IPsndocwadocManageService.class).generateTeamItem(psnjob);
+		}
+	}
+
+	/**
+	 * ->修改上一筆工作記錄結束日期
+	 * 
+	 * @param prejob
+	 * @param psnjob
+	 * @throws DAOException
+	 */
+	private void updatePreJob(PsnJobVO prejob, PsnJobVO psnjob) throws DAOException {
+		prejob.setEnddate(psnjob.getBegindate().getDateBefore(1));
+		prejob.setStatus(VOStatus.UPDATED);
+		getBaseDAO().updateVO(prejob);
 	}
 
 }

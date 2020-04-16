@@ -194,7 +194,7 @@ public class BaseOrgPanel_Org extends BaseOrgPanel {
 
 	}
 
-	protected UIRefPane getRefPane() {
+	public UIRefPane getRefPane() {
 		if (this.refPane == null) {
 			this.refPane = new UIRefPane();
 			this.refPane.setRefNodeName(getNodeName());

@@ -2,8 +2,8 @@ package nc.bs.hrta.leaveextrarest.ace.bp;
 
 import nc.bs.hrta.leaveextrarest.plugin.bpplugin.LeaveextrarestPluginPoint;
 import nc.impl.pubapp.pattern.data.bill.template.InsertBPTemplate;
-import nc.impl.pubapp.pattern.rule.processer.AroundProcesser;
 import nc.impl.pubapp.pattern.rule.IRule;
+import nc.impl.pubapp.pattern.rule.processer.AroundProcesser;
 import nc.vo.ta.leaveextrarest.AggLeaveExtraRestVO;
 
 /**
@@ -41,5 +41,9 @@ public class AceLeaveextrarestInsertBP {
 		IRule<AggLeaveExtraRestVO> rule = null;
 		rule = new nc.bs.pubapp.pub.rule.FillInsertDataRule();
 		processer.addBeforeRule(rule);
+
+		rule = new CheckSettledRule();
+		processer.addBeforeRule(rule);
+		;
 	}
 }

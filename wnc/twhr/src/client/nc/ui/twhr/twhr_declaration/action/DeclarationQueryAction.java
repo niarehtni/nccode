@@ -24,7 +24,7 @@ public class DeclarationQueryAction extends DefaultQueryAction{
 	 */
 	private static final long serialVersionUID = 2454391567868762831L;
 	
-	private PrimaryOrgPanel primaryOrgPanel = null;
+	private nc.ui.twhr.glb.view.OrgPanel_Org primaryOrgPanel = null;
 		
 	
 	@Override
@@ -35,11 +35,11 @@ public class DeclarationQueryAction extends DefaultQueryAction{
 		return true;
 	}
 
-	public PrimaryOrgPanel getPrimaryOrgPanel() {
+	public nc.ui.twhr.glb.view.OrgPanel_Org getPrimaryOrgPanel() {
 		return primaryOrgPanel;
 	}
 
-	public void setPrimaryOrgPanel(PrimaryOrgPanel primaryOrgPanel) {
+	public void setPrimaryOrgPanel(nc.ui.twhr.glb.view.OrgPanel_Org primaryOrgPanel) {
 		this.primaryOrgPanel = primaryOrgPanel;
 	}
 	
@@ -59,15 +59,10 @@ public class DeclarationQueryAction extends DefaultQueryAction{
 	QueryConditionDLGDelegator dlg = getQryDLGDelegator();
 	
 	//获取选择的人力资源组织
-	
-	
-	String pk_hrOrg = getPrimaryOrgPanel().getRefPane().getRefPK();
-	dlg.setDefaultValue("pk_hrorg_temp", pk_hrOrg);
 	dlg.getQueryConditionDLG().beforeShowModal();
 	for (IFilterEditor edt : dlg.getSimpleEditorFilterEditors()) {
 	    IFilter flt = edt.getFilter();
-	    if (flt.getFilterMeta().getFieldCode().equals("legal_org_temp")
-		    || flt.getFilterMeta().getFieldCode().equals("pk_psndoc_temp")
+	    if (flt.getFilterMeta().getFieldCode().equals("pk_psndoc_temp")
 		    || flt.getFilterMeta().getFieldCode().equals("pk_waperiod_temp")
 	    	|| flt.getFilterMeta().getFieldCode().equals("pk_dept_temp")) {
 	    
@@ -75,7 +70,13 @@ public class DeclarationQueryAction extends DefaultQueryAction{
 			.getFieldValueElemEditor().getFieldValueElemEditorComponent()).getRefModel().setPk_org(
 					getPrimaryOrgPanel().getRefPane().getRefPK());
 		
-	    }else if(flt.getFilterMeta().getFieldCode().equals("pk_hrorg_temp")){
+	    }else if(flt.getFilterMeta().getFieldCode().equals("legal_org_temp")){
+
+	    	((DefaultFieldValueEditor) ((DefaultFilterEditor) edt).getFieldValueEditor()).setValue(orgValue);
+			flt.setFieldValue(orgValue);
+			
+			
+			
 	    	UIRefPane hrPanel = ((UIRefPane) ((DefaultFieldValueEditor) ((DefaultFilterEditor) edt).getFieldValueEditor())
 	    			.getFieldValueElemEditor().getFieldValueElemEditorComponent());
 	    	hrPanel.setEnabled(false);

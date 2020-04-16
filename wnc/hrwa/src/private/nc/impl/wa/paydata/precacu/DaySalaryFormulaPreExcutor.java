@@ -25,6 +25,11 @@ import nc.vo.wa.pub.WaLoginContext;
  */
 public class DaySalaryFormulaPreExcutor extends AbstractPreExcutorFormulaParse {
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -381307272761044759L;
+
 	@Override
 	public void excute(Object formula, WaLoginContext context) throws BusinessException {
 		// ÏÈÇå¿Õ”µ“þ
@@ -32,7 +37,7 @@ public class DaySalaryFormulaPreExcutor extends AbstractPreExcutorFormulaParse {
 				+ "' and creator = '" + context.getPk_loginUser() + "'";
 		getBaseDao().executeUpdate(sql);
 
-		sql = "select DISTINCT pk_psndoc from wa_cacu_data where pk_wa_class=  '" + context.getPk_wa_class()
+		sql = "select DISTINCT pk_psndoc from wa_cacu_data where pk_wa_class= '" + context.getPk_wa_class()
 				+ "' and creator = '" + context.getPk_loginUser() + "'";
 
 		@SuppressWarnings("unchecked")
@@ -40,12 +45,14 @@ public class DaySalaryFormulaPreExcutor extends AbstractPreExcutorFormulaParse {
 		String cyear = context.getCyear();
 		String cperiod = context.getCperiod();
 		String[] arguments = getArguments(formula.toString());
-		String pk_wa_item = String.valueOf(arguments[0]).replaceAll("\'", "");
-		String pk_group_item = String.valueOf(arguments[1]).replaceAll("\'", "");
+		String pk_wa_item = arguments[0].replaceAll("\'", "");
 		String[] psndocs = (String[]) pk_psndocs.toArray(new String[pk_psndocs.size()]);
+		String pk_group_item = arguments[1].replaceAll("\'", "");;
+		String pk_org = context.getPk_org();
 		Map<String, UFDouble> psnSalaryMap = lookup(IWadaysalaryQueryService.class)
-				.getTotalDaySalaryMapByWaItemWithoutRecalculate(psndocs, context.getPk_wa_class(), cyear, cperiod,
-						pk_wa_item, pk_group_item);
+				.getTotalDaySalaryMapByWaItemWithoutRecalculate(
+						pk_org,psndocs, context.getPk_wa_class(), cyear, cperiod,
+						pk_wa_item,pk_group_item);
 		if (psnSalaryMap == null || psnSalaryMap.size() == 0) {
 			return;
 		}
@@ -80,5 +87,4 @@ public class DaySalaryFormulaPreExcutor extends AbstractPreExcutorFormulaParse {
 		}
 		return baseDao;
 	}
-
 }

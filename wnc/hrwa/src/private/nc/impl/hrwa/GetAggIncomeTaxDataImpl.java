@@ -89,8 +89,8 @@ public class GetAggIncomeTaxDataImpl implements IGetAggIncomeTaxData {
 		qrySql.append("	psn.id AS id,\n");
 		qrySql.append("	psn.pk_group AS pk_group,\n");
 		qrySql.append(" hi_psndoc_ptcost.paydate AS cpaydate,\n");
-		qrySql.append("	SUBSTRING(hi_psndoc_ptcost.paydate,1,4)+SUBSTRING(hi_psndoc_ptcost.paydate,6,2) AS cperiod,\n");
-		qrySql.append(" SUBSTRING(hi_psndoc_ptcost.paydate,1,4)+SUBSTRING(hi_psndoc_ptcost.paydate,6,2) AS cyearperiod,\n");// 会计期间
+		qrySql.append(" SUBSTRING(hi_psndoc_ptcost.paydate,1,4) || SUBSTRING(hi_psndoc_ptcost.paydate,6,2) AS cperiod,\n");
+		qrySql.append(" SUBSTRING(hi_psndoc_ptcost.paydate,1,4) || SUBSTRING(hi_psndoc_ptcost.paydate,6,2) AS cyearperiod,\n");// 会计期间
 		qrySql.append(" hi_psndoc_ptcost.payamount AS taxbase,\n");
 		qrySql.append(" hi_psndoc_ptcost.taxamount AS cacu_value,\n");
 		qrySql.append(" ISNULL(hi_psndoc_ptcost.payamount, 0)-ISNULL(hi_psndoc_ptcost.taxamount, 0) AS netincome,\n");
@@ -129,6 +129,21 @@ public class GetAggIncomeTaxDataImpl implements IGetAggIncomeTaxData {
 			IncomeTaxVO hvo = getHVOFromMap(hvoMap, voAttrTypeMap);
 			if (null != hvo) {
 				AggIncomeTaxVO aggVO = new AggIncomeTaxVO();
+				// mod start Ares.Tank 对刚刚解密的数据再加密回去 2018-8-21 11:04:06
+				// ps. 这是一件非常蠢的事,不要问我为什么,我只是来改bug的,我只能这么干
+				if (hvo.getCacu_value() != null) {
+					hvo.setCacu_value(new UFDouble(SalaryEncryptionUtil.encryption(hvo.getCacu_value().getDouble())));
+				}
+				if (hvo.getNetincome() != null) {
+					hvo.setNetincome(new UFDouble(SalaryEncryptionUtil.encryption(hvo.getNetincome().getDouble())));
+				}
+				if (hvo.getTaxbase() != null) {
+					hvo.setTaxbase(new UFDouble(SalaryEncryptionUtil.encryption(hvo.getTaxbase().getDouble())));
+				}
+				if (hvo.getPickedup() != null) {
+					hvo.setPickedup(new UFDouble(SalaryEncryptionUtil.encryption(hvo.getPickedup().getDouble())));
+				}
+				// mod end Ares.Tank 对刚刚解密的数据再加密回去 2018-8-21 11:04:06
 				aggVO.setParentVO(hvo);
 				aggVoList.add(aggVO);
 				psnList.add(hvo.getPk_psndoc());
@@ -269,7 +284,9 @@ public class GetAggIncomeTaxDataImpl implements IGetAggIncomeTaxData {
 						+ " 23:59:59' AND wap.cpaydate>='" + firstday + " 00:00:00')\n");
 			} else if ("1001ZZ1000000001O22R".equals(twhr07)) {// 薪资期间
 				String inCyearperiod = isc.getInSQL(getCyearperiod(year, beginMonth, endMonth));
-				qrySql.append("(wac.pk_org = '" + orgs[i] + "' AND (cast(wa.cyear as varchar(20)) || cast(wa.cperiod as varchar(20))) in (" + inCyearperiod + "))\n");
+				qrySql.append("(wac.pk_org = '" + orgs[i]
+						+ "' AND (cast(wa.cyear as varchar(20)) || cast(wa.cperiod as varchar(20))) in ("
+						+ inCyearperiod + "))\n");
 			} else {
 				throw new BusinessException(ResHelper.getString("incometax", "2incometax-n-000048")/* "组织参数TWHR07未维护" */);
 			}
@@ -357,9 +374,9 @@ public class GetAggIncomeTaxDataImpl implements IGetAggIncomeTaxData {
 
 		// MOD(外籍满与未满183天员工申请生成的判断修复)
 		// by ssx on 2019-05-21
-		if(!isForeignDeparture) {
+		if (!isForeignDeparture) {
 			if (isForeignMonth) {
-			// 外籍逐月申报：判断是否外籍员工，如果满了183天，则不属于外籍员工
+				// 外籍逐月申报：判断是否外籍员工，如果满了183天，则不属于外籍员工
 				Iterator<AggIncomeTaxVO> it = aggVoList.iterator();
 				while (it.hasNext()) {
 					AggIncomeTaxVO aggVO = it.next();
@@ -368,6 +385,11 @@ public class GetAggIncomeTaxDataImpl implements IGetAggIncomeTaxData {
 					String twhr09 = twhr09Map.get(hvo.getPk_hrorg());
 					UFBoolean isForeign = (UFBoolean) psnMap.get(hvo.getPk_psndoc()).getAttributeValue(
 							LocalizationSysinitUtil.getTwhrlPsn("TWHRLPSN01"));
+					
+					// 申報明細檔生成錯誤勞退自提取值異常  by George 20200304 缺陷Bug #33464
+				    // 當 人員資料(bd_psndoc) 的 是否外籍員工(glbdef7) 沒勾選的情況可能是 null 或 'N'，null時會報NullPointerException
+					isForeign = isForeign == null ? UFBoolean.FALSE : isForeign;
+					
 					UFDouble expireNum = expireNumMap.get(hvo.getPk_hrorg());
 					if (!isForeign.booleanValue()
 							|| isExpire(twhr08, twhr09, expireNum, psnMap.get(hvo.getPk_psndoc()), hvo.getCyear(),
@@ -378,6 +400,7 @@ public class GetAggIncomeTaxDataImpl implements IGetAggIncomeTaxData {
 			} else {
 				// 非逐月申报：判断是否外籍员工，不满183天，应从申报范围中删除
 				Iterator<AggIncomeTaxVO> it = aggVoList.iterator();
+				LocalizationSysinitUtil.reloadRefs();
 				while (it.hasNext()) {
 					AggIncomeTaxVO aggVO = it.next();
 					IncomeTaxVO hvo = aggVO.getParentVO();
@@ -385,6 +408,11 @@ public class GetAggIncomeTaxDataImpl implements IGetAggIncomeTaxData {
 					String twhr09 = twhr09Map.get(hvo.getPk_hrorg());
 					UFBoolean isForeign = (UFBoolean) psnMap.get(hvo.getPk_psndoc()).getAttributeValue(
 							LocalizationSysinitUtil.getTwhrlPsn("TWHRLPSN01"));
+					
+					// 申報明細檔生成錯誤勞退自提取值異常  by George 20200304 缺陷Bug #33464
+				    // 當 人員資料(bd_psndoc) 的 是否外籍員工(glbdef7) 沒勾選的情況可能是 null 或 'N'，null時會報NullPointerException
+					isForeign = isForeign == null ? UFBoolean.FALSE : isForeign;
+					
 					UFDouble expireNum = expireNumMap.get(hvo.getPk_hrorg());
 					if (isForeign.booleanValue()
 							&& !isExpire(twhr08, twhr09, expireNum, psnMap.get(hvo.getPk_psndoc()), hvo.getCyear(),
@@ -396,15 +424,17 @@ public class GetAggIncomeTaxDataImpl implements IGetAggIncomeTaxData {
 		}
 		// end
 
-		// 判断档案是否已经生产，如果已经生成未汇总则覆盖，否则不能生成
-		Map<String, UFBoolean> isgather = getIsgather(pk_wa_dataList.toArray(new String[0]));
+		// 申報明細檔生成錯誤勞退自提取值異常  by George 20200304 缺陷Bug #33464
+		// 判断档案是否已经生产，如果已经生成未申報则覆盖，否则不能生成
+		Map<String, UFBoolean> isdeclare = getIsdeclare(pk_wa_dataList.toArray(new String[0]));
 		List<String> deleteList = new ArrayList<String>();
 		Iterator<AggIncomeTaxVO> it = aggVoList.iterator();
 		while (it.hasNext()) {
 			AggIncomeTaxVO aggVO = it.next();
 			IncomeTaxVO hvo = aggVO.getParentVO();
-			if (null != isgather.get(hvo.getPk_wa_data())) {
-				if (isgather.get(hvo.getPk_wa_data()).booleanValue()) {// 已汇总
+			// 判斷是否申報
+			if (null != isdeclare.get(hvo.getPk_wa_data())) {
+				if (isdeclare.get(hvo.getPk_wa_data()).booleanValue()) {// 已申報
 					it.remove();
 				} else {
 					deleteList.add(hvo.getPk_wa_data());
@@ -558,6 +588,10 @@ public class GetAggIncomeTaxDataImpl implements IGetAggIncomeTaxData {
 			// 其餘情況皆屬於外籍員工未滿183天。
 
 			// 居留證到期日
+			if (psn.getAttributeValue(LocalizationSysinitUtil.getTwhrlPsn("TWHRLPSN04")) == null) {
+				throw new BusinessException("員工 [" + psn.getCode() + "] 的居留證到期日期為空");
+			}
+
 			UFLiteralDate permitDate = new UFDate(psn.getAttributeValue(
 					LocalizationSysinitUtil.getTwhrlPsn("TWHRLPSN04")).toString())
 					.toUFLiteralDate(UFLiteralDate.BASE_TIMEZONE);
@@ -568,13 +602,13 @@ public class GetAggIncomeTaxDataImpl implements IGetAggIncomeTaxData {
 			// 是否當年入職（當年=薪資計算所在年度，即：入職年度=薪資計算期間所在年度）
 			UFLiteralDate joinDate = null;
 			Collection<PsnOrgVO> psnorgs = getDao().retrieveByClause(PsnOrgVO.class,
-					"pk_psndoc='" + psn.getPk_psndoc() + "' and endflag='N' and lastflag='Y'");
-			if (psnorgs != null && psnorgs.size() >= 0) {
+					"pk_psndoc='" + psn.getPk_psndoc() + "' and  lastflag='Y'");
+			if (psnorgs != null && psnorgs.size() > 0) {
 				joinDate = psnorgs.toArray(new PsnOrgVO[0])[0].getJoinsysdate();
 			}
 
 			if (joinDate == null) {
-				throw new BusinessException("未找到員工 [] 的到職日，無法判斷其居留情況。");
+				throw new BusinessException("未找到員工 [" + psn.getCode() + "] 的到職日，無法判斷其居留情況。");
 			}
 
 			if (joinDate.getYear() == Integer.valueOf(year)) {
@@ -847,6 +881,13 @@ public class GetAggIncomeTaxDataImpl implements IGetAggIncomeTaxData {
 		return map;
 	}
 
+	/**
+	 * 判断档案是否已经生产，如果已经生成未汇总则覆盖，否则不能生成
+	 * 
+	 * @param pk_wa_data
+	 * @return
+	 * @throws BusinessException
+	 */
 	private Map<String, UFBoolean> getIsgather(String[] pk_wa_data) throws BusinessException {
 		InSQLCreator isc = new InSQLCreator();
 		String inPsndocSql = isc.getInSQL(pk_wa_data);
@@ -860,6 +901,34 @@ public class GetAggIncomeTaxDataImpl implements IGetAggIncomeTaxData {
 				HashMap<String, Object> hashMap = listMaps.get(i);
 				String pk_org = hashMap.get("pk_wa_data") != null ? hashMap.get("pk_wa_data").toString() : "";
 				String value = hashMap.get("isgather") != null ? hashMap.get("isgather").toString() : "N";
+				map.put(pk_org, new UFBoolean(value));
+			}
+		}
+		return map;
+	}
+	
+	/**
+	 * 判断档案是否已经生产，如果已经生成未申報则覆盖，否则不能生成
+	 * 
+	 * @author by George
+	 * @param pk_wa_data
+	 * @date 20200204
+	 * @return
+	 * @throws BusinessException
+	 */
+	private Map<String, UFBoolean> getIsdeclare(String[] pk_wa_data) throws BusinessException {
+		InSQLCreator isc = new InSQLCreator();
+		String inPsndocSql = isc.getInSQL(pk_wa_data);
+		String qrySql = "SELECT\n" + "	pk_wa_data,\n" + "	isdeclare\n" + "FROM\n" + "	hrwa_incometax\n" + "WHERE\n"
+				+ "	pk_wa_data IN (" + inPsndocSql + ")\n" + "AND ISNULL(dr, 0) = 0";
+		List<HashMap<String, Object>> listMaps = (ArrayList<HashMap<String, Object>>) getDao().executeQuery(
+				qrySql.toString(), new MapListProcessor());
+		Map<String, UFBoolean> map = new HashMap<String, UFBoolean>();
+		if (listMaps != null && listMaps.size() > 0) {
+			for (int i = 0; i < listMaps.size(); i++) {
+				HashMap<String, Object> hashMap = listMaps.get(i);
+				String pk_org = hashMap.get("pk_wa_data") != null ? hashMap.get("pk_wa_data").toString() : "";
+				String value = hashMap.get("isdeclare") != null ? hashMap.get("isdeclare").toString() : "N";
 				map.put(pk_org, new UFBoolean(value));
 			}
 		}

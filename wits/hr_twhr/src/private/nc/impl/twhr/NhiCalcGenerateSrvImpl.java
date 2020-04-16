@@ -1,6 +1,7 @@
 package nc.impl.twhr;
 
 import java.lang.reflect.Array;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -23,6 +24,7 @@ import nc.itf.hr.hi.WadocQueryVOCutUtils.MoneyCalcTypeEnum;
 import nc.itf.twhr.INhiCalcGenerateSrv;
 import nc.itf.twhr.INhicalcMaintain;
 import nc.jdbc.framework.processor.BeanListProcessor;
+import nc.jdbc.framework.processor.ColumnProcessor;
 import nc.jdbc.framework.processor.MapListProcessor;
 import nc.pubitf.twhr.IRangetablePubQuery;
 import nc.vo.bd.meta.BatchOperateVO;
@@ -239,7 +241,6 @@ public class NhiCalcGenerateSrvImpl implements INhiCalcGenerateSrv {
 
 		checkNhiVOs(nhiVOs);
 
-		// 對比勞健保與定調薪資料
 		NhiCalcVO[] nhiFinalVOs = compareNhiData(nhiVOs, adjMap, psnList, pk_org, cyear, cperiod);
 		this.setRangeTables(null);
 		return nhiFinalVOs;
@@ -448,6 +449,21 @@ public class NhiCalcGenerateSrvImpl implements INhiCalcGenerateSrv {
 					nhivo.setOldhealthsalary(new UFDouble(getDoubleValue(healthSetting.getAttributeValue("glbdef6"))
 							+ getDoubleValue(healthSetting.getAttributeValue("glbdef7"))));
 					nhivo.setOldhealthrange(new UFDouble(getDoubleValue(healthSetting.getAttributeValue("glbdef16"))));
+				}
+			} else {
+				// 定調資信息維護的勞健保加保按鈕，對應的健保級距是healthrange by George 20190805 缺陷Bug #28256
+				// 計算勞健保節點的健保級距，對應的是oldhealthrange
+				// 人員當月健保金額為0時，健保級距也需要顯示人員當月加保級距
+				String strSQL = "SELECT glbdef16 FROM hi_psndoc_glbdef3 WHERE pk_psndoc = '" + nhivo.getPk_psndoc() + "' "
+						+ " and dr = 0 and glbdef14 = N'Y' and glbdef2 = '本人' "
+						+ " and enddate >= '" + beginDateOfMonth + "' and enddate <= '" + endDateOfMonth + "'"; 
+				
+				BigDecimal bd=(BigDecimal) new BaseDAO().executeQuery(strSQL, new ColumnProcessor());
+				
+				if (null != bd) {
+					bd=bd.setScale(0, UFDouble.ROUND_DOWN);
+					String Oldhealthrange = bd.toString();
+					nhivo.setOldhealthrange(new UFDouble(Oldhealthrange));
 				}
 			}
 

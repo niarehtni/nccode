@@ -683,4 +683,10 @@ public class PsnjobImportExecutor extends DataImportExecutor implements IDataExc
 		// TODO 自动生成的方法存根
 
 	}
+
+	@Override
+	public void doQueryByBP() throws BusinessException {
+		// TODO 自動產生的方法 Stub
+
+	}
 }

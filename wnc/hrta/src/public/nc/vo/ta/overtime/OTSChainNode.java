@@ -1,5 +1,6 @@
 package nc.vo.ta.overtime;
 
+import nc.bs.uap.oid.OidGenerator;
 
 /**
  * 加班分段明細雙向鏈表
@@ -34,7 +35,8 @@ public class OTSChainNode extends DoublyLinkedListNode<SegDetailVO> {
 
 	public OTSChainNode cloneSingle() {
 		OTSChainNode clonedNode = new OTSChainNode();
-		clonedNode.setNodeData(this.getNodeData());
+		clonedNode.setNodeData((SegDetailVO) this.getNodeData().clone());
+		clonedNode.getNodeData().setPk_segdetail(OidGenerator.getInstance().nextOid());
 		clonedNode.setNextNode(null);
 		clonedNode.setPriorNode(null);
 		return clonedNode;

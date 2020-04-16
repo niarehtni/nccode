@@ -1,10 +1,6 @@
 package nc.ui.wa.itemgroup.action;
 
-import nc.bs.framework.common.NCLocator;
-import nc.itf.uap.IUAPQueryBS;
-import nc.jdbc.framework.processor.ColumnProcessor;
 import nc.ui.pubapp.uif2app.actions.DifferentVOSaveAction;
-import nc.vo.pub.BusinessException;
 import nc.vo.wa.itemgroup.AggItemGroupVO;
 
 public class GroupItemSaveAction extends DifferentVOSaveAction {
@@ -19,27 +15,10 @@ public class GroupItemSaveAction extends DifferentVOSaveAction {
 		if (null != getEditor().getValue()) {
 			AggItemGroupVO value = (AggItemGroupVO) getEditor().getValue();
 			if (value.getParentVO() != null) {
-				if (value.getParentVO().getPk_org() == null) {
-					value.getParentVO().setPk_org(getModel().getContext().getPk_org());
-				}
-				value.getParentVO().setPk_org_v(getOrgVerion(value.getParentVO().getPk_org()));
-				getEditor().setValue(value);
+				//改为全局节点 tank 2019年10月17日15:06:20 
+				value.getParentVO().setPk_org("GLOBLE00000000000000");
+				value.getParentVO().setPk_org_v("GLOBLE00000000000000");
 			}
 		}
-
 	}
-
-	private String getOrgVerion(String pk_org) {
-		if (null == pk_org) {
-			return null;
-		}
-		String sql = "select pk_vid from org_orgs where pk_org = '" + pk_org + "'";
-		try {
-			return (String) NCLocator.getInstance().lookup(IUAPQueryBS.class).executeQuery(sql, new ColumnProcessor());
-		} catch (BusinessException e) {
-			e.printStackTrace();
-		}
-		return null;
-	}
-
 }

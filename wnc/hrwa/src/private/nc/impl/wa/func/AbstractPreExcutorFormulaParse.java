@@ -1,14 +1,20 @@
 package nc.impl.wa.func;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
-import nc.jdbc.framework.JdbcSession;
-import nc.jdbc.framework.PersistenceManager;
-import nc.jdbc.framework.exception.DbException;
+import nc.bs.dao.BaseDAO;
+import nc.bs.dao.DAOException;
+import nc.jdbc.framework.processor.MapListProcessor;
 import nc.vo.dataitem.pub.DataVOUtils;
+import nc.vo.hi.psndoc.PsnJobVO;
 import nc.vo.hr.func.FunctionReplaceVO;
 import nc.vo.pub.BusinessException;
 import nc.vo.pub.lang.UFDouble;
+import nc.vo.pub.lang.UFLiteralDate;
+import nc.vo.ta.period.PeriodVO;
+import nc.vo.ta.timeitem.LeaveTypeCopyVO;
 import nc.vo.wa.classitem.WaClassItemVO;
 import nc.vo.wa.paydata.IFormula;
 
@@ -52,74 +58,170 @@ public abstract class AbstractPreExcutorFormulaParse extends AbstractWAFormulaPa
 		return fvo;
 	}
 
-	protected void writeToTempData(String pk_wa_class, String creator, Map<String, UFDouble[]> ovtFeeResult) {
+	protected void writeToWaOTTempData(String pk_wa_class, String creator, Map<String, UFDouble[]> ovtFeeResult,
+			boolean isLeave) {
 		// 批量更新
-		PersistenceManager sessionManager = null;
 		try {
-			sessionManager = PersistenceManager.getInstance();
-			JdbcSession session = sessionManager.getJdbcSession();
 			for (String pk_psndoc : ovtFeeResult.keySet()) {
-				UFDouble amountTaxFree = (ovtFeeResult.get(pk_psndoc) == null || ovtFeeResult.get(pk_psndoc).length < 1) ? UFDouble.ZERO_DBL
-						: ovtFeeResult.get(pk_psndoc)[0];
-				UFDouble amountTaxable = (ovtFeeResult.get(pk_psndoc) == null || ovtFeeResult.get(pk_psndoc).length < 3) ? UFDouble.ZERO_DBL
-						: ovtFeeResult.get(pk_psndoc)[2];
-				session.addBatch("delete from wa_cacu_overtimefee where pk_wa_class='" + pk_wa_class
-						+ "' and creator='" + creator + "' and pk_psndoc='" + pk_psndoc + "' and intcomp=0;");
-				session.addBatch("insert into wa_cacu_overtimefee (pk_wa_class, creator, pk_psndoc, intcomp, amounttaxfree, amounttaxable) values ('"
-						+ pk_wa_class
-						+ "','"
-						+ creator
-						+ "','"
-						+ pk_psndoc
-						+ "',"
-						+ String.valueOf(0)
-						+ ","
-						+ amountTaxFree.toString() + "," + amountTaxable.toString() + ");");
+				if (!isLeave) {
+					// 轉調休
+					UFDouble amountTaxFree = (ovtFeeResult.get(pk_psndoc) == null || ovtFeeResult.get(pk_psndoc).length < 1) ? UFDouble.ZERO_DBL
+							: ovtFeeResult.get(pk_psndoc)[0];
+					UFDouble amountTaxable = (ovtFeeResult.get(pk_psndoc) == null || ovtFeeResult.get(pk_psndoc).length < 3) ? UFDouble.ZERO_DBL
+							: ovtFeeResult.get(pk_psndoc)[2];
+					getBaseDao().executeUpdate(
+							"delete from wa_cacu_overtimefee where pk_wa_class='" + pk_wa_class + "' and creator='"
+									+ creator + "' and pk_psndoc='" + pk_psndoc + "' and intcomp=0;");
+					getBaseDao().executeUpdate(
+							"insert into wa_cacu_overtimefee (pk_wa_class, creator, pk_psndoc, intcomp, amounttaxfree, amounttaxable) values ('"
+									+ pk_wa_class + "','" + creator + "','" + pk_psndoc + "'," + String.valueOf(0)
+									+ "," + amountTaxFree.toString() + "," + amountTaxable.toString() + ");");
 
-				amountTaxFree = (ovtFeeResult.get(pk_psndoc) == null || ovtFeeResult.get(pk_psndoc).length < 2) ? UFDouble.ZERO_DBL
-						: ovtFeeResult.get(pk_psndoc)[1];
-				amountTaxable = (ovtFeeResult.get(pk_psndoc) == null || ovtFeeResult.get(pk_psndoc).length < 4) ? UFDouble.ZERO_DBL
-						: ovtFeeResult.get(pk_psndoc)[3];
-				session.addBatch("delete from wa_cacu_overtimefee where pk_wa_class='" + pk_wa_class
-						+ "' and creator='" + creator + "' and pk_psndoc='" + pk_psndoc + "' and intcomp=1;");
-				session.addBatch("insert into wa_cacu_overtimefee (pk_wa_class, creator, pk_psndoc, intcomp, amounttaxfree, amounttaxable) values ('"
-						+ pk_wa_class
-						+ "','"
-						+ creator
-						+ "','"
-						+ pk_psndoc
-						+ "',"
-						+ String.valueOf(1)
-						+ ","
-						+ amountTaxFree.toString() + "," + amountTaxable.toString() + ");");
+					// 非轉調休
+					amountTaxFree = (ovtFeeResult.get(pk_psndoc) == null || ovtFeeResult.get(pk_psndoc).length < 2) ? UFDouble.ZERO_DBL
+							: ovtFeeResult.get(pk_psndoc)[1];
+					amountTaxable = (ovtFeeResult.get(pk_psndoc) == null || ovtFeeResult.get(pk_psndoc).length < 4) ? UFDouble.ZERO_DBL
+							: ovtFeeResult.get(pk_psndoc)[3];
+					getBaseDao().executeUpdate(
+							"delete from wa_cacu_overtimefee where pk_wa_class='" + pk_wa_class + "' and creator='"
+									+ creator + "' and pk_psndoc='" + pk_psndoc + "' and intcomp=1;");
+					getBaseDao().executeUpdate(
+							"insert into wa_cacu_overtimefee (pk_wa_class, creator, pk_psndoc, intcomp, amounttaxfree, amounttaxable) values ('"
+									+ pk_wa_class + "','" + creator + "','" + pk_psndoc + "'," + String.valueOf(1)
+									+ "," + amountTaxFree.toString() + "," + amountTaxable.toString() + ");");
 
-				amountTaxFree = ((ovtFeeResult.get(pk_psndoc) == null || ovtFeeResult.get(pk_psndoc).length < 1) ? UFDouble.ZERO_DBL
-						: ovtFeeResult.get(pk_psndoc)[0]).add((ovtFeeResult.get(pk_psndoc) == null || ovtFeeResult
-						.get(pk_psndoc).length < 2) ? UFDouble.ZERO_DBL : ovtFeeResult.get(pk_psndoc)[1]);
-				amountTaxable = ((ovtFeeResult.get(pk_psndoc) == null || ovtFeeResult.get(pk_psndoc).length < 3) ? UFDouble.ZERO_DBL
-						: ovtFeeResult.get(pk_psndoc)[2]).add((ovtFeeResult.get(pk_psndoc) == null || ovtFeeResult
-						.get(pk_psndoc).length < 4) ? UFDouble.ZERO_DBL : ovtFeeResult.get(pk_psndoc)[3]);
-				session.addBatch("delete from wa_cacu_overtimefee where pk_wa_class='" + pk_wa_class
-						+ "' and creator='" + creator + "' and pk_psndoc='" + pk_psndoc + "' and intcomp=2;");
-				session.addBatch("insert into wa_cacu_overtimefee (pk_wa_class, creator, pk_psndoc, intcomp, amounttaxfree, amounttaxable) values ('"
-						+ pk_wa_class
-						+ "','"
-						+ creator
-						+ "','"
-						+ pk_psndoc
-						+ "',"
-						+ String.valueOf(2)
-						+ ","
-						+ amountTaxFree.toString() + "," + amountTaxable.toString() + ");");
+					// 合計
+					amountTaxFree = ((ovtFeeResult.get(pk_psndoc) == null || ovtFeeResult.get(pk_psndoc).length < 1) ? UFDouble.ZERO_DBL
+							: ovtFeeResult.get(pk_psndoc)[0]).add((ovtFeeResult.get(pk_psndoc) == null || ovtFeeResult
+							.get(pk_psndoc).length < 2) ? UFDouble.ZERO_DBL : ovtFeeResult.get(pk_psndoc)[1]);
+					amountTaxable = ((ovtFeeResult.get(pk_psndoc) == null || ovtFeeResult.get(pk_psndoc).length < 3) ? UFDouble.ZERO_DBL
+							: ovtFeeResult.get(pk_psndoc)[2]).add((ovtFeeResult.get(pk_psndoc) == null || ovtFeeResult
+							.get(pk_psndoc).length < 4) ? UFDouble.ZERO_DBL : ovtFeeResult.get(pk_psndoc)[3]);
+					getBaseDao().executeUpdate(
+							"delete from wa_cacu_overtimefee where pk_wa_class='" + pk_wa_class + "' and creator='"
+									+ creator + "' and pk_psndoc='" + pk_psndoc + "' and intcomp=2;");
+					getBaseDao().executeUpdate(
+							"insert into wa_cacu_overtimefee (pk_wa_class, creator, pk_psndoc, intcomp, amounttaxfree, amounttaxable) values ('"
+									+ pk_wa_class + "','" + creator + "','" + pk_psndoc + "'," + String.valueOf(2)
+									+ "," + amountTaxFree.toString() + "," + amountTaxable.toString() + ");");
+				} else {
+					// 轉調休
+					UFDouble amountTaxFree = (ovtFeeResult.get(pk_psndoc) == null || ovtFeeResult.get(pk_psndoc).length < 1) ? UFDouble.ZERO_DBL
+							: ovtFeeResult.get(pk_psndoc)[0];
+					UFDouble amountTaxable = (ovtFeeResult.get(pk_psndoc) == null || ovtFeeResult.get(pk_psndoc).length < 3) ? UFDouble.ZERO_DBL
+							: ovtFeeResult.get(pk_psndoc)[2];
+					getBaseDao().executeUpdate(
+							"delete from wa_cacu_overtimefee where pk_wa_class='" + pk_wa_class + "' and creator='"
+									+ creator + "' and pk_psndoc='" + pk_psndoc + "' and intcomp=-2;");
+					getBaseDao().executeUpdate(
+							"insert into wa_cacu_overtimefee (pk_wa_class, creator, pk_psndoc, intcomp, amounttaxfree, amounttaxable) values ('"
+									+ pk_wa_class + "','" + creator + "','" + pk_psndoc + "'," + String.valueOf(-2)
+									+ "," + amountTaxFree.toString() + "," + amountTaxable.toString() + ");");
+
+					// 非轉調休
+					amountTaxFree = (ovtFeeResult.get(pk_psndoc) == null || ovtFeeResult.get(pk_psndoc).length < 2) ? UFDouble.ZERO_DBL
+							: ovtFeeResult.get(pk_psndoc)[1];
+					amountTaxable = (ovtFeeResult.get(pk_psndoc) == null || ovtFeeResult.get(pk_psndoc).length < 4) ? UFDouble.ZERO_DBL
+							: ovtFeeResult.get(pk_psndoc)[3];
+					getBaseDao().executeUpdate(
+							"delete from wa_cacu_overtimefee where pk_wa_class='" + pk_wa_class + "' and creator='"
+									+ creator + "' and pk_psndoc='" + pk_psndoc + "' and intcomp=-3;");
+					getBaseDao().executeUpdate(
+							"insert into wa_cacu_overtimefee (pk_wa_class, creator, pk_psndoc, intcomp, amounttaxfree, amounttaxable) values ('"
+									+ pk_wa_class + "','" + creator + "','" + pk_psndoc + "'," + String.valueOf(-3)
+									+ "," + amountTaxFree.toString() + "," + amountTaxable.toString() + ");");
+
+					// 合計
+					amountTaxFree = ((ovtFeeResult.get(pk_psndoc) == null || ovtFeeResult.get(pk_psndoc).length < 1) ? UFDouble.ZERO_DBL
+							: ovtFeeResult.get(pk_psndoc)[0]).add((ovtFeeResult.get(pk_psndoc) == null || ovtFeeResult
+							.get(pk_psndoc).length < 2) ? UFDouble.ZERO_DBL : ovtFeeResult.get(pk_psndoc)[1]);
+					amountTaxable = ((ovtFeeResult.get(pk_psndoc) == null || ovtFeeResult.get(pk_psndoc).length < 3) ? UFDouble.ZERO_DBL
+							: ovtFeeResult.get(pk_psndoc)[2]).add((ovtFeeResult.get(pk_psndoc) == null || ovtFeeResult
+							.get(pk_psndoc).length < 4) ? UFDouble.ZERO_DBL : ovtFeeResult.get(pk_psndoc)[3]);
+					getBaseDao().executeUpdate(
+							"delete from wa_cacu_overtimefee where pk_wa_class='" + pk_wa_class + "' and creator='"
+									+ creator + "' and pk_psndoc='" + pk_psndoc + "' and intcomp=-1;");
+					getBaseDao().executeUpdate(
+							"insert into wa_cacu_overtimefee (pk_wa_class, creator, pk_psndoc, intcomp, amounttaxfree, amounttaxable) values ('"
+									+ pk_wa_class + "','" + creator + "','" + pk_psndoc + "'," + String.valueOf(-1)
+									+ "," + amountTaxFree.toString() + "," + amountTaxable.toString() + ");");
+				}
 			}
-			session.executeBatch();
-		} catch (DbException e) {
+		} catch (BusinessException e) {
 			e.printStackTrace();
-		} finally {
-			if (sessionManager != null) {
-				sessionManager.release();
-			}
 		}
 	}
 
+	protected UFLiteralDate[] getBaseYear(UFLiteralDate baseDate, UFLiteralDate checkDate) {
+		int checkYear = baseDate.getYear() - 2;
+		UFLiteralDate[] scopeDates = new UFLiteralDate[2];
+		do {
+			checkYear++;
+			scopeDates[0] = getDateInYear(baseDate, checkYear);
+			scopeDates[1] = getDateInYear(baseDate, checkYear + 1).getDateBefore(1);
+		} while (checkDate.before(scopeDates[0]) || checkDate.after(scopeDates[1]));
+		return scopeDates;
+	}
+
+	protected UFLiteralDate getDateInYear(UFLiteralDate baseDate, int checkYear) {
+		UFLiteralDate yearBeginDate;
+		if (baseDate.toString().contains("-02-29")) {
+			if (UFLiteralDate.isLeapYear(checkYear)) {
+				yearBeginDate = new UFLiteralDate(String.valueOf(checkYear) + "-02-29");
+			} else {
+				yearBeginDate = new UFLiteralDate(String.valueOf(checkYear) + "-03-01");
+			}
+		} else {
+			yearBeginDate = new UFLiteralDate(String.valueOf(checkYear) + baseDate.toString().substring(4));
+		}
+		return yearBeginDate;
+	}
+
+	private BaseDAO baseDao;
+
+	protected BaseDAO getBaseDao() {
+		if (baseDao == null) {
+			baseDao = new BaseDAO();
+		}
+		return baseDao;
+	}
+
+	protected String getCheckYear(UFLiteralDate endDate, Map<String, Object> psndates, UFLiteralDate[] scopeDates,
+			LeaveTypeCopyVO leaveTypeCopy) {
+		if (LeaveTypeCopyVO.LEAVESETPERIOD_STARTDATE == leaveTypeCopy.getLeavesetperiod()) {
+			// 按年資起算日
+			scopeDates = getBaseYear(new UFLiteralDate((String) psndates.get("workagestartdate")), endDate);
+		} else if (LeaveTypeCopyVO.LEAVESETPERIOD_YEAR == leaveTypeCopy.getLeavesetperiod()) {
+			// 按自然年
+			scopeDates[0] = new UFLiteralDate(String.valueOf(endDate.getYear()) + "-01-01");
+			scopeDates[1] = new UFLiteralDate(String.valueOf(endDate.getYear()) + "-12-31");
+		} else if (LeaveTypeCopyVO.LEAVESETPERIOD_DATE == leaveTypeCopy.getLeavesetperiod()) {
+			// 按入職日期（組織關係.進入日期）
+			scopeDates = getBaseYear((UFLiteralDate) psndates.get("begindate"), endDate);
+		}
+
+		String checkYear = String.valueOf(scopeDates[0].getYear());
+		return checkYear;
+	}
+
+	@SuppressWarnings("unchecked")
+	protected Collection<PsnJobVO> getPsnJobsWithNoLeaveByPsnSQL(String psnInSQL, Collection<PeriodVO> periodVos)
+			throws DAOException {
+		return this.getBaseDao().retrieveByClause(
+				PsnJobVO.class,
+				"pk_psndoc in (" + psnInSQL
+						+ ") and trnsevent <> 4 and trnstype <> '1001X110000000003O5G' and begindate <= '"
+						+ periodVos.toArray(new PeriodVO[0])[0].getEnddate()
+						+ "' and isnull(enddate, '9999-12-31') >= '"
+						+ periodVos.toArray(new PeriodVO[0])[0].getBegindate() + "'");
+	}
+
+	@SuppressWarnings("unchecked")
+	protected List<Map<String, Object>> getNewestPsnOrgByPsnSQL(String psnInSQL) throws DAOException {
+		return (List<Map<String, Object>>) this
+				.getBaseDao()
+				.executeQuery(
+						"select pk_psndoc, begindate, joinsysdate, workagestartdate from hi_psnorg org where begindate = (select max(begindate) from hi_psnorg where pk_psndoc = org.pk_psndoc) and pk_psndoc  in ("
+								+ psnInSQL + ")", new MapListProcessor());
+	}
 }
