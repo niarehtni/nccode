@@ -5,6 +5,7 @@ import nc.vo.hi.psndoc.PTCostVO;
 import nc.vo.pub.BusinessException;
 import nc.vo.pub.lang.UFDate;
 import nc.vo.twhr.twhr_declaration.AggDeclarationVO;
+import nc.vo.twhr.twhr_declaration.CompanyAdjustBVO;
 import nc.vo.uif2.LoginContext;
 
 public interface ITwhr_declarationMaintain {
@@ -30,6 +31,12 @@ public interface ITwhr_declarationMaintain {
 
 	public AggDeclarationVO[] unapprove(AggDeclarationVO[] clientFullVOs, AggDeclarationVO[] originBills)
 			throws BusinessException;
+
+	public String[] insertCompanyAdjustVOs(String pk_org, CompanyAdjustBVO[] vos) throws BusinessException;
+
+	public int updateCompanyAdjustVOs(String pk_org, CompanyAdjustBVO[] vos) throws BusinessException;
+
+	public void deleteCompanyAdjustVOs(CompanyAdjustBVO[] vos) throws BusinessException;
 
 	/**
 	 * 二代健保回写逻辑--薪资发放

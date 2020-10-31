@@ -31,7 +31,6 @@ import nc.ui.pub.bill.BillModel;
 import nc.ui.pub.bill.BillModelCellEditableController;
 import nc.ui.pub.bill.BillScrollPane;
 import nc.ui.pub.bill.BillTableCellRenderer;
-import nc.ui.pub.bill.IBillModelDecimalListener2;
 import nc.ui.uif2.AppEvent;
 import nc.ui.uif2.AppEventListener;
 import nc.ui.uif2.UIState;
@@ -281,7 +280,7 @@ public class PsnWadocSubPane extends HrBillFormEditor implements BillEditListene
 	public void initTableStyle() {
 		getBillPane().getTable().setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		getBillPane().getTable().getSelectionModel().addListSelectionListener(this);
-		getBillPane().getTable().setSortEnabled(false);
+		getBillPane().getTable().setSortEnabled(true);
 		getBillPane().getTable().setColumnSelectionAllowed(false);
 		getBillPane().getTable().setRowSelectionAllowed(true);
 
@@ -294,7 +293,7 @@ public class PsnWadocSubPane extends HrBillFormEditor implements BillEditListene
 	 */
 	private void addDecimalListener() {
 		String[] billitems = new String[] { PsndocWadocVO.CRITERIONVALUE, PsndocWadocVO.NMONEY };
-		IBillModelDecimalListener2 bmd = new WaItemDecimalAdapter(WaItemVO.PK_WA_ITEM, billitems,
+		WaItemDecimalAdapter bmd = new WaItemDecimalAdapter(WaItemVO.PK_WA_ITEM, billitems,
 				(PsndocwadocAppModel) getModel());
 		getBillCardPanel().getBillModel().addDecimalListener(bmd);
 
@@ -319,6 +318,7 @@ public class PsnWadocSubPane extends HrBillFormEditor implements BillEditListene
 				subvo.setPsnName(vo.getPsnname());
 				subvo.setPostName(vo.getPostname());
 			}
+
 			setWadocData(subvos);
 		} catch (BusinessException ex) {
 			Logger.error(ex.getMessage(), ex);
@@ -1038,12 +1038,22 @@ public class PsnWadocSubPane extends HrBillFormEditor implements BillEditListene
 
 	@Override
 	public boolean beforeEdit(BillEditEvent e) {
-		// TODO Auto-generated method stub
 		if (((BillItem) e.getSource()).getKey().equals("docname")) {
 			UIRefPane changeCauseRefpane = (UIRefPane) ((BillItem) e.getSource()).getComponent();
 			changeCauseRefpane.getRefModel().setPk_org(getModel().getContext().getPk_org());
 			changeCauseRefpane.getRefModel().addWherePart(" and pk_defdoclist = '1002Z710000000004MO1' ", true);
 		}
+		// ssx added on 2020-07-24
+		// 新增時也要考慮過濾掉不再使用的薪資標準（組織參數：HRWAWNC01）
+		else if (((BillItem) e.getSource()).getKey().equals("pk_wa_grd_showname")) {
+			UIRefPane grdPane = (UIRefPane) ((BillItem) e.getSource()).getComponent();
+			if (grdPane != null) {
+				AbstractRefModel model = grdPane.getRefModel();
+				model.setWherePart("(select value from pub_sysinit where initcode='HRWAWNC01' and pk_org = '"
+						+ getModel().getContext().getPk_org() + "') NOT LIKE '%' || code || '%' ");
+			}
+		}
+		// end
 		return true;
 	}
 }

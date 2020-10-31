@@ -10,7 +10,9 @@ import javax.swing.JComponent;
 import javax.swing.JFileChooser;
 
 import nc.bs.framework.common.NCLocator;
+import nc.itf.uap.IUAPQueryBS;
 import nc.itf.wa.datainterface.IReportExportService;
+import nc.jdbc.framework.processor.ColumnProcessor;
 import nc.ui.hr.uif2.action.HrAction;
 import nc.ui.pub.beans.UIFileChooser;
 import nc.ui.pubapp.uif2app.model.BillManageModel;
@@ -55,27 +57,41 @@ public class ExportApplyAction extends HrAction {
 		checkData();
 		String twYear = String.valueOf(Integer.valueOf(this.getApplyYear()) - 1911);
 
+		String schemaCode = "IITR_FMT_TW_2020";
+		IUAPQueryBS qry = NCLocator.getInstance().lookup(IUAPQueryBS.class);
+		String charSetCode = (String) qry.executeQuery("select CHARSETCODE from wa_expformat_head where code = '"
+				+ schemaCode + "'", new ColumnProcessor());
+
+		String fileExt = null;
+		if (charSetCode.equals("UTF-8")) {
+			fileExt = "U8";
+		} else {
+			charSetCode = "Big5-HKSCS";
+		}
+
 		String[] textArr = getService().getIITXTextReport(dataPKs.toArray(new String[0]),
 				Integer.valueOf(this.getApplyYear()), this.getApplyFormat(), this.getApplyCount(),
 				this.getApplyReason(), this.getVatNumber(), this.getGrantType(), this.getComLinkMan(),
-				this.getComLinkTel(), this.getComLineEmail());
+				this.getComLinkTel(), this.getComLineEmail(), schemaCode, charSetCode);
 
 		if (textArr != null && textArr.length > 2) {
 			UIFileChooser fileChooser = new UIFileChooser();
 			fileChooser.setDialogTitle("請指定要匯出的文檔名稱");
 			TextFileFilter4TW filter = new TextFileFilter4TW();
-			filter.setFilterString("*." + twYear);
+			filter.setFilterString("*." + fileExt);
 			filter.setDescription("生成綜所稅申報檔");
 			fileChooser.addChoosableFileFilter(filter);
 			fileChooser.setSelectedFile(new File(fileChooser.getCurrentDirectory().getAbsolutePath() + "\\"
-					+ this.getVatNumber() + "." + twYear));
+					+ this.getVatNumber() + "." + twYear + (fileExt == null ? "" : "." + fileExt)));
 			int userSelection = fileChooser.showSaveDialog(parentUi);
 
 			String filename = "";
 			File fileToSave = null;
 			if (userSelection == JFileChooser.APPROVE_OPTION) {
-				if (!fileChooser.getSelectedFile().getAbsoluteFile().toString().toUpperCase().endsWith("." + twYear)) {
-					filename = fileChooser.getSelectedFile().getAbsolutePath() + "." + twYear;
+				if (!fileChooser.getSelectedFile().getAbsoluteFile().toString().toUpperCase()
+						.endsWith((fileExt == null ? "." + twYear : "." + fileExt))) {
+					filename = fileChooser.getSelectedFile().getAbsolutePath()
+							+ (fileExt == null ? "." + twYear : "." + fileExt);
 				} else {
 					filename = fileChooser.getSelectedFile().getAbsolutePath();
 				}
@@ -95,7 +111,7 @@ public class ExportApplyAction extends HrAction {
 
 			if (fileToSave != null) {
 				// 讀取報表文本
-				FileUtils.writeStringToFile(fileToSave, sb.toString(), "Big5-HKSCS");
+				FileUtils.writeStringToFile(fileToSave, sb.toString(), charSetCode);
 			}
 
 			// 暫不回寫注記標記
@@ -205,6 +221,15 @@ public class ExportApplyAction extends HrAction {
 			dataPKs.clear();
 			for (Object line : data) {
 				AggSumIncomeTaxVO aggvo = (AggSumIncomeTaxVO) line;
+
+				if (UFBoolean.TRUE.equals(aggvo.getParentVO().getIsforeignmonthdec())) {
+					continue;
+				}
+
+				if (UFBoolean.TRUE.equals(aggvo.getParentVO().getIsmanualdec())) {
+					continue;
+				}
+
 				if (UFBoolean.TRUE.equals(aggvo.getParentVO().getIsdeclare())) {
 					throw new BusinessException("員工 [" + aggvo.getParentVO().getCode() + "] 綜所稅資料已申報，不能重複申報。");
 				}

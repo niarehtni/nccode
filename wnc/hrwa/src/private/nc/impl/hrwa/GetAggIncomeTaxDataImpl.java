@@ -23,11 +23,11 @@ import nc.itf.hrwa.IGetAggIncomeTaxData;
 import nc.jdbc.framework.processor.ColumnListProcessor;
 import nc.jdbc.framework.processor.ColumnProcessor;
 import nc.jdbc.framework.processor.MapListProcessor;
+import nc.jdbc.framework.processor.MapProcessor;
 import nc.jdbc.framework.processor.ResultSetProcessor;
 import nc.pub.encryption.util.SalaryEncryptionUtil;
 import nc.pubitf.twhr.IBasedocPubQuery;
 import nc.vo.bd.countryzone.CountryZoneVO;
-import nc.vo.hi.psndoc.PsnOrgVO;
 import nc.vo.hi.psndoc.PsndocVO;
 import nc.vo.hrwa.incometax.AggIncomeTaxVO;
 import nc.vo.hrwa.incometax.IncomeTaxUtil;
@@ -42,6 +42,7 @@ import nc.vo.pub.lang.UFDateTime;
 import nc.vo.pub.lang.UFDouble;
 import nc.vo.pub.lang.UFLiteralDate;
 import nc.vo.twhr.basedoc.BaseDocVO;
+import nc.vo.wa.payfile.PayfileVO;
 
 import org.apache.commons.lang.StringUtils;
 
@@ -192,13 +193,17 @@ public class GetAggIncomeTaxDataImpl implements IGetAggIncomeTaxData {
 	 *            起始时间
 	 * @param endMonth
 	 *            截止时间
+	 * @param offBeginDate
+	 *            離職開始日期
+	 * @param offEndDate
+	 *            離職結束日期
 	 * @return
 	 * @throws BusinessException
 	 */
 	@Override
 	public List<AggIncomeTaxVO> getAggIncomeTaxData(boolean isForeignDeparture, boolean isForeignMonth,
 			String unifiednumber, String[] declaretype, String[] waclass, String year, String beginMonth,
-			String endMonth) throws BusinessException {
+			String endMonth, UFLiteralDate offBeginDate, UFLiteralDate offEndDate) throws BusinessException {
 		// 根据统一编号获取组织
 		String[] orgs = getOrgs(unifiednumber);
 		// 获取参数TWHR07的值
@@ -264,7 +269,7 @@ public class GetAggIncomeTaxDataImpl implements IGetAggIncomeTaxData {
 		if (isForeignMonth) {
 			qrySql.append("AND psn." + LocalizationSysinitUtil.getTwhrlPsn("TWHRLPSN01") + "='Y'\n");
 		}
-		qrySql.append("AND wap.payoffflag='Y'\n");// 已发放
+		qrySql.append("AND wap.payoffflag='Y' AND wap.cpaydate is not null \n");// 已发放
 		qrySql.append("AND (\n");
 		String[] startStr = beginMonth.split("-");
 		String[] endStr = endMonth.split("-");
@@ -328,6 +333,11 @@ public class GetAggIncomeTaxDataImpl implements IGetAggIncomeTaxData {
 							+ dueDate.toString().substring(0, 10) + " 23:59:59'))\n");
 				}
 
+				if (offBeginDate != null && offEndDate != null) {
+					qrySql.append(" and ((select count(pk_psnjob) from hi_psnjob where pk_psndoc=wa.pk_psndoc and trnsevent=4 and begindate between '"
+							+ offBeginDate.toString() + "' and '" + offEndDate.toString() + "') > 0)");
+				}
+
 			}
 			qrySql.append(")\n");
 		}
@@ -367,8 +377,8 @@ public class GetAggIncomeTaxDataImpl implements IGetAggIncomeTaxData {
 			}
 		}
 
-		Map<String, String> twhr08Map = getSysinit(orgs, "TWHR08");
-		Map<String, String> twhr09Map = getSysinit(orgs, "TWHR09");
+		// Map<String, String> twhr08Map = getSysinit(orgs, "TWHR08");
+		// Map<String, String> twhr09Map = getSysinit(orgs, "TWHR09");
 		Map<String, UFDouble> expireNumMap = getBaseDocUFDoubleValue(orgs, "TWSP0013");
 		Map<String, PsndocVO> psnMap = getMapPsndocVO(psnList.toArray(new String[0]));
 
@@ -381,19 +391,28 @@ public class GetAggIncomeTaxDataImpl implements IGetAggIncomeTaxData {
 				while (it.hasNext()) {
 					AggIncomeTaxVO aggVO = it.next();
 					IncomeTaxVO hvo = aggVO.getParentVO();
-					String twhr08 = twhr08Map.get(hvo.getPk_hrorg());
-					String twhr09 = twhr09Map.get(hvo.getPk_hrorg());
+					// String twhr08 = twhr08Map.get(hvo.getPk_hrorg());
+					// String twhr09 = twhr09Map.get(hvo.getPk_hrorg());
 					UFBoolean isForeign = (UFBoolean) psnMap.get(hvo.getPk_psndoc()).getAttributeValue(
 							LocalizationSysinitUtil.getTwhrlPsn("TWHRLPSN01"));
-					
-					// 申報明細檔生成錯誤勞退自提取值異常  by George 20200304 缺陷Bug #33464
-				    // 當 人員資料(bd_psndoc) 的 是否外籍員工(glbdef7) 沒勾選的情況可能是 null 或 'N'，null時會報NullPointerException
+					UFBoolean isResident = (UFBoolean) psnMap.get(hvo.getPk_psndoc()).getAttributeValue(
+							LocalizationSysinitUtil.getTwhrlPsn("TWHRLPSN02"));
 					isForeign = isForeign == null ? UFBoolean.FALSE : isForeign;
-					
 					UFDouble expireNum = expireNumMap.get(hvo.getPk_hrorg());
+					// 申報明細檔生成錯誤勞退自提取值異常 by George 20200304 缺陷Bug #33464
+					// 當 人員資料(bd_psndoc) 的 是否外籍員工(glbdef7) 沒勾選的情況可能是 null 或
+					// 'N'，null時會報NullPointerException
+
+					// ssx modified on 2020-08-21
+					// 判斷183天變更算法
+					// isExpire(twhr08, twhr09, expireNum,
+					// psnMap.get(hvo.getPk_psndoc()),
+					// hvo.getCyear(),hvo.getCperiod())
 					if (!isForeign.booleanValue()
-							|| isExpire(twhr08, twhr09, expireNum, psnMap.get(hvo.getPk_psndoc()), hvo.getCyear(),
-									hvo.getCperiod())) {
+							|| (isForeign.booleanValue() && (isResident.booleanValue() || isExpire(expireNum,
+									psnMap.get(hvo.getPk_psndoc()), hvo.getCyear(),
+									hvo.getCpaydate().toUFLiteralDate(UFLiteralDate.BASE_TIMEZONE))))) {
+						// end
 						it.remove();
 					}
 				}
@@ -404,19 +423,27 @@ public class GetAggIncomeTaxDataImpl implements IGetAggIncomeTaxData {
 				while (it.hasNext()) {
 					AggIncomeTaxVO aggVO = it.next();
 					IncomeTaxVO hvo = aggVO.getParentVO();
-					String twhr08 = twhr08Map.get(hvo.getPk_hrorg());
-					String twhr09 = twhr09Map.get(hvo.getPk_hrorg());
+					// String twhr08 = twhr08Map.get(hvo.getPk_hrorg());
+					// String twhr09 = twhr09Map.get(hvo.getPk_hrorg());
 					UFBoolean isForeign = (UFBoolean) psnMap.get(hvo.getPk_psndoc()).getAttributeValue(
 							LocalizationSysinitUtil.getTwhrlPsn("TWHRLPSN01"));
-					
-					// 申報明細檔生成錯誤勞退自提取值異常  by George 20200304 缺陷Bug #33464
-				    // 當 人員資料(bd_psndoc) 的 是否外籍員工(glbdef7) 沒勾選的情況可能是 null 或 'N'，null時會報NullPointerException
+
+					// 申報明細檔生成錯誤勞退自提取值異常 by George 20200304 缺陷Bug #33464
+					// 當 人員資料(bd_psndoc) 的 是否外籍員工(glbdef7) 沒勾選的情況可能是 null 或
+					// 'N'，null時會報NullPointerException
 					isForeign = isForeign == null ? UFBoolean.FALSE : isForeign;
-					
+
 					UFDouble expireNum = expireNumMap.get(hvo.getPk_hrorg());
+
+					// ssx modified on 2020-08-21
+					// 判斷183天變更算法
+					// isExpire(twhr08, twhr09, expireNum,
+					// psnMap.get(hvo.getPk_psndoc()),
+					// hvo.getCyear(),hvo.getCperiod())
 					if (isForeign.booleanValue()
-							&& !isExpire(twhr08, twhr09, expireNum, psnMap.get(hvo.getPk_psndoc()), hvo.getCyear(),
-									hvo.getCperiod())) {
+							&& !isExpire(expireNum, psnMap.get(hvo.getPk_psndoc()), hvo.getCyear(), hvo.getCpaydate()
+									.toUFLiteralDate(UFLiteralDate.BASE_TIMEZONE))) {
+						// end
 						it.remove();
 					}
 				}
@@ -424,7 +451,7 @@ public class GetAggIncomeTaxDataImpl implements IGetAggIncomeTaxData {
 		}
 		// end
 
-		// 申報明細檔生成錯誤勞退自提取值異常  by George 20200304 缺陷Bug #33464
+		// 申報明細檔生成錯誤勞退自提取值異常 by George 20200304 缺陷Bug #33464
 		// 判断档案是否已经生产，如果已经生成未申報则覆盖，否则不能生成
 		Map<String, UFBoolean> isdeclare = getIsdeclare(pk_wa_dataList.toArray(new String[0]));
 		List<String> deleteList = new ArrayList<String>();
@@ -537,148 +564,35 @@ public class GetAggIncomeTaxDataImpl implements IGetAggIncomeTaxData {
 		return waclass;
 	}
 
-	/**
-	 * 判断员工工作是否满183天
-	 * 
-	 * @param twhr08
-	 * @param twhr09
-	 * @param psn
-	 * @return
-	 * @throws BusinessException
-	 */
 	@SuppressWarnings("unchecked")
-	private boolean isExpire(String twhr08, String twhr09, UFDouble expireNum, PsndocVO psn, String year, String month)
+	private boolean isExpire(UFDouble expireNum, PsndocVO psn, String year, UFLiteralDate countDate)
 			throws BusinessException {
-		String isResident = psn.getAttributeValue(LocalizationSysinitUtil.getTwhrlPsn("TWHRLPSN02")) != null ? psn
-				.getAttributeValue(LocalizationSysinitUtil.getTwhrlPsn("TWHRLPSN02")).toString() : "N";
-		if ("Y".equals(isResident)) {
-			return true;
+		// 按給付日查詢員工到職日
+		Map<String, String> inOutDate = (Map<String, String>) this
+				.getDao()
+				.executeQuery(
+						"select begindate, isnull(enddate, '9999-12-31') enddate from hi_psnorg where pk_psnorg in (select pk_psnorg from hi_psnjob where pk_psndoc='"
+								+ psn.getPk_psndoc()
+								+ "' and '"
+								+ countDate.toString()
+								+ "' between begindate and isnull(enddate, '9999-12-31') and ismainjob='Y') and lastflag='Y'",
+						new MapProcessor());
+
+		if (inOutDate == null) {
+			throw new BusinessException("獲取員工 [" + psn.getCode() + "] 的到職日時出現錯誤。");
 		}
-		if ("1001ZZ1000000001NCMA".equals(twhr08)) {// 扣税核算入境日期
-			if (LocalizationSysinitUtil.getTwhrlPsn("TWHRLPSN03") == null) {
-				throw new BusinessException("參數TWHRLPSN03為空!");
-			}
-			if (psn.getAttributeValue(LocalizationSysinitUtil.getTwhrlPsn("TWHRLPSN03")) == null) {
-				throw new BusinessException("員工:" + psn.getCode() + ",扣税核算入境日期為空!");
-			}
-			UFDate permitDate = new UFDate(psn.getAttributeValue(LocalizationSysinitUtil.getTwhrlPsn("TWHRLPSN03"))
-					.toString());
-			UFDate oneDay = new UFDate(year + "-01-01");// 会计年第一天
-			UFDate currentMonthLastDay = new UFDate(getLastDayOfMonth(Integer.parseInt(year), Integer.parseInt(month)));// 薪资结束日期
-			int days = 0;
-			if (permitDate.before(oneDay)) {
-				days = UFDate.getDaysBetween(oneDay, currentMonthLastDay);
-			} else {
-				days = UFDate.getDaysBetween(permitDate, currentMonthLastDay);
-			}
-			if (days - expireNum.intValue() >= 0) {
-				return true;
-			}
-		} else if ("1001ZZ1000000001NCMB".equals(twhr08)) {// 居留证到期日
-			if ("null".equals(twhr09) || "".equals(twhr09)) {
-				throw new BusinessException(ResHelper.getString("notice", "2notice-tw-000008")/* "系统参数居留证到期日(TWHR09)未设置，请维护后重新操作。" */);
-			}
-			// MOD (補充183判斷邏輯)
-			// 當年度入職者，
-			// 如入職日小於居留證到期基準日並且居留證到期日晚於年度結束日，則代表滿183天；
-			//
-			// 如非當年度入職者，
-			// 居留證到期日期大於居留證到期基準日，則代表滿183天
-			//
-			// 其餘情況皆屬於外籍員工未滿183天。
 
-			// 居留證到期日
-			if (psn.getAttributeValue(LocalizationSysinitUtil.getTwhrlPsn("TWHRLPSN04")) == null) {
-				throw new BusinessException("員工 [" + psn.getCode() + "] 的居留證到期日期為空");
-			}
-
-			UFLiteralDate permitDate = new UFDate(psn.getAttributeValue(
-					LocalizationSysinitUtil.getTwhrlPsn("TWHRLPSN04")).toString())
-					.toUFLiteralDate(UFLiteralDate.BASE_TIMEZONE);
-
-			// 居留證到期基準日
-			UFLiteralDate datumDay = new UFDate(twhr09).toUFLiteralDate(UFLiteralDate.BASE_TIMEZONE);
-
-			// 是否當年入職（當年=薪資計算所在年度，即：入職年度=薪資計算期間所在年度）
-			UFLiteralDate joinDate = null;
-			Collection<PsnOrgVO> psnorgs = getDao().retrieveByClause(PsnOrgVO.class,
-					"pk_psndoc='" + psn.getPk_psndoc() + "' and  lastflag='Y'");
-			if (psnorgs != null && psnorgs.size() > 0) {
-				joinDate = psnorgs.toArray(new PsnOrgVO[0])[0].getJoinsysdate();
-			}
-
-			if (joinDate == null) {
-				throw new BusinessException("未找到員工 [" + psn.getCode() + "] 的到職日，無法判斷其居留情況。");
-			}
-
-			if (joinDate.getYear() == Integer.valueOf(year)) {
-				// 當年入職
-				// 如入職日小於居留證到期基準日並且居留證到期日晚於年度結束日
-				if (joinDate.before(datumDay) && permitDate.after(new UFLiteralDate(year + "-12-31"))) {
-					return true;
-				}
-			} else {
-				// 非當年入職
-				// 居留證到期日期大於居留證到期基準日
-				if (permitDate.after(datumDay)) {
-					return true;
-				}
-			}
-			// end
+		UFLiteralDate baseDate = new UFLiteralDate(year + "-01-01");
+		if (Integer.valueOf(inOutDate.get("begindate").substring(0, 4)).equals(Integer.valueOf(year))) {
+			// 非當年入職: MIN(離職日,給付日) - 1/1 + 1
+			baseDate = new UFLiteralDate(inOutDate.get("begindate"));
 		}
-		return false;
-	}
+		// 當年入職: MIN(離職日,給付日) - 到職日 + 1
 
-	/**
-	 * 判断员工工作是否满183天
-	 * 
-	 * @param twhr08
-	 * @param twhr09
-	 * @param psn
-	 * @return
-	 * @throws BusinessException
-	 */
-	private boolean isExpirenew(String twhr08, String twhr09, UFDouble expireNum, PsndocVO psn, String year,
-			String month) throws BusinessException {
-		String isResident = psn.getAttributeValue(LocalizationSysinitUtil.getTwhrlPsn("TWHRLPSN02")) != null ? psn
-				.getAttributeValue(LocalizationSysinitUtil.getTwhrlPsn("TWHRLPSN02")).toString() : "N";
-		if ("Y".equals(isResident)) {
-			return true;
-		}
-		if ("1001ZZ1000000001NCMA".equals(twhr08)) {// 扣税核算入境日期
-			// 扣税核算入境日期
-			UFDate permitDate = null;
-			if (null == psn.getAttributeValue("glbdef8")) {
-				throw new BusinessException("員工編號[" + psn.getCode() + "]扣稅核算入境日期未設置");
-			} else {
-				permitDate = new UFDate(String.valueOf(psn.getAttributeValue("glbdef8")));
-			}
-			UFDate oneDay = new UFDate(year + "-01-01");// 会计年第一天
-			UFDate currentMonthLastDay = new UFDate(getLastDayOfMonth(Integer.parseInt(year), Integer.parseInt(month)));// 薪资结束日期
-			int days = 0;
-			if (null != permitDate && permitDate.before(oneDay)) {
-				days = UFDate.getDaysBetween(oneDay, currentMonthLastDay);
-			}
-			if (null != permitDate && (permitDate.after(oneDay) || permitDate.isSameDate(oneDay))) {
-				days = UFDate.getDaysBetween(permitDate, currentMonthLastDay);
-			}
-			if (days - expireNum.intValue() >= 0) {
-				return true;
-			}
-		} else if ("1001ZZ1000000001NCMB".equals(twhr08)) {// 居留证到期日
-			// 居留证到期日
-			if (null == psn.getAttributeValue("glbdef9") || "".equals(psn.getAttributeValue("glbdef8"))) {
-				// throw new BusinessException(ResHelper.getString("notice",
-				// "2notice-tw-000008")/* "系统参数居留证到期日(TWHR09)未设置，请维护后重新操作。" */);
-				throw new BusinessException("員工編號[" + psn.getCode() + "]居留證到期日未設置");
-			}
-			UFDate permitDate = new UFDate(String.valueOf(psn.getAttributeValue("glbdef9")));
-			UFDate datumDay = new UFDate(twhr09);
-			if (permitDate.after(datumDay)) {
-				return true;
-			}
-		}
-		return false;
+		countDate = countDate.before(new UFLiteralDate(inOutDate.get("enddate"))) ? countDate : new UFLiteralDate(
+				inOutDate.get("enddate"));
+
+		return (UFLiteralDate.getDaysBetween(baseDate, countDate) + 1) > expireNum.intValue();
 	}
 
 	public String getLastDayOfMonth(int year, int month) {
@@ -906,7 +820,7 @@ public class GetAggIncomeTaxDataImpl implements IGetAggIncomeTaxData {
 		}
 		return map;
 	}
-	
+
 	/**
 	 * 判断档案是否已经生产，如果已经生成未申報则覆盖，否则不能生成
 	 * 
@@ -933,94 +847,6 @@ public class GetAggIncomeTaxDataImpl implements IGetAggIncomeTaxData {
 			}
 		}
 		return map;
-	}
-
-	/**
-	 * @author ward.wong(by he 修改)
-	 * @date 20180126
-	 * @version v1.0
-	 * @功能描述 证别号判断方法实现
-	 * 
-	 */
-	@Override
-	public String getIdtypeno(String pk_psndoc, String cyearperiod) throws BusinessException {
-		PsndocVO psndoc = (PsndocVO) getDao().retrieveByPK(PsndocVO.class, pk_psndoc);
-		// 查询出国籍的code
-		String country = "TW";
-		if (null == psndoc.getCountry()) {
-			List<CountryZoneVO> countrylist = (List<CountryZoneVO>) this.dao.retrieveByClause(CountryZoneVO.class,
-					"dr != 1");
-			for (CountryZoneVO vo : countrylist) {
-				if (vo.getPk_country().equals(psndoc.getCountry())) {
-					country = vo.getCode();
-				}
-			}
-		}
-
-		// 国籍为空或者国籍为tw，证号别为0
-		// 国籍为大陆 未满183天为3，满183天为5
-		// 国籍为非台湾非大陆，未满183天为3，满183天为7
-
-		if ("TW".equals(country)) {
-			return "0";
-		} else if ("CN".equals(country)) {
-			String twhr08 = getSysinitValue(psndoc.getPk_org(), "TWHR08");
-			String twhr09 = getSysinitValue(psndoc.getPk_org(), "TWHR09");
-			UFDouble expireNum = getBaseDocUFDoubleValue(psndoc.getPk_org(), "TWSP0013");
-			String cyear = cyearperiod.substring(0, 4);
-			String cperiod = cyearperiod.substring(5, 6);
-			if (isExpirenew(twhr08, twhr09, expireNum, psndoc, cyear, cperiod)) {
-				return "5";
-			} else {
-				return "3";
-			}
-		} else {
-			String twhr08 = getSysinitValue(psndoc.getPk_org(), "TWHR08");
-			String twhr09 = getSysinitValue(psndoc.getPk_org(), "TWHR09");
-			UFDouble expireNum = getBaseDocUFDoubleValue(psndoc.getPk_org(), "TWSP0013");
-			String cyear = cyearperiod.substring(0, 4);
-			String cperiod = cyearperiod.substring(5, 6);
-			if (isExpirenew(twhr08, twhr09, expireNum, psndoc, cyear, cperiod)) {
-				return "7";
-			} else {
-				return "3";
-			}
-		}
-		/*
-		 * String isForeign = psndoc.getAttributeValue("glbdef7") != null ?
-		 * psndoc.getAttributeValue("glbdef7").toString() : "N";
-		 * 
-		 * if (null == psndoc.getCountry() || "".equals(psndoc.getCountry()) ||
-		 * "0001Z010000000079UJK".equals(psndoc.getCountry())) { if
-		 * ("N".equals(isForeign)) { return "0"; } else { throw new
-		 * BusinessException(ResHelper.getString("incometax",
-		 * "2incometax-n-000051") "人员" + psndoc.getName() + "(" +
-		 * psndoc.getCode() + ResHelper.getString("incometax",
-		 * "2incometax-n-000050") "),证别号错误，请检查！" ); } } else if
-		 * ("0001Z010000000079UJJ".equals(psndoc.getCountry())) { if
-		 * ("N".equals(isForeign)) { throw new
-		 * BusinessException(ResHelper.getString("incometax",
-		 * "2incometax-n-000051") "人员" + psndoc.getName() + "(" +
-		 * psndoc.getCode() + ResHelper.getString("incometax",
-		 * "2incometax-n-000050") "),证别号错误，请检查！" ); } else { String twhr08 =
-		 * getSysinitValue(psndoc.getPk_org(), "TWHR08"); String twhr09 =
-		 * getSysinitValue(psndoc.getPk_org(), "TWHR09"); UFDouble expireNum =
-		 * getBaseDocUFDoubleValue(psndoc.getPk_org(), "TWSP0013"); String cyear
-		 * = cyearperiod.substring(0, 4); String cperiod =
-		 * cyearperiod.substring(5, 6); if (isExpire(twhr08, twhr09, expireNum,
-		 * psndoc, cyear, cperiod)) { return "3"; } else { return "5"; } } }
-		 * else { if ("N".equals(isForeign)) { throw new
-		 * BusinessException(ResHelper.getString("incometax",
-		 * "2incometax-n-000051") "人员" + psndoc.getName() + "(" +
-		 * psndoc.getCode() + ResHelper.getString("incometax",
-		 * "2incometax-n-000050") "),证别号错误，请检查！" ); } else { String twhr08 =
-		 * getSysinitValue(psndoc.getPk_org(), "TWHR08"); String twhr09 =
-		 * getSysinitValue(psndoc.getPk_org(), "TWHR09"); UFDouble expireNum =
-		 * getBaseDocUFDoubleValue(psndoc.getPk_org(), "TWSP0013"); String cyear
-		 * = cyearperiod.substring(0, 4); String cperiod =
-		 * cyearperiod.substring(5, 6); if (isExpire(twhr08, twhr09, expireNum,
-		 * psndoc, cyear, cperiod)) { return "3"; } else { return "7"; } } }
-		 */
 	}
 
 	@Override
@@ -1149,6 +975,60 @@ public class GetAggIncomeTaxDataImpl implements IGetAggIncomeTaxData {
 	@Override
 	public void reloadLocalizationRefs() throws BusinessException {
 		LocalizationSysinitUtil.reloadRefs();
+	}
+
+	@Override
+	public String getIdtypeno(String pk_psndoc, String pk_wa_data, String cyearperiod) throws BusinessException {
+		PsndocVO psndoc = (PsndocVO) getDao().retrieveByPK(PsndocVO.class, pk_psndoc);
+
+		PayfileVO payfileVo = (PayfileVO) getDao().retrieveByPK(PayfileVO.class, pk_wa_data);
+
+		String paydate = payfileVo == null ? null : payfileVo.getCpaydate()
+				.toUFLiteralDate(UFLiteralDate.BASE_TIMEZONE).toString();
+
+		if (StringUtils.isEmpty(paydate)) {
+			paydate = (String) getDao().executeQuery(
+					"select paydate from hi_psndoc_ptcost where pk_psndoc_sub = '" + pk_wa_data + "'",
+					new ColumnProcessor());
+		}
+
+		if (StringUtils.isEmpty(paydate)) {
+			throw new BusinessException("獲取員工 [" + psndoc.getCode() + "] 的給付日期錯誤。");
+		}
+		// 查询出国籍的code
+
+		// ssx modified on 2020-07-30
+		// 修复按人员取人员所属国家代码逻辑问题
+		String country = "TW";
+		if (null != psndoc.getCountry()) {
+			CountryZoneVO countryVO = (CountryZoneVO) this.dao.retrieveByPK(CountryZoneVO.class, psndoc.getCountry());
+			country = countryVO.getCode();
+		}
+		// end
+
+		// 国籍为空或者国籍为tw，证号别为0
+		// 国籍为大陆 未满183天为3，满183天为5
+		// // 国籍为非台湾非大陆，未满183天为3，满183天为7
+		// String twhr08 = getSysinitValue(psndoc.getPk_org(), "TWHR08");
+		// String twhr09 = getSysinitValue(psndoc.getPk_org(), "TWHR09");
+		UFDouble expireNum = getBaseDocUFDoubleValue(psndoc.getPk_org(), "TWSP0013");
+		String cyear = cyearperiod.substring(0, 4);
+		// String cperiod = cyearperiod.substring(5, 6);
+		if ("TW".equals(country)) {
+			return "0";
+		} else if ("CN".equals(country)) {
+			if (isExpire(expireNum, psndoc, cyear, new UFLiteralDate(paydate))) {
+				return "5";
+			} else {
+				return "3";
+			}
+		} else {
+			if (!isExpire(expireNum, psndoc, cyear, new UFLiteralDate(paydate))) {
+				return "7";
+			} else {
+				return "3";
+			}
+		}
 	}
 
 }

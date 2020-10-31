@@ -28,6 +28,7 @@ import nc.vo.wa.pub.WaLoginVOHelper;
 public class TaxFormulaPreExcutor4TW extends AbstractFormulaExecutor {
 	int convMode = 0;
 
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	@Override
 	public void excute(Object inTaxFormulaVO, WaLoginContext context) throws BusinessException {
 		if (inTaxFormulaVO instanceof TaxFormulaVO) {
@@ -49,15 +50,16 @@ public class TaxFormulaPreExcutor4TW extends AbstractFormulaExecutor {
 			IWaPeriodQuery periodQry = (IWaPeriodQuery) NCLocator.getInstance().lookup(IWaPeriodQuery.class.getName());
 			PeriodVO[] prds = periodQry.getPeriodsByScheme(WaLoginVOHelper.getParentClass(context.getWaLoginVO())
 					.getPk_periodscheme());
-			String strBeginDate = "";
-			String strEndDate = "";
-			for (PeriodVO prd : prds) {
-				if (prd.getCyear().equals(context.getCyear()) && prd.getCperiod().equals(context.getCperiod())) {
-					strBeginDate = prd.getCstartdate().toStdString();
-					strEndDate = prd.getCenddate().toStdString();
-					break;
-				}
-			}
+			// String strBeginDate = "";
+			// String strEndDate = "";
+			// for (PeriodVO prd : prds) {
+			// if (prd.getCyear().equals(context.getCyear()) &&
+			// prd.getCperiod().equals(context.getCperiod())) {
+			// strBeginDate = prd.getCstartdate().toStdString();
+			// strEndDate = prd.getCenddate().toStdString();
+			// break;
+			// }
+			// }
 
 			PersistenceManager sessionManager = null;
 			try {
@@ -67,12 +69,16 @@ public class TaxFormulaPreExcutor4TW extends AbstractFormulaExecutor {
 				UFDouble taxFreeAmount = getBaseDocUFDoubleValue(context.getPk_org(), "TWSP0001"); // 免稅額(標準)
 				UFDouble stdDeductAmount = getBaseDocUFDoubleValue(context.getPk_org(), "TWSP0004"); // 標準扣除額（夫妻合併）
 				UFDouble spcDeductAmount = getBaseDocUFDoubleValue(context.getPk_org(), "TWSP0005"); // 特別扣除額
+
+				List<String> strUpdate = new ArrayList<String>();
+
 				// String step =
 				// "(case when wa_cacu_data.tax_base<110000 then 500 when wa_cacu_data.tax_base<120000 then 1000 when wa_cacu_data.tax_base<150000 then 1500 else 2000 end)";
 				String sql = "";
 				// sql += "UPDATE wa_cacu_data ";
-				sql += " SELECT wa_cacu_data.PK_CACU_DATA, CASE WHEN Final.Tax <= " + minTaxAmount.toString()
-						+ " THEN 0 ELSE Final.Tax END WAVALUE ";
+				// 非固定稅率
+				sql += " SELECT wa_cacu_data.pk_psndoc, wa_cacu_data.PK_CACU_DATA, CASE WHEN Final.Tax <= "
+						+ minTaxAmount.toString() + " THEN 0 ELSE Final.Tax END WAVALUE ";
 				sql += "FROM     wa_cacu_data INNER JOIN ";
 				sql += "     (SELECT FLOOR((Temp.AnnualSalary * wa_taxtable.ntaxrate / 100 - wa_taxtable.nquickdebuct) / 120)  ";
 				sql += "        * 10 Tax, Temp.pk_cacu_data ";
@@ -98,9 +104,23 @@ public class TaxFormulaPreExcutor4TW extends AbstractFormulaExecutor {
 				sql += " where wa_data.taxtype <> 2 ";
 				// sql += " and bd_psndoc.idtype=5";
 				List<Map> taxResult = (List<Map>) session.executeQuery(sql, new MapListProcessor());
+				if (taxResult != null && taxResult.size() > 0) {
+					for (Map rst : taxResult) {
+						if (new UFDouble(String.valueOf(rst.get("wavalue"))).doubleValue() > 0) {
+							strUpdate.add("UPDATE WA_CACU_DATA SET CACU_VALUE=" + String.valueOf(rst.get("wavalue"))
+									+ " WHERE PK_CACU_DATA='" + String.valueOf(rst.get("pk_cacu_data") + "';"));
+						}
+					}
 
-				sql = " select wa_cacu_data.PK_CACU_DATA, ROUND((case when (wa_cacu_data.tax_base >= wa_taxtable.nminamount and (wa_taxtable.nmaxamount is null or wa_cacu_data.tax_base <= wa_taxtable.nmaxamount)) then  ";
-				sql += " 	wa_cacu_data.tax_base * ISNULL(wa_taxtable.ntaxrate, 0) / 100 - wa_taxtable.nquickdebuct else 0 end), 0) WAVALUE ";
+					if (strUpdate.size() > 0) {
+						for (String strSQL : strUpdate)
+							session.executeUpdate(strSQL.toString());
+					}
+				}
+
+				// 固定稅率
+				sql = " select wa_cacu_data.pk_psndoc, wa_cacu_data.PK_CACU_DATA, ROUND((case when (wa_cacu_data.tax_base >= wa_taxtable.nminamount and (wa_taxtable.nmaxamount is null or wa_cacu_data.tax_base <= wa_taxtable.nmaxamount)) then  ";
+				sql += " 	wa_cacu_data.tax_base * ISNULL(wa_taxtable.ntaxrate, 0) / 100 - wa_taxtable.nquickdebuct else 0 end), 0) wavalue ";
 				sql += " from wa_cacu_data  ";
 				sql += "  inner join wa_data on wa_data.pk_wa_data = wa_cacu_data.pk_wa_data ";
 				sql += "  inner join org_hrorg ON org_hrorg.pk_hrorg = wa_data.pk_org  ";
@@ -112,38 +132,17 @@ public class TaxFormulaPreExcutor4TW extends AbstractFormulaExecutor {
 						+ "' and wa_cacu_data.creator = '" + useid + "' and wa_taxbase.itbltype=1";
 				List<Map> fixTaxResult = (List<Map>) session.executeQuery(sql, new MapListProcessor());
 
-				List<String> strUpdate = new ArrayList<String>();
-				if (taxResult != null && taxResult.size() > 0) {
-					for (Map rst : taxResult) {
-						boolean isrep = false;
-						if (fixTaxResult != null && fixTaxResult.size() > 0) {
-							for (Map fixrst : fixTaxResult) {
-								if (rst.get("pk_cacu_data").equals(fixrst.get("pk_cacu_data"))) {
-									strUpdate.add("UPDATE WA_CACU_DATA SET CACU_VALUE="
-											+ String.valueOf(fixrst.get("wavalue")) + " WHERE PK_CACU_DATA='"
-											+ String.valueOf(fixrst.get("pk_cacu_data")) + "';");
-									isrep = true;
-								}
-							}
-						}
-
-						if (!isrep) {
-							strUpdate.add("UPDATE WA_CACU_DATA SET CACU_VALUE=" + String.valueOf(rst.get("wavalue"))
-									+ " WHERE PK_CACU_DATA='" + String.valueOf(rst.get("pk_cacu_data") + "';"));
-						}
+				strUpdate.clear();
+				if (fixTaxResult != null && fixTaxResult.size() > 0) {
+					for (Map rst : fixTaxResult) {
+						strUpdate.add("UPDATE WA_CACU_DATA SET CACU_VALUE=" + String.valueOf(rst.get("wavalue"))
+								+ " WHERE PK_CACU_DATA='" + String.valueOf(rst.get("pk_cacu_data") + "';"));
 					}
-				} else {
-					if (fixTaxResult != null && fixTaxResult.size() > 0) {
-						for (Map fixResult : fixTaxResult) {
-							strUpdate.add("UPDATE WA_CACU_DATA SET CACU_VALUE=" + fixResult.get("wavalue")
-									+ " WHERE PK_CACU_DATA='" + fixResult.get("pk_cacu_data") + "';");
-						}
-					}
-				}
 
-				if (strUpdate.size() > 0) {
-					for (String strSQL : strUpdate)
-						session.executeUpdate(strSQL.toString());
+					if (fixTaxResult.size() > 0) {
+						for (String strSQL : strUpdate)
+							session.executeUpdate(strSQL.toString());
+					}
 				}
 			} catch (DbException e) {
 				throw new DAOException(e.getMessage());

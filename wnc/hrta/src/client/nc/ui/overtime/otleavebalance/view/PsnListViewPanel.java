@@ -16,6 +16,7 @@ import nc.bs.logging.Logger;
 import nc.ui.ml.NCLangRes;
 import nc.ui.pub.beans.MessageDialog;
 import nc.ui.pub.beans.UIButton;
+import nc.ui.pub.beans.UICheckBox;
 import nc.ui.pub.beans.UIDialog;
 import nc.ui.pub.beans.UILabel;
 import nc.ui.pub.beans.UIPanel;
@@ -24,6 +25,7 @@ import nc.ui.pub.beans.ValueChangedEvent;
 import nc.ui.pub.beans.ValueChangedListener;
 import nc.ui.pub.bill.BillEditEvent;
 import nc.ui.pub.bill.BillEditListener2;
+import nc.vo.pub.lang.UFBoolean;
 import nc.vo.pub.lang.UFLiteralDate;
 
 public class PsnListViewPanel extends UIDialog implements BillEditListener2, ActionListener, PropertyChangeListener,
@@ -43,10 +45,12 @@ public class PsnListViewPanel extends UIDialog implements BillEditListener2, Act
 	private UILabel psnRefLable = null;// 人員參照標籤
 	private UIRefPane calendarRefField = null;// 日期參照
 	private UILabel calendarRefLable = null;// 日期參照標籤
+	private UICheckBox checkCurrentTerm = null;
 
 	private String pk_org;
 	private UFLiteralDate startDate;
 	private String[] selectedPsndocPKs;
+	private UFBoolean createCurrentTerm;
 
 	@SuppressWarnings("deprecation")
 	public PsnListViewPanel() {
@@ -56,7 +60,7 @@ public class PsnListViewPanel extends UIDialog implements BillEditListener2, Act
 	private void initialize() {
 		this.setTitle("重建分段人員");
 		this.setLayout(new BorderLayout());
-		this.setSize(new Dimension(350, 160));
+		this.setSize(new Dimension(350, 190));
 		this.setContentPane(getUIDialogContentPane());
 		isInit = true;
 	}
@@ -97,12 +101,28 @@ public class PsnListViewPanel extends UIDialog implements BillEditListener2, Act
 				ivjUIPanel1.add(getPsnRefField());
 				ivjUIPanel1.add(getCalendarRefLable());
 				ivjUIPanel1.add(getCalendarRefField());
-				ivjUIPanel1.setBounds(10, 10, 320, 60);
+				ivjUIPanel1.add(getCheckCurrentTerm());
+				ivjUIPanel1.setBounds(10, 10, 320, 120);
 			} catch (Throwable ivjExc) {
 				handleException(ivjExc);
 			}
 		}
 		return ivjUIPanel1;
+	}
+
+	private UICheckBox getCheckCurrentTerm() {
+		if (checkCurrentTerm == null) {
+			checkCurrentTerm = new UICheckBox();
+			checkCurrentTerm.setName("checkCurTerm");
+			checkCurrentTerm.setText("重建當期");
+			checkCurrentTerm.setBorder(null);
+			checkCurrentTerm.setSelected(false);
+			checkCurrentTerm.setVisible(true);
+			// checkCurrentTerm.setPreferredSize(new Dimension(120, 30));
+			checkCurrentTerm.setBounds(10, 75, 80, 30);
+			checkCurrentTerm.addPropertyChangeListener(this);
+		}
+		return checkCurrentTerm;
 	}
 
 	private UIRefPane getPsnRefField() {
@@ -138,6 +158,7 @@ public class PsnListViewPanel extends UIDialog implements BillEditListener2, Act
 		if (calendarRefField == null) {
 			calendarRefField = new UIRefPane("日历");
 			calendarRefField.setVisible(true);
+			calendarRefField.setEnabled(false);
 			calendarRefField.setBounds(90, 8, 220, 50);
 			calendarRefField.setButtonFireEvent(true);
 			calendarRefField.addPropertyChangeListener(this);
@@ -205,6 +226,7 @@ public class PsnListViewPanel extends UIDialog implements BillEditListener2, Act
 			this.setSelectedPsndocPKs(this.getPsnRefField().getRefPKs());
 			this.setStartDate(this.getCalendarRefField().getValueObj() == null ? null : new UFLiteralDate(String
 					.valueOf(this.getCalendarRefField().getValueObj())));
+			this.setCreateCurrentTerm(new UFBoolean(this.getCheckCurrentTerm().isSelected()));
 			setResult(UIDialog.ID_OK);
 			dispose();
 		} else if (e.getSource().equals(getCancelButton())) {
@@ -255,6 +277,21 @@ public class PsnListViewPanel extends UIDialog implements BillEditListener2, Act
 
 	public void setStartDate(UFLiteralDate startDate) {
 		this.startDate = startDate;
+	}
+
+	public void setCheckCurrentTerm(UICheckBox checkCurrentTerm) {
+		this.checkCurrentTerm = checkCurrentTerm;
+	}
+
+	public UFBoolean getCreateCurrentTerm() {
+		if (createCurrentTerm == null) {
+			createCurrentTerm = UFBoolean.FALSE;
+		}
+		return createCurrentTerm;
+	}
+
+	public void setCreateCurrentTerm(UFBoolean createCurrentTerm) {
+		this.createCurrentTerm = createCurrentTerm;
 	}
 
 }

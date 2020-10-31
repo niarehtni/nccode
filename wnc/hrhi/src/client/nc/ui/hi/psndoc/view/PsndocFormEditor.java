@@ -62,14 +62,17 @@ import nc.ui.pub.beans.MessageDialog;
 import nc.ui.pub.beans.UIComboBox;
 import nc.ui.pub.beans.UIRefPane;
 import nc.ui.pub.beans.UITable;
+import nc.ui.pub.beans.UITable.SortItem;
 import nc.ui.pub.beans.constenum.DefaultConstEnum;
 import nc.ui.pub.beans.constenum.IConstEnum;
+import nc.ui.pub.beans.table.IMutilSortableTableModel;
 import nc.ui.pub.bill.BillCardBeforeEditListener;
 import nc.ui.pub.bill.BillEditEvent;
 import nc.ui.pub.bill.BillEditListener2;
 import nc.ui.pub.bill.BillItem;
 import nc.ui.pub.bill.BillItemEvent;
 import nc.ui.pub.bill.BillModel;
+import nc.ui.pub.bill.BillTabbedPane;
 import nc.ui.pub.bill.IBillItem;
 import nc.ui.uif2.AppEvent;
 import nc.ui.uif2.ShowStatusBarMsgUtil;
@@ -815,11 +818,18 @@ public class PsndocFormEditor extends HrBillFormEditor implements BillCardBefore
 				}
 
 			} else if ((PsnJobVO.getDefaultTableName() + "_" + "pk_dept").equals(evt.getKey())) {
-				String dept = evt.getValue() == null ? "" : ((String[]) evt.getValue())[0];
+				// String dept = evt.getValue() == null ? "" : ((String[])
+				// evt.getValue())[0];
 				// by he
-				Boolean isSupervisor = (Boolean) getHeadItemValue(PsnJobVO.getDefaultTableName() + "_" + "jobglbdef2");
-				setHeadItemValue("glbdef11", getCluster(dept));
-				setHeadItemValue("hi_psnjob_jobglbdef9", getPrincipal(dept, isSupervisor));
+				// Boolean isSupervisor = (Boolean)
+				// getHeadItemValue(PsnJobVO.getDefaultTableName() + "_" +
+				// "jobglbdef2");
+				// setHeadItemValue("glbdef11", getCluster(dept));
+				// ssx remarked on 2020-06-08
+				// 取消直屬主管自動賦值
+				// setHeadItemValue("hi_psnjob_jobglbdef9", getPrincipal(dept,
+				// isSupervisor));
+				// end
 				Object obj = getHeadItemValue(PsnJobVO.getDefaultTableName() + "_" + "pk_post");
 				if (obj != null) {
 					clearHeadItemValue(new String[] { PsnJobVO.getDefaultTableName() + "_" + "pk_post",
@@ -1098,14 +1108,24 @@ public class PsndocFormEditor extends HrBillFormEditor implements BillCardBefore
 				if (workagestartdate != null) {
 					workagestartdate.setValue(date);
 				}
-			} else if ("hi_psnjob_jobglbdef2".equals(evt.getKey())) {
-				Boolean isSupervisor = (Boolean) (evt.getValue() == null ? "false" : ((Boolean) evt.getValue()));
-				String directSupervisor = (String) getHeadItemValue(PsnJobVO.getDefaultTableName() + "_" + "jobglbdef9");
-				String dept = (String) getHeadItemValue(PsnJobVO.getDefaultTableName() + "_" + "pk_dept");
-				if (null != directSupervisor && null != dept) {
-					setHeadItemValue("hi_psnjob_jobglbdef9", getPrincipal(dept, isSupervisor));
-				}
 			}
+			// ssx remarded on 2020-07-12
+			// 刪除直屬主管相關代碼
+			// else if ("hi_psnjob_jobglbdef2".equals(evt.getKey())) {
+			// Boolean isSupervisor = (Boolean) (evt.getValue() == null ?
+			// "false" : ((Boolean) evt.getValue()));
+			// String directSupervisor = (String)
+			// getHeadItemValue(PsnJobVO.getDefaultTableName() + "_" +
+			// "jobglbdef9");
+			// String dept = (String)
+			// getHeadItemValue(PsnJobVO.getDefaultTableName() + "_" +
+			// "pk_dept");
+			// if (null != directSupervisor && null != dept) {
+			// setHeadItemValue("hi_psnjob_jobglbdef9", getPrincipal(dept,
+			// isSupervisor));
+			// }
+			// }
+			// end
 
 			String series = (String) getHeadItemValue(PsnJobVO.getDefaultTableName() + "_" + "series");
 			String postseries = (String) getHeadItemValue(PsnJobVO.getDefaultTableName() + "_" + "pk_postseries");
@@ -2089,7 +2109,7 @@ public class PsndocFormEditor extends HrBillFormEditor implements BillCardBefore
 		String[] strTabCodes = getBillCardPanel().getBillData().getBodyTableCodes();
 		if (strTabCodes != null) {
 			for (String strTabCode : strTabCodes) {
-				getBillCardPanel().getBillTable(strTabCode).removeSortListener();
+				// getBillCardPanel().getBillTable(strTabCode).removeSortListener();
 				getBillCardPanel().getBodyPanel(strTabCode).setBBodyMenuShow(false);
 			}
 		}
@@ -2254,8 +2274,10 @@ public class PsndocFormEditor extends HrBillFormEditor implements BillCardBefore
 				if (getBillCardPanel().getHeadItem("father_serial_name") != null) {
 					nc.vo.pub.lang.MultiLangText names = (MultiLangText) getBillCardPanel().getBodyValueAt(
 							subVOs.length - 1, "series.father_pk.jobtypename");
-					getBillCardPanel().setHeadItem("father_serial_name",
-							names.getText(MultiLangUtil.getCurrentLangSeq() - 1));
+					if (names != null) {
+						getBillCardPanel().setHeadItem("father_serial_name",
+								names.getText(MultiLangUtil.getCurrentLangSeq() - 1));
+					}
 				}
 				// end
 			}
@@ -2318,7 +2340,7 @@ public class PsndocFormEditor extends HrBillFormEditor implements BillCardBefore
 
 		String[] tabCodes = getBillCardPanel().getBillData().getBodyTableCodes();
 		for (int i = 0; (tabCodes != null) && (i < tabCodes.length); i++) {
-			getBillCardPanel().getBillTable(tabCodes[i]).removeSortListener();
+			// getBillCardPanel().getBillTable(tabCodes[i]).removeSortListener();
 			getBillCardPanel().getBodyPanel(tabCodes[i]).setBBodyMenuShow(false);
 		}
 
@@ -2467,6 +2489,11 @@ public class PsndocFormEditor extends HrBillFormEditor implements BillCardBefore
 		}
 		disableHeaditems();
 		getBillCardPanel().getHeadItem(PsnJobVO.getDefaultTableName() + "_" + "pk_jobgrade").setEnabled(false);
+
+		// ssx added on 2020-05-28 for #35540
+		// 入職時入職前采計年資默認為0
+		getBillCardPanel().getHeadItem(PsnOrgVO.getDefaultTableName() + "_" + "orgglbdef5").setValue(UFDouble.ZERO_DBL);
+		// end ssx
 	}
 
 	protected void onEdit() {
@@ -2693,11 +2720,26 @@ public class PsndocFormEditor extends HrBillFormEditor implements BillCardBefore
 		} finally {
 			BatchMatchContext.getShareInstance().setInBatchMatch(false);
 		}
+		getBillCardPanel().execHeadLoadFormulas();
 	}
 
 	private void subTabChanged(ChangeEvent evt) {
 		loadCurrentRowSubData();
-		getModel().fireEvent(new AppEvent("tabchanged", evt.getSource(), null));
+		// ssx added on 2020-06-10
+		// 增加按第2列顺序排序逻辑，以免画面排序混乱
+		try {
+			List<SortItem> sortList = new ArrayList<SortItem>();
+			SortItem sItem = new SortItem(2);
+			sItem.setAscending(true);
+			sortList.add(sItem);
+			((IMutilSortableTableModel) ((UITable) getBillCardPanel().getBillTable(
+					((BillTabbedPane) evt.getSource()).getSelectedTableCode())).getModel()).sortByColumns(sortList,
+					new int[0]);
+			// end
+			getModel().fireEvent(new AppEvent("tabchanged", evt.getSource(), null));
+		} catch (Exception e) {
+			Logger.error(e.getMessage());
+		}
 	}
 
 	private void fillData() {

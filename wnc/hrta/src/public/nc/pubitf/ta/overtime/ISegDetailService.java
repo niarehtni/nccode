@@ -511,11 +511,16 @@ public interface ISegDetailService {
 	/**
 	 * 強制重建加班分段及消耗
 	 * 
+	 * @param pk_org
+	 *            組織PK
 	 * @param pk_psndoc
 	 *            重建人PK
 	 * @param startDate
 	 *            起始日期
+	 * @param isCurrentTerm
+	 *            是否只重建當期資料
 	 * @throws BusinessException
 	 */
-	public void forceRebuildSegDetailByPsn(String pk_psndoc, UFLiteralDate startDate) throws BusinessException;
+	public void forceRebuildSegDetailByPsn(String pk_org, String pk_psndoc, UFLiteralDate startDate,
+			UFBoolean isCurrentTerm) throws BusinessException;
 }

@@ -12,6 +12,7 @@ import nc.bs.dao.DAOException;
 import nc.bs.uap.oid.OidGenerator;
 import nc.hr.utils.InSQLCreator;
 import nc.impl.ta.overtime.SegdetailMaintainImpl;
+import nc.jdbc.framework.processor.ColumnProcessor;
 import nc.jdbc.framework.processor.MapListProcessor;
 import nc.vo.hi.psndoc.PsndocVO;
 import nc.vo.ml.MultiLangUtil;
@@ -122,6 +123,70 @@ public class OTSChainUtils {
 		return firstNode;
 	}
 
+	public static OTSChainNode buildPartChainNodes(String pk_psndoc, UFLiteralDate otDate, String pk_overtimereg,
+			boolean isForceComp, boolean isNoComp, boolean isForceNotCancel, boolean isForceNotConsumeFinished,
+			boolean isForceSettled) throws BusinessException {
+		// 按人員取全節點
+		String lastDate = (String) getBaseDAO().executeQuery(
+				"select max(regdate) from hrta_segdetail where regdate < '" + otDate.toString() + "' and pk_psndoc='"
+						+ pk_psndoc + "'", new ColumnProcessor());
+		if (StringUtils.isEmpty(lastDate)) {
+			lastDate = otDate.getDateBefore(1).toString();
+		}
+		String nextDate = (String) getBaseDAO().executeQuery(
+				"select min(regdate) from hrta_segdetail where regdate > '" + otDate.toString() + "' and pk_psndoc='"
+						+ pk_psndoc + "'", new ColumnProcessor());
+		if (StringUtils.isEmpty(nextDate)) {
+			nextDate = otDate.getDateAfter(1).toString();
+		}
+		OTSChainNode firstNode = null;
+		List<String> pkList = new ArrayList<String>();
+		Collection<SegDetailVO> sdList = retrieveSegDetailData(new String[] { pk_psndoc }, new UFLiteralDate(lastDate),
+				new UFLiteralDate(nextDate), pk_overtimereg, false);
+		if (sdList != null && sdList.size() > 0) {
+			for (SegDetailVO vo : sdList) {
+				vo.setPk_segdetailconsume(getConsumeVO(vo.getPk_segdetail()));
+				// 查找第一個節點
+				if (vo.getPk_parentsegdetail() == null || !existsParent(vo, sdList.toArray(new SegDetailVO[0]))) {
+					firstNode = new OTSChainNode();
+					firstNode.setNodeData(vo);
+					firstNode.setNextNode(null);
+					firstNode.setPriorNode(null);
+					pkList.add(vo.getPk_segdetail());
+				}
+			}
+
+			if (firstNode != null) {
+				OTSChainNode curNode = firstNode;
+				// 構建鏈表
+				for (SegDetailVO vo : sdList) {
+					if (!pkList.contains(vo.getPk_segdetail())) {
+						SegDetailVO childVO = getChildVO(sdList.toArray(new SegDetailVO[0]), curNode.getNodeData()
+								.getPk_segdetail());
+						if (childVO != null) {
+							OTSChainNode newNode = new OTSChainNode();
+							newNode.setNodeData(childVO);
+							appendNode(curNode, newNode, true);
+							curNode = newNode;
+						} else {
+							break; // 一旦找不到子節點，認為鏈表已建立完畢
+						}
+
+						pkList.add(vo.getPk_segdetail());
+					}
+				}
+			}
+		}
+
+		// 如果有過濾條件
+		if (isForceComp || isForceNotCancel || isForceNotConsumeFinished || isForceSettled) {
+			firstNode = filterNodes(isForceComp, isNoComp, isForceNotCancel, isForceNotConsumeFinished, isForceSettled,
+					firstNode);
+		}
+
+		return firstNode;
+	}
+
 	/**
 	 * 根據人員及加班類別創建現有記錄創建鏈表
 	 * 
@@ -158,7 +223,7 @@ public class OTSChainUtils {
 		Map<String, List<OTSChainNode>> psnNodes = null;
 		Map<String, OTSChainNode> psnFirstNode = new HashMap<String, OTSChainNode>();
 		Map<String, OTSChainNode> minNode = new HashMap<String, OTSChainNode>();
-		;
+
 		Map<String, String> minsegCode = new HashMap<String, String>();
 		if (vodataList != null && vodataList.size() > 0) {
 			SegDetailVO[] sdList = getSegDetailVOsFromVOData(vodataList);
@@ -200,8 +265,7 @@ public class OTSChainUtils {
 					// 構建鏈表
 					for (OTSChainNode vo : psnNodes.get(pk_psndoc).toArray(new OTSChainNode[0])) {
 						SegDetailVO childVO = getChildVOByCode(psnNodes.get(pk_psndoc).toArray(new OTSChainNode[0]),
-								curNode.getNodeData().getNodecode(), curNode.getNodeData().getApproveddate()
-										.toStdString());
+								curNode);
 						if (childVO != null) {
 							OTSChainNode newNode = new OTSChainNode();
 							newNode.setNodeData(childVO);
@@ -250,6 +314,18 @@ public class OTSChainUtils {
 	}
 
 	@SuppressWarnings("unchecked")
+	public static Collection<SegDetailVO> retrieveSegDetailData(String[] pk_psndocs, UFLiteralDate startDate,
+			UFLiteralDate endDate, String pk_overtimereg, boolean isComp) throws BusinessException {
+		return (Collection<SegDetailVO>) getBaseDAO().retrieveByClause(
+				SegDetailVO.class,
+				"dr=0 and " + (isComp ? "(iscompensation = 'Y' or issettled = 'N') and " : "") + " pk_psndoc in ("
+						+ (new InSQLCreator().getInSQL(pk_psndocs)) + ") "
+						+ (startDate == null ? "" : " and regdate >= '" + startDate.toString() + "' ")
+						+ (endDate == null ? "" : " and regdate <= '" + endDate.toString() + "' ")
+						+ (StringUtils.isEmpty(pk_overtimereg) ? "" : " and pk_overtimereg='" + pk_overtimereg + "'"));
+	}
+
+	@SuppressWarnings("unchecked")
 	public static List<Map<String, Object>> retrieveSegDetailData(String[] pk_psndocs, UFLiteralDate startDate,
 			UFLiteralDate endDate, String pk_overtimereg) throws BusinessException {
 		return (List<Map<String, Object>>) getBaseDAO()
@@ -268,7 +344,7 @@ public class OTSChainUtils {
 								+ (startDate == null ? "" : " and regdate >= '" + startDate.toString() + "' ")
 								+ (endDate == null ? "" : " and regdate <= '" + endDate.toString() + "' ")
 								+ (StringUtils.isEmpty(pk_overtimereg) ? "" : " and pk_overtimereg='" + pk_overtimereg
-										+ "'"), new MapListProcessor());
+										+ "' order by nodecode"), new MapListProcessor());
 	}
 
 	private static SegDetailVO[] getSegDetailVOsFromVOData(List<Map<String, Object>> vodataList) {
@@ -439,10 +515,13 @@ public class OTSChainUtils {
 		return null;
 	}
 
-	private static SegDetailVO getChildVOByCode(OTSChainNode[] psnNodes, String parentNodeCode,
-			String parentApproveddateStr) {
+	private static SegDetailVO getChildVOByCode(OTSChainNode[] psnNodes, OTSChainNode builtNode)
+			throws BusinessException {
 		String minCode = null;
 		SegDetailVO minSeg = null;
+		String parentNodeCode = builtNode.getNodeData().getNodecode();
+		String parentApproveddateStr = builtNode.getNodeData().getApproveddate().toStdString();
+		String pk_overtimereg = builtNode.getNodeData().getPk_overtimereg();
 		if (psnNodes != null && psnNodes.length > 0) {
 			// mod 用code和审批日期为key的方式区分分段的顺序 tank 2020年3月9日 00:11:28
 			// TODO :同一個人，同一天，同一分段，審核日期都一樣场景下,分段顺序的区分
@@ -450,10 +529,15 @@ public class OTSChainUtils {
 			StringBuilder comparetorSB = new StringBuilder();
 
 			for (OTSChainNode curNode : psnNodes) {
-
 				comparetorSB.append(curNode.getNodeData().getNodecode()).append(
 						curNode.getNodeData().getApproveddate().toStdString());
-				if (comparetorSB.toString().compareTo(key) > 0) {
+				if (comparetorSB.toString().compareTo(key) > 0
+				// ssx added on 2020-10-27
+				// 比較分段時不能只比較分段編號+審批日期的大小，還存在一種情況是審批日期和分段編號完全相同，
+				// 但是不同單據的情況，故增加對該情況下加班單不同的判斷
+						|| (comparetorSB.toString().compareTo(key) == 0
+								&& !pk_overtimereg.equals(curNode.getNodeData().getPk_overtimereg()) && !nodeExists(
+									builtNode, curNode))) {
 					// mod end 用code和审批日期为key的方式区分分段的顺序 tank 2020年3月9日 00:11:32
 					if (StringUtils.isEmpty(minCode)) {
 						minCode = curNode.getNodeData().getNodecode();
@@ -469,6 +553,22 @@ public class OTSChainUtils {
 			}
 		}
 		return minSeg;
+	}
+
+	private static boolean nodeExists(OTSChainNode oriNode, OTSChainNode seekNode) throws BusinessException {
+		boolean isExits = false;
+		if (oriNode != null) {
+			OTSChainNode curNode = getFirstNode(oriNode);
+			while (curNode != null) {
+				if (curNode.getNodeData().getNodecode().equals(seekNode.getNodeData().getNodecode())
+						&& curNode.getNodeData().getPk_overtimereg().equals(seekNode.getNodeData().getPk_overtimereg())) {
+					isExits = true;
+				}
+				curNode = curNode.getNextNode();
+			}
+		}
+
+		return isExits;
 	}
 
 	private static SegDetailVO getChildVO(SegDetailVO[] sdList, String pk_segdetail) {
@@ -975,7 +1075,7 @@ public class OTSChainUtils {
 
 			if (originalDateType == 5 && checkDateType == 5) {
 				if (curNodeCode.equals(checkedNodeCode)
-						|| (curCodeList[0].equals(checkedCodeList[0]) && (curCodeList[1].compareTo(checkedCodeList[1]) == 0))) {
+						|| (curCodeList[0].equals(checkedCodeList[0]) && (curCodeList[1].compareTo(checkedCodeList[1]) <= 0))) {
 					retNode = curNode;
 					break;
 				}

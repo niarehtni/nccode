@@ -68,502 +68,503 @@ import org.apache.commons.lang.StringUtils;
 
 public class LeaveRegisterMaintainImpl implements ILeaveRegisterQueryMaintain, ILeaveRegisterManageMaintain {
 
-    private HrBatchService serviceTemplate;
-    private ISegDetailService ovSegService;
+	private HrBatchService serviceTemplate;
+	private ISegDetailService ovSegService;
 
-    public HrBatchService getServiceTemplate() {
-	if (serviceTemplate == null) {
-	    serviceTemplate = new HrBatchService(IMetaDataIDConst.LEAVE);
-	}
-	return serviceTemplate;
-    }
-
-    public ISegDetailService getOvSegService() {
-	if (ovSegService == null) {
-	    ovSegService = NCLocator.getInstance().lookup(ISegDetailService.class);
-	}
-
-	return ovSegService;
-    }
-
-    @SuppressWarnings("unchecked")
-    @Override
-    public LeaveRegVO[] queryByCond(LoginContext context, FromWhereSQL fromWhereSQL, Object etraConds)
-	    throws BusinessException {
-	// 取主表名
-	String alias = FromWhereSQLUtils.getMainTableAlias(fromWhereSQL, LeaveRegVO.getDefaultTableName());
-	// 拼组织的sql
-	String etraCondsNext = "(" + alias + "." + LeaveRegVO.PK_ORG
-		+ (context.getPk_org() == null ? " is null" : (" = '" + context.getPk_org() + "' ")) + " or " + alias
-		+ "." + LeaveRegVO.PK_ADMINORG
-		+ (context.getPk_org() == null ? " is null" : (" = '" + context.getPk_org() + "' ")) + ")";
-	// 增加权限sql，使用工作记录资源实体下的“时间管理通用引用”元数据操作
-	fromWhereSQL = PubPermissionUtils.addPubQueryPermission2FromWhereSQL(fromWhereSQL,
-		LeaveRegVO.getDefaultTableName(), LeaveRegVO.getDefaultTableName(), LeaveRegVO.PK_PSNJOB);
-
-	// 按期间查询
-	String periodSql = TaNormalQueryUtils.getPeriodSql(context, LeaveRegVO.class, alias,
-		(TaBillRegQueryParams) etraConds);
-	if (periodSql != null) {
-	    etraCondsNext += " and " + periodSql;
-	}
-
-	String sql = FromWhereSQLUtils.createSelectSQL(fromWhereSQL, "tbm_leavereg", etraCondsNext, null);
-	Collection<LeaveRegVO> aggvos = (Collection<LeaveRegVO>) new BaseDAO().executeQuery(sql, new BeanListProcessor(
-		LeaveRegVO.class));
-	if (CollectionUtils.isEmpty(aggvos))
-	    return null;
-	return aggvos.toArray(new LeaveRegVO[0]);
-    }
-
-    @Override
-    public LeaveRegVO queryByPk(String pk) throws BusinessException {
-	return getServiceTemplate().queryByPk(LeaveRegVO.class, pk);
-    }
-
-    @Override
-    public void deleteArrayData(LeaveRegVO[] vos) throws BusinessException {
-	if (ArrayUtils.isEmpty(vos))
-	    return;
-	// for(LeaveRegVO vo:vos){
-	// PeriodServiceFacade.checkMonth(vo.getPk_org(), vo.getPk_psndoc(),
-	// vo.getBegindate(), vo.getEnddate());
-	// }
-
-	IDateScope maxDateScope = DateScopeUtils.getMaxRangeDateScope(vos);
-	PeriodServiceFacade.checkMonth(vos[0].getPk_org(), StringPiecer.getStrArray(vos, LeaveRegVO.PK_PSNDOC),
-		maxDateScope.getBegindate(), maxDateScope.getEnddate());
-
-	DefaultValidationService vService = new DefaultValidationService();
-	vService.addValidator(new LeaveRegDeleteValidator());
-	vService.validate(vos);
-	getServiceTemplate().delete(vos);
-	for (LeaveRegVO vo : vos) {
-	    LeavePlanChangeTime.ChangeTime(vo.getLength().multiply(-1), vo.getLeaveplan());
-	}
-	ILeaveBalanceManageService balanceService = NCLocator.getInstance().lookup(ILeaveBalanceManageService.class);
-	balanceService.queryAndCalLeaveBalanceVO(vos[0].getPk_org(), (Object[]) vos);
-	// 业务日志
-	TaBusilogUtil.writeLeaveRegDeleteBusiLog(vos);
-	CacheProxy.fireDataDeletedBatch(LeaveRegVO.getDefaultTableName(),
-		StringPiecer.getStrArray(vos, LeaveRegVO.PK_LEAVEREG));
-	// MOD(台灣新法令)
-	// ssx added on 2018-9-19
-	this.getOvSegService().deleteOvertimeSegDetailConsume(vos);
-	// end
-    }
-
-    @Override
-    public void deleteData(LeaveRegVO vo) throws BusinessException {
-	if (vo == null)
-	    return;
-	deleteArrayData(new LeaveRegVO[] { vo });
-    }
-
-    @Override
-    public LeaveRegVO[] insertArrayData(LeaveRegVO[] vos) throws BusinessException {
-	BillMethods.processBeginEndDatePkJobOrgTimeZone(vos);
-	return insertData(vos, true);
-    }
-
-    @Override
-    public LeaveRegVO[] insertData(LeaveRegVO[] vos, boolean needCalAndValidate) throws BusinessException {
-	if (ArrayUtils.isEmpty(vos))
-	    return null;
-	if (needCalAndValidate) {
-	    new LeaveRegValidatorService().validate(vos);
-	    // check(vos[0].getPk_org(), vos);//保存前的提示性校验中已经校验过了，为了效率此处不再校验
-	    BillValidatorAtServer.checkCalendarCompleteForLeaveAndShutdown(vos[0].getPk_org(), vos);
-	}
-
-	// 查询考勤档案
-	IDateScope maxDateScope = DateScopeUtils.getMaxRangeDateScope(vos);
-	// 有可能在A组织填休假记录，然后调配到B组织，所以需要跨组织查询
-	ITBMPsndocQueryService psndocService = NCLocator.getInstance().lookup(ITBMPsndocQueryService.class);
-	Map<String, List<TBMPsndocVO>> psndocMap = psndocService.queryTBMPsndocMapByPsndocs(null,
-		StringPiecer.getStrArrayDistinct(vos, LeaveRegVO.PK_PSNDOC), maxDateScope.getBegindate(),
-		maxDateScope.getEnddate(), false);
-	if (MapUtils.isEmpty(psndocMap))
-	    return null;
-	for (LeaveRegVO vo : vos) {
-	    if (vo.getLeaveindex() == null)
-		vo.setLeaveindex(1);
-	    if (vo.getIsleaveoff() == null)
-		vo.setIsleaveoff(UFBoolean.FALSE);
-	    // 根据结束日期找归属的考勤档案
-	    TBMPsndocVO psndocVO = TBMPsndocVO.findIntersectionVO(psndocMap.get(vo.getPk_psndoc()), vo.getEnddate()
-		    .toStdString());
-	    if (psndocVO == null)
-		throw new BusinessException(ResHelper.getString("6017psndoc", "06017psndoc0131"/*
-											        * @
-											        * res
-											        * "保存失败,人员{0}的考勤档案时间范围不包含该时间段"
-											        */,
-			psndocService.getPsnName(vo.getPk_psndoc())));
-	    // 设置管理组织
-	    vo.setPk_adminorg(psndocVO.getPk_adminorg());
-	}
-	// 审批通过的要校验该类别的休假数据是否已经结算了
-	LeaveRegVO[] retvos = getServiceTemplate().insert(vos);
-	if (null == vos[0].getPk_billsourceh() || "~".equals(vos[0].getPk_billsourceh())
-		|| "".equals(vos[0].getPk_billsourceh())) {
-	    // ssx added for Taiwan new Law
-	    this.getOvSegService().regOvertimeSegDetailConsume(vos);
-	    // end
-	}
-	afterInsert(vos, retvos);
-	return retvos;
-    }
-
-    private void afterInsert(final LeaveRegVO[] vos, final LeaveRegVO[] retvos) throws BusinessException {
-
-	final InvocationInfo invocationInfo = BDDistTokenUtil.getInvocationInfo();
-	new Executor(new Runnable() {
-	    @Override
-	    public void run() {
-		BDDistTokenUtil.setInvocationInfo(invocationInfo);
-		try {
-		    NCLocator.getInstance().lookup(ILeaveBalanceManageService.class)
-			    .queryAndCalLeaveBalanceVO(vos[0].getPk_org(), (Object[]) vos);
-		    // 业务日志
-		    TaBusilogUtil.writeLeaveRegAddBusiLog(retvos);
-		    CacheProxy.fireDataInserted(LeaveRegVO.getDefaultTableName());
-		} catch (BusinessException e) {
-		    Logger.error(e.getMessage(), e);
+	public HrBatchService getServiceTemplate() {
+		if (serviceTemplate == null) {
+			serviceTemplate = new HrBatchService(IMetaDataIDConst.LEAVE);
 		}
-	    }
-	}).start();
-
-    }
-
-    @Override
-    public LeaveRegVO insertData(LeaveRegVO vo) throws BusinessException {
-	if (vo == null)
-	    return null;
-	return insertArrayData(new LeaveRegVO[] { vo })[0];
-    }
-
-    @Override
-    public LeaveRegVO[] updateArrayData(LeaveRegVO[] vos) throws BusinessException {
-	return null;
-    }
-
-    @Override
-    public LeaveRegVO updateData(LeaveRegVO vo) throws BusinessException {
-	if (vo == null)
-	    return null;
-	PeriodServiceFacade.checkMonth(vo.getPk_org(), vo.getPk_psndoc(), vo.getBegindate(), vo.getEnddate());
-	LeaveRegVO oldvo = getServiceTemplate().queryByPk(LeaveRegVO.class, vo.getPk_leavereg());
-	// TODO:如果用户修改了类别,则原类别的结算记录也要重新计算
-	new LeaveRegValidatorService().validate(vo);
-	// new
-	// LeaveApplyApproveManageMaintainImpl().checkCrossPeriodBills(vo.getPk_org(),
-	// new LeaveCommonVO[]{vo});
-	check(vo);
-	BillValidatorAtServer.checkCalendarCompleteForLeaveAndShutdown(vo);
-
-	ITimeItemQueryService itemService = NCLocator.getInstance().lookup(ITimeItemQueryService.class);
-	TimeItemCopyVO typeVO = itemService.queryCopyTypesByDefPK(vo.getPk_org(), vo.getPk_leavetype(),
-		TimeItemCopyVO.LEAVE_TYPE);
-
-	BillValidatorAtServer.checkLeaveRestrictPara(typeVO, vo.getLeavehour(), vo.getRestdayorhour());
-
-	ILeaveBalanceManageService balanceService = NCLocator.getInstance().lookup(ILeaveBalanceManageService.class);
-
-	// 修改保存时导致管理组织主键丢失，insert也是在后台插入的
-	ITBMPsndocQueryService psndocService = NCLocator.getInstance().lookup(ITBMPsndocQueryService.class);
-	TBMPsndocVO psndocVO = psndocService.queryTBMPsndocByPsndoc(vo.getPk_org(), vo.getPk_psndoc(), vo.getEnddate());
-	if (psndocVO == null)
-	    throw new BusinessException(ResHelper.getString("6017psndoc", "06017psndoc0131"/*
-											    * @
-											    * res
-											    * "保存失败,人员{0}的考勤档案时间范围不包含该时间段"
-											    */,
-		    psndocService.getPsnName(vo.getPk_psndoc())));
-	// 设置管理组织
-	vo.setPk_adminorg(psndocVO.getPk_adminorg());
-
-	// ssx added for Taiwan new Law
-	this.getOvSegService().updateOvertimeSegDetailConsume(new LeaveRegVO[] { vo });
-	// end
-	LeaveRegVO regvo = getServiceTemplate().update(true, vo)[0];
-	balanceService.queryAndCalLeaveBalanceVO(vo.getPk_org(), vo);
-	// 业务日志
-	TaBusilogUtil.writeLeaveRegEditBusiLog(new LeaveRegVO[] { regvo }, new LeaveRegVO[] { oldvo });
-	CacheProxy.fireDataUpdated(LeaveRegVO.getDefaultTableName());
-	return regvo;
-    }
-
-    @Override
-    public LeaveRegVO leaveOff(LeaveRegVO vo, ICalendar factBeginTime, ICalendar factEndTime) throws BusinessException {
-	if (vo == null)
-	    return null;
-	if (factBeginTime instanceof UFDateTime && factEndTime instanceof UFDateTime)
-	    return leaveOff(vo, (UFDateTime) factBeginTime, (UFDateTime) factEndTime);
-	if (factBeginTime instanceof UFLiteralDate && factEndTime instanceof UFLiteralDate)
-	    return leaveOff(vo, (UFLiteralDate) factBeginTime, (UFLiteralDate) factEndTime);
-	throw new IllegalArgumentException("params must have the same type!");
-    }
-
-    private LeaveRegVO leaveOff(LeaveRegVO vo, UFLiteralDate factBeginDate, UFLiteralDate factEndDate)
-	    throws BusinessException {
-	if (vo == null) {
-	    return null;
+		return serviceTemplate;
 	}
-	UFDouble oldLeaveLen = vo.getLength();
-	validateAndUpdateBanlance(vo);
-	// 2015-09-17调整，需求为哺乳假开始时间已经封存但是应该允许销假，修改为只要结束日期没有封存则可以销假
-	// validatePeriodSeal(vo.getPk_org(),factBeginDate,factEndDate,false);
-	// validatePeriodSeal(vo.getPk_org(),vo.getLeavebegindate(),vo.getLeaveenddate(),true);
-	validatePeriodSeal(vo.getPk_org(), factEndDate, factEndDate, false);
-	validatePeriodSeal(vo.getPk_org(), vo.getLeaveenddate(), vo.getLeaveenddate(), true);
 
-	ITBMPsndocQueryService s = NCLocator.getInstance().lookup(ITBMPsndocQueryService.class);
-	s.checkTBMPsndocDate(vo.getPk_org(), vo.getPk_psndoc(), factBeginDate, factEndDate);
+	public ISegDetailService getOvSegService() {
+		if (ovSegService == null) {
+			ovSegService = NCLocator.getInstance().lookup(ISegDetailService.class);
+		}
 
-	vo.setLeavebegindate(factBeginDate);
-	vo.setLeaveenddate(factEndDate);
-	vo.setIsleaveoff(UFBoolean.TRUE);
-	vo.setBacktime(new UFDateTime(System.currentTimeMillis()));
-
-	BillValidatorAtServer.checkLeave(vo);
-	BillValidatorAtServer.checkCalendarCompleteForLeaveAndShutdown(vo);
-
-	// 业务日志
-	LeaveRegVO oldvo = getServiceTemplate().queryByPk(LeaveRegVO.class, vo.getPk_leavereg());
-	TaBusilogUtil.writeLeaveRegOffBusiLog(new LeaveRegVO[] { vo }, new LeaveRegVO[] { oldvo });
-
-	vo = getServiceTemplate().update(true, vo)[0];
-	UFDouble newLeaveLen = vo.getLength();
-	LeavePlanChangeTime.ChangeTime((newLeaveLen.sub(oldLeaveLen)), vo.getLeaveplan());
-	NCLocator.getInstance().lookup(ILeaveBalanceManageService.class).queryAndCalLeaveBalanceVO(vo.getPk_org(), vo);
-
-	return vo;
-    }
-
-    private LeaveRegVO leaveOff(LeaveRegVO vo, UFDateTime factBeginDateTime, UFDateTime factEndDateTime)
-	    throws BusinessException {
-	if (vo == null) {
-	    return null;
+		return ovSegService;
 	}
-	UFDouble oldLeaveLen = vo.getLength();
-	// UFLiteralDate applyBeginDate = vo.getBegindate();
-	UFLiteralDate applyEndDate = vo.getEnddate();
-	// 2015-09-17调整，需求为哺乳假开始时间已经封存但是应该允许销假，修改为只要结束日期没有封存则可以销假
-	// validatePeriodSeal(vo.getPk_org(),applyBeginDate,applyEndDate,true);
-	validatePeriodSeal(vo.getPk_org(), applyEndDate, applyEndDate, true);
-	vo.setLeavebegintime(factBeginDateTime);
-	vo.setLeaveendtime(factEndDateTime);
-	TimeRuleVO timeRuleVO = NCLocator.getInstance().lookup(ITimeRuleQueryService.class).queryByOrg(vo.getPk_org());
-	CommonMethods.processBeginEndDate(vo, timeRuleVO.getTimeZoneMap());
-	// UFLiteralDate beginDate = vo.getBegindate();
-	UFLiteralDate endDate = vo.getEnddate();
-	validateAndUpdateBanlance(vo);
-	// 2015-09-17调整，需求为哺乳假开始时间已经封存但是应该允许销假，修改为只要结束日期没有封存则可以销假
-	// validatePeriodSeal(vo.getPk_org(),beginDate,endDate,false);
-	validatePeriodSeal(vo.getPk_org(), endDate, endDate, false);
 
-	ITBMPsndocQueryService s = NCLocator.getInstance().lookup(ITBMPsndocQueryService.class);
-	s.checkTBMPsndocTime(vo.getPk_org(), vo.getPk_psndoc(), factBeginDateTime, factEndDateTime);
+	@SuppressWarnings("unchecked")
+	@Override
+	public LeaveRegVO[] queryByCond(LoginContext context, FromWhereSQL fromWhereSQL, Object etraConds)
+			throws BusinessException {
+		// 取主表名
+		String alias = FromWhereSQLUtils.getMainTableAlias(fromWhereSQL, LeaveRegVO.getDefaultTableName());
+		// 拼组织的sql
+		String etraCondsNext = "(" + alias + "." + LeaveRegVO.PK_ORG
+				+ (context.getPk_org() == null ? " is null" : (" = '" + context.getPk_org() + "' ")) + " or " + alias
+				+ "." + LeaveRegVO.PK_ADMINORG
+				+ (context.getPk_org() == null ? " is null" : (" = '" + context.getPk_org() + "' ")) + ")";
+		// 增加权限sql，使用工作记录资源实体下的“时间管理通用引用”元数据操作
+		fromWhereSQL = PubPermissionUtils.addPubQueryPermission2FromWhereSQL(fromWhereSQL,
+				LeaveRegVO.getDefaultTableName(), LeaveRegVO.getDefaultTableName(), LeaveRegVO.PK_PSNJOB);
 
-	vo.setIsleaveoff(UFBoolean.TRUE);
-	vo.setBacktime(new UFDateTime(System.currentTimeMillis()));
+		// 按期间查询
+		String periodSql = TaNormalQueryUtils.getPeriodSql(context, LeaveRegVO.class, alias,
+				(TaBillRegQueryParams) etraConds);
+		if (periodSql != null) {
+			etraCondsNext += " and " + periodSql;
+		}
 
-	BillValidatorAtServer.checkLeave(vo);
-	BillValidatorAtServer.checkCalendarCompleteForLeaveAndShutdown(vo);
-	// 业务日志
-	LeaveRegVO oldvo = getServiceTemplate().queryByPk(LeaveRegVO.class, vo.getPk_leavereg());
-	TaBusilogUtil.writeLeaveRegOffBusiLog(new LeaveRegVO[] { vo }, new LeaveRegVO[] { oldvo });
-
-	vo = getServiceTemplate().update(true, vo)[0];
-	UFDouble newLeaveLen = vo.getLength();
-	LeavePlanChangeTime.ChangeTime((newLeaveLen.sub(oldLeaveLen)), vo.getLeaveplan());
-
-	NCLocator.getInstance().lookup(ILeaveBalanceManageService.class).queryAndCalLeaveBalanceVO(vo.getPk_org(), vo);
-
-	return vo;
-    }
-
-    /**
-     * 
-     * @param pk_org
-     * @param beginDate
-     * @param endDate
-     * @param title
-     *            申请or实际
-     * @throws BusinessException
-     */
-    private void validatePeriodSeal(String pk_org, UFLiteralDate beginDate, UFLiteralDate endDate, boolean isApply)
-	    throws BusinessException {
-	PeriodVO[] vos = PeriodServiceFacade.queryPeriodsByDateScope(pk_org, beginDate, endDate);
-	if (vos == null || vos.length < 1) {
-	    String msg = isApply ? ResHelper.getString("6017leave", "06017leave0219")/*
-										      * @
-										      * res
-										      * "未获得指定申请日期段内的考勤期间!"
-										      */: ResHelper.getString(
-		    "6017leave", "06017leave0220")/* @res "未获得指定实际日期段内的考勤期间!" */;
-	    throw new BusinessException(msg);
+		String sql = FromWhereSQLUtils.createSelectSQL(fromWhereSQL, "tbm_leavereg", etraCondsNext, null);
+		Collection<LeaveRegVO> aggvos = (Collection<LeaveRegVO>) new BaseDAO().executeQuery(sql, new BeanListProcessor(
+				LeaveRegVO.class));
+		if (CollectionUtils.isEmpty(aggvos))
+			return null;
+		return aggvos.toArray(new LeaveRegVO[0]);
 	}
-	for (PeriodVO periodVO : vos) {
-	    if (periodVO.getSealflag() != null && periodVO.getSealflag().booleanValue()) {
-		String msg = isApply ? ResHelper.getString("6017leave", "06017leave0221")/*
-											  * @
-											  * res
-											  * "指定申请日期段内的考勤期间已经封存,不能销假!"
-											  */: ResHelper.getString(
-			"6017leave", "06017leave0222")/*
-						       * @res
-						       * "指定实际日期段内的考勤期间已经封存,不能销假!"
-						       */;
-		throw new BusinessException(msg);
-	    }
+
+	@Override
+	public LeaveRegVO queryByPk(String pk) throws BusinessException {
+		return getServiceTemplate().queryByPk(LeaveRegVO.class, pk);
 	}
-    }
 
-    private void validateAndUpdateBanlance(LeaveRegVO vo) throws BusinessException {
-	// 查询结余信息，更新时长差
-	ILeaveBalanceManageService balanceService = NCLocator.getInstance().lookup(ILeaveBalanceManageService.class);
-	Map<String, LeaveBalanceVO> balanceMap = balanceService.queryAndCalLeaveBalanceVO(vo.getPk_org(), vo);
-	if (MapUtils.isEmpty(balanceMap))
-	    return;
-	LeaveBalanceVO balanceVO = balanceMap.get(vo.getPk_psnorg() + vo.getPk_leavetype() + vo.getYearmonth());
-	if (balanceVO == null)
-	    return;
-	if (balanceVO.getIssettlement().booleanValue() || balanceVO.getIsuse().booleanValue())
-	    throw new BusinessException(ResHelper.getString("6017leave", "06017leave0223")/*
-											   * @
-											   * res
-											   * "无法完成操作,当前休假类别和休假期间的结余数据已结算!"
-											   */);
-	UFDouble oldHour = vo.getLeavehour();
-	ILeaveRegisterInfoDisplayer displayer = new LeaveRegisterInfoDisplayer();
-	vo = displayer.calculate(vo, TimeZone.getDefault());
-	UFDouble trueHour = vo.getLeavehour().sub(oldHour);
-	// 已休时长
-	balanceVO.setYidayorhour(balanceVO.getYidayorhour().add(trueHour));
-	new BaseDAO().updateVO(balanceVO, new String[] { LeaveBalanceVO.YIDAYORHOUR });
-	// getServiceTemplate().update(true, balanceVO);
-    }
+	@Override
+	public void deleteArrayData(LeaveRegVO[] vos) throws BusinessException {
+		if (ArrayUtils.isEmpty(vos))
+			return;
+		// for(LeaveRegVO vo:vos){
+		// PeriodServiceFacade.checkMonth(vo.getPk_org(), vo.getPk_psndoc(),
+		// vo.getBegindate(), vo.getEnddate());
+		// }
 
-    @Override
-    public Map<String, Map<Integer, ITimeScopeWithBillInfo[]>> check(LeaveRegVO vo) throws BusinessException {
-	return BillValidatorAtServer.checkLeave(vo);
-    }
+		IDateScope maxDateScope = DateScopeUtils.getMaxRangeDateScope(vos);
+		PeriodServiceFacade.checkMonth(vos[0].getPk_org(), StringPiecer.getStrArray(vos, LeaveRegVO.PK_PSNDOC),
+				maxDateScope.getBegindate(), maxDateScope.getEnddate());
 
-    @Override
-    public Map<String, Map<Integer, ITimeScopeWithBillInfo[]>> check(String pk_org, LeaveRegVO[] vos)
-	    throws BusinessException {
-	return BillValidatorAtServer.checkLeave(pk_org, vos);
-    }
-
-    @Override
-    public LeaveCheckResult<LeaveRegVO> checkWhenSave(LeaveRegVO regVO) throws BusinessException {
-	new LeaveRegValidatorService().validate(regVO);
-	LeaveCheckResult<LeaveRegVO> checkResult = new LeaveCheckResult<LeaveRegVO>();
-	checkResult.setMutexCheckResult(BillValidatorAtServer.checkLeave(regVO));
-	SplitBillResult<LeaveRegVO> splitResult = SplitLeaveBillUtils.split(regVO);
-	checkResult.setSplitResult(splitResult);
-	return checkResult;
-    }
-
-    @Override
-    public LeaveRegVO[] insertData(SplitBillResult<LeaveRegVO> splitResult) throws BusinessException {
-	String splitid = new SequenceGenerator().generate();
-	LeaveRegVO[] result = splitResult.getSplitResult();
-	BillMethods.processBeginEndDatePkJobOrgTimeZone(result);
-	for (int i = 0; i < result.length; i++) {
-	    result[i].setSplitid(splitid);
+		DefaultValidationService vService = new DefaultValidationService();
+		vService.addValidator(new LeaveRegDeleteValidator());
+		vService.validate(vos);
+		getServiceTemplate().delete(vos);
+		for (LeaveRegVO vo : vos) {
+			LeavePlanChangeTime.ChangeTime(vo.getLength().multiply(-1), vo.getLeaveplan());
+		}
+		ILeaveBalanceManageService balanceService = NCLocator.getInstance().lookup(ILeaveBalanceManageService.class);
+		balanceService.queryAndCalLeaveBalanceVO(vos[0].getPk_org(), (Object[]) vos);
+		// 业务日志
+		TaBusilogUtil.writeLeaveRegDeleteBusiLog(vos);
+		CacheProxy.fireDataDeletedBatch(LeaveRegVO.getDefaultTableName(),
+				StringPiecer.getStrArray(vos, LeaveRegVO.PK_LEAVEREG));
+		// MOD(台灣新法令)
+		// ssx added on 2018-9-19
+		this.getOvSegService().deleteOvertimeSegDetailConsume(vos);
+		// end
 	}
-	// 已经校验过,不需要再校验
-	return insertData(result, false);
-    }
 
-    @Override
-    public LeaveRegVO[] updateData(SplitBillResult<LeaveRegVO> splitResult) throws BusinessException {
-	LeaveRegVO oriRegVO = (LeaveRegVO) new BaseDAO().retrieveByPK(LeaveRegVO.class, splitResult.getOriginalBill()
-		.getPk_leavereg());
-	String splitid = oriRegVO.getSplitid();
-	LeaveRegVO[] result = splitResult.getSplitResult();
-	BillMethods.processBeginEndDatePkJobOrgTimeZone(result);
-	List<LeaveRegVO> addList = new ArrayList<LeaveRegVO>();
-	int index = 0; // 更新的单据位置
-	for (int i = 0; i < result.length; i++) {
-	    LeaveRegVO regVO = result[i];
-	    regVO.setSplitid(splitid);
-	    if (oriRegVO.getPk_leavereg().equals(regVO.getPk_leavereg())) {
-		index = i;
-		result[i] = updateData(regVO);
-		continue;
-	    }
-	    addList.add(regVO);
+	@Override
+	public void deleteData(LeaveRegVO vo) throws BusinessException {
+		if (vo == null)
+			return;
+		deleteArrayData(new LeaveRegVO[] { vo });
 	}
-	if (CollectionUtils.isEmpty(addList))
-	    return result;
-	LeaveRegVO[] finalResult = insertData(addList.toArray(new LeaveRegVO[0]), false);
-	finalResult = (LeaveRegVO[]) ArrayUtils.add(finalResult, index, result[index]);
-	return finalResult;
-    }
 
-    @Override
-    public LeaveRegVO[] queryByPks(String[] pks) throws BusinessException {
-	if (ArrayUtils.isEmpty(pks))
-	    return null;
-	return getServiceTemplate().queryByPks(LeaveRegVO.class, pks);
-    }
-
-    @Override
-    public LeaveRegVO queryByPsndate(String pk_psndoc, UFLiteralDate date, String pk_org) throws BusinessException {
-	if (date == null)
-	    return null;
-	String condition = " pk_org = '" + pk_org + "' and pk_psndoc = '" + pk_psndoc + "' and '" + date.toString()
-		+ "' between leavebegindate and leaveenddate order by leavebegintime desc ";
-	LeaveRegVO[] vos = getServiceTemplate().queryByCondition(LeaveRegVO.class, condition);
-	if (ArrayUtils.isEmpty(vos))
-	    return null;
-	return vos[0];
-    }
-
-    @Override
-    public String[] queryPKsByFromWhereSQL(LoginContext context, FromWhereSQL fromWhereSQL, Object etraConds)
-	    throws BusinessException {
-	String cond = getSQLCondByFromWhereSQL(context, fromWhereSQL, etraConds);
-	String alias = FromWhereSQLUtils.getMainTableAlias(fromWhereSQL, LeaveRegVO.getDefaultTableName());
-	List<String> result = excuteQueryPksBycond(cond, alias);
-	return CollectionUtils.isEmpty(result) ? null : (String[]) result.toArray(new String[0]);
-    }
-
-    public String getSQLCondByFromWhereSQL(LoginContext context, FromWhereSQL fromWhereSQL, Object etraConds)
-	    throws BusinessException {
-	// 取主表名
-	String alias = FromWhereSQLUtils.getMainTableAlias(fromWhereSQL, LeaveRegVO.getDefaultTableName());
-	// 拼组织的sql
-	String etraCondsNext = "(" + alias + "." + LeaveRegVO.PK_ORG
-		+ (context.getPk_org() == null ? " is null" : (" = '" + context.getPk_org() + "' ")) + " or " + alias
-		+ "." + LeaveRegVO.PK_ADMINORG
-		+ (context.getPk_org() == null ? " is null" : (" = '" + context.getPk_org() + "' ")) + ")";
-	// 增加权限sql，使用工作记录资源实体下的“时间管理通用引用”元数据操作
-	fromWhereSQL = PubPermissionUtils.addPubQueryPermission2FromWhereSQL(fromWhereSQL,
-		LeaveRegVO.getDefaultTableName(), LeaveRegVO.getDefaultTableName(), LeaveRegVO.PK_PSNJOB);
-
-	// 按期间查询
-	String periodSql = TaNormalQueryUtils.getPeriodSql(context, LeaveRegVO.class, alias,
-		(TaBillRegQueryParams) etraConds);
-	if (periodSql != null) {
-	    etraCondsNext += " and " + periodSql;
+	@Override
+	public LeaveRegVO[] insertArrayData(LeaveRegVO[] vos) throws BusinessException {
+		BillMethods.processBeginEndDatePkJobOrgTimeZone(vos);
+		return insertData(vos, true);
 	}
-	String sql = FromWhereSQLUtils.createSelectSQL(fromWhereSQL, LeaveRegVO.getDefaultTableName(),
-		new String[] { LeaveRegVO.PK_LEAVEREG }, null, null, null, null);
-	etraCondsNext += " and " + LeaveRegVO.PK_LEAVEREG + " in ( " + sql + " ) ";
-	return etraCondsNext;
-    }
 
-    private List<String> excuteQueryPksBycond(String cond, String alias) throws BusinessException {
-	String sql = "select " + (StringUtils.isEmpty(alias) ? "" : alias + ".") + LeaveRegVO.PK_LEAVEREG + " from "
-		+ LeaveRegVO.getDefaultTableName() + " " + (StringUtils.isEmpty(alias) ? "" : alias);
-	if (!StringUtils.isEmpty(cond))
-	    sql = sql + " where " + cond;
-	List<String> result = (List) new BaseDAO().executeQuery(sql, new ColumnListProcessor());
-	return result;
-    }
+	@Override
+	public LeaveRegVO[] insertData(LeaveRegVO[] vos, boolean needCalAndValidate) throws BusinessException {
+		if (ArrayUtils.isEmpty(vos))
+			return null;
+		if (needCalAndValidate) {
+			new LeaveRegValidatorService().validate(vos);
+			// check(vos[0].getPk_org(), vos);//保存前的提示性校验中已经校验过了，为了效率此处不再校验
+			BillValidatorAtServer.checkCalendarCompleteForLeaveAndShutdown(vos[0].getPk_org(), vos);
+		}
+
+		// 查询考勤档案
+		IDateScope maxDateScope = DateScopeUtils.getMaxRangeDateScope(vos);
+		// 有可能在A组织填休假记录，然后调配到B组织，所以需要跨组织查询
+		ITBMPsndocQueryService psndocService = NCLocator.getInstance().lookup(ITBMPsndocQueryService.class);
+		Map<String, List<TBMPsndocVO>> psndocMap = psndocService.queryTBMPsndocMapByPsndocs(null,
+				StringPiecer.getStrArrayDistinct(vos, LeaveRegVO.PK_PSNDOC), maxDateScope.getBegindate(),
+				maxDateScope.getEnddate(), false);
+		if (MapUtils.isEmpty(psndocMap))
+			return null;
+		for (LeaveRegVO vo : vos) {
+			if (vo.getLeaveindex() == null)
+				vo.setLeaveindex(1);
+			if (vo.getIsleaveoff() == null)
+				vo.setIsleaveoff(UFBoolean.FALSE);
+			// 根据结束日期找归属的考勤档案
+			TBMPsndocVO psndocVO = TBMPsndocVO.findIntersectionVO(psndocMap.get(vo.getPk_psndoc()), vo.getEnddate()
+					.toStdString());
+			if (psndocVO == null)
+				throw new BusinessException(ResHelper.getString("6017psndoc", "06017psndoc0131"/*
+																								 * @
+																								 * res
+																								 * "保存失败,人员{0}的考勤档案时间范围不包含该时间段"
+																								 */,
+						psndocService.getPsnName(vo.getPk_psndoc())));
+			// 设置管理组织
+			vo.setPk_adminorg(psndocVO.getPk_adminorg());
+		}
+		// 审批通过的要校验该类别的休假数据是否已经结算了
+		LeaveRegVO[] retvos = getServiceTemplate().insert(vos);
+		if (null == vos[0].getPk_billsourceh() || "~".equals(vos[0].getPk_billsourceh())
+				|| "".equals(vos[0].getPk_billsourceh())) {
+			// ssx added for Taiwan new Law
+			this.getOvSegService().regOvertimeSegDetailConsume(vos);
+			// end
+		}
+		afterInsert(vos, retvos);
+		return retvos;
+	}
+
+	private void afterInsert(final LeaveRegVO[] vos, final LeaveRegVO[] retvos) throws BusinessException {
+
+		final InvocationInfo invocationInfo = BDDistTokenUtil.getInvocationInfo();
+		new Executor(new Runnable() {
+			@Override
+			public void run() {
+				BDDistTokenUtil.setInvocationInfo(invocationInfo);
+				try {
+					NCLocator.getInstance().lookup(ILeaveBalanceManageService.class)
+							.queryAndCalLeaveBalanceVO(vos[0].getPk_org(), (Object[]) vos);
+					// 业务日志
+					TaBusilogUtil.writeLeaveRegAddBusiLog(retvos);
+					CacheProxy.fireDataInserted(LeaveRegVO.getDefaultTableName());
+				} catch (BusinessException e) {
+					Logger.error(e.getMessage(), e);
+				}
+			}
+		}).start();
+
+	}
+
+	@Override
+	public LeaveRegVO insertData(LeaveRegVO vo) throws BusinessException {
+		if (vo == null)
+			return null;
+		return insertArrayData(new LeaveRegVO[] { vo })[0];
+	}
+
+	@Override
+	public LeaveRegVO[] updateArrayData(LeaveRegVO[] vos) throws BusinessException {
+		return null;
+	}
+
+	@Override
+	public LeaveRegVO updateData(LeaveRegVO vo) throws BusinessException {
+		if (vo == null)
+			return null;
+		PeriodServiceFacade.checkMonth(vo.getPk_org(), vo.getPk_psndoc(), vo.getBegindate(), vo.getEnddate());
+		LeaveRegVO oldvo = getServiceTemplate().queryByPk(LeaveRegVO.class, vo.getPk_leavereg());
+		// TODO:如果用户修改了类别,则原类别的结算记录也要重新计算
+		new LeaveRegValidatorService().validate(vo);
+		// new
+		// LeaveApplyApproveManageMaintainImpl().checkCrossPeriodBills(vo.getPk_org(),
+		// new LeaveCommonVO[]{vo});
+		check(vo);
+		BillValidatorAtServer.checkCalendarCompleteForLeaveAndShutdown(vo);
+
+		ITimeItemQueryService itemService = NCLocator.getInstance().lookup(ITimeItemQueryService.class);
+		TimeItemCopyVO typeVO = itemService.queryCopyTypesByDefPK(vo.getPk_org(), vo.getPk_leavetype(),
+				TimeItemCopyVO.LEAVE_TYPE);
+
+		BillValidatorAtServer.checkLeaveRestrictPara(typeVO, vo.getLeavehour(), vo.getRestdayorhour());
+
+		ILeaveBalanceManageService balanceService = NCLocator.getInstance().lookup(ILeaveBalanceManageService.class);
+
+		// 修改保存时导致管理组织主键丢失，insert也是在后台插入的
+		ITBMPsndocQueryService psndocService = NCLocator.getInstance().lookup(ITBMPsndocQueryService.class);
+		TBMPsndocVO psndocVO = psndocService.queryTBMPsndocByPsndoc(vo.getPk_org(), vo.getPk_psndoc(), vo.getEnddate());
+		if (psndocVO == null)
+			throw new BusinessException(ResHelper.getString("6017psndoc", "06017psndoc0131"/*
+																							 * @
+																							 * res
+																							 * "保存失败,人员{0}的考勤档案时间范围不包含该时间段"
+																							 */,
+					psndocService.getPsnName(vo.getPk_psndoc())));
+		// 设置管理组织
+		vo.setPk_adminorg(psndocVO.getPk_adminorg());
+
+		// ssx added for Taiwan new Law
+		this.getOvSegService().updateOvertimeSegDetailConsume(new LeaveRegVO[] { vo });
+		// end
+		LeaveRegVO regvo = getServiceTemplate().update(true, vo)[0];
+		balanceService.queryAndCalLeaveBalanceVO(vo.getPk_org(), vo);
+		// 业务日志
+		TaBusilogUtil.writeLeaveRegEditBusiLog(new LeaveRegVO[] { regvo }, new LeaveRegVO[] { oldvo });
+		CacheProxy.fireDataUpdated(LeaveRegVO.getDefaultTableName());
+		return regvo;
+	}
+
+	@Override
+	public LeaveRegVO leaveOff(LeaveRegVO vo, ICalendar factBeginTime, ICalendar factEndTime) throws BusinessException {
+		if (vo == null)
+			return null;
+		if (factBeginTime instanceof UFDateTime && factEndTime instanceof UFDateTime)
+			return leaveOff(vo, (UFDateTime) factBeginTime, (UFDateTime) factEndTime);
+		if (factBeginTime instanceof UFLiteralDate && factEndTime instanceof UFLiteralDate)
+			return leaveOff(vo, (UFLiteralDate) factBeginTime, (UFLiteralDate) factEndTime);
+		throw new IllegalArgumentException("params must have the same type!");
+	}
+
+	private LeaveRegVO leaveOff(LeaveRegVO vo, UFLiteralDate factBeginDate, UFLiteralDate factEndDate)
+			throws BusinessException {
+		if (vo == null) {
+			return null;
+		}
+		UFDouble oldLeaveLen = vo.getLength();
+		validateAndUpdateBanlance(vo);
+		// 2015-09-17调整，需求为哺乳假开始时间已经封存但是应该允许销假，修改为只要结束日期没有封存则可以销假
+		// validatePeriodSeal(vo.getPk_org(),factBeginDate,factEndDate,false);
+		// validatePeriodSeal(vo.getPk_org(),vo.getLeavebegindate(),vo.getLeaveenddate(),true);
+		validatePeriodSeal(vo.getPk_org(), factEndDate, factEndDate, false);
+		validatePeriodSeal(vo.getPk_org(), vo.getLeaveenddate(), vo.getLeaveenddate(), true);
+
+		ITBMPsndocQueryService s = NCLocator.getInstance().lookup(ITBMPsndocQueryService.class);
+		s.checkTBMPsndocDate(vo.getPk_org(), vo.getPk_psndoc(), factBeginDate, factEndDate);
+
+		vo.setLeavebegindate(factBeginDate);
+		vo.setLeaveenddate(factEndDate);
+		vo.setIsleaveoff(UFBoolean.TRUE);
+		vo.setBacktime(new UFDateTime(System.currentTimeMillis()));
+
+		BillValidatorAtServer.checkLeave(vo);
+		BillValidatorAtServer.checkCalendarCompleteForLeaveAndShutdown(vo);
+
+		// 业务日志
+		LeaveRegVO oldvo = getServiceTemplate().queryByPk(LeaveRegVO.class, vo.getPk_leavereg());
+		TaBusilogUtil.writeLeaveRegOffBusiLog(new LeaveRegVO[] { vo }, new LeaveRegVO[] { oldvo });
+
+		vo = getServiceTemplate().update(true, vo)[0];
+		UFDouble newLeaveLen = vo.getLength();
+		LeavePlanChangeTime.ChangeTime((newLeaveLen.sub(oldLeaveLen)), vo.getLeaveplan());
+		NCLocator.getInstance().lookup(ILeaveBalanceManageService.class).queryAndCalLeaveBalanceVO(vo.getPk_org(), vo);
+
+		return vo;
+	}
+
+	private LeaveRegVO leaveOff(LeaveRegVO vo, UFDateTime factBeginDateTime, UFDateTime factEndDateTime)
+			throws BusinessException {
+		if (vo == null) {
+			return null;
+		}
+		UFDouble oldLeaveLen = vo.getLength();
+		// UFLiteralDate applyBeginDate = vo.getBegindate();
+		UFLiteralDate applyEndDate = vo.getEnddate();
+		// 2015-09-17调整，需求为哺乳假开始时间已经封存但是应该允许销假，修改为只要结束日期没有封存则可以销假
+		// validatePeriodSeal(vo.getPk_org(),applyBeginDate,applyEndDate,true);
+		validatePeriodSeal(vo.getPk_org(), applyEndDate, applyEndDate, true);
+		vo.setLeavebegintime(factBeginDateTime);
+		vo.setLeaveendtime(factEndDateTime);
+		TimeRuleVO timeRuleVO = NCLocator.getInstance().lookup(ITimeRuleQueryService.class).queryByOrg(vo.getPk_org());
+		CommonMethods.processBeginEndDate(vo, timeRuleVO.getTimeZoneMap());
+		// UFLiteralDate beginDate = vo.getBegindate();
+		UFLiteralDate endDate = vo.getEnddate();
+		validateAndUpdateBanlance(vo);
+		// 2015-09-17调整，需求为哺乳假开始时间已经封存但是应该允许销假，修改为只要结束日期没有封存则可以销假
+		// validatePeriodSeal(vo.getPk_org(),beginDate,endDate,false);
+		validatePeriodSeal(vo.getPk_org(), endDate, endDate, false);
+
+		ITBMPsndocQueryService s = NCLocator.getInstance().lookup(ITBMPsndocQueryService.class);
+		s.checkTBMPsndocTime(vo.getPk_org(), vo.getPk_psndoc(), factBeginDateTime, factEndDateTime);
+
+		vo.setIsleaveoff(UFBoolean.TRUE);
+		vo.setBacktime(new UFDateTime(System.currentTimeMillis()));
+
+		BillValidatorAtServer.checkLeave(vo);
+		BillValidatorAtServer.checkCalendarCompleteForLeaveAndShutdown(vo);
+		// 业务日志
+		LeaveRegVO oldvo = getServiceTemplate().queryByPk(LeaveRegVO.class, vo.getPk_leavereg());
+		TaBusilogUtil.writeLeaveRegOffBusiLog(new LeaveRegVO[] { vo }, new LeaveRegVO[] { oldvo });
+
+		vo = getServiceTemplate().update(true, vo)[0];
+		UFDouble newLeaveLen = vo.getLength();
+		LeavePlanChangeTime.ChangeTime((newLeaveLen.sub(oldLeaveLen)), vo.getLeaveplan());
+
+		NCLocator.getInstance().lookup(ILeaveBalanceManageService.class).queryAndCalLeaveBalanceVO(vo.getPk_org(), vo);
+
+		return vo;
+	}
+
+	/**
+	 * 
+	 * @param pk_org
+	 * @param beginDate
+	 * @param endDate
+	 * @param title
+	 *            申请or实际
+	 * @throws BusinessException
+	 */
+	private void validatePeriodSeal(String pk_org, UFLiteralDate beginDate, UFLiteralDate endDate, boolean isApply)
+			throws BusinessException {
+		PeriodVO[] vos = PeriodServiceFacade.queryPeriodsByDateScope(pk_org, beginDate, endDate);
+		if (vos == null || vos.length < 1) {
+			String msg = isApply ? ResHelper.getString("6017leave", "06017leave0219")/*
+																					 * @
+																					 * res
+																					 * "未获得指定申请日期段内的考勤期间!"
+																					 */: ResHelper.getString(
+					"6017leave", "06017leave0220")/* @res "未获得指定实际日期段内的考勤期间!" */;
+			throw new BusinessException(msg);
+		}
+		for (PeriodVO periodVO : vos) {
+			if (periodVO.getSealflag() != null && periodVO.getSealflag().booleanValue()) {
+				String msg = isApply ? ResHelper.getString("6017leave", "06017leave0221")/*
+																						 * @
+																						 * res
+																						 * "指定申请日期段内的考勤期间已经封存,不能销假!"
+																						 */: ResHelper.getString(
+						"6017leave", "06017leave0222")/*
+													 * @res
+													 * "指定实际日期段内的考勤期间已经封存,不能销假!"
+													 */;
+				throw new BusinessException(msg);
+			}
+		}
+	}
+
+	private void validateAndUpdateBanlance(LeaveRegVO vo) throws BusinessException {
+		// 查询结余信息，更新时长差
+		ILeaveBalanceManageService balanceService = NCLocator.getInstance().lookup(ILeaveBalanceManageService.class);
+		Map<String, LeaveBalanceVO> balanceMap = balanceService.queryAndCalLeaveBalanceVO(vo.getPk_org(), vo);
+		if (MapUtils.isEmpty(balanceMap))
+			return;
+		LeaveBalanceVO balanceVO = balanceMap.get(vo.getPk_psnorg() + vo.getPk_leavetype() + vo.getYearmonth());
+		if (balanceVO == null)
+			return;
+		if (balanceVO.getIssettlement().booleanValue() || balanceVO.getIsuse().booleanValue())
+			throw new BusinessException(ResHelper.getString("6017leave", "06017leave0223")/*
+																						 * @
+																						 * res
+																						 * "无法完成操作,当前休假类别和休假期间的结余数据已结算!"
+																						 */);
+		UFDouble oldHour = vo.getLeavehour();
+		ILeaveRegisterInfoDisplayer displayer = new LeaveRegisterInfoDisplayer();
+		vo = displayer.calculate(vo, TimeZone.getDefault());
+		UFDouble trueHour = vo.getLeavehour().sub(oldHour);
+		// 已休时长
+		balanceVO.setYidayorhour(balanceVO.getYidayorhour().add(trueHour));
+		new BaseDAO().updateVO(balanceVO, new String[] { LeaveBalanceVO.YIDAYORHOUR });
+		// getServiceTemplate().update(true, balanceVO);
+	}
+
+	@Override
+	public Map<String, Map<Integer, ITimeScopeWithBillInfo[]>> check(LeaveRegVO vo) throws BusinessException {
+		return BillValidatorAtServer.checkLeave(vo);
+	}
+
+	@Override
+	public Map<String, Map<Integer, ITimeScopeWithBillInfo[]>> check(String pk_org, LeaveRegVO[] vos)
+			throws BusinessException {
+		return BillValidatorAtServer.checkLeave(pk_org, vos);
+	}
+
+	@Override
+	public LeaveCheckResult<LeaveRegVO> checkWhenSave(LeaveRegVO regVO) throws BusinessException {
+		new LeaveRegValidatorService().validate(regVO);
+		LeaveCheckResult<LeaveRegVO> checkResult = new LeaveCheckResult<LeaveRegVO>();
+		checkResult.setMutexCheckResult(BillValidatorAtServer.checkLeave(regVO));
+		SplitBillResult<LeaveRegVO> splitResult = SplitLeaveBillUtils.split(regVO);
+		checkResult.setSplitResult(splitResult);
+		return checkResult;
+	}
+
+	@Override
+	public LeaveRegVO[] insertData(SplitBillResult<LeaveRegVO> splitResult) throws BusinessException {
+		String splitid = new SequenceGenerator().generate();
+		LeaveRegVO[] result = splitResult.getSplitResult();
+		BillMethods.processBeginEndDatePkJobOrgTimeZone(result);
+		for (int i = 0; i < result.length; i++) {
+			result[i].setSplitid(splitid);
+		}
+		// 已经校验过,不需要再校验
+		return insertData(result, false);
+	}
+
+	@Override
+	public LeaveRegVO[] updateData(SplitBillResult<LeaveRegVO> splitResult) throws BusinessException {
+		LeaveRegVO oriRegVO = (LeaveRegVO) new BaseDAO().retrieveByPK(LeaveRegVO.class, splitResult.getOriginalBill()
+				.getPk_leavereg());
+		String splitid = oriRegVO.getSplitid();
+		LeaveRegVO[] result = splitResult.getSplitResult();
+		BillMethods.processBeginEndDatePkJobOrgTimeZone(result);
+		List<LeaveRegVO> addList = new ArrayList<LeaveRegVO>();
+		int index = 0; // 更新的单据位置
+		for (int i = 0; i < result.length; i++) {
+			LeaveRegVO regVO = result[i];
+			regVO.setSplitid(splitid);
+			if (oriRegVO.getPk_leavereg().equals(regVO.getPk_leavereg())) {
+				index = i;
+				result[i] = updateData(regVO);
+				continue;
+			}
+			addList.add(regVO);
+		}
+		if (CollectionUtils.isEmpty(addList))
+			return result;
+		LeaveRegVO[] finalResult = insertData(addList.toArray(new LeaveRegVO[0]), false);
+		finalResult = (LeaveRegVO[]) ArrayUtils.add(finalResult, index, result[index]);
+		return finalResult;
+	}
+
+	@Override
+	public LeaveRegVO[] queryByPks(String[] pks) throws BusinessException {
+		if (ArrayUtils.isEmpty(pks))
+			return null;
+
+		return getServiceTemplate().queryByPks(LeaveRegVO.class, pks);
+	}
+
+	@Override
+	public LeaveRegVO queryByPsndate(String pk_psndoc, UFLiteralDate date, String pk_org) throws BusinessException {
+		if (date == null)
+			return null;
+		String condition = " pk_org = '" + pk_org + "' and pk_psndoc = '" + pk_psndoc + "' and '" + date.toString()
+				+ "' between leavebegindate and leaveenddate order by leavebegintime desc ";
+		LeaveRegVO[] vos = getServiceTemplate().queryByCondition(LeaveRegVO.class, condition);
+		if (ArrayUtils.isEmpty(vos))
+			return null;
+		return vos[0];
+	}
+
+	@Override
+	public String[] queryPKsByFromWhereSQL(LoginContext context, FromWhereSQL fromWhereSQL, Object etraConds)
+			throws BusinessException {
+		String cond = getSQLCondByFromWhereSQL(context, fromWhereSQL, etraConds);
+		String alias = FromWhereSQLUtils.getMainTableAlias(fromWhereSQL, LeaveRegVO.getDefaultTableName());
+		List<String> result = excuteQueryPksBycond(cond, alias);
+		return CollectionUtils.isEmpty(result) ? null : (String[]) result.toArray(new String[0]);
+	}
+
+	public String getSQLCondByFromWhereSQL(LoginContext context, FromWhereSQL fromWhereSQL, Object etraConds)
+			throws BusinessException {
+		// 取主表名
+		String alias = FromWhereSQLUtils.getMainTableAlias(fromWhereSQL, LeaveRegVO.getDefaultTableName());
+		// 拼组织的sql
+		String etraCondsNext = "(" + alias + "." + LeaveRegVO.PK_ORG
+				+ (context.getPk_org() == null ? " is null" : (" = '" + context.getPk_org() + "' ")) + " or " + alias
+				+ "." + LeaveRegVO.PK_ADMINORG
+				+ (context.getPk_org() == null ? " is null" : (" = '" + context.getPk_org() + "' ")) + ")";
+		// 增加权限sql，使用工作记录资源实体下的“时间管理通用引用”元数据操作
+		fromWhereSQL = PubPermissionUtils.addPubQueryPermission2FromWhereSQL(fromWhereSQL,
+				LeaveRegVO.getDefaultTableName(), LeaveRegVO.getDefaultTableName(), LeaveRegVO.PK_PSNJOB);
+
+		// 按期间查询
+		String periodSql = TaNormalQueryUtils.getPeriodSql(context, LeaveRegVO.class, alias,
+				(TaBillRegQueryParams) etraConds);
+		if (periodSql != null) {
+			etraCondsNext += " and " + periodSql;
+		}
+		String sql = FromWhereSQLUtils.createSelectSQL(fromWhereSQL, LeaveRegVO.getDefaultTableName(),
+				new String[] { LeaveRegVO.PK_LEAVEREG }, null, null, null, null);
+		etraCondsNext += " and " + LeaveRegVO.PK_LEAVEREG + " in ( " + sql + " ) ";
+		return etraCondsNext;
+	}
+
+	private List<String> excuteQueryPksBycond(String cond, String alias) throws BusinessException {
+		String sql = "select " + (StringUtils.isEmpty(alias) ? "" : alias + ".") + LeaveRegVO.PK_LEAVEREG + " from "
+				+ LeaveRegVO.getDefaultTableName() + " " + (StringUtils.isEmpty(alias) ? "" : alias);
+		if (!StringUtils.isEmpty(cond))
+			sql = sql + " where " + cond;
+		List<String> result = (List) new BaseDAO().executeQuery(sql, new ColumnListProcessor());
+		return result;
+	}
 }

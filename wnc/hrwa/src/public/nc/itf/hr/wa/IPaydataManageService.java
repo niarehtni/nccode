@@ -198,4 +198,18 @@ public interface IPaydataManageService {
 	 */
 	public void doEncryptEx(WaLoginContext loginContext) throws BusinessException;
 
+	/**
+	 * 通過Email發送加密PDF薪資單
+	 * 
+	 * @param payFileVOs
+	 *            薪資檔案VOs
+	 * @param pk_itemgroup
+	 *            薪資項目分組
+	 * @param showZeroItems
+	 *            是否顯示金額為0的項目
+	 * @return
+	 * @throws BusinessException
+	 */
+	public boolean sendPayslipByEmail(SuperVO[] payFileVOs, String pk_itemgroup, boolean showZeroItems)
+			throws BusinessException;
 }

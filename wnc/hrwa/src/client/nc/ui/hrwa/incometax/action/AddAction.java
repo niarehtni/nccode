@@ -19,6 +19,7 @@ import nc.vo.hrwa.incometax.IncomeTaxVO;
 import nc.vo.pub.lang.UFBoolean;
 import nc.vo.pub.lang.UFDate;
 import nc.vo.pub.lang.UFDateTime;
+import nc.vo.pub.lang.UFLiteralDate;
 import nc.vo.uap.busibean.exception.BusiBeanException;
 
 /**
@@ -68,6 +69,8 @@ public class AddAction extends NCAction {
 						String year = addTaxView.getYear();
 						String beginMonth = addTaxView.getBeginMonth();
 						String endMonth = addTaxView.getEndMonth();
+						UFLiteralDate offBeginDate = addTaxView.getOffBeginDate();
+						UFLiteralDate offEndDate = addTaxView.getOffEndDate();
 						IGetAggIncomeTaxData getServer = NCLocator.getInstance().lookup(IGetAggIncomeTaxData.class);
 						List<AggIncomeTaxVO> listAggIncomeTaxVOs = new ArrayList<AggIncomeTaxVO>();
 						List<AggIncomeTaxVO> listPsnIncomeTaxVOs = new ArrayList<AggIncomeTaxVO>();
@@ -81,13 +84,15 @@ public class AddAction extends NCAction {
 						// 薪资方案取数
 						if (null != waclass && waclass.length > 0) {
 							listAggIncomeTaxVOs = getServer.getAggIncomeTaxData(isForeignDeparture, isForeignMonth,
-									unifiednumber, declaretype, waclass, year, beginMonth, endMonth);
+									unifiednumber, declaretype, waclass, year, beginMonth, endMonth, offBeginDate,
+									offEndDate);
 							if (null != listAggIncomeTaxVOs && listAggIncomeTaxVOs.size() > 0) {
 								for (int i = 0; i < listAggIncomeTaxVOs.size(); i++) {
 									AggIncomeTaxVO aggVO = listAggIncomeTaxVOs.get(i);
 									IncomeTaxVO hvo = aggVO.getParentVO();
 									// 是否外籍员工
 									hvo.setIsforeignmonthdec(new UFBoolean(isForeignMonth));
+									hvo.setIsforeigndeprdec(new UFBoolean(isForeignDeparture));
 								}
 							}
 						}

@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.swing.JButton;
 import javax.swing.JTabbedPane;
@@ -44,6 +45,7 @@ public abstract class PsnChangeDlg extends UIDialog {
 	private UFLiteralDate beginDate = null;
 	private UIPanel bottomPanel = null;
 	private JButton cancelButton = null;
+	private JButton unSelectDupButton = null;
 	private LoginContext context = null;
 	private UFLiteralDate endDate = null;
 	private HashMap<Integer, SelectableBillScrollPane> hashMapPane = null;
@@ -117,12 +119,55 @@ public abstract class PsnChangeDlg extends UIDialog {
 			bottomPanel = new UIPanel();
 			java.awt.FlowLayout ivjUIPanel1FlowLayout = new java.awt.FlowLayout(FlowLayout.CENTER, 50, 10);
 			bottomPanel.setLayout(ivjUIPanel1FlowLayout);
+			bottomPanel.add(getUnselectDupButton(), getUnselectDupButton().getName());
 			bottomPanel.add(getOkButton(), getOkButton().getName());
 			bottomPanel.add(getCancelButton(), getCancelButton().getName());
 			bottomPanel.setPreferredSize(new java.awt.Dimension(0, 50));
 
 		}
 		return bottomPanel;
+	}
+
+	private JButton getUnselectDupButton() {
+		if (unSelectDupButton == null) {
+			char cHotKey = 'U';
+			unSelectDupButton = new JButton();
+			unSelectDupButton.setPreferredSize(new Dimension(80, 20));
+			unSelectDupButton.setText("保留最新(" + cHotKey + ")");
+			unSelectDupButton.setName("unSelectDupButton");
+			unSelectDupButton.setMnemonic(cHotKey);
+			unSelectDupButton.addActionListener(new java.awt.event.ActionListener() {
+				@Override
+				public void actionPerformed(java.awt.event.ActionEvent e) {
+					SelectableBillScrollPane billScrollPane = (SelectableBillScrollPane) getJTabbedPane()
+							.getSelectedComponent();
+					int rowCount = billScrollPane.getTable().getRowCount();
+					Map<String, UFLiteralDate> psnDates = new HashMap<String, UFLiteralDate>();
+					Map<String, Integer> psnIndexes = new HashMap<String, Integer>();
+					for (int i = 0; i < rowCount; i++) {
+						if (billScrollPane.isSelected(i)) {
+							PsnTrnVO vo = (PsnTrnVO) billScrollPane.getTableModel().getBodyValueRowVO(i,
+									PsnTrnVO.class.getName());
+							if (psnDates.containsKey(vo.getPk_psndoc())) {
+								if (psnDates.get(vo.getPk_psndoc()).before(vo.getTrndate())) {
+									billScrollPane.getTableModel().setValueAt(Boolean.FALSE,
+											psnIndexes.get(vo.getPk_psndoc()), billScrollPane.getSelectRowCode());
+									psnDates.put(vo.getPk_psndoc(), vo.getTrndate());
+									psnIndexes.put(vo.getPk_psndoc(), i);
+								} else {
+									billScrollPane.getTableModel().setValueAt(Boolean.FALSE, i,
+											billScrollPane.getSelectRowCode());
+								}
+							} else {
+								psnDates.put(vo.getPk_psndoc(), vo.getTrndate());
+								psnIndexes.put(vo.getPk_psndoc(), i);
+							}
+						}
+					}
+				}
+			});
+		}
+		return unSelectDupButton;
 	}
 
 	/**
@@ -210,9 +255,11 @@ public abstract class PsnChangeDlg extends UIDialog {
 			colname = new String[] { ResHelper.getString("common", "UC000-0004044")
 			/* @res "选择" */, ResHelper.getString("6001comp", "06001comp0021")
 			/* @res "员工号" */, ResHelper.getString("common", "UC000-0001403")
-			/* @res "姓名" */, ResHelper.getString("common", "UC000-0000140")
-			/* @res "人员类别" */, ResHelper.getString("6007event", "26007event-000003")
-			/* @res"异动类型" */,
+			/* @res "姓名" */,
+					ResHelper.getString("common", "UC000-0000140")
+					/* @res "人员类别" */,
+					ResHelper.getString("6007event", "26007event-000003")
+					/* @res"异动类型" */,
 					ResHelper.getString("common", "UC000-0003054")// (33457)jimmy
 																	// added on
 																	// 2020-02-27

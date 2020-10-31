@@ -288,8 +288,6 @@ public class DeptAdjustServiceImpl implements IDeptAdjustService {
 					parentVO = (HRDeptVO) new BaseDAO().retrieveByPK(HRDeptVO.class, hrDptNewVerVO.getPk_dept());
 					newVO.setParentVO(parentVO);
 					newPkdeptV = ((HRDeptVO) newVO.getParentVO()).getPk_vid();
-					// 插入部门变更历史数据
-					getBaseDAO().insertVO(historyVO);
 					// 如果部門代碼變更或部門名稱變更,則新增人員任職記錄，
 					int renameAndPrincipalChangeFlag = 0;
 					if (deptAdjVO.getCode() != null && deptAdjVO.getName() != null) {
@@ -314,7 +312,13 @@ public class DeptAdjustServiceImpl implements IDeptAdjustService {
 						} else {
 							renameAndPrincipalChangeFlag = 3;
 						}
+					} else {
+						historyVO.setChangetype(DeptChangeType.CHANGEPRINCIPAL);
+						renameAndPrincipalChangeFlag = 2;
 					}
+					// 插入部门变更历史数据
+					getBaseDAO().insertVO(historyVO);
+
 					// 判断是不是修改了上级部门，如果修改了，要修改innercode wangywt 20190711
 					String deptIncodesql = "";
 					String randcode = "";
@@ -358,7 +362,11 @@ public class DeptAdjustServiceImpl implements IDeptAdjustService {
 					// 部門負責人變更時，同步變更下級部門的上級主管
 					if (principleChanged) {
 						updateChildCharger(deptAdjVO.getPk_dept(), deptAdjVO.getPrincipal());
-						updateMemberManager(deptAdjVO.getPk_dept(), deptAdjVO.getPrincipal());
+						// ssx remarked on 2020-06-16
+						// 啟碁取消同步主屬主管需求
+						// updateMemberManager(deptAdjVO.getPk_dept(),
+						// deptAdjVO.getPrincipal());
+						// end
 					}
 					// end
 				}
@@ -1265,6 +1273,12 @@ public class DeptAdjustServiceImpl implements IDeptAdjustService {
 				renameAndPrincipalChangeFlag = 3;
 			}
 		}
+
+		if (renameAndPrincipalChangeFlag == 0) {
+			historyVO.setChangetype(DeptChangeType.CHANGEPRINCIPAL);
+			renameAndPrincipalChangeFlag = -1;
+		}
+
 		if (renameAndPrincipalChangeFlag != 0) {
 			// getDeptManageService().renameAndPrincipalChange(newVO, historyVO,
 			// true, renameAndPrincipalChangeFlag);

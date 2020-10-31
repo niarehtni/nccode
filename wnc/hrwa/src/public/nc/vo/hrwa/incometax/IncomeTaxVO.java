@@ -14,7 +14,7 @@ import nc.vo.pubapp.pattern.model.meta.entity.vo.VOMetaFactory;
  * @date 20180126
  * @version v1.0
  * @功能描述 申报明细档单据VO
- *
+ * 
  */
 public class IncomeTaxVO extends SuperVO {
 
@@ -134,21 +134,34 @@ public class IncomeTaxVO extends SuperVO {
 	 * 人力资源组织
 	 */
 	public String pk_hrorg;
-	
+
 	/**
 	 * 業別代號、
 	 */
 	public String biztype;
-	
+
 	/**
 	 * 費用別、
 	 */
 	public String feetype;
-	
+
 	/**
 	 * 項目代號
 	 */
 	public String projectcode;
+
+	/**
+	 * 是否外籍员工离境申报
+	 */
+	public UFBoolean isforeigndeprdec;
+
+	public UFBoolean getIsforeigndeprdec() {
+		return isforeigndeprdec;
+	}
+
+	public void setIsforeigndeprdec(UFBoolean isforeigndeprdec) {
+		this.isforeigndeprdec = isforeigndeprdec;
+	}
 
 	public String getBiztype() {
 		return biztype;
@@ -650,7 +663,6 @@ public class IncomeTaxVO extends SuperVO {
 	public void setPk_hrorg(String pk_hrorg) {
 		this.pk_hrorg = pk_hrorg;
 	}
-	
 
 	public UFBoolean getIsgather() {
 		return isgather;

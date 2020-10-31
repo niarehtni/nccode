@@ -1,27 +1,36 @@
 package nc.impl.twhr;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import nc.bs.dao.BaseDAO;
-import nc.bs.dao.DAOException;
+import nc.bs.framework.common.NCLocator;
 import nc.hr.utils.InSQLCreator;
 import nc.impl.pub.ace.AceDiffinsuranceaPubServiceImpl;
 import nc.impl.pubapp.pub.smart.BatchSaveAction;
 import nc.itf.twhr.IDiffinsuranceaMaintain;
+import nc.itf.uap.IUAPQueryBS;
+import nc.jdbc.framework.processor.BeanListProcessor;
 import nc.jdbc.framework.processor.ColumnProcessor;
 import nc.jdbc.framework.processor.MapListProcessor;
+import nc.jdbc.framework.processor.ProcessorUtils;
+import nc.jdbc.framework.processor.ResultSetProcessor;
+import nc.pubitf.twhr.utils.LegalOrgUtilsEX;
 import nc.ui.querytemplate.querytree.IQueryScheme;
 import nc.vo.bd.meta.BatchOperateVO;
+import nc.vo.hi.psndoc.PsndocDefVO;
 import nc.vo.pub.BusinessException;
 import nc.vo.pub.ISuperVO;
-import nc.vo.pub.lang.UFBoolean;
 import nc.vo.pub.lang.UFDouble;
 import nc.vo.twhr.diffinsurance.DiffinsuranceVO;
 import nc.vo.twhr.nhicalc.BaoAccountVO;
+import nc.vo.twhr.nhicalc.PsndocDefTableUtil;
 
 public class DiffinsuranceaMaintainImpl extends AceDiffinsuranceaPubServiceImpl implements IDiffinsuranceaMaintain {
 	private BaseDAO dao;
@@ -54,409 +63,293 @@ public class DiffinsuranceaMaintainImpl extends AceDiffinsuranceaPubServiceImpl 
 
 		// ExceptionUtils.wrappBusinessException("已存在差异分析数据");
 		// else {
-		String pk_period1 = pk_period.replace("-", "");
-		String sql = "pk_org='" + pk_org + "' and pk_period='" + pk_period + "' and dr=0";
-		// 1. 读对账单
-		Collection<BaoAccountVO> accVOs = this.getDao().retrieveByClause(BaoAccountVO.class, sql);
-		String sql2 = "select wa_data.pk_psndoc,isnull( SALARY_DECRYPT(max(f_22)),0) as f_22 ,isnull( SALARY_DECRYPT(sum(f_23)),0) as f_23,isnull( SALARY_DECRYPT(sum(f_24)),0) as f_24,isnull( SALARY_DECRYPT(max(f_27)),0) as f_27 ,isnull( SALARY_DECRYPT(max(f_28)),0) as f_28,isnull( SALARY_DECRYPT(sum(f_29)),0) as f_29,isnull( SALARY_DECRYPT(max(f_46)),0) as f_46,isnull( SALARY_DECRYPT(sum(f_47)),0) as f_47,isnull( SALARY_DECRYPT(sum(f_50)),0) as f_50,bd_psndoc.id idno, wa_data.pk_org, wa_data.pk_group"
-				+ " from wa_data wa_data inner join bd_psndoc bd_psndoc on wa_data.PK_PSNDOC=bd_psndoc.PK_PSNDOC"
-				+ " where  wa_data.cyearperiod='"
-				+ pk_period1
-				+ "' and wa_data.pk_org='"
-				+ pk_org
-				+ "'  group  by id, wa_data.pk_org, wa_data.pk_group,wa_data.pk_psndoc";
-		// 2. 读薪资数据
-		List<Map> waDatas = (List<Map>) this.getDao().executeQuery(sql2, new MapListProcessor());
-		// 读取劳健退子集的数据，判断是否有投保记录
-		List<String> pk_psndocs = new ArrayList<String>();
-		for (Map maps : waDatas) {
-			pk_psndocs.add(String.valueOf(maps.get("pk_psndoc")));
+		// 法人组织
+		Map<String, String> pk_legal_orgMap = LegalOrgUtilsEX.getLegalOrgByOrgs(new String[] { pk_org });
+		if (pk_legal_orgMap == null || pk_legal_orgMap.get(pk_org) == null) {
+			throw new BusinessException("未找到本組織的法人組織!");
 		}
-		Map<String, String> recodermap = getrecoder(pk_psndocs);
-		// 3. 对账,生成差异分析结果
+		String pk_legal_org = pk_legal_orgMap.get(pk_org);
+		// String pk_period1 = pk_period.replace("-", "");
+		String sql = "pk_org='" + pk_org + "' and pk_period='" + pk_period + "' and dr=0";
+		// 读对账单
+		@SuppressWarnings("unchecked")
+		List<BaoAccountVO> accVOs = (List<BaoAccountVO>) this.getDao().retrieveByClause(BaoAccountVO.class, sql);
+		if (accVOs == null || accVOs.size() < 0) {
+			return;
+		}
+		// 主表人员列表
+		Set<String> accPsnSet = new HashSet<>();
+		for (BaoAccountVO accVO : accVOs) {
+			accPsnSet.add(accVO.getPk_psndoc());
+		}
+		// 勞健保投保匯總
+		sql = "select * from " + PsndocDefTableUtil.getPsnNHISumTablename() + " where pk_hrorg = '" + pk_org
+				+ "' and legalpersonorg = '" + pk_legal_org + "' and glbdef1 = '" + pk_period.split("-")[0]
+				+ "' and glbdef2 = '" + pk_period.split("-")[1] + "' and dr = 0";
+		@SuppressWarnings("unchecked")
+		List<PsndocDefVO> totalList = (List<PsndocDefVO>) getBaseDao().executeQuery(sql,
+				new BeanListProcessor(PsndocDefTableUtil.getPsnNHISumClass()));
+		Map<String, PsndocDefVO> psnDegMap = new HashMap<>();
+		// 主表缺少的人员
+		Map<String, PsndocDefVO> diffPsnMap = new HashMap<>();
+		if (totalList.size() > 0) {
+			for (PsndocDefVO vo : totalList) {
+				psnDegMap.put(vo.getPk_psndoc(), vo);
+				if (!accPsnSet.contains(vo.getPk_psndoc())) {
+					diffPsnMap.put(vo.getPrimaryKey(), vo);
+				}
+			}
+		}
+		// 补齐缺少的人员
+		accVOs = addDiffPsn(accVOs, diffPsnMap, pk_org, pk_period);
+
+		// 健保投保明细(汇总)
+		sql = "select pk_psndoc,sum(heainspre) rate from hi_psndoc_headetail "
+				+ " where dr = 0 and  legalpersonorg = '" + pk_legal_org + "' ANd heayear = '"
+				+ pk_period.split("-")[0] + "' and heamonth = '" + pk_period.split("-")[1] + "' and pk_hrorg = '"
+				+ pk_org + "' " + " group by pk_psndoc ";
+		@SuppressWarnings("unchecked")
+		Map<String, Double> psn2healthMap = (Map<String, Double>) getBaseDao().executeQuery(sql,
+				new ResultSetProcessor() {
+					private static final long serialVersionUID = 190241326954128264L;
+					private Map<String, Double> psnHealthMap = new HashMap<>();
+
+					@Override
+					public Object handleResultSet(ResultSet rs) throws SQLException {
+						while (rs.next()) {
+							psnHealthMap.put(rs.getString(1), rs.getDouble(2));
+						}
+						return psnHealthMap;
+					}
+				});
+		// 称谓关系
+		@SuppressWarnings("unchecked")
+		List<Map<String, String>> personlist = (List<Map<String, String>>) NCLocator
+				.getInstance()
+				.lookup(IUAPQueryBS.class)
+				.executeQuery(
+						" select id idnumber,'本人' name from hi_psndoc_cert " + " union all "
+								+ " select idnumber idnumber,doc.name2 name from hi_psndoc_family fa "
+								+ " left join bd_defdoc doc on doc.pk_defdoc = fa. mem_relation "
+								+ " where fa.idnumber is not null and fa.dr = 0 ", new MapListProcessor());
+		Map<String, String> id2TitleMap = new HashMap<>();
+		for (Map<String, String> map : personlist) {
+			id2TitleMap.put(map.get("idnumber"), map.get("name"));
+		}
+		// 对账,生成差异分析结果
 		List<DiffinsuranceVO> voList = new ArrayList<DiffinsuranceVO>();
 		for (BaoAccountVO vo : accVOs) {
-			/*
-			 * DiffinsuranceVO diffivo = new DiffinsuranceVO();
-			 * diffivo.setDr(0); diffivo.setPk_period(vo.getPk_period());
-			 * diffivo.setPk_org(vo.getPk_org()); diffivo.setName(vo.getName());
+			DiffinsuranceVO diffivo = new DiffinsuranceVO();
+			// 对应劳健保投保汇总
+			PsndocDefVO defVO = psnDegMap.get(vo.getPk_psndoc());
+			if (defVO == null) {
+				try {
+					defVO = (PsndocDefVO) PsndocDefTableUtil.getPsnNHISumClass().newInstance();
+				} catch (InstantiationException | IllegalAccessException e) {
+					throw new BusinessException(e);
+				}
+			}
+
+			/**
+			 * 基础数据
 			 */
-			Map wadata = this.getWaDataByID(waDatas, vo.getIdno());
-			// 劳保费比较
-			if (null != vo.getIdno()) {
-				DiffinsuranceVO diffivo = new DiffinsuranceVO();
-				diffivo.setDr(0);
-				diffivo.setPk_period(vo.getPk_period());
-				diffivo.setPk_org(vo.getPk_org());
-				diffivo.setName(vo.getName());
-				diffivo.setIdno(vo.getLaborid());
-				// 对比类型
-				diffivo.setIchecktype(1);
-				if (null != wadata && wadata.size() > 0) {
-					diffivo.setPk_psndoc(String.valueOf(wadata.get("pk_psndoc")));
-					// 劳保级距投保单位
-					diffivo.setOrg_amount(null == wadata.get("f_22") ? UFDouble.ZERO_DBL : new UFDouble(String
-							.valueOf(wadata.get("f_22"))));
-					// 工负担投保单位
-					diffivo.setOrg_psnamount(null == wadata.get("f_46") ? UFDouble.ZERO_DBL : new UFDouble(String
-							.valueOf(wadata.get("f_46"))));
-					// 雇主负担投保单位
-					diffivo.setOrg_orgamount(null == wadata.get("f_27") ? UFDouble.ZERO_DBL : new UFDouble(String
-							.valueOf(wadata.get("f_27"))));
-				}
-				// 级距对账单
-				diffivo.setDiff_amount(vo.getLabor_amount() == null ? UFDouble.ZERO_DBL : vo.getLabor_amount());
-				//
-				diffivo.setCheck_orgamount(vo.getLabor_orgamount() == null ? UFDouble.ZERO_DBL : vo
-						.getLabor_orgamount());
-				diffivo.setCheck_psnamount(vo.getLabor_psnamount() == null ? UFDouble.ZERO_DBL : vo
-						.getLabor_psnamount());
-				// 差异金额员工
-				if (null != diffivo.getCheck_psnamount()) {
-					diffivo.setDiff_psnamount(diffivo.getCheck_psnamount().sub(
-							diffivo.getOrg_psnamount() == null ? UFDouble.ZERO_DBL : diffivo.getOrg_psnamount()));
-				} else {
-					diffivo.setDiff_psnamount(UFDouble.ZERO_DBL.sub(diffivo.getOrg_psnamount() == null ? UFDouble.ZERO_DBL
-							: diffivo.getOrg_psnamount()));
-				}
-				// 差异金额雇主
-				if (null != diffivo.getCheck_orgamount()) {
-					diffivo.setDiff_orgamount(diffivo.getCheck_orgamount().sub(
-							diffivo.getOrg_orgamount() == null ? UFDouble.ZERO_DBL : diffivo.getOrg_orgamount()));
-				} else {
-					diffivo.setDiff_orgamount(UFDouble.ZERO_DBL.sub(diffivo.getOrg_orgamount() == null ? UFDouble.ZERO_DBL
-							: diffivo.getOrg_orgamount()));
-				}
-				// 投保记录
-				UFBoolean flag = IsInsurance(vo.getIdno(), recodermap, "labor");
-				// 差异原因
-				// 无此员工
-				if (null == wadata) {
-					DiffinsuranceVO diffivono = (DiffinsuranceVO) diffivo.clone();
-					diffivono.setName(vo.getName());
-					diffivono.setIdno(vo.getLaborid());
-					diffivono.setIdifftype(4);
-					voList.add(diffivono);
-					// 无投保记录
-				} else if (!flag.booleanValue()) {
-					DiffinsuranceVO diffivoinsurance = (DiffinsuranceVO) diffivo.clone();
-					diffivoinsurance.setIdifftype(4);
-					voList.add(diffivoinsurance);
-				} else {
-					// 金额不符
-					if (diffivo.getDiff_orgamount().doubleValue() != 0
-							&& diffivo.getDiff_psnamount().doubleValue() != 0) {
-						DiffinsuranceVO diffivoamount = (DiffinsuranceVO) diffivo.clone();
-						diffivoamount.setIdifftype(3);
-						voList.add(diffivoamount);
-					}
-					// 级距不符
-					if (diffivo.getCheck_orgamount()
-							.sub(diffivo.getDiff_amount() == null ? UFDouble.ZERO_DBL : diffivo.getDiff_amount())
-							.doubleValue() != 0) {
-						DiffinsuranceVO diffivoSpacing = (DiffinsuranceVO) diffivo.clone();
-						diffivoSpacing.setIdifftype(2);
-						voList.add(diffivoSpacing);
-					}
+			diffivo.setPk_group(vo.getPk_group());
+			diffivo.setPk_org(vo.getPk_org());
+			diffivo.setPk_org_v(vo.getPk_org_v());
+			diffivo.setPk_period(vo.getPk_period());
+			diffivo.setPk_psndoc(vo.getPk_psndoc());
+			diffivo.setIdno(vo.getIdno());
+			diffivo.setPsnname(vo.getName());
+			diffivo.setAppellation(id2TitleMap.get(vo.getIdno()));
 
-				}
+			/**
+			 * 导入数据
+			 */
+			// 健保個人承擔金額_對帳單_總額<-健保員工保費
+			diffivo.setHeath_psnins_import(vo.getHealth_psnamount());
+			// 健保公司承擔金額_對帳單<-健保僱主保費
+			diffivo.setHeath_orgins_import(vo.getHealth_orgamount());
+			// 勞保個人承擔金額_對帳單<-勞保員工負擔金額
+			diffivo.setLabor_psnins_import(vo.getLabor_psnamount());
+			// 勞保公司承擔金額_對帳單<-勞保公司負擔金額
+			diffivo.setLabor_orgins_import(vo.getLabor_orgamount());
+			// 勞退個人承擔金額_對帳單 <-勞退員工自提金額」
+			diffivo.setRetire_psnins_import(vo.getRetire_psnamount());
+			// 健保費_對帳單
+			diffivo.setHeath_sys_ins_import(vo.getHealth_psnamount());
 
-			}
-			// 健保费对账
-			if (null != vo.getIdno()) {
-				DiffinsuranceVO diffivo = new DiffinsuranceVO();
-				diffivo.setDr(0);
-				diffivo.setPk_period(vo.getPk_period());
-				diffivo.setPk_org(vo.getPk_org());
-				diffivo.setName(vo.getName());
-				diffivo.setIdno(vo.getHealthid());
-				// 对比类型
-				diffivo.setIchecktype(3);
-				// 投保记录
-				UFBoolean flag = IsInsurance(vo.getIdno(), recodermap, "health");
-				if (null != wadata && wadata.size() > 0) {
-					diffivo.setPk_psndoc(String.valueOf(wadata.get("pk_psndoc")));
-					// 劳保级距投保单位
-					diffivo.setOrg_amount(null == wadata.get("f_23") ? UFDouble.ZERO_DBL : new UFDouble(String
-							.valueOf(wadata.get("f_23"))));
-					// 工负担投保单位
-					diffivo.setOrg_psnamount(null == wadata.get("f_47") ? UFDouble.ZERO_DBL : new UFDouble(String
-							.valueOf(wadata.get("f_47"))));
-					// 雇主负担投保单位
-					diffivo.setOrg_orgamount(null == wadata.get("f_28") ? UFDouble.ZERO_DBL : new UFDouble(String
-							.valueOf(wadata.get("f_28"))));
-				}
-				// 级距对账单
-				diffivo.setDiff_amount(vo.getHealth_amount() == null ? UFDouble.ZERO_DBL : vo.getHealth_amount());
-				//
-				diffivo.setCheck_orgamount(vo.getHealth_orgamount() == null ? UFDouble.ZERO_DBL : vo
-						.getHealth_orgamount());
-				diffivo.setCheck_psnamount(vo.getHealth_psnamount() == null ? UFDouble.ZERO_DBL : vo
-						.getHealth_psnamount());
-				// 差异金额员工
-				if (null != diffivo.getCheck_psnamount()) {
-					diffivo.setDiff_psnamount(diffivo.getCheck_psnamount().sub(
-							diffivo.getOrg_psnamount() == null ? UFDouble.ZERO_DBL : diffivo.getOrg_psnamount()));
-				} else {
-					diffivo.setDiff_psnamount(UFDouble.ZERO_DBL.sub(diffivo.getOrg_psnamount() == null ? UFDouble.ZERO_DBL
-							: diffivo.getOrg_psnamount()));
-				}
-				// 差异金额雇主
-				if (null != diffivo.getCheck_orgamount()) {
-					diffivo.setDiff_orgamount(diffivo.getCheck_orgamount().sub(
-							diffivo.getOrg_orgamount() == null ? UFDouble.ZERO_DBL : diffivo.getOrg_orgamount()));
-				} else {
-					diffivo.setDiff_orgamount(UFDouble.ZERO_DBL.sub(diffivo.getOrg_orgamount() == null ? UFDouble.ZERO_DBL
-							: diffivo.getOrg_orgamount()));
-				}
-				// 差异原因
-				// 无此员工
-				if (null == wadata) {
-					DiffinsuranceVO diffivono = (DiffinsuranceVO) diffivo.clone();
-					diffivono.setName(vo.getName());
-					diffivono.setIdno(vo.getHealthid());
-					diffivono.setIdifftype(4);
-					voList.add(diffivono);
-					// 无投保记录
-				} else if (!flag.booleanValue()) {
-					DiffinsuranceVO diffivoinsurance = (DiffinsuranceVO) diffivo.clone();
-					diffivoinsurance.setIdifftype(4);
-					voList.add(diffivoinsurance);
-				} else {
-					// 金额不符
-					if (diffivo.getDiff_orgamount().doubleValue() != 0
-							&& diffivo.getDiff_psnamount().doubleValue() != 0) {
-						DiffinsuranceVO diffivoamount = (DiffinsuranceVO) diffivo.clone();
-						diffivoamount.setIdifftype(3);
-						voList.add(diffivoamount);
-					}
-					// 级距不符
-					if (diffivo.getCheck_orgamount()
-							.sub(diffivo.getDiff_amount() == null ? UFDouble.ZERO_DBL : diffivo.getDiff_amount())
-							.doubleValue() != 0) {
-						DiffinsuranceVO diffivoSpacing = (DiffinsuranceVO) diffivo.clone();
-						diffivoSpacing.setIdifftype(2);
-						voList.add(diffivoSpacing);
-					}
+			/**
+			 * 系统数据
+			 */
+			// 健保投保級距
+			diffivo.setHeath_grade((UFDouble) defVO.getAttributeValue("glbdef17"));
+			// 健保個人承擔金額(系統-總額)
+			diffivo.setHeath_psnins((UFDouble) defVO.getAttributeValue("glbdef22"));
+			// 健保公司承擔金額(系統)
+			diffivo.setHeath_orgins((UFDouble) defVO.getAttributeValue("glbdef20"));
+			// 勞保投保級距
+			diffivo.setLabor_grade((UFDouble) defVO.getAttributeValue("glbdef4"));
+			// 勞保個人承擔金額(系統)
+			diffivo.setLabor_psnins((UFDouble) defVO.getAttributeValue("glbdef12"));
+			// 勞保公司承擔金額(系統)
+			diffivo.setLabor_orgins((UFDouble) defVO.getAttributeValue("glbdef13"));
+			// 勞退投保級距
+			diffivo.setRetire_grade((UFDouble) defVO.getAttributeValue("glbdef14"));
+			// 勞退個人承擔金額(系統)
+			diffivo.setRetire_psnins((UFDouble) defVO.getAttributeValue("glbdef15"));
 
-				}
-			}
-			// 劳退费对账
-			if (null != vo.getIdno()) {
-				DiffinsuranceVO diffivo = new DiffinsuranceVO();
-				diffivo.setDr(0);
-				diffivo.setPk_period(vo.getPk_period());
-				diffivo.setPk_org(vo.getPk_org());
-				diffivo.setName(vo.getName());
-				diffivo.setIdno(vo.getRetiredid());
-				// 对比类型
-				diffivo.setIchecktype(2);
-				// 投保记录
-				UFBoolean flag = IsInsurance(vo.getIdno(), recodermap, "retire");
-				if (null != wadata && wadata.size() > 0) {
-					diffivo.setPk_psndoc(String.valueOf(wadata.get("pk_psndoc")));
-					// 劳保级距投保单位
-					diffivo.setOrg_amount(null == wadata.get("f_24") ? UFDouble.ZERO_DBL : new UFDouble(String
-							.valueOf(wadata.get("f_24"))));
-					// 工负担投保单位
-					diffivo.setOrg_psnamount(null == wadata.get("f_50") ? UFDouble.ZERO_DBL : new UFDouble(String
-							.valueOf(wadata.get("f_50"))));
-					// 雇主负担投保单位
-					diffivo.setOrg_orgamount(null == wadata.get("f_29") ? UFDouble.ZERO_DBL : new UFDouble(String
-							.valueOf(wadata.get("f_29"))));
-				}
-				// 级距对账单
-				diffivo.setDiff_amount(vo.getRetire_amount() == null ? UFDouble.ZERO_DBL : vo.getRetire_amount());
-				//
-				diffivo.setCheck_orgamount(vo.getRetire_orgamount() == null ? UFDouble.ZERO_DBL : vo
-						.getRetire_orgamount());
-				diffivo.setCheck_psnamount(vo.getRetire_psnamount() == null ? UFDouble.ZERO_DBL : vo
-						.getRetire_psnamount());
-				// 差异金额员工
-				if (null == diffivo.getCheck_psnamount()) {
-					diffivo.setDiff_psnamount(UFDouble.ZERO_DBL.sub(diffivo.getOrg_psnamount() == null ? UFDouble.ZERO_DBL
-							: diffivo.getOrg_psnamount()));
-				} else {
-					diffivo.setDiff_psnamount(diffivo.getCheck_psnamount().sub(
-							diffivo.getOrg_psnamount() == null ? UFDouble.ZERO_DBL : diffivo.getOrg_psnamount()));
-				}
-				// 差异金额雇主
-				if (null != diffivo.getCheck_orgamount()) {
-					diffivo.setDiff_orgamount(diffivo.getCheck_orgamount().sub(
-							diffivo.getOrg_orgamount() == null ? UFDouble.ZERO_DBL : diffivo.getOrg_orgamount()));
-				} else {
-					diffivo.setDiff_orgamount(UFDouble.ZERO_DBL.sub(diffivo.getOrg_orgamount() == null ? UFDouble.ZERO_DBL
-							: diffivo.getOrg_psnamount() == null ? UFDouble.ZERO_DBL : diffivo.getOrg_psnamount()));
-				}
+			// 健保費(系統)
+			Double healthIns = psn2healthMap.get(vo.getPk_psndoc());
+			diffivo.setHeath_sys_ins(healthIns == null ? UFDouble.ZERO_DBL : new UFDouble(healthIns));
 
-				// 差异原因
-				// 无此员工
-				if (null == wadata) {
-					DiffinsuranceVO diffivono = (DiffinsuranceVO) diffivo.clone();
-					diffivono.setName(vo.getName());
-					diffivono.setIdno(vo.getRetiredid());
-					diffivono.setIdifftype(4);
-					voList.add(diffivono);
-					// 无投保记录
-				} else if (!flag.booleanValue()) {
-					DiffinsuranceVO diffivoinsurance = (DiffinsuranceVO) diffivo.clone();
-					diffivoinsurance.setIdifftype(4);
-					voList.add(diffivoinsurance);
-				} else {
-					// 金额不符
-					if (diffivo.getDiff_orgamount().doubleValue() != 0
-							&& diffivo.getDiff_psnamount().doubleValue() != 0) {
-						DiffinsuranceVO diffivoamount = (DiffinsuranceVO) diffivo.clone();
-						diffivoamount.setIdifftype(3);
-						voList.add(diffivoamount);
-					}
-					// 级距不符
-					if (diffivo.getCheck_orgamount()
-							.sub(diffivo.getDiff_amount() == null ? UFDouble.ZERO_DBL : diffivo.getDiff_amount())
-							.doubleValue() != 0) {
-						DiffinsuranceVO diffivoSpacing = (DiffinsuranceVO) diffivo.clone();
-						diffivoSpacing.setIdifftype(2);
-						voList.add(diffivoSpacing);
-					}
+			/**
+			 * 计算差异
+			 */
+			// 補扣健保個人承擔金額 = 健保個人承擔金額(對帳單-總額) 減 健保個人承擔金額(系統-總額) PS為負數時則等於 0
+			diffivo.setHeath_suppleins(getResultZero(diffivo.getHeath_psnins_import(), diffivo.getHeath_psnins()));
+			// 退還健保個人承擔金額 = 健保個人承擔金額(對帳單-總額) 減 健保個人承擔金額(系統-總額) PS絕對值
+			diffivo.setHeath_returnnins(getResultZero(diffivo.getHeath_psnins(), diffivo.getHeath_psnins_import()));
+			// 補扣健保費 = 健保費(對帳單) 減 健保費(系統) PS 為負數時則等於 0
+			diffivo.setHeath_sys_suppleins(getResultZero(diffivo.getHeath_sys_ins(), diffivo.getHeath_sys_ins_import()));
+			// 退還健保費=健保費(對帳單) 減 健保費(系統) PS 絕對值
+			diffivo.setHeath_sys_returnins(getResultZero(diffivo.getHeath_sys_ins_import(), diffivo.getHeath_sys_ins()));
+			// 補扣勞保個人承擔金額 = 勞保個人承擔金額(對帳單)減 勞保個人承擔金額(系統) PS為負數時則等於 0
+			diffivo.setLabor_suppleins(getResultZero(diffivo.getLabor_psnins_import(), diffivo.getLabor_psnins()));
+			// 退還勞保個人承擔金額 = 勞保個人承擔金額(對帳單) 減 勞保個人承擔金額(系統) PS 絕對值
+			diffivo.setLabor_returnnins(getResultZero(diffivo.getLabor_psnins(), diffivo.getLabor_psnins_import()));
+			// 補扣勞退個人承擔金額 = 勞保個人承擔金額(對帳單)減 勞保個人承擔金額(系統) PS為負數時則等於 0
+			diffivo.setRetire_suppleins(getResultZero(diffivo.getRetire_psnins_import(), diffivo.getRetire_psnins()));
+			// 退還勞退個人承擔金額 = 勞保個人承擔金額(對帳單) 減 勞保個人承擔金額(系統) PS绝对值
+			diffivo.setRetire_returnnins(getResultZero(diffivo.getRetire_psnins(), diffivo.getRetire_psnins_import()));
 
-				}
-			}
-
+			diffivo.setDr(0);
+			voList.add(diffivo);
 		}
 
 		// 4. 保存差异单
-		dao.insertVOList(voList);
-
-		// 5 刷新在前台
-	}
-
-	private UFBoolean IsInsurance(String idno, Map<String, String> recodermap, String form) {
-		UFBoolean healthinsurance = UFBoolean.FALSE;
-		UFBoolean laborinsurance = UFBoolean.FALSE;
-		UFBoolean retireinsurance = UFBoolean.FALSE;
-		for (String map : recodermap.keySet()) {
-			// 劳保
-			if (map.split(":")[1].equals("labor")) {
-				if (null != idno && idno.equals(map.split(":")[0])) {
-					laborinsurance = recodermap.get(map) == null ? UFBoolean.FALSE : new UFBoolean(recodermap.get(map));
-				}
-			}
-			// 健保
-			if (null != idno && map.split(":")[1].equals("health")) {
-				if (idno.equals(map.split(":")[0])) {
-					healthinsurance = recodermap.get(map) == null ? UFBoolean.FALSE
-							: new UFBoolean(recodermap.get(map));
-				}
-			}
-			// 劳退
-			if (null != idno && map.split(":")[1].equals("retire")) {
-				if (idno.equals(map.split(":")[0])) {
-					retireinsurance = recodermap.get(map) == null ? UFBoolean.FALSE
-							: new UFBoolean(recodermap.get(map));
-				}
-			}
-
-		}
-		if (form.equals("labor")) {
-			return laborinsurance;
-		} else if (form.equals("health")) {
-			return healthinsurance;
-		} else {
-			return retireinsurance;
+		for (DiffinsuranceVO vo : voList) {
+			dao.insertVO(vo);
 		}
 	}
 
-	private Map<String, String> getrecoder(List<String> pk_psndocs) {
-		Map<String, String> maps = new HashMap<String, String>();
-		// 查询两个子集
-		InSQLCreator insql = new InSQLCreator();
-		// IUAPQueryBS iUAPQueryBS =
-		// (IUAPQueryBS)NCLocator.getInstance().lookup(IUAPQueryBS.class.getName());
-		try {
-			// 劳保
-			List<Map<String, String>> laborlist = (List<Map<String, String>>) this
-					.getBaseDao()
-					.executeQuery(
-							"select hg.glbdef10,hg.glbdef11,bp.id from HI_PSNDOC_GLBDEF1 hg ,bd_psndoc bp where hg.pk_psndoc=bp.pk_psndoc and hg.pk_psndoc in("
-									+ insql.getInSQL(pk_psndocs.toArray(new String[0])) + ") and hg.dr <> 1;",
-							new MapListProcessor());
-			// 健保
-			List<Map<String, String>> healthlist = (List<Map<String, String>>) this.getBaseDao().executeQuery(
-					"select hg.glbdef14,bp.id from HI_PSNDOC_GLBDEF2 hg ,bd_psndoc bp where hg.pk_psndoc=bp.pk_psndoc and hg.pk_psndoc in("
-							+ insql.getInSQL(pk_psndocs.toArray(new String[0])) + ") and hg.dr <> 1;",
-					new MapListProcessor());
+	/**
+	 * 将汇总记录作为对比的一部分
+	 * 
+	 * @param accVOs
+	 * @param diffPsnMap
+	 *            <pk_psndoc,劳健保汇总记录>
+	 * @param pk_period
+	 * @param pk_org
+	 * @return
+	 * @throws BusinessException
+	 */
+	private List<BaoAccountVO> addDiffPsn(List<BaoAccountVO> accVOs, Map<String, PsndocDefVO> diffPsnMap,
+			String pk_org, String pk_period) throws BusinessException {
+		if (diffPsnMap != null && diffPsnMap.size() > 0) {
+			Set<String> keySet = diffPsnMap.keySet();
+			// 查询相关信息
+			InSQLCreator insql = new InSQLCreator();
+			String pkInsql = insql.getInSQL(keySet.toArray(new String[0]));
+			String sql = "select DISTINCT psn.pk_psndoc pk_psndoc,psn.name2 name,cert.id id,org.pk_group pk_group,org.pk_vid pk_org_v "
+					+ " from "
+					+ PsndocDefTableUtil.getPsnNHISumTablename()
+					+ " g4 "
+					+ " left join bd_psndoc psn on g4.pk_psndoc = psn.pk_psndoc  "
+					+ " left join hi_psndoc_cert cert on (cert.pk_psndoc = psn.pk_psndoc and cert.dr = 0)  "
+					+ " inner join bd_psnidtype type on (type.dr = 0 and type.pk_identitype = cert.idtype and type.code = 'TW01')  "
+					+ " left join org_orgs org on org.pk_org = '"
+					+ pk_org
+					+ "'  where g4.pk_psndoc_sub in ("
+					+ pkInsql
+					+ ")";
+			@SuppressWarnings("unchecked")
+			Map<String, Map<String, Object>> psnInfoMap = (Map<String, Map<String, Object>>) getBaseDao().executeQuery(
+					sql, new ResultSetProcessor() {
+						private static final long serialVersionUID = 1L;
+						Map<String, Map<String, Object>> rsMap = new HashMap<>();
 
-			for (Map<String, String> healthvo : healthlist) {
-				if (maps.size() <= 0 || null == maps.get(healthvo.get("id") + ":health")
-						|| !maps.get(healthvo.get("id") + ":health").equals("Y")) {
-					maps.put(healthvo.get("id") + ":health",
-							healthvo.get("glbdef14") == null ? "N" : String.valueOf(healthvo.get("glbdef14")));
+						@Override
+						public Object handleResultSet(ResultSet rs) throws SQLException {
+							while (rs.next()) {
+								rsMap.put(rs.getString(1), ProcessorUtils.toMap(rs));
+							}
+							return rsMap;
+						}
+					});
+			for (String pk_def : keySet) {
+				BaoAccountVO diffivo = new BaoAccountVO();
+				// 对应劳健保投保汇总
+				PsndocDefVO defVO = diffPsnMap.get(pk_def);
+
+				if (defVO == null) {
+					try {
+						defVO = (PsndocDefVO) PsndocDefTableUtil.getPsnNHISumClass().newInstance();
+					} catch (InstantiationException | IllegalAccessException e) {
+						throw new BusinessException(e);
+					}
 				}
+				/**
+				 * 基础数据
+				 */
+				// 数据
+				Map<String, Object> dateMap = psnInfoMap.get(defVO.getPk_psndoc());
+				if (dateMap == null) {
+					dateMap = new HashMap<>();
+				}
+				diffivo.setPk_group((String) dateMap.get("pk_group"));
+				diffivo.setPk_org(pk_org);
+				diffivo.setPk_org_v((String) dateMap.get("pk_vid"));
+				diffivo.setPk_period(pk_period);
+				diffivo.setPk_psndoc(defVO.getPk_psndoc());
+				diffivo.setIdno((String) dateMap.get("id"));
+				diffivo.setName((String) dateMap.get("name"));
+				// diffivo.setAppellation("本人");
+				accVOs.add(diffivo);
 			}
-			for (Map<String, String> laborvo : laborlist) {
-				if (maps.size() <= 0 || null == maps.get(laborvo.get("id") + ":labor")
-						|| !maps.get(laborvo.get("id") + ":labor").equals("Y")) {
-					maps.put(laborvo.get("id") + ":labor",
-							laborvo.get("glbdef10") == null ? "N" : String.valueOf(laborvo.get("glbdef10")));
-				}
-				if (maps.size() <= 0 || null == maps.get(laborvo.get("id") + ":retire")
-						|| !maps.get(laborvo.get("id") + ":retire").equals("Y")) {
-					maps.put(laborvo.get("id") + ":retire",
-							laborvo.get("glbdef11") == null ? "N" : String.valueOf(laborvo.get("glbdef11")));
-				}
-			}
-		} catch (DAOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (BusinessException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
 		}
-		return maps;
+		return accVOs;
 	}
 
-	// }
-	private boolean idExist(Object idno, Collection<BaoAccountVO> accVOs) {
-		for (BaoAccountVO vo : accVOs) {
-			String idnos = idno.toString();
-			String idnoacc = vo.getIdno().toString();
-			if (idnos.equals(idnoacc)) {
-				return true;
-			}
+	/**
+	 * 两数相减的绝对值
+	 * 
+	 * @param minuend
+	 *            被减数
+	 * @param subtrahend
+	 *            减数
+	 * @return
+	 */
+	private UFDouble getResultAbs(UFDouble minuend, UFDouble subtrahend) {
+		if (minuend == null) {
+			minuend = UFDouble.ZERO_DBL;
 		}
-		return false;
+		if (subtrahend == null) {
+			subtrahend = UFDouble.ZERO_DBL;
+		}
+		return minuend.sub(subtrahend).abs();
 	}
 
-	private boolean voExist(String pk_org, String pk_period) {
-
-		String sql4 = "select * from twhr_diffinsurance where pk_org='" + pk_org + "' and pk_period='" + pk_period
-				+ "'";
-
-		try {
-			List<Map> waDatas = (List<Map>) this.getDao().executeQuery(sql4, new MapListProcessor());
-			if (waDatas.size() == 0) {
-				return true;
-
-			}
-		} catch (DAOException e) {
-			// TODO 自动生成的 catch 块
-			e.printStackTrace();
+	/**
+	 * 两数相减,为负数则为0
+	 * 
+	 * @param minuend
+	 *            被减数
+	 * @param subtrahend
+	 *            减数
+	 * @return
+	 */
+	private UFDouble getResultZero(UFDouble minuend, UFDouble subtrahend) {
+		if (minuend == null) {
+			minuend = UFDouble.ZERO_DBL;
 		}
-
-		return false;
-	}
-
-	// 页面上的身份证
-	private Map getWaDataByID(List<Map> waDatas, String idno) {
-		if (null == idno) {
-			return null;
+		if (subtrahend == null) {
+			subtrahend = UFDouble.ZERO_DBL;
 		}
-		for (Map data : waDatas) {
-			if (idno.equals(data.get("idno"))) {
-				return data;
-			}
+		UFDouble rs = minuend.sub(subtrahend);
+		if (rs.compareTo(UFDouble.ZERO_DBL) < 0) {
+			rs = UFDouble.ZERO_DBL;
 		}
-		return null;
+		return rs;
 	}
 
 	public BaseDAO getDao() {

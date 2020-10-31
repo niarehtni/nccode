@@ -68,4 +68,10 @@
   <functionClass>nc.ui.hr.formula.func.PartWHLeavePercentParaFunc</functionClass>
 </formula>
 
+<!--入職已滿月數 ssx 2020-06-10 -->
+<formula>
+  <customType>9</customType>
+  <functionName>onDutyMonths</functionName>
+  <functionClass>nc.ui.hr.formula.func.OnDutyMonthsParaFunc</functionClass>
+</formula>
 </formula-array>

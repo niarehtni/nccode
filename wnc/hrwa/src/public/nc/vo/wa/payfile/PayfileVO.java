@@ -11,17 +11,19 @@ import nc.vo.pub.lang.UFBoolean;
 import nc.vo.pub.lang.UFDate;
 import nc.vo.pub.lang.UFDouble;
 import nc.vo.pub.lang.UFLiteralDate;
+
 /**
  * <b> 在此处简要描述此类的功能 </b>
  * <p>
- *     在此处添加此类的描述信息
+ * 在此处添加此类的描述信息
  * </p>
  * 创建日期:2009-11-26 11:30:31
+ * 
  * @author
  * @version NCPrj ??
  */
 @SuppressWarnings("serial")
-public class PayfileVO extends SuperVO implements  IBDObject{
+public class PayfileVO extends SuperVO implements IBDObject {
 	/** 表名 */
 	private static final String TABLE_NAME = "wa_data";
 
@@ -51,7 +53,7 @@ public class PayfileVO extends SuperVO implements  IBDObject{
 	private nc.vo.pub.lang.UFDouble redtotal = UFDouble.ZERO_DBL;
 	private java.lang.Integer dr = 0;
 	private nc.vo.pub.lang.UFDateTime ts;
-	private java.lang.String psnid;//身份证号
+	private java.lang.String psnid;// 身份证号
 	private java.lang.String psncode;
 	private java.lang.String psnname;
 	private java.lang.String postname;
@@ -61,18 +63,18 @@ public class PayfileVO extends SuperVO implements  IBDObject{
 	private java.lang.String orgname;
 	private java.lang.String clerkcode;
 	private java.lang.String taxbasename;
-	private UFBoolean selectflag = UFBoolean.FALSE;//向导中选中人员标记
-	private UFBoolean isndebuct= UFBoolean.FALSE;
+	private UFBoolean selectflag = UFBoolean.FALSE;// 向导中选中人员标记
+	private UFBoolean isndebuct = UFBoolean.FALSE;
 	private UFBoolean isderate = UFBoolean.FALSE;
 	private UFDouble derateptg;
 	private Integer taxtype;
 	private String taxtypename;
 	private UFBoolean taxedit;
-	private UFBoolean taxfreeedit ;
+	private UFBoolean taxfreeedit;
 	private UFBoolean stopedit;
 	private UFBoolean fipedit;
 	private UFBoolean libedit;
-	private UFBoolean isrulehint = UFBoolean.TRUE ;
+	private UFBoolean isrulehint = UFBoolean.TRUE;
 	private java.lang.String pk_prnt_class;
 	private UFDate cpaydate;
 	private UFLiteralDate leavedate;
@@ -92,28 +94,29 @@ public class PayfileVO extends SuperVO implements  IBDObject{
 	private java.lang.String workdept;
 	private java.lang.String workdeptvid;
 
-	//新个税相关字段
+	// 新个税相关字段
 	private java.lang.String taxorg;
 	private java.lang.String taxsumuid;
 	private UFBoolean taxorgedit;
-		
+
 	private nc.vo.pub.lang.UFBoolean fipendflag = UFBoolean.FALSE;
 
-	private nc.vo.pub.lang.UFDouble taxable_income ;
+	private nc.vo.pub.lang.UFDouble taxable_income;
 	private nc.vo.pub.lang.UFDouble nquickdebuct;
 	private nc.vo.pub.lang.UFDouble expense_deduction;
 	private nc.vo.pub.lang.UFDouble taxrate;
-	
+
+	private Integer exnhitype;
 	/**
 	 * 業別代號、
 	 */
 	public String biztype;
-	
+
 	/**
 	 * 費用別、
 	 */
 	public String feetype;
-	
+
 	/**
 	 * 項目代號
 	 */
@@ -154,19 +157,19 @@ public class PayfileVO extends SuperVO implements  IBDObject{
 	public static final String TAXTYPE = "taxtype";
 	public static final String TAXTYPENAME = "taxtypename";
 
-	public static final String TAXEDIT= "taxedit";
-	public static final String  TAXFREEEDIT= "taxfreeedit";
-	public static final String  STOPEDIT= "stopedit";
-	public static final String FIPEDIT= "fipedit";
-	public static final String LIBEDIT= "libedit";
-	public static final String  PK_BANKTYPE1= "pk_banktype1";
-	public static final String  PK_BANKTYPE2= "pk_banktype2";
-	public static final String  PK_BANKTYPE3= "pk_banktype3";
+	public static final String TAXEDIT = "taxedit";
+	public static final String TAXFREEEDIT = "taxfreeedit";
+	public static final String STOPEDIT = "stopedit";
+	public static final String FIPEDIT = "fipedit";
+	public static final String LIBEDIT = "libedit";
+	public static final String PK_BANKTYPE1 = "pk_banktype1";
+	public static final String PK_BANKTYPE2 = "pk_banktype2";
+	public static final String PK_BANKTYPE3 = "pk_banktype3";
 
-	public static final String  CPAYDATE= "cpaydate";
-	public static final String  VPAYCOMMENT= "vpaycomment";
-	public static final String  PAYFLAG= "payflag";
-	public static final String  LEAVEDATE= "leavedate";
+	public static final String CPAYDATE = "cpaydate";
+	public static final String VPAYCOMMENT = "vpaycomment";
+	public static final String PAYFLAG = "payflag";
+	public static final String LEAVEDATE = "leavedate";
 	public static final String PK_FINANCEORG = "pk_financeorg";
 	public static final String PK_FINANACEDEPT = "pk_financedept";
 	public static final String PK_LIABILITYORG = "pk_liabilityorg";
@@ -186,396 +189,472 @@ public class PayfileVO extends SuperVO implements  IBDObject{
 	public static final String EXPENSE_DEDUCTION = "expense_deduction";
 	public static final String TAXRATE = "taxrate";
 	public static final String CYEARPERIOD = "cyearperiod";
-	
+
 	// {MOD:个税申报}
 	public static final String BIZTYPE = "biztype";
 	public static final String FEETYPE = "feetype";
 	public static final String PROJECTCODE = "projectcode";
-	
-	//新个税相关字段
+
+	// 新个税相关字段
 	public static final String TAXORG = "taxorg";
 	public static final String TAXSUMUID = "taxsumuid";
 	public static final String TAXORGEDIT = "taxorgedit";
-	
+
+	public static final String EXNHITYPE = "exnhitype";
+
 	public String getBiztype() {
 		return biztype;
 	}
+
 	public void setBiztype(String biztype) {
 		this.biztype = biztype;
 	}
+
 	public String getFeetype() {
 		return feetype;
 	}
+
 	public void setFeetype(String feetype) {
 		this.feetype = feetype;
 	}
+
 	public String getProjectcode() {
 		return projectcode;
 	}
+
 	public void setProjectcode(String projectcode) {
 		this.projectcode = projectcode;
 	}
+
 	public java.lang.String getTaxorg() {
 		return taxorg;
 	}
+
 	public void setTaxorg(java.lang.String taxorg) {
 		this.taxorg = taxorg;
 	}
+
 	public java.lang.String getTaxsumuid() {
 		return taxsumuid;
 	}
+
 	public void setTaxsumuid(java.lang.String taxsumuid) {
 		this.taxsumuid = taxsumuid;
 	}
+
 	public UFBoolean getTaxorgedit() {
 		return taxorgedit;
 	}
+
 	public void setTaxorgedit(UFBoolean taxorgedit) {
 		this.taxorgedit = taxorgedit;
 	}
+
 	public nc.vo.pub.lang.UFBoolean getPayflag() {
 		return payflag;
 	}
+
 	public void setPayflag(nc.vo.pub.lang.UFBoolean payflag) {
 		this.payflag = payflag;
 	}
+
 	/***************************************************************************
 	 * <br>
 	 * Created on 2011-05-24 18:41:32<br>
+	 * 
 	 * @return 返回表名称
 	 * @author erl
 	 ***************************************************************************/
-	public static String getDefaultTableName()
-	{
+	public static String getDefaultTableName() {
 		return TABLE_NAME;
 	}
+
 	/**
-	 * 属性pk_wa_data的Getter方法.
-	 * 创建日期:2009-11-26 11:30:31
+	 * 属性pk_wa_data的Getter方法. 创建日期:2009-11-26 11:30:31
+	 * 
 	 * @return java.lang.String
 	 */
-	public java.lang.String getPk_wa_data () {
+	public java.lang.String getPk_wa_data() {
 		return pk_wa_data;
 	}
+
 	/**
-	 * 属性pk_wa_data的Setter方法.
-	 * 创建日期:2009-11-26 11:30:31
-	 * @param newPk_wa_data java.lang.String
+	 * 属性pk_wa_data的Setter方法. 创建日期:2009-11-26 11:30:31
+	 * 
+	 * @param newPk_wa_data
+	 *            java.lang.String
 	 */
-	public void setPk_wa_data (java.lang.String newPk_wa_data ) {
+	public void setPk_wa_data(java.lang.String newPk_wa_data) {
 		this.pk_wa_data = newPk_wa_data;
 	}
+
 	/**
-	 * 属性pk_psndoc的Getter方法.
-	 * 创建日期:2009-11-26 11:30:31
+	 * 属性pk_psndoc的Getter方法. 创建日期:2009-11-26 11:30:31
+	 * 
 	 * @return java.lang.String
 	 */
-	public java.lang.String getPk_psndoc () {
+	public java.lang.String getPk_psndoc() {
 		return pk_psndoc;
 	}
+
 	/**
-	 * 属性pk_psndoc的Setter方法.
-	 * 创建日期:2009-11-26 11:30:31
-	 * @param newPk_psndoc java.lang.String
+	 * 属性pk_psndoc的Setter方法. 创建日期:2009-11-26 11:30:31
+	 * 
+	 * @param newPk_psndoc
+	 *            java.lang.String
 	 */
-	public void setPk_psndoc (java.lang.String newPk_psndoc ) {
+	public void setPk_psndoc(java.lang.String newPk_psndoc) {
 		this.pk_psndoc = newPk_psndoc;
 	}
+
 	/**
-	 * 属性pk_psnjob的Getter方法.
-	 * 创建日期:2009-11-26 11:30:31
+	 * 属性pk_psnjob的Getter方法. 创建日期:2009-11-26 11:30:31
+	 * 
 	 * @return java.lang.String
 	 */
-	public java.lang.String getPk_psnjob () {
+	public java.lang.String getPk_psnjob() {
 		return pk_psnjob;
 	}
+
 	/**
-	 * 属性pk_psnjob的Setter方法.
-	 * 创建日期:2009-11-26 11:30:31
-	 * @param newPk_psnjob java.lang.String
+	 * 属性pk_psnjob的Setter方法. 创建日期:2009-11-26 11:30:31
+	 * 
+	 * @param newPk_psnjob
+	 *            java.lang.String
 	 */
-	public void setPk_psnjob (java.lang.String newPk_psnjob ) {
+	public void setPk_psnjob(java.lang.String newPk_psnjob) {
 		this.pk_psnjob = newPk_psnjob;
 	}
+
 	/**
-	 * 属性pk_psnorg的Getter方法.
-	 * 创建日期:2009-11-26 11:30:31
+	 * 属性pk_psnorg的Getter方法. 创建日期:2009-11-26 11:30:31
+	 * 
 	 * @return java.lang.String
 	 */
-	public java.lang.String getPk_psnorg () {
+	public java.lang.String getPk_psnorg() {
 		return pk_psnorg;
 	}
+
 	/**
-	 * 属性pk_psnorg的Setter方法.
-	 * 创建日期:2009-11-26 11:30:31
-	 * @param newPk_psnorg java.lang.String
+	 * 属性pk_psnorg的Setter方法. 创建日期:2009-11-26 11:30:31
+	 * 
+	 * @param newPk_psnorg
+	 *            java.lang.String
 	 */
-	public void setPk_psnorg (java.lang.String newPk_psnorg ) {
+	public void setPk_psnorg(java.lang.String newPk_psnorg) {
 		this.pk_psnorg = newPk_psnorg;
 	}
+
 	/**
-	 * 属性assgid的Getter方法.
-	 * 创建日期:2009-11-26 11:30:31
+	 * 属性assgid的Getter方法. 创建日期:2009-11-26 11:30:31
+	 * 
 	 * @return java.lang.Integer
 	 */
-	public java.lang.Integer getAssgid () {
+	public java.lang.Integer getAssgid() {
 		return assgid;
 	}
+
 	/**
-	 * 属性assgid的Setter方法.
-	 * 创建日期:2009-11-26 11:30:31
-	 * @param newAssgid java.lang.Integer
+	 * 属性assgid的Setter方法. 创建日期:2009-11-26 11:30:31
+	 * 
+	 * @param newAssgid
+	 *            java.lang.Integer
 	 */
-	public void setAssgid (java.lang.Integer newAssgid ) {
+	public void setAssgid(java.lang.Integer newAssgid) {
 		this.assgid = newAssgid;
 	}
+
 	/**
-	 * 属性pk_group的Getter方法.
-	 * 创建日期:2009-11-26 11:30:31
+	 * 属性pk_group的Getter方法. 创建日期:2009-11-26 11:30:31
+	 * 
 	 * @return java.lang.String
 	 */
-	public java.lang.String getPk_group () {
+	public java.lang.String getPk_group() {
 		return pk_group;
 	}
+
 	/**
-	 * 属性pk_group的Setter方法.
-	 * 创建日期:2009-11-26 11:30:31
-	 * @param newPk_group java.lang.String
+	 * 属性pk_group的Setter方法. 创建日期:2009-11-26 11:30:31
+	 * 
+	 * @param newPk_group
+	 *            java.lang.String
 	 */
-	public void setPk_group (java.lang.String newPk_group ) {
+	public void setPk_group(java.lang.String newPk_group) {
 		this.pk_group = newPk_group;
 	}
+
 	/**
-	 * 属性pk_org的Getter方法.
-	 * 创建日期:2009-11-26 11:30:31
+	 * 属性pk_org的Getter方法. 创建日期:2009-11-26 11:30:31
+	 * 
 	 * @return java.lang.String
 	 */
-	public java.lang.String getPk_org () {
+	public java.lang.String getPk_org() {
 		return pk_org;
 	}
+
 	/**
-	 * 属性pk_org的Setter方法.
-	 * 创建日期:2009-11-26 11:30:31
-	 * @param newPk_org java.lang.String
+	 * 属性pk_org的Setter方法. 创建日期:2009-11-26 11:30:31
+	 * 
+	 * @param newPk_org
+	 *            java.lang.String
 	 */
-	public void setPk_org (java.lang.String newPk_org ) {
+	public void setPk_org(java.lang.String newPk_org) {
 		this.pk_org = newPk_org;
 	}
 
 	/**
-	 * 属性cyear的Getter方法.
-	 * 创建日期:2009-11-26 11:30:31
+	 * 属性cyear的Getter方法. 创建日期:2009-11-26 11:30:31
+	 * 
 	 * @return java.lang.String
 	 */
-	public java.lang.String getCyear () {
+	public java.lang.String getCyear() {
 		return cyear;
 	}
+
 	/**
-	 * 属性cyear的Setter方法.
-	 * 创建日期:2009-11-26 11:30:31
-	 * @param newCyear java.lang.String
+	 * 属性cyear的Setter方法. 创建日期:2009-11-26 11:30:31
+	 * 
+	 * @param newCyear
+	 *            java.lang.String
 	 */
-	public void setCyear (java.lang.String newCyear ) {
+	public void setCyear(java.lang.String newCyear) {
 		this.cyear = newCyear;
 	}
+
 	/**
-	 * 属性cperiod的Getter方法.
-	 * 创建日期:2009-11-26 11:30:31
+	 * 属性cperiod的Getter方法. 创建日期:2009-11-26 11:30:31
+	 * 
 	 * @return java.lang.String
 	 */
-	public java.lang.String getCperiod () {
+	public java.lang.String getCperiod() {
 		return cperiod;
 	}
+
 	/**
-	 * 属性cperiod的Setter方法.
-	 * 创建日期:2009-11-26 11:30:31
-	 * @param newCperiod java.lang.String
+	 * 属性cperiod的Setter方法. 创建日期:2009-11-26 11:30:31
+	 * 
+	 * @param newCperiod
+	 *            java.lang.String
 	 */
-	public void setCperiod (java.lang.String newCperiod ) {
+	public void setCperiod(java.lang.String newCperiod) {
 		this.cperiod = newCperiod;
 	}
+
 	/**
-	 * 属性taxtableid的Getter方法.
-	 * 创建日期:2009-11-26 11:30:31
+	 * 属性taxtableid的Getter方法. 创建日期:2009-11-26 11:30:31
+	 * 
 	 * @return java.lang.String
 	 */
-	public java.lang.String getTaxtableid () {
+	public java.lang.String getTaxtableid() {
 		return taxtableid;
 	}
+
 	/**
-	 * 属性taxtableid的Setter方法.
-	 * 创建日期:2009-11-26 11:30:31
-	 * @param newTaxtableid java.lang.String
+	 * 属性taxtableid的Setter方法. 创建日期:2009-11-26 11:30:31
+	 * 
+	 * @param newTaxtableid
+	 *            java.lang.String
 	 */
-	public void setTaxtableid (java.lang.String newTaxtableid ) {
+	public void setTaxtableid(java.lang.String newTaxtableid) {
 		this.taxtableid = newTaxtableid;
 	}
+
 	/**
-	 * 属性stopflag的Getter方法.
-	 * 创建日期:2009-11-26 11:30:31
+	 * 属性stopflag的Getter方法. 创建日期:2009-11-26 11:30:31
+	 * 
 	 * @return nc.vo.pub.lang.UFBoolean
 	 */
-	public nc.vo.pub.lang.UFBoolean getStopflag () {
+	public nc.vo.pub.lang.UFBoolean getStopflag() {
 		return stopflag;
 	}
+
 	/**
-	 * 属性stopflag的Setter方法.
-	 * 创建日期:2009-11-26 11:30:31
-	 * @param newStopflag nc.vo.pub.lang.UFBoolean
+	 * 属性stopflag的Setter方法. 创建日期:2009-11-26 11:30:31
+	 * 
+	 * @param newStopflag
+	 *            nc.vo.pub.lang.UFBoolean
 	 */
-	public void setStopflag (nc.vo.pub.lang.UFBoolean newStopflag ) {
+	public void setStopflag(nc.vo.pub.lang.UFBoolean newStopflag) {
 		this.stopflag = newStopflag;
 	}
+
 	/**
-	 * 属性caculateflag的Getter方法.
-	 * 创建日期:2009-11-26 11:30:31
+	 * 属性caculateflag的Getter方法. 创建日期:2009-11-26 11:30:31
+	 * 
 	 * @return nc.vo.pub.lang.UFBoolean
 	 */
-	public nc.vo.pub.lang.UFBoolean getCaculateflag () {
+	public nc.vo.pub.lang.UFBoolean getCaculateflag() {
 		return caculateflag;
 	}
+
 	/**
-	 * 属性caculateflag的Setter方法.
-	 * 创建日期:2009-11-26 11:30:31
-	 * @param newCaculateflag nc.vo.pub.lang.UFBoolean
+	 * 属性caculateflag的Setter方法. 创建日期:2009-11-26 11:30:31
+	 * 
+	 * @param newCaculateflag
+	 *            nc.vo.pub.lang.UFBoolean
 	 */
-	public void setCaculateflag (nc.vo.pub.lang.UFBoolean newCaculateflag ) {
+	public void setCaculateflag(nc.vo.pub.lang.UFBoolean newCaculateflag) {
 		this.caculateflag = newCaculateflag;
 	}
+
 	/**
-	 * 属性checkflag的Getter方法.
-	 * 创建日期:2009-11-26 11:30:31
+	 * 属性checkflag的Getter方法. 创建日期:2009-11-26 11:30:31
+	 * 
 	 * @return nc.vo.pub.lang.UFBoolean
 	 */
-	public nc.vo.pub.lang.UFBoolean getCheckflag () {
+	public nc.vo.pub.lang.UFBoolean getCheckflag() {
 		return checkflag;
 	}
+
 	/**
-	 * 属性checkflag的Setter方法.
-	 * 创建日期:2009-11-26 11:30:31
-	 * @param newCheckflag nc.vo.pub.lang.UFBoolean
+	 * 属性checkflag的Setter方法. 创建日期:2009-11-26 11:30:31
+	 * 
+	 * @param newCheckflag
+	 *            nc.vo.pub.lang.UFBoolean
 	 */
-	public void setCheckflag (nc.vo.pub.lang.UFBoolean newCheckflag ) {
+	public void setCheckflag(nc.vo.pub.lang.UFBoolean newCheckflag) {
 		this.checkflag = newCheckflag;
 	}
 
 	/**
-	 * 属性partflag的Getter方法.
-	 * 创建日期:2009-11-26 11:30:31
+	 * 属性partflag的Getter方法. 创建日期:2009-11-26 11:30:31
+	 * 
 	 * @return nc.vo.pub.lang.UFBoolean
 	 */
-	public nc.vo.pub.lang.UFBoolean getPartflag () {
+	public nc.vo.pub.lang.UFBoolean getPartflag() {
 		return partflag;
 	}
+
 	/**
-	 * 属性partflag的Setter方法.
-	 * 创建日期:2009-11-26 11:30:31
-	 * @param newPartflag nc.vo.pub.lang.UFBoolean
+	 * 属性partflag的Setter方法. 创建日期:2009-11-26 11:30:31
+	 * 
+	 * @param newPartflag
+	 *            nc.vo.pub.lang.UFBoolean
 	 */
-	public void setPartflag (nc.vo.pub.lang.UFBoolean newPartflag ) {
+	public void setPartflag(nc.vo.pub.lang.UFBoolean newPartflag) {
 		this.partflag = newPartflag;
 	}
+
 	/**
-	 * 属性pk_bankaccbas1的Getter方法.
-	 * 创建日期:2009-11-26 11:30:31
+	 * 属性pk_bankaccbas1的Getter方法. 创建日期:2009-11-26 11:30:31
+	 * 
 	 * @return java.lang.String
 	 */
-	public java.lang.String getPk_bankaccbas1 () {
+	public java.lang.String getPk_bankaccbas1() {
 		return pk_bankaccbas1;
 	}
+
 	/**
-	 * 属性pk_bankaccbas1的Setter方法.
-	 * 创建日期:2009-11-26 11:30:31
-	 * @param newPk_bankaccbas1 java.lang.String
+	 * 属性pk_bankaccbas1的Setter方法. 创建日期:2009-11-26 11:30:31
+	 * 
+	 * @param newPk_bankaccbas1
+	 *            java.lang.String
 	 */
-	public void setPk_bankaccbas1 (java.lang.String newPk_bankaccbas1 ) {
+	public void setPk_bankaccbas1(java.lang.String newPk_bankaccbas1) {
 		this.pk_bankaccbas1 = newPk_bankaccbas1;
 	}
+
 	/**
-	 * 属性pk_bankaccbas2的Getter方法.
-	 * 创建日期:2009-11-26 11:30:31
+	 * 属性pk_bankaccbas2的Getter方法. 创建日期:2009-11-26 11:30:31
+	 * 
 	 * @return java.lang.String
 	 */
-	public java.lang.String getPk_bankaccbas2 () {
+	public java.lang.String getPk_bankaccbas2() {
 		return pk_bankaccbas2;
 	}
+
 	/**
-	 * 属性pk_bankaccbas2的Setter方法.
-	 * 创建日期:2009-11-26 11:30:31
-	 * @param newPk_bankaccbas2 java.lang.String
+	 * 属性pk_bankaccbas2的Setter方法. 创建日期:2009-11-26 11:30:31
+	 * 
+	 * @param newPk_bankaccbas2
+	 *            java.lang.String
 	 */
-	public void setPk_bankaccbas2 (java.lang.String newPk_bankaccbas2 ) {
+	public void setPk_bankaccbas2(java.lang.String newPk_bankaccbas2) {
 		this.pk_bankaccbas2 = newPk_bankaccbas2;
 	}
+
 	/**
-	 * 属性pk_bankaccbas3的Getter方法.
-	 * 创建日期:2009-11-26 11:30:31
+	 * 属性pk_bankaccbas3的Getter方法. 创建日期:2009-11-26 11:30:31
+	 * 
 	 * @return java.lang.String
 	 */
-	public java.lang.String getPk_bankaccbas3 () {
+	public java.lang.String getPk_bankaccbas3() {
 		return pk_bankaccbas3;
 	}
+
 	/**
-	 * 属性pk_bankaccbas3的Setter方法.
-	 * 创建日期:2009-11-26 11:30:31
-	 * @param newPk_bankaccbas3 java.lang.String
+	 * 属性pk_bankaccbas3的Setter方法. 创建日期:2009-11-26 11:30:31
+	 * 
+	 * @param newPk_bankaccbas3
+	 *            java.lang.String
 	 */
-	public void setPk_bankaccbas3 (java.lang.String newPk_bankaccbas3 ) {
+	public void setPk_bankaccbas3(java.lang.String newPk_bankaccbas3) {
 		this.pk_bankaccbas3 = newPk_bankaccbas3;
 	}
+
 	/**
-	 * 属性redtotal的Getter方法.
-	 * 创建日期:2009-11-26 11:30:31
+	 * 属性redtotal的Getter方法. 创建日期:2009-11-26 11:30:31
+	 * 
 	 * @return nc.vo.pub.lang.UFDouble
 	 */
-	public nc.vo.pub.lang.UFDouble getRedtotal () {
+	public nc.vo.pub.lang.UFDouble getRedtotal() {
 		return redtotal;
 	}
+
 	/**
-	 * 属性redtotal的Setter方法.
-	 * 创建日期:2009-11-26 11:30:31
-	 * @param newRedtotal nc.vo.pub.lang.UFDouble
+	 * 属性redtotal的Setter方法. 创建日期:2009-11-26 11:30:31
+	 * 
+	 * @param newRedtotal
+	 *            nc.vo.pub.lang.UFDouble
 	 */
-	public void setRedtotal (nc.vo.pub.lang.UFDouble newRedtotal ) {
+	public void setRedtotal(nc.vo.pub.lang.UFDouble newRedtotal) {
 		this.redtotal = newRedtotal;
 	}
+
 	/**
-	 * 属性dr的Getter方法.
-	 * 创建日期:2009-11-26 11:30:31
+	 * 属性dr的Getter方法. 创建日期:2009-11-26 11:30:31
+	 * 
 	 * @return java.lang.Integer
 	 */
-	public java.lang.Integer getDr () {
+	public java.lang.Integer getDr() {
 		return dr;
 	}
+
 	/**
-	 * 属性dr的Setter方法.
-	 * 创建日期:2009-11-26 11:30:31
-	 * @param newDr java.lang.Integer
+	 * 属性dr的Setter方法. 创建日期:2009-11-26 11:30:31
+	 * 
+	 * @param newDr
+	 *            java.lang.Integer
 	 */
-	public void setDr (java.lang.Integer newDr ) {
+	public void setDr(java.lang.Integer newDr) {
 		this.dr = newDr;
 	}
+
 	/**
-	 * 属性ts的Getter方法.
-	 * 创建日期:2009-11-26 11:30:31
+	 * 属性ts的Getter方法. 创建日期:2009-11-26 11:30:31
+	 * 
 	 * @return nc.vo.pub.lang.UFDateTime
 	 */
-	public nc.vo.pub.lang.UFDateTime getTs () {
+	public nc.vo.pub.lang.UFDateTime getTs() {
 		return ts;
 	}
+
 	/**
-	 * 属性ts的Setter方法.
-	 * 创建日期:2009-11-26 11:30:31
-	 * @param newTs nc.vo.pub.lang.UFDateTime
+	 * 属性ts的Setter方法. 创建日期:2009-11-26 11:30:31
+	 * 
+	 * @param newTs
+	 *            nc.vo.pub.lang.UFDateTime
 	 */
-	public void setTs (nc.vo.pub.lang.UFDateTime newTs ) {
+	public void setTs(nc.vo.pub.lang.UFDateTime newTs) {
 		this.ts = newTs;
 	}
 
 	/**
-	 * <p>取得父VO主键字段.
+	 * <p>
+	 * 取得父VO主键字段.
 	 * <p>
 	 * 创建日期:2009-11-26 11:30:31
+	 * 
 	 * @return java.lang.String
 	 */
 	@Override
@@ -584,9 +663,11 @@ public class PayfileVO extends SuperVO implements  IBDObject{
 	}
 
 	/**
-	 * <p>取得表主键.
+	 * <p>
+	 * 取得表主键.
 	 * <p>
 	 * 创建日期:2009-11-26 11:30:31
+	 * 
 	 * @return java.lang.String
 	 */
 	@Override
@@ -595,9 +676,11 @@ public class PayfileVO extends SuperVO implements  IBDObject{
 	}
 
 	/**
-	 * <p>返回表名称.
+	 * <p>
+	 * 返回表名称.
 	 * <p>
 	 * 创建日期:2009-11-26 11:30:31
+	 * 
 	 * @return java.lang.String
 	 */
 	@Override
@@ -607,12 +690,13 @@ public class PayfileVO extends SuperVO implements  IBDObject{
 
 	/**
 	 * 按照默认方式创建构造子.
-	 *
+	 * 
 	 * 创建日期:2009-11-26 11:30:31
 	 */
 	public PayfileVO() {
 		super();
 	}
+
 	/**
 	 * @author zhangg on 2009-12-28
 	 * @return the pk_wa_class
@@ -620,205 +704,281 @@ public class PayfileVO extends SuperVO implements  IBDObject{
 	public java.lang.String getPk_wa_class() {
 		return pk_wa_class;
 	}
+
 	/**
 	 * @author zhangg on 2009-12-28
-	 * @param pk_wa_class the pk_wa_class to set
+	 * @param pk_wa_class
+	 *            the pk_wa_class to set
 	 */
 	public void setPk_wa_class(java.lang.String pk_wa_class) {
 		this.pk_wa_class = pk_wa_class;
 	}
+
 	public java.lang.String getPsnname() {
 		return psnname;
 	}
+
 	public void setPsnname(java.lang.String psnname) {
 		this.psnname = psnname;
 	}
+
 	public java.lang.String getPostname() {
 		return postname;
 	}
+
 	public void setPostname(java.lang.String postname) {
 		this.postname = postname;
 	}
+
 	public java.lang.String getJobname() {
 		return jobname;
 	}
+
 	public void setJobname(java.lang.String jobname) {
 		this.jobname = jobname;
 	}
+
 	public java.lang.String getDeptname() {
 		return deptname;
 	}
+
 	public void setDeptname(java.lang.String deptname) {
 		this.deptname = deptname;
 	}
+
 	public java.lang.String getOrgname() {
 		return orgname;
 	}
+
 	public void setOrgname(java.lang.String orgname) {
 		this.orgname = orgname;
 	}
+
 	public java.lang.String getClerkcode() {
 		return clerkcode;
 	}
+
 	public void setClerkcode(java.lang.String clerkcode) {
 		this.clerkcode = clerkcode;
 	}
+
 	public void setTaxbasename(java.lang.String taxbasename) {
 		this.taxbasename = taxbasename;
 	}
+
 	public java.lang.String getTaxbasename() {
 		return taxbasename;
 	}
+
 	public void setPsncode(java.lang.String psncode) {
 		this.psncode = psncode;
 	}
+
 	public java.lang.String getPsncode() {
 		return psncode;
 	}
+
 	public void setSelectflag(UFBoolean selectflag) {
 		this.selectflag = selectflag;
 	}
+
 	public UFBoolean getSelectflag() {
 		return selectflag;
 	}
+
 	public void setIsderate(UFBoolean isderate) {
 		this.isderate = isderate;
 	}
+
 	public UFBoolean getIsderate() {
 		return isderate;
 	}
+
 	public void setIsndebuct(UFBoolean isndebuct) {
 		this.isndebuct = isndebuct;
 	}
+
 	public UFBoolean getIsndebuct() {
 		return isndebuct;
 	}
+
 	public void setDerateptg(UFDouble derateptg) {
 		this.derateptg = derateptg;
 	}
+
 	public UFDouble getDerateptg() {
 		return derateptg;
 	}
+
 	public void setTaxtype(Integer taxtype) {
-		if(taxtype==null)
+		if (taxtype == null)
 			return;
 		this.taxtype = taxtype;
-		if(taxtype == 0){
-			setTaxtypename(ResHelper.getString("60130payfile","060130payfile0327")/*@res "代扣税"*/);
-		}else if(taxtype == 1){
-			setTaxtypename(ResHelper.getString("60130payfile","060130payfile0328")/*@res "代付税"*/);
-		}else{
-			setTaxtypename(ResHelper.getString("60130payfile","060130payfile0329")/*@res "不扣税"*/);
+		if (taxtype == 0) {
+			setTaxtypename(ResHelper.getString("60130payfile", "060130payfile0327")/*
+																					 * @
+																					 * res
+																					 * "代扣税"
+																					 */);
+		} else if (taxtype == 1) {
+			setTaxtypename(ResHelper.getString("60130payfile", "060130payfile0328")/*
+																					 * @
+																					 * res
+																					 * "代付税"
+																					 */);
+		} else {
+			setTaxtypename(ResHelper.getString("60130payfile", "060130payfile0329")/*
+																					 * @
+																					 * res
+																					 * "不扣税"
+																					 */);
 		}
 	}
+
 	public Integer getTaxtype() {
 		return taxtype;
 	}
+
 	public void setTaxedit(UFBoolean taxedit) {
 		this.taxedit = taxedit;
 	}
+
 	public UFBoolean getTaxedit() {
 		return taxedit;
 	}
+
 	public void setTaxfreeedit(UFBoolean taxfreeedit) {
 		this.taxfreeedit = taxfreeedit;
 	}
+
 	public UFBoolean getTaxfreeedit() {
 		return taxfreeedit;
 	}
+
 	public void setStopedit(UFBoolean stopedit) {
 		this.stopedit = stopedit;
 	}
+
 	public UFBoolean getStopedit() {
 		return stopedit;
 	}
+
 	public void setPsnid(java.lang.String psnid) {
 		this.psnid = psnid;
 	}
+
 	public java.lang.String getPsnid() {
 		return psnid;
 	}
+
 	public void setTaxtypename(String taxtypename) {
 		this.taxtypename = taxtypename;
 	}
+
 	public String getTaxtypename() {
 		return taxtypename;
 	}
+
 	public void setPk_banktype1(java.lang.String pk_banktype1) {
 		this.pk_banktype1 = pk_banktype1;
 	}
+
 	public java.lang.String getPk_banktype1() {
 		return pk_banktype1;
 	}
+
 	public void setPk_banktype2(java.lang.String pk_banktype2) {
 		this.pk_banktype2 = pk_banktype2;
 	}
+
 	public java.lang.String getPk_banktype2() {
 		return pk_banktype2;
 	}
+
 	public void setPk_banktype3(java.lang.String pk_banktype3) {
 		this.pk_banktype3 = pk_banktype3;
 	}
+
 	public java.lang.String getPk_banktype3() {
 		return pk_banktype3;
 	}
+
 	public void setIsrulehint(UFBoolean isrulehint) {
 		this.isrulehint = isrulehint;
 	}
+
 	public UFBoolean getIsrulehint() {
 		return isrulehint;
 	}
+
 	public void setPk_prnt_class(java.lang.String pk_prnt_class) {
 		this.pk_prnt_class = pk_prnt_class;
 	}
+
 	public java.lang.String getPk_prnt_class() {
 		return pk_prnt_class;
 	}
+
 	public UFDate getCpaydate() {
 		return cpaydate;
 	}
+
 	public void setCpaydate(UFDate cpaydate) {
 		this.cpaydate = cpaydate;
 	}
+
 	public java.lang.String getVpaycomment() {
 		return vpaycomment;
 	}
+
 	public void setVpaycomment(java.lang.String vpaycomment) {
 		this.vpaycomment = vpaycomment;
 	}
+
 	public UFLiteralDate getLeavedate() {
 		return leavedate;
 	}
+
 	public void setLeavedate(UFLiteralDate leavedate) {
 		this.leavedate = leavedate;
 	}
+
 	public java.lang.String getPsnclname() {
 		return psnclname;
 	}
+
 	public void setPsnclname(java.lang.String psnclname) {
 		this.psnclname = psnclname;
 	}
+
 	public java.lang.String getPk_financeorg() {
 		return pk_financeorg;
 	}
+
 	public void setPk_financeorg(java.lang.String pk_financeorg) {
 		this.pk_financeorg = pk_financeorg;
 	}
+
 	public java.lang.String getPk_financedept() {
 		return pk_financedept;
 	}
+
 	public void setPk_financedept(java.lang.String pk_financedept) {
 		this.pk_financedept = pk_financedept;
 	}
+
 	public java.lang.String getPk_liabilityorg() {
 		return pk_liabilityorg;
 	}
+
 	public void setPk_liabilityorg(java.lang.String pk_liabilityorg) {
 		this.pk_liabilityorg = pk_liabilityorg;
 	}
+
 	public java.lang.String getPk_liabilitydept() {
 		return pk_liabilitydept;
 	}
+
 	public void setPk_liabilitydept(java.lang.String pk_liabilitydept) {
 		this.pk_liabilitydept = pk_liabilitydept;
 	}
@@ -826,12 +986,15 @@ public class PayfileVO extends SuperVO implements  IBDObject{
 	public java.lang.String getFiporgvid() {
 		return fiporgvid;
 	}
+
 	public void setFiporgvid(java.lang.String fiporgvid) {
 		this.fiporgvid = fiporgvid;
 	}
+
 	public java.lang.String getFipdeptvid() {
 		return fipdeptvid;
 	}
+
 	public void setFipdeptvid(java.lang.String fipdeptvid) {
 		this.fipdeptvid = fipdeptvid;
 	}
@@ -839,114 +1002,140 @@ public class PayfileVO extends SuperVO implements  IBDObject{
 	public java.lang.String getLibdeptvid() {
 		return libdeptvid;
 	}
+
 	public void setLibdeptvid(java.lang.String libdeptvid) {
 		this.libdeptvid = libdeptvid;
 	}
+
 	public java.lang.String getWorkorg() {
 		return workorg;
 	}
+
 	public void setWorkorg(java.lang.String workorg) {
 		this.workorg = workorg;
 	}
+
 	public java.lang.String getWorkorgvid() {
 		return workorgvid;
 	}
+
 	public void setWorkorgvid(java.lang.String workorgvid) {
 		this.workorgvid = workorgvid;
 	}
+
 	public java.lang.String getWorkdept() {
 		return workdept;
 	}
+
 	public void setWorkdept(java.lang.String workdept) {
 		this.workdept = workdept;
 	}
+
 	public java.lang.String getWorkdeptvid() {
 		return workdeptvid;
 	}
+
 	public void setWorkdeptvid(java.lang.String workdeptvid) {
 		this.workdeptvid = workdeptvid;
 	}
+
 	public nc.vo.pub.lang.UFBoolean getFipendflag() {
 		return fipendflag;
 	}
+
 	public void setFipendflag(nc.vo.pub.lang.UFBoolean fipendflag) {
 		this.fipendflag = fipendflag;
 	}
+
 	public UFBoolean getFipedit() {
 		return fipedit;
 	}
+
 	public void setFipedit(UFBoolean fipedit) {
 		this.fipedit = fipedit;
 	}
+
 	public UFBoolean getLibedit() {
 		return libedit;
 	}
+
 	public void setLibedit(UFBoolean libedit) {
 		this.libedit = libedit;
 	}
 
 	/**
-	 * 属性taxable_income的Getter方法.属性名：应纳税所得额
-	 * 创建日期:
+	 * 属性taxable_income的Getter方法.属性名：应纳税所得额 创建日期:
+	 * 
 	 * @return nc.vo.pub.lang.UFDouble
 	 */
-	public nc.vo.pub.lang.UFDouble getTaxable_income () {
+	public nc.vo.pub.lang.UFDouble getTaxable_income() {
 		return taxable_income;
 	}
+
 	/**
-	 * 属性taxable_income的Setter方法.属性名：应纳税所得额
-	 * 创建日期:
-	 * @param newTaxable_income nc.vo.pub.lang.UFDouble
+	 * 属性taxable_income的Setter方法.属性名：应纳税所得额 创建日期:
+	 * 
+	 * @param newTaxable_income
+	 *            nc.vo.pub.lang.UFDouble
 	 */
-	public void setTaxable_income (nc.vo.pub.lang.UFDouble newTaxable_income ) {
+	public void setTaxable_income(nc.vo.pub.lang.UFDouble newTaxable_income) {
 		this.taxable_income = newTaxable_income;
 	}
+
 	/**
-	 * 属性nquickdebuct的Getter方法.属性名：速算扣除数
-	 * 创建日期:
+	 * 属性nquickdebuct的Getter方法.属性名：速算扣除数 创建日期:
+	 * 
 	 * @return nc.vo.pub.lang.UFDouble
 	 */
-	public nc.vo.pub.lang.UFDouble getNquickdebuct () {
+	public nc.vo.pub.lang.UFDouble getNquickdebuct() {
 		return nquickdebuct;
 	}
+
 	/**
-	 * 属性nquickdebuct的Setter方法.属性名：速算扣除数
-	 * 创建日期:
-	 * @param newNquickdebuct nc.vo.pub.lang.UFDouble
+	 * 属性nquickdebuct的Setter方法.属性名：速算扣除数 创建日期:
+	 * 
+	 * @param newNquickdebuct
+	 *            nc.vo.pub.lang.UFDouble
 	 */
-	public void setNquickdebuct (nc.vo.pub.lang.UFDouble newNquickdebuct ) {
+	public void setNquickdebuct(nc.vo.pub.lang.UFDouble newNquickdebuct) {
 		this.nquickdebuct = newNquickdebuct;
 	}
+
 	/**
-	 * 属性expense_deduction的Getter方法.属性名：费用扣除标准
-	 * 创建日期:
+	 * 属性expense_deduction的Getter方法.属性名：费用扣除标准 创建日期:
+	 * 
 	 * @return nc.vo.pub.lang.UFDouble
 	 */
-	public nc.vo.pub.lang.UFDouble getExpense_deduction () {
+	public nc.vo.pub.lang.UFDouble getExpense_deduction() {
 		return expense_deduction;
 	}
+
 	/**
-	 * 属性expense_deduction的Setter方法.属性名：费用扣除标准
-	 * 创建日期:
-	 * @param newExpense_deduction nc.vo.pub.lang.UFDouble
+	 * 属性expense_deduction的Setter方法.属性名：费用扣除标准 创建日期:
+	 * 
+	 * @param newExpense_deduction
+	 *            nc.vo.pub.lang.UFDouble
 	 */
-	public void setExpense_deduction (nc.vo.pub.lang.UFDouble newExpense_deduction ) {
+	public void setExpense_deduction(nc.vo.pub.lang.UFDouble newExpense_deduction) {
 		this.expense_deduction = newExpense_deduction;
 	}
+
 	/**
-	 * 属性taxrate的Getter方法.属性名：税率
-	 * 创建日期:
+	 * 属性taxrate的Getter方法.属性名：税率 创建日期:
+	 * 
 	 * @return nc.vo.pub.lang.UFDouble
 	 */
-	public nc.vo.pub.lang.UFDouble getTaxrate () {
+	public nc.vo.pub.lang.UFDouble getTaxrate() {
 		return taxrate;
 	}
+
 	/**
-	 * 属性taxrate的Setter方法.属性名：税率
-	 * 创建日期:
-	 * @param newTaxrate nc.vo.pub.lang.UFDouble
+	 * 属性taxrate的Setter方法.属性名：税率 创建日期:
+	 * 
+	 * @param newTaxrate
+	 *            nc.vo.pub.lang.UFDouble
 	 */
-	public void setTaxrate (nc.vo.pub.lang.UFDouble newTaxrate ) {
+	public void setTaxrate(nc.vo.pub.lang.UFDouble newTaxrate) {
 		this.taxrate = newTaxrate;
 	}
 
@@ -978,5 +1167,12 @@ public class PayfileVO extends SuperVO implements  IBDObject{
 		this.cyearperiod = cyearperiod;
 	}
 
-}
+	public Integer getExnhitype() {
+		return exnhitype;
+	}
 
+	public void setExnhitype(Integer exnhitype) {
+		this.exnhitype = exnhitype;
+	}
+
+}

@@ -17,6 +17,7 @@ import nc.itf.ta.ITBMPsndocQueryMaintain;
 import nc.itf.uap.IUAPQueryBS;
 import nc.jdbc.framework.processor.ColumnProcessor;
 import nc.ui.bd.ref.IRefConst;
+import nc.ui.hi.ref.PsnjobAOSRefTreeModel2;
 import nc.ui.hr.uif2.view.HrBillFormEditor;
 import nc.ui.hr.uif2.view.PrimaryOrgPanel;
 import nc.ui.org.ref.OrgVOsDefaultRefModel;
@@ -50,7 +51,6 @@ import nc.vo.ta.timeregion.RegionOrgVO;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 
-@SuppressWarnings("restriction")
 public class TbmPsndocFormEditor extends HrBillFormEditor implements BillCardBeforeEditListener {
 	private static final long serialVersionUID = 1L;
 	private OrgVOsDefaultRefModel refModel;
@@ -301,6 +301,28 @@ public class TbmPsndocFormEditor extends HrBillFormEditor implements BillCardBef
 								+ " where tbm_psndoc.enddate='" + TBMPsndocCommonValue.END_DATA
 								+ "' and  tbm_psndoc.pk_org='" + getModel().getContext().getPk_org() + "') "
 								+ PubPermissionUtils.getPsnjobPermission());
+
+				int hasGlbdef8 = -1;
+				IUAPQueryBS query = NCLocator.getInstance().lookup(IUAPQueryBS.class);
+				try {
+					hasGlbdef8 = (int) query.executeQuery(
+							"select count(glbdef1) from HI_PSNDOC_GLBDEF8 where pk_psndoc = (select pk_psndoc from sm_user where cuserid = '"
+									+ getModel().getContext().getPk_loginUser() + "')", new ColumnProcessor());
+				} catch (BusinessException ex) {
+					ex.printStackTrace();
+				}
+
+				if (hasGlbdef8 > 0) {
+					String deptWherePart = "#DEPT_PK# in (select glbdef1 from HI_PSNDOC_GLBDEF8 where pk_psndoc = (select pk_psndoc from sm_user where cuserid = '"
+							+ getModel().getContext().getPk_loginUser()
+							+ "') and '"
+							+ new UFLiteralDate().toString()
+							+ "' between BEGINDATE and nvl(ENDDATE, '9999-12-31')) and (select count(pk_dept) from org_dept where pk_dept=#DEPT_PK# and isnull(HRCANCELED, 'N')='N') > 0";
+					PsnjobAOSRefTreeModel2 refModel = (PsnjobAOSRefTreeModel2) psnRef.getRefModel();
+					if (refModel != null) {
+						refModel.setClassWherePart(deptWherePart.replace("#DEPT_PK#", "orgdept.pk_orgdept"));
+					}
+				}
 			}
 		} else if (TBMPsndocVO.PK_REGION.equals(e.getItem().getKey())) {
 			// 只显示当前人力资源组织下已启用的考勤区域 heqiaoa

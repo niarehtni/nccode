@@ -4,13 +4,10 @@ import java.awt.Event;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 
-
 import nc.bs.framework.common.NCLocator;
 import nc.hr.utils.ResHelper;
 import nc.itf.twhr.ITwhr_declarationMaintain;
-import nc.ui.bd.pub.BDOrgPanel;
 import nc.ui.hr.uif2.action.HrAction;
-import nc.ui.hr.uif2.view.PrimaryOrgPanel;
 import nc.ui.pub.beans.MessageDialog;
 import nc.ui.pub.beans.progress.IProgressMonitor;
 import nc.ui.pub.beans.progress.NCProgresses;
@@ -21,7 +18,7 @@ import nc.vo.pub.lang.UFDate;
 
 /**
  * 生成按钮
- *
+ * 
  * @author: Ares.Tank
  * @date: 2018-9-26 19:36:05
  * @since: eHR V6.5
@@ -32,8 +29,7 @@ public class GeneratAction extends HrAction {
 	private Object startDateMonth = null;
 	private ShowUpableBillForm billForm;
 	private BillListView billListView;
-	
-	
+
 	public ShowUpableBillForm getBillForm() {
 		return billForm;
 	}
@@ -54,10 +50,8 @@ public class GeneratAction extends HrAction {
 		putValue("Code", "generatAction");
 		setBtnName("生成");
 
-		putValue("ShortDescription",
-				ResHelper.getString("68J61710", "declartic0001") + "(Ctrl+F)");
-		putValue("AcceleratorKey", javax.swing.KeyStroke.getKeyStroke(
-				KeyEvent.VK_F, Event.CTRL_MASK));
+		putValue("ShortDescription", ResHelper.getString("68J61710", "declartic0001") + "(Ctrl+F)");
+		putValue("AcceleratorKey", javax.swing.KeyStroke.getKeyStroke(KeyEvent.VK_F, Event.CTRL_MASK));
 	}
 
 	public void doActionForExtend(ActionEvent e) throws Exception {
@@ -81,23 +75,18 @@ public class GeneratAction extends HrAction {
 			new Thread(new Runnable() {
 				@Override
 				public void run() {
-					IProgressMonitor progressMonitor = NCProgresses
-							.createDialogProgressMonitor(getEntranceUI());
+					IProgressMonitor progressMonitor = NCProgresses.createDialogProgressMonitor(getEntranceUI());
 					try {
 						progressMonitor.beginTask("生成中...", -1); // 导入数据...
 						progressMonitor.setProcessInfo("請稍後..."); // 数据导入中,请稍后......
-						ITwhr_declarationMaintain service = NCLocator
-								.getInstance().lookup(
-										ITwhr_declarationMaintain.class);
-						service.generatCompanyBVO(new UFDate(startDateMonth
-								+ "-01 00:00:00"), getPrimaryOrgPanel()
-								.getRefPane().getRefPK(), getContext()
-								.getPk_group());
-						((nc.ui.pubapp.uif2app.query2.model.ModelDataManager) (getPrimaryOrgPanel())
-								.getDataManager()).refresh();
+						ITwhr_declarationMaintain service = NCLocator.getInstance().lookup(
+								ITwhr_declarationMaintain.class);
+						service.generatCompanyBVO(new UFDate(startDateMonth + "-01 00:00:00"), getPrimaryOrgPanel()
+								.getRefPane().getRefPK(), getContext().getPk_group());
+						((nc.ui.pubapp.uif2app.query2.model.ModelDataManager) (getPrimaryOrgPanel()).getDataManager())
+								.refresh();
 					} catch (Exception e) {
-						MessageDialog.showErrorDlg(getEntranceUI(), null,
-								e.getMessage());
+						MessageDialog.showErrorDlg(getEntranceUI(), null, e.getMessage());
 					} finally {
 						progressMonitor.done();
 					}
@@ -115,16 +104,16 @@ public class GeneratAction extends HrAction {
 	protected boolean isActionEnable() {
 		String tableCode = null;
 		String pk_org = null;
-		try{
+		try {
 			tableCode = getBillListView().getBillListPanel().getBodyTabbedPane().getSelectedTableCode();
 			pk_org = getPrimaryOrgPanel().getRefPane().getRefPK();
-		}catch(Exception e){
+		} catch (Exception e) {
 			pk_org = null;
 			tableCode = null;
 		}
-		if(pk_org!=null && tableCode!=null && tableCode.equals("id_companybvo")){
+		if (pk_org != null && tableCode != null && tableCode.equals("id_companybvo")) {
 			return true;
-		}else{
+		} else {
 			return false;
 		}
 	}
@@ -136,6 +125,5 @@ public class GeneratAction extends HrAction {
 	public void setBillListView(BillListView billListView) {
 		this.billListView = billListView;
 	}
-
 
 }

@@ -62,7 +62,7 @@
 
 	<!-- 界面元素 ***********************************************************-->
 	<!--====== 视图元素：[查询区域控件实例对象] ==============-->
-	<!-- <bean id="viewa" class="nc.ui.pubapp.uif2app.tangramlayout.UEQueryAreaShell" init-method="initUI">
+	<!-- bean id="viewa" class="nc.ui.pubapp.uif2app.tangramlayout.UEQueryAreaShell" init-method="initUI">
 		<property name="queryAreaCreator" ref="defaultQueryAction" />
 	</bean> -->
 
@@ -80,16 +80,17 @@
 		<property name="titleAction">
 			<bean id="returnAction" class="nc.ui.pubapp.uif2app.actions.UEReturnAction">
 				<property name="goComponent" ref="billListView" />
-				<property name="saveAction" ref="saveScriptAction" />
+				<property name="saveAction" ref="saveAction" />
 				<property name="model" ref="bmModel" />
 			</bean>
 		</property>
 	</bean>
 
 	<!--====== 视图元素：[PUBAPP表单控件(ShowUpableBillForm)实例对象] ==============-->
-	<bean id="billForm" class="nc.ui.pubapp.uif2app.view.ShowUpableBillForm" init-method="initUI">
+	<bean id="billForm" class="nc.ui.twhr.twhr_declaration.ace.view.DecBillForm" init-method="initUI">
 		<property name="model"><ref bean="bmModel" /></property>
 		<property name="nodekey" value="bt" />
+		<property name="showOrgPanel" value="true" />
 		<!-- 表体行操作按钮注册，这只是一组默认设置，开发人员需要自己在此添加其他需要的表体行操作按钮 -->
 		<property name="bodyLineActions">
 			<list>
@@ -104,7 +105,9 @@
 	<!-- 界面布局总装*********************************************************** -->
 	<bean id="container" class="nc.ui.uif2.TangramContainer" init-method="initUI">
 		<property name="tangramLayoutRoot">
-					<bean class="nc.ui.uif2.tangramlayout.node.TBNode">
+			<bean class="nc.ui.uif2.tangramlayout.node.TBNode">
+				<property name="name" value="cardLayout" />
+				<property name="showMode" value="CardLayout" />	
 				<property name="tabs">
 					<list>
 						<bean class="nc.ui.uif2.tangramlayout.node.VSNode">
@@ -143,11 +146,9 @@
 						</bean>
 					</list>
 				</property>
-				<property name="name" value="cardLayout" />
-			<property name="showMode" value="CardLayout" />
 			</bean>
-
 		</property>
+
 		<property name="actions">
 			<list>
 				<!-- <ref bean="addAction" />
@@ -163,39 +164,26 @@
 				<ref bean="defaultRefreshAction" />
 				<ref bean="separatorAction" />
 				<ref bean="defaultImportAction" />
-				<!-- <ref bean="separatorAction" />
-				<ref bean="commitScriptAction" />
-				<ref bean="unCommitScriptAction" />
-				<ref bean="approveScriptAction" />
-				<ref bean="uNApproveScriptAction" />
 				<ref bean="separatorAction" />
-				<ref bean="linkQueryAction" />
-				<ref bean="separatorAction" />
-				<ref bean="metaDataBasedPrintAction" />
-				<ref bean="metaDataBasedPrintActiona" />
-				<ref bean="outputAction" />
-				<ref bean="separatorAction" />
-				<ref bean="pFApproveStatusInfoAction" /> -->
-
+				<ref bean="companyAdjAction" />
 			</list>
 		</property>
 		
 		<property name="editActions">
 			<list>
-				<ref bean="saveScriptAction" />
+				<ref bean="saveAction" />
 				<ref bean="cancelAction" />
-				
+				<ref bean="separatorAction" />
+				<!-- ref bean="addLineAction" />
+				<ref bean="delLineAction" />
+				<ref bean="separatorAction" /-->
+				<ref bean="importCompanyAdjAction" />
 			</list>
 		</property>
-
+		
 		<property name="model">
 			<ref bean="bmModel" />
 		</property>		
-		<!--
-		<property name="model">
-			<ref bean="$vmObject.topActionDependModel"/>
-		</property>
-		-->
 	</bean>
 	
 	<!-- 打开节点监听 newadd-->
@@ -205,15 +193,12 @@
 		<property name="voClassName" value="nc.vo.twhr.twhr_declaration.AggDeclarationVO"/>
 	</bean>
 
-
-
 	<!-- ClosingListener 编辑态关闭节点时提示是否保存//newadd***************************************************-->
 	<!-- 节点关闭前校验 -->
 	<bean id="ClosingListener" class="nc.ui.pubapp.common.validateservice.ClosingCheck" >
 		<property name="model" ref="bmModel" />
-		<property name="saveAction" ref="saveScriptAction" />
+		<property name="saveAction" ref="saveAction" />
 	</bean>
-
 
 	<!-- 事件监听newadd -->
 	<bean id="bmModelEventMediator" class="nc.ui.pubapp.uif2app.model.AppEventHandlerMediator">
@@ -313,6 +298,38 @@
 		<property name="exceptionHandler"><ref bean="exceptionHandler" /></property>
 	</bean>
 
+	<!--======= 动作：[newActions] [補充保費調整] ===========-->
+	<bean id="companyAdjAction" class="nc.ui.twhr.twhr_declaration.action.CompanyAdjustAction">
+		<property name="model"><ref bean="bmModel"/></property>
+		<property name="primaryOrgPanel"><ref bean="primaryOrgPanel"/></property>
+		<property name="btnName" value="公司補充保費調整"/>
+		<property name="billForm"><ref bean="billForm"/></property>
+		<property name="billListView"><ref bean="billListView"/></property>
+		<property name="interceptor">
+			<bean class="nc.ui.pubapp.uif2app.actions.interceptor.CompositeActionInterceptor">
+				<property name="interceptors">
+					<list>
+						<bean class="nc.ui.pubapp.uif2app.actions.interceptor.ShowUpComponentInterceptor">
+							<property name="showUpComponent" ref="billForm" />
+						</bean>
+						<!--此处可以扩展添加自己的拦截器-->
+					</list>
+				</property>
+			</bean>
+		</property>
+		<property name="exceptionHandler"><ref bean="exceptionHandler" /></property>
+	</bean>
+
+	<!--======= 动作：[newActions] [導入公司補充保費調整數據] ===========-->
+	<bean id="importCompanyAdjAction" class="nc.ui.twhr.twhr_declaration.action.ImportCompanyAdjustAction">
+		<property name="model"><ref bean="bmModel"/></property>
+		<property name="primaryOrgPanel"><ref bean="primaryOrgPanel"/></property>
+		<property name="btnName" value="導入調整數據"/>
+		<property name="billForm"><ref bean="billForm"/></property>
+		<property name="billListView"><ref bean="billListView"/></property>
+		<property name="exceptionHandler"><ref bean="exceptionHandler" /></property>
+	</bean>
+	
 	<!--======= 动作：[newActions] [删除] ===========-->
 	<bean id="deleteScriptAction" class="nc.ui.pubapp.uif2app.actions.pflow.DeleteScriptAction">
 		<property name="model"><ref bean="bmModel"/></property>
@@ -349,8 +366,11 @@
 	<!--======= 动作：[newActions] [导入] ===========by wangywt 20190620-->
 	<bean id="defaultImportAction" class="nc.ui.twhr.twhr_declaration.action.DecImportAction">
 		<property name="model"><ref bean="bmModel"/></property>
+		<property name="primaryOrgPanel"><ref bean="primaryOrgPanel"/></property>
+		<property name="billListView"><ref bean="billListView"/></property>
 		<property name="btnName" value="導入" />
 	</bean>
+	
 	<!--======= 动作：[newActions] [复制] ===========-->
 	<bean id="copyAction" class="nc.ui.pubapp.uif2app.actions.CopyAction">
 		<property name="model"><ref bean="bmModel"/></property>
@@ -448,19 +468,33 @@
 	</bean>
 
 	<!--======= 动作：[newActions] [保存] ===========-->
-	<bean id="saveScriptAction" class="nc.ui.pubapp.uif2app.actions.pflow.SaveScriptAction">
+	<bean id="saveAction" class="nc.ui.twhr.twhr_declaration.action.SaveAction">
 		<property name="model"><ref bean="bmModel"/></property>
-		<property name="editor"><ref bean="billForm"/></property>
-		<property name="billType" value="NHI1" />
-		<property name="filledUpInFlow" value="true" />
-		<property name="actionName" value="SAVEBASE" />
+		<property name="billForm"><ref bean="billForm"/></property>
+		<property name="billListView"><ref bean="billListView"/></property>
+		<property name="dataManager"><ref bean="bmModelModelDataManager"/></property>
 		<property name="exceptionHandler"><ref bean="exceptionHandler" /></property>
 	</bean>
-
+ 
 	<!--======= 动作：[newActions] [取消] ===========-->
-	<bean id="cancelAction" class="nc.ui.pubapp.uif2app.actions.CancelAction">
+	<bean id="cancelAction" class="nc.ui.twhr.twhr_declaration.action.CancelAction">
 		<property name="model"><ref bean="bmModel"/></property>
-		<property name="editor"><ref bean="billForm"/></property>
+		<property name="billForm"><ref bean="billForm"/></property>
+		<property name="billListView"><ref bean="billListView"/></property>
+		<property name="exceptionHandler"><ref bean="exceptionHandler" /></property>
+	</bean>
+	
+	<!--======= 动作：[newActions] [新增行] ===========-->
+	<bean id="addLineAction" class="nc.ui.twhr.twhr_declaration.action.AddLine">
+		<property name="model"><ref bean="bmModel"/></property>
+		<property name="billForm"><ref bean="billForm"/></property>
+		<property name="exceptionHandler"><ref bean="exceptionHandler" /></property>
+	</bean>
+	
+	<!--======= 动作：[newActions] [刪除行] ===========-->
+	<bean id="delLineAction" class="nc.ui.twhr.twhr_declaration.action.DelLine">
+		<property name="model"><ref bean="bmModel"/></property>
+		<property name="billForm"><ref bean="billForm"/></property>
 		<property name="exceptionHandler"><ref bean="exceptionHandler" /></property>
 	</bean>
 

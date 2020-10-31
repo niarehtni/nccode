@@ -170,6 +170,7 @@
 	<bean id="EditAction" class="nc.ui.wa.payfile.action.EditPayfileAction">
 		<property name="model" ref="ManageAppModel" />
 		<property name="dataManager" ref="modelDataManager" />
+		<property name="editor" ref="billFormEditor" />
 	</bean>
 	<bean id="BatchEditAction" class="nc.ui.wa.payfile.action.BatchEditPayfileAction">
 		<property name="model" ref="ManageAppModel" />

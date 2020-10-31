@@ -103,8 +103,7 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 	public static String getLeavePsndocSQL(String pk_org, String pk_wa_class, String cyear, String cperiod,
 			UFLiteralDate leaveScopeBeginDate, UFLiteralDate leaveScopeEndDate, String creator) {
 		String strSQL = "select DISTINCT wa_cacu_data.pk_psndoc from wa_cacu_data "
-				+ " inner join hi_psnjob on wa_cacu_data.pk_psndoc = hi_psnjob.pk_psndoc "
-				+ " AND hi_psnjob.begindate = (SELECT CASE WHEN MAX(pj.begindate) BETWEEN '"
+				+ " inner join hi_psnjob on wa_cacu_data.pk_psndoc = hi_psnjob.pk_psndoc AND hi_psnjob.begindate = (SELECT CASE WHEN MAX(pj.begindate) BETWEEN '"
 				+ leaveScopeBeginDate.toString()
 				+ "' AND '"
 				+ leaveScopeEndDate.toString()
@@ -146,7 +145,11 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 		String sql = "select tbm_leavereg.pk_psndoc psndoc,effectivedate begindate , "
 				// ssx added on 2019-11-27
 				// 考慮未來期間已銷假，本期間時數被沖抵，下面還要取出本期銷假單用於抵銷本期假單
-				+ " sum(case when isleaveoff='Y' then (select sum(regleavehourcopy) from tbm_leaveoff where pk_leavereg = tbm_leavereg.pk_leavereg) else leavehour end) leavehour "
+				+ " sum(case when isleaveoff='Y' then (select sum(regleavehourcopy) from tbm_leaveoff where pk_leavereg = tbm_leavereg.pk_leavereg) else leavehour end) leavehour, "
+				// end
+				// ssx added on 2020-05-11
+				// 扣除掉之前月份已審批通過的過去時間的請假單之銷假時數
+				+ " sum(case when isleaveoff='Y' then (select sum(regleavehourcopy) from tbm_leaveoff where pk_leavereg = tbm_leavereg.pk_leavereg) else leavehour end) deduct_last_leaveoff "
 				// end
 				+ " from tbm_leavereg inner join hi_psnjob on hi_psnjob.pk_psnjob = tbm_leavereg.pk_psnjob where pk_leavetype = '"
 				+ pk_leaveitem
@@ -162,7 +165,16 @@ public class PaydataDAO extends AppendBaseDAO implements ICommonAlterName {
 				+ " 23:59:59'))" + ") and tbm_leavereg.pk_psndoc in (" + psndocCondition
 				+ ") group by tbm_leavereg.pk_psndoc, effectivedate";
 		sql += " union all ";
-		sql += "select tbm_leaveoff.pk_psndoc psndoc, tbm_leavereg.effectivedate begindate, sum(tbm_leaveoff.differencehour) leavehour from tbm_leaveoff "
+		sql += "select tbm_leaveoff.pk_psndoc psndoc, tbm_leavereg.effectivedate begindate, sum(tbm_leaveoff.differencehour) leavehour, "
+				// ssx added on 2020-05-11
+				// 扣除掉之前月份已審批通過的過去時間的請假單之銷假時數
+				+ "sum(case when tbm_leavereg.effectivedate < '"
+				+ sumStartDate
+				+ "' and tbm_leavereg.approve_time < '"
+				+ sumStartDate.getDateAfter(sumStartDate.getDaysMonth() - sumStartDate.getDay() + 1)
+				+ " 00:00:00' then 0 else tbm_leaveoff.differencehour end) deduct_last_leaveoff "
+				// end
+				+ " from tbm_leaveoff "
 				+ " inner join tbm_leavereg on tbm_leavereg.pk_leavereg = tbm_leaveoff.pk_leavereg "
 				+ " inner join hi_psnjob on hi_psnjob.pk_psnjob = tbm_leavereg.pk_psnjob "
 				+ " where "

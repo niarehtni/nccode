@@ -30,6 +30,20 @@ public class GroupInsuranceFormularFactory extends HrWaDefaultVariableFactory {
 							+ GroupInsuranceFormularTableCreator.GROUPINS_BASECALC_NAME
 							+ "]");
 			fieldItems.add(item);
+			HRFormulaItem item2 = new HRFormulaItem(
+					GroupInsuranceFormularTableCreator.GROUPINS_COVERAGE_CODE,
+					GroupInsuranceFormularTableCreator.GROUPINS_COVERAGE_NAME,
+					"["
+							+ GroupInsuranceFormularTableCreator.GROUPINS_INFOSET_NAME
+							+ "."
+							+ GroupInsuranceFormularTableCreator.GROUPINS_COVERAGE_NAME
+							+ "]",
+					"["
+							+ GroupInsuranceFormularTableCreator.GROUPINS_INFOSET_NAME
+							+ "."
+							+ GroupInsuranceFormularTableCreator.GROUPINS_COVERAGE_NAME
+							+ "]");
+			fieldItems.add(item2);
 		}
 
 		return fieldItems;

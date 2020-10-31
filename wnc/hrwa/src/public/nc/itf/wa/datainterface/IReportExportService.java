@@ -57,12 +57,16 @@ public interface IReportExportService {
 	 *            聯絡人電話
 	 * @param comLinkEmail
 	 *            申報單位電子郵箱
+	 * @param schemaCode
+	 *            方案編碼
+	 * @param charSetCode
+	 *            字符集
 	 * @return
 	 * @throws BusinessException
 	 */
 	public String[] getIITXTextReport(String[] dataPKs, int iYear, String applyFormat, String applyCount,
 			String applyReason, String vatNumber, String grantType, String comLinkMan, String comLinkTel,
-			String comLinkEmail) throws BusinessException;
+			String comLinkEmail, String schemaCode, String charSetCode) throws BusinessException;
 
 	/**
 	 * 獲取滙豐銀行（臺灣）報盤數據

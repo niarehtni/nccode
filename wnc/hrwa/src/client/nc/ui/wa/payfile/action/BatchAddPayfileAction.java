@@ -17,7 +17,6 @@ import nc.bs.framework.common.NCLocator;
 import nc.bs.logging.Logger;
 import nc.bs.wa.util.LocalizationSysinitUtil;
 import nc.funcnode.ui.action.INCAction;
-import nc.hr.utils.InSQLCreator;
 import nc.hr.utils.ResHelper;
 import nc.hr.utils.SQLHelper;
 import nc.itf.hr.wa.IPayfileManageService;
@@ -25,25 +24,20 @@ import nc.itf.uap.IUAPQueryBS;
 import nc.jdbc.framework.processor.ColumnProcessor;
 import nc.ui.hr.uif2.action.HrAction;
 import nc.ui.pub.beans.MessageDialog;
-import nc.ui.pub.beans.UIDialog;
 import nc.ui.pub.beans.wizard.IWizardDialogListener;
 import nc.ui.pub.beans.wizard.WizardActionException;
 import nc.ui.pub.beans.wizard.WizardDialog;
 import nc.ui.pub.beans.wizard.WizardEvent;
 import nc.ui.pub.beans.wizard.WizardStep;
-import nc.ui.uif2.ShowStatusBarMsgUtil;
 import nc.ui.wa.payfile.model.PayfileAppModel;
 import nc.ui.wa.payfile.model.PayfileModelDataManager;
 import nc.ui.wa.payfile.model.PayfileModelService;
 import nc.ui.wa.payfile.model.PayfileWizardModel;
-import nc.ui.wa.payfile.view.WaClassSynDlg;
 import nc.ui.wa.payfile.wizard.BatchAddWizardSecondStep;
 import nc.ui.wa.payfile.wizard.BatchAddWizardThirdStep;
 import nc.ui.wa.payfile.wizard.SearchPsnWizardFirstStep;
-import nc.ui.wa.pub.WADelegator;
 import nc.vo.hi.psndoc.PsndocVO;
 import nc.vo.pub.BusinessException;
-import nc.vo.wa.category.WaClassVO;
 import nc.vo.wa.payfile.PayfileVO;
 import nc.vo.wa.payfile.WizardActionType;
 import nc.vo.wa.pub.WaLoginContext;
@@ -51,7 +45,7 @@ import nc.vo.wa.taxrate.TaxBaseVO;
 
 /**
  * 薪资档案批量增加Action
- *
+ * 
  * @author: zhoucx
  * @date: 2009-11-30 下午04:45:18
  * @since: eHR V6.0
@@ -67,19 +61,23 @@ public class BatchAddPayfileAction extends PayfileBaseAction implements IWizardD
 	private PayfileWizardModel wizardModel = null;
 
 	private IPayfileManageService payfileService = null;
-	
-	private Map<String,String> psnCodes=null;//map<pk_psndoc,code>
-	
-	private Map<String,PsndocVO> psndocMap=null;//map<pk_psndoc,psndoc>
 
-	private final String actionName = ResHelper.getString("60130payfile","060130payfile0330")/*@res "批量增加"*/;
+	private Map<String, String> psnCodes = null;// map<pk_psndoc,code>
+
+	private Map<String, PsndocVO> psndocMap = null;// map<pk_psndoc,psndoc>
+
+	private final String actionName = ResHelper.getString("60130payfile", "060130payfile0330")/*
+																							 * @
+																							 * res
+																							 * "批量增加"
+																							 */;
 
 	public BatchAddPayfileAction() {
 		super();
 		setBtnName(actionName);
 		putValue(INCAction.CODE, "BatchAdd");
 		putValue(Action.ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_B, Event.CTRL_MASK + Event.SHIFT_MASK));
-		putValue(Action.SHORT_DESCRIPTION, actionName+"(Ctrl+Shif+B)");
+		putValue(Action.SHORT_DESCRIPTION, actionName + "(Ctrl+Shif+B)");
 	}
 
 	public PayfileAppModel getPayfileModel() {
@@ -102,8 +100,8 @@ public class BatchAddPayfileAction extends PayfileBaseAction implements IWizardD
 	@Override
 	public void doActionForExtend(ActionEvent e) throws Exception {
 
-		WizardDialog wizardDialog = new WizardDialog(getModel().getContext().getEntranceUI(),
-				newWizardModel(), getSteps(), null);
+		WizardDialog wizardDialog = new WizardDialog(getModel().getContext().getEntranceUI(), newWizardModel(),
+				getSteps(), null);
 		wizardDialog.setWizardDialogListener(this);
 		wizardDialog.setResizable(true);
 		wizardDialog.setSize(new Dimension(700, 560));
@@ -135,43 +133,49 @@ public class BatchAddPayfileAction extends PayfileBaseAction implements IWizardD
 		WaLoginContext context = (WaLoginContext) getModel().getContext();
 		if (addPsntemp != null && addPsntemp.length > 0) {
 			PayfileVO batchvo = getWizardModel().getBatchitemvo();
-			Map<String,String> isForeginMap=new HashMap<String, String>();
-			TaxBaseVO taxBaseVO=new TaxBaseVO();
-			if(null!=batchvo.getTaxtableid()&&!"".equals(batchvo.getTaxtableid())){
+			Map<String, String> isForeginMap = new HashMap<String, String>();
+			TaxBaseVO taxBaseVO = new TaxBaseVO();
+			if (null != batchvo.getTaxtableid() && !"".equals(batchvo.getTaxtableid())) {
 				try {
 					taxBaseVO = (TaxBaseVO) getUAPQueryBS().retrieveByPK(TaxBaseVO.class, batchvo.getTaxtableid());
 				} catch (BusinessException e2) {
-					Logger.error(e2.getMessage(),e2);
+					Logger.error(e2.getMessage(), e2);
 				}
 			}
-			if(Integer.valueOf(3).equals(taxBaseVO.getItbltype())){
+			if (Integer.valueOf(3).equals(taxBaseVO.getItbltype())) {
 				try {
-					isForeginMap=getIsForegin(addPsntemp);
+					isForeginMap = getIsForegin(addPsntemp);
 				} catch (BusinessException e) {
 					Logger.error(e.getMessage(), e);
 					WizardActionException e1 = new WizardActionException(e);
-					e1.addMsg(ResHelper.getString("60130payfile","060130payfile0245")/*@res "提示"*/, e.getMessage());
+					e1.addMsg(ResHelper.getString("60130payfile", "060130payfile0245")/*
+																					 * @
+																					 * res
+																					 * "提示"
+																					 */, e.getMessage());
 					throw e1;
 				}
 			}
-			String sysinitValue="";
+			String sysinitValue = "";
 			try {
-				sysinitValue=getSysinitValue(context.getPk_org());
+				sysinitValue = getSysinitValue(context.getPk_org());
 			} catch (BusinessException e2) {
-				Logger.error(e2.getMessage(),e2);
+				Logger.error(e2.getMessage(), e2);
 			}
-			List<PayfileVO> listPayfileVOs=new ArrayList<PayfileVO>();//能够保存的数据
-			List<PayfileVO> errorList=new ArrayList<PayfileVO>();//存在问题的数据
-			List<PayfileVO> errorList2=new ArrayList<PayfileVO>();//数据不完整的数据
+			List<PayfileVO> listPayfileVOs = new ArrayList<PayfileVO>();// 能够保存的数据
+			List<PayfileVO> errorList = new ArrayList<PayfileVO>();// 存在问题的数据
+			List<PayfileVO> errorList2 = new ArrayList<PayfileVO>();// 数据不完整的数据
 			for (PayfileVO element : addPsntemp) {
-				if("Y".equals(isForeginMap.get(element.getPk_psndoc()))){
-					if("1001ZZ1000000001NCMA".equals(String.valueOf(sysinitValue))){//参数如果选择a.扣税核算入境日期
-						if(psndocMap.get(element.getPk_psndoc()).getAttributeValue(LocalizationSysinitUtil.getTwhrlPsn("TWHRLPSN03"))==null){
+				if ("Y".equals(isForeginMap.get(element.getPk_psndoc()))) {
+					if ("1001ZZ1000000001NCMA".equals(String.valueOf(sysinitValue))) {// 参数如果选择a.扣税核算入境日期
+						if (psndocMap.get(element.getPk_psndoc()).getAttributeValue(
+								LocalizationSysinitUtil.getTwhrlPsn("TWHRLPSN03")) == null) {
 							errorList2.add(element);
 							continue;
 						}
-					}else if("1001ZZ1000000001NCMB".equals(String.valueOf(sysinitValue))){//参数如果选择b.居留证到期日期
-						if(psndocMap.get(element.getPk_psndoc()).getAttributeValue(LocalizationSysinitUtil.getTwhrlPsn("TWHRLPSN04"))==null){
+					} else if ("1001ZZ1000000001NCMB".equals(String.valueOf(sysinitValue))) {// 参数如果选择b.居留证到期日期
+						if (psndocMap.get(element.getPk_psndoc()).getAttributeValue(
+								LocalizationSysinitUtil.getTwhrlPsn("TWHRLPSN04")) == null) {
 							errorList2.add(element);
 							continue;
 						}
@@ -182,8 +186,7 @@ public class BatchAddPayfileAction extends PayfileBaseAction implements IWizardD
 				element.setPk_wa_class(context.getPk_wa_class()); // 薪资类别
 				element.setCyear(context.getWaYear()); // 薪资年度
 				element.setCperiod(context.getWaPeriod()); // 薪资期间
-				element.setCyearperiod(context.getWaYear()
-						+ context.getWaPeriod());
+				element.setCyearperiod(context.getWaYear() + context.getWaPeriod());
 				element.setPk_group(context.getPk_group());
 				element.setPk_org(context.getPk_org());
 				// 界面的填写数据。
@@ -194,54 +197,67 @@ public class BatchAddPayfileAction extends PayfileBaseAction implements IWizardD
 				element.setDerateptg(batchvo.getDerateptg());// 减税比例
 				element.setTaxtype(batchvo.getTaxtype());// 扣税方式
 				element.setPartflag(getWizardModel().isPartflag());
-				if(Integer.valueOf(3).equals(taxBaseVO.getItbltype())){
-					if("N".equals(isForeginMap.get(element.getPk_psndoc()))){
+
+				// ssx added on 2020-10-22
+				// 設置補充保費計算方式
+				element.setExnhitype(batchvo.getExnhitype());
+				//
+
+				if (Integer.valueOf(3).equals(taxBaseVO.getItbltype())) {
+					if ("N".equals(isForeginMap.get(element.getPk_psndoc()))) {
 						errorList.add(element);
-					}else{
+					} else {
 						listPayfileVOs.add(element);
 					}
-				}else{
+				} else {
 					listPayfileVOs.add(element);
 				}
 			}
 
 			// 批量增加
 			try {
-//				addPsntemp = getPayfileService().addPsnVOs(addPsntemp);
-				if(listPayfileVOs!=null&&listPayfileVOs.size()>0)
-				addPsntemp = getPayfileService().addPsnVOs(listPayfileVOs.toArray(new PayfileVO[0]));
-				//同步其它薪资档案
-				//by:xiejie3客户要求不提示同步其它薪资档案/山河智能装备股份有限公司  NCdp205210105
-//				int yesOrNo = showYesNoMessage(ResHelper.getString("60130payfile","060130payfile0337")/*@res "是否同步其它薪资方案"*/);
-//				if(UIDialog.ID_YES == yesOrNo){
-//					WaClassVO[] classVOs = WADelegator.getWaClassQuery().queryAllClassidForRollIn((WaLoginContext)getModel().getContext());
-//					WaClassSynDlg dialog = new WaClassSynDlg(getEntranceUI());
-//					dialog.initData(classVOs);
-//					dialog.show();
-//					if(dialog.getResult() == UIDialog.ID_OK){
-//						int rowCount = dialog.getUICenterPanel().getTablePanel().getTableModel().getRowCount();
-//						List<WaClassVO> classList = new ArrayList<WaClassVO>();
-//						for(int i=0;i<rowCount;i++){
-//							Boolean isSelected = (Boolean)dialog.getUICenterPanel().getTablePanel().getTableModel().getValueAt(i, 0);
-//							if(isSelected!=null&&isSelected){
-//								classList.add(classVOs[i]);
-//							}
-//						}
+				// addPsntemp = getPayfileService().addPsnVOs(addPsntemp);
+				if (listPayfileVOs != null && listPayfileVOs.size() > 0)
+					addPsntemp = getPayfileService().addPsnVOs(listPayfileVOs.toArray(new PayfileVO[0]));
+				// 同步其它薪资档案
+				// by:xiejie3客户要求不提示同步其它薪资档案/山河智能装备股份有限公司 NCdp205210105
+				// int yesOrNo =
+				// showYesNoMessage(ResHelper.getString("60130payfile","060130payfile0337")/*@res
+				// "是否同步其它薪资方案"*/);
+				// if(UIDialog.ID_YES == yesOrNo){
+				// WaClassVO[] classVOs =
+				// WADelegator.getWaClassQuery().queryAllClassidForRollIn((WaLoginContext)getModel().getContext());
+				// WaClassSynDlg dialog = new WaClassSynDlg(getEntranceUI());
+				// dialog.initData(classVOs);
+				// dialog.show();
+				// if(dialog.getResult() == UIDialog.ID_OK){
+				// int rowCount =
+				// dialog.getUICenterPanel().getTablePanel().getTableModel().getRowCount();
+				// List<WaClassVO> classList = new ArrayList<WaClassVO>();
+				// for(int i=0;i<rowCount;i++){
+				// Boolean isSelected =
+				// (Boolean)dialog.getUICenterPanel().getTablePanel().getTableModel().getValueAt(i,
+				// 0);
+				// if(isSelected!=null&&isSelected){
+				// classList.add(classVOs[i]);
+				// }
+				// }
 
-
-//						if (!classList.isEmpty()) {
-//							getPayfileModel().batchSynToOtherClass(addPsntemp,
-//									classList);
-//						}
-//					}
-//				}
-
-
+				// if (!classList.isEmpty()) {
+				// getPayfileModel().batchSynToOtherClass(addPsntemp,
+				// classList);
+				// }
+				// }
+				// }
 
 			} catch (BusinessException e) {
 				Logger.error(e.getMessage(), e);
 				WizardActionException e1 = new WizardActionException(e);
-				e1.addMsg(ResHelper.getString("60130payfile","060130payfile0245")/*@res "提示"*/, e.getMessage());
+				e1.addMsg(ResHelper.getString("60130payfile", "060130payfile0245")/*
+																				 * @
+																				 * res
+																				 * "提示"
+																				 */, e.getMessage());
 				throw e1;
 			}
 			getWizardModel().setPayfileVOs(null);
@@ -249,37 +265,46 @@ public class BatchAddPayfileAction extends PayfileBaseAction implements IWizardD
 			getWizardModel().setSelectVOs(null);
 			// 刷新页面
 			((PayfileModelDataManager) getDataManager()).refresh();
-			if((errorList!=null&&errorList.size()>0)||(errorList2!=null&&errorList2.size()>0)){
-				String msg="";
-				if(errorList!=null&&errorList.size()>0){
-					msg=ResHelper.getString("notice","2notice-tw-000002")/*人员编码为*/;
+			if ((errorList != null && errorList.size() > 0) || (errorList2 != null && errorList2.size() > 0)) {
+				String msg = "";
+				if (errorList != null && errorList.size() > 0) {
+					msg = ResHelper.getString("notice", "2notice-tw-000002")/* 人员编码为 */;
 					for (int i = 0; i < errorList.size(); i++) {
-						String code=psnCodes.get(errorList.get(i).getPk_psndoc());
-						if(i==errorList.size()-1)
-							msg+=code;
+						String code = psnCodes.get(errorList.get(i).getPk_psndoc());
+						if (i == errorList.size() - 1)
+							msg += code;
 						else
-							msg+=code+"、";
+							msg += code + "、";
 					}
-					msg+=ResHelper.getString("notice","2notice-tw-000003")+"\n"/*的员工不是外籍员工，请确认员工咨询维护中是否正确维护是否外籍员工。*/;
+					msg += ResHelper.getString("notice", "2notice-tw-000003") + "\n"/*
+																					 * 的员工不是外籍员工
+																					 * ，
+																					 * 请确认员工咨询维护中是否正确维护是否外籍员工
+																					 * 。
+																					 */;
 				}
-				if(errorList2!=null&&errorList2.size()>0){
-					msg+=ResHelper.getString("notice","2notice-tw-000002")/*人员编码为*/;
+				if (errorList2 != null && errorList2.size() > 0) {
+					msg += ResHelper.getString("notice", "2notice-tw-000002")/* 人员编码为 */;
 					for (int i = 0; i < errorList2.size(); i++) {
-						String code=psnCodes.get(errorList2.get(i).getPk_psndoc());
-						if(i==errorList2.size()-1)
-							msg+=code;
+						String code = psnCodes.get(errorList2.get(i).getPk_psndoc());
+						if (i == errorList2.size() - 1)
+							msg += code;
 						else
-							msg+=code+"、";
+							msg += code + "、";
 					}
-					if("1001ZZ1000000001NCMA".equals(String.valueOf(sysinitValue))){//参数如果选择a.扣税核算入境日期
-						msg+=ResHelper.getString("notice","2notice-tw-000006");
-					}else if("1001ZZ1000000001NCMB".equals(String.valueOf(sysinitValue))){//参数如果选择b.居留证到期日期
-						msg+=ResHelper.getString("notice","2notice-tw-000007");
+					if ("1001ZZ1000000001NCMA".equals(String.valueOf(sysinitValue))) {// 参数如果选择a.扣税核算入境日期
+						msg += ResHelper.getString("notice", "2notice-tw-000006");
+					} else if ("1001ZZ1000000001NCMB".equals(String.valueOf(sysinitValue))) {// 参数如果选择b.居留证到期日期
+						msg += ResHelper.getString("notice", "2notice-tw-000007");
 					}
 				}
-				MessageDialog.showErrorDlg(null, ResHelper.getString("60130payfile","060130payfile0245"), msg);
-			}else{
-				putValue(HrAction.MESSAGE_AFTER_ACTION, ResHelper.getString("60130payfile","060130payfile0350")/*@res "批量增加操作成功。"*/);
+				MessageDialog.showErrorDlg(null, ResHelper.getString("60130payfile", "060130payfile0245"), msg);
+			} else {
+				putValue(HrAction.MESSAGE_AFTER_ACTION, ResHelper.getString("60130payfile", "060130payfile0350")/*
+																												 * @
+																												 * res
+																												 * "批量增加操作成功。"
+																												 */);
 			}
 		}
 	}
@@ -303,12 +328,11 @@ public class BatchAddPayfileAction extends PayfileBaseAction implements IWizardD
 		return wizardModel;
 	}
 
-	public PayfileWizardModel newWizardModel(){
+	public PayfileWizardModel newWizardModel() {
 		wizardModel = new PayfileWizardModel();
 		wizardModel.setSteps(getSteps());
 		return wizardModel;
 	}
-
 
 	/**
 	 * @author xuanlt on 2010-3-24
@@ -321,38 +345,43 @@ public class BatchAddPayfileAction extends PayfileBaseAction implements IWizardD
 
 	@Override
 	protected boolean isActionEnable() {
-		if(getWaLoginVO().getBatch()!=null&&getWaLoginVO().getBatch()>100){
+		if (getWaLoginVO().getBatch() != null && getWaLoginVO().getBatch() > 100) {
 			return false;
 		}
-		return  super.isActionEnable();
+		return super.isActionEnable();
 	}
+
 	/**
 	 * 根据要插入的薪资档案VO，查询所有员工是否为外籍员工
+	 * 
 	 * @author ward
 	 * @date 2018-01-15
 	 * @param vos
 	 * @return
 	 * @throws BusinessException
 	 */
-	public Map<String,String> getIsForegin(PayfileVO[] vos) throws BusinessException{
-			String[] pks = SQLHelper.getStrArray(vos, PayfileVO.PK_PSNDOC);
-		//	InSQLCreator isc = new InSQLCreator();
-		//	String inPsndocSql = isc.getInSQL(pks);
-			String inPsndocSql=SQLHelper.joinToInSql(pks,-1);
-			String where = PayfileVO.PK_PSNDOC+" in("+inPsndocSql+")";
-			IUAPQueryBS queryBS=NCLocator.getInstance().lookup(IUAPQueryBS.class);
-			@SuppressWarnings("unchecked")
-			List<PsndocVO> list=(ArrayList<PsndocVO>) queryBS.retrieveByClause(PsndocVO.class, where);
-			Map<String,String> SLOMap=new HashMap<String, String>();
-			psnCodes=new HashMap<String,String>();
-			psndocMap=new HashMap<String,PsndocVO>();
-			for (PsndocVO psndocVO : list) {
-				SLOMap.put(psndocVO.getPk_psndoc(), psndocVO.getAttributeValue(LocalizationSysinitUtil.getTwhrlPsn("TWHRLPSN01"))!=null?psndocVO.getAttributeValue(LocalizationSysinitUtil.getTwhrlPsn("TWHRLPSN01")).toString():"N");
-				psnCodes.put(psndocVO.getPk_psndoc(), psndocVO.getCode());
-				psndocMap.put(psndocVO.getPk_psndoc(), psndocVO);
-			}
-			return SLOMap;
+	public Map<String, String> getIsForegin(PayfileVO[] vos) throws BusinessException {
+		String[] pks = SQLHelper.getStrArray(vos, PayfileVO.PK_PSNDOC);
+		// InSQLCreator isc = new InSQLCreator();
+		// String inPsndocSql = isc.getInSQL(pks);
+		String inPsndocSql = SQLHelper.joinToInSql(pks, -1);
+		String where = PayfileVO.PK_PSNDOC + " in(" + inPsndocSql + ")";
+		IUAPQueryBS queryBS = NCLocator.getInstance().lookup(IUAPQueryBS.class);
+		@SuppressWarnings("unchecked")
+		List<PsndocVO> list = (ArrayList<PsndocVO>) queryBS.retrieveByClause(PsndocVO.class, where);
+		Map<String, String> SLOMap = new HashMap<String, String>();
+		psnCodes = new HashMap<String, String>();
+		psndocMap = new HashMap<String, PsndocVO>();
+		for (PsndocVO psndocVO : list) {
+			SLOMap.put(psndocVO.getPk_psndoc(),
+					psndocVO.getAttributeValue(LocalizationSysinitUtil.getTwhrlPsn("TWHRLPSN01")) != null ? psndocVO
+							.getAttributeValue(LocalizationSysinitUtil.getTwhrlPsn("TWHRLPSN01")).toString() : "N");
+			psnCodes.put(psndocVO.getPk_psndoc(), psndocVO.getCode());
+			psndocMap.put(psndocVO.getPk_psndoc(), psndocVO);
+		}
+		return SLOMap;
 	}
+
 	/**
 	 * @功能描述 获取参数设置的值
 	 * @author ward
@@ -361,15 +390,15 @@ public class BatchAddPayfileAction extends PayfileBaseAction implements IWizardD
 	 * @return
 	 * @throws BusinessException
 	 */
-	public String getSysinitValue(String pk_org) throws BusinessException{
-		String qrySql="select value from pub_sysinit where initcode='TWHR08' and pk_org='"+pk_org+"' and isnull(dr,0)=0";
-		Object sysinitValue=getUAPQueryBS().executeQuery(qrySql, new ColumnProcessor());
+	public String getSysinitValue(String pk_org) throws BusinessException {
+		String qrySql = "select value from pub_sysinit where initcode='TWHR08' and pk_org='" + pk_org
+				+ "' and isnull(dr,0)=0";
+		Object sysinitValue = getUAPQueryBS().executeQuery(qrySql, new ColumnProcessor());
 		return String.valueOf(sysinitValue);
 	}
-	
-	
+
 	private IUAPQueryBS queryBS = null;
-	
+
 	public IUAPQueryBS getUAPQueryBS() {
 		if (queryBS == null) {
 			queryBS = NCLocator.getInstance().lookup(IUAPQueryBS.class);

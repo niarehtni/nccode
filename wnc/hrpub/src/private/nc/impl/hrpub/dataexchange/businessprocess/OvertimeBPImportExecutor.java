@@ -17,6 +17,7 @@ import nc.itf.hrpub.IDataExchangeExternalExecutor;
 import nc.itf.ta.IOvertimeApplyQueryMaintain;
 import nc.itf.ta.IOvertimeRegisterManageMaintain;
 import nc.itf.ta.IOvertimeRegisterQueryMaintain;
+import nc.itf.ta.algorithm.BillProcessHelper;
 import nc.jdbc.framework.processor.ColumnProcessor;
 import nc.vo.pub.BusinessException;
 import nc.vo.pub.SuperVO;
@@ -92,27 +93,9 @@ public class OvertimeBPImportExecutor extends DataImportExecutor implements IDat
 					}
 					// end
 
-					PsndocDismissedValidator dismChecker = new PsndocDismissedValidator(vo.getOvertimebegintime());
-					dismChecker.validate(vo.getPk_psndoc(), vo.getOvertimebegindate());
-
 					vo.setPk_org(this.getPk_org());
 					vo.setPk_org_v(this.getPk_org_v());
 					vo.setPk_group(this.getPk_group());
-
-					// 人员工作记录 PK_PSNJOB
-					String startdate = getDateString((String) rowNCMap.get(rowNo + ":overtimebegintime")).substring(0,
-							10);
-					startdate = dismChecker.getShiftRegDateByDateTime(pk_psndoc,
-							new UFDateTime((String) rowNCMap.get(rowNo + ":overtimebegintime")),
-							new UFLiteralDate(startdate)).toString();
-					Map<String, Object> psnjob = this.getPsnjob(pk_psndoc, startdate);
-					if (psnjob != null && psnjob.size() > 0 && !StringUtils.isEmpty((String) psnjob.get("pk_psnjob"))) {
-						vo.setPk_psnjob((String) psnjob.get("pk_psnjob"));
-						vo.setPk_dept_v((String) psnjob.get("pk_dept_v"));
-						vo.setPk_psnorg((String) psnjob.get("pk_psnorg"));
-					} else {
-						throw new BusinessException("未找到員工工作記錄");
-					}
 					vo.setToresthour(UFDouble.ZERO_DBL);
 					vo.setTs(new UFDateTime());
 
@@ -124,8 +107,22 @@ public class OvertimeBPImportExecutor extends DataImportExecutor implements IDat
 					if (!StringUtils.isEmpty((String) rowNCMap.get(rowNo + ":vestdate"))) {
 						vo.setVestdate(new UFLiteralDate((String) rowNCMap.get(rowNo + ":vestdate")));
 					}
-					// this.getRowNCVO().put(rowNo+":"+psnjobVO.getBegindate(),
-					// aggVO);
+
+					// 人员工作记录 PK_PSNJOB
+					UFLiteralDate startdate = BillProcessHelper.getShiftRegDateByOvertime(vo);
+
+					PsndocDismissedValidator dismChecker = new PsndocDismissedValidator(vo.getOvertimebegintime());
+					dismChecker.validate(vo.getPk_psndoc(), startdate);
+
+					Map<String, Object> psnjob = this.getPsnjob(pk_psndoc, startdate.toString());
+					if (psnjob != null && psnjob.size() > 0 && !StringUtils.isEmpty((String) psnjob.get("pk_psnjob"))) {
+						vo.setPk_psnjob((String) psnjob.get("pk_psnjob"));
+						vo.setPk_dept_v((String) psnjob.get("pk_dept_v"));
+						vo.setPk_psnorg((String) psnjob.get("pk_psnorg"));
+					} else {
+						throw new BusinessException("未找到員工工作記錄");
+					}
+
 					this.getRowNCVO().put(rowNo + ":" + vo.getApprove_time().toString(), vo);
 				} catch (Exception e) {
 					this.getErrorMessages().put(rowNo, e.getMessage());

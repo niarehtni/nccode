@@ -9,6 +9,7 @@ import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
 
 import nc.bs.framework.common.NCLocator;
+import nc.bs.logging.Logger;
 import nc.bs.uif2.LockFailedException;
 import nc.bs.uif2.VersionConflictException;
 import nc.itf.hi.IPsndocSubInfoService4JFS;
@@ -18,7 +19,6 @@ import nc.ui.hi.employee.view.PeriodChooseDlg;
 import nc.ui.hr.caculate.view.BannerTimerDialog;
 import nc.ui.hr.uif2.action.HrAction;
 import nc.ui.pub.beans.UIDialog;
-import nc.ui.uif2.ShowStatusBarMsgUtil;
 import nc.vo.hi.psndoc.PsndocAggVO;
 import nc.vo.pub.BusinessException;
 import nc.vo.pub.lang.UFDate;
@@ -228,18 +228,16 @@ public class RenewRangeAction extends HrAction {
 
 				return SysInitQuery.getParaBoolean(this.getContext().getPk_org(), "TWHR06").booleanValue();
 			} catch (BusinessException e) {
-				ShowStatusBarMsgUtil.showStatusBarMsg(
-						nc.vo.ml.NCLangRes4VoTransl.getNCLangRes().getStrByID("twhr_personalmgt", "068J61035-0010")/*
-																													 * @
-																													 * res
-																													 * 取臺灣勞健保參數發生錯誤
-																													 * ：
-																													 */
-								+ e.getMessage(), getModel().getContext());
+				Logger.error(nc.vo.ml.NCLangRes4VoTransl.getNCLangRes()
+						.getStrByID("twhr_personalmgt", "068J61035-0010")/*
+																		 * @ res
+																		 * 取臺灣勞健保參數發生錯誤
+																		 * ：
+																		 */
+						+ e.getMessage());
+				return false;
 			}
 		}
-
-		return true;
 	}
 
 }

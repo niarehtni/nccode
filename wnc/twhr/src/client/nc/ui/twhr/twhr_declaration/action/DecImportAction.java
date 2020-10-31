@@ -23,6 +23,7 @@ import nc.ui.hr.uif2.action.HrAction;
 import nc.ui.pub.beans.MessageDialog;
 import nc.ui.pub.beans.progress.IProgressMonitor;
 import nc.ui.pub.beans.progress.NCProgresses;
+import nc.ui.pubapp.uif2app.view.BillListView;
 import nc.ui.uif2.model.ModelDataDescriptor;
 import nc.vo.org.OrgVO;
 import nc.vo.pub.BusinessException;
@@ -53,6 +54,9 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 public class DecImportAction extends HrAction {
 
 	private static final long serialVersionUID = -1542523256471536559L;
+
+	private nc.ui.twhr.glb.view.OrgPanel_Org primaryOrgPanel = null;
+	private BillListView billListView;
 
 	// 日期格式化器
 	private final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
@@ -611,5 +615,38 @@ public class DecImportAction extends HrAction {
 			return sbd.toString();
 		}
 		return strDigt;
+	}
+
+	protected boolean isActionEnable() {
+		String tableCode = null;
+		String pk_org = null;
+		try {
+			tableCode = getBillListView().getBillListPanel().getBodyTabbedPane().getSelectedTableCode();
+			pk_org = getPrimaryOrgPanel().getRefPane().getRefPK();
+		} catch (Exception e) {
+			pk_org = null;
+			tableCode = null;
+		}
+		if (pk_org != null && tableCode != null && !tableCode.equals("companyadjust")) {
+			return true;
+		} else {
+			return false;
+		}
+	}
+
+	public BillListView getBillListView() {
+		return billListView;
+	}
+
+	public void setBillListView(BillListView billListView) {
+		this.billListView = billListView;
+	}
+
+	public nc.ui.twhr.glb.view.OrgPanel_Org getPrimaryOrgPanel() {
+		return primaryOrgPanel;
+	}
+
+	public void setPrimaryOrgPanel(nc.ui.twhr.glb.view.OrgPanel_Org primaryOrgPanel) {
+		this.primaryOrgPanel = primaryOrgPanel;
 	}
 }

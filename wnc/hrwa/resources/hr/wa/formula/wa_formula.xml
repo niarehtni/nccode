@@ -38,7 +38,7 @@
     <function>
        <defaultName>OTHERSOURCE</defaultName>
       <hintMsgRes>OTHERSOURCE</hintMsgRes>
-	  <inputSigRes>OTHERSOURCE</inputSigRes>
+      <inputSigRes>OTHERSOURCE</inputSigRes>
       <pattern>valueOfWAORTHERDS\(\w{20}\)</pattern>
       <arguments>valueOfWAORTHERDS({0})</arguments>
       <group>OTHERSOURCE</group>
@@ -52,7 +52,7 @@
     <function>
        <defaultName>6013salarypmt;06013salarypmt0268</defaultName>
       <hintMsgRes>6013commonbasic;06013commonbasic0094</hintMsgRes>
-	  <inputSigRes>6013salarypmt;06013salarypmt0268</inputSigRes>
+      <inputSigRes>6013salarypmt;06013salarypmt0268</inputSigRes>
       <pattern>waAdjustDoc\([f,c,d]_\d+,.*\)</pattern>
       <arguments>waAdjustDoc({0},{1})</arguments>
        <parapanel>nc.ui.hr.func.WaParaAdjPanel</parapanel>
@@ -69,7 +69,7 @@
       <defaultName>6013commonbasic;06013commonbasic0095</defaultName>
       <hintMsgRes>6013commonbasic;06013commonbasic0096</hintMsgRes>
       <inputSigRes>6013commonbasic;06013commonbasic0095</inputSigRes>
-	  <pattern>waOtherClassData\(\w{20},[f,c,d]_\d+,-?\d+,\w+,\w+,\w+\)</pattern>
+      <pattern>waOtherClassData\(\w{20},[f,c,d]_\d+,-?\d+,\w+,\w+,\w+\)</pattern>
       <arguments>waOtherClassData({0},{1},{2},{3},{4},{5})</arguments>
       <displayName>waOtherClassData</displayName>
       <parapanel>nc.ui.hr.func.WaOrtherClassPanel</parapanel>
@@ -86,7 +86,7 @@
       <defaultName>6013commonbasic;06013commonbasic0097</defaultName>
       <hintMsgRes>6013commonbasic;06013commonbasic0098</hintMsgRes>
       <inputSigRes>6013commonbasic;06013commonbasic0097</inputSigRes>
-	  <pattern>waOtherPeriodData\(\w{20},[f,c,d]_\d+\,\d+\)</pattern>
+      <pattern>waOtherPeriodData\(\w{20},[f,c,d]_\d+\,\d+\)</pattern>
       <arguments>waOtherPeriodData({0},{1},{2})</arguments>
       <parapanel>nc.ui.hr.func.WaOrtherPeriodPanel</parapanel>
       <convertor>nc.ui.hr.func.WaOrtherPeriodConvertor</convertor>
@@ -102,7 +102,7 @@
       <defaultName>6013commonbasic;06013commonbasic0099</defaultName>
       <hintMsgRes>6013commonbasic;06013commonbasic0100</hintMsgRes>
       <inputSigRes>6013commonbasic;06013commonbasic0099</inputSigRes> 
-	  <pattern>waStaticsFixPrd\(\w{20},[f,c,d]_\d+,\w+,\d+,\d+\)</pattern>
+      <pattern>waStaticsFixPrd\(\w{20},[f,c,d]_\d+,\w+,\d+,\d+\)</pattern>
       <arguments>waStaticsFixPrd({0},{1},{2},{3},{4})</arguments>
       <parapanel>nc.ui.hr.func.WaParaPanel_jd</parapanel>
       <convertor>nc.ui.hr.func.WaParaPanel_jdConvertor</convertor>
@@ -118,7 +118,7 @@
       <defaultName>6013commonbasic;06013commonbasic0101</defaultName>
       <hintMsgRes>6013commonbasic;06013commonbasic0102</hintMsgRes>
        <inputSigRes>6013commonbasic;06013commonbasic0101</inputSigRes>
-	   <pattern>waStaticsRelativePrd\(\w{20},[f,c,d]_\d+,\w+,\d+,\d+\)</pattern>
+       <pattern>waStaticsRelativePrd\(\w{20},[f,c,d]_\d+,\w+,\d+,\d+\)</pattern>
       <arguments>waStaticsRelativePrd({0},{1},{2},{3},{4})</arguments>
       <parapanel>nc.ui.hr.func.WaParaPanel_xd</parapanel>
       <convertor>nc.ui.hr.func.WaParaPanel_xdConvertor</convertor>
@@ -134,7 +134,7 @@
       <defaultName>6013commonbasic;06013commonbasic0103</defaultName>
       <hintMsgRes>6013commonbasic;06013commonbasic0104</hintMsgRes>
        <inputSigRes>6013commonbasic;06013commonbasic0103</inputSigRes>
-	  <pattern>waOtherClassGrpData\(\w{20},[f,c,d]_\d+,\d+,\w+,\w+\)</pattern>
+      <pattern>waOtherClassGrpData\(\w{20},[f,c,d]_\d+,\d+,\w+,\w+\)</pattern>
       <arguments>waOtherClassGrpData({0},{1},{2},{3},{4})</arguments>
       <parapanel>nc.ui.hr.func.WaGroupStaticsParaPanel</parapanel>
       <convertor>nc.ui.hr.func.WaGroupStaticsConvertor</convertor>
@@ -150,7 +150,7 @@
       <defaultName>6013commonbasic;06013commonbasic0105</defaultName>
       <hintMsgRes>6013commonbasic;06013commonbasic0106</hintMsgRes>
        <inputSigRes>6013commonbasic;06013commonbasic0105</inputSigRes>
-	  <pattern>payDataItem\(c_\d+,\w{20},[f,c,d]_\d+\)</pattern>
+      <pattern>payDataItem\(c_\d+,\w{20},[f,c,d]_\d+\)</pattern>
       <arguments>payDataItem({0},{1},{2})</arguments>
       <parapanel>nc.ui.hr.func.WaPeriodParaPanel</parapanel>
       <convertor>nc.ui.hr.func.WaPeriodPanelConvertor</convertor>
@@ -365,7 +365,7 @@
       <hintMsgRes>6013commonbasic;06013commonbasic0130</hintMsgRes>
       <inputSigRes>6013commonbasic;06013commonbasic0131</inputSigRes>
       <pattern>psnSubinf\(\w+,\w+,\w+,\w+,\w+,\w+,\w+,\w+\)</pattern>
-	  <arguments>psnSubinf({0},{1},{2},{3},{4},{5},{6},{7})</arguments>
+      <arguments>psnSubinf({0},{1},{2},{3},{4},{5},{6},{7})</arguments>
       <parapanel>nc.ui.hr.itemsource.view.PsnInfSetParaPanel</parapanel>
       <convertor>nc.ui.hr.itemsource.view.PsnSubInfConverter</convertor>
       <group>HI</group>
@@ -689,6 +689,25 @@
   </entry>
   <!--end -->
 
+  <!-- ssx added on 2019-10-27, 休假計薪時數統計-->
+  <entry>
+    <string>valueOfCurMonLeaveSalaryHour</string>
+    <function>
+      <defaultName>6013commonbasic;06013commonbasic0295</defaultName>
+      <displayName>valueOfLeaveSalaryHour()</displayName>
+      <hintMsgRes>6013commonbasic;06013commonbasic0298</hintMsgRes>
+      <inputSigRes>6013commonbasic;06013commonbasic0295</inputSigRes>
+      <pattern>valueOfCurMonLeaveSalaryHour\(\w+\)</pattern>
+       <arguments>valueOfCurMonLeaveSalaryHour({0})</arguments>
+      <parapanel>nc.ui.hr.func.TbmLeaveParaPanel</parapanel>
+      <convertor>nc.ui.hr.func.TbmLeaveParaConvertor</convertor>
+      <group>TA</group>
+      <process>nc.impl.wa.func.LeaveTypeCurMonSalaryHourParse</process>
+      <productCode>UPP6013func</productCode>
+    </function>
+  </entry>
+  <!--end -->
+  
   <!-- ssx added on 2020-03-14, 離職人員休假計薪時數統計-->
   <entry>
     <string>valueOfLeaveLeaveSalaryHour</string>
@@ -915,7 +934,7 @@
       <hintMsgRes>6013commonbasicadd20180426;06013commonbasic0001</hintMsgRes>
       <inputSigRes>6013commonbasicadd20180426;06013commonbasic0001</inputSigRes>
       <pattern>overtimePays\(.*\)</pattern>
-	  <arguments>overtimePays({0})</arguments>
+      <arguments>overtimePays({0})</arguments>
       <returntype>0</returntype>
       <parapanel>nc.ui.wa.formular.OverTimePaysFunctionEditor</parapanel>
       <group>WA</group>
@@ -948,7 +967,7 @@
       <hintMsgRes>6013commonbasicadd20180426;06013commonbasic0002</hintMsgRes>
       <inputSigRes>6013commonbasicadd20180426;06013commonbasic0002</inputSigRes>
       <pattern>taxableOvertimePays\(.*\)</pattern>
-	  <arguments>taxableOvertimePays({0})</arguments>
+      <arguments>taxableOvertimePays({0})</arguments>
       <returntype>0</returntype>
       <parapanel>nc.ui.wa.formular.LeavePaysFunctionEditor</parapanel>
       <group>WA</group>
@@ -1121,9 +1140,9 @@
     <string>NHISETTING</string>
     <function>
       <defaultName>twhr_paydata;TaiwanNHICalculator-0010</defaultName>
-	  <displayName>nhiSetting()</displayName>
+      <displayName>nhiSetting()</displayName>
       <hintMsgRes>twhr_paydata;TaiwanNHICalculator-0011</hintMsgRes>
-	  <inputSigRes>twhr_paydata;TaiwanNHICalculator-0010</inputSigRes>
+      <inputSigRes>twhr_paydata;TaiwanNHICalculator-0010</inputSigRes>
       <pattern>nhiSetting\(.*\)</pattern>
       <arguments>nhiSetting({0})</arguments>
       <parapanel>nc.ui.wa.formular.func.NHISettingParaPanel</parapanel>
@@ -1161,7 +1180,7 @@
       <pattern>waProjSalary\(\w+\)</pattern>
       <arguments>waProjSalary({0})</arguments>
       <parapanel>nc.ui.wa.formular.WaProjSalaryEditor</parapanel>
-	  <returntype>0</returntype>
+      <returntype>0</returntype>
       <group>WA</group>
       <process>nc.impl.wa.func.WaProjSalary</process>
       <productCode>UPP6013func</productCode>
@@ -1174,7 +1193,7 @@
       <defaultName>6013commonbasic;06013commonbasic0265</defaultName>
       <hintMsgRes>6013commonbasic;06013commonbasic0265</hintMsgRes>
       <inputSigRes>6013commonbasic;06013commonbasic0265</inputSigRes>
-	  <pattern>avgSalary\(.*,.*\)</pattern>
+      <pattern>avgSalary\(.*,.*\)</pattern>
       <arguments>avgSalary({0},{1})</arguments>
       <displayName>avgSalary</displayName>
       <parapanel>nc.ui.hr.func.AvgSalaryPanel</parapanel>
@@ -1193,7 +1212,7 @@
       <displayName>overTimeFee</displayName>
       <hintMsgRes>6013commonbasic;06013commonbasic0268</hintMsgRes>
       <inputSigRes>6013commonbasic;06013commonbasic0268</inputSigRes>
-      <pattern>overTimeFee\([ ,\d]*[ ]*,[ ,\d]*[ ]*,[ ]*[\',\"]{1}\w{20}[\',\"]{1}[ ]*\)</pattern>
+      <pattern>overTimeFee\(\s*[0-2]\s*,\s*[0-1]\s*,.*?\)</pattern>
       <arguments>overTimeFee({0},{1},{2})</arguments>
        <returntype>0</returntype>
       <parapanel>nc.ui.wa.formular.OverTimeFeeFunctionEditor</parapanel>
@@ -1205,7 +1224,7 @@
   
   
   <entry>
-  	<string>LEAVEFEE</string>
+      <string>LEAVEFEE</string>
     <function>
       <defaultName>6013commonbasic;06013commonbasic0272</defaultName>
       <displayName>leaveFee</displayName>
@@ -1268,7 +1287,7 @@
       <displayName>leaveOverTimeFee</displayName>
       <hintMsgRes>6013commonbasic;06013commonbasic0275</hintMsgRes>
       <inputSigRes>6013commonbasic;06013commonbasic0274</inputSigRes>
-      <pattern>leaveOverTimeFee\([ ,\d]*[ ]*,[ ,\d]*[ ]*,[ ]*[\',\"]{1}\w{20}[\',\"]{1}[ ]*\)</pattern>
+      <pattern>leaveOverTimeFee\(\s*[0-2]\s*,\s*[0-1]\s*,.*?\)</pattern>
       <arguments>leaveOverTimeFee({0},{1},{2})</arguments>
        <returntype>0</returntype>
       <parapanel>nc.ui.wa.formular.LeaveOverTimeFeeFunctionEditor</parapanel>
@@ -1279,7 +1298,7 @@
   </entry>
   
   <entry>
-  	<string>LEAVELEAVEFEE</string>
+      <string>LEAVELEAVEFEE</string>
     <function>
       <defaultName>6013commonbasic;06013commonbasic0276</defaultName>
       <displayName>leaveLeaveFee</displayName>
@@ -1305,7 +1324,7 @@
       <hintMsgRes>wadaysalary;wadaysalary_func_000002</hintMsgRes>
       <inputSigRes>wadaysalary;wadaysalary_func_999999</inputSigRes>
       <pattern>daySalary\(.*,.*\)</pattern>
-	  <arguments>daySalary({0},{1})</arguments>
+      <arguments>daySalary({0},{1})</arguments>
       <returntype>0</returntype>
       <parapanel>nc.ui.wa.formular.DaySalaryFunctionEditor</parapanel>
       <group>WA</group>
@@ -1356,8 +1375,8 @@
       <displayName>ALPaidHours</displayName>
       <hintMsgRes>wadaysalary;wadaysalary_func_000004</hintMsgRes>
       <inputSigRes>wadaysalary;wadaysalary_func_000003</inputSigRes>
-	  <pattern>ALPaidHours\(.*\)</pattern>
-	  <arguments>ALPaidHours({0})</arguments>
+      <pattern>ALPaidHours\(.*\)</pattern>
+      <arguments>ALPaidHours({0})</arguments>
       <returntype>0</returntype>
       <parapanel>nc.ui.wa.formular.ALPaidHoursFunctionEditor</parapanel>
       <group>WA</group>
@@ -1372,7 +1391,7 @@
       <displayName>courtDeduct()</displayName>
       <hintMsgRes>wadaysalary;wadaysalary_func_999998</hintMsgRes>
       <inputSigRes>wadaysalary;wadaysalary_func_999998</inputSigRes>
-	  <pattern>courtDeduct\(\)</pattern>
+      <pattern>courtDeduct\(\)</pattern>
       <returntype>0</returntype>
       <parapanel>nc.ui.hr.itemsource.view.NullParaPanel</parapanel>
       <group>WA</group>
@@ -1387,8 +1406,8 @@
       <displayName>scenarioFeeBase</displayName>
       <hintMsgRes>wadaysalary;wadaysalary_func_999997</hintMsgRes>
       <inputSigRes>wadaysalary;wadaysalary_func_999997</inputSigRes>
-	  <pattern>scenarioFeeBase\(.*\)</pattern>
-	  <arguments>scenarioFeeBase({0})</arguments>
+      <pattern>scenarioFeeBase\(.*\)</pattern>
+      <arguments>scenarioFeeBase({0})</arguments>
       <returntype>0</returntype>
       <parapanel>nc.ui.wa.formular.ScenarioFeeBasePanel</parapanel>
       <group>WA</group>
@@ -1453,4 +1472,23 @@
     </function>
   </entry>
     <!--新增補休假勤明細取數函數 add by ssx 2020年3月29日 end -->
+
+    <!-- 薪資統計數_絕對時間段_不含離 -->
+    <entry>
+    <string>WASTATICSFIXPRDNO</string>
+    <function>
+      <defaultName>6013commonbasic;06013commonbasic0296</defaultName>
+      <hintMsgRes>6013commonbasic;06013commonbasic0297</hintMsgRes>
+      <inputSigRes>6013commonbasic;06013commonbasic0296</inputSigRes> 
+      <pattern>waStaticsFixPrdno\(\w{20},[f,c,d]_\d+,\w+,\d+,\d+\)</pattern>
+      <arguments>waStaticsFixPrdno({0},{1},{2},{3},{4})</arguments>
+      <parapanel>nc.ui.hr.func.WaParaPanel_jdno</parapanel>
+      <convertor>nc.ui.hr.func.WaParaPanel_jdnoConvertor</convertor>
+      <group>WAORTHER</group>
+      <process>nc.impl.wa.func.PayDataOPNo</process>
+      <productCode>UPP6013func</productCode>
+    </function>
+  </entry>
+  <!-- 薪資統計數_絕對時間段_不含離 -->
+
 </linked-hash-map>

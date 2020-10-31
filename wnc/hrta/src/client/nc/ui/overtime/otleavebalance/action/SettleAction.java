@@ -10,7 +10,6 @@ import nc.bs.framework.common.NCLocator;
 import nc.pubitf.para.SysInitQuery;
 import nc.pubitf.ta.leaveextrarest.ILeaveExtraRestService;
 import nc.pubitf.ta.overtime.ISegDetailService;
-import nc.ui.bd.defdoc.view.SettleDateChooseDialog;
 import nc.ui.hr.caculate.view.BannerTimerDialog;
 import nc.ui.hr.uif2.action.HrAction;
 import nc.ui.overtime.otleavebalance.model.OTLeaveBalanceModeDataManager;

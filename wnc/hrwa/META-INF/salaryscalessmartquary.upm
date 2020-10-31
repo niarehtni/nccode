@@ -5,5 +5,9 @@
 			<interface>nc.ift.hrwa.salarysmart.ISalaryScalesSmartQuary</interface>
 			<implementation>nc.impl.hrwa.salarysmart.SalaryScalesSmartQuaryImpl</implementation>
 		</component>
+		<component priority="0" singleton="true" remote="true" tx="CMT" supportAlias="true">
+			<interface>nc.ift.hrwa.salarysmart.IDeptCombineSmartQuery</interface>
+			<implementation>nc.impl.hrwa.salarysmart.DeptCombineSmartQuery</implementation>
+		</component>
 	</public>
 </module>

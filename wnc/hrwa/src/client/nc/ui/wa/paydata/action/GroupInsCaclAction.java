@@ -41,6 +41,11 @@ public class GroupInsCaclAction extends PayDataBaseAction {
 	public void doAction(ActionEvent arg0) throws Exception {
 		JComponent parentUi = getWaContext().getEntranceUI();
 
+		if (showYesNoMessage("團保計算已合併至薪資計算過程中，是否仍然單獨計算團保費？") != 4) {
+			this.putValue("message_after_action", "團保計算已取消。");
+			return;
+		}
+
 		new SwingWorker() {
 
 			BannerTimerDialog dialog = new BannerTimerDialog(SwingUtilities.getWindowAncestor(getModel().getContext()
@@ -56,7 +61,7 @@ public class GroupInsCaclAction extends PayDataBaseAction {
 					// 计算服务
 					IPsndocSubInfoService4JFS service = NCLocator.getInstance().lookup(IPsndocSubInfoService4JFS.class);
 					service.calculateGroupIns(getWaContext().getPk_org(), getWaContext().getPk_wa_class(),
-							getWaContext().getCyear(), getWaContext().getCperiod());
+							getWaContext().getCyear(), getWaContext().getCperiod(), null, false);
 
 				} catch (LockFailedException le) {
 					errorMessage = le.getMessage();

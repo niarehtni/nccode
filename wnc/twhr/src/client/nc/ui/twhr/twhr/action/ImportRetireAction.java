@@ -3,6 +3,8 @@ package nc.ui.twhr.twhr.action;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import nc.bs.framework.common.NCLocator;
 import nc.bs.logging.Logger;
@@ -63,16 +65,18 @@ public class ImportRetireAction extends HrAction {
 	@Override
 	public void doAction(ActionEvent paramActionEvent) throws Exception {
 		AccoutImportDlg dlg = new AccoutImportDlg(getContext());
+		dlg.setTitle("勞退帳單匯入");
 		if (1 == dlg.showModal()) {
 			putValue(HrAction.MESSAGE_AFTER_ACTION, "");
 			final String filePath = dlg.getFilePathPane().getText();
+			final String pk_legal_org = dlg.getLegalOrgPanl().getRefPK();
+			final String waPeriod = dlg.getPeriodPanel().getRefPK();
 			// 判断文件是否是劳退
 			if (!filePath.contains("勞退")) {
 				MessageDialog.showHintDlg(ImportRetireAction.this.getEntranceUI(), null, "請導入正確文件!");
 				return;
 			}
 			final Integer dataType = (Integer) dlg.getUiCbxDataType().getSelectdItemValue();
-			final LoginContext waContext = (LoginContext) getContext();
 			new Thread(new Runnable() {
 				@Override
 				public void run() {
@@ -82,16 +86,30 @@ public class ImportRetireAction extends HrAction {
 					progressMonitor.beginTask(ResHelper.getString("6013dataitf_01", "dataitf-01-0042"), -1); // 导入数据...
 					progressMonitor.setProcessInfo(ResHelper.getString("6013dataitf_01", "dataitf-01-0043")); // 数据导入中,请稍后......
 					try {
-						ImportRetireAction.this.RetireImport(filePath, waContext, dataType);
+						Map<Integer, Set<String>> errorMap = 
+								ImportRetireAction.this.RetireImport(filePath, dataType,pk_legal_org,waPeriod);
 						getBatchRefreshAction().doAction(null);
-						MessageDialog.showHintDlg(ImportRetireAction.this.getEntranceUI(), null,
-								ResHelper.getString("6013dataitf_01", "dataitf-01-0044")); // 数据导入成功！
+						
+						if(errorMap!=null && errorMap.size() > 0){
+							StringBuilder sb = new StringBuilder();
+							if(errorMap.get(ITwhrMaintain.ERROR_NO_MATCH_ORG)!=null){
+								sb.append("以下身份證號未匹配到組織,請核對人員任職記錄和證件號:");
+								Set<String> psnIdSet = errorMap.get(ITwhrMaintain.ERROR_NO_MATCH_ORG);
+								for(String id : psnIdSet){
+									sb.append("[").append(id).append("] ");
+								}
+							}
+							MessageDialog.showWarningDlg(ImportRetireAction.this.getEntranceUI(), 
+									"導入結果", sb.toString());
+						}else{
+							MessageDialog.showHintDlg(ImportRetireAction.this.getEntranceUI(), null,
+									ResHelper.getString("6013dataitf_01", "dataitf-01-0044")); // 数据导入成功！
+						}
 					} catch (Exception e) {
 						Logger.error(e);
 						try {
 							getBatchRefreshAction().doAction(null);
 						} catch (Exception e1) {
-							// TODO Auto-generated catch block
 							e1.printStackTrace();
 						}
 						MessageDialog.showErrorDlg(ImportRetireAction.this.getEntranceUI(), null, e.getMessage());
@@ -109,7 +127,7 @@ public class ImportRetireAction extends HrAction {
 
 	}
 
-	protected void RetireImport(String filePath, LoginContext waContext, Integer dataType) throws Exception {
+	protected Map<Integer, Set<String>> RetireImport(String filePath,Integer dataType,String pk_legal_org,String waPeriod) throws Exception {
 		if (null == dataType) {
 			Logger.error("import data type is null!");
 			// "导入数据类型为空!"
@@ -125,8 +143,7 @@ public class ImportRetireAction extends HrAction {
 		}
 		switch (dataType.intValue()) {
 		case DataItfConst.VALUE_SALARY_DETAIL:
-			importretireDataSD(filePath, waContext);
-			break;
+			return importretireDataSD(filePath,pk_legal_org,waPeriod);
 
 		default:
 			Logger.error("import data type is out of type arry combobox!");
@@ -136,29 +153,29 @@ public class ImportRetireAction extends HrAction {
 
 	}
 
-	private void importretireDataSD(String filePath, LoginContext waContext) throws Exception {
+	private Map<Integer, Set<String>> importretireDataSD(String filePath,String pk_legal_org,String waPeriod) throws Exception {
 		BaoAccountVO[] vos = null;
-		int count = 0;
 		List<BaoAccountVO> list = new ArrayList<BaoAccountVO>();
+		Map<Integer, Set<String>> errorMap = null;
 		try {
 			do {
-				String pk_org = this.getOrgpanel().getRefPane().getRefPK();
-				waContext.setPk_org(pk_org);
-				String waperiod = AccountOrgHeadPanel.getWaperiod();
+				//String pk_org = this.getOrgpanel().getRefPane().getRefPK();
+				//String waperiod = AccountOrgHeadPanel.getWaperiod();
 				// if (!StringUtils.isEmpty(pk_org)) {
 				// vos = DataItfFileReaderAccount.readFileSD(pk_org,
 				// filePath, waContext);
-				vos = DataItfFileReaderAccount.readRetireTxtFileSD(pk_org, waperiod, filePath, waContext);
+				vos = DataItfFileReaderAccount.readRetireTxtFileSD(waPeriod, filePath);
 				if (!ArrayUtils.isEmpty(vos)) {
 
-					StringBuilder condition = new StringBuilder(getFilterCondition(waContext));
+					//StringBuilder condition = new StringBuilder(getFilterCondition(waContext));
 					// BatchOperateVO bo = new BatchOperateVO();
 					// bo.setAddObjs(vos);
 					for (BaoAccountVO vo : vos) {
 						list.add(vo);
 					}
-					getService().insertupdateretire(list.toArray(new BaoAccountVO[0]));
-					count += vos.length;
+					errorMap =
+							getService().insertupdateretire(list.toArray(new BaoAccountVO[0]),pk_legal_org,waPeriod);
+
 				}
 				// }
 			} while (ArrayUtils.isEmpty(vos));
@@ -169,9 +186,10 @@ public class ImportRetireAction extends HrAction {
 			errormsg.append(e.getMessage());
 			throw new Exception(errormsg.toString());
 		}
+		return errorMap;
 	}
 
-	protected void healthInsuranceImport(String filePath, LoginContext waContext, Integer dataType) throws Exception {
+	/*protected void healthInsuranceImport(String filePath, Integer dataType,String pk_legal_org,String waPeriod) throws Exception {
 		if (null == dataType) {
 			Logger.error("import data type is null!");
 			// "导入数据类型为空!"
@@ -187,7 +205,7 @@ public class ImportRetireAction extends HrAction {
 		}
 		switch (dataType.intValue()) {
 		case DataItfConst.VALUE_SALARY_DETAIL:
-			retireimport(filePath, waContext);
+			retireimport(filePath, pk_legal_org,waPeriod);
 			break;
 
 		default:
@@ -196,20 +214,19 @@ public class ImportRetireAction extends HrAction {
 			throw new Exception(ResHelper.getString("6013dataitf_01", "dataitf-01-0021"));
 		}
 
-	}
+	}*/
 
-	private void retireimport(String filePath, LoginContext waContext) throws Exception {
+	/*private void retireimport(String filePath, String pk_legal_org,String waPeriod) throws Exception {
 		BaoAccountVO[] vos = null;
 		int count = 0;
 
 		try {
 			do {
-				String pk_org = this.getOrgpanel().getRefPane().getRefPK();
-				String waperiod = AccountOrgHeadPanel.getWaperiod();
-				if (!StringUtils.isEmpty(pk_org)) {
-					vos = DataItfFileReaderAccount.readRetireTxtFileSD(pk_org, waperiod, filePath, waContext);
+				//String waperiod = AccountOrgHeadPanel.getWaperiod();
+				if (!StringUtils.isEmpty(waPeriod)) {
+					vos = DataItfFileReaderAccount.readRetireTxtFileSD( waPeriod, filePath, pk_legal_org);
 					if (!ArrayUtils.isEmpty(vos)) {
-						getService().insertupdateretire(vos);
+						getService().insertupdateretire(vos,pk_legal_org);
 
 						count += vos.length;
 					}
@@ -223,7 +240,7 @@ public class ImportRetireAction extends HrAction {
 			throw new Exception(errormsg.toString());
 		}
 
-	}
+	}*/
 
 	protected String getFilterCondition(LoginContext waContext) {
 		SqlBuilder condition = new SqlBuilder();

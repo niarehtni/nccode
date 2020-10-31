@@ -215,10 +215,18 @@ public class AddInsuranceExportAction extends HrAction {
 						+ " left join bd_defdoc doc2 on g2.glbdef17= doc2.pk_defdoc "
 						+ " left join bd_defdoc doc4 on g2.glbdef16 = doc4.pk_defdoc "
 						// +" where a.code in('TP1006008','TP1712008')"
-						//tank 改用begindate方式获取最新的工作记录,有时会有脏数据,lastflag='Y'的记录同一个人会有两条
+						// tank
+						// 改用begindate方式获取最新的工作记录,有时会有脏数据,lastflag='Y'的记录同一个人会有两条
 						+ " INNER JOIN  hi_psnjob psnjob ON psnjob.PK_PSNDOC = a.PK_PSNDOC "
-							+ " and psnjob.BEGINDATE = (select max(BEGINDATE) from hi_psnjob where  pk_org = '"+pk_legalOrg+"' "
-							+ " and dr = 0 and PK_PSNDOC = a.PK_PSNDOC) "
+						+
+						// MOD by ssx on 2020-04-30
+						// 同日离职入职过滤掉离职记录
+						" and psnjob.trnsevent<>4 "
+						// end MOD
+						+ " and psnjob.BEGINDATE = (select max(BEGINDATE) from hi_psnjob where  pk_org = '"
+						+ pk_legalOrg + "' and trnsevent<>4 and "
+
+						+ "dr = 0 and PK_PSNDOC = a.PK_PSNDOC) "
 						+ " inner join bd_defdoc dfc on  dfc.PK_DEFDOC=psnjob.JOBGLBDEF8 " + " where g2.begindate = '"
 						+ startPeriod + "'"
 						+ " and g2.begindate=(select max(gl.begindate) from bd_psndoc ps left join "
@@ -320,7 +328,8 @@ public class AddInsuranceExportAction extends HrAction {
 								cell.setCellValue(map.get("gztjl") == null ? "" : map.get("gztjl").toString());
 								break;
 							case 24:
-								cell.setCellValue(map.get("grtjl") == null ? "" : df.format(map.get("grtjl")));
+								cell.setCellValue(map.get("grtjl") == null ? "" : df
+										.format(getDecryptedDecimalValue(map.get("grtjl"))));
 								break;
 							case 25:
 								cell.setCellValue(adYearToRepublicOfChina(map.get("lttjdate")));

@@ -17,6 +17,7 @@ import java.util.Set;
 import nc.bs.dao.BaseDAO;
 import nc.bs.dao.DAOException;
 import nc.bs.framework.common.NCLocator;
+import nc.hr.utils.InSQLCreator;
 import nc.impl.pub.ace.AceTwhr_declarationPubServiceImpl;
 import nc.itf.twhr.ITwhr_declarationMaintain;
 import nc.itf.uap.IUAPQueryBS;
@@ -26,10 +27,13 @@ import nc.jdbc.framework.processor.MapListProcessor;
 import nc.jdbc.framework.processor.ResultSetProcessor;
 import nc.pubitf.para.DeclarationUtils;
 import nc.pubitf.para.SysInitQuery4TWHR;
+import nc.pubitf.twhr.IBasedocPubQuery;
 import nc.pubitf.twhr.utils.LegalOrgUtilsEX;
 import nc.ui.querytemplate.querytree.IQueryScheme;
 import nc.vo.bm.util.SQLHelper;
 import nc.vo.hi.psndoc.PTCostVO;
+import nc.vo.hi.psndoc.PsnJobVO;
+import nc.vo.hi.psndoc.PsndocVO;
 import nc.vo.logging.Debug;
 import nc.vo.org.OrgVO;
 import nc.vo.pub.BusinessException;
@@ -40,14 +44,19 @@ import nc.vo.pub.lang.UFDate;
 import nc.vo.pub.lang.UFDateTime;
 import nc.vo.pub.lang.UFDouble;
 import nc.vo.pub.lang.UFLiteralDate;
+import nc.vo.twhr.basedoc.BaseDocVO;
 import nc.vo.twhr.nhicalc.PsndocDefTableUtil;
 import nc.vo.twhr.twhr_declaration.AggDeclarationVO;
 import nc.vo.twhr.twhr_declaration.BusinessBVO;
+import nc.vo.twhr.twhr_declaration.CompanyAdjustBVO;
 import nc.vo.twhr.twhr_declaration.CompanyBVO;
+import nc.vo.twhr.twhr_declaration.DeclarationHVO;
 import nc.vo.twhr.twhr_declaration.NonPartTimeBVO;
 import nc.vo.twhr.twhr_declaration.PartTimeBVO;
 import nc.vo.uif2.LoginContext;
 import nc.vo.wa.paydata.DataVO;
+
+import org.apache.commons.lang.StringUtils;
 
 public class Twhr_declarationMaintainImpl extends AceTwhr_declarationPubServiceImpl implements
 		ITwhr_declarationMaintain {
@@ -65,6 +74,8 @@ public class Twhr_declarationMaintainImpl extends AceTwhr_declarationPubServiceI
 	private static String DECLARATION_BUSINESS_TABLE_NAME = "declaration_business";
 	// 公司补充保费表名
 	private static String DECLARATION_COMPANY_TABLE_NAME = "declaration_company";
+	// 公司補充保費調整表名
+	private static String DECLARATION_COMPANYADJ_TABLE_NAME = "declaration_companyadj";
 
 	/**
 	 * @return the basDAO
@@ -292,6 +303,7 @@ public class Twhr_declarationMaintainImpl extends AceTwhr_declarationPubServiceI
 	/**
 	 * 从薪资发放和劳务费用中生成公司补充保费 dateMoth 给付日期的月份 pk_hrorg 人力资源组织 pk_group 集团
 	 */
+	@SuppressWarnings("unchecked")
 	@Override
 	public void generatCompanyBVO(UFDate dateMonth, String pk_hrorg, String pkGroup) throws BusinessException {
 		// 薪资发放数据map<薪资方案,map<薪资期间,map<人员,本次扣税金额>>>
@@ -301,7 +313,7 @@ public class Twhr_declarationMaintainImpl extends AceTwhr_declarationPubServiceI
 		String cyear = dateMonth.getYear() + "";
 		// 月份
 		String cperiod = dateMonth.getStrMonth();
-		//福委方案 
+		// 福委方案
 		Set<String> ferryWaclassSet = getFerryWaclass();
 		for (String pk_org : orgs) {
 			UFDouble heathRate = SysInitQuery4TWHR.getParaDbl(pk_org, "TWEP0002");
@@ -354,9 +366,9 @@ public class Twhr_declarationMaintainImpl extends AceTwhr_declarationPubServiceI
 					String pk_wa_class = rowMap.get("pk_wa_class");
 					String pk_wa_period = rowMap.get("pk_wa_period");
 					String payDateStr = rowMap.get("pay_date");
-					//tank 福委方案不生成 2020年1月30日22:30:02
-					if(pk_wa_class!=null && ferryWaclassSet.contains(pk_wa_class)){
-					    continue;
+					// tank 福委方案不生成 2020年1月30日22:30:02
+					if (pk_wa_class != null && ferryWaclassSet.contains(pk_wa_class)) {
+						continue;
 					}
 					// 获取本期间本薪资方案
 					getPay("null", pk_org, pk_wa_class, pk_wa_period, payMap);
@@ -453,6 +465,9 @@ public class Twhr_declarationMaintainImpl extends AceTwhr_declarationPubServiceI
 						// 部门
 						newVO.setPk_dept(baseInfo.get("pk_dept") != null ? String.valueOf(baseInfo.get("pk_dept"))
 								: null);
+						if (StringUtils.isEmpty(newVO.getPk_dept())) {
+							setPsnJobDept(pkPsndoc, payDate.toString(), newVO);
+						}
 						// 補充保費費基
 						newVO.setReplenis_base(newVO.getPay_money().sub(newVO.getTotalinsure()));
 						// 补充保费
@@ -491,8 +506,10 @@ public class Twhr_declarationMaintainImpl extends AceTwhr_declarationPubServiceI
 						CompanyBVO newVO = new CompanyBVO();
 						// 行号
 						newVO.setNum(++sum);
+
 						// 部门
-						newVO.setPk_dept(null);
+						setPsnJobDept(vo.getPk_psndoc(), vo.getPaydate().toString(), newVO);
+
 						// 薪资方案
 						newVO.setPk_wa_class(null);
 						// 给付日期
@@ -523,7 +540,49 @@ public class Twhr_declarationMaintainImpl extends AceTwhr_declarationPubServiceI
 				}
 			}
 			// 按人员和申报格式进行汇总
-			saveList = totalVO(saveList,pk_org);
+			saveList = totalVO(saveList, pk_org);
+
+			Collection<CompanyAdjustBVO> adjVOs = this.getBaseDAO().retrieveByClause(
+					CompanyAdjustBVO.class,
+					"pk_org='" + pk_org + "' and adjustdate >= '" + startDayOfMonth + "' and adjustdate < '"
+							+ endDayOfMonth + "'");
+			if (adjVOs != null && adjVOs.size() > 0) {
+				for (CompanyAdjustBVO adjvo : adjVOs) {
+					CompanyBVO newVO = new CompanyBVO();
+					// 行号
+					newVO.setNum(++sum);
+					// 部门
+					setPsnJobDept(adjvo.getPk_psndoc(), adjvo.getAdjustdate().toString(), newVO);
+					// 薪资方案
+					newVO.setPk_wa_class(null);
+					// 给付日期
+					newVO.setPay_date(new UFDate(adjvo.getAdjustdate().toDate()));
+					// 给付金额(本次扣稅基數)
+					newVO.setPay_money(UFDouble.ZERO_DBL);
+					// 人员
+					newVO.setPk_psndoc(adjvo.getPk_psndoc());
+					// 投保总额 (级距)
+					newVO.setTotalinsure(adjvo.getAdjustamount());
+					// TS
+					newVO.setTs(new UFDateTime());
+					// 法人组织
+					newVO.setVbdef1(pk_org);
+					// 薪资方案
+					newVO.setVbdef2(null);
+					// 薪资期间
+					newVO.setVbdef3(null);
+					// 人员
+					newVO.setVbdef4(adjvo.getPk_psndoc());
+					// 補充保費費基
+					newVO.setReplenis_base(newVO.getTotalinsure());
+					// 补充保费
+					// 取消四舍五入逻辑
+					newVO.setCompany_bear(newVO.getReplenis_base().multiply(heathRate).div(100));
+
+					saveList.add(newVO);
+				}
+			}
+
 			avo.setChildren(CompanyBVO.class, saveList.toArray(new CompanyBVO[0]));
 			AggDeclarationVO[] saveVOs = { avo };
 			// 先当成新增全新的记录
@@ -533,14 +592,42 @@ public class Twhr_declarationMaintainImpl extends AceTwhr_declarationPubServiceI
 		}
 	}
 
+	private void setPsnJobDept(String pk_psndoc, String payDate, CompanyBVO newVO) throws DAOException {
+		// 部门
+		// ssx added on 2020-06-12
+		// Redmine #35830 新增回写部门逻辑
+		Collection<PsnJobVO> psnjobvos = this.getBaseDAO().retrieveByClause(
+				PsnJobVO.class,
+				"pk_psndoc='" + pk_psndoc + "' and '" + payDate
+						+ "' between begindate and isnull(enddate, '9999-12-31')");
+
+		String pk_dept = null;
+		if (psnjobvos != null && psnjobvos.size() > 0) {
+			UFLiteralDate maxBeginDate = null;
+			for (PsnJobVO psnjobvo : psnjobvos) {
+				if (maxBeginDate == null) {
+					maxBeginDate = psnjobvo.getBegindate();
+					pk_dept = psnjobvo.getPk_dept();
+				} else {
+					if (maxBeginDate.before(psnjobvo.getBegindate())) {
+						pk_dept = psnjobvo.getPk_dept();
+					}
+				}
+			}
+		}
+
+		newVO.setPk_dept(pk_dept);
+		// end
+	}
+
 	/**
 	 * 按人员和申报格式进行汇总
 	 * 
 	 * @param saveList
 	 * @return
-	 * @throws BusinessException 
+	 * @throws BusinessException
 	 */
-	private List<CompanyBVO> totalVO(List<CompanyBVO> saveList,String pk_org) throws BusinessException {
+	private List<CompanyBVO> totalVO(List<CompanyBVO> saveList, String pk_org) throws BusinessException {
 		// 只有50薪资和同一月的资料,所以只按人员汇总
 		// 如果一个人有多笔,则只保留给付日期最新一笔的级距,其他的级距置为零
 		List<CompanyBVO> resultList = new ArrayList<>();
@@ -571,9 +658,11 @@ public class Twhr_declarationMaintainImpl extends AceTwhr_declarationPubServiceI
 						// 置空旧记录
 						lastPayDateCompanyVO.setTotalinsure(UFDouble.ZERO_DBL);
 						// 補充保費費基
-						lastPayDateCompanyVO.setReplenis_base(lastPayDateCompanyVO.getPay_money().sub(lastPayDateCompanyVO.getTotalinsure()));
-						lastPayDateCompanyVO.setCompany_bear(lastPayDateCompanyVO.getReplenis_base().multiply(heathRate).div(100));
-						
+						lastPayDateCompanyVO.setReplenis_base(lastPayDateCompanyVO.getPay_money().sub(
+								lastPayDateCompanyVO.getTotalinsure()));
+						lastPayDateCompanyVO.setCompany_bear(lastPayDateCompanyVO.getReplenis_base()
+								.multiply(heathRate).div(100));
+
 						lastPayDateCompanyVO = cbvo;
 					} else {
 						// 置空旧记录
@@ -650,7 +739,7 @@ public class Twhr_declarationMaintainImpl extends AceTwhr_declarationPubServiceI
 			return result;
 		}
 		// 从薪资发放表中查出这个薪资方案和期间所有人的本次扣税基数
-		String sqlStr = " select wa.pk_psndoc pk_psndoc,SALARY_DECRYPT(wa.f_4) f_4" + " from wa_period period "
+		String sqlStr = " select wa.pk_psndoc pk_psndoc,SALARY_DECRYPT(wa.f_4)  f_4" + " from wa_period period "
 				+ " left join wa_data wa on (wa.pk_org = '" + pk_org + "' and wa.cperiod = period.cperiod "
 				+ " and wa.cyear = period.cyear and wa.pk_wa_class = '" + pk_wa_class + "' ) "
 				+ " where period.pk_wa_period = '" + pk_wa_period + "' ";
@@ -779,7 +868,53 @@ public class Twhr_declarationMaintainImpl extends AceTwhr_declarationPubServiceI
 		}
 		// 判断是否是新生成的数据,还是同一天的数据
 		SuperVO superVO = isExistPTCostRecord(ptvo.getPk_psndoc(), ptvo.getPaydate(), type);
-		if (DECLAREFORM_90AB == type) {
+		if (DECLAREFORM_50 == type) {
+			if (ptvo.getTaxamount() != null && ptvo.getExtendamount().intValue() != 0 && ptvo.getExtendamount() != null
+					&& ptvo.getExtendamount().intValue() != 0) {
+				// 50格式
+				SuperVO[] svos = new SuperVO[1];
+				PartTimeBVO newVO = null;
+				// svos[0] = DeclarationUtils.getNonPartTimeBVO();
+				if (null == superVO) {
+					newVO = DeclarationUtils.getPartTimeBVO();
+				} else {
+					newVO = (PartTimeBVO) (superVO.clone());
+				}
+
+				// 给付日期:
+				newVO.setPay_date(new UFDate(ptvo.getPaydate().toDate()));
+
+				PsndocVO psndocvo = (PsndocVO) this.getBaseDAO().retrieveByPK(PsndocVO.class, ptvo.getPk_psndoc());
+
+				// 所得人姓名
+				newVO.setBeneficiary_name(psndocvo.getName2());
+				// 所得人身份证号
+				newVO.setBeneficiary_id(psndocvo.getId());
+				// 部门
+				newVO.setPk_dept(null);
+
+				// 单次给付金额
+				newVO.setSingle_pay(ptvo.getTaxamount());
+				// 单次扣缴补充保险费金额
+				newVO.setSingle_withholding(ptvo.getExtendamount());
+
+				// 写入薪资方案、薪资期间、法人组织 用作取消计算的标识
+				newVO.setVbdef1(pk_org);
+				// newVO.setVbdef2(pk_wa_class);
+				// newVO.setVbdef3(pk_wa_period);
+				newVO.setVbdef4(ptvo.getPk_psndoc());
+
+				newVO.setPk_org(pk_org);
+				newVO.setPk_group(pk_group);
+
+				BaseDocVO TWNHHI03 = NCLocator.getInstance().lookup(IBasedocPubQuery.class)
+						.queryBaseDocByCode(pk_org, "TWNHHI03");
+				newVO.setInsurance_unit_code(TWNHHI03.getTextvalue());
+
+				svos[0] = newVO;
+				avo.setChildren(PartTimeBVO.class, svos);
+			}
+		} else if (DECLAREFORM_90AB == type) {
 			// 90AB格式
 			SuperVO[] svos = new SuperVO[1];
 			BusinessBVO newVO = null;
@@ -831,7 +966,7 @@ public class Twhr_declarationMaintainImpl extends AceTwhr_declarationPubServiceI
 	// 获取健保基本信息
 	private Map<String, Object> getBaseInfo(String psndoc, String pk_org, UFDate payDate) throws BusinessException {
 		// Map<String,Object> resultMap = new HashMap<>();
-		String sqlStr = "SELECT "
+		String sqlStr = "SELECT distinct "
 				+ SQLHelper.getMultiLangNameColumn("psn.name")
 				+ " as beneficiary_name, hi_psndoc_cert.id as beneficiary_id, "
 				+ " org.glbdef40 as insurance_unit_code ,job.pk_dept as pk_dept from bd_psndoc psn "
@@ -843,8 +978,11 @@ public class Twhr_declarationMaintainImpl extends AceTwhr_declarationPubServiceI
 				+ " left join hi_psndoc_cert on (hi_psndoc_cert.pk_psndoc = psn.pk_psndoc and hi_psndoc_cert.dr = 0 and hi_psndoc_cert.iseffect = 'Y')"
 				+ " inner join bd_psnidtype on hi_psndoc_cert.idtype = bd_psnidtype.pk_identitype and "
 				+ " 	( ( NVL(psn.glbdef7,'N')='Y' AND ( heal.glbdef5= ( SELECT  pk_defdoc FROM bd_defdoc WHERE code = 'HT01' "
-				+" AND pk_defdoclist =  ( SELECT pk_defdoclist  FROM bd_defdoclist WHERE  code = 'TWHR007')) AND bd_psnidtype.code='TW03')) or "
-				+ "(heal.glbdef5=(select pk_defdoc from bd_defdoc where code = 'HT08' and pk_defdoclist = (select pk_defdoclist from bd_defdoclist where code = 'TWHR007')) and bd_psnidtype.code='TW03') or bd_psnidtype.code = 'TW01') "
+				+ " AND pk_defdoclist =  ( SELECT pk_defdoclist  FROM bd_defdoclist WHERE  code = 'TWHR007')) AND bd_psnidtype.code='TW03')) or "
+				// MOD by ssx on 2020-05-04
+				// #34819, 健保身份增加陸籍配偶，從 = 'HT08' 改為 in ('HT08','HT09')
+				+ "(heal.glbdef5 in (select pk_defdoc from bd_defdoc where code in ('HT08','HT09') and pk_defdoclist = (select pk_defdoclist from bd_defdoclist where code = 'TWHR007')) and bd_psnidtype.code='TW03') or bd_psnidtype.code = 'TW01') "
+				// end MOD
 				+ " left join org_hrorg org on psn.pk_org = org.pk_hrorg "
 				+ " left join hi_psnjob job on (psn.pk_psndoc = job.pk_psndoc and job.begindate <= '"
 				+ payDate.toStdString() + "' and isnull(job.enddate,'9999-12-31') >= '" + payDate.toStdString()
@@ -1014,19 +1152,23 @@ public class Twhr_declarationMaintainImpl extends AceTwhr_declarationPubServiceI
 			List<Map<String, String>> psn_ret = (List<Map<String, String>>) this
 					.getBaseDAO()
 					.executeQuery(
-							"select "
+							"select distinct "
 									+ SQLHelper.getMultiLangNameColumn("psn.name")
-									+ ",psn.pk_psndoc,hi_psndoc_cert.id  from bd_psndoc psn "
+									+ " name ,psn.pk_psndoc,hi_psndoc_cert.id  from bd_psndoc psn "
 									+ " inner join "
 									+ PsndocDefTableUtil.getPsnHealthTablename()
-									+ " heal on psn.pk_psndoc = heal.pk_psndoc and glbdef2='本人' and begindate=(select max(begindate) from "
+									+ " heal on psn.pk_psndoc = heal.pk_psndoc and heal.glbdef2='本人' and begindate=(select max(begindate) from "
 									+ PsndocDefTableUtil.getPsnHealthTablename()
 									+ " where pk_psndoc=heal.pk_psndoc and glbdef2=heal.glbdef2)"
 									+ " left join hi_psndoc_cert on (hi_psndoc_cert.pk_psndoc = psn.pk_psndoc and hi_psndoc_cert.dr = 0 and hi_psndoc_cert.iseffect = 'Y')"
 									+ " inner join bd_psnidtype on hi_psndoc_cert.idtype = bd_psnidtype.pk_identitype and "
-									+ " 	( ( NVL(psn.glbdef7,'N')='Y' AND ( heal.glbdef5= ( SELECT  pk_defdoc FROM bd_defdoc WHERE code = 'HT01' "
-									+" AND pk_defdoclist =  ( SELECT pk_defdoclist  FROM bd_defdoclist WHERE  code = 'TWHR007')) AND bd_psnidtype.code='TW03')) or "
-									+ " (heal.glbdef5=(select pk_defdoc from bd_defdoc where code = 'HT08' and pk_defdoclist = (select pk_defdoclist from bd_defdoclist where code = 'TWHR007')) and bd_psnidtype.code='TW03') or bd_psnidtype.code = 'TW01') "
+									+ " 	( ( isnull(psn.glbdef7,'N')='Y' AND ( heal.glbdef5= ( SELECT  pk_defdoc FROM bd_defdoc WHERE code = 'HT01' "
+									+ " AND pk_defdoclist =  ( SELECT pk_defdoclist  FROM bd_defdoclist WHERE  code = 'TWHR007')) AND bd_psnidtype.code='TW03')) or "
+									// MOD by ssx on 2020-05-04
+									// #34819, 健保身份增加陸籍配偶，從 = 'HT08' 改為 in
+									// ('HT08','HT09')
+									+ " (heal.glbdef5 in (select pk_defdoc from bd_defdoc where code in ('HT08','HT09') and pk_defdoclist = (select pk_defdoclist from bd_defdoclist where code = 'TWHR007')) and bd_psnidtype.code='TW03') or bd_psnidtype.code = 'TW01') "
+									// end MOD
 									+ "where psn.dr = 0", new MapListProcessor());
 			Map<String, String> psnmap = new HashMap<String, String>();
 			for (Map<String, String> map : psn_ret) {
@@ -1077,27 +1219,81 @@ public class Twhr_declarationMaintainImpl extends AceTwhr_declarationPubServiceI
 		}
 		return pk;
 	}
-	
+
 	/**
 	 * 查询所有福委方案
+	 * 
 	 * @param pk_org
 	 * @return
-	 * @throws DAOException 
+	 * @throws DAOException
 	 */
-	private Set<String> getFerryWaclass() throws DAOException{
-	    String sql = "select PK_WA_CLASS from WA_WACLASS where nvl(ISFERRY,'N') = 'Y'";
-	    @SuppressWarnings("unchecked")
-	    Set<String> FWSet = (Set<String>)getBaseDAO().executeQuery(sql, new ResultSetProcessor() {
-	        private Set<String> rsSet= new HashSet<>();
-	        @Override
-	        public Object handleResultSet(ResultSet rs) throws SQLException {
-	    		while(rs.next()){
-	    		    rsSet.add(rs.getString(1));
-	    		}
-	    		return rsSet;
-	        }
-	    });
-	    return FWSet;
+	private Set<String> getFerryWaclass() throws DAOException {
+		String sql = "select PK_WA_CLASS from WA_WACLASS where nvl(ISFERRY,'N') = 'Y'";
+		@SuppressWarnings("unchecked")
+		Set<String> FWSet = (Set<String>) getBaseDAO().executeQuery(sql, new ResultSetProcessor() {
+			private Set<String> rsSet = new HashSet<>();
+
+			@Override
+			public Object handleResultSet(ResultSet rs) throws SQLException {
+				while (rs.next()) {
+					rsSet.add(rs.getString(1));
+				}
+				return rsSet;
+			}
+		});
+		return FWSet;
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public String[] insertCompanyAdjustVOs(String pk_org, CompanyAdjustBVO[] vos) throws BusinessException {
+		Collection<DeclarationHVO> hvos = this.getBaseDAO().retrieveByClause(DeclarationHVO.class,
+				"pk_org='" + pk_org + "'");
+
+		OrgVO orgvo = null;
+		if (!StringUtils.isEmpty(pk_org)) {
+			orgvo = (OrgVO) this.getBaseDAO().retrieveByPK(OrgVO.class, pk_org);
+		}
+
+		for (CompanyAdjustBVO vo : vos) {
+			vo.setPk_declaration(hvos.toArray(new DeclarationHVO[0])[0].getPk_declaration());
+			if (orgvo != null) {
+				vo.setPk_org_v(orgvo.getPk_vid());
+			}
+		}
+
+		String[] pks = this.getBaseDAO().insertVOArray(vos);
+
+		this.getBaseDAO().executeUpdate(
+				"update declaration_companyadj set dr=0 where pk_companyadj in (" + new InSQLCreator().getInSQL(pks)
+						+ ")");
+
+		return pks;
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public int updateCompanyAdjustVOs(String pk_org, CompanyAdjustBVO[] vos) throws BusinessException {
+		Collection<DeclarationHVO> hvos = this.getBaseDAO().retrieveByClause(DeclarationHVO.class,
+				"pk_org='" + pk_org + "'");
+
+		for (CompanyAdjustBVO vo : vos) {
+			vo.setPk_declaration(hvos.toArray(new DeclarationHVO[0])[0].getPk_declaration());
+		}
+
+		int count = this.getBaseDAO().updateVOArray(vos);
+
+		for (CompanyAdjustBVO vo : vos) {
+			this.getBaseDAO().executeUpdate(
+					"update declaration_companyadj set dr=0 where pk_companyadj = '" + vo.getPk_companyadj() + "'");
+		}
+
+		return count;
+	}
+
+	@Override
+	public void deleteCompanyAdjustVOs(CompanyAdjustBVO[] vos) throws BusinessException {
+		this.getBaseDAO().deleteVOArray(vos);
 	}
 
 }

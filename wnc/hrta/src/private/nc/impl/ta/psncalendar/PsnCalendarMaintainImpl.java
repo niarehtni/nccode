@@ -1910,7 +1910,7 @@ public class PsnCalendarMaintainImpl implements IPsnCalendarQueryMaintain, IPsnC
 				if (modifiedMapInOrg.size() > 0)
 					modifiedCalendarMap.put(vo.getPk_psndoc(), modifiedMapInOrg);
 			}
-			checker.checkCalendar(pk_org, modifiedCalendarMap, true, true, false);// 进行校验
+			checker.checkCalendar(pk_org, modifiedCalendarMap, true, true, true);// 进行校验
 		}
 	}
 
@@ -3058,9 +3058,28 @@ public class PsnCalendarMaintainImpl implements IPsnCalendarQueryMaintain, IPsnC
 				otherTableSelFields, "tbm_psncalendar psncalendar", "psncalendar.pk_org", "psncalendar.pk_psndoc",
 				"psncalendar.calendar", beginDate.toString(), endDate.toString(), null, null, fromWhereSQL);
 		String sql = wrapper.getSql();
+
+		BaseDAO dao = new BaseDAO();
+		// ssx added on 2020-07-25
+		// 啟碁啟用產線權限子集控制領班查詢權限（部門及人員查詢範圍）
+		int hasGlbdef8 = -1;
+		hasGlbdef8 = (int) dao.executeQuery(
+				"select count(glbdef1) from HI_PSNDOC_GLBDEF8 where pk_psndoc = (select pk_psndoc from sm_user where cuserid = '"
+						+ InvocationInfoProxy.getInstance().getUserId() + "')", new ColumnProcessor());
+
+		if (hasGlbdef8 > 0) {
+			String deptWherePart = "#DEPT_PK# in (select glbdef1 from HI_PSNDOC_GLBDEF8 where pk_psndoc = (select pk_psndoc from sm_user where cuserid = '"
+					+ InvocationInfoProxy.getInstance().getUserId()
+					+ "') and '"
+					+ new UFLiteralDate().toString()
+					+ "' between BEGINDATE and nvl(ENDDATE, '9999-12-31')) and (select count(pk_dept) from org_dept where pk_dept=#DEPT_PK# and isnull(HRCANCELED, 'N')='N') > 0";
+
+			sql = sql.replace("order by", " and " + deptWherePart.replace("#DEPT_PK#", "T1.pk_dept") + " order by ");
+		}
+		// end
+
 		SQLParameter para = wrapper.getParam();
-		List<PsnJobVO> returnList = (List<PsnJobVO>) new BaseDAO().executeQuery(sql, para, new BeanListProcessor(
-				PsnJobVO.class));
+		List<PsnJobVO> returnList = (List<PsnJobVO>) dao.executeQuery(sql, para, new BeanListProcessor(PsnJobVO.class));
 		if (CollectionUtils.isEmpty(returnList))
 			return null;
 		return returnList.toArray(new PsnJobVO[0]);

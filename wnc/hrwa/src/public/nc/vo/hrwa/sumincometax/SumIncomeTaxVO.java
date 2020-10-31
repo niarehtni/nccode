@@ -6,6 +6,7 @@ import nc.vo.pub.lang.UFBoolean;
 import nc.vo.pub.lang.UFDate;
 import nc.vo.pub.lang.UFDateTime;
 import nc.vo.pub.lang.UFDouble;
+import nc.vo.pub.lang.UFLiteralDate;
 import nc.vo.pubapp.pattern.model.meta.entity.vo.VOMetaFactory;
 
 /**
@@ -166,7 +167,29 @@ public class SumIncomeTaxVO extends SuperVO {
 	 * 是否外籍员工逐月申报
 	 */
 	public UFBoolean isforeignmonthdec;
-	
+
+	/**
+	 * 是否外籍员工出境申报
+	 */
+	public UFBoolean isforeigndeprdec;
+
+	/**
+	 * 是否手工申报
+	 */
+	public UFBoolean ismanualdec;
+
+	/**
+	 * 给付日期
+	 */
+	public UFLiteralDate paydate;
+
+	public UFLiteralDate getPaydate() {
+		return paydate;
+	}
+
+	public void setPaydate(UFLiteralDate paydate) {
+		this.paydate = paydate;
+	}
 
 	public String getCyear() {
 		return cyear;
@@ -784,6 +807,22 @@ public class SumIncomeTaxVO extends SuperVO {
 
 	public void setPickedupadjust(UFDouble pickedupadjust) {
 		this.pickedupadjust = pickedupadjust;
+	}
+
+	public UFBoolean getIsforeigndeprdec() {
+		return isforeigndeprdec;
+	}
+
+	public void setIsforeigndeprdec(UFBoolean isforeigndeprdec) {
+		this.isforeigndeprdec = isforeigndeprdec;
+	}
+
+	public UFBoolean getIsmanualdec() {
+		return ismanualdec;
+	}
+
+	public void setIsmanualdec(UFBoolean ismanualdec) {
+		this.ismanualdec = ismanualdec;
 	}
 
 	/**

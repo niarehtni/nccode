@@ -274,13 +274,14 @@ public class DataCaculateService extends AbstractCaculateService {
 
 		if (!this.getBaseDao().isTableExisted("wa_cacu_overtimefee")) {
 			executeSQLs("CREATE TABLE wa_cacu_overtimefee  ( intcomp int, amounttaxable NUMBER(28,8),"
-					+ " amounttaxfree NUMBER(28,8)," + " pk_wa_class VARCHAR2(20)," + " creator VARCHAR2(20),"
+					+ " amounttaxfree NUMBER(28,8), taxfreehours NUMBER(28,8), taxablehours NUMBER(28,8), "
+					+ " pk_wa_class VARCHAR2(20)," + " creator VARCHAR2(20),"
 					+ " pk_psndoc VARCHAR2(20), TS CHAR(19) DEFAULT TO_CHAR(SYSDATE,'yyyy-mm-dd hh24:mi:ss'),"
 					+ " DR NUMBER(10) DEFAULT 0, PRIMARY KEY (pk_psndoc, creator, pk_wa_class, intcomp)" + ")");
 		}
 
 		if (!this.getBaseDao().isTableExisted("wa_cacu_leavefee")) {
-			executeSQLs("CREATE TABLE wa_cacu_leavefee  (intcomp int, pk_timeitem VARCHAR(20), pk_item_group VARCHAR(20), amount NUMBER(28,8),"
+			executeSQLs("CREATE TABLE wa_cacu_leavefee  (intcomp int, pk_timeitem VARCHAR(20), pk_item_group VARCHAR(20), amount NUMBER(28,8), "
 					+ " pk_wa_class VARCHAR2(20),  creator VARCHAR2(20),"
 					+ " pk_psndoc VARCHAR2(20), TS CHAR(19) DEFAULT TO_CHAR(SYSDATE,'yyyy-mm-dd hh24:mi:ss'),"
 					+ " DR NUMBER(10) DEFAULT 0, PRIMARY KEY (pk_psndoc, creator, pk_wa_class, intcomp, pk_timeitem, pk_item_group)"
@@ -288,7 +289,7 @@ public class DataCaculateService extends AbstractCaculateService {
 		}
 
 		if (!this.getBaseDao().isTableExisted("wa_cacu_leavehour")) {
-			executeSQLs("CREATE TABLE wa_cacu_leavehour  (intcomp int, cyear VARCHAR(4), cperiod VARCHAR(2), pk_timeitem VARCHAR(20), hours NUMBER(28,8),"
+			executeSQLs("CREATE TABLE wa_cacu_leavehour  (intcomp int, cyear VARCHAR(4), cperiod VARCHAR(2), pk_timeitem VARCHAR(20), hours NUMBER(28,8), curmon_hours NUMBER(28,8),"
 					+ " pk_wa_class VARCHAR2(20),  creator VARCHAR2(20),"
 					+ " pk_psndoc VARCHAR2(20), TS CHAR(19) DEFAULT TO_CHAR(SYSDATE,'yyyy-mm-dd hh24:mi:ss'),"
 					+ " DR NUMBER(10) DEFAULT 0, PRIMARY KEY (intcomp, pk_psndoc, creator, pk_wa_class,  pk_timeitem)"
@@ -312,7 +313,11 @@ public class DataCaculateService extends AbstractCaculateService {
 				+ getLoginContext().getWaLoginVO().getPeriodVO().getCenddate().toString()
 				+ "') lastdate,hi_psnjob.pk_psndoc "
 				+ " FROM wa_cacu_data INNER JOIN hi_psnjob ON hi_psnjob.pk_psndoc = wa_cacu_data.pk_psndoc "
-				+ " AND hi_psnjob.begindate = (SELECT max(pj.begindate) FROM hi_psnjob pj WHERE  pj.pk_psndoc = hi_psnjob.pk_psndoc "
+				// MOD by ssx on 2020-04-30
+				// 同日离职入职过滤掉离职记录
+				+ " and hi_psnjob.trnsevent<>4 "
+				// end MOD
+				+ " AND hi_psnjob.begindate = (SELECT max(pj.begindate) FROM hi_psnjob pj WHERE  pj.pk_psndoc = hi_psnjob.pk_psndoc and pj.trnsevent<>4 "
 				+ " AND trnsevent<>4 AND trnstype<>'1001X110000000003O5G'  AND pj.begindate <= "
 				+ " (SELECT tbm_period.enddate FROM tbm_period "
 				+ " inner join wa_period on tbm_period.accyear = wa_period.caccyear and tbm_period.accmonth = wa_period.caccperiod"
@@ -386,6 +391,10 @@ public class DataCaculateService extends AbstractCaculateService {
 
 			// 对于代缴税特殊处理f2扣款合计
 			updateF2(tmpVO);
+			
+			if(null!=waClassItemVO.getVformula() && waClassItemVO.getVformula().toUpperCase().startsWith("WASTATICSFIXPRDNO")){
+				clearSalaryMidData();
+			}
 
 			long timeEnd = System.currentTimeMillis();
 			Logger.error("----WNC-CALCULATE-WAITEM-SPENT-TIME--" + waClassItemVO.getName() + " ["
@@ -796,6 +805,19 @@ public class DataCaculateService extends AbstractCaculateService {
 
 		}
 
+	}
+	/**
+	 * // 薪资计算完毕。删除对应中间表数据
+	 */
+	public void clearSalaryMidData() throws BusinessException {
+		// 薪资计算完毕。删除对应中间表数据
+		StringBuffer deleteSalaryMidData = new StringBuffer();
+		deleteSalaryMidData.append("delete from SALARYCALCULATION  ");
+		if(null!=getLoginContext().getPk_loginUser()){
+			deleteSalaryMidData.append(" where pk_user = '" + getLoginContext().getPk_loginUser() + "' ");
+		}
+		executeSQLs(deleteSalaryMidData);
+		// this.getBaseDao().executeUpdate(deleteWa_cacu_data.toString());
 	}
 
 }

@@ -15,7 +15,7 @@ public class GroupItemSaveAction extends DifferentVOSaveAction {
 		if (null != getEditor().getValue()) {
 			AggItemGroupVO value = (AggItemGroupVO) getEditor().getValue();
 			if (value.getParentVO() != null) {
-				//改为全局节点 tank 2019年10月17日15:06:20 
+				// 改为全局节点 tank 2019年10月17日15:06:20
 				value.getParentVO().setPk_org("GLOBLE00000000000000");
 				value.getParentVO().setPk_org_v("GLOBLE00000000000000");
 			}

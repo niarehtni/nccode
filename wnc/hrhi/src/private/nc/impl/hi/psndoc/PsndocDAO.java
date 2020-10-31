@@ -1290,16 +1290,24 @@ public class PsndocDAO extends SimpleDocServiceTemplate {
 		} catch (Exception ex) {
 			Logger.error(ex.getMessage(), ex);
 		}
+
 		// 更新直属主管
-		List<PsnJobVO> list = (List<PsnJobVO>) baseDAOManager.retrieveByClause(PsnJobVO.class, "pk_psnjob in(" + inSql
-				+ ")");
-		List<HashMap<String, Object>> principalist = getPrincipal();
-		for (PsnJobVO job : list) {
-			// 由于导入进来的数据没有直属主管,因此在这里给直属主管赋值
-			String directsupervisor = getPrincipal(principalist, job.getPk_dept(), job.getPk_psndoc());
-			job.setAttributeValue("jobglbdef9", directsupervisor);
-		}
-		baseDAOManager.updateVOList(list);
+		// ssx remarked on 2020-06-16
+		// 啟碁取消更新直屬主管需求
+		// List<PsnJobVO> list = (List<PsnJobVO>)
+		// baseDAOManager.retrieveByClause(PsnJobVO.class, "pk_psnjob in(" +
+		// inSql
+		// + ")");
+		// List<HashMap<String, Object>> principalist = getPrincipal();
+		// for (PsnJobVO job : list) {
+		// // 由于导入进来的数据没有直属主管,因此在这里给直属主管赋值
+		// String directsupervisor = getPrincipal(principalist,
+		// job.getPk_dept(), job.getPk_psndoc());
+		// job.setAttributeValue("jobglbdef9", directsupervisor);
+		// }
+		// baseDAOManager.updateVOList(list);
+		// end
+
 		// 同步缓存
 		HiCacheUtils.synCache(PsndocVO.getDefaultTableName(), PsnJobVO.getDefaultTableName(),
 				PsnOrgVO.getDefaultTableName());
@@ -2709,6 +2717,22 @@ public class PsndocDAO extends SimpleDocServiceTemplate {
 		String strPk_psnorg = getNextOid();
 		psnOrgVO.setPrimaryKey(strPk_psnorg);
 		psnOrgVO.setPk_psndoc(strPk_psndoc);
+
+		// ssx added on 2020-08-06
+		// 年资保留天数及启碁年资设置默认值
+		if (psnOrgVO.getAttributeValue("workageremaindays") == null) {
+			psnOrgVO.setAttributeValue("workageremaindays", 0);
+		}
+
+		if (psnOrgVO.getAttributeValue("orgglbdef8") == null) {
+			psnOrgVO.setAttributeValue(
+					"orgglbdef8",
+					new UFDouble((Integer) psnOrgVO.getAttributeValue("workageremaindays")).div(365).add(
+							(psnOrgVO.getAttributeValue("orgglbdef6")) == null ? UFDouble.ZERO_DBL : new UFDouble(
+									(String) psnOrgVO.getAttributeValue("orgglbdef6"))));
+		}
+		// end
+
 		String strPk_psnjob = null;
 		if (psnJobVOs != null && psnJobVOs.length > 0) {
 			for (int i = 0; i < psnJobVOs.length; i++) {

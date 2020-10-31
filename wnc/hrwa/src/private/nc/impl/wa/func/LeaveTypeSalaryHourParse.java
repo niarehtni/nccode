@@ -60,14 +60,15 @@ public class LeaveTypeSalaryHourParse extends AbstractPreExcutorFormulaParse {
 						+ context.getPk_wa_class() + "' and creator = '" + pk_creator + "'";
 
 				sql = PaydataDAO.getLeaveHoursSQLByPeriodCondtions(this.getPk_leaveitem(), periodDates, psnlistsql);
-				sql = "select psndoc pk_psndoc, sum(leavehour) leavehour from (" + sql + ") tmp group by psndoc";
+				sql = "select psndoc pk_psndoc, sum(leavehour) leavehour, sum(deduct_last_leaveoff) curmon_leavehour from ("
+						+ sql + ") tmp group by psndoc";
 
 				List<Map<String, Object>> results = (List<Map<String, Object>>) this.getBaseDao().executeQuery(sql,
 						new MapListProcessor());
 				if (results != null && results.size() > 0) {
 					for (Map<String, Object> result : results) {
 						if (result != null) {
-							sql = "insert into wa_cacu_leavehour (intcomp, pk_timeitem, cyear, cperiod, hours, pk_wa_class, creator, pk_psndoc)"
+							sql = "insert into wa_cacu_leavehour (intcomp, pk_timeitem, cyear, cperiod, hours, curmon_hours, pk_wa_class, creator, pk_psndoc)"
 									+ " values ("
 									+ String.valueOf(INTCOMP)
 									+ ",'"
@@ -78,13 +79,11 @@ public class LeaveTypeSalaryHourParse extends AbstractPreExcutorFormulaParse {
 									+ cperiod
 									+ "',"
 									+ String.valueOf(result.get("leavehour"))
+									+ ", "
+									+ String.valueOf(result.get("curmon_leavehour"))
 									+ ",'"
 									+ context.getPk_wa_class()
-									+ "','"
-									+ pk_creator
-									+ "','"
-									+ result.get("pk_psndoc")
-									+ "')";
+									+ "','" + pk_creator + "','" + result.get("pk_psndoc") + "')";
 							session.addBatch(sql);
 						}
 					}

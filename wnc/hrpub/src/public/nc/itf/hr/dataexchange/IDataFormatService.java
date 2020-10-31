@@ -64,4 +64,21 @@ public interface IDataFormatService {
 	 */
 	public Map<String, Map<Integer, Map<String, Object>>> getWaItemByItemGroup(String pk_org, String pk_wa_class,
 			String cyear, String cperiod, String itemGroupCode) throws BusinessException;
+
+	/**
+	 * 根據重算結果取團保期間結果
+	 * 
+	 * @param pk_org
+	 *            組織PK
+	 * @param pk_wa_class
+	 *            薪資方案PK
+	 * @param cyear
+	 *            年度
+	 * @param cperiod
+	 *            期间
+	 * @return
+	 * @throws BusinessException
+	 */
+	public Map<String, String> getGroupInsInfoByRecalculating(String pk_org, String pk_wa_class, String cyear,
+			String cperiod) throws BusinessException;
 }

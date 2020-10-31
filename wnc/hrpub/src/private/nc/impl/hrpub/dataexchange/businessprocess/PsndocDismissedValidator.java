@@ -43,7 +43,7 @@ public class PsndocDismissedValidator {
 						PsnJobVO.class,
 						"pk_psndoc = '"
 								+ pk_psndoc
-								+ "' and pk_psnorg in (select pk_psnorg from hi_psnorg where pk_psndoc = hi_psnjob.pk_psndoc and lastflag='Y')");
+								+ "' and pk_psnorg in (select pk_psnorg from hi_psnorg where pk_psndoc = hi_psnjob.pk_psndoc and hi_psnjob.ismainjob='Y' and lastflag='Y')");
 
 		if (psnjobs != null && psnjobs.size() > 0) {
 			for (PsnJobVO vo : psnjobs) {
@@ -68,7 +68,10 @@ public class PsndocDismissedValidator {
 				PsnCalendarVO.class,
 				"pk_psndoc='" + pk_psndoc + "' and calendar between '"
 						+ checkTime.getDate().getDateBefore(3).toUFLiteralDate(UFLiteralDate.BASE_TIMEZONE) + "' and '"
-						+ checkTime.getDate().getDateAfter(3).toUFLiteralDate(UFLiteralDate.BASE_TIMEZONE) + "'");
+						+ checkTime.getDate().getDateAfter(3).toUFLiteralDate(UFLiteralDate.BASE_TIMEZONE)
+						+ "' and calendar >= (select begindate from hi_psnorg where pk_psndoc='" + pk_psndoc
+						+ "' and '" + checkTime.getDate().toUFLiteralDate(UFLiteralDate.BASE_TIMEZONE)
+						+ "' between begindate and isnull(enddate, '9999-12-31'))");
 		if (psncals != null && psncals.size() > 0) {
 			for (PsnCalendarVO psncal : psncals) {
 				if (psncal.getPk_shift() != null) {

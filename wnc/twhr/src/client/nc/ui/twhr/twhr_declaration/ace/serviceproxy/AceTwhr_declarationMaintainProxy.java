@@ -13,11 +13,8 @@ import nc.ui.querytemplate.querytree.IQueryScheme;
  */
 public class AceTwhr_declarationMaintainProxy implements IQueryService {
 	@Override
-	public Object[] queryByQueryScheme(IQueryScheme queryScheme)
-			throws Exception {
-		ITwhr_declarationMaintain query = NCLocator.getInstance().lookup(
-				ITwhr_declarationMaintain.class);
+	public Object[] queryByQueryScheme(IQueryScheme queryScheme) throws Exception {
+		ITwhr_declarationMaintain query = NCLocator.getInstance().lookup(ITwhr_declarationMaintain.class);
 		return query.query(queryScheme);
 	}
-
 }

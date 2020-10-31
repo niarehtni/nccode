@@ -21,7 +21,6 @@ import nc.pubitf.para.SysInitQuery;
 import nc.ui.pub.beans.MessageDialog;
 import nc.ui.pub.beans.UIPanel;
 import nc.ui.pub.beans.table.ColumnGroup;
-import nc.ui.pub.beans.table.GroupableTableHeader;
 import nc.ui.pub.bill.BillEditEvent;
 import nc.ui.pub.bill.BillEditListener;
 import nc.ui.pub.bill.BillItem;
@@ -41,6 +40,7 @@ import nc.ui.wa.salaryadjmgt.WASalaryadjmgtDelegator;
 import nc.vo.hi.wadoc.PsndocWadocMainVO;
 import nc.vo.hi.wadoc.PsndocWadocVO;
 import nc.vo.hi.wadoc.PsndocwadocCommonDef;
+import nc.vo.org.OrgVO;
 import nc.vo.pub.BusinessException;
 import nc.vo.pub.lang.UFDouble;
 import nc.vo.wa.item.WaItemVO;
@@ -63,6 +63,8 @@ public class PsnWadocMainPane extends UIPanel implements BillEditListener, AppEv
 	private int currentSelectRow = 0;
 	/** 表体对象 */
 	private PsnWadocSubPane component;
+
+	private int iflddecimal;
 
 	/**
 	 * PsnWadocMainPanel 构造子注解。
@@ -190,7 +192,7 @@ public class PsnWadocMainPane extends UIPanel implements BillEditListener, AppEv
 		billItem.setDataType(BillItem.STRING);
 		billItem.setEdit(false);
 		billItem.setWidth(70);
-		billItem.setShow(true);
+		billItem.setShow(false);
 		billItem.setNull(false);
 		listBillItems.add(billItem);
 
@@ -203,7 +205,7 @@ public class PsnWadocMainPane extends UIPanel implements BillEditListener, AppEv
 		billItem.setDataType(BillItem.STRING);
 		billItem.setEdit(false);
 		billItem.setWidth(70);
-		billItem.setShow(true);
+		billItem.setShow(false);
 		billItem.setNull(false);
 		listBillItems.add(billItem);
 
@@ -216,12 +218,13 @@ public class PsnWadocMainPane extends UIPanel implements BillEditListener, AppEv
 		billItem.setDataType(BillItem.STRING);
 		billItem.setEdit(false);
 		billItem.setWidth(70);
-		billItem.setShow(true);
+		billItem.setShow(false);
 		billItem.setNull(false);
 		listBillItems.add(billItem);
 
 		WaItemVO[] vos = null;
 		String pkOrg = this.getModel().getContext().getPk_org();
+
 		PsndocwadocAppModel model = (PsndocwadocAppModel) getModel();
 		if (pkOrg == null) {
 			vos = null;
@@ -236,11 +239,25 @@ public class PsnWadocMainPane extends UIPanel implements BillEditListener, AppEv
 			model.getCachedWaItemVOs().put(pkOrg, vos);
 			// getComponent().setCachedWaItemVOs(vos);
 		}
-		if (vos != null) {
-			int iflddecimal = IBillItem.DEFAULT_DECIMAL_DIGITS;
-			for (WaItemVO vo : vos) {
 
-				iflddecimal = vo.getIflddecimal();
+		if (vos != null) {
+			IUAPQueryBS svc = NCLocator.getInstance().lookup(IUAPQueryBS.class);
+			OrgVO orgvo;
+			try {
+				orgvo = (OrgVO) svc.retrieveByPK(OrgVO.class, pkOrg);
+
+				if (orgvo != null && "0001Z010000000079UJK".equals(orgvo.getCountryzone())) {
+					this.setIflddecimal(0);
+				} else {
+					this.setIflddecimal(IBillItem.DEFAULT_DECIMAL_DIGITS);
+				}
+			} catch (BusinessException e) {
+				e.printStackTrace();
+			}
+
+			for (WaItemVO vo : vos) {
+				// iflddecimal = vo.getIflddecimal();
+
 				billItem = new BillItem();
 				billItem.setName(ResHelper.getString("60130adjapprove", "160130adjapprove0006")/*
 																								 * @
@@ -251,7 +268,7 @@ public class PsnWadocMainPane extends UIPanel implements BillEditListener, AppEv
 				billItem.setDataType(BillItem.STRING);
 				billItem.setEdit(false);
 				billItem.setWidth(70);
-				billItem.setShow(true);
+				billItem.setShow(false);
 				billItem.setNull(false);
 				listBillItems.add(billItem);
 
@@ -265,24 +282,26 @@ public class PsnWadocMainPane extends UIPanel implements BillEditListener, AppEv
 				billItem.setDataType(BillItem.DECIMAL);
 				billItem.setEdit(false);
 				billItem.setWidth(70);
-				billItem.setDecimalDigits(iflddecimal);
-				billItem.setLength(31);
-				billItem.setShow(true);
+				billItem.setDecimalDigits(this.getIflddecimal());
+				// billItem.setLength(31);
+				billItem.setShow(false);
 				billItem.setNull(false);
 				listBillItems.add(billItem);
 
 				billItem = new BillItem();
-				billItem.setName(ResHelper.getString("common", "UC000-0004112")/*
-																				 * @
-																				 * res
-																				 * "金额"
-																				 */);
+				// billItem.setName(ResHelper.getString("common",
+				// "UC000-0004112")
+				billItem.setName(ResHelper.getString("common", vo.getMultilangName())/*
+																					 * @
+																					 * res
+																					 * "金额"
+																					 */);
 				billItem.setKey(vo.getPk_wa_item() + "." + PsndocWadocMainVO.NMONEY);
 				billItem.setDataType(BillItem.DECIMAL);
 				billItem.setEdit(false);
-				billItem.setWidth(70);
-				billItem.setDecimalDigits(iflddecimal);
-				billItem.setLength(31);
+				billItem.setWidth(100);
+				billItem.setDecimalDigits(this.getIflddecimal());
+				// billItem.setLength(31);
 				billItem.setShow(true);
 				billItem.setNull(false);
 				listBillItems.add(billItem);
@@ -297,11 +316,11 @@ public class PsnWadocMainPane extends UIPanel implements BillEditListener, AppEv
 		billItem.setKey(PsndocWadocMainVO.TOTALSALARY);
 		billItem.setDataType(BillItem.DECIMAL);
 		billItem.setEdit(false);
-		billItem.setWidth(70);
-		billItem.setDecimalDigits(IBillItem.DEFAULT_DECIMAL_DIGITS);
+		billItem.setWidth(100);
 		billItem.setLength(31);
 		billItem.setShow(true);
 		billItem.setNull(false);
+		billItem.setDecimalDigits(this.getIflddecimal());
 		listBillItems.add(billItem);
 		// end
 
@@ -384,12 +403,14 @@ public class PsnWadocMainPane extends UIPanel implements BillEditListener, AppEv
 		getBillPane().setRowNOShow(true);
 
 		// 设定多表头
-		GroupableTableHeader header = (GroupableTableHeader) getBillPane().getTable().getTableHeader();
-		if (vos != null) {
-			for (WaItemVO element : vos) {
-				header.addColumnGroup(getColumnGroup(element.getPk_wa_item(), element.getMultilangName()));
-			}
-		}
+		// GroupableTableHeader header = (GroupableTableHeader)
+		// getBillPane().getTable().getTableHeader();
+		// if (vos != null) {
+		// for (WaItemVO element : vos) {
+		// header.addColumnGroup(getColumnGroup(element.getPk_wa_item(),
+		// element.getMultilangName()));
+		// }
+		// }
 		// TableColResize.reSizeTable(getBillPane()); //连续刷新报错！
 	}
 
@@ -534,7 +555,6 @@ public class PsnWadocMainPane extends UIPanel implements BillEditListener, AppEv
 				((PsndocwadocAppModel) getModel()).setState(PsndocwadocCommonDef.UNKNOWN_STATE);
 				PsndocWadocMainVO vo = getBodySelectedVO(currentSelectRow);
 				if (vo != null) {
-
 					getComponent().setSubVOs(vo);
 					// ((PsndocwadocAppModel)
 					// getModel()).setUiState(UIState.NOT_EDIT);
@@ -725,5 +745,14 @@ public class PsnWadocMainPane extends UIPanel implements BillEditListener, AppEv
 		// 全消按钮
 		getBillPane().getTable().getHeaderPopupMenu().add(new PsnDocCancelSelectAllAction(getBillPane()));
 	}
+
 	//
+
+	public int getIflddecimal() {
+		return iflddecimal;
+	}
+
+	public void setIflddecimal(int iflddecimal) {
+		this.iflddecimal = iflddecimal;
+	}
 }

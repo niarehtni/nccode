@@ -212,6 +212,7 @@
 						</bean>
 					</property>
 				</bean>
+				
 				<!-- nc.ui.pubapp.uif2app.event.billform.AddEvent -->
 				<bean class="nc.ui.pubapp.uif2app.event.EventHandlerGroup">
 					<property name="event" value="nc.ui.pubapp.uif2app.event.billform.AddEvent" />
@@ -219,10 +220,29 @@
 						<bean class="nc.ui.wa.itemgroup.ace.handler.AceAddHandler" />
 					</property>
 				</bean>
+				
+				<!-- 表体字段编辑前事件 -->
+				<bean class="nc.ui.pubapp.uif2app.event.EventHandlerGroup">
+					<property name="event" value="nc.ui.pubapp.uif2app.event.card.CardBodyBeforeEditEvent" />
+					<property name="picky" ref="childrenPicky" />
+					<property name="handler">
+						<bean class="nc.ui.wa.itemgroup.ace.handler.ItemGroupBodyBeforeEditHandler"  />
+					</property>
+				</bean>
 			</list>
 		</property>
 	</bean>
 
+	<!-- 事件监听 -->
+	<bean id="childrenPicky" class="nc.ui.pubapp.uif2app.event.ChildrenPicky">
+		<property name="billform" ref="billForm" />
+		<property name="bodyVoClasses">
+			<list>
+				<value>nc.vo.wa.itemgroup.ItemGroupMemberVO</value>
+			</list>
+		</property>
+	</bean>
+	
 	<!--懒加载信息配置*******************************************************-->
 	<!--懒加载，加载表体数据-->
 	<bean id="billLazilyLoader" class="nc.ui.pubapp.uif2app.lazilyload.DefaultBillLazilyLoader" />
@@ -241,7 +261,12 @@
 		</property>
 	</bean>
 
-
+	<!-- 显示卡片的拦截器 -->
+	<bean id="showCardInterceptor"
+		class="nc.ui.pubapp.uif2app.actions.interceptor.ShowUpComponentInterceptor">
+		<property name="showUpComponent" ref="billForm" />
+	</bean>
+	
 	<!-- 行号自动处理 -->
 	<bean id="rowNoMediator" class="nc.ui.pubapp.uif2app.view.RowNoMediator">
 		<property name="model" ref="bmModel" />
@@ -260,24 +285,14 @@
 	<!--======= 动作：[newActions] [新增] ===========-->
 	<bean id="addAction" class="nc.ui.pubapp.uif2app.actions.AddAction">
 		<property name="model"><ref bean="bmModel"/></property>
-		<property name="interceptor">
-			<bean class="nc.ui.pubapp.uif2app.actions.interceptor.CompositeActionInterceptor">
-				<property name="interceptors">
-					<list>
-						<bean class="nc.ui.pubapp.uif2app.actions.interceptor.ShowUpComponentInterceptor">
-							<property name="showUpComponent" ref="billForm" />
-						</bean>
-						<!--此处可以扩展添加自己的拦截器-->
-					</list>
-				</property>
-			</bean>
-		</property>
+		<property name="interceptor" ref="showCardInterceptor" />
 		<property name="exceptionHandler"><ref bean="exceptionHandler" /></property>
 	</bean>
 
 	<!--======= 动作：[newActions] [修改] ===========-->
 	<bean id="editAction" class="nc.ui.pubapp.uif2app.actions.EditAction">
 		<property name="model"><ref bean="bmModel"/></property>
+		<property name="interceptor" ref="showCardInterceptor" />
 		<property name="exceptionHandler"><ref bean="exceptionHandler" /></property>
 	</bean>
 

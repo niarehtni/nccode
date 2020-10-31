@@ -398,7 +398,7 @@ public class MDExchangeServiceImpl implements IMDExchangeService, IBackgroundWor
 							BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(
 									logFile), StandardCharsets.UTF_8));
 							writer.write("------ Data Migration Import Log -----\r\n\r\n");
-							MapKeyComparator mapCmp = new MapKeyComparator();
+							MapKeyComparator<String> mapCmp = new MapKeyComparator<String>();
 							errMsgs = mapCmp.sortMapByKey(errMsgs);
 							for (Entry<String, String> err : errMsgs.entrySet()) {
 								writer.write("Log Time:" + new UFDateTime().toString() + "\r\nRow No.:" + err.getKey()

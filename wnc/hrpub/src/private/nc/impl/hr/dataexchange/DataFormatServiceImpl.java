@@ -7,10 +7,13 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import nc.bs.dao.BaseDAO;
+import nc.bs.framework.common.NCLocator;
 import nc.bs.hr.dataexchange.export.FormatHelper;
+import nc.itf.hi.IPsndocSubInfoService4JFS;
 import nc.itf.hr.dataexchange.IDataFormatService;
+import nc.jdbc.framework.processor.ColumnProcessor;
 import nc.jdbc.framework.processor.MapListProcessor;
-import nc.pub.encryption.util.SalaryDecryptUtil;
+import nc.vo.bd.defdoc.DefdocVO;
 import nc.vo.pub.BusinessException;
 import nc.vo.pub.lang.UFBoolean;
 import nc.vo.pub.lang.UFDouble;
@@ -32,7 +35,11 @@ public class DataFormatServiceImpl implements IDataFormatService {
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	@Override
 	public List<Map> getFormatByCode(String formatCode) throws BusinessException {
-		String strSQL = " SELECT  item.linenumber , ";
+		String strSQL = "select charsetcode from wa_expformat_head where code = '" + formatCode + "'";
+		String charset = (String) this.getBaseDAO().executeQuery(strSQL, new ColumnProcessor());
+		FormatHelper.TEXTENCODING = charset;
+
+		strSQL = " SELECT  item.linenumber , ";
 		strSQL += "         item.posnumber , ";
 		strSQL += "         item.itemcode , ";
 		strSQL += "         item.itemname , ";
@@ -51,7 +58,8 @@ public class DataFormatServiceImpl implements IDataFormatService {
 		strSQL += "         item.colnumber, ";
 		strSQL += "         item.colbytelength, ";
 		strSQL += "         item.enablecondition, ";
-		strSQL += "         item.forcechinese";
+		strSQL += "         item.forcechinese, ";
+		strSQL += "         item.orderno ";
 		strSQL += " FROM    wa_expformat_item item ";
 		strSQL += "         INNER JOIN wa_expformat_head head ON item.pk_formathead = head.pk_formathead ";
 		strSQL += " WHERE   head.code = '" + formatCode + "' ";
@@ -75,13 +83,12 @@ public class DataFormatServiceImpl implements IDataFormatService {
 			String cperiod, String itemGroupCode, int colNumber, int colByteLength) throws BusinessException {
 		Map<String, String> returnMap = new HashMap<String, String>();
 
-		String strSQL = "select itemkey, name2, isnull(name3, name2) name3, mb.orderno  from wa_classitem wc inner join wa_itemgroupmember mb on wc.pk_wa_item = mb.pk_waitem inner join wa_itemgroup gp on gp.pk_itemgroup = mb.pk_itemgroup where gp.groupcode = '"
-				+ itemGroupCode
-				+ "' and wc.pk_org = '"
-				+ pk_org
-				+ "' and wc.pk_wa_class = '"
-				+ pk_wa_class
-				+ "' and wc.cyear='" + cyear + "' and wc.cperiod = '" + cperiod + "' order by orderno";
+		String strSQL = "select itemkey, name2, isnull(name3, name2) name3, mb.orderno" + "  from wa_classitem wc"
+				+ " inner join wa_itemgroupmember mb on wc.pk_wa_item = mb.pk_waitem"
+				+ " inner join wa_itemgroup gp on gp.pk_itemgroup = mb.pk_itemgroup"
+				+ " where mb.dr=0 and gp.dr=0 and gp.groupcode = '" + itemGroupCode + "' and wc.pk_org = '" + pk_org
+				+ "' and wc.pk_wa_class = '" + pk_wa_class + "' and wc.cyear='" + cyear + "' and wc.cperiod = '"
+				+ cperiod + "' order by orderno";
 
 		List<Map<String, Object>> groupedWaItems = (List<Map<String, Object>>) this.getBaseDAO().executeQuery(strSQL,
 				new MapListProcessor());
@@ -112,8 +119,8 @@ public class DataFormatServiceImpl implements IDataFormatService {
 					cols[curColIndex] = new String();
 
 					// 按順序處理
-					for (int i = 1; i <= orderItems.size(); i++) {
-						String itemkey = orderItems.get(i);
+					for (int i = 0; i < orderItems.size(); i++) {
+						String itemkey = (String) ((Entry) orderItems.entrySet().toArray()[i]).getValue();
 						if (dataEntry.getValue().containsKey(itemkey)) {
 							try {
 								if (cols[curColIndex].getBytes(FormatHelper.TEXTENCODING).length
@@ -137,10 +144,14 @@ public class DataFormatServiceImpl implements IDataFormatService {
 						}
 					}
 
-					returnMap.put(dataEntry.getKey(), (cols[0] == null ? "" : cols[0])
-							+ (cols[1] == null ? "" : cols[1]) + (cols[2] == null ? "" : cols[2])
-							+ (cols[3] == null ? "" : cols[3]) + (cols[4] == null ? "" : cols[4])
-							+ (cols[5] == null ? "" : cols[5]));
+					for (int i = 0; i < colNumber; i++) {
+						if (!returnMap.containsKey(dataEntry.getKey())) {
+							returnMap.put(dataEntry.getKey(), StringUtils.isEmpty(cols[i]) ? "" : cols[i]);
+						} else {
+							returnMap.put(dataEntry.getKey(),
+									returnMap.get(dataEntry.getKey()) + (StringUtils.isEmpty(cols[i]) ? "" : cols[i]));
+						}
+					}
 				}
 			}
 
@@ -161,12 +172,12 @@ public class DataFormatServiceImpl implements IDataFormatService {
 
 				for (Entry<String, Object> dataEntry : wadata.entrySet()) {
 					if (!dataEntry.getKey().equals("id") && !dataEntry.getKey().equals("glbdef7")) {
-						UFDouble value = SalaryDecryptUtil.decrypt(new UFDouble(String.valueOf(dataEntry.getValue())));
+						UFDouble value = new UFDouble(String.valueOf(dataEntry.getValue()));
 						if (!UFDouble.ZERO_DBL.equals(value)) {
 							psnItemValues.get(id).put(
 									dataEntry.getKey(),
 									(itemNames.get(dataEntry.getKey())[isForeign.booleanValue() ? 1 : 0] + ":" + value
-											.setScale(1, UFDouble.ROUND_HALF_UP).toString()) + ";");
+											.toString()) + ";");
 						}
 					}
 				}
@@ -179,9 +190,15 @@ public class DataFormatServiceImpl implements IDataFormatService {
 		for (Map<String, Object> waitem : groupedWaItems) {
 			String itemkey = (String) waitem.get("itemkey");
 			if (StringUtils.isEmpty(strSQL)) {
-				strSQL = "wd." + itemkey;
+				strSQL = "round(SALARY_DECRYPT(isnull(wd."
+						+ itemkey
+						+ ",0)), coalesce((select iflddecimal from wa_classitem where pk_wa_class = wd.pk_wa_class and cyear = wd.cyear and cperiod = wd.cperiod and itemkey = '"
+						+ itemkey + "'),0)) " + itemkey;
 			} else {
-				strSQL += ",wd." + itemkey;
+				strSQL += ",round(SALARY_DECRYPT(isnull(wd."
+						+ itemkey
+						+ ",0)), coalesce((select iflddecimal from wa_classitem where pk_wa_class = wd.pk_wa_class and cyear = wd.cyear and cperiod = wd.cperiod and itemkey = '"
+						+ itemkey + "'),0)) " + itemkey;
 			}
 
 			itemNames.put(itemkey, new String[] { (String) waitem.get("name2"), (String) waitem.get("name3") });
@@ -197,13 +214,12 @@ public class DataFormatServiceImpl implements IDataFormatService {
 		// 格式: MAP<ID, MAP<ORDERNO, MAP<NAME, VALUE>>>
 		Map<String, Map<Integer, Map<String, Object>>> returnMap = new HashMap<String, Map<Integer, Map<String, Object>>>();
 
-		String strSQL = "select itemkey, name2, isnull(name3, name2) name3, mb.orderno  from wa_classitem wc inner join wa_itemgroupmember mb on wc.pk_wa_item = mb.pk_waitem inner join wa_itemgroup gp on gp.pk_itemgroup = mb.pk_itemgroup where gp.groupcode = '"
-				+ itemGroupCode
-				+ "' and wc.pk_org = '"
-				+ pk_org
-				+ "' and wc.pk_wa_class = '"
-				+ pk_wa_class
-				+ "' and wc.cyear='" + cyear + "' and wc.cperiod = '" + cperiod + "' order by orderno";
+		String strSQL = "select itemkey, name2, isnull(name3, name2) name3, mb.orderno  " + " from wa_classitem wc"
+				+ " inner join wa_itemgroupmember mb on wc.pk_wa_item = mb.pk_waitem "
+				+ " inner join wa_itemgroup gp on gp.pk_itemgroup = mb.pk_itemgroup "
+				+ " where mb.dr=0 and gp.dr=0 and gp.groupcode = '" + itemGroupCode + "' and wc.pk_org = '" + pk_org
+				+ "' and wc.pk_wa_class = '" + pk_wa_class + "' and wc.cyear='" + cyear + "' and wc.cperiod = '"
+				+ cperiod + "' order by orderno";
 
 		List<Map<String, Object>> groupedWaItems = (List<Map<String, Object>>) this.getBaseDAO().executeQuery(strSQL,
 				new MapListProcessor());
@@ -235,11 +251,10 @@ public class DataFormatServiceImpl implements IDataFormatService {
 
 					for (Entry<String, Object> dataEntry : wadata.entrySet()) {
 						if (!dataEntry.getKey().equals("id") && !dataEntry.getKey().equals("glbdef7")) {
-							UFDouble value = SalaryDecryptUtil.decrypt(new UFDouble(
-									String.valueOf(dataEntry.getValue())));
+							UFDouble value = new UFDouble(String.valueOf(dataEntry.getValue()));
 							if (!UFDouble.ZERO_DBL.equals(value)) {
 								String itemName = itemNames.get(dataEntry.getKey())[isForeign.booleanValue() ? 1 : 0];
-								String itemValue = value.setScale(1, UFDouble.ROUND_HALF_UP).toString();
+								String itemValue = value.toString();
 								psnItemValues.get(id).put(dataEntry.getKey(), itemName + ":" + itemValue);
 							}
 						}
@@ -271,5 +286,49 @@ public class DataFormatServiceImpl implements IDataFormatService {
 
 		}
 		return returnMap;
+	}
+
+	@Override
+	public Map<String, String> getGroupInsInfoByRecalculating(String pk_org, String pk_wa_class, String cyear,
+			String cperiod) throws BusinessException {
+		IPsndocSubInfoService4JFS recalcSvc = NCLocator.getInstance().lookup(IPsndocSubInfoService4JFS.class);
+		Map<String, Map<String, UFDouble>> calResult = recalcSvc.recalculateGroupIns(pk_org, pk_wa_class, cyear,
+				cperiod);
+
+		Map<String, String> infoReturn = new HashMap<String, String>();
+		if (calResult != null && calResult.size() > 0) {
+			for (Entry<String, Map<String, UFDouble>> calEntry : calResult.entrySet()) {
+				String id = calEntry.getKey();
+
+				if (!infoReturn.containsKey(id)) {
+					infoReturn.put(id, "");
+				}
+
+				if (calEntry.getValue() != null && calEntry.getValue().size() > 0) {
+					for (Entry<String, UFDouble> insComEntry : calEntry.getValue().entrySet()) {
+						if (insComEntry.getValue() != null && !UFDouble.ZERO_DBL.equals(insComEntry.getValue())) {
+							String insComName = getInsComNameByPK(insComEntry.getKey());
+							infoReturn.put(id, (infoReturn.get(id) + insComName + ":"
+									+ insComEntry.getValue().setScale(0, UFDouble.ROUND_HALF_UP).toString() + ";"));
+						}
+					}
+				}
+			}
+		}
+		return infoReturn;
+	}
+
+	Map<String, String> insComPKNameMap = new HashMap<String, String>();
+
+	private String getInsComNameByPK(String key) throws BusinessException {
+		if (!insComPKNameMap.containsKey(key)) {
+			DefdocVO vo = (DefdocVO) this.getBaseDAO().retrieveByPK(DefdocVO.class, key);
+			if (vo != null) {
+				insComPKNameMap.put(key, vo.getName2());
+			} else {
+				insComPKNameMap.put(key, "");
+			}
+		}
+		return insComPKNameMap.get(key);
 	}
 }

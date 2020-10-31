@@ -1,6 +1,8 @@
 package nc.ui.wa.formular;
 
 import java.awt.Dimension;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
 import javax.swing.SwingConstants;
 
@@ -19,7 +21,7 @@ import nc.vo.hr.dataio.ConstEnumFactory;
  * @author ssx
  * @date 2019-4-5
  */
-public class LeaveOverTimeFeeFunctionEditor extends WaAbstractFunctionEditor {
+public class LeaveOverTimeFeeFunctionEditor extends WaAbstractFunctionEditor implements ActionListener {
 
 	/**
 	 * serial no
@@ -34,6 +36,9 @@ public class LeaveOverTimeFeeFunctionEditor extends WaAbstractFunctionEditor {
 	// 薪资项目分组参照 Ares.Tank 2019年1月20日21:17:47
 	private UILabel groupLabel = null;
 	private UIRefPane groupRef = null;
+
+	private UILabel isHourLabel = null;
+	private UIComboBox isHourBox = null;
 
 	@Override
 	public void setModel(AbstractUIAppModel model) {
@@ -65,7 +70,7 @@ public class LeaveOverTimeFeeFunctionEditor extends WaAbstractFunctionEditor {
 	private void initialize() {
 		try {
 			setLayout(null);
-			setSize(300, 180);
+			setSize(300, 210);
 			setTitle("請選擇參數");
 
 			add(getLblIsComp(), getLblIsComp().getName());
@@ -76,6 +81,9 @@ public class LeaveOverTimeFeeFunctionEditor extends WaAbstractFunctionEditor {
 
 			add(getGroupLabel(), getGroupLabel().getName());
 			add(getGroupRef(), getGroupRef().getName());
+
+			add(getIsHourLabel(), getIsHourLabel().getName());
+			add(getIsHourBox(), getIsHourBox().getName());
 
 			add(getOkButton(), getOkButton().getName());
 			add(getCancelButton(), getCancelButton().getName());
@@ -183,14 +191,58 @@ public class LeaveOverTimeFeeFunctionEditor extends WaAbstractFunctionEditor {
 		return cboIsComp;
 	}
 
+	public UILabel getIsHourLabel() {
+		if (this.isHourLabel == null) {
+			try {
+				this.isHourLabel = new UILabel();
+				this.isHourLabel.setName("isHourLabel");
+				this.isHourLabel.setText("是否加班時數");
+				this.isHourLabel.setHorizontalAlignment(SwingConstants.RIGHT);
+				this.isHourLabel.setBounds(10, 80, 100, 22);
+			} catch (Throwable ivjExc) {
+				handleException(ivjExc);
+			}
+		}
+		return this.isHourLabel;
+	}
+
+	private UIComboBox getIsHourBox() {
+		if (isHourBox == null) {
+			try {
+				isHourBox = new UIComboBox();
+				String[] ml = new String[2];
+				ml[0] = ResHelper.getString("6013commonbasic", "06013commonbasic0270")/*
+																					 * @
+																					 * res
+																					 * "否"
+																					 */;
+				ml[1] = ResHelper.getString("6013commonbasic", "06013commonbasic0271")/*
+																					 * @
+																					 * res
+																					 * "是"
+																					 */;
+
+				Integer[] mlDefault = new Integer[] { 0, 1 };
+				ConstEnumFactory<Integer> mPairFactory = new ConstEnumFactory<Integer>(ml, mlDefault);
+				isHourBox.addItems(mPairFactory.getAllConstEnums());
+				isHourBox.setBounds(120, 80, 150, 22);
+
+				isHourBox.addActionListener(this);
+			} catch (java.lang.Throwable ivjExc) {
+				handleException(ivjExc);
+			}
+		}
+		return isHourBox;
+	}
+
 	public UILabel getGroupLabel() {
 		if (this.groupLabel == null) {
 			try {
 				this.groupLabel = new UILabel();
 				this.groupLabel.setName("UILabel3");
-				this.groupLabel.setText("薪资项目分组：");
+				this.groupLabel.setText("薪资项目分组");
 				this.groupLabel.setHorizontalAlignment(SwingConstants.RIGHT);
-				this.groupLabel.setBounds(10, 80, 100, 22);
+				this.groupLabel.setBounds(10, 110, 100, 22);
 			} catch (Throwable ivjExc) {
 				handleException(ivjExc);
 			}
@@ -214,7 +266,7 @@ public class LeaveOverTimeFeeFunctionEditor extends WaAbstractFunctionEditor {
 			groupRef.setButtonFireEvent(true);
 			groupRef.getUITextField().setShowMustInputHint(true);
 			groupRef.setName("groupRef");
-			groupRef.setBounds(120, 80, 150, 22);
+			groupRef.setBounds(120, 110, 150, 22);
 
 		}
 		return groupRef;
@@ -275,22 +327,24 @@ public class LeaveOverTimeFeeFunctionEditor extends WaAbstractFunctionEditor {
 																						 */;
 			}
 
-			if (getCboComp().getSelectedIndex() < 0) {
-				if (nullstr.length() > 0) {
-					nullstr += ",";
+			if ((Integer) getIsHourBox().getSelectdItemValue() == 0) {
+				if (getCboComp().getSelectedIndex() < 0) {
+					if (nullstr.length() > 0) {
+						nullstr += ",";
+					}
+
+					nullstr += "加班轉調休";
 				}
 
-				nullstr += "加班轉調休";
-			}
-
-			if (nullstr.length() > 0)
-				throw new Exception(nullstr + ResHelper.getString("6013commonbasic", "06013commonbasic0021")/*
-																											 * @
-																											 * res
-																											 * "不能为空！"
-																											 */);
-			if (getGroupRef().getRefPK() == null) {
-				throw new Exception("請選擇一個薪資項目分組!");
+				if (nullstr.length() > 0)
+					throw new Exception(nullstr + ResHelper.getString("6013commonbasic", "06013commonbasic0021")/*
+																												 * @
+																												 * res
+																												 * "不能为空！"
+																												 */);
+				if (getGroupRef().getRefPK() == null) {
+					throw new Exception("請選擇一個薪資項目分組!");
+				}
 			}
 			return true;
 
@@ -319,7 +373,7 @@ public class LeaveOverTimeFeeFunctionEditor extends WaAbstractFunctionEditor {
 	public UIButton getOkButton() {
 		if (okButton == null) {
 			okButton = new UIButton(ResHelper.getString("common", "UC001-0000044"));
-			okButton.setBounds(48, 128, 80, 22);
+			okButton.setBounds(48, 158, 80, 22);
 		}
 		return okButton;
 	}
@@ -327,9 +381,25 @@ public class LeaveOverTimeFeeFunctionEditor extends WaAbstractFunctionEditor {
 	public UIButton getCancelButton() {
 		if (cancelButton == null) {
 			cancelButton = new UIButton(ResHelper.getString("common", "UC001-0000008"));
-			cancelButton.setBounds(172, 128, 80, 22);
+			cancelButton.setBounds(172, 158, 80, 22);
 		}
 		return cancelButton;
+	}
+
+	@Override
+	public void actionPerformed(ActionEvent e) {
+		if (e.getSource() == getIsHourBox()) {
+			if ((Integer) getIsHourBox().getSelectdItemValue() == 1) {
+				this.getGroupRef().getUITextField().setShowMustInputHint(false);
+				this.getGroupRef().setEnabled(false);
+				this.getGroupRef().setEditable(false);
+				this.getGroupRef().setValueObj(null);
+			} else {
+				this.getGroupRef().getUITextField().setShowMustInputHint(true);
+				this.getGroupRef().setEnabled(true);
+				this.getGroupRef().setEditable(true);
+			}
+		}
 	}
 
 }

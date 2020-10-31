@@ -20,9 +20,13 @@ import nc.ui.pub.beans.UIDialog;
 import nc.ui.uif2.ShowStatusBarMsgUtil;
 import nc.ui.uif2.editor.IBillListPanelView;
 import nc.vo.hi.psndoc.PsndocVO;
+import nc.vo.ml.MultiLangUtil;
 import nc.vo.pub.BusinessException;
+import nc.vo.pub.lang.UFBoolean;
 import nc.vo.pub.lang.UFLiteralDate;
 import nc.vo.ta.timeitem.LeaveTypeCopyVO;
+
+import org.apache.commons.lang.StringUtils;
 
 public class ForceRebuildPsnSegDetailAction extends HrAction {
 
@@ -32,7 +36,7 @@ public class ForceRebuildPsnSegDetailAction extends HrAction {
 	private static final long serialVersionUID = 6101162527113648376L;
 	private IBillListPanelView listView;
 	private OTLeaveBalanceOrgPanel orgpanel;
-	String error = null;
+	private String strError;
 
 	public ForceRebuildPsnSegDetailAction() {
 		setCode("REBUILDPSNSEG");
@@ -53,6 +57,7 @@ public class ForceRebuildPsnSegDetailAction extends HrAction {
 			}
 
 			final UFLiteralDate startDate = psnSelPanel.getStartDate();
+			final UFBoolean createCurrentTerm = psnSelPanel.getCreateCurrentTerm();
 			String message = "";
 			if (startDate == null) {
 				message = "是否重建已選定員工全部分段資料？";
@@ -73,25 +78,36 @@ public class ForceRebuildPsnSegDetailAction extends HrAction {
 								ISegDetailService svc = NCLocator.getInstance().lookup(ISegDetailService.class);
 								dialog.start();
 								for (String pk_psndoc : pks) {
-									dialog.setStartText("正在重建員工 ["
-											+ ((PsndocVO) query.retrieveByPK(PsndocVO.class, pk_psndoc)).getName()
-											+ "] 分段資料...");
-									svc.forceRebuildSegDetailByPsn(pk_psndoc, startDate);
+									PsndocVO psnvo = (PsndocVO) query.retrieveByPK(PsndocVO.class, pk_psndoc);
+
+									if (psnvo != null) {
+										dialog.setStartText("<html>正在重建員工下列員工的"
+												+ (createCurrentTerm.booleanValue() ? "當期" : "全部")
+												+ "分段資料：<br />"
+												+ MultiLangUtil.getSuperVONameOfCurrentLang(psnvo, PsndocVO.NAME,
+														PsndocVO.NAME) + " [" + psnvo.getCode() + "]</html>");
+										svc.forceRebuildSegDetailByPsn(getContext().getPk_org(), pk_psndoc, startDate,
+												createCurrentTerm);
+									} else {
+										throw new BusinessException("未找到員工檔案。");
+									}
 								}
 
 							} catch (Exception e) {
-								error = e.getMessage();
+								setStrError(e.getMessage() == null ? e.toString() : e.getMessage());
 							} finally {
 								dialog.end();
 							}
 
-							return Boolean.TRUE;
+							return Boolean.FALSE;
 						}
 
 						@Override
 						protected void done() {
-							if (error != null) {
-								ShowStatusBarMsgUtil.showErrorMsg("錯誤", error, getContext());
+							if (!StringUtils.isEmpty(getStrError())) {
+								ShowStatusBarMsgUtil.showErrorMsg("錯誤", getStrError(), getContext());
+							} else {
+								ShowStatusBarMsgUtil.showStatusBarMsg("重建分段完畢。", getContext());
 							}
 						}
 					}.execute();
@@ -130,6 +146,21 @@ public class ForceRebuildPsnSegDetailAction extends HrAction {
 
 	public void setOrgpanel(OTLeaveBalanceOrgPanel orgpanel) {
 		this.orgpanel = orgpanel;
+	}
+
+	/**
+	 * @return strError
+	 */
+	public String getStrError() {
+		return strError;
+	}
+
+	/**
+	 * @param strError
+	 *            要設定的 strError
+	 */
+	public void setStrError(String strError) {
+		this.strError = strError;
 	}
 
 }

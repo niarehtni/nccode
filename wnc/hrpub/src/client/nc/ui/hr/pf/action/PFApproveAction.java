@@ -134,11 +134,17 @@ public class PFApproveAction extends PFBaseAction implements IBesideApproveConte
 			}
 		}
 		// 如果apprRetObj不为空，则回写结束日期到人员信息子集健保信息和劳健退子集 he
-		if (null != apprRetObj) {
-			AggStapply[] aggvos = (AggStapply[]) apprRetObj.getRetObj();
-
-			NCLocator.getInstance().lookup(IPsndocSubInfoService4JFS.class).finishInsurance(aggvos);
-		}
+		// 使用離職申請/審批，如申請日與生效日不同，會出現異常  by George 20200521 缺陷Bug #35332
+		// 節點: 離職審批 的 審批 按鈕，因為多了一個 執行 按鈕經過修改，這個功能已經被移植到 執行 按鈕中
+		// 這裡不再需要這段代碼，不然會重複執行、影響功能
+		// 審批 按鈕在下面 174行 getModel().saveAfterBatchApprove(al.toArray(new Object[0]));
+		// 會依照 生效日期 與 當下時間 比較看要不要執行 執行 按鈕功能
+		// 如果 生效日期 > 當下時間 不執行，生效日期 <= 當下時間 執行
+//		if (null != apprRetObj) {
+//			AggStapply[] aggvos = (AggStapply[]) apprRetObj.getRetObj();
+//
+//			NCLocator.getInstance().lookup(IPsndocSubInfoService4JFS.class).finishInsurance(aggvos);
+//		}
 
 		// 错误信息两部分,审批错误与执行错误
 		String errMsg = "";

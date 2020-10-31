@@ -8,6 +8,7 @@ import nc.bs.businessevent.BusinessEvent;
 import nc.bs.businessevent.IBusinessEvent;
 import nc.bs.businessevent.IBusinessListener;
 import nc.bs.dao.BaseDAO;
+import nc.bs.dao.DAOException;
 import nc.bs.framework.common.NCLocator;
 import nc.itf.hr.wa.IPsndocwadocManageService;
 import nc.itf.ta.IPsnCalendarManageService;
@@ -23,6 +24,7 @@ import nc.vo.hi.pub.HiEventValueObject;
 import nc.vo.pub.BusinessException;
 import nc.vo.pub.VOStatus;
 import nc.vo.pub.lang.UFLiteralDate;
+import nc.vo.ta.psndoc.TBMPsndocVO;
 
 import org.apache.commons.lang.StringUtils;
 
@@ -48,6 +50,7 @@ public class PsnjobShiftChangeBusinessListener implements IBusinessListener {
 
 		dealPsnShift(hiEventValueObjectArray, eventObject);
 		dealPsnWaDoc(hiEventValueObjectArray, eventObject);
+
 	}
 
 	private HiEventValueObject[] handleEventParamters(Object eventParams) {
@@ -80,6 +83,14 @@ public class PsnjobShiftChangeBusinessListener implements IBusinessListener {
 		List<PsnJobVO> jobList = new ArrayList<>();
 
 		for (HiEventValueObject vo : eventVOs) {
+			PsnJobVO newPsnJob = vo.getPsnjob_after();
+			loadSysRefs(newPsnJob);
+
+			// 留停期间产生的异动不生成考勤档案
+			if (isInTermLeave(newPsnJob)) {
+				continue;
+			}
+
 			jobList.add(vo.getPsnjob_after());
 		}
 		if (jobList.size() > 0) {
@@ -88,15 +99,43 @@ public class PsnjobShiftChangeBusinessListener implements IBusinessListener {
 		}
 	}
 
+	private void loadSysRefs(PsnJobVO newPsnJob) throws BusinessException {
+		// 留停異動類型
+		refTransType = SysInitQuery.getParaString(newPsnJob.getPk_hrorg(), "TWHR11").toString();
+		// 複職異動類型
+		refReturnType = SysInitQuery.getParaString(newPsnJob.getPk_hrorg(), "TWHR12").toString();
+
+		if (refTransType == null || refTransType.equals("~")) {
+			throw new BusinessException("系統參數 [TWHR11] 未指定用於留停的異動類型。");
+		}
+
+		if (refReturnType == null || refReturnType.equals("~")) {
+			throw new BusinessException("系統參數 [TWHR12] 未指定用於留停複職的異動類型。");
+		}
+	}
+
+	private boolean isInTermLeave(PsnJobVO newPsnJob) throws DAOException {
+		String isTermLeave = "N";
+		if (!refReturnType.equals(newPsnJob.getTrnstype())) {
+			isTermLeave = (String) this.getBaseDao()
+					.executeQuery(
+							"SELECT CASE WHEN LeaveCount > ReturnCount  THEN 'Y' ELSE 'N' END ISTERMLEAVE FROM  (SELECT  SUM(CASE WHEN trnstype='"
+									+ refTransType + "' THEN 1 ELSE 0 END) LeaveCount, SUM(CASE WHEN trnstype='"
+									+ refReturnType
+									+ "'  THEN 1  ELSE 0 END) ReturnCount FROM hi_psnjob WHERE  pk_psndoc = '"
+									+ newPsnJob.getPk_psndoc() + "' AND begindate < '"
+									+ newPsnJob.getBegindate().toString() + "' AND pk_psnorg = '"
+									+ newPsnJob.getPk_psnorg() + "' GROUP BY pk_psndoc, pk_psnorg) tmp",
+							new ColumnProcessor());
+		}
+		return "Y".equals(isTermLeave);
+	}
+
 	private void dealPsnShift(HiEventValueObject[] eventVOs, IBusinessEvent eventObject) throws BusinessException {
 		for (HiEventValueObject vo : eventVOs) {
 			PsnJobVO oldPsnJob = vo.getPsnjob_before();
 			PsnJobVO newPsnJob = vo.getPsnjob_after();
-
-			// 留停異動類型
-			refTransType = SysInitQuery.getParaString(newPsnJob.getPk_hrorg(), "TWHR11").toString();
-			// 複職異動類型
-			refReturnType = SysInitQuery.getParaString(newPsnJob.getPk_hrorg(), "TWHR12").toString();
+			loadSysRefs(newPsnJob);
 
 			// ssx added on 2019-11-16
 			// 如果修改的不是最新的記錄則不影響班次等記錄
@@ -107,6 +146,11 @@ public class PsnjobShiftChangeBusinessListener implements IBusinessListener {
 			// 離職情況不處理
 			if (newPsnJob.getTrnsevent() == 4) {
 				return;
+			}
+
+			// 留停期间产生的异动不生成考勤档案
+			if (isInTermLeave(newPsnJob)) {
+				continue;
 			}
 
 			String pk_hrorg = vo.getPk_hrorg();
@@ -165,11 +209,15 @@ public class PsnjobShiftChangeBusinessListener implements IBusinessListener {
 		// 取人员在职日最后一日
 		// 取日期较小的一个
 		String strSQL = "select calendar from tbm_psncalendar where pk_psndoc in (select pk_psndoc from hi_psnjob where pk_psnjob in (select pk_psnjob from bd_team_b where cteamid = '"
-				+ cteamid + "')) and calendar<='" + psnjobEnddate + "' order by calendar desc";
+				+ cteamid
+				+ "')) and calendar<='"
+				+ psnjobEnddate
+				+ "' and (select count(pk_period) from tbm_period where pk_org = TBM_PSNCALENDAR.PK_ORG and CALENDAR between BEGINDATE and ENDDATE) > 0 order by calendar desc";
 		String maxDate = (String) this.getBaseDao().executeQuery(strSQL, new ColumnProcessor());
 		return new UFLiteralDate(StringUtils.isEmpty(maxDate) ? psnjobEnddate : maxDate);
 	}
 
+	@SuppressWarnings("unchecked")
 	private void changeShiftGroup(String pk_hrorg, PsnJobVO oldPsnJob, PsnJobVO newPsnJob, IBusinessEvent eventObject)
 			throws BusinessException {
 		TeamItemVO[] updatedTeamItems = null;
@@ -179,8 +227,26 @@ public class PsnjobShiftChangeBusinessListener implements IBusinessListener {
 			updatedTeamItems = finishOldShift(oldPsnJob, newPsnJob, eventObject);
 		}
 		// 開始新班組
-		if (!existsOverlapTeam(newPsnJob, updatedTeamItems) && !isExit(newPsnJob)) {
-			NCLocator.getInstance().lookup(IPsndocwadocManageService.class).generateTeamItem(newPsnJob);
+		if (!existsOverlapTeam(newPsnJob, updatedTeamItems)) {
+			if (!isExit(newPsnJob)) {
+				NCLocator.getInstance().lookup(IPsndocwadocManageService.class).generateTeamItem(newPsnJob);
+			}
+		} else {
+			if (!StringUtils.isEmpty((String) newPsnJob.getAttributeValue("jobglbdef7"))) {
+				Collection<TBMPsndocVO> tpsnvos = this.getBaseDao().retrieveByClause(TBMPsndocVO.class,
+						"pk_psnjob='" + (String) newPsnJob.getPk_psnjob() + "'");
+				if (tpsnvos != null && tpsnvos.size() > 0) {
+					tpsnvos.toArray(new TBMPsndocVO[0])[0].setBegindate(newPsnJob.getBegindate());
+					tpsnvos.toArray(new TBMPsndocVO[0])[0]
+							.setEnddate(newPsnJob.getEnddate() == null ? new UFLiteralDate("9999-12-01") : tpsnvos
+									.toArray(new TBMPsndocVO[0])[0].getEnddate());
+					tpsnvos.toArray(new TBMPsndocVO[0])[0].setStatus(VOStatus.UPDATED);
+					tpsnvos.toArray(new TBMPsndocVO[0])[0].setPk_team((String) newPsnJob
+							.getAttributeValue("jobglbdef7"));
+					this.getBaseDao().updateVO(tpsnvos.toArray(new TBMPsndocVO[0])[0]);
+				}
+				NCLocator.getInstance().lookup(IPsndocwadocManageService.class).sync2TeamCalendar(newPsnJob);
+			}
 		}
 	}
 
@@ -199,7 +265,11 @@ public class PsnjobShiftChangeBusinessListener implements IBusinessListener {
 	private boolean existsOverlapTeam(PsnJobVO newPsnJob, TeamItemVO[] updatedTeamItems) throws BusinessException {
 		String strSQL = "select cteam_bid from bd_team_b where cworkmanid = '" + newPsnJob.getPk_psndoc()
 				+ "' and dstartdate <= '" + (newPsnJob.getEnddate() == null ? "9999-12-31" : newPsnJob.getEnddate())
-				+ "' and isnull(denddate, '9999-12-31') >= '" + newPsnJob.getBegindate() + "' and dr=0";
+				+ "' and isnull(denddate, '9999-12-31') >= '" + newPsnJob.getBegindate() + "' and dr=0"
+				// ssx added on 2020-09-09
+				// 當前異動記錄已有對應班組的均為已存在
+				+ " or pk_psnjob='" + newPsnJob.getPk_psnjob() + "'";
+		//
 
 		List<String> itempks = (List<String>) this.getBaseDao().executeQuery(strSQL, new ColumnListProcessor());
 
@@ -236,8 +306,11 @@ public class PsnjobShiftChangeBusinessListener implements IBusinessListener {
 
 		// 舊班組為空時，不做結束動作
 		if (!StringUtils.isEmpty(oldShift)) {
-			Collection<TeamItemVO> itemVOs = this.getBaseDao().retrieveByClause(TeamItemVO.class,
-					"cteamid='" + oldShift + "' and isnull(dr,0)=0 and cworkmanid = '"+newPsnJob.getPk_psndoc()+"'");
+			Collection<TeamItemVO> itemVOs = this.getBaseDao()
+					.retrieveByClause(
+							TeamItemVO.class,
+							"cteamid='" + oldShift + "' and isnull(dr,0)=0 and cworkmanid = '"
+									+ newPsnJob.getPk_psndoc() + "'");
 
 			for (TeamItemVO vo : itemVOs) {
 				if (vo.getCworkmanid().equals(newPsnJob.getPk_psndoc())) {
@@ -245,25 +318,36 @@ public class PsnjobShiftChangeBusinessListener implements IBusinessListener {
 					// 在班組同一個人有多條記錄時，不能所有都設定結束日期
 					UFLiteralDate originEnddate = vo.getDenddate() == null ? new UFLiteralDate("9999-12-31") : vo
 							.getDenddate();
-					UFLiteralDate newJobEnddate = newPsnJob.getEnddate() ==null?new UFLiteralDate("9999-12-31"):newPsnJob.getEnddate();
-					
-					String oldTeamId = (oldPsnJob==null || oldPsnJob.getAttributeValue("jobglbdef7")==null)?
-							"":(String)oldPsnJob.getAttributeValue("jobglbdef7");
-					String newTeamId = (newPsnJob==null || newPsnJob.getAttributeValue("jobglbdef7")==null)?
-							"":(String)newPsnJob.getAttributeValue("jobglbdef7");
-					if (vo.getDstartdate().before(newPsnJob.getBegindate().getDateBefore(1))
-							&& originEnddate.after(newPsnJob.getBegindate().getDateBefore(1))) {
+					UFLiteralDate newJobEnddate = newPsnJob.getEnddate() == null ? new UFLiteralDate("9999-12-31")
+							: newPsnJob.getEnddate();
+
+					String oldTeamId = (oldPsnJob == null || oldPsnJob.getAttributeValue("jobglbdef7") == null) ? ""
+							: (String) oldPsnJob.getAttributeValue("jobglbdef7");
+					String newTeamId = (newPsnJob == null || newPsnJob.getAttributeValue("jobglbdef7") == null) ? ""
+							: (String) newPsnJob.getAttributeValue("jobglbdef7");
+
+					// ssx added on 2020-09-09
+					// 當更新異動記錄時(非新增)，只調整班次時間
+					if (oldPsnJob.getPk_psnjob().equals(newPsnJob.getPk_psnjob())
+							&& vo.getPk_psnjob().equals(newPsnJob.getPk_psnjob())) {
+						vo.setDstartdate(newPsnJob.getBegindate());
+						vo.setDenddate(newPsnJob.getEnddate());
+						vo.setStatus(VOStatus.UPDATED);
+						updateItemVOs.add(vo);
+					} //
+					else if ((vo.getDstartdate().before(newPsnJob.getBegindate().getDateBefore(1)) && originEnddate
+							.after(newPsnJob.getBegindate().getDateBefore(1)))
+							|| (originEnddate.equals(newJobEnddate) && newJobEnddate.equals("9999-12-31"))) {
 						vo.setDenddate(newPsnJob.getBegindate().getDateBefore(1));
 						vo.setStatus(VOStatus.UPDATED);
 						updateItemVOs.add(vo);
-					}else if(vo.getDstartdate().isSameDate(newPsnJob.getBegindate())
-						&& originEnddate.isSameDate(newJobEnddate)
-						&& !oldTeamId.equals(newTeamId)){
-					    	//tank 异动的时候,只修改班组的情况
-					    	vo.setStatus(VOStatus.DELETED);
-					    	updateItemVOs.add(vo);
+					} else if (vo.getDstartdate().isSameDate(newPsnJob.getBegindate())
+							&& originEnddate.isSameDate(newJobEnddate) && !oldTeamId.equals(newTeamId)) {
+						// tank 异动的时候,只修改班组的情况
+						vo.setStatus(VOStatus.DELETED);
+						updateItemVOs.add(vo);
 					}
-					
+
 				}
 			}
 

@@ -21,7 +21,11 @@ public class GroupInsuranceFormularTableCreator implements IFormulaTableCreator 
 																	 */;
 	public static String GROUPINS_BASECALC_NAME = nc.vo.ml.NCLangRes4VoTransl
 			.getNCLangRes().getStrByID("68J61035", "01035001-0001")/* @res 保薪基数 */;
+	public static String GROUPINS_COVERAGE_NAME = nc.vo.ml.NCLangRes4VoTransl
+			.getNCLangRes().getStrByID("68J61035", "01035001-0011")/* @res 劳保投保级距 */;
 	public static String GROUPINS_BASECALC_CODE = "glbdef6";
+	/* @res 劳保投保级距code */
+	public static String GROUPINS_COVERAGE_CODE = "glbdef4";
 
 	public List<FormulaItem> getAllTables() throws BusiBeanException {
 		List<FormulaItem> items = new ArrayList();

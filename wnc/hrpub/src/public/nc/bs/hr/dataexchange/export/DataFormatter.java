@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -20,6 +21,7 @@ import nc.vo.pub.lang.UFDouble;
 
 import org.apache.commons.lang.ObjectUtils;
 import org.apache.commons.lang.StringUtils;
+import org.mozilla.javascript.edu.emory.mathcs.backport.java.util.Arrays;
 
 public class DataFormatter {
 	private Map<String, String> jointTables;
@@ -53,6 +55,7 @@ public class DataFormatter {
 		Map<Integer, Map<String, String>> lineFieldValueMap = new HashMap<Integer, Map<String, String>>();
 		Map<Integer, Map<String, Integer>> lineFieldDataSourceMap = new HashMap<Integer, Map<String, Integer>>();
 		Map<Integer, List<String>> lineGroupByMap = new HashMap<Integer, List<String>>();
+		Map<Integer, List<String>> lineOrderByMap = new HashMap<Integer, List<String>>();
 		List<String> apiList = new ArrayList<String>();
 		List<Map> formats = getFormatService().getFormatByCode(this.getFormatterCode());
 
@@ -64,6 +67,8 @@ public class DataFormatter {
 			appendLineJoinMap(lineJoinMap, format, lineNo);
 			// 行-字段-取值
 			appendListFieldValueMap(lineFieldValueMap, lineGroupByMap, format, lineNo);
+			// 行-字段-排序
+			appendListOrderByMap(lineOrderByMap, format, lineNo);
 			// 行-字段-數據源
 			appendListFieldDataSourceMap(lineFieldDataSourceMap, format, lineNo);
 			// 行-條件鍵
@@ -111,7 +116,8 @@ public class DataFormatter {
 			for (Map line : rstEntry.getValue()) {
 				Map<String, Object> realLine = (Map<String, Object>) line;
 				for (Entry<String, Object> valentry : realLine.entrySet()) {
-					valentry.setValue(replaceFunctions(lineResults, String.valueOf(valentry.getValue())));
+					valentry.setValue(replaceFunctions(lineResults,
+							(valentry.getValue() == null ? "" : String.valueOf(valentry.getValue()))));
 				}
 			}
 		}
@@ -127,7 +133,10 @@ public class DataFormatter {
 			}
 			// 根據當前結果行找到行格式集
 			List<Map<String, Object>> formatList = getLineFormat(formats, entry.getKey());
-			for (Map<String, Object> lineRec : entry.getValue()) {
+
+			Map<String, Object>[] sortedMapList = resultListSort(entry.getValue(), lineOrderByMap.get(entry.getKey()));
+
+			for (Map<String, Object> lineRec : sortedMapList) {
 				String strProRes = "";
 				for (int i = 0; i < formatList.size(); i++) {
 					// 行格式集中定義的位置順序
@@ -166,7 +175,9 @@ public class DataFormatter {
 								if (enabled) {
 									if (formatList.get(i).get("splitter") != null) {
 										strProRes += ((String) formatList.get(i).get("splitter")).trim().equals(
-												"%ENTER%") ? "\r\n" : (String) itemVal.getValue();
+												"%ENTER%") ? "\r\n"
+												: (getFormattedText(itemVal, formatList.get(i)) + ((String) formatList
+														.get(i).get("splitter")).trim());
 									} else {
 										strProRes += getFormattedText(itemVal, formatList.get(i));
 									}
@@ -180,6 +191,59 @@ public class DataFormatter {
 			}
 		}
 		return resultList.toArray(new String[0]);
+	}
+
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	private Map<String, Object>[] resultListSort(List<Map> valueMapList, List<String> orderByList) {
+		Object[] valueMaps = valueMapList.toArray();
+
+		if (orderByList != null && orderByList.size() > 0) {
+			for (int i = 0; i < valueMaps.length - 1; i++) {
+				Map<String, Object> valueMapA = (Map<String, Object>) valueMaps[i];
+				String keyA = getKey(valueMapA, orderByList);
+
+				for (int j = i + 1; j < valueMaps.length; j++) {
+					Map<String, Object> valueMapB = (Map<String, Object>) valueMaps[j];
+					String keyB = getKey(valueMapB, orderByList);
+
+					if (keyA.compareTo(keyB) > 0) {
+						Map<String, Object> valueEx = valueMapA;
+						valueMapA = valueMapB;
+						valueMaps[i] = valueMapB;
+						valueMapB = valueEx;
+						valueMaps[j] = valueEx;
+
+						keyA = getKey(valueMapA, orderByList);
+						keyB = getKey(valueMapB, orderByList);
+					}
+				}
+			}
+		}
+
+		return (Map<String, Object>[]) Arrays.asList(valueMaps).toArray(new HashMap[0]);
+	}
+
+	private String getKey(Map<String, Object> valueMap, List<String> orderByList) {
+		String key = "";
+		for (String orderBy : orderByList) {
+			key += valueMap.get(orderBy.split(":")[1].toLowerCase());
+		}
+		return key;
+	}
+
+	private void appendListOrderByMap(Map<Integer, List<String>> lineOrderByMap, Map format, int lineNo) {
+		if (!lineOrderByMap.containsKey(lineNo)) {
+			lineOrderByMap.put(lineNo, new ArrayList<String>());
+		}
+
+		if (format.get("orderno") != null) {
+			lineOrderByMap.get(lineNo).add(
+					String.format("%09d", (Integer) format.get("orderno")) + ":" + format.get("itemcode"));
+		}
+
+		if (lineOrderByMap.get(lineNo).size() > 1) {
+			Collections.sort(lineOrderByMap.get(lineNo));
+		}
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
@@ -197,13 +261,17 @@ public class DataFormatter {
 							String[] refs = strRef.replace("%", "").split(":");
 							String methodName = refs[1];
 
-							if (methodName.equals("GETTEXTINFO")) {
+							if (methodName.equals("GETTEXTINFO") || methodName.equals("GETGROUPINSINFO")) {
 								String keyItemCode = refs[2]; // IDNUMBER
 
 								if (apiResultMap.containsKey(methodName)) {
 									Map<String, String> value = (Map<String, String>) apiResultMap.get(methodName);
-									itemvalue = itemvalue.replace(strRef,
-											value.get(result.get(keyItemCode.toLowerCase())));
+									String valueKey = (String) result.get(keyItemCode.toLowerCase());
+									if (value.containsKey(valueKey)) {
+										itemvalue = itemvalue.replace(strRef, value.get(valueKey));
+									} else {
+										itemvalue = itemvalue.replace(strRef, "");
+									}
 								} else {
 									itemvalue = itemvalue.replace(strRef, "");
 								}
@@ -300,7 +368,17 @@ public class DataFormatter {
 			if (api.toUpperCase().equals("GETTEXTINFO")) {
 				Map<String, String> strResult = this.getFormatService().getWaItemGroupColumnsByItemGroup(
 						this.getPk_org(), this.getClassid(), String.valueOf(this.getiYear()),
-						this.getStartPeriod().substring(4), "WAEXPGROUP01", 6, 33);
+						this.getStartPeriod().substring(4), "WAEXPGROUP01", 5, 33);
+
+				if (strResult != null && strResult.size() > 0) {
+					apiResultMap.put(api.toUpperCase(), strResult);
+				} else {
+					apiResultMap.put(api.toUpperCase(), null);
+				}
+			} else if (api.toUpperCase().equals("GETGROUPINSINFO")) {
+				Map<String, String> strResult = this.getFormatService().getGroupInsInfoByRecalculating(
+						this.getPk_org(), this.getClassid(), String.valueOf(this.getiYear()),
+						this.getStartPeriod().substring(4));
 
 				if (strResult != null && strResult.size() > 0) {
 					apiResultMap.put(api.toUpperCase(), strResult);
@@ -417,8 +495,10 @@ public class DataFormatter {
 				value = new UFDouble(String.valueOf(itemVal.getValue())).toString();
 			}
 		} else {
-			value = ObjectUtils.toString(itemVal.getValue());
+			value = itemVal.getValue() == null ? "" : ObjectUtils.toString(itemVal.getValue());
 		}
+
+		value = value == null ? null : value.trim();
 
 		if (datatype == 3) {
 			if (isFoceChinese.booleanValue()) {
@@ -767,6 +847,8 @@ public class DataFormatter {
 							value = ((Long) lineResultsMap.get(tarLine).get(j).get(tarField)).doubleValue();
 						} else if (lineResultsMap.get(tarLine).get(j).get(tarField) instanceof BigDecimal) {
 							value = ((BigDecimal) lineResultsMap.get(tarLine).get(j).get(tarField)).doubleValue();
+						} else if (lineResultsMap.get(tarLine).get(j).get(tarField) instanceof Integer) {
+							value = (Integer) lineResultsMap.get(tarLine).get(j).get(tarField);
 						}
 						if (value < minvalue) {
 							minvalue = value;
@@ -795,6 +877,8 @@ public class DataFormatter {
 							value = ((Long) lineResultsMap.get(tarLine).get(j).get(tarField)).doubleValue();
 						} else if (lineResultsMap.get(tarLine).get(j).get(tarField) instanceof BigDecimal) {
 							value = ((BigDecimal) lineResultsMap.get(tarLine).get(j).get(tarField)).doubleValue();
+						} else if (lineResultsMap.get(tarLine).get(j).get(tarField) instanceof Integer) {
+							value = (Integer) lineResultsMap.get(tarLine).get(j).get(tarField);
 						}
 						if (value > maxvalue) {
 							maxvalue = value;

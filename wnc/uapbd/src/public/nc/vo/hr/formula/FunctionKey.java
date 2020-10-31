@@ -111,9 +111,10 @@ public class FunctionKey {
 	 */
 	public static final String PAYDATA = "PAYDATA";// 取指定类别的相同薪资期间的薪资项目数据
 	public static final String PAYDATAAB = "PAYDATAAB";// 薪资统计数_相对时间段
+	public static final String PAYDATAOP = "PAYDATAOP";// 薪资统计数_绝对时间段
 
 	public static final String PAYDATAITEM = "PAYDATAITEM";// 薪资函数:按期间项目取数
-	public static final String PAYDATAOP = "PAYDATAOP";// 薪资统计数_绝对时间段
+	public static final String PAYDATAOPNO = "PAYDATAOPNO";// 薪资统计数_绝对时间段_不含离职
 
 	public static final String PAYDATAPD = "PAYDATAPD";// 取指定类别指定期间的薪资数据
 	public static final String PAYDATASF = "PAYDATASF";// 团队统计函数

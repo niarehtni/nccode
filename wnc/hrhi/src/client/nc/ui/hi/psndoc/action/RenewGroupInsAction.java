@@ -4,19 +4,15 @@ import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 import java.util.List;
 
-
 import javax.swing.JComponent;
 import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
 
 import nc.bs.framework.common.NCLocator;
-import nc.bs.uif2.LockFailedException;
-import nc.bs.uif2.VersionConflictException;
 import nc.itf.hi.IPsndocSubInfoService4JFS;
 import nc.pubitf.para.SysInitQuery;
 import nc.ui.hi.employee.model.EmployeePsndocModel;
 import nc.ui.hi.employee.view.GinsPeriodChooseDlg;
-import nc.ui.hi.employee.view.PeriodChooseDlg;
 import nc.ui.hr.caculate.view.BannerTimerDialog;
 import nc.ui.hr.uif2.action.HrAction;
 import nc.ui.pub.beans.UIDialog;
@@ -38,10 +34,10 @@ public class RenewGroupInsAction extends HrAction {
 	private EmployeePsndocModel model;
 	private String errorMessage = "";
 	private UFDate cBaseDate = null;
-	
 
 	/**
 	 * 生效日期
+	 * 
 	 * @return
 	 */
 	public UFDate getcBaseDate() {
@@ -51,6 +47,7 @@ public class RenewGroupInsAction extends HrAction {
 	public void setcBaseDate(UFDate cBaseDate) {
 		this.cBaseDate = cBaseDate;
 	}
+
 	public RenewGroupInsAction() {
 		this.setBtnName("同步團保基數");
 		this.setCode("RenewGroupInsAction");
@@ -58,17 +55,15 @@ public class RenewGroupInsAction extends HrAction {
 
 	@Override
 	public void doAction(ActionEvent arg0) throws Exception {
-		if (getModel().getSelectedOperaRows() == null
-				|| getModel().getSelectedOperaRows().length == 0) {
+		if (getModel().getSelectedOperaRows() == null || getModel().getSelectedOperaRows().length == 0) {
 			errorMessage = "同步團保基數發生錯誤：" + "請選擇要進行同步的員工";
 			this.putValue("message_after_action", errorMessage);
 			return;
 		}
 
 		JComponent parentUi = getModel().getContext().getEntranceUI();
-		GinsPeriodChooseDlg dlg = new GinsPeriodChooseDlg(parentUi,
-				nc.vo.ml.NCLangRes4VoTransl.getNCLangRes().getStrByID(
-						"twhr_personalmgt", "068J61035-0093")/* @res 請選擇有效日期 */);
+		GinsPeriodChooseDlg dlg = new GinsPeriodChooseDlg(parentUi, nc.vo.ml.NCLangRes4VoTransl.getNCLangRes()
+				.getStrByID("twhr_personalmgt", "068J61035-0093")/* @res 請選擇有效日期 */);
 
 		dlg.initUI();
 		dlg.setContext(this.getContext());
@@ -79,9 +74,8 @@ public class RenewGroupInsAction extends HrAction {
 			this.setcBaseDate(dlg.getcBaseDate());
 
 			new SwingWorker() {
-				BannerTimerDialog dialog = new BannerTimerDialog(
-						SwingUtilities.getWindowAncestor(getModel()
-								.getContext().getEntranceUI()));
+				BannerTimerDialog dialog = new BannerTimerDialog(SwingUtilities.getWindowAncestor(getModel()
+						.getContext().getEntranceUI()));
 				String error = null;
 
 				protected Boolean doInBackground() throws Exception {
@@ -92,24 +86,16 @@ public class RenewGroupInsAction extends HrAction {
 						Object[] rows = getModel().getSelectedOperaDatas();
 						List<String> pk_psndocs = new ArrayList<String>();
 						for (Object row : rows) {
-							pk_psndocs.add(((PsndocAggVO) row).getParentVO()
-									.getPk_psndoc());
+							pk_psndocs.add(((PsndocAggVO) row).getParentVO().getPk_psndoc());
 						}
 
 						// 獲取資料
-						IPsndocSubInfoService4JFS service = NCLocator
-								.getInstance().lookup(
-										IPsndocSubInfoService4JFS.class);
-						service.renewGroupIns(getContext().getPk_org(),
-								pk_psndocs.toArray(new String[0]),
+						IPsndocSubInfoService4JFS service = NCLocator.getInstance().lookup(
+								IPsndocSubInfoService4JFS.class);
+						service.renewGroupIns(getContext().getPk_org(), pk_psndocs.toArray(new String[0]),
 								getcBaseDate());
 
-					} catch (LockFailedException le) {
-						error = le.getMessage();
-					} catch (VersionConflictException le) {
-						throw new BusinessException(le.getBusiObject()
-								.toString(), le);
-					} catch (Exception e) {
+					} catch (Throwable e) {
 						error = e.getMessage();
 					} finally {
 						dialog.end();
@@ -153,16 +139,15 @@ public class RenewGroupInsAction extends HrAction {
 			return false;
 		} else {
 			try {
-				return SysInitQuery.getParaBoolean(
-						this.getContext().getPk_org(), "TWHR06").booleanValue();
+				return SysInitQuery.getParaBoolean(this.getContext().getPk_org(), "TWHR06").booleanValue();
 			} catch (BusinessException e) {
 				ShowStatusBarMsgUtil.showStatusBarMsg(
-						nc.vo.ml.NCLangRes4VoTransl.getNCLangRes().getStrByID(
-								"twhr_personalmgt", "068J61035-0010")/*
-																	 * @res
-																	 * 取臺灣勞健保參數發生錯誤
-																	 * ：
-																	 */
+						nc.vo.ml.NCLangRes4VoTransl.getNCLangRes().getStrByID("twhr_personalmgt", "068J61035-0010")/*
+																													 * @
+																													 * res
+																													 * 取臺灣勞健保參數發生錯誤
+																													 * ：
+																													 */
 								+ e.getMessage(), getModel().getContext());
 			}
 		}

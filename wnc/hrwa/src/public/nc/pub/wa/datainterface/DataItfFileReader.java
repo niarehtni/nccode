@@ -62,14 +62,14 @@ public class DataItfFileReader {
 				|| filePath.toLowerCase().trim().endsWith(DataItfConst.SUFFIX_XLSX);
 	}
 
-	public static DataVO[] readFileSD(String filePath, WaLoginContext waContext, ImpParamVO paraVO) throws Exception {
+	public static DataVO[] readFileSD(String filePath, WaLoginContext waContext, ImpParamVO paraVO, int type)
+			throws Exception {
 		if (StringUtils.isNotBlank(filePath)) {
 			DataVO[] datas = null;
 			if (isCsvFile(filePath)) {
 				datas = readCsvSD(filePath, waContext, paraVO);
 			} else if (isExcelFile(filePath)) {
-				// datas = readExcelSD(filePath, waContext, paraVO);
-				datas = readBigExcelSD(filePath, waContext, paraVO);
+				datas = readBigExcelSD(filePath, waContext, paraVO, type);
 			}
 			return datas;
 		}
@@ -83,7 +83,6 @@ public class DataItfFileReader {
 			if (isCsvFile(filePath)) {
 				datas = readCsvSOD(filePath, waContext, paraVO);
 			} else if (isExcelFile(filePath)) {
-				// datas = readExcelSOD(filePath, waContext, paraVO);
 				datas = readBigExcelSOD(filePath, waContext, paraVO);
 			}
 			return datas;
@@ -244,7 +243,6 @@ public class DataItfFileReader {
 			if (isCsvFile(filePath)) {
 				datas = readCsvBD(filePath, waContext, paraVO);
 			} else if (isExcelFile(filePath)) {
-				// datas = readExcelBD(filePath, waContext, paraVO);
 				datas = readBigExcelBD(filePath, waContext, paraVO);
 			}
 			return datas;
@@ -406,10 +404,10 @@ public class DataItfFileReader {
 					dvo.setPk_banktype1(pk_banktype);
 
 					for (int i = 5; i < ary.length; i++) {
-						//格式更改 tank 2020年1月31日00:27:36 薪资数据导入按指定格式
-					    /*if (i == 32) {
-							continue;
-						}*/
+						// 格式更改 tank 2020年1月31日00:27:36 薪资数据导入按指定格式
+						/*
+						 * if (i == 32) { continue; }
+						 */
 						MappingFieldVO mappVO = indexItemKeyMap.get(String.valueOf(i));
 						if (null == mappVO) {
 							continue;
@@ -908,183 +906,11 @@ public class DataItfFileReader {
 		return voList.toArray(new BonusOthBuckVO[0]);
 	}
 
-	public static DataVO[] readExcelSD(String filePath, final WaLoginContext waContext, final ImpParamVO paraVO)
-			throws Exception {
+	public static DataVO[] readBigExcelSD(String filePath, final WaLoginContext waContext, final ImpParamVO paraVO,
+			final int type) throws Exception {
 		final List<DataVO> voList = new ArrayList<DataVO>();
 		final StringBuilder errImpMsg = new StringBuilder();
 		paraVO.countReset();
-		final Map<String, HRDeptVO> codeDeptVOMap = paraVO.getCodeDeptVOMap();
-		final Map<String, PsndocVO> codePsnVOMap = paraVO.getCodePsnVOMap();
-		final Map<String, PsndocVO> codeDeptPsnVOMap = paraVO.getCodeDeptPsnVOMap();
-		final Map<String, BankAccbasVO> codeBankVOMap = paraVO.getCodeBankVOMap();
-		final Map<String, MappingFieldVO> indexItemKeyMap = paraVO.getIndexItemKeyMap();
-		if (null == indexItemKeyMap || indexItemKeyMap.isEmpty()) {
-			// Mapping表(wa_imp_fieldmapping)中没有找到类型[{0}]的薪资项目对应字段信息!
-			throw new Exception(ResHelper.getString("6013dataitf_01", "dataitf-01-0041", null,
-					new String[] { String.valueOf(MappingFieldVO.TYPE_SD) }));
-		}
-		FileUtils.readExcel(filePath, new IExcelRowReader() {
-
-			@Override
-			public boolean readRow(int sheetNo, int rowNo, Row row) throws Exception {
-				if (null != row) {
-					paraVO.countIncrement();
-					if (paraVO.getCount() <= paraVO.getStartIndex()) {
-						return true;
-					}
-
-					String deptCode = getCellValue(row.getCell(0)); // 部门编码
-					String deptName = getCellValue(row.getCell(1)); // 部门名称
-					String psnCode = getCellValue(row.getCell(2)); // 人员编码
-					String psnName = getCellValue(row.getCell(3)); // 人员名称
-					String yearmonth = getCellValue(row.getCell(4)); // 薪资期间（年月）
-					String bankAcc = getCellValue(row.getCell(32)); // 账号
-					String pk_psndoc = "";
-					String pk_psnjob = "";
-					String pk_psnorg = "";
-					String pk_workdept = "";
-					String pk_workorg = "";
-					String pk_banktype = "";
-					// String pk_bankacc = "";
-					Logger.info(rowNo + "");
-
-					DataVO dvo = new DataVO();
-					voList.add(dvo);
-					// if (voList.size() > paraVO.getLimitNum()) {
-					// throw new Exception(ResHelper.getString("6013dataitf_01",
-					// "dataitf-01-0045", null,
-					// new String[] { paraVO.getLimitNum() + "" }));
-					// }
-					StringBuilder errMsg = new StringBuilder();
-					if (StringUtils.isBlank(deptCode)) {
-						// 部门编码不能为空!
-						errMsg.append(ResHelper.getString("6013dataitf_01", "dataitf-01-0022"));
-					} else {
-						HRDeptVO vo = codeDeptVOMap.get(deptCode);
-						if (null == vo) {
-							// 部门编码在系统中找不到!
-							errMsg.append(ResHelper.getString("6013dataitf_01", "dataitf-01-0023"));
-						} else {
-							pk_workdept = vo.getPk_dept();
-							deptName = MultiLangHelper.getName(vo);
-						}
-					}
-					if (StringUtils.isBlank(psnCode)) {
-						// 人员编码不能为空!
-						errMsg.append(ResHelper.getString("6013dataitf_01", "dataitf-01-0024"));
-					} else {
-						PsndocVO vo = codePsnVOMap.get(psnCode);
-						if (null == vo) {
-							// 人员编码在系统中找不到!
-							errMsg.append(ResHelper.getString("6013dataitf_01", "dataitf-01-0025"));
-						} else if (StringUtils.isNotBlank(deptCode)) {
-							vo = codeDeptPsnVOMap.get(psnCode + deptCode);
-							pk_psndoc = vo.getPk_psndoc();
-							psnName = MultiLangHelper.getName(vo);
-							PsnJobVO jobvo = vo.getPsnJobVO();
-							if (null == jobvo) {
-								// 人员[" + psnCode + "]
-								// 在部门[" + deptCode + "]下的任职记录在系统中找不到!
-								errMsg.append(ResHelper.getString("6013dataitf_01", "dataitf-01-0026", null,
-										new String[] { psnCode, deptCode }));
-							} else {
-								pk_psnjob = jobvo.getPk_psnjob();
-								pk_psnorg = jobvo.getPk_psnorg();
-								pk_workdept = jobvo.getPk_dept();
-								pk_workorg = jobvo.getPk_org();
-							}
-						}
-					}
-					yearmonth = getWaYearMonth(yearmonth, errMsg);
-					if (StringUtils.isBlank(bankAcc)) {
-						// 账号不能为空!
-						// errMsg.append(ResHelper.getString("6013dataitf_01",
-						// "dataitf-01-0029"));
-					} else {
-						BankAccbasVO vo = codeBankVOMap.get(bankAcc);
-						if (null == vo) {
-							// 账号在系统中找不到!
-							// errMsg.append(ResHelper.getString("6013dataitf_01",
-							// "dataitf-01-0030"));
-						} else {
-							pk_banktype = vo.getPk_banktype();
-							// pk_bankacc = vo.getPk_bankaccbas();
-						}
-					}
-					if (errMsg.length() > 0) {
-						// 行[" + rowNo + "],
-						errMsg.insert(
-								0,
-								ResHelper.getString("6013dataitf_01", "dataitf-01-0031", null, new String[] { rowNo
-										+ "" }));
-						// throw new Exception(errMsg.toString());
-						if (errImpMsg.length() > 0) {
-							errImpMsg.append(System.getProperty("line.separator"));
-						}
-						errImpMsg.append(errMsg);
-						return true;
-					}
-
-					setMnyFieldValueZero(dvo);
-					dvo.setCyearperiod(yearmonth);
-					if (yearmonth.length() == 6) {
-						dvo.setCyear(yearmonth.substring(0, 4));
-						dvo.setCperiod(yearmonth.substring(4, 6));
-					}
-					dvo.setPk_psndoc(pk_psndoc);
-					dvo.setPk_psnjob(pk_psnjob);
-					dvo.setPk_psnorg(pk_psnorg);
-					dvo.setWorkdept(pk_workdept);
-					dvo.setWorkorg(pk_workorg);
-					dvo.setPk_bankaccbas1(bankAcc);
-					dvo.setClerkcode(psnCode);
-					dvo.setDeptname(deptName);
-					dvo.setPsnname(psnName);
-					dvo.setPk_bankaccbas1(bankAcc);
-					dvo.setPk_banktype1(pk_banktype);
-
-					// 获得当前行的列数
-					int lastCellNum = row.getPhysicalNumberOfCells();
-					for (int i = 5; i < lastCellNum; i++) {
-						if (i == 32) {
-							continue;
-						}
-						MappingFieldVO mappVO = indexItemKeyMap.get(String.valueOf(i));
-						if (null == mappVO) {
-							continue;
-						}
-						String itemKey = mappVO.getItemkey();
-						if (StringUtils.isNotBlank(itemKey)) {
-							dvo.setAttributeValue(itemKey, getCellValue(row.getCell(i)));
-						}
-					}
-					dvo.setPk_org(waContext.getPk_org());
-					dvo.setPk_group(waContext.getPk_group());
-					dvo.setPk_wa_class(waContext.getClassPK());
-
-					if (voList.size() == paraVO.getLimitNum()) {
-						return false;
-					}
-				}
-				return true;
-
-			}
-		});
-		if (errImpMsg.length() > 0) {
-			throw new Exception(errImpMsg.toString());
-		}
-		return voList.toArray(new DataVO[0]);
-	}
-
-	public static DataVO[] readBigExcelSD(String filePath, final WaLoginContext waContext, final ImpParamVO paraVO)
-			throws Exception {
-		final List<DataVO> voList = new ArrayList<DataVO>();
-		final StringBuilder errImpMsg = new StringBuilder();
-		paraVO.countReset();
-		final Map<String, HRDeptVO> codeDeptVOMap = paraVO.getCodeDeptVOMap();
-		final Map<String, PsndocVO> codePsnVOMap = paraVO.getCodePsnVOMap();
-		final Map<String, PsndocVO> codeDeptPsnVOMap = paraVO.getCodeDeptPsnVOMap();
-		final Map<String, BankAccbasVO> codeBankVOMap = paraVO.getCodeBankVOMap();
 		final Map<String, MappingFieldVO> indexItemKeyMap = paraVO.getIndexItemKeyMap();
 		if (null == indexItemKeyMap || indexItemKeyMap.isEmpty()) {
 			// Mapping表(wa_imp_fieldmapping)中没有找到类型[{0}]的薪资项目对应字段信息!
@@ -1092,107 +918,69 @@ public class DataItfFileReader {
 					new String[] { String.valueOf(MappingFieldVO.TYPE_SD) }));
 		}
 		BigExcelReader reader = new BigExcelReader(filePath) {
+			String[] numberFields = new String[0];
 
 			@Override
 			protected void outputRow(String[] datas, int[] rowTypes, int rowIndex) {
-				if (null != datas && rowIndex > 0) {
-					paraVO.countIncrement();
-					if (paraVO.getCount() <= paraVO.getStartIndex()) {
-						return;
+				if (null != datas && rowIndex == 0) {
+					if (datas.length >= 5) {
+						numberFields = new String[datas.length - 5];
+						for (int i = 5; i < datas.length; i++) {
+							numberFields[i - 5] = datas[i];
+						}
 					}
-
+				} else if (null != datas && rowIndex > 0) {
 					String deptCode = datas[0]; // 部门编码
 					String deptName = datas[1]; // 部门名称
 					String psnCode = datas[2]; // 人员编码
 					String psnName = datas[3]; // 人员名称
 					String yearmonth = datas[4]; // 薪资期间（年月）
-					String bankAcc = datas[32]; // 账号
-					String pk_psndoc = "";
-					String pk_psnjob = "";
-					String pk_psnorg = "";
-					String pk_workdept = "";
-					String pk_workorg = "";
-					String pk_banktype = "";
-					// String pk_bankacc = "";
-					Logger.info(String.valueOf(rowIndex) + "");
+					// 導入201909的中秋獎金，出現找不到人員編碼的訊息，以7002009來看，任職歷史並無異常，再請協助確認 by
+					// George 20200523
+					// 顧問給的導入資料中沒有 銀行帳號， 先註釋掉就可導入成功，回頭跟顧問確認如何處理
+					// String bankAcc = datas[32]; // 账号
 
-					DataVO dvo = new DataVO();
-					voList.add(dvo);
-					// if (voList.size() > paraVO.getLimitNum()) {
-					// throw new Exception(ResHelper.getString("6013dataitf_01",
-					// "dataitf-01-0045", null,
-					// new String[] { paraVO.getLimitNum() + "" }));
-					// }
 					StringBuilder errMsg = new StringBuilder();
+					DataVO dvo = new DataVO();
+
+					dvo.setPk_org(waContext.getPk_org());
+					dvo.setPk_group(waContext.getPk_group());
+					dvo.setPk_wa_class(waContext.getClassPK());
+
 					if (StringUtils.isBlank(deptCode)) {
 						// 部门编码不能为空!
 						errMsg.append(ResHelper.getString("6013dataitf_01", "dataitf-01-0022"));
 					} else {
-						HRDeptVO vo = codeDeptVOMap.get(deptCode);
-						if (null == vo) {
-							// 部门编码在系统中找不到!
-							errMsg.append(ResHelper.getString("6013dataitf_01", "dataitf-01-0023"));
-						} else {
-							pk_workdept = vo.getPk_dept();
-							deptName = MultiLangHelper.getName(vo);
-						}
+						dvo.setWorkdept(deptCode);
+						dvo.setDeptname(deptName);
 					}
+
 					if (StringUtils.isBlank(psnCode)) {
 						// 人员编码不能为空!
 						errMsg.append(ResHelper.getString("6013dataitf_01", "dataitf-01-0024"));
 					} else {
-						PsndocVO vo = codePsnVOMap.get(psnCode);
-						if (null == vo) {
-							// 人员编码在系统中找不到!
-							errMsg.append(ResHelper.getString("6013dataitf_01", "dataitf-01-0025"));
-						} else if (StringUtils.isNotBlank(deptCode)) {
-							vo = codeDeptPsnVOMap.get(psnCode + deptCode);
-							if (vo == null) {
-								// 人员[" + psnCode + "]
-								// 在部门[" + deptCode + "]下的任职记录在系统中找不到!
-								errMsg.append(ResHelper.getString("6013dataitf_01", "dataitf-01-0026", null,
-										new String[] { psnCode, deptCode }));
-							} else {
-								pk_psndoc = vo.getPk_psndoc();
-								psnName = MultiLangHelper.getName(vo);
-								PsnJobVO jobvo = vo.getPsnJobVO();
-								if (null == jobvo) {
-									// 人员[" + psnCode + "]
-									// 在部门[" + deptCode + "]下的任职记录在系统中找不到!
-									errMsg.append(ResHelper.getString("6013dataitf_01", "dataitf-01-0026", null,
-											new String[] { psnCode, deptCode }));
-								} else {
-									pk_psnjob = jobvo.getPk_psnjob();
-									pk_psnorg = jobvo.getPk_psnorg();
-									pk_workdept = jobvo.getPk_dept();
-									pk_workorg = jobvo.getPk_org();
-								}
-							}
-						}
+						dvo.setPsncode(psnCode);
+						dvo.setPsnname(psnName);
 					}
+					// 導入201909的中秋獎金，出現找不到人員編碼的訊息，以7002009來看，任職歷史並無異常，再請協助確認 by
+					// George 20200523
+					// 顧問給的導入資料中沒有 銀行帳號， 先註釋掉就可導入成功，回頭跟顧問確認如何處理
+					// dvo.setPk_bankaccbas1(bankAcc);
+
+					setMnyFieldValueZero(dvo);
+
 					yearmonth = getWaYearMonth(yearmonth, errMsg);
-					if (StringUtils.isBlank(bankAcc)) {
-						// 账号不能为空!
-						// errMsg.append(ResHelper.getString("6013dataitf_01",
-						// "dataitf-01-0029"));
-					} else {
-						BankAccbasVO vo = codeBankVOMap.get(bankAcc);
-						if (null == vo) {
-							// 账号在系统中找不到!
-							// errMsg.append(ResHelper.getString("6013dataitf_01",
-							// "dataitf-01-0030"));
-						} else {
-							pk_banktype = vo.getPk_banktype();
-							// pk_bankacc = vo.getPk_bankaccbas();
-						}
+					dvo.setCyearperiod(yearmonth);
+					if (!StringUtils.isBlank(yearmonth)&& yearmonth.length() == 6) {
+						dvo.setCyear(yearmonth.substring(0, 4));
+						dvo.setCperiod(yearmonth.substring(4, 6));
 					}
+
 					if (errMsg.length() > 0) {
-						// 行[" + rowNo + "],
 						errMsg.insert(
 								0,
 								ResHelper.getString("6013dataitf_01", "dataitf-01-0031", null,
 										new String[] { String.valueOf(rowIndex) + "" }));
-						// throw new Exception(errMsg.toString());
 						if (errImpMsg.length() > 0) {
 							errImpMsg.append(System.getProperty("line.separator"));
 						}
@@ -1200,327 +988,34 @@ public class DataItfFileReader {
 						return;
 					}
 
-					setMnyFieldValueZero(dvo);
-					dvo.setCyearperiod(yearmonth);
-					if (yearmonth.length() == 6) {
-						dvo.setCyear(yearmonth.substring(0, 4));
-						dvo.setCperiod(yearmonth.substring(4, 6));
-					}
-					dvo.setPk_psndoc(pk_psndoc);
-					dvo.setPk_psnjob(pk_psnjob);
-					dvo.setPk_psnorg(pk_psnorg);
-					dvo.setWorkdept(pk_workdept);
-					dvo.setWorkorg(pk_workorg);
-					dvo.setPk_bankaccbas1(bankAcc);
-					dvo.setClerkcode(psnCode);
-					dvo.setDeptname(deptName);
-					dvo.setPsnname(psnName);
-					dvo.setPk_bankaccbas1(bankAcc);
-					dvo.setPk_banktype1(pk_banktype);
-
 					// 获得当前行的列数
 					int lastCellNum = datas.length;
 					for (int i = 5; i < lastCellNum; i++) {
-					  //格式更改 tank 2020年1月31日00:27:36 薪资数据导入按指定格式
-					    	/*if (i == 32) {
-							continue;
-						}*/
-						MappingFieldVO mappVO = indexItemKeyMap.get(String.valueOf(i));
-						if (null == mappVO) {
-							continue;
-						}
-						String itemKey = mappVO.getItemkey();
-						if (StringUtils.isNotBlank(itemKey)) {
-							dvo.setAttributeValue(itemKey, datas[i]);
+						// 格式更改 tank 2020年1月31日00:27:36 薪资数据导入按指定格式
+						/*
+						 * if (i == 32) { continue; }
+						 */
+						if (type == MappingFieldVO.TYPE_SD) {
+							MappingFieldVO mappVO = indexItemKeyMap.get(String.valueOf(i));
+							if (null == mappVO) {
+								continue;
+							}
+							String itemKey = mappVO.getItemkey();
+							if (StringUtils.isNotBlank(itemKey)) {
+								dvo.setAttributeValue(itemKey, datas[i]);
+							}
+						} else if (type == MappingFieldVO.TYPE_BD) {
+							dvo.setAttributeValue(numberFields[i - 5], datas[i]);
 						}
 					}
-					dvo.setPk_org(waContext.getPk_org());
-					dvo.setPk_group(waContext.getPk_group());
-					dvo.setPk_wa_class(waContext.getClassPK());
 
-					if (voList.size() == paraVO.getLimitNum()) {
-						return;
-					}
+					voList.add(dvo);
 				}
 			}
 		};
 
 		reader.parse();
 
-		if (errImpMsg.length() > 0) {
-			throw new Exception(errImpMsg.toString());
-		}
-		return voList.toArray(new DataVO[0]);
-	}
-
-	public static SalaryOthBuckVO[] readExcelSOD(String filePath, final WaLoginContext waContext,
-			final ImpParamVO paraVO) throws Exception {
-		final List<SalaryOthBuckVO> voList = new ArrayList<SalaryOthBuckVO>();
-		final StringBuilder errImpMsg = new StringBuilder();
-		paraVO.countReset();
-		final Map<String, HRDeptVO> codeDeptVOMap = paraVO.getCodeDeptVOMap();
-		final Map<String, PsndocVO> codePsnVOMap = paraVO.getCodePsnVOMap();
-		FileUtils.readExcel(filePath, new IExcelRowReader() {
-
-			@Override
-			public boolean readRow(int sheetNo, int rowNo, Row row) throws Exception {
-				if (null != row) {
-					paraVO.countIncrement();
-					if (paraVO.getCount() <= paraVO.getStartIndex()) {
-						return true;
-					}
-
-					String deptcode = getCellValue(row.getCell(0)); // 部门编码
-					String deptname = getCellValue(row.getCell(1)); // 部门名称
-					String psncode = getCellValue(row.getCell(2)); // 人员编码
-					String psnname = getCellValue(row.getCell(3)); // 人员名称
-					String pldecode = getCellValue(row.getCell(4)); // 加扣代码-对应薪资发放项目
-					String pldename = getCellValue(row.getCell(5)); // 加扣名称
-					String paydate = getCellValue(row.getCell(6)); // 发放日期
-					String yearmonth = getCellValue(row.getCell(7)); // 发放期间
-					String taxadd = getCellValue(row.getCell(8)); // 应税加项
-					String notaxadd = getCellValue(row.getCell(9)); // 免税加项
-					String taxsub = getCellValue(row.getCell(10)); // 应税减项
-					String notaxsub = getCellValue(row.getCell(11)); // 免税减项
-					String remark = getCellValue(row.getCell(12)); // 备注
-					Logger.info(rowNo + "");
-					SalaryOthBuckVO vo = new SalaryOthBuckVO();
-					voList.add(vo);
-					// if (voList.size() > paraVO.getLimitNum()) {
-					// throw new Exception(ResHelper.getString("6013dataitf_01",
-					// "dataitf-01-0045", null,
-					// new String[] { paraVO.getLimitNum() + "" }));
-					// }
-					StringBuilder errMsg = new StringBuilder();
-					String pk_dept = "";
-					String pk_psndoc = "";
-					if (StringUtils.isBlank(deptcode)) {
-						// 部门编码不能为空!
-						errMsg.append(ResHelper.getString("6013dataitf_01", "dataitf-01-0022"));
-					} else {
-						HRDeptVO deptVO = codeDeptVOMap.get(deptcode);
-						if (null == deptVO) {
-							// 部门编码在系统中找不到!
-							errMsg.append(ResHelper.getString("6013dataitf_01", "dataitf-01-0023"));
-						} else {
-							pk_dept = deptVO.getPk_dept();
-						}
-					}
-					if (StringUtils.isBlank(psncode)) {
-						// 人员编码不能为空!
-						errMsg.append(ResHelper.getString("6013dataitf_01", "dataitf-01-0024"));
-					} else {
-						PsndocVO psnVO = codePsnVOMap.get(psncode);
-						if (null == psnVO) {
-							// 人员编码在系统中找不到!
-							errMsg.append(ResHelper.getString("6013dataitf_01", "dataitf-01-0025"));
-						} else {
-							pk_psndoc = psnVO.getPk_psndoc();
-						}
-					}
-					if (StringUtils.isBlank(pldecode)) {
-						// 加扣代号不能为空!
-						errMsg.append(ResHelper.getString("6013dataitf_01", "dataitf-01-0032"));
-					}
-					yearmonth = getWaYearMonth(yearmonth, errMsg);
-					if (StringUtils.isBlank(taxadd)) {
-						// 应税加项不能为空!
-						errMsg.append(ResHelper.getString("6013dataitf_01", "dataitf-01-0035"));
-					}
-					if (StringUtils.isBlank(notaxadd)) {
-						// 免税加项不能为空!
-						errMsg.append(ResHelper.getString("6013dataitf_01", "dataitf-01-0036"));
-					}
-					if (StringUtils.isBlank(taxsub)) {
-						// 应税减项不能为空!
-						errMsg.append(ResHelper.getString("6013dataitf_01", "dataitf-01-0037"));
-					}
-					if (StringUtils.isBlank(notaxsub)) {
-						// 免税减项不能为空!
-						errMsg.append(ResHelper.getString("6013dataitf_01", "dataitf-01-0038"));
-					}
-					if (errMsg.length() > 0) {
-						// 行[" + rowNo + "],
-						errMsg.insert(
-								0,
-								ResHelper.getString("6013dataitf_01", "dataitf-01-0031", null, new String[] { rowNo
-										+ "" }));
-						// throw new Exception(errMsg.toString());
-						if (errImpMsg.length() > 0) {
-							errImpMsg.append(System.getProperty("line.separator"));
-						}
-						errImpMsg.append(errMsg);
-						return true;
-					}
-
-					vo.setDeptcode(deptcode);
-					vo.setDeptname(deptname);
-					vo.setPsndoccode(psncode);
-					vo.setPsndocname(psnname);
-					vo.setPldecode(pldecode);
-					vo.setPldename(pldename);
-					vo.setPaydate(paydate);
-					vo.setCyearperiod(yearmonth);
-					vo.setTaxadd(getNumber(taxadd));
-					vo.setTaxsub(getNumber(taxsub));
-					vo.setNotaxadd(getNumber(notaxadd));
-					vo.setNotaxsub(getNumber(notaxsub));
-					vo.setRemark(remark);
-					vo.setPk_dept(pk_dept);
-					vo.setPk_psndoc(pk_psndoc);
-					setDataByContext(vo, waContext);
-
-					if (voList.size() == paraVO.getLimitNum()) {
-						return false;
-					}
-				}
-
-				return true;
-			}
-		});
-		if (errImpMsg.length() > 0) {
-			throw new Exception(errImpMsg.toString());
-		}
-		return voList.toArray(new SalaryOthBuckVO[0]);
-	}
-
-	public static DataVO[] readExcelBD(String filePath, final WaLoginContext waContext, final ImpParamVO paraVO)
-			throws Exception {
-		final List<DataVO> voList = new ArrayList<DataVO>();
-		final StringBuilder errImpMsg = new StringBuilder();
-		paraVO.countReset();
-		final Map<String, HRDeptVO> codeDeptVOMap = paraVO.getCodeDeptVOMap();
-		final Map<String, PsndocVO> codePsnVOMap = paraVO.getCodePsnVOMap();
-		final Map<String, PsndocVO> codeDeptPsnVOMap = paraVO.getCodeDeptPsnVOMap();
-		final Map<String, MappingFieldVO> indexItemKeyMap = paraVO.getIndexItemKeyMap();
-		if (null == indexItemKeyMap || indexItemKeyMap.isEmpty()) {
-			// Mapping表(wa_imp_fieldmapping)中没有找到类型[{0}]的薪资项目对应字段信息!
-			throw new Exception(ResHelper.getString("6013dataitf_01", "dataitf-01-0041", null,
-					new String[] { String.valueOf(MappingFieldVO.TYPE_BD) }));
-		}
-		FileUtils.readExcel(filePath, new IExcelRowReader() {
-
-			@Override
-			public boolean readRow(int sheetNo, int rowNo, Row row) throws Exception {
-				if (null != row) {
-					paraVO.countIncrement();
-					if (paraVO.getCount() <= paraVO.getStartIndex()) {
-						return true;
-					}
-
-					String deptCode = getCellValue(row.getCell(0)); // 部门编码
-					String deptName = getCellValue(row.getCell(1)); // 部门名称
-					String psnCode = getCellValue(row.getCell(2)); // 人员编码
-					String psnName = getCellValue(row.getCell(3)); // 人员名称
-					String yearmonth = getCellValue(row.getCell(4)); // 薪资期间（年月）
-					// String schemename = getCellValue(row.getCell(5)); // 节金名称
-					String pk_psndoc = "";
-					String pk_psnjob = "";
-					String pk_psnorg = "";
-					String pk_workdept = "";
-					String pk_workorg = "";
-					Logger.info(rowNo + "");
-
-					DataVO dvo = new DataVO();
-					voList.add(dvo);
-					// if (voList.size() > paraVO.getLimitNum()) {
-					// throw new Exception(ResHelper.getString("6013dataitf_01",
-					// "dataitf-01-0045", null,
-					// new String[] { paraVO.getLimitNum() + "" }));
-					// }
-					StringBuilder errMsg = new StringBuilder();
-					if (StringUtils.isBlank(deptCode)) {
-						// 部门编码不能为空!
-						errMsg.append(ResHelper.getString("6013dataitf_01", "dataitf-01-0022"));
-					} else {
-						HRDeptVO vo = codeDeptVOMap.get(deptCode);
-						if (null == vo) {
-							// 部门编码在系统中找不到!
-							errMsg.append(ResHelper.getString("6013dataitf_01", "dataitf-01-0023"));
-						} else {
-							pk_workdept = vo.getPk_dept();
-							deptName = MultiLangHelper.getName(vo);
-						}
-					}
-					if (StringUtils.isBlank(psnCode)) {
-						// 人员编码不能为空!
-						errMsg.append(ResHelper.getString("6013dataitf_01", "dataitf-01-0024"));
-					} else {
-						PsndocVO vo = codePsnVOMap.get(psnCode);
-						if (null == vo) {
-							// 人员编码在系统中找不到!
-							errMsg.append(ResHelper.getString("6013dataitf_01", "dataitf-01-0025"));
-						} else if (StringUtils.isNotBlank(deptCode)) {
-							vo = codeDeptPsnVOMap.get(psnCode + deptCode);
-							pk_psndoc = vo.getPk_psndoc();
-							psnName = MultiLangHelper.getName(vo);
-							PsnJobVO jobvo = vo.getPsnJobVO();
-							if (null == jobvo) {
-								// 人员[" + psnCode + "]
-								// 在部门[" + deptCode + "]下的任职记录在系统中找不到!
-								errMsg.append(ResHelper.getString("6013dataitf_01", "dataitf-01-0026", null,
-										new String[] { psnCode, deptCode }));
-							} else {
-								pk_psnjob = jobvo.getPk_psnjob();
-								pk_psnorg = jobvo.getPk_psnorg();
-								pk_workdept = jobvo.getPk_dept();
-								pk_workorg = jobvo.getPk_org();
-							}
-						}
-					}
-					yearmonth = getWaYearMonth(yearmonth, errMsg);
-					if (errMsg.length() > 0) {
-						// 行[" + rowNo + "],
-						errMsg.insert(
-								0,
-								ResHelper.getString("6013dataitf_01", "dataitf-01-0031", null, new String[] { rowNo
-										+ "" }));
-						// throw new Exception(errMsg.toString());
-						if (errImpMsg.length() > 0) {
-							errImpMsg.append(System.getProperty("line.separator"));
-						}
-						errImpMsg.append(errMsg);
-						return true;
-					}
-
-					setMnyFieldValueZero(dvo);
-					dvo.setCyearperiod(yearmonth);
-					if (yearmonth.length() == 6) {
-						dvo.setCyear(yearmonth.substring(0, 4));
-						dvo.setCperiod(yearmonth.substring(4, 6));
-					}
-					dvo.setPk_psndoc(pk_psndoc);
-					dvo.setPk_psnjob(pk_psnjob);
-					dvo.setPk_psnorg(pk_psnorg);
-					dvo.setWorkdept(pk_workdept);
-					dvo.setWorkorg(pk_workorg);
-					dvo.setClerkcode(psnCode);
-					dvo.setDeptname(deptName);
-					dvo.setPsnname(psnName);
-
-					// 获得当前行的列数
-					int lastCellNum = row.getPhysicalNumberOfCells();
-					for (int i = 6; i < lastCellNum; i++) {
-						MappingFieldVO mappVO = indexItemKeyMap.get(Integer.valueOf(i));
-						if (null == mappVO) {
-							continue;
-						}
-						String itemKey = mappVO.getItemkey();
-						if (StringUtils.isNotBlank(itemKey)) {
-							dvo.setAttributeValue(itemKey, getCellValue(row.getCell(i)));
-						}
-					}
-					dvo.setPk_org(waContext.getPk_org());
-					dvo.setPk_group(waContext.getPk_group());
-					dvo.setPk_wa_class(waContext.getClassPK());
-
-					if (voList.size() == paraVO.getLimitNum()) {
-						return false;
-					}
-				}
-				return true;
-			}
-		});
 		if (errImpMsg.length() > 0) {
 			throw new Exception(errImpMsg.toString());
 		}

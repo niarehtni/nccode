@@ -58,7 +58,8 @@ public class HrTrnDAO extends BaseDAOManager {
 			String strAddWhere, boolean filterByOrg) throws BusinessException {
 
 		// 薪资福利用到的字段 "pk_dept", "pk_post","pk_psncl", "pk_psnjob"
-		StringBuffer sqlBuf = new StringBuffer(" select psnjob.pk_psnjob,psndoc.code as psncode,psnjob.clerkcode, ");
+		StringBuffer sqlBuf = new StringBuffer(
+				" select distinct psnjob.pk_psnjob,psndoc.code as psncode,psnjob.clerkcode, ");
 		sqlBuf.append("       " + SQLHelper.getMultiLangNameColumn("psndoc.name") + "  as psnname, "); // 6
 		sqlBuf.append("       " + SQLHelper.getMultiLangNameColumn("bd_psncl.name") + "  as psnclassname, "); // 6
 		// ssx added on 2019-12-21
@@ -158,7 +159,7 @@ public class HrTrnDAO extends BaseDAOManager {
 			// tableSql = tableSql.replaceAll(
 			// " psnjob.lastflag = 'Y' and", "");
 
-			sqlBuf.append(",hipschg.begindate as trndate ");
+			sqlBuf.append(",psnjob.begindate as trndate ");
 			sqlBuf.append(tableSql);
 			sqlBuf.append("and psnjob.ismainjob = 'Y' ");// 主职
 			// sqlBuf.append("and psnjob.endflag = 'N' ");// 未结束的任职记录

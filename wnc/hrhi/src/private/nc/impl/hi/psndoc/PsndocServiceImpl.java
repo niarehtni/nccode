@@ -47,7 +47,6 @@ import nc.itf.hr.frame.IPersistenceRetrieve;
 import nc.itf.hr.frame.IPersistenceUpdate;
 import nc.itf.hr.infoset.IInfoSetQry;
 import nc.itf.hr.psnclrule.IPsnclruleQueryService;
-import nc.itf.hr.wa.IDeductDetailService;
 import nc.itf.hrp.psnbudget.IBudgetSetQueryService;
 import nc.itf.hrp.psnbudget.IOrgBudgetQueryService;
 import nc.itf.org.IOrgConst;
@@ -155,6 +154,7 @@ import nc.vo.pub.lang.UFDate;
 import nc.vo.pub.lang.UFDouble;
 import nc.vo.pub.lang.UFLiteralDate;
 import nc.vo.sm.UserVO;
+import nc.vo.twhr.nhicalc.PsndocDefTableUtil;
 import nc.vo.uif2.LoginContext;
 import nc.vo.util.BDVersionValidationUtil;
 import nc.vo.util.SqlWhereUtil;
@@ -341,7 +341,14 @@ public class PsndocServiceImpl implements IPsndocService, IPsndocQryService {
 		{
 			where = " pk_psnorg in ( " + inSql + " ) and lastflag = 'Y' ";
 		} else {
-			where = " pk_psndoc in ( " + inSql + " ) and lastflag = 'Y' ";
+			if (PsndocDefTableUtil.getPsnLaborTablename().equals(tableName)
+					|| PsndocDefTableUtil.getPsnHealthTablename().equals(tableName)
+					|| PsndocDefTableUtil.getGroupInsuranceTablename().equals(tableName)) {
+				where = " pk_psndoc in ( " + inSql + " ) and begindate = (select max(tmp.begindate) from " + tableName
+						+ " tmp where tmp.pk_psndoc = " + tableName + ".pk_psndoc) ";
+			} else {
+				where = " pk_psndoc in ( " + inSql + " ) and lastflag = 'Y' ";
+			}
 		}
 
 		T[] vos = (T[]) getPsndocDAO().querySubByCondition(className, where, null);
@@ -1787,62 +1794,80 @@ public class PsndocServiceImpl implements IPsndocService, IPsndocQryService {
 					tableVO[ii].setAttributeValue("glbdef6", decrypt);
 				}
 			}
-			
-			//BEGIN 张恒｛21946｝保留年資天數影響年資起算日 2018/8/30
-			if("hi_psnorg".equals(tablename)){
-				if(null != tableVO){
-					//获取组织关系对象
-					PsnOrgVO psnorgVO = (PsnOrgVO)tableVO[0];
-					//获取到职日期
+
+			// BEGIN 张恒｛21946｝保留年資天數影響年資起算日 2018/8/30
+			if ("hi_psnorg".equals(tablename)) {
+				if (null != tableVO) {
+					// 获取组织关系对象
+					PsnOrgVO psnorgVO = (PsnOrgVO) tableVO[0];
+					// 获取到职日期
 					UFLiteralDate begindates = psnorgVO.getBegindate();
-					if(null != begindates){
+					if (null != begindates) {
 						UFDate begindatess = new UFDate(begindates.toString());
-						//获取保留年资天数
-						Integer workageremaindays = tableVO[0].getAttributeValue("workageremaindays") == null ? 0 : (Integer)tableVO[0].getAttributeValue("workageremaindays");
-						//获取累计留停天数
-						Integer totalleavedays = tableVO[0].getAttributeValue("totalleavedays") == null ? 0 : (Integer)tableVO[0].getAttributeValue("totalleavedays");
-						//获取年资起算日 = （到職日期-保留年資天數+累計留停天數）
-						UFDate workagestartdate = begindatess.getDateAfter(totalleavedays).getDateBefore(workageremaindays);
+						// 获取保留年资天数
+						Integer workageremaindays = (tableVO[0].getAttributeValue("workageremaindays") == null ? 0
+								: (Integer) tableVO[0].getAttributeValue("workageremaindays"));
+						// 获取累计留停天数
+						UFDouble totalleavedays = new UFDouble(
+								tableVO[0].getAttributeValue("totalleavedays") == null ? 0
+										: (Integer) tableVO[0].getAttributeValue("totalleavedays"));
+						// 获取年资起算日 = （到職日期-保留年資天數+累計留停天數）
+						UFDate workagestartdate = begindatess.getDateAfter(totalleavedays.intValue()).getDateBefore(
+								workageremaindays.intValue());
 						String workagestartStr = workagestartdate.toString().substring(0, 10);
-						//获取保留年資結束日期 = （到職日期-1天）
+						// 获取保留年資結束日期 = （到職日期-1天）
 						UFDate workageenddate = begindatess.getDateBefore(1);
 						String workageendStr = workageenddate.toString().substring(0, 10);
-						//获取保留年資开始日期 = （保留年資結束日期-保留年資天數）
-						UFDate workagebegindate = workageenddate.getDateBefore(workageremaindays);
+						// 获取保留年資开始日期 = （保留年資結束日期-保留年資天數）
+						UFDate workagebegindate = workageenddate.getDateBefore(workageremaindays.intValue());
 						String workagebeginStr = workagebegindate.toString().substring(0, 10);
-						if(null != workagestartdate && null != workageenddate && null != workagebegindate){
-							
+						if (null != workagestartdate && null != workageenddate && null != workagebegindate) {
+							// ssx added on 2020-08-06
+							// 年资保留天数及启碁年资设置默认值
+							tableVO[0].setAttributeValue("workageremaindays", workageremaindays);
+							tableVO[0]
+									.setAttributeValue(
+											"orgglbdef8",
+											new UFDouble(workageremaindays)
+													.div(365)
+													.add((tableVO[0].getAttributeValue("orgglbdef6") == null ? UFDouble.ZERO_DBL
+															: new UFDouble((String) tableVO[0]
+																	.getAttributeValue("orgglbdef6")))));
+							// end
+
 							tableVO[0].setAttributeValue("workagestartdate", workagestartStr);
 							tableVO[0].setAttributeValue("orgglbdef10", workagebeginStr);
 							tableVO[0].setAttributeValue("orgglbdef11", workageendStr);
-							
+
 						}
 					}
 				}
 			}
-			//END 张恒｛21946｝保留年資天數影響年資起算日 2018/8/30
-			
+			// END 张恒｛21946｝保留年資天數影響年資起算日 2018/8/30
+
 			// 保存
 			psndocAggVO.setTableVO(tablename, tableVO);
 		}
 		// 但强 数据加密 2018-1-19 14:31:11 end
-		
-		PsndocAggVO aggvo =  getPsndocDAO().savePsndoc(psndocAggVO);
 
-	        //刷新法扣档案的操作
-	        updateCourtInfo(aggvo.getParentVO().getPk_psndoc());
-	        return aggvo;
+		PsndocAggVO aggvo = getPsndocDAO().savePsndoc(psndocAggVO);
+
+		// 刷新法扣档案的操作
+		updateCourtInfo(aggvo.getParentVO().getPk_psndoc());
+		return aggvo;
 	}
 
-    private void updateCourtInfo(String pk_psndoc) throws BusinessException {
-	// 先获取此人所有的vo
-	String sql = "select * from hi_psndoc_deductdetails where dr = 0 and pk_psndoc = '" + pk_psndoc + "' ";
-	@SuppressWarnings("unchecked")
-	List<DeductDetailsVO> ddvList = (List<DeductDetailsVO>) new BaseDAO().executeQuery(sql, new BeanListProcessor(
-		DeductDetailsVO.class));
-	// 更新flag
-	NCLocator.getInstance().lookup(IDeductDetailService.class).updateDebtfile(ddvList, true);
-    }
+	private void updateCourtInfo(String pk_psndoc) throws BusinessException {
+		// 先获取此人所有的vo
+		String sql = "select * from hi_psndoc_deductdetails where dr = 0 and pk_psndoc = '" + pk_psndoc + "' ";
+		@SuppressWarnings("unchecked")
+		List<DeductDetailsVO> ddvList = (List<DeductDetailsVO>) new BaseDAO().executeQuery(sql, new BeanListProcessor(
+				DeductDetailsVO.class));
+		// 更新flag
+		// NCLocator.getInstance().lookup(IDeductDetailService.class).updateDebtfile(ddvList,
+		// true);
+	}
+
 	/****************************************************************************
 	 * {@inheritDoc}<br>
 	 * Created on 2010-4-15 10:53:46<br>

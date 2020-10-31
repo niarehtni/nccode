@@ -36,6 +36,8 @@ import nc.ui.pub.beans.progress.NCProgresses;
 import nc.ui.wa.ref.WaPeriodRefTreeModel;
 import nc.ui.wa.util.LocalizationSysinitUtil;
 import nc.vo.pub.BusinessException;
+import nc.vo.pub.lang.UFDate;
+import nc.vo.pub.lang.UFLiteralDate;
 
 /**
  * 
@@ -74,7 +76,7 @@ public class AddIncomeTaxView extends UIDialog implements ActionListener, ValueC
 		try {
 			setName("AddIncomeTaxView");
 			setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
-			setSize(LabbedCom.MaxSize.width * 4, 430);
+			setSize(LabbedCom.MaxSize.width * 4, 410);
 			setContentPane(getUIDialogContentPane());
 		} catch (Throwable ivjExc) {
 			handleException(ivjExc);
@@ -83,13 +85,12 @@ public class AddIncomeTaxView extends UIDialog implements ActionListener, ValueC
 	}
 
 	private JPanel getUIDialogContentPane() {
-		if (ivjUIDialogContentPane == null) {
+		if (ivjUIDialogContentPane == null || true) {
 			try {
 				ivjUIDialogContentPane = new javax.swing.JPanel();
 				ivjUIDialogContentPane.setName("UIDialogContentPane");
 				ivjUIDialogContentPane.setLayout(new java.awt.BorderLayout());
-				getUIDialogContentPane().add(getUIPanel1());// , "Center"
-				// getUIDialogContentPane().add(getUIPanel2(), "South");
+				ivjUIDialogContentPane.add(getUIPanel1());
 			} catch (Throwable ivjExc) {
 				handleException(ivjExc);
 			}
@@ -98,7 +99,7 @@ public class AddIncomeTaxView extends UIDialog implements ActionListener, ValueC
 	}
 
 	private UIPanel getUIPanel1() {
-		if (ivjUIPanel1 == null) {
+		if (ivjUIPanel1 == null || true) {
 			try {
 				ivjUIPanel1 = new UIPanel();
 				ivjUIPanel1.setName("UIPanel1");
@@ -129,6 +130,13 @@ public class AddIncomeTaxView extends UIDialog implements ActionListener, ValueC
 				ivjUIPanel1.add(getWaendmonthLabel());
 				ivjUIPanel1.add(getWaendmonthRefPane());
 
+				// 离职开始日
+				ivjUIPanel1.add(getOffBeginmonthLabel());
+				ivjUIPanel1.add(getOffBeginmonthRefPane());
+				// 离职结束日
+				ivjUIPanel1.add(getOffEndmonthLabel());
+				ivjUIPanel1.add(getOffEndmonthRefPane());
+
 				ivjUIPanel1.add(getBtnOK(), getBtnOK().getName());
 				ivjUIPanel1.add(getBtnCancel(), getBtnCancel().getName());
 			} catch (Throwable ivjExc) {
@@ -156,7 +164,7 @@ public class AddIncomeTaxView extends UIDialog implements ActionListener, ValueC
 	private JCheckBox getisForeignMonthDec() {
 		if (isForeignMonthDec == null) {
 			isForeignMonthDec = new JCheckBox(ResHelper.getString("incometax", "2incometax-n-000013")/* "是否外籍员工逐月申报" */);
-			isForeignMonthDec.setBounds(230, 10, 200, 30);
+			isForeignMonthDec.setBounds(195, 10, 200, 30);
 			isForeignMonthDec.addItemListener(this);
 		}
 		return isForeignMonthDec;
@@ -165,7 +173,7 @@ public class AddIncomeTaxView extends UIDialog implements ActionListener, ValueC
 	private JCheckBox getisForeignDepartureDec() {
 		if (isForeignDepartureDec == null) {
 			isForeignDepartureDec = new JCheckBox(ResHelper.getString("incometax", "2incometax-n-000053")/* "外籍員工離境申報" */);
-			isForeignDepartureDec.setBounds(230, 50, 200, 30);
+			isForeignDepartureDec.setBounds(195, 35, 200, 30);
 			isForeignDepartureDec.addItemListener(this);
 		}
 		return isForeignDepartureDec;
@@ -177,7 +185,7 @@ public class AddIncomeTaxView extends UIDialog implements ActionListener, ValueC
 				unifiednumberLabel = new CMPLabel();
 				unifiednumberLabel.setName("unifiednumberLabel");
 				unifiednumberLabel.setText(ResHelper.getString("incometax", "2incometax-n-000014")/* "统一编号" */);
-				unifiednumberLabel.setBounds(0, 90, 100, 30);
+				unifiednumberLabel.setBounds(0, 70, 100, 30);
 			} catch (Throwable ivjExc) {
 				handleException(ivjExc);
 			}
@@ -191,7 +199,7 @@ public class AddIncomeTaxView extends UIDialog implements ActionListener, ValueC
 				declaretypeLabel = new CMPLabel();
 				declaretypeLabel.setName("declaretypeLabel");
 				declaretypeLabel.setText(ResHelper.getString("incometax", "2incometax-n-000015")/* "申报凭单格式" */);
-				declaretypeLabel.setBounds(0, 130, 100, 30);
+				declaretypeLabel.setBounds(0, 100, 100, 30);
 			} catch (Throwable ivjExc) {
 				handleException(ivjExc);
 			}
@@ -205,7 +213,7 @@ public class AddIncomeTaxView extends UIDialog implements ActionListener, ValueC
 				waclassLabel = new CMPLabel();
 				waclassLabel.setName("waclassLabel");
 				waclassLabel.setText(ResHelper.getString("incometax", "2incometax-n-000016")/* "薪资方案" */);
-				waclassLabel.setBounds(0, 170, 100, 30);
+				waclassLabel.setBounds(0, 130, 100, 30);
 			} catch (Throwable ivjExc) {
 				handleException(ivjExc);
 			}
@@ -219,7 +227,7 @@ public class AddIncomeTaxView extends UIDialog implements ActionListener, ValueC
 				wayearLabel = new CMPLabel();
 				wayearLabel.setName("wayearLabel");
 				wayearLabel.setText(ResHelper.getString("incometax", "2incometax-n-000017")/* "薪资年度" */);
-				wayearLabel.setBounds(0, 210, 100, 30);
+				wayearLabel.setBounds(0, 160, 100, 30);
 			} catch (Throwable ivjExc) {
 				handleException(ivjExc);
 			}
@@ -233,7 +241,7 @@ public class AddIncomeTaxView extends UIDialog implements ActionListener, ValueC
 				wabeginmonthLabel = new CMPLabel();
 				wabeginmonthLabel.setName("wabeginmonthLabel");
 				wabeginmonthLabel.setText(ResHelper.getString("incometax", "2incometax-n-000018")/* "开始时间" */);
-				wabeginmonthLabel.setBounds(0, 250, 100, 30);
+				wabeginmonthLabel.setBounds(0, 190, 100, 30);
 			} catch (Throwable ivjExc) {
 				handleException(ivjExc);
 			}
@@ -247,7 +255,7 @@ public class AddIncomeTaxView extends UIDialog implements ActionListener, ValueC
 				waendmonthLabel = new CMPLabel();
 				waendmonthLabel.setName("waendmonthLabel");
 				waendmonthLabel.setText(ResHelper.getString("incometax", "2incometax-n-000019")/* "结束时间" */);
-				waendmonthLabel.setBounds(0, 290, 100, 30);
+				waendmonthLabel.setBounds(0, 220, 100, 30);
 			} catch (Throwable ivjExc) {
 				handleException(ivjExc);
 			}
@@ -258,7 +266,7 @@ public class AddIncomeTaxView extends UIDialog implements ActionListener, ValueC
 	private JCheckBox getisPtCost() {
 		if (isPtCost == null) {
 			isPtCost = new JCheckBox(ResHelper.getString("incometax", "2incometax-n-000054")/* "是否生成劳务页签" */);
-			isPtCost.setBounds(160, 330, 200, 30);
+			isPtCost.setBounds(160, 310, 200, 30);
 			isPtCost.addItemListener(this);
 		}
 		return isPtCost;
@@ -275,7 +283,7 @@ public class AddIncomeTaxView extends UIDialog implements ActionListener, ValueC
 				unifiednumberRefPane = new UIRefPane();
 				unifiednumberRefPane.setName("unifiednumberRefPane");
 				unifiednumberRefPane.setRefNodeName("統一編號(自定义档案)");
-				unifiednumberRefPane.setBounds(160, 90, 150, 50);
+				unifiednumberRefPane.setBounds(160, 70, 150, 50);
 				unifiednumberRefPane.addValueChangedListener(this);
 				unifiednumberRefPane.setButtonFireEvent(true);
 			} catch (Throwable ivjExc) {
@@ -297,7 +305,7 @@ public class AddIncomeTaxView extends UIDialog implements ActionListener, ValueC
 				declaretypeRefPane.setName("declaretypeRefPane");
 				declaretypeRefPane.setRefNodeName("申報格式(自定义档案)");
 				declaretypeRefPane.addValueChangedListener(this);
-				declaretypeRefPane.setBounds(160, 130, 150, 50);
+				declaretypeRefPane.setBounds(160, 100, 150, 50);
 				declaretypeRefPane.setMultiSelectedEnabled(true);
 			} catch (Throwable ivjExc) {
 				handleException(ivjExc);
@@ -315,7 +323,7 @@ public class AddIncomeTaxView extends UIDialog implements ActionListener, ValueC
 		if (this.waClassRefPane == null) {
 			this.waClassRefPane = new UIRefPane();
 			this.waClassRefPane.setVisible(this.isShow);
-			waClassRefPane.setBounds(160, 170, 150, 50);
+			waClassRefPane.setBounds(160, 130, 150, 50);
 			waClassRefPane.addValueChangedListener(this);
 			waClassRefPane.setButtonFireEvent(true);
 			WaClassRefModel refmodel = getClassRefModel();
@@ -344,7 +352,7 @@ public class AddIncomeTaxView extends UIDialog implements ActionListener, ValueC
 				wayearRefPane = new UIRefPane();
 				wayearRefPane.setName("wayearRefPane");
 				wayearRefPane.setRefNodeName("年");
-				wayearRefPane.setBounds(160, 210, 150, 50);
+				wayearRefPane.setBounds(160, 160, 150, 50);
 			} catch (Throwable ivjExc) {
 				handleException(ivjExc);
 			}
@@ -364,7 +372,7 @@ public class AddIncomeTaxView extends UIDialog implements ActionListener, ValueC
 				wabeginmonthRefPane = new UIRefPane();
 				wabeginmonthRefPane.setName("wabeginmonthRefPane");
 				wabeginmonthRefPane.setRefNodeName("会计期间档案");
-				wabeginmonthRefPane.setBounds(160, 250, 150, 50);
+				wabeginmonthRefPane.setBounds(160, 190, 150, 50);
 				wabeginmonthRefPane.addValueChangedListener(this);
 			} catch (Throwable ivjExc) {
 				handleException(ivjExc);
@@ -385,7 +393,7 @@ public class AddIncomeTaxView extends UIDialog implements ActionListener, ValueC
 				waendmonthRefPane = new UIRefPane();
 				waendmonthRefPane.setName("waendmonthRefPane");
 				waendmonthRefPane.setRefNodeName("会计期间档案");
-				waendmonthRefPane.setBounds(160, 290, 150, 50);
+				waendmonthRefPane.setBounds(160, 220, 150, 50);
 			} catch (Throwable ivjExc) {
 				handleException(ivjExc);
 			}
@@ -448,6 +456,23 @@ public class AddIncomeTaxView extends UIDialog implements ActionListener, ValueC
 					ResHelper.getString("incometax", "2incometax-n-000026") /* "开始时间不能小于结束时间" */);
 			return;
 		}
+
+		if (getisForeignDepartureDec().isSelected()) {
+			if (getOffBeginmonthRefPane().getValueObj() == null) {
+				handleException(new BusinessException("外籍人員離境申報時，離職開始日期不能為空。"));
+				return;
+			}
+			if (getOffEndmonthRefPane().getValueObj() == null) {
+				handleException(new BusinessException("外籍人員離境申報時，離職結束日期不能為空。"));
+				return;
+			}
+
+			this.offBeginDate = ((UFDate) getOffBeginmonthRefPane().getValueObj())
+					.toUFLiteralDate(UFLiteralDate.BASE_TIMEZONE);
+			this.offEndDate = ((UFDate) getOffEndmonthRefPane().getValueObj())
+					.toUFLiteralDate(UFLiteralDate.BASE_TIMEZONE);
+		}
+
 		this.closeOK();
 
 	}
@@ -520,6 +545,13 @@ public class AddIncomeTaxView extends UIDialog implements ActionListener, ValueC
 		if (getisForeignDepartureDec() == source) {
 			if (getisForeignDepartureDec().isSelected()) {
 				getisForeignMonthDec().setSelected(false);
+				getOffBeginmonthRefPane().setEnabled(true);
+				getOffEndmonthRefPane().setEnabled(true);
+			} else {
+				getOffBeginmonthRefPane().setValueObj(null);
+				getOffEndmonthRefPane().setValueObj(null);
+				getOffBeginmonthRefPane().setEnabled(false);
+				getOffEndmonthRefPane().setEnabled(false);
 			}
 		} else if (getisForeignMonthDec() == source) {
 			if (getisForeignMonthDec().isSelected()) {
@@ -576,7 +608,7 @@ public class AddIncomeTaxView extends UIDialog implements ActionListener, ValueC
 				btnOK.addActionListener(this);
 				btnOK.registerKeyboardAction(this, KeyStroke.getKeyStroke(KeyEvent.VK_Y, InputEvent.ALT_MASK),
 						JComponent.WHEN_IN_FOCUSED_WINDOW);
-				btnOK.setBounds(135, 370, 55, 25);
+				btnOK.setBounds(135, 365, 55, 25);
 			} catch (Throwable ivjExc) {
 				handleException(ivjExc);
 			}
@@ -593,7 +625,7 @@ public class AddIncomeTaxView extends UIDialog implements ActionListener, ValueC
 				btnCancel.addActionListener(this);
 				btnCancel.registerKeyboardAction(this, KeyStroke.getKeyStroke(KeyEvent.VK_C, InputEvent.ALT_MASK),
 						JComponent.WHEN_IN_FOCUSED_WINDOW);
-				btnCancel.setBounds(210, 370, 55, 25);
+				btnCancel.setBounds(210, 365, 55, 25);
 			} catch (Throwable ivjExc) {
 				handleException(ivjExc);
 			}
@@ -622,12 +654,25 @@ public class AddIncomeTaxView extends UIDialog implements ActionListener, ValueC
 	private CMPLabel wabeginmonthLabel = null;// 开始时间
 	private CMPLabel waendmonthLabel = null;// 截止时间
 
+	// ssx added on 2020-08-16
+	// WNC增加离职区间过滤
+	private CMPLabel offBeginmonthLabel = null;// 离职开始日
+	private CMPLabel offEndmonthLabel = null;// 离职结束日
+	// end
+
 	private UIRefPane unifiednumberRefPane = null;// 统一编号
 	private UIRefPane declaretypeRefPane = null;// 申报凭单格式
 	private UIRefPane waClassRefPane = null;// 薪资方案
 	private UIRefPane wayearRefPane = null;// 薪资年度
 	private UIRefPane wabeginmonthRefPane = null;// 开始时间
 	private UIRefPane waendmonthRefPane = null;// 结束时间
+
+	// ssx added on 2020-08-16
+	// WNC增加离职区间过滤
+	private UIRefPane offBeginmonthRefPane = null;// 离职开始日
+	private UIRefPane offEndmonthRefPane = null;// 离职结束日
+	// end
+
 	private WaClassRefModel classRefModel = null;
 	private WaPeriodRefTreeModel periodRefModel = null;
 	protected boolean isShow = true;
@@ -641,6 +686,13 @@ public class AddIncomeTaxView extends UIDialog implements ActionListener, ValueC
 	private String year;
 	private String beginMonth;
 	private String endMonth;
+
+	// ssx added on 2020-08-16
+	// WNC增加离职区间过滤
+	private UFLiteralDate offBeginDate;
+	private UFLiteralDate offEndDate;
+
+	// end
 
 	public boolean isForeignMonth() {
 		return isForeignMonth;
@@ -713,5 +765,86 @@ public class AddIncomeTaxView extends UIDialog implements ActionListener, ValueC
 	public void setEndMonth(String endMonth) {
 		this.endMonth = endMonth;
 	}
+
+	// ssx added on 2020-08-16
+	// WNC增加离职区间过滤
+	public CMPLabel getOffBeginmonthLabel() {
+		if (offBeginmonthLabel == null) {
+			try {
+				offBeginmonthLabel = new CMPLabel();
+				offBeginmonthLabel.setName("offBeginmonthLabel");
+				offBeginmonthLabel.setText("離職開始日");
+				offBeginmonthLabel.setBounds(0, 250, 100, 30);
+			} catch (Throwable ivjExc) {
+				handleException(ivjExc);
+			}
+		}
+		return offBeginmonthLabel;
+	}
+
+	public CMPLabel getOffEndmonthLabel() {
+		if (offEndmonthLabel == null) {
+			try {
+				offEndmonthLabel = new CMPLabel();
+				offEndmonthLabel.setName("offEndmonthLabel");
+				offEndmonthLabel.setText("離職結束日");
+				offEndmonthLabel.setBounds(0, 280, 100, 30);
+			} catch (Throwable ivjExc) {
+				handleException(ivjExc);
+			}
+		}
+		return offEndmonthLabel;
+	}
+
+	public UIRefPane getOffBeginmonthRefPane() {
+		if (this.offBeginmonthRefPane == null) {
+			try {
+				offBeginmonthRefPane = new UIRefPane();
+				offBeginmonthRefPane.setName("offBeginmonthRefPane");
+				offBeginmonthRefPane.setRefNodeName("日历");
+				offBeginmonthRefPane.setBounds(160, 250, 150, 50);
+				offBeginmonthRefPane.addValueChangedListener(this);
+				offBeginmonthRefPane.setEnabled(false);
+			} catch (Throwable ivjExc) {
+				handleException(ivjExc);
+			}
+
+		}
+		return offBeginmonthRefPane;
+	}
+
+	public UIRefPane getOffEndmonthRefPane() {
+		if (this.offEndmonthRefPane == null) {
+			try {
+				offEndmonthRefPane = new UIRefPane();
+				offEndmonthRefPane.setName("offEndmonthRefPane");
+				offEndmonthRefPane.setRefNodeName("日历");
+				offEndmonthRefPane.setBounds(160, 280, 150, 50);
+				offEndmonthRefPane.addValueChangedListener(this);
+				offEndmonthRefPane.setEnabled(false);
+			} catch (Throwable ivjExc) {
+				handleException(ivjExc);
+			}
+
+		}
+		return offEndmonthRefPane;
+	}
+
+	public UFLiteralDate getOffBeginDate() {
+		return offBeginDate;
+	}
+
+	public void setOffBeginDate(UFLiteralDate offBeginDate) {
+		this.offBeginDate = offBeginDate;
+	}
+
+	public UFLiteralDate getOffEndDate() {
+		return offEndDate;
+	}
+
+	public void setOffEndDate(UFLiteralDate offEndDate) {
+		this.offEndDate = offEndDate;
+	}
+	// end
 
 }

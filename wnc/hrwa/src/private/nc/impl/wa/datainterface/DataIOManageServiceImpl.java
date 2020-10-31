@@ -1,19 +1,21 @@
-/**
- * 
- */
 package nc.impl.wa.datainterface;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
+import nc.bs.dao.BaseDAO;
 import nc.bs.logging.Logger;
 import nc.hr.frame.persistence.SimpleDocServiceTemplate;
 import nc.hr.utils.CommonUtils;
 import nc.hr.utils.InSQLCreator;
+import nc.hr.utils.MultiLangHelper;
 import nc.hr.utils.ResHelper;
 import nc.hr.utils.StringPiecer;
 import nc.itf.hr.datainterface.IDataIOManageService;
@@ -164,17 +166,190 @@ public class DataIOManageServiceImpl implements IDataIOManageService {
 	}
 
 	@Override
-	public void importPayDataSD(DataVO[] SDVos, SalaryOthBuckVO[] SODVos) throws BusinessException {
+	public void importPayDataSD(DataVO[] SDVos) throws BusinessException {
 		// 组装薪资明细数据存储逻辑
 		if (ArrayUtils.isEmpty(SDVos)) {
 			return;
 		}
-		addOtherToMainVO(SDVos, SODVos);
+		convertData(SDVos);
+
+		String[] psnPks = StringPiecer.getStrArrayDistinct(SDVos, DataVO.PK_PSNDOC);
+		SalaryOthBuckVO[] SODVos = queryDataByConditon("pk_wa_class='" + SDVos[0].getPk_wa_class() + "'", psnPks,
+				SalaryOthBuckVO.class);
+
+		// 批量期間導入 導入201910 員工郭育培部門應為召幕任用部 但導入時看到員工關心部 by George 20200521 缺陷Bug
+		// #35316
+		// 加一個布林值判斷要不要查詢 组织_部门版本信息(org_dept_v)
+		addOtherToMainVO(SDVos, SODVos, false);
+
+		List<String> pklist = new ArrayList<String>();
+		// 驗重
+		for (DataVO vo : SDVos) {
+			String key = vo.getPk_wa_class() + vo.getCyear() + vo.getCperiod() + vo.getPk_psndoc();
+			if (pklist.contains(key)) {
+				throw new BusinessException("員工 [" + vo.getPsncode() + "] 的當期資料發生重覆。");
+			} else {
+				pklist.add(key);
+			}
+		}
+
 		SalaryEncryptionUtil.encryption4Array(SDVos);
 		getWaifsetDao().getBaseDao().insertVOArray(SDVos);
 		// 清除组织薪资方案内存储的数据.
 		if (!ArrayUtils.isEmpty(SODVos)) {
 			getWaifsetDao().getBaseDao().deleteVOArray(SODVos);
+		}
+	}
+
+	@SuppressWarnings("unchecked")
+	private void convertData(DataVO[] sDVos) throws BusinessException {
+		Set<String> deptCodes = new HashSet<String>();
+		Set<String> psnCodes = new HashSet<String>();
+
+		StringBuilder errDeptMsg = new StringBuilder();
+		StringBuilder errPsnMsg = new StringBuilder();
+		StringBuilder errJobMsg = new StringBuilder();
+
+		if (!ArrayUtils.isEmpty(sDVos)) {
+			for (DataVO vo : sDVos) {
+				deptCodes.add(vo.getWorkdept());
+				psnCodes.add(vo.getPsncode());
+			}
+
+			BaseDAO dao = new BaseDAO();
+
+			// 加載人員VO
+			Collection<PsndocVO> psndocVOs = dao.retrieveByClause(PsndocVO.class, "", new String[] {
+					PsndocVO.PK_PSNDOC, PsndocVO.CODE, PsndocVO.NAME, PsndocVO.NAME2, PsndocVO.NAME3, PsndocVO.NAME4,
+					PsndocVO.NAME5, PsndocVO.NAME6 });
+			Map<String, PsndocVO> psnMap = CommonUtils.toMap(PsndocVO.CODE, psndocVOs.toArray(new PsndocVO[0]));
+
+			String deptCode = "";
+			String pk_dept = "";
+			Map<String, String[]> deptMap = new HashMap<String, String[]>();
+
+			for (DataVO vo : sDVos) {
+				if (deptMap.containsKey(vo.getWorkdept())) {
+					vo.setWorkdeptvid(deptMap.get(vo.getWorkdept())[1]);
+					vo.setDeptname(deptMap.get(vo.getWorkdept())[2]);
+					vo.setWorkdept(deptMap.get(vo.getWorkdept())[0]);
+				} else {
+					Collection<HRDeptVersionVO> deptvVOs = dao
+							.retrieveByClause(
+									HRDeptVersionVO.class,
+									"code ='"
+											+ vo.getWorkdept()
+											+ "'"
+											+ " and vstartdate <= (select cenddate || ' 23:59:59' from wa_period wp inner join wa_periodscheme ps on wp.pk_periodscheme = ps.pk_periodscheme inner join wa_waclass wc on wc.pk_periodscheme = wp.pk_periodscheme where wp.cyear='"
+											+ vo.getCyear()
+											+ "' and wp.cperiod='"
+											+ vo.getCperiod()
+											+ "' and wc.pk_wa_class = '"
+											+ vo.getPk_wa_class()
+											+ "') and venddate >= (select cstartdate || '00:00:00' from wa_period wp inner join wa_periodscheme ps on wp.pk_periodscheme = ps.pk_periodscheme inner join wa_waclass wc on wc.pk_periodscheme = wp.pk_periodscheme where wp.cyear='"
+											+ vo.getCyear() + "' and wp.cperiod='" + vo.getCperiod()
+											+ "' and wc.pk_wa_class = '" + vo.getPk_wa_class() + "')",
+									"vstartdate desc", new String[] { HRDeptVersionVO.PK_DEPT, HRDeptVersionVO.PK_VID,
+											HRDeptVersionVO.CODE, HRDeptVersionVO.NAME, HRDeptVersionVO.NAME2,
+											HRDeptVersionVO.NAME3, HRDeptVersionVO.NAME4, HRDeptVersionVO.NAME5,
+											HRDeptVersionVO.NAME6 });
+					if (deptvVOs != null && deptvVOs.size() > 0) {
+						HRDeptVersionVO deptvvo = deptvVOs.toArray(new HRDeptVersionVO[0])[0];
+						pk_dept = deptvvo.getPk_dept();
+						deptCode = deptvvo.getCode();
+						vo.setWorkdept(deptvvo.getPk_dept());
+						vo.setWorkdeptvid(deptvvo.getPk_vid());
+						// 批量期間導入 導入201910 員工郭育培部門應為召幕任用部 但導入時看到員工關心部 by George
+						// 20200521 缺陷Bug #35316
+						// 批量期間導入 所需要 组织_部门版本信息(org_dept_v) 相關值提前放入
+						vo.setFipdeptvid(deptvvo.getPk_vid());
+						vo.setLibdeptvid(deptvvo.getPk_vid());
+						vo.setDeptname(MultiLangHelper.getName(deptvvo));
+					} else {
+						Collection<HRDeptVO> deptVOs = dao.retrieveByClause(HRDeptVO.class, "code='" + vo.getWorkdept()
+								+ "'");
+						if (deptVOs != null || deptVOs.size() > 0) {
+							HRDeptVO deptvo = deptVOs.toArray(new HRDeptVO[0])[0];
+							pk_dept = deptvo.getPk_dept();
+							deptCode = deptvo.getCode();
+							vo.setWorkdept(deptvo.getPk_dept());
+							vo.setWorkdeptvid(deptvo.getPk_vid());
+							// 批量期間導入 導入201910 員工郭育培部門應為召幕任用部 但導入時看到員工關心部 by
+							// George 20200521 缺陷Bug #35316
+							// 批量期間導入 所需要 组织_部门版本信息(org_dept_v) 相關值提前放入
+							vo.setFipdeptvid(deptvo.getPk_vid());
+							vo.setLibdeptvid(deptvo.getPk_vid());
+							vo.setDeptname(MultiLangHelper.getName(deptvo));
+						} else {
+							String err = "[" + vo.getWorkdept() + "]: "
+									+ ResHelper.getString("6013dataitf_01", "dataitf-01-0023") + "\r\n";// 部門编码在系统中找不到!
+							if (errDeptMsg.indexOf(err) < 0) {
+								errDeptMsg.append(err);
+							}
+							continue;
+						}
+					}
+
+					deptMap.put(deptCode, new String[] { vo.getWorkdept(), vo.getWorkdeptvid(), vo.getDeptname() });
+				}
+
+				String pk_psndoc = psnMap.containsKey(vo.getPsncode()) ? psnMap.get(vo.getPsncode()).getPk_psndoc()
+						: null;
+				if (!StringUtils.isEmpty(pk_psndoc)) {
+					vo.setPk_psndoc(pk_psndoc);
+					vo.setPsnname(MultiLangHelper.getName(psnMap.get(vo.getPsncode())));
+				} else {
+					errPsnMsg.append("[" + vo.getPsncode() + "]: "
+							+ ResHelper.getString("6013dataitf_01", "dataitf-01-0025") + "\r\n");// 人員编码在系统中找不到!
+					continue;
+				}
+
+				Collection<PsnJobVO> jobVOs = dao
+						.retrieveByClause(
+								PsnJobVO.class,
+								"pk_psndoc = '"
+										+ pk_psndoc
+										+ "' "
+										// +"and pk_dept = '"
+										// + pk_dept
+										// + "' "
+										+ " and begindate <= (select cenddate from wa_period wp inner join wa_periodscheme ps on wp.pk_periodscheme = ps.pk_periodscheme inner join wa_waclass wc on wc.pk_periodscheme = wp.pk_periodscheme where wp.cyear='"
+										+ vo.getCyear()
+										+ "' and wp.cperiod='"
+										+ vo.getCperiod()
+										+ "' and wc.pk_wa_class = '"
+										+ vo.getPk_wa_class()
+										+ "') and nvl(enddate, '9999-12-31') >= (select cstartdate from wa_period wp inner join wa_periodscheme ps on wp.pk_periodscheme = ps.pk_periodscheme inner join wa_waclass wc on wc.pk_periodscheme = wp.pk_periodscheme where wp.cyear='"
+										+ vo.getCyear() + "' and wp.cperiod='" + vo.getCperiod()
+										+ "' and wc.pk_wa_class = '" + vo.getPk_wa_class() + "') and trnsevent <> 4",
+								"begindate", new String[] { PsnJobVO.PK_PSNJOB, PsnJobVO.PK_PSNORG, PsnJobVO.PK_DEPT_V,
+										PsnJobVO.PK_ORG, PsnJobVO.CLERKCODE });
+				if (jobVOs != null && jobVOs.size() > 0) {
+					PsnJobVO jobvo = jobVOs.toArray(new PsnJobVO[0])[0];
+					vo.setPk_psnjob(jobvo.getPk_psnjob());
+					vo.setPk_psnorg(jobvo.getPk_psnorg());
+					vo.setWorkdeptvid(jobvo.getPk_dept_v());
+					// 批量期間導入 導入201910 員工郭育培部門應為召幕任用部 但導入時看到員工關心部 by George
+					// 20200521 缺陷Bug #35316
+					// 批量期間導入 所需要 组织_部门版本信息(org_dept_v) 相關值提前放入
+					// 這裡是由 工作记录(hi_psnjob) 查詢 组织_部门版本信息(org_dept_v)，才能查到對的部門
+					vo.setFipdeptvid(jobvo.getPk_dept_v());
+					vo.setLibdeptvid(jobvo.getPk_dept_v());
+					vo.setWorkorg(jobvo.getPk_org());
+					vo.setClerkcode(jobvo.getClerkcode());
+				} else {
+					// 人员[" + psnCode + "]
+					// 在部门[" + deptCode + "]下的任职记录在系统中找不到!
+					errJobMsg.append(ResHelper.getString("6013dataitf_01", "dataitf-01-0026", null,
+							new String[] { vo.getPsncode(), deptCode })
+							+ "\r\n");
+					continue;
+				}
+			}
+		}
+
+		if (errDeptMsg.length() > 0 || errPsnMsg.length() > 0 || errJobMsg.length() > 0) {
+			throw new BusinessException(errDeptMsg.append(errPsnMsg).append(errJobMsg).toString());
 		}
 	}
 
@@ -184,7 +359,10 @@ public class DataIOManageServiceImpl implements IDataIOManageService {
 		if (ArrayUtils.isEmpty(BDVos)) {
 			return;
 		}
-		addOtherToMainVO(BDVos, BODVos);
+		// 批量期間導入 導入201910 員工郭育培部門應為召幕任用部 但導入時看到員工關心部 by George 20200521 缺陷Bug
+		// #35316
+		// 加一個布林值判斷要不要查詢 组织_部门版本信息(org_dept_v)，這裡先按照原來的需要查詢
+		addOtherToMainVO(BDVos, BODVos, true);
 		SalaryEncryptionUtil.encryption4Array(BDVos);
 		getWaifsetDao().getBaseDao().insertVOArray(BDVos);
 		// 清除组织薪资方案内存储的数据.
@@ -196,13 +374,17 @@ public class DataIOManageServiceImpl implements IDataIOManageService {
 	@Override
 	public Map<String, PsndocVO> queryPsnByOrgConditionn(String pk_org, String pk_wa_class, String cyear,
 			String cperiod, boolean includeJob) throws BusinessException {
-		String condition = " (pk_psndoc in (select distinct pk_psndoc from hi_psnjob pj inner join (select cstartdate, cenddate from wa_period wp inner join wa_periodscheme ps on wp.pk_periodscheme = ps.pk_periodscheme inner join wa_waclass wc on wc.pk_periodscheme = wp.pk_periodscheme where wp.cyear='"
-				+ cyear
-				+ "' and wp.cperiod='"
-				+ cperiod
-				+ "' and wc.pk_wa_class = '"
-				+ pk_wa_class
-				+ "') tmp on tmp.cstartdate <= nvl(pj.enddate,'9999-12-31') and pj.trnsevent<>4)) ";
+		// String condition =
+		// " (pk_psndoc in (select distinct pk_psndoc from hi_psnjob pj inner join (select cstartdate, cenddate from wa_period wp inner join wa_periodscheme ps on wp.pk_periodscheme = ps.pk_periodscheme inner join wa_waclass wc on wc.pk_periodscheme = wp.pk_periodscheme where wp.cyear='"
+		// + cyear
+		// + "' and wp.cperiod='"
+		// + cperiod
+		// + "' and wc.pk_wa_class = '"
+		// + pk_wa_class
+		// +
+		// "') tmp on tmp.cstartdate <= nvl(pj.enddate,'9999-12-31') and pj.trnsevent<>4)) ";
+		String condition = " (pk_psndoc in (select pk_psndoc from wa_data where pk_wa_class = '" + pk_wa_class
+				+ "' and cyear = '" + cyear + "' and cperiod = '" + cperiod + "')) ";
 		return queryPsnByOrgConditionn(pk_org, condition, includeJob);
 	}
 
@@ -276,12 +458,23 @@ public class DataIOManageServiceImpl implements IDataIOManageService {
 		return CommonUtils.toMap(PsndocVO.CODE, psnVos);
 	}
 
-	private void addOtherToMainVO(DataVO[] vos, DataItfFileVO[] detailVos) throws BusinessException {
+	/**
+	 * 批量期間導入 導入201910 員工郭育培部門應為召幕任用部 但導入時看到員工關心部 by George 20200521 缺陷Bug
+	 * #35316 加一個布林值判斷要不要查詢 组织_部门版本信息(org_dept_v)
+	 */
+	private void addOtherToMainVO(DataVO[] vos, DataItfFileVO[] detailVos, boolean reloadDeptV)
+			throws BusinessException {
 		// TODO处理必要字段及加扣明细-奖金
 		String[] orgpks = StringPiecer.getStrArrayDistinct(vos, DataVO.WORKORG);
-		String[] deptpks = StringPiecer.getStrArrayDistinct(vos, DataVO.WORKDEPT);
-		Map<String, String> deptVMap = qryVersionPks(HRDeptVersionVO.class, HRDeptVersionVO.PK_DEPT, deptpks,
-				HRDeptVersionVO.PK_VID);
+
+		// 批量期間導入 導入201910 員工郭育培部門應為召幕任用部 但導入時看到員工關心部 by George 20200521 缺陷Bug
+		// #35316
+		// 批量期間導入 不查詢 组织_部门版本信息(org_dept_v)，因為查詢沒有看 工作记录 (hi_psnjob) 的
+		// 部门版本信息(pk_dept_v)，會抓錯部門
+		String[] deptpks = reloadDeptV ? StringPiecer.getStrArrayDistinct(vos, DataVO.WORKDEPT) : new String[0];
+		Map<String, String> deptVMap = reloadDeptV ? qryVersionPks(HRDeptVersionVO.class, HRDeptVersionVO.PK_DEPT,
+				deptpks, HRDeptVersionVO.PK_VID) : new HashMap<String, String>();
+
 		Map<String, String> orgVMap = qryVersionPks(HROrgVersionVO.class, HROrgVersionVO.PK_ORG, orgpks,
 				HROrgVersionVO.PK_VID);
 		Map<String, Map<String, DataItfFileVO>> uidCodeVOMap = null;
@@ -376,13 +569,19 @@ public class DataIOManageServiceImpl implements IDataIOManageService {
 		vo.setAttributeValue("D_1", "日期");
 		vo.setDerateptg(null);
 		vo.setExpense_deduction(UFDouble.ZERO_DBL.setScale(0, 0));
-		vo.setFipdeptvid(deptVMap.get(vo.getWorkdept()));
+		// 批量期間導入 導入201910 員工郭育培部門應為召幕任用部 但導入時看到員工關心部 by George 20200521 缺陷Bug
+		// #35316
+		// 批量期間導入 不查詢 组织_部门版本信息(org_dept_v)，在前面代碼先行set了
+		if (deptVMap.size() > 0) {
+			vo.setFipdeptvid(deptVMap.get(vo.getWorkdept()));
+			vo.setLibdeptvid(deptVMap.get(vo.getWorkdept()));
+			vo.setWorkdeptvid(deptVMap.get(vo.getWorkdept()));
+		}
 		vo.setFipendflag(UFBoolean.FALSE);
 		vo.setFiporgvid(orgVMap.get(vo.getWorkorg()));
 		vo.setIsderate(UFBoolean.FALSE);
 		vo.setIsndebuct(UFBoolean.FALSE);
 		vo.setIsrulehint(UFBoolean.TRUE);
-		vo.setLibdeptvid(deptVMap.get(vo.getWorkdept()));
 		vo.setNquickdebuct(UFDouble.ZERO_DBL.setScale(0, 0));
 		vo.setPartflag(UFBoolean.FALSE);
 		// vo.setPk_bankaccbas1(null);
@@ -410,7 +609,6 @@ public class DataIOManageServiceImpl implements IDataIOManageService {
 		vo.setTaxtype(Integer.valueOf(2));
 		// vo.setVpaycomment(null);
 		// vo.setWorkdept(null);
-		vo.setWorkdeptvid(deptVMap.get(vo.getWorkdept()));
 		// vo.setWorkorg(null);
 		vo.setWorkorgvid(orgVMap.get(vo.getWorkorg()));
 	}
@@ -460,11 +658,11 @@ public class DataIOManageServiceImpl implements IDataIOManageService {
 	}
 
 	protected void setPeriodStateVO(PeriodStateVO pstateVO, UFDate paydate) {
-		pstateVO.setAccountmark(UFBoolean.TRUE);
+		pstateVO.setAccountmark(UFBoolean.FALSE);
 		pstateVO.setCaculateflag(UFBoolean.TRUE);
 		pstateVO.setCheckflag(UFBoolean.TRUE);
 		pstateVO.setEnableflag(UFBoolean.TRUE);
-		pstateVO.setIsapproved(UFBoolean.TRUE);
+		pstateVO.setIsapproved(UFBoolean.FALSE);
 		pstateVO.setPayoffflag(UFBoolean.TRUE);
 		pstateVO.setCpaydate(paydate);
 	}

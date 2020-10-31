@@ -1,6 +1,13 @@
 package nc.impl.wa.paydata;
 
+import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.InputStreamReader;
 import java.math.BigDecimal;
+import java.nio.charset.Charset;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -10,12 +17,14 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.Vector;
 
 import nc.bs.dao.BaseDAO;
 import nc.bs.dao.DAOException;
 import nc.bs.framework.common.NCLocator;
+import nc.bs.framework.common.RuntimeEnv;
 import nc.hr.frame.persistence.SimpleDocLocker;
 import nc.hr.frame.persistence.SimpleDocServiceTemplate;
 import nc.hr.utils.CommonUtils;
@@ -61,6 +70,7 @@ import nc.vo.hr.datainterface.HrIntfaceVO;
 import nc.vo.hr.tools.pub.Pair;
 import nc.vo.hrp.budgetmgt.BudgetWarnMessageVo;
 import nc.vo.logging.Debug;
+import nc.vo.ml.MultiLangUtil;
 import nc.vo.pub.BusinessException;
 import nc.vo.pub.SuperVO;
 import nc.vo.pub.VOStatus;
@@ -97,6 +107,11 @@ import nc.vo.wa.repay.ReDataVO;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
+
+import com.itextpdf.text.Document;
+import com.itextpdf.text.PageSize;
+import com.itextpdf.text.pdf.PdfWriter;
+import com.itextpdf.tool.xml.XMLWorkerHelper;
 
 /**
  * 薪资发放实现类
@@ -2135,33 +2150,44 @@ public class PaydataServiceImpl implements IPaydataManageService, IPaydataQueryS
 			}
 		}
 
-		// ssx added on 2020-02-29
-		// 定調資項目檢查
-		String sql = "SELECT psn.code  FROM    wa_data wd "
-				+ "INNER JOIN    hi_psndoc_wadoc wadoc ON    wadoc.pk_psndoc = wd.pk_psndoc "
-				+ " INNER JOIN bd_psndoc psn on wd.pk_psndoc = psn.pk_psndoc "
-				+ "WHERE  "
-				+ (!StringUtils.isEmpty(condition) && !caculateTypeVO.getRange().booleanValue() ? ("wd." + condition + "and")
-						: "") + " wd.checkflag = 'N' AND wd.pk_wa_class = '" + loginContext.getPk_wa_class()
-				+ "' AND wd.cyear = '" + loginContext.getCyear() + "' AND wd.cperiod = '" + loginContext.getCperiod()
-				+ "' AND wd.stopflag = 'N' GROUP BY psn.code having sum(case when least('"
-				+ loginContext.getWaLoginVO().getPeriodVO().getCenddate().toString()
-				+ "',NVL(enddate,'9999-12-31')) >= greatest('"
-				+ loginContext.getWaLoginVO().getPeriodVO().getCstartdate().toString()
-				+ "',begindate) AND pk_wa_item = '1001A110000000000GEF'  then 1 else 0 end) = 0";
-		List<String> psncodes = (List<String>) dao.executeQuery(sql, new ColumnListProcessor());
-		if (psncodes != null && psncodes.size() > 0) {
-			String message = "";
-			for (String psncode : psncodes) {
-				if (StringUtils.isEmpty(message)) {
-					message += psncode;
-				} else {
-					message += "," + psncode;
+		// MOD by ssx on 2020-04-29
+		// 先檢查月薪天數公式在本次計薪是否被引用，如果引用了就不再做檢查
+		int cntWageDays = (int) dao.executeQuery(
+				"select count(pk_wa_classitem) from wa_classitem where vformula like '%wageDays%' and pk_wa_class='"
+						+ loginContext.getPk_wa_class() + "'  and cyear='" + loginContext.getCyear()
+						+ "' and cperiod='" + loginContext.getCperiod() + "'  and dr=0;", new ColumnProcessor());
+
+		if (cntWageDays > 0) {
+			// ssx added on 2020-02-29
+			// 定調資項目檢查
+			String sql = "SELECT psn.code  FROM    wa_data wd "
+					+ "INNER JOIN    hi_psndoc_wadoc wadoc ON    wadoc.pk_psndoc = wd.pk_psndoc "
+					+ " INNER JOIN bd_psndoc psn on wd.pk_psndoc = psn.pk_psndoc "
+					+ "WHERE  "
+					+ (!StringUtils.isEmpty(condition) && !caculateTypeVO.getRange().booleanValue() ? ("wd."
+							+ (condition.contains("wa_data.") ? condition.replace("wa_data.", "") : condition) + " and")
+							: "") + " wd.checkflag = 'N' AND wd.pk_wa_class = '" + loginContext.getPk_wa_class()
+					+ "' AND wd.cyear = '" + loginContext.getCyear() + "' AND wd.cperiod = '"
+					+ loginContext.getCperiod()
+					+ "' AND wd.stopflag = 'N' GROUP BY psn.code having sum(case when least('"
+					+ loginContext.getWaLoginVO().getPeriodVO().getCenddate().toString()
+					+ "',NVL(enddate,'9999-12-31')) >= greatest('"
+					+ loginContext.getWaLoginVO().getPeriodVO().getCstartdate().toString()
+					+ "',begindate) AND pk_wa_item = '1001A110000000000GEF'  then 1 else 0 end) = 0";
+			List<String> psncodes = (List<String>) dao.executeQuery(sql, new ColumnListProcessor());
+			if (psncodes != null && psncodes.size() > 0) {
+				String message = "";
+				for (String psncode : psncodes) {
+					if (StringUtils.isEmpty(message)) {
+						message += psncode;
+					} else {
+						message += "," + psncode;
+					}
 				}
-			}
-			throw new BusinessException("下列人員月薪天數為0，請檢查人員定調資數據。\r\n" + message);
+				throw new BusinessException("下列人員月薪天數為0，請檢查人員【本薪】定調資數據。\r\n" + message);
+			} // end
 		}
-		// end
+		// end MOD
 
 		// ssx remarked on 2019-11-05
 		// 为了福委历史数据，暂时不检查年资起算日
@@ -2216,6 +2242,134 @@ public class PaydataServiceImpl implements IPaydataManageService, IPaydataQueryS
 	public void doEncryptEx(WaLoginContext loginContext) throws BusinessException {
 		DataCaculateService caculateService = new DataCaculateService(loginContext);
 		caculateService.doEncryptBySQL();
+	}
+
+	@Override
+	public boolean sendPayslipByEmail(SuperVO[] payFileVOs, String pk_itemgroup, boolean showZeroItems)
+			throws BusinessException {
+		try {
+			String filePath = RuntimeEnv.getInstance().getNCHome() + "/resources/hr/wa/";
+			File file = new File(filePath + "paysliptemplate.tpl");
+			InputStreamReader isr = new InputStreamReader(new FileInputStream(file), "UTF-8");
+			BufferedReader read = new BufferedReader(isr);
+			String strBuffer;
+			StringBuilder templateContent = new StringBuilder();
+			while ((strBuffer = read.readLine()) != null) { // 若檔案內容不為null就執行
+				templateContent.append(strBuffer);
+			}
+			read.close();
+			templateContent = applyDataToTemplate(payFileVOs, pk_itemgroup, templateContent, showZeroItems);
+
+			generatePDFDocument(templateContent.toString(), filePath, "123qwe");
+		} catch (Exception e) {
+			throw new BusinessException(e.getMessage());
+		}
+		return true;
+	}
+
+	@SuppressWarnings("unchecked")
+	private StringBuilder applyDataToTemplate(SuperVO[] payFileVOs, String pk_itemgroup, StringBuilder templateContent,
+			boolean showZeroItems) throws BusinessException {
+		Set<String> wadataPKs = new HashSet<String>();
+		for (SuperVO vo : payFileVOs) {
+			wadataPKs.add(vo.getPrimaryKey());
+		}
+		List<Map<String, String>> itemkeys = (List<Map<String, String>>) getService().getBaseDao().executeQuery(
+				"SELECT it.itemkey, it.name" + MultiLangUtil.getCurrentLangSeqSuffix()
+						+ " name FROM wa_itemgroupmember mb "
+						+ "INNER JOIN wa_item it ON it.pk_wa_item = mb.pk_waitem WHERE mb.pk_itemgroup='"
+						+ pk_itemgroup + "' ORDER BY mb.orderno", new MapListProcessor());
+
+		String strGroupItems = "";
+		if (itemkeys != null && itemkeys.size() > 0) {
+			for (Map<String, String> itemkey : itemkeys) {
+				strGroupItems += ", SALARY_DECRYPT(isnull(" + itemkey.get("itemkey") + ",0)) " + itemkey.get("name");
+			}
+		} else {
+			throw new BusinessException("未發現指定薪資項目分組的已選取薪資項目。");
+		}
+
+		String strSQL = "select wd.pk_psndoc, wc.name WACLASSNAME, left(wd.cpaydate,10) PAYDATE, dp.code DEPTNAME, psn.code PSNCODE, "
+				+ "psn.name PSNNAME, wd.pk_bankaccbas1 ACCOUNTID, SALARY_DECRYPT(wd.f_5) incometax,  SALARY_DECRYPT(wd.f_49) extrains, "
+				+ "SALARY_DECRYPT(f_1) payable, SALARY_DECRYPT(f_3) paid, SALARY_DECRYPT(f_2) deductable "
+				+ strGroupItems
+				+ " from wa_data wd "
+				+ "inner join wa_waclass wc on wd.pk_wa_class = wc.pk_wa_class "
+				+ "inner join org_dept dp on wd.workdept = dp.pk_dept "
+				+ "inner join bd_psndoc psn on wd.pk_psndoc = psn.pk_psndoc "
+				+ "where wd.cpaydate is not null"
+				+ " and wd.pk_wa_data in (" + new InSQLCreator().getInSQL(wadataPKs.toArray(new String[0])) + ")";
+
+		List<Map<String, Object>> result = (List<Map<String, Object>>) this.getService().getBaseDao()
+				.executeQuery(strSQL, new MapListProcessor());
+		if (result == null || result.size() == 0) {
+			throw new BusinessException("未發現員工薪資資料，請檢查後重試。");
+		} else {
+			String headHTML = templateContent.substring(0, templateContent.indexOf("$FOREACH:PK_PSNDOC$"));
+			String contentHTMLSeed = templateContent.substring(templateContent.indexOf("$FOREACH:PK_PSNDOC$")
+					+ "$FOREACH:PK_PSNDOC$".length(), templateContent.indexOf("$ENDFOR:PK_PSNDOC$"));
+			String tailHTML = templateContent.substring(templateContent.indexOf("$ENDFOR:PK_PSNDOC$")
+					+ "$ENDFOR:PK_PSNDOC$".length());
+
+			templateContent = new StringBuilder();
+			templateContent.append(headHTML);
+			for (Map<String, Object> psnRec : result) {
+				String contentPsn = contentHTMLSeed;
+				for (Entry<String, Object> rec : psnRec.entrySet()) {
+					contentPsn = contentPsn.replace("$" + rec.getKey().toUpperCase() + "$",
+							String.valueOf(rec.getValue()));
+				}
+
+				String innerHeadHTML = contentPsn.substring(0, contentPsn.indexOf("$FOREACH:PK_WA_ITEM$"));
+				String innerHTMLSeed = contentPsn.substring(contentPsn.indexOf("$FOREACH:PK_WA_ITEM$")
+						+ "$FOREACH:PK_WA_ITEM$".length(), contentPsn.indexOf("$ENDFOR:PK_WA_ITEM$"));
+				String innerTailHTML = contentPsn.substring(contentPsn.indexOf("$ENDFOR:PK_WA_ITEM$")
+						+ "$ENDFOR:PK_WA_ITEM$".length());
+
+				StringBuilder innerPsnContent = new StringBuilder();
+				for (Map<String, String> itemkey : itemkeys) {
+					if (showZeroItems || Double.valueOf(String.valueOf(psnRec.get(itemkey.get("name")))) != 0.0D) {
+						innerPsnContent = innerPsnContent.append(innerHTMLSeed.replace("$WAITEMNAME$",
+								itemkey.get("name")).replace("$WAITEMVALUE$",
+								String.valueOf(psnRec.get(itemkey.get("name")))));
+					}
+				}
+
+				if (innerPsnContent.length() == 0) {
+					innerPsnContent = innerPsnContent.append(innerHTMLSeed.replace("$WAITEMNAME$", "").replace(
+							"$WAITEMVALUE$", ""));
+				}
+
+				templateContent.append(innerHeadHTML);
+				templateContent.append(innerPsnContent);
+				templateContent.append(innerTailHTML);
+			}
+			templateContent.append(tailHTML);
+		}
+		return templateContent;
+	}
+
+	private void generatePDFDocument(String content, String filePath, String password) throws Exception {
+		// 自訂字型物件
+		// XMLWorkerFontProvider fontImp = new XMLWorkerFontProvider(filePath);
+		// FontFactory.setFontImp(fontImp);
+		// // 註冊FontFactory，定義Font Alias Name = mingliu
+		// FontFactory.register(filePath + "mingliu.ttc", "mingliu");
+		Document document = new Document(PageSize.A4, 0, 0, 0, 0);
+		PdfWriter pw = PdfWriter.getInstance(document, new FileOutputStream(filePath + "payslip.pdf"));
+		if (!StringUtils.isEmpty(password)) {
+			pw.setEncryption(password.getBytes(), password.getBytes(), PdfWriter.ALLOW_PRINTING,
+					PdfWriter.ENCRYPTION_AES_128);
+		}
+		document.open();
+		// Initial HTML轉換物件
+		XMLWorkerHelper xmlWorker = XMLWorkerHelper.getInstance();
+		// Parse HTML字串，要把自訂的FontProvider傳入
+		xmlWorker.parseXHtml(pw, document, new ByteArrayInputStream(content.getBytes("UTF-8")),
+				Charset.forName("UTF-8"));
+		if (document != null) {
+			document.close();
+		}
 	}
 
 }

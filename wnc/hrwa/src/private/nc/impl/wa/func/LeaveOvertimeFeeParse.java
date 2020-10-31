@@ -72,7 +72,7 @@ public class LeaveOvertimeFeeParse extends AbstractPreExcutorFormulaParse {
 		// 分离参数
 		String[] arguments = getArguments(formula.toString());
 
-		int intComp = arguments[0].equals("0") ? -3 : (arguments[0].equals("1") ? -2 : -1); // MOD
+		int intComp = arguments[0].equals("0") ? -2 : (arguments[0].equals("1") ? -3 : -1); // MOD
 																							// by
 																							// ssx
 																							// on
@@ -83,7 +83,8 @@ public class LeaveOvertimeFeeParse extends AbstractPreExcutorFormulaParse {
 
 		// add by ssx on 2019-04-07
 		UFLiteralDate leaveBeginDate = endDate.getDateAfter(1);
-		UFLiteralDate leaveEndDate = startDate.getDateAfter(startDate.getDaysMonth() - startDate.getDay()); // 月末最後一天
+		UFLiteralDate leaveEndDate = leaveBeginDate.getDateAfter(
+				leaveBeginDate.getDaysMonth() - leaveBeginDate.getDay()).getDateAfter(1); // 月末最後一天
 		// MOD end
 
 		/* 获取计算人员集合 start */
@@ -94,16 +95,18 @@ public class LeaveOvertimeFeeParse extends AbstractPreExcutorFormulaParse {
 		List<String> psndocList = (List<String>) basedao.executeQuery(psnlistsql, new ColumnListProcessor());
 		/* 获取计算人员集合 end */
 
-		int rows = (int) basedao.executeQuery(
-				"select count(*) from wa_cacu_overtimefee where pk_wa_class='" + pk_wa_class + "' and creator='"
-						+ this.getContext().getPk_loginUser() + "' and intcomp=" + String.valueOf(intComp),
+		int rows = (int) basedao.executeQuery("select case when (sum("
+				+ ("null".equals(pk_group_item) ? "taxfreehours+taxablehours" : "amounttaxfree+amounttaxable")
+				+ ")) > 0 then 1 else 0 end cnt from wa_cacu_overtimefee where pk_wa_class='" + pk_wa_class
+				+ "' and creator='" + this.getContext().getPk_loginUser() + "' and intComp=" + String.valueOf(intComp),
 				new ColumnProcessor());
 		if (rows == 0 && psndocList != null && psndocList.size() > 0) {
 			// 调用接口返回应税或免税加班费
 			ISegDetailService segDetailService = NCLocator.getInstance().lookup(ISegDetailService.class);
 			// 计算加班费,传入分组入口
-			Map<String, UFDouble[]> ovtFeeResult = segDetailService.calculateOvertimeFeeByDate(pk_org,
-					psndocList.toArray(new String[0]), startDate, endDate, null, null, pk_group_item, true);
+			Map<String, UFDouble[]> ovtFeeResult = segDetailService.calculateOvertimeFeeByDate(pk_org, psndocList
+					.toArray(new String[0]), startDate, endDate, null, null, (pk_group_item.equals("null") ? null
+					: pk_group_item), true);
 			if (null == ovtFeeResult || ovtFeeResult.size() == 0) {
 				throw new BusinessException("调用接口ISegDetailService获取应税(免税)加班费为空");
 			} else {
@@ -123,16 +126,21 @@ public class LeaveOvertimeFeeParse extends AbstractPreExcutorFormulaParse {
 		Pattern p = Pattern.compile("\\d");
 		Matcher m = p.matcher(String.valueOf(arguments[0]).replaceAll("\'", ""));
 
-		int intComp = arguments[0].equals("0") ? -2 : (arguments[0].equals("1") ? -3 : -1); // MOD
-																							// by
-																							// ssx
-																							// on
-																							// 2020-03-09，改合計為非轉調休
+		// 公式參數: 0=轉調休，1=加班費（非轉調休），2=合計
+		// 臨時表標識intComp：-2=轉調休，-3=加班費（非轉調休），-1=合計
+		int intComp = arguments[0].equals("0") ? -2 : (arguments[0].equals("1") ? -3 : -1);
+
 		// 是否免税 0否 1是
 		int flag = Integer.valueOf(arguments[1]);
 
+		// 薪资项目分组
+		String pk_group_item = String.valueOf(arguments[2]).replaceAll("\'", "");
+
 		fvo.setAliTableName("wa_cacu_data");
-		fvo.setReplaceStr("coalesce(" + "(select " + (flag == 0 ? "amounttaxable" : "amounttaxfree")
+		fvo.setReplaceStr("coalesce("
+				+ "(select "
+				+ ((pk_group_item == null || pk_group_item.equals("null")) ? (flag == 0 ? "taxablehours"
+						: "taxfreehours") : (flag == 0 ? "amounttaxable" : "amounttaxfree"))
 				+ " from wa_cacu_overtimefee where pk_wa_class=wa_cacu_data.pk_wa_class and creator='"
 				+ this.getContext().getPk_loginUser() + "' and intcomp=" + String.valueOf(intComp)
 				+ " and pk_psndoc=wa_cacu_data.pk_psndoc)" + ", 0)");

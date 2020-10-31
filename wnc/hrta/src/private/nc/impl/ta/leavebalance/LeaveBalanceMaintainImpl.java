@@ -12,8 +12,10 @@ import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TimeZone;
 
 import nc.bs.dao.BaseDAO;
@@ -31,6 +33,7 @@ import nc.hr.utils.SQLHelper;
 import nc.hr.utils.StringPiecer;
 import nc.impl.hr.formula.parser.IFormulaParser;
 import nc.impl.hr.formula.parser.XMLFormulaParser;
+import nc.impl.pub.OTLeaveBalanceUtils;
 import nc.impl.ta.algorithm.BillProcessHelperAtServer;
 import nc.impl.ta.statistic.pub.ParaHelper;
 import nc.itf.om.IAOSQueryService;
@@ -56,6 +59,7 @@ import nc.pubitf.rbac.IDataPermissionPubService;
 import nc.ui.querytemplate.querytree.FromWhereSQL;
 import nc.vo.hi.psndoc.PsnJobVO;
 import nc.vo.hi.psndoc.PsnOrgVO;
+import nc.vo.hi.psndoc.PsndocVO;
 import nc.vo.hr.temptable.TempTableVO;
 import nc.vo.hr.tools.dbtool.util.db.DBUtil;
 import nc.vo.hr.tools.pub.GeneralVO;
@@ -139,6 +143,12 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain, IL
 		} catch (Exception e) {
 			Logger.error(e.getMessage(), e);
 		}
+
+		// ssx added on 2020-06-10
+		// 在職已滿月數 #35698
+		generateOnDutyMonthsTemp(vos);
+		// end
+
 		// begin-双百支持-zhaozhaob-数据量过大假期计算问题-20161117（20170111NC67合并补丁）
 		List<LeaveBalanceVO> tempCalList = new ArrayList<LeaveBalanceVO>();
 		for (int i = 0; i < canCalList.size(); i++) {
@@ -170,6 +180,120 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain, IL
 		// 业务日志
 		TaBusilogUtil.writeLeaveBalanceCalculateBusiLog(retvos);
 		return retvos;
+	}
+
+	@SuppressWarnings("unchecked")
+	private void generateOnDutyMonthsTemp(LeaveBalanceVO[] vos) throws BusinessException {
+		if (!baseDao.isTableExisted("tbm_cacu_annalleave")) {
+			baseDao.executeUpdate("CREATE TABLE tbm_cacu_annalleave  ( ondutymonth NUMBER(28,8),  cyear VARCHAR2(4), "
+					+ "workagestartdate VARCHAR2(10), creator VARCHAR2(20), pk_leavebalance VARCHAR2(20), "
+					+ "TS CHAR(19) DEFAULT TO_CHAR(SYSDATE,'yyyy-mm-dd hh24:mi:ss'), DR NUMBER(10) DEFAULT 0, "
+					+ "PRIMARY KEY (pk_leavebalance, creator, cyear, workagestartdate)" + ")");
+		}
+
+		StringBuffer deleteWa_cacu_data = new StringBuffer();
+		deleteWa_cacu_data.append("delete from tbm_cacu_annalleave ");
+		deleteWa_cacu_data.append(" where creator='" + InvocationInfoProxy.getInstance().getUserId() + "'");
+		baseDao.executeUpdate(deleteWa_cacu_data.toString());
+
+		PersistenceManager sessionManager = null;
+		String insertTempSql = "insert into tbm_cacu_annalleave(creator,pk_leavebalance,ondutymonth,cyear,workagestartdate) values (?,?,?,?,?)";
+
+		Set<String> pks = new HashSet<String>();
+		try {
+			sessionManager = PersistenceManager.getInstance();
+			JdbcSession session = sessionManager.getJdbcSession();
+			// 获取当前计算人员PK List
+			for (LeaveBalanceVO vo : vos) {
+				if (!pks.contains(vo.getPk_leavebalance())) {
+					pks.add(vo.getPk_leavebalance());
+				} else {
+					continue;
+				}
+
+				PsnOrgVO psnorg = (PsnOrgVO) baseDao.retrieveByPK(PsnOrgVO.class, vo.getPk_psnorg());
+				UFLiteralDate workAgeStartDate = (UFLiteralDate) psnorg.getAttributeValue("workagestartdate");
+
+				if (workAgeStartDate == null) {
+					PsndocVO psnvo = (PsndocVO) baseDao.retrieveByPK(PsndocVO.class, vo.getPk_psndoc());
+					throw new BusinessException("員工 [" + psnvo.getCode() + "] 的年資起算日不能為空。");
+				}
+
+				UFLiteralDate psnBeginDate = OTLeaveBalanceUtils.getBeginDateByWorkAgeStartDate(vo.getCuryear(),
+						workAgeStartDate);
+				UFLiteralDate psnEndDate = OTLeaveBalanceUtils.getEndDateByWorkAgeStartDate(vo.getCuryear(),
+						workAgeStartDate);
+
+				UFLiteralDate baseDate = new UFLiteralDate();
+				if (psnBeginDate.after(baseDate)) {
+					// 提前計算以後年度，計算基準日期取當天系統日期
+					baseDate = new UFLiteralDate();
+				} else if (psnEndDate.before(baseDate)) {
+					// 計算上一年度，計算基準日期取前一年度最後一天
+					baseDate = psnEndDate;
+				}
+
+				// 取當前組織關係下工作記錄
+				Collection<PsnJobVO> psnjobs = baseDao.retrieveByClause(PsnJobVO.class,
+						"pk_psnorg = '" + vo.getPk_psnorg() + "' and ismainjob='Y' ");
+
+				boolean isTransLeave = false;
+				for (PsnJobVO psnjob : psnjobs) {
+					if (psnjob.getTrnsevent() == 4) {
+						// 該員工在當前組織關係中已離職，計算基準日期取離職前一天
+						baseDate = psnjob.getBegindate().getDateBefore(1);
+						isTransLeave = true;
+					}
+				}
+
+				if (!isTransLeave) {
+					int termLeaveCount = 0;
+					int termBackCount = 0;
+					UFLiteralDate lastTermLeaveDate = null;
+					for (PsnJobVO psnjob : psnjobs) {
+						// 沒離職的人判斷期間內是否留停且未回任
+						if (psnjob.getTrnstype().equals("1001X110000000003O5G")) {
+							termLeaveCount++;
+							if (lastTermLeaveDate == null || lastTermLeaveDate.before(psnjob.getBegindate())) {
+								// 最晚一次留停開始日期，解決期間內多次留停問題
+								lastTermLeaveDate = psnjob.getBegindate();
+							}
+						} else if (psnjob.getTrnstype().equals("1001X110000000003O5I")) {
+							termBackCount++;
+						}
+					}
+
+					if (termLeaveCount > termBackCount) {
+						// 已留停，未返回，計算基準日期取留停前一天
+						baseDate = lastTermLeaveDate.getDateBefore(1);
+					}
+				}
+
+				int months = 0;
+				if (workAgeStartDate.getDay() > baseDate.getDay()) {
+					months = (baseDate.getYear() - workAgeStartDate.getYear()) * 12 + baseDate.getMonth()
+							- workAgeStartDate.getMonth() - 1;
+				} else {
+					months = (baseDate.getYear() - workAgeStartDate.getYear()) * 12 + baseDate.getMonth()
+							- workAgeStartDate.getMonth();
+				}
+
+				SQLParameter parameter = new SQLParameter();
+				parameter.addParam(InvocationInfoProxy.getInstance().getUserId());
+				parameter.addParam(vo.getPk_leavebalance());
+				parameter.addParam(months);
+				parameter.addParam(vo.getCuryear());
+				parameter.addParam(workAgeStartDate.toString());
+				session.addBatch(insertTempSql, parameter);
+			}
+			session.executeBatch();
+		} catch (DbException e) {
+			e.printStackTrace();
+		} finally {
+			if (sessionManager != null) {
+				sessionManager.release();
+			}
+		}
 	}
 
 	/**
@@ -514,6 +638,12 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain, IL
 			InSQLCreator isc = new InSQLCreator();
 			try {
 				String inSQL = isc.getInSQL(pks);
+
+				// ssx added on 2020-06-10
+				// 在職已滿月數 #35698
+				generateOnDutyMonthsTemp(filteredVOs);
+				// end
+
 				// 如果是否加班转调休，则需要计算享有和实际享有（加班转调休的享有和实际享有都是在转调休、反转调休时生成）
 				if (!typeVO.getTimeitemcode().equals(TimeItemCopyVO.OVERTIMETOLEAVETYPE))
 					calCurRealDayOrHour(pk_org, typeVO, year, month, periodBeginDate, periodEndDate, filteredVOs,
@@ -1932,9 +2062,9 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain, IL
 		// 取入职日期 或者年资日期
 		Map<String, UFLiteralDate> psnOrgDateMap = new HashMap<String, UFLiteralDate>();
 		InSQLCreator isc = new InSQLCreator();
+		String psnOrgInSql = isc.getInSQL(StringPiecer.getStrArray(vos, LeaveBalanceVO.PK_PSNORG));
+		PsnOrgVO[] psnOrgVOs = CommonUtils.retrieveByClause(PsnOrgVO.class, " pk_psnorg in (" + psnOrgInSql + ") ");
 		try {
-			String psnOrgInSql = isc.getInSQL(StringPiecer.getStrArray(vos, LeaveBalanceVO.PK_PSNORG));
-			PsnOrgVO[] psnOrgVOs = CommonUtils.retrieveByClause(PsnOrgVO.class, " pk_psnorg in (" + psnOrgInSql + ") ");
 			if (!ArrayUtils.isEmpty(psnOrgVOs)) {
 				for (PsnOrgVO psnOrgVO : psnOrgVOs)
 
@@ -2109,9 +2239,20 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain, IL
 					badVOs = (LeaveBalanceVO[]) CommonUtils.toArray(LeaveBalanceVO.class,
 							dao.retrieveByClause(LeaveBalanceVO.class, prePeriodCond, para));
 					boolean prePeriodNotSealed = false;
-					if (ArrayUtils.isEmpty(badVOs))
-						prePeriodNotSealed = true;
-					else {
+					if (ArrayUtils.isEmpty(badVOs)) {
+						// MOD by ssx on 2020-04-24
+						// 没找到就列为有未结算，这点有疑问
+						// 改成入职年如果比结算年早，找不到就列为有未结算，这样更合理一些
+						for (PsnOrgVO psnOrgVO : psnOrgVOs) {
+							if (psnOrgVO.getPk_psnorg().equals(vo.getPk_psnorg())) {
+								if (Integer.valueOf(psnOrgVO.getBegindate().toString().substring(0, 4)) < Integer
+										.valueOf(previousPeriod.getTimeyear())) {
+									prePeriodNotSealed = true;
+								}
+							}
+						}
+						// end
+					} else {
 						for (LeaveBalanceVO badVO : badVOs) {
 							if (!badVO.isSettlement()) {
 								prePeriodNotSealed = true;
@@ -2605,7 +2746,7 @@ public class LeaveBalanceMaintainImpl implements ILeaveBalanceManageMaintain, IL
 		BaseDAO baseDao = new BaseDAO();
 		// MOD by ssx #33564
 		// 離職人員可以結算
-		Collection<PsnOrgVO> psnorgvos = baseDao.retrieveByClause(PsnOrgVO.class, "pk_psnorg = '" + vo.getPk_psnorg()
+		Collection<PsnOrgVO> psnorgvos = baseDao.retrieveByClause(PsnOrgVO.class, "pk_psnorg  = '" + vo.getPk_psnorg()
 				+ "' ");
 		if (psnorgvos.toArray(new PsnOrgVO[0])[0].getEndflag().booleanValue()) {
 			return true;

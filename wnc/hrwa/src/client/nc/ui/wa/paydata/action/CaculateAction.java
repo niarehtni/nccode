@@ -3,6 +3,7 @@ package nc.ui.wa.paydata.action;
 import java.awt.Event;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -15,6 +16,7 @@ import nc.bs.framework.common.NCLocator;
 import nc.bs.uif2.LockFailedException;
 import nc.funcnode.ui.action.INCAction;
 import nc.hr.utils.ResHelper;
+import nc.itf.hi.IPsndocSubInfoService4JFS;
 import nc.itf.hr.wa.IHRWAActionCode;
 import nc.itf.hr.wa.IPaydataManageService;
 import nc.itf.hrwa.IWadaysalaryQueryService;
@@ -27,6 +29,7 @@ import nc.ui.pub.beans.UIDialog;
 import nc.ui.uif2.ShowStatusBarMsgUtil;
 import nc.vo.hr.caculate.CaculateTypeVO;
 import nc.vo.pub.SuperVO;
+import nc.vo.pub.lang.UFBoolean;
 import nc.vo.pub.lang.UFDouble;
 import nc.vo.wa.paydata.DataVO;
 import nc.vo.wa.pub.WaState;
@@ -105,26 +108,64 @@ public class CaculateAction extends PayDataBaseAction {
 										+ new UFDouble((end - start) / 1000).setScale(2, UFDouble.ROUND_UP).toString()
 										+ "秒", getContext());
 
-						dialog.setStartText("預處理二代健保數據，請稍等...");
-						// 取消二代健保计算的结果 Ares.Tank 2018年10月26日17:01:47
-						start = System.currentTimeMillis();
-						ICalculateTWNHI nhiSrv = NCLocator.getInstance().lookup(ICalculateTWNHI.class);
-						nhiSrv.delExtendNHIInfo(getContext().getPk_group(), getContext().getPk_org(), getWaContext()
-								.getPk_wa_class(), getWaContext().getWaLoginVO().getPeriodVO().getPk_wa_period());
-						getPaydataManager().refreshWithoutItem();
-						end = System.currentTimeMillis();
-						ShowStatusBarMsgUtil.showStatusBarMsg("二代健保預處理耗時："
-								+ new UFDouble((end - start) / 1000).setScale(2, UFDouble.ROUND_UP).toString() + "秒",
-								getContext());
+						List<String> pk_psndocs = null;
+						if (!caculateTypeVO.getRange().booleanValue()) {
+							// 部分
+							pk_psndocs = new ArrayList<String>();
+							for (SuperVO vo : payfileVos) {
+								if (caculateTypeVO.getType().booleanValue()) {
+									// 全部
+									pk_psndocs.add((String) vo.getAttributeValue("pk_psndoc"));
+								} else {
+									if (!((UFBoolean) vo.getAttributeValue("caculateflag")).booleanValue()) {
+										// 未计算
+										pk_psndocs.add((String) vo.getAttributeValue("pk_psndoc"));
+									}
+								}
+							}
+						}
 
-						dialog.setStartText(ResHelper.getString("60130paydata", "060130paydata0333")/*
-																									 * @
-																									 * res
-																									 * "薪资计算过程中，请稍等..."
-																									 */);
-						// 以下方法中出现refresh方法有可能造成线程问题。
-						// 解决思路将refresh拿到该线程执行完毕后。
-						getPaydataManager().onCaculate(caculateTypeVO, payfileVos.toArray(new SuperVO[0]));
+						if (pk_psndocs == null || pk_psndocs.size() > 0) {
+							start = System.currentTimeMillis();
+							dialog.setStartText(nc.vo.ml.NCLangRes4VoTransl.getNCLangRes().getStrByID(
+									"twhr_personalmgt", "068J61035-0002")/*
+																		 * @res
+																		 * 正在计算员工团保费用
+																		 */);
+							// 团保计算服务
+							IPsndocSubInfoService4JFS service = NCLocator.getInstance().lookup(
+									IPsndocSubInfoService4JFS.class);
+							service.calculateGroupIns(getWaContext().getPk_org(), getWaContext().getPk_wa_class(),
+									getWaContext().getCyear(), getWaContext().getCperiod(), (pk_psndocs == null ? null
+											: pk_psndocs.toArray(new String[0])), false);
+
+							end = System.currentTimeMillis();
+							ShowStatusBarMsgUtil.showStatusBarMsg("團保計算耗時："
+									+ new UFDouble((end - start) / 1000).setScale(2, UFDouble.ROUND_UP).toString()
+									+ "秒", getContext());
+
+							dialog.setStartText("預處理二代健保數據，請稍等...");
+							// 取消二代健保计算的结果 Ares.Tank 2018年10月26日17:01:47
+							start = System.currentTimeMillis();
+							ICalculateTWNHI nhiSrv = NCLocator.getInstance().lookup(ICalculateTWNHI.class);
+							nhiSrv.delExtendNHIInfo(getContext().getPk_group(), getContext().getPk_org(),
+									getWaContext().getPk_wa_class(), getWaContext().getWaLoginVO().getPeriodVO()
+											.getPk_wa_period());
+							getPaydataManager().refreshWithoutItem();
+							end = System.currentTimeMillis();
+							ShowStatusBarMsgUtil.showStatusBarMsg("二代健保預處理耗時："
+									+ new UFDouble((end - start) / 1000).setScale(2, UFDouble.ROUND_UP).toString()
+									+ "秒", getContext());
+
+							dialog.setStartText(ResHelper.getString("60130paydata", "060130paydata0333")/*
+																										 * @
+																										 * res
+																										 * "薪资计算过程中，请稍等..."
+																										 */);
+							// 以下方法中出现refresh方法有可能造成线程问题。
+							// 解决思路将refresh拿到该线程执行完毕后。
+							getPaydataManager().onCaculate(caculateTypeVO, payfileVos.toArray(new SuperVO[0]));
+						}
 					} catch (LockFailedException le) {
 						error = ResHelper.getString("60130paydata", "060130paydata0334")/*
 																						 * @

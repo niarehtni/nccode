@@ -65,7 +65,7 @@ public class ItemGroupMemberVO extends SuperVO {
 	/**
 	 * œ‘ æ¥Œ–Ú
 	 */
-	public int orderno;
+	public Integer orderno;
 	/**
 	 * ïrÈg¥¡
 	 */
@@ -266,7 +266,7 @@ public class ItemGroupMemberVO extends SuperVO {
 	 * 
 	 * @return int
 	 */
-	public int getOrderno() {
+	public Integer getOrderno() {
 		return orderno;
 	}
 
@@ -276,7 +276,7 @@ public class ItemGroupMemberVO extends SuperVO {
 	 * @param orderno
 	 *            orderno int
 	 */
-	public void setOrderno(int orderno) {
+	public void setOrderno(Integer orderno) {
 		this.orderno = orderno;
 	}
 

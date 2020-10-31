@@ -3,6 +3,8 @@ package nc.ui.twhr.twhr.action;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import nc.bs.framework.common.NCLocator;
 import nc.bs.logging.Logger;
@@ -63,16 +65,18 @@ public class ImportHealthInsuranceAction extends HrAction {
 	@Override
 	public void doAction(ActionEvent paramActionEvent) throws Exception {
 		AccoutImportDlg dlg = new AccoutImportDlg(getContext());
+		dlg.setTitle("健保帳單匯入");
 		if (1 == dlg.showModal()) {
 			putValue(HrAction.MESSAGE_AFTER_ACTION, "");
 			final String filePath = dlg.getFilePathPane().getText();
+			final String pk_legal_org = dlg.getLegalOrgPanl().getRefPK();
+			final String waPeriod = dlg.getPeriodPanel().getRefPK();
 			// 判断文件是否是劳退
 			if (!filePath.contains("_健_")) {
 				MessageDialog.showHintDlg(ImportHealthInsuranceAction.this.getEntranceUI(), null, "請導入正確文件!");
 				return;
 			}
 			final Integer dataType = (Integer) dlg.getUiCbxDataType().getSelectdItemValue();
-			final LoginContext waContext = (LoginContext) getContext();
 
 			new Thread(new Runnable() {
 				@Override
@@ -83,10 +87,26 @@ public class ImportHealthInsuranceAction extends HrAction {
 					progressMonitor.beginTask(ResHelper.getString("6013dataitf_01", "dataitf-01-0042"), -1); // 导入数据...
 					progressMonitor.setProcessInfo(ResHelper.getString("6013dataitf_01", "dataitf-01-0043")); // 数据导入中,请稍后......
 					try {
-						ImportHealthInsuranceAction.this.healthInsuranceImport(filePath, waContext, dataType);
+						Map<Integer, Set<String>> errorMap = 
+								ImportHealthInsuranceAction.this.healthInsuranceImport(filePath, dataType,pk_legal_org,waPeriod);
 						getBatchRefreshAction().doAction(null);
-						MessageDialog.showHintDlg(ImportHealthInsuranceAction.this.getEntranceUI(), null,
-								ResHelper.getString("6013dataitf_01", "dataitf-01-0044")); // 数据导入成功！
+						if(errorMap!=null && errorMap.size() > 0){
+							StringBuilder sb = new StringBuilder();
+							if(errorMap.get(ITwhrMaintain.ERROR_NO_MATCH_ORG)!=null){
+								sb.append("以下身份證號未匹配到組織,請核對人員任職記錄和證件號:");
+								Set<String> psnIdSet = errorMap.get(ITwhrMaintain.ERROR_NO_MATCH_ORG);
+								for(String id : psnIdSet){
+									sb.append("[").append(id).append("] ");
+								}
+							}
+							
+							MessageDialog.showWarningDlg(ImportHealthInsuranceAction.this.getEntranceUI(), 
+									"導入結果", sb.toString());
+						}else{
+							MessageDialog.showHintDlg(ImportHealthInsuranceAction.this.getEntranceUI(), null,
+									ResHelper.getString("6013dataitf_01", "dataitf-01-0044")); // 数据导入成功！
+						}
+						
 					} catch (Exception e) {
 						Logger.error(e);
 						try {
@@ -110,7 +130,7 @@ public class ImportHealthInsuranceAction extends HrAction {
 
 	}
 
-	protected void healthInsuranceImport(String filePath, LoginContext waContext, Integer dataType) throws Exception {
+	protected Map<Integer, Set<String>> healthInsuranceImport(String filePath,Integer dataType,String pk_legal_org,String waPeriod) throws Exception {
 		if (null == dataType) {
 			Logger.error("import data type is null!");
 			// "导入数据类型为空!"
@@ -126,9 +146,7 @@ public class ImportHealthInsuranceAction extends HrAction {
 		}
 		switch (dataType.intValue()) {
 		case DataItfConst.VALUE_SALARY_DETAIL:
-			healthInsuranceimport(filePath, waContext);
-			break;
-
+			return healthInsuranceimport(filePath, pk_legal_org,waPeriod);
 		default:
 			Logger.error("import data type is out of type arry combobox!");
 			// "导入的数据类型超出定义的下列表!"
@@ -137,24 +155,23 @@ public class ImportHealthInsuranceAction extends HrAction {
 
 	}
 
-	private void healthInsuranceimport(String filePath, LoginContext waContext) throws Exception {
+	private Map<Integer, Set<String>> healthInsuranceimport(String filePath, String pk_legal_org, String waPeriod)
+			throws Exception {
 		BaoAccountVO[] vos = null;
-		int count = 0;
-
+		Map<Integer,Set<String>> errorMap = null;
 		List<BaoAccountVO> list = new ArrayList<BaoAccountVO>();
 		try {
 			do {
-				String pk_org = this.getOrgpanel().getRefPane().getRefPK();
-				waContext.setPk_org(pk_org);
-				String waperiod = AccountOrgHeadPanel.getWaperiod();
-				if (!StringUtils.isEmpty(pk_org)) {
-					vos = DataItfFileReaderAccount.readhealthTxtFileSD(pk_org, waperiod, filePath, waContext);
+
+				if (!StringUtils.isEmpty(waPeriod)) {
+					vos = DataItfFileReaderAccount.readhealthTxtFileSD(waPeriod, filePath);
 					if (!ArrayUtils.isEmpty(vos)) {
 						for (BaoAccountVO vo : vos) {
 							list.add(vo);
 						}
-						getService().insertupdatehealth(list.toArray(new BaoAccountVO[0]));
-						count += vos.length;
+						errorMap = getService().insertupdatehealth(
+								list.toArray(new BaoAccountVO[0]), pk_legal_org, waPeriod);
+						return errorMap;
 					}
 				}
 			} while (ArrayUtils.isEmpty(vos));
@@ -165,6 +182,7 @@ public class ImportHealthInsuranceAction extends HrAction {
 			errormsg.append(e.getMessage());
 			throw new Exception(errormsg.toString());
 		}
+		return errorMap;
 
 	}
 

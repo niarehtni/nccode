@@ -50,18 +50,15 @@ public class ExportIncomeAction extends HrAsynAction {
 			@Override
 			public void run() {
 
-				IProgressMonitor progressMonitor = NCProgresses
-						.createDialogProgressMonitor(getModel().getContext()
-								.getEntranceUI());
+				IProgressMonitor progressMonitor = NCProgresses.createDialogProgressMonitor(getModel().getContext()
+						.getEntranceUI());
 
 				try {
-					progressMonitor.beginTask("匯出中...",
-							IProgressMonitor.UNKNOWN_REMAIN_TIME);
+					progressMonitor.beginTask("匯出中...", IProgressMonitor.UNKNOWN_REMAIN_TIME);
 					exportExcel(getFilepath());
 				} catch (Exception e) {
-					ShowStatusBarMsgUtil.showErrorMsgWithClear(ResHelper
-							.getString("incometax", "2incometax-n-000004"), e
-							.getMessage(), getModel().getContext());
+					ShowStatusBarMsgUtil.showErrorMsgWithClear(ResHelper.getString("incometax", "2incometax-n-000004"),
+							e.getMessage(), getModel().getContext());
 				} finally {
 					progressMonitor.done(); // 进度任务结束
 				}
@@ -79,8 +76,7 @@ public class ExportIncomeAction extends HrAsynAction {
 	}
 
 	protected boolean isActionEnable() {
-		Object[] objects = ((IMultiRowSelectModel) getModel())
-				.getSelectedOperaDatas();
+		Object[] objects = ((IMultiRowSelectModel) getModel()).getSelectedOperaDatas();
 		if (null == objects) {
 			return false;
 		}
@@ -89,8 +85,7 @@ public class ExportIncomeAction extends HrAsynAction {
 
 	public ExportIncomeAction() {
 		setCode("ExportIncomeAction");
-		setBtnName(nc.vo.ml.NCLangRes4VoTransl.getNCLangRes().getStrByID(
-				"notice", "2notice-tw-000010"/* "导出" */));
+		setBtnName(nc.vo.ml.NCLangRes4VoTransl.getNCLangRes().getStrByID("notice", "2notice-tw-000010"/* "导出" */));
 	}
 
 	public AbstractAppModel getModel() {
@@ -111,8 +106,7 @@ public class ExportIncomeAction extends HrAsynAction {
 	}
 
 	public String getExportFilePath() {
-		FileNameExtensionFilter filter = new FileNameExtensionFilter("*.xlsx",
-				"xlsx");
+		FileNameExtensionFilter filter = new FileNameExtensionFilter("*.xlsx", "xlsx");
 		JFileChooser fc = new JFileChooser();
 		fc.setFileFilter(filter);
 		fc.setMultiSelectionEnabled(false);
@@ -127,10 +121,8 @@ public class ExportIncomeAction extends HrAsynAction {
 		return null;
 	}
 
-	public void exportExcel(String filepath) throws BusinessException,
-			IOException {
-		Object[] objects = ((IMultiRowSelectModel) getModel())
-				.getSelectedOperaDatas();
+	public void exportExcel(String filepath) throws BusinessException, IOException {
+		Object[] objects = ((IMultiRowSelectModel) getModel()).getSelectedOperaDatas();
 		if (null == objects || objects.length < 1) {
 			return;
 		}
@@ -139,26 +131,20 @@ public class ExportIncomeAction extends HrAsynAction {
 			AggIncomeTaxVO aggvo = (AggIncomeTaxVO) objects[i];
 			incomeTaxVOs[i] = aggvo.getParentVO();
 		}
-		IGetAggIncomeTaxData getService = NCLocator.getInstance().lookup(
-				IGetAggIncomeTaxData.class);
-		Map<String, String> psndocMap = getService.getPsnNameByPks(SQLHelper
-				.getStrArray(incomeTaxVOs, "pk_psndoc"));
-		Map<String, String> WaClassMap = getService.getWaClassName(SQLHelper
-				.getStrArray(incomeTaxVOs, "pk_wa_class"));
+		IGetAggIncomeTaxData getService = NCLocator.getInstance().lookup(IGetAggIncomeTaxData.class);
+		Map<String, String> psndocMap = getService.getPsnNameByPks(SQLHelper.getStrArray(incomeTaxVOs, "pk_psndoc"));
+		Map<String, String> WaClassMap = getService.getWaClassName(SQLHelper.getStrArray(incomeTaxVOs, "pk_wa_class"));
 		String readFilename = "IncomeTax.xlsx";
-		InputStream instream = ExportIncomeAction.class
-				.getResourceAsStream(readFilename);
+		InputStream instream = ExportIncomeAction.class.getResourceAsStream(readFilename);
 		XSSFWorkbook wb = new XSSFWorkbook(instream);
 		XSSFSheet sheet = wb.getSheetAt(0);
 		int rowNum = 1;
 		for (int i = 0; i < incomeTaxVOs.length; i++) {
 			IncomeTaxVO interVO = incomeTaxVOs[i];
-			XSSFRow row = sheet.getRow(rowNum) == null ? sheet
-					.createRow(rowNum) : sheet.getRow(rowNum);
+			XSSFRow row = sheet.getRow(rowNum) == null ? sheet.createRow(rowNum) : sheet.getRow(rowNum);
 			XSSFRow row2 = sheet.getRow(rowNum - 1);
-			for (int j = 0; j < 8; j++) {
-				XSSFCell cell = row.getCell(j) == null ? row.createCell(j)
-						: row.getCell(j);
+			for (int j = 0; j < 9; j++) {
+				XSSFCell cell = row.getCell(j) == null ? row.createCell(j) : row.getCell(j);
 				XSSFCellStyle alterableStyle = row2.getCell(j).getCellStyle(); // 获取当前单元格的样式对象
 				switch (j) {
 				case 0:// 员工编号
@@ -169,28 +155,36 @@ public class ExportIncomeAction extends HrAsynAction {
 					cell.setCellValue(psndocMap.get(interVO.getPk_psndoc()));
 					cell.setCellStyle(alterableStyle);
 					break;
-				case 2:// 薪资期间
-					cell.setCellValue(interVO.getCyearperiod()==null?"":interVO.getCyearperiod());
+				// ssx added on 2020-09-03
+				// 導出增加身份證號
+				case 2:// 身份證號
+					cell.setCellValue(interVO.getId());
 					cell.setCellStyle(alterableStyle);
 					break;
-				case 3:// 薪资方案
-					cell.setCellValue(WaClassMap.get(interVO.getPk_wa_class())==null?"":WaClassMap.get(interVO.getPk_wa_class()));
+				// end
+				case 3:// 薪资期间
+					cell.setCellValue(interVO.getCyearperiod() == null ? "" : interVO.getCyearperiod());
 					cell.setCellStyle(alterableStyle);
 					break;
-				case 4:// 给付总额
-					cell.setCellValue(interVO.getTaxbase()==null?0:interVO.getTaxbase().intValue());
+				case 4:// 薪资方案
+					cell.setCellValue(WaClassMap.get(interVO.getPk_wa_class()) == null ? "" : WaClassMap.get(interVO
+							.getPk_wa_class()));
 					cell.setCellStyle(alterableStyle);
 					break;
-				case 5:// 扣缴税额
-					cell.setCellValue(interVO.getCacu_value()==null?0:interVO.getCacu_value().intValue());
+				case 5:// 给付总额
+					cell.setCellValue(interVO.getTaxbase() == null ? 0 : interVO.getTaxbase().intValue());
 					cell.setCellStyle(alterableStyle);
 					break;
-				case 6:// 给付净额
-					cell.setCellValue(interVO.getNetincome()==null?0:interVO.getNetincome().intValue());
+				case 6:// 扣缴税额
+					cell.setCellValue(interVO.getCacu_value() == null ? 0 : interVO.getCacu_value().intValue());
 					cell.setCellStyle(alterableStyle);
 					break;
-				case 7:// 员工自提金额
-					cell.setCellValue(interVO.getPickedup()==null?0:interVO.getPickedup().intValue());
+				case 7:// 给付净额
+					cell.setCellValue(interVO.getNetincome() == null ? 0 : interVO.getNetincome().intValue());
+					cell.setCellStyle(alterableStyle);
+					break;
+				case 8:// 员工自提金额
+					cell.setCellValue(interVO.getPickedup() == null ? 0 : interVO.getPickedup().intValue());
 					cell.setCellStyle(alterableStyle);
 					break;
 				default:
@@ -215,8 +209,8 @@ public class ExportIncomeAction extends HrAsynAction {
 			CProce.destroy();
 		} catch (Exception e) {
 			Logger.error(e.getMessage());
-			throw new BusinessException(nc.vo.ml.NCLangRes4VoTransl
-					.getNCLangRes().getStrByID("notice", "2notice-tw-000011")/* "發生錯誤，請檢查！" */);
+			throw new BusinessException(nc.vo.ml.NCLangRes4VoTransl.getNCLangRes().getStrByID("notice",
+					"2notice-tw-000011")/* "發生錯誤，請檢查！" */);
 		}
 	}
 }

@@ -34,6 +34,18 @@
 				<process>nc.impl.ta.formula.parser.func.PartWHLeavePercentFuncParser</process>
 				<productCode>UPP6013func</productCode>
 			</function>
+
+			<function>
+				<defaultName>6017item;06017item0094</defaultName>
+				<displayName>onDutyMonths()</displayName>
+				<hintMsgRes>6017item;06017item0094</hintMsgRes>
+				<inputSigRes>6017item;06017item0094</inputSigRes>
+				<pattern>onDutyMonths\(\)</pattern>
+				<arguments>onDutyMonths()</arguments>
+				<group>DATEFUNC</group>
+				<process>nc.impl.ta.formula.parser.func.OnDutyMonthsFuncParser</process>
+				<productCode>UPP6013func</productCode>
+			</function>
 		</list>
 
 		

@@ -11,6 +11,7 @@ import java.util.Set;
 
 import nc.bs.dao.BaseDAO;
 import nc.bs.dao.DAOException;
+import nc.bs.framework.common.InvocationInfoProxy;
 import nc.bs.framework.common.NCLocator;
 import nc.bs.om.pub.MapProcessor;
 import nc.hr.utils.CommonUtils;
@@ -686,6 +687,28 @@ public class TBMPsndocDAO {
 		if (StringUtils.isNotEmpty(pk_hrorg))
 			para.getParameters().add(0, pk_hrorg);
 		BaseDAO dao = new BaseDAO();
+
+		// ssx added on 2020-07-25
+		// 啟碁啟用產線權限子集控制領班查詢權限（部門及人員查詢範圍）
+		int hasGlbdef8 = -1;
+		hasGlbdef8 = (int) dao.executeQuery(
+				"select count(glbdef1) from HI_PSNDOC_GLBDEF8 where pk_psndoc = (select pk_psndoc from sm_user where cuserid = '"
+						+ InvocationInfoProxy.getInstance().getUserId() + "')", new ColumnProcessor());
+
+		if (hasGlbdef8 > 0) {
+			String deptWherePart = "#DEPT_PK# in (select glbdef1 from HI_PSNDOC_GLBDEF8 where pk_psndoc = (select pk_psndoc from sm_user where cuserid = '"
+					+ InvocationInfoProxy.getInstance().getUserId()
+					+ "') and '"
+					+ new UFLiteralDate().toString()
+					+ "' between BEGINDATE and nvl(ENDDATE, '9999-12-31')) and (select count(pk_dept) from org_dept where pk_dept=#DEPT_PK# and isnull(HRCANCELED, 'N')='N') > 0";
+			sql = sql.replace(
+					"order by",
+					" and "
+							+ (sql.contains(" T1 ") ? deptWherePart.replace("#DEPT_PK#", "T1.pk_dept") : deptWherePart
+									.replace("#DEPT_PK#", "psnjob.pk_dept")) + " order by ");
+		}
+		//
+
 		Collection<TBMPsndocVO> c = (Collection<TBMPsndocVO>) dao.executeQuery(sql, para, new BeanListProcessor(
 				TBMPsndocVO.class));
 		if (CollectionUtils.isEmpty(c))

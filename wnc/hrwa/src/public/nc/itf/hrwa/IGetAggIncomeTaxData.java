@@ -6,6 +6,7 @@ import java.util.Map;
 import nc.vo.hrwa.incometax.AggIncomeTaxVO;
 import nc.vo.hrwa.sumincometax.AggSumIncomeTaxVO;
 import nc.vo.pub.BusinessException;
+import nc.vo.pub.lang.UFLiteralDate;
 
 /**
  * 
@@ -31,12 +32,16 @@ public interface IGetAggIncomeTaxData {
 	 *            起始时间
 	 * @param endMonth
 	 *            截止时间
+	 * @param offBeginDate
+	 *            離職開始日期
+	 * @param offEndDate
+	 *            離職結束日期
 	 * @return
 	 * @throws BusinessException
 	 */
 	public List<AggIncomeTaxVO> getAggIncomeTaxData(boolean isForeignDeparture, boolean isForeignMonth,
 			String unifiednumber, String[] declaretype, String[] waclass, String year, String beginMonth,
-			String endMonth) throws BusinessException;
+			String endMonth, UFLiteralDate offBeginDate, UFLiteralDate offEndDate) throws BusinessException;
 
 	/**
 	 * @功能描述 根据条件生成相关人员申报明细档
@@ -64,10 +69,11 @@ public interface IGetAggIncomeTaxData {
 	 * 根据人员主键判断证别号
 	 * 
 	 * @param pk_psndoc
+	 *            pk_wa_data 薪资数据表主键
 	 * @return
 	 * @throws BusinessException
 	 */
-	public String getIdtypeno(String pk_psndoc, String cyearperiod) throws BusinessException;
+	public String getIdtypeno(String pk_psndoc, String pk_wa_data, String cyearperiod) throws BusinessException;
 
 	/**
 	 * 根据申报明细档主键，删除汇总信息

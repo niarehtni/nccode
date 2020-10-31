@@ -75,7 +75,7 @@ public class LeaveLeaveFeeParse extends AbstractPreExcutorFormulaParse {
 		// MOD (按日合计离职考勤扣款)
 		// add by ssx on 2019-04-07
 		startDate = endDate.getDateAfter(1);
-		endDate = startDate.getDateAfter(startDate.getDaysMonth() - startDate.getDay()); // 月末最後一天
+		endDate = startDate.getDateAfter(startDate.getDaysMonth() - startDate.getDay()).getDateAfter(1); // 月末最後一天
 		// MOD end
 
 		// String[] formulaArg = formula.toString().split(",");

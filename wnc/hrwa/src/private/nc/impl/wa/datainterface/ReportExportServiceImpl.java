@@ -8,6 +8,7 @@ import java.util.Map;
 import nc.bs.dao.BaseDAO;
 import nc.bs.framework.common.NCLocator;
 import nc.bs.hr.dataexchange.export.DataFormatter;
+import nc.bs.hr.dataexchange.export.FormatHelper;
 import nc.hr.utils.InSQLCreator;
 import nc.hr.utils.ResHelper;
 import nc.itf.org.IOrgPubQryService;
@@ -16,6 +17,7 @@ import nc.jdbc.framework.processor.ColumnListProcessor;
 import nc.jdbc.framework.processor.ColumnProcessor;
 import nc.jdbc.framework.processor.MapListProcessor;
 import nc.pubitf.para.SysInitQuery;
+import nc.pubitf.para.SysInitQuery4TWHR;
 import nc.vo.bd.defdoc.DefdocVO;
 import nc.vo.ml.MultiLangUtil;
 import nc.vo.org.HROrgVO;
@@ -98,15 +100,17 @@ public class ReportExportServiceImpl implements IReportExportService {
 
 	public String[] getIITXTextReport(String[] dataPKs, int iYear, String applyFormat, String applyCount,
 			String applyReason, String vatNumber, String grantType, String comLinkMan, String comLinkTel,
-			String comLinkEmail) throws BusinessException {
+			String comLinkEmail, String schemaCode, String charSetCode) throws BusinessException {
 		Map<String, Object> refList = getRefListByVatNumber(vatNumber);
 		InSQLCreator creator = new InSQLCreator();
 		String tempTableName = creator.getInSQL(dataPKs);
-		DataFormatter formatter = new DataFormatter("IITR_FMT_TW_2018");
+		DataFormatter formatter = new DataFormatter(schemaCode);
+
+		FormatHelper.TEXTENCODING = charSetCode;
 		formatter.setiYear(iYear);
 		formatter.getRefsMap().putAll(refList);
 		formatter.getRefsMap().put("APPLYCOUNT", applyCount);
-		formatter.getRefsMap().put("APPLYREASON", applyReason == null ? "" : applyReason);
+		formatter.getRefsMap().put("APPLYREASON", StringUtils.isEmpty(applyReason) ? "" : applyReason);
 		formatter.getRefsMap().put("GRANTTYPE", grantType);
 		formatter.getRefsMap().put("FORMAT", applyFormat);
 		formatter.getRefsMap().put("TEMPTABLENAME", tempTableName);
@@ -170,6 +174,14 @@ public class ReportExportServiceImpl implements IReportExportService {
 				ret.put("COMHOUSETAXNODS", SysInitQuery.getParaString("GLOBLE00000000000000", "TWHRLORG24"));
 			} else {
 				// 公司
+				String pk_org = (String) baseDao
+						.executeQuery(
+								"select pk_hrorg from org_hrorg where glbdef29=(select bd_defdoc.pk_defdoc from bd_defdoc inner join bd_defdoclist on bd_defdoc.pk_defdoclist=bd_defdoclist.pk_defdoclist where bd_defdoc.code = '"
+										+ vatNumber + "' and bd_defdoclist.code='TWHR014')", new ColumnProcessor());
+
+				if (StringUtils.isEmpty(pk_org)) {
+					throw new BusinessException("取申報組織參數錯誤。");
+				}
 				// TWHRLORG01 縣市別
 				ret.put("COUNTYDS", SysInitQuery.getParaString("GLOBLE00000000000000", "TWHRLORG01"));
 				// TWHRLORG02 機關別
@@ -177,21 +189,37 @@ public class ReportExportServiceImpl implements IReportExportService {
 				// TWHRLORG03 申報統一編號
 				ret.put("VATNUMBERDS", SysInitQuery.getParaString("GLOBLE00000000000000", "TWHRLORG03"));
 				// TWHRLORG04 申報單位名稱
-				ret.put("COMNAMEDS", SysInitQuery.getParaString("GLOBLE00000000000000", "TWHRLORG04"));
+				ret.put("COMNAMEDS", SysInitQuery4TWHR.getParaString(pk_org, "TWTAX003") == null ? ""
+						: SysInitQuery4TWHR.getParaString(pk_org, "TWTAX003"));// SysInitQuery.getParaString("GLOBLE00000000000000",
+																				// "TWHRLORG04"));
 				// TWHRLORG05 申報單位地址
-				ret.put("COMADDRESSDS", SysInitQuery.getParaString("GLOBLE00000000000000", "TWHRLORG05"));
+				ret.put("COMADDRESSDS", SysInitQuery4TWHR.getParaString(pk_org, "TWTAX004") == null ? ""
+						: SysInitQuery4TWHR.getParaString(pk_org, "TWTAX004"));// SysInitQuery.getParaString("GLOBLE00000000000000",
+																				// "TWHRLORG05"));
 				// TWHRLORG06 扣稅義務人名稱
-				ret.put("COMPRINCIPALDS", SysInitQuery.getParaString("GLOBLE00000000000000", "TWHRLORG06"));
+				ret.put("COMPRINCIPALDS", SysInitQuery4TWHR.getParaString(pk_org, "TWTAX006") == null ? ""
+						: SysInitQuery4TWHR.getParaString(pk_org, "TWTAX006"));// SysInitQuery.getParaString("GLOBLE00000000000000",
+																				// "TWHRLORG06"));
 				// TWHRLORG07 申報單位稅籍編號
-				ret.put("COMTAXNODS", SysInitQuery.getParaString("GLOBLE00000000000000", "TWHRLORG07"));
+				ret.put("COMTAXNODS", SysInitQuery4TWHR.getParaString(pk_org, "TWTAX007") == null ? ""
+						: SysInitQuery4TWHR.getParaString(pk_org, "TWTAX007"));// SysInitQuery.getParaString("GLOBLE00000000000000",
+																				// "TWHRLORG07"));
 				// TWHRLORG08 總分支機構註記
-				ret.put("COMISHQDS", SysInitQuery.getParaString("GLOBLE00000000000000", "TWHRLORG08"));
+				ret.put("COMISHQDS", SysInitQuery4TWHR.getParaBoolean(pk_org, "TWTAX008") == null ? "N"
+						: SysInitQuery4TWHR.getParaBoolean(pk_org, "TWTAX008").toString());// SysInitQuery.getParaString("GLOBLE00000000000000",
+																							// "TWHRLORG08"));
 				// TWHRLORG09 上市公司註記
-				ret.put("COMINSTOCKDS", SysInitQuery.getParaString("GLOBLE00000000000000", "TWHRLORG09"));
+				ret.put("COMINSTOCKDS", SysInitQuery4TWHR.getParaBoolean(pk_org, "TWTAX009") == null ? "N"
+						: SysInitQuery4TWHR.getParaBoolean(pk_org, "TWTAX009").toString());// SysInitQuery.getParaString("GLOBLE00000000000000",
+																							// "TWHRLORG09"));
 				// TWHRLORG10 金融機構註記
-				ret.put("COMISBANKDS", SysInitQuery.getParaString("GLOBLE00000000000000", "TWHRLORG10"));
+				ret.put("COMISBANKDS", SysInitQuery4TWHR.getParaBoolean(pk_org, "TWTAX010") == null ? "N"
+						: SysInitQuery4TWHR.getParaBoolean(pk_org, "TWTAX010").toString());// SysInitQuery.getParaString("GLOBLE00000000000000",
+				// "TWHRLORG10"));
 				// TWHRLORG11 事務所代理註記
-				ret.put("COMISAGENTDS", SysInitQuery.getParaString("GLOBLE00000000000000", "TWHRLORG11"));
+				ret.put("COMISAGENTDS", SysInitQuery4TWHR.getParaBoolean(pk_org, "TWTAX011") == null ? "N"
+						: SysInitQuery4TWHR.getParaBoolean(pk_org, "TWTAX011").toString());// SysInitQuery.getParaString("GLOBLE00000000000000",
+																							// "TWHRLORG11"));
 				// TWHRLORG12 房屋稅籍編號
 				ret.put("COMHOUSETAXNODS", SysInitQuery.getParaString("GLOBLE00000000000000", "TWHRLORG12"));
 			}

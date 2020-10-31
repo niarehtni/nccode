@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
@@ -35,6 +36,7 @@ import nc.itf.hr.wa.IPsndocwadocManageService;
 import nc.itf.twhr.IGroupgradeMaintain;
 import nc.itf.twhr.IGroupinsuranceMaintain;
 import nc.itf.twhr.INhiCalcGenerateSrv;
+import nc.itf.uap.IUAPQueryBS;
 import nc.jdbc.framework.processor.BeanListProcessor;
 import nc.jdbc.framework.processor.ColumnListProcessor;
 import nc.jdbc.framework.processor.ColumnProcessor;
@@ -42,7 +44,12 @@ import nc.jdbc.framework.processor.MapListProcessor;
 import nc.jdbc.framework.processor.MapProcessor;
 import nc.pub.encryption.util.SalaryDecryptUtil;
 import nc.pub.encryption.util.SalaryEncryptionUtil;
+import nc.pub.smart.context.SmartContext;
+import nc.pub.smart.data.DataSet;
+import nc.pub.smart.metadata.Field;
+import nc.pub.smart.metadata.MetaData;
 import nc.pubitf.para.SysInitQuery;
+import nc.pubitf.twhr.IBasedocPubQuery;
 import nc.pubitf.twhr.IRangetablePubQuery;
 import nc.vo.bd.defdoc.DefdocVO;
 import nc.vo.bd.psn.PsndocVO;
@@ -62,6 +69,7 @@ import nc.vo.hi.wadoc.PsndocWadocVO;
 import nc.vo.pub.BusinessException;
 import nc.vo.pub.lang.UFBoolean;
 import nc.vo.pub.lang.UFDate;
+import nc.vo.pub.lang.UFDateTime;
 import nc.vo.pub.lang.UFDouble;
 import nc.vo.pub.lang.UFLiteralDate;
 import nc.vo.pubapp.pattern.data.IRowSet;
@@ -151,11 +159,19 @@ public class PsndocSubInfoService4JFSImpl implements IPsndocSubInfoService4JFS {
 		return null;
 	}
 
+	// MOD by ssx on 2020-04-27
+	// 增加只計算功能，給產出薪資明細檔邏輯使用
+	// 後續應可作為統計用途，另外再修改邏輯
+	// 注意後續修改時，不要影響薪資明細檔取數
 	@Override
-	public void calculateGroupIns(String pk_org, String pk_wa_class, String cYear, String cPeriod)
-			throws BusinessException {
-		// 取得计算年月（未审核当前期间）
-		Map periodMap = getCalculatePeriod(pk_org, cYear, cPeriod);
+	public void calculateGroupIns(String pk_org, String pk_wa_class, String cYear, String cPeriod, String[] pk_psndocs,
+			boolean onlyCalculate) throws BusinessException {
+		if (onlyCalculate) {
+			setInsComStates(null);
+		}
+
+		// 取得计算年月（未审核当前期间），只計算時不管薪資檔案是否關閉(MOD on 2020-04-27)
+		Map periodMap = getCalculatePeriod(pk_org, cYear, cPeriod, onlyCalculate);
 
 		String cyear = (String) periodMap.get("cyear");
 		String cperiod = (String) periodMap.get("cperiod");
@@ -163,32 +179,37 @@ public class PsndocSubInfoService4JFSImpl implements IPsndocSubInfoService4JFS {
 		String cenddate = (String) periodMap.get("cenddate");
 
 		// 按組織、期間取本次生成人員列表
-		List<String> pk_psndocs = getGroupInsurancePsnList(pk_org, cyear, cperiod);
-
+		List<String> listPsns = getGroupInsurancePsnList(pk_org, cyear, cperiod, pk_psndocs);
 		// 取員工ID
-		Map<String, String> psnIDs = getPsnIDMap(pk_psndocs);
+		Map<String, String> psnIDs = getPsnIDMap(listPsns);
 
 		// 取人员子集设定
-		Map<String, Map<String, GroupInsSettingVO>> groupSettings = getGroupSettings(cstartdate, cenddate, pk_psndocs,
+		Map<String, Map<String, GroupInsSettingVO>> groupSettings = getGroupSettings(cstartdate, cenddate, listPsns,
 				pk_org, cyear, cperiod);
 
 		Map<String, String[]> groupInsRatePair = new HashMap<String, String[]>();
 		// 取团保费率表
 		getGroupInsuranceSettings(groupSettings, groupInsRatePair);
+		// 勞保投保級距
+		Map<String, Double> grand = getGrand(listPsns, cstartdate, cenddate);
 
 		// 計算團保 <pk_psndoc, GroupInsDetailVO>
 		Map<String, GroupInsDetailVO> calcRst = calculateGroupInsurance(pk_org, cstartdate, cenddate, groupSettings,
-				groupInsRatePair, psnIDs);
-		// 計載每月每名員工與眷屬總共需負擔之團保費，如遇以戶計算的則為平分，除不盡者找其中一個人塞餘額
-		Map<String, List<FamEmpGroupInsDetailVO>> calcFEdetails = calcFEdetailGroupIns(pk_org, cstartdate, cenddate,
-				groupSettings, groupInsRatePair);
-		// 回写团保明细子集
-		writeBackPsndoc(calcRst);
-		// 回写眷属与员工团保投保明细 by he
-		writeBackfamempdetail(calcFEdetails);
-		// 清空薪資發放已計算標記
-		clearWaDataCalculateFlag(pk_org, pk_wa_class, cyear, cperiod, calcRst);
-	}
+				groupInsRatePair, psnIDs, grand);
+
+		// 不是只計算時，回寫子集
+		if (!onlyCalculate) {
+			// 計載每月每名員工與眷屬總共需負擔之團保費，如遇以戶計算的則為平分，除不盡者找其中一個人塞餘額
+			Map<String, List<FamEmpGroupInsDetailVO>> calcFEdetails = calcFEdetailGroupIns(pk_org, cstartdate,
+					cenddate, groupSettings, groupInsRatePair, grand);
+			// 回写团保明细子集
+			writeBackPsndoc(calcRst);
+			// 回写眷属与员工团保投保明细 by he
+			writeBackfamempdetail(calcFEdetails);
+			// 清空薪資發放已計算標記
+			clearWaDataCalculateFlag(pk_org, pk_wa_class, cyear, cperiod, calcRst);
+		}
+	} // end MOD
 
 	@SuppressWarnings("unchecked")
 	private Map<String, String> getPsnIDMap(List<String> pk_psndocs) throws BusinessException {
@@ -206,6 +227,7 @@ public class PsndocSubInfoService4JFSImpl implements IPsndocSubInfoService4JFS {
 		return rtn;
 	}
 
+	@SuppressWarnings("unchecked")
 	private void writeBackfamempdetail(Map<String, List<FamEmpGroupInsDetailVO>> calcFEdetails)
 			throws BusinessException, DAOException {
 		if (calcFEdetails.size() > 0) {
@@ -230,17 +252,23 @@ public class PsndocSubInfoService4JFSImpl implements IPsndocSubInfoService4JFS {
 				e.printStackTrace();
 			}
 			// 查询出明细
-
-			List<GroupInsuranceDetailVO> listvos = (List<GroupInsuranceDetailVO>) this.getBaseDao().retrieveByClause(
-					GroupInsuranceDetailVO.class,
-					"pk_psndoc in(" + insql.getInSQL(pk_psndocs.toArray(new String[0])) + ")");
 			List<GroupInsuranceDetailVO> deletelist = new ArrayList<GroupInsuranceDetailVO>();
 			List<GroupInsuranceDetailVO> insertvos = new ArrayList<GroupInsuranceDetailVO>();
-			for (String rst : calcFEdetails.keySet()) {
-				for (FamEmpGroupInsDetailVO famempvo : calcFEdetails.get(rst)) {
-					for (GroupInsuranceDetailVO vo : listvos) {
-						if (famempvo.getPk_psndoc().equals(vo.getPk_psndoc())
-								&& famempvo.getdStartDate().isSameDate(vo.getBegindate())
+
+			Map<String, List<GroupInsuranceDetailVO>> mapVOs = new HashMap<String, List<GroupInsuranceDetailVO>>();
+			List<List<String>> groupedPsn = getGroupedKeys(calcFEdetails.keySet());
+			for (String pk_psndoc : calcFEdetails.keySet()) {
+				for (FamEmpGroupInsDetailVO famempvo : calcFEdetails.get(pk_psndoc)) {
+					if (!mapVOs.containsKey(pk_psndoc)) {
+						mapVOs = getGroupDetailByGroupKeys(pk_psndoc, groupedPsn);
+					}
+
+					if (!mapVOs.containsKey(pk_psndoc)) {
+						continue;
+					}
+
+					for (GroupInsuranceDetailVO vo : mapVOs.get(pk_psndoc)) {
+						if (famempvo.getdStartDate().isSameDate(vo.getBegindate())
 								&& famempvo.getdEndDate().isSameDate(vo.getEnddate())) {
 							deletelist.add(vo);
 						}
@@ -249,7 +277,7 @@ public class PsndocSubInfoService4JFSImpl implements IPsndocSubInfoService4JFS {
 
 					defVO.setBegindate(famempvo.getdStartDate());
 					defVO.setEnddate(famempvo.getdEndDate());
-					defVO.setPk_psndoc(rst);
+					defVO.setPk_psndoc(pk_psndoc);
 					defVO.setRecordnum(0);
 					defVO.setLastflag(UFBoolean.TRUE);
 					defVO.setDr(0);
@@ -273,6 +301,57 @@ public class PsndocSubInfoService4JFSImpl implements IPsndocSubInfoService4JFS {
 
 	}
 
+	@SuppressWarnings("unchecked")
+	private Map<String, List<GroupInsuranceDetailVO>> getGroupDetailByGroupKeys(String pk_psndoc,
+			List<List<String>> groupedPsn) throws BusinessException {
+		Map<String, List<GroupInsuranceDetailVO>> detailMap = new HashMap<String, List<GroupInsuranceDetailVO>>();
+		List<String> curLoadPsns = null;
+		for (List<String> psnList : groupedPsn) {
+			if (psnList.contains(pk_psndoc)) {
+				curLoadPsns = psnList;
+				break;
+			}
+		}
+		if (curLoadPsns != null) {
+			Collection<GroupInsuranceDetailVO> vos = this.getBaseDao().retrieveByClause(GroupInsuranceDetailVO.class,
+					"pk_psndoc in (" + new InSQLCreator().getInSQL(curLoadPsns.toArray(new String[0])) + ")");
+
+			if (vos != null && vos.size() > 0) {
+				for (GroupInsuranceDetailVO vo : vos) {
+					if (!detailMap.containsKey(vo.getPk_psndoc())) {
+						detailMap.put(vo.getPk_psndoc(), new ArrayList<GroupInsuranceDetailVO>());
+					}
+
+					detailMap.get(vo.getPk_psndoc()).add(vo);
+				}
+			}
+		}
+		return detailMap;
+	}
+
+	private List<List<String>> getGroupedKeys(Set<String> keySet) throws BusinessException {
+		Integer groupSize = 199;
+		Integer count = 0;
+		List<List<String>> groupedKeys = new ArrayList<List<String>>();
+		if (keySet != null && keySet.size() > 0) {
+			List<String> keyGroup = new ArrayList<String>();
+			for (String key : keySet) {
+				if (count.equals(groupSize)) {
+					groupedKeys.add(keyGroup);
+					keyGroup = new ArrayList<String>();
+					count = 0;
+				}
+
+				keyGroup.add(key);
+				count++;
+			}
+			if (count > 0) {
+				groupedKeys.add(keyGroup);
+			}
+		}
+		return groupedKeys;
+	}
+
 	private String getdefname(String insurancecode, List<DefdocVO> vos) {
 		String name = null;
 		for (DefdocVO vo : vos) {
@@ -285,7 +364,7 @@ public class PsndocSubInfoService4JFSImpl implements IPsndocSubInfoService4JFS {
 
 	private Map<String, List<FamEmpGroupInsDetailVO>> calcFEdetailGroupIns(String pk_org, String cstartdate,
 			String cenddate, Map<String, Map<String, GroupInsSettingVO>> groupSettings,
-			Map<String, String[]> groupInsRatePair) throws BusinessException {
+			Map<String, String[]> groupInsRatePair, Map<String, Double> grand) throws BusinessException {
 		IGroupinsuranceMaintain srv = NCLocator.getInstance().lookup(IGroupinsuranceMaintain.class);
 		GroupInsuranceSettingVO[] setVOs = srv.queryByCondition(pk_org, groupInsRatePair.values());
 		// 计算团保费用
@@ -293,6 +372,7 @@ public class PsndocSubInfoService4JFSImpl implements IPsndocSubInfoService4JFS {
 		if (groupSettings != null && groupSettings.size() > 0 && setVOs != null && setVOs.length > 0) {
 			for (Entry<String, Map<String, GroupInsSettingVO>> grpSets : groupSettings.entrySet()) {
 				String pk_psndoc = grpSets.getKey();
+				Double grandvalue = null == grand.get(pk_psndoc) ? 0 : grand.get(pk_psndoc);
 				// 这list用来存员工和眷属的险种-身份
 				List<String> idinslists = new ArrayList<String>();
 				List<FamEmpGroupInsDetailVO> famemplist = new ArrayList<FamEmpGroupInsDetailVO>();
@@ -341,8 +421,13 @@ public class PsndocSubInfoService4JFSImpl implements IPsndocSubInfoService4JFS {
 								String formular = setting.getCformularstr();
 								// iif( glbdef6 <= 200000 , 200000 , glbdef6 *
 								// 200000)
-								formular = formular.replace("glbdef6", salaryBase.toString());
-								psn_sub_amount = Calculator.evalExp(formular);
+								formular = null == formular ? null : formular.replace("glbdef6", salaryBase.toString());
+								// 投保级距
+								// double grand =
+								// getGrand(pk_psndoc,cstartdate,cenddate);
+								formular = null == formular ? null : formular.replace("glbdef4",
+										String.valueOf(grandvalue));
+								psn_sub_amount = Calculator.evalExp(null == formular ? "" : formular);
 							} // 計算方式end
 
 							if (!calcFEdetails.containsKey(pk_psndoc)) {
@@ -395,15 +480,28 @@ public class PsndocSubInfoService4JFSImpl implements IPsndocSubInfoService4JFS {
 					int i = 1;
 					if (hlist.size() > 0) {
 						for (FamEmpGroupInsDetailVO famempvo : hlist) {
-							// rem(3,2)=1
+							double insuranceamount = (int) famempvo.getInsuranceamount().doubleValue();
 
-							int insuranceamount = (int) famempvo.getInsuranceamount().doubleValue();
-							if (i == 1) {
-								famempvo.setInsuranceamount(new UFDouble((insuranceamount / hlist.size())
-										+ (insuranceamount % (hlist.size()))));
-							} else {
-
-								famempvo.setInsuranceamount(new UFDouble((insuranceamount / hlist.size())));
+							if (famempvo.getIshousehold().booleanValue()) {
+//								if (i == 1) {
+//									famempvo.setInsuranceamount(new UFDouble((insuranceamount / hlist.size())
+//											+ (insuranceamount % (hlist.size()))));
+//								} else {
+//
+//									famempvo.setInsuranceamount(new UFDouble((insuranceamount / hlist.size())));
+//								}
+								
+								//replace by jimmy20201029----begin
+								UFDouble ub;
+								ub = new UFDouble((insuranceamount / hlist.size()));
+								//取商。每项算完無條件捨去
+								ub = ub.setScale(0, UFDouble.ROUND_FLOOR);
+								if (i == 1) {
+									famempvo.setInsuranceamount(ub.add((insuranceamount % (hlist.size()))));
+								} else {
+									famempvo.setInsuranceamount(ub);
+								}
+								//replace by jimmy20201029----end
 							}
 							i++;
 						}
@@ -431,10 +529,12 @@ public class PsndocSubInfoService4JFSImpl implements IPsndocSubInfoService4JFS {
 		}
 	}
 
-	private Map getCalculatePeriod(String pk_org, String cYear, String cPeriod) throws DAOException, BusinessException {
+	private Map getCalculatePeriod(String pk_org, String cYear, String cPeriod, boolean onlyCalculate)
+			throws DAOException, BusinessException {
 		String strSQL = "select cyear, cperiod, cstartdate, cenddate from wa_period where pk_wa_period in"
-				+ " (select pk_wa_period from wa_periodstate where " + " enableflag='Y' and isapproved='N' "
-				+ " and pk_org = '" + pk_org + "') and cyear = '" + cYear + "' and cperiod = '" + cPeriod + "'";
+				+ " (select pk_wa_period from wa_periodstate where "
+				+ (onlyCalculate ? "" : " enableflag='Y' and isapproved='N' and ") + " pk_org = '" + pk_org
+				+ "') and cyear = '" + cYear + "' and cperiod = '" + cPeriod + "'";
 
 		Map periodMap = (Map) this.getBaseDao().executeQuery(strSQL, new MapProcessor());
 		if (periodMap == null || periodMap.size() == 0) {
@@ -444,12 +544,20 @@ public class PsndocSubInfoService4JFSImpl implements IPsndocSubInfoService4JFS {
 		return periodMap;
 	}
 
-	private List<String> getGroupInsurancePsnList(String pk_org, String cyear, String cperiod) throws BusinessException {
-		List<String> psnList = findPersonList(pk_org, cyear, cperiod);
-		if (psnList == null || psnList.size() == 0) {
-			throw new BusinessException(nc.vo.ml.NCLangRes4VoTransl.getNCLangRes().getStrByID("twhr_personalmgt",
-					"068J61035-0012")/* @res 不存在要计算团保的员工 */);
+	private List<String> getGroupInsurancePsnList(String pk_org, String cyear, String cperiod, String[] pk_psndocs)
+			throws BusinessException {
+		List<String> psnList = new ArrayList<String>();
+
+		if (pk_psndocs != null) {
+			psnList = new ArrayList<String>(Arrays.asList(pk_psndocs));
+		} else {
+			psnList = findPersonList(pk_org, cyear, cperiod);
+			if (psnList == null || psnList.size() == 0) {
+				throw new BusinessException(nc.vo.ml.NCLangRes4VoTransl.getNCLangRes().getStrByID("twhr_personalmgt",
+						"068J61035-0012")/* @res 不存在要计算团保的员工 */);
+			}
 		}
+
 		return psnList;
 	}
 
@@ -480,7 +588,9 @@ public class PsndocSubInfoService4JFSImpl implements IPsndocSubInfoService4JFS {
 						+ "' and begindate='" + rst.getValue().getdStartDate() + "' and enddate='"
 						+ rst.getValue().getdEndDate() + "'";
 				this.getBaseDao().executeUpdate(strSQL);
-				strSQL = "update hi_psndoc_glbdef7 set recordnum = recordnum +1 " + " where pk_psndoc='"
+				strSQL = "update hi_psndoc_glbdef7 set recordnum = recordnum +1, ts='" + new UFDateTime().toString()
+						+ "', modifiedtime='" + new UFDateTime().toString() + "',modifier='"
+						+ InvocationInfoProxy.getInstance().getUserId() + "' where pk_psndoc='"
 						+ rst.getValue().getPk_psndoc()
 						+ "' and exists(select * from hi_psndoc_glbdef7 def where hi_psndoc_glbdef7"
 						+ ".pk_psndoc = def.pk_psndoc and def.recordnum = 1)";
@@ -507,7 +617,7 @@ public class PsndocSubInfoService4JFSImpl implements IPsndocSubInfoService4JFS {
 
 	private Map<String, GroupInsDetailVO> calculateGroupInsurance(String pk_org, String cstartdate, String cenddate,
 			Map<String, Map<String, GroupInsSettingVO>> groupSettings, Map<String, String[]> groupInsRatePair,
-			Map<String, String> psnIDs) throws BusinessException {
+			Map<String, String> psnIDs, Map<String, Double> grand) throws BusinessException {
 		IGroupinsuranceMaintain srv = NCLocator.getInstance().lookup(IGroupinsuranceMaintain.class);
 		GroupInsuranceSettingVO[] setVOs = srv.queryByCondition(pk_org, groupInsRatePair.values());
 		// 计算团保费用
@@ -516,7 +626,7 @@ public class PsndocSubInfoService4JFSImpl implements IPsndocSubInfoService4JFS {
 		psnHouseHolded = new ArrayList<String>();
 		if (groupSettings != null && groupSettings.size() > 0 && setVOs != null && setVOs.length > 0) {
 			for (Entry<String, Map<String, GroupInsSettingVO>> grpSets : groupSettings.entrySet()) {
-				errorMsg = calculateGroupInsByPsn(pk_org, cstartdate, cenddate, psnIDs, setVOs, calcRst, grpSets);
+				errorMsg = calculateGroupInsByPsn(pk_org, cstartdate, cenddate, psnIDs, setVOs, calcRst, grpSets, grand);
 			}
 		}
 
@@ -534,8 +644,10 @@ public class PsndocSubInfoService4JFSImpl implements IPsndocSubInfoService4JFS {
 
 	private String calculateGroupInsByPsn(String pk_org, String cstartdate, String cenddate,
 			Map<String, String> psnIDs, GroupInsuranceSettingVO[] setVOs, Map<String, GroupInsDetailVO> calcRst,
-			Entry<String, Map<String, GroupInsSettingVO>> grpSets) throws BusinessException, DAOException {
+			Entry<String, Map<String, GroupInsSettingVO>> grpSets, Map<String, Double> grand) throws BusinessException,
+			DAOException {
 		String pk_psndoc = grpSets.getKey();
+		double grandvalue = null == grand.get(pk_psndoc) ? 0 : grand.get(pk_psndoc);
 		String errorMsg = "";
 		for (Entry<String, GroupInsSettingVO> psnSet : grpSets.getValue().entrySet()) {
 			GroupInsuranceSettingVO setting = getGroupInsSetting(setVOs, psnSet.getValue().getPk_GroupInsurance(),
@@ -566,16 +678,37 @@ public class PsndocSubInfoService4JFSImpl implements IPsndocSubInfoService4JFS {
 				if (setting != null) // 按團保險種計算start
 				{
 					calculateGroupInsBySetting(pk_org, cstartdate, cenddate, psnIDs, calcRst, pk_psndoc, psnSet,
-							setting);
+							setting, grandvalue);
 				} // 按團保險種計算end
 			}// 計算全月end
 		}
 		return errorMsg;
 	}
 
+	private Map<String, Map<String, UFDouble>> insComStates;
+
+	/**
+	 * @return insComStates
+	 */
+	public Map<String, Map<String, UFDouble>> getInsComStates() {
+		if (insComStates == null) {
+			insComStates = new HashMap<String, Map<String, UFDouble>>();
+		}
+		return insComStates;
+	}
+
+	/**
+	 * @param insComStates
+	 *            要設定的 insComStates
+	 */
+	public void setInsComStates(Map<String, Map<String, UFDouble>> insComStates) {
+		this.insComStates = insComStates;
+	}
+
 	private void calculateGroupInsBySetting(String pk_org, String cstartdate, String cenddate,
 			Map<String, String> psnIDs, Map<String, GroupInsDetailVO> calcRst, String pk_psndoc,
-			Entry<String, GroupInsSettingVO> psnSet, GroupInsuranceSettingVO setting) throws BusinessException {
+			Entry<String, GroupInsSettingVO> psnSet, GroupInsuranceSettingVO setting, Double grandvalue)
+			throws BusinessException {
 		UFDouble psn_sub_amount = UFDouble.ZERO_DBL;
 		UFDouble salaryBase = (psnSet.getValue().getiSalaryBase() == null || psnSet.getValue().getiSalaryBase()
 				.equals(UFDouble.ZERO_DBL)) ? UFDouble.ZERO_DBL : psnSet.getValue().getiSalaryBase();
@@ -602,8 +735,11 @@ public class PsndocSubInfoService4JFSImpl implements IPsndocSubInfoService4JFS {
 			// iif( glbdef6 <= 200000 , 200000 , glbdef6
 			// *
 			// 200000)
-			formular = formular.replace("glbdef6", salaryBase.toString());
-			psn_sub_amount = Calculator.evalExp(formular);
+			formular = null == formular ? null : formular.replace("glbdef6", salaryBase.toString());
+			// 投保级距
+			// double grand = getGrand(pk_psndoc,cstartdate,cenddate);
+			formular = null == formular ? null : formular.replace("glbdef4", String.valueOf(grandvalue));
+			psn_sub_amount = Calculator.evalExp(null == formular ? "" : formular);
 		} // 計算方式end
 
 		if (!calcRst.containsKey(pk_psndoc)) {
@@ -634,6 +770,26 @@ public class PsndocSubInfoService4JFSImpl implements IPsndocSubInfoService4JFS {
 		psn_sub_amount = psn_sub_amount.setScale(0, UFDouble.ROUND_HALF_UP);
 		// end
 
+		// MOD by ssx on 2020-04-27
+		// 按保險公司維度統計, 員工身份證號為Key
+		String insuranceCom = setting.getInsurancecompany();
+		if (!StringUtils.isEmpty(psnIDs.get(pk_psndoc))) {
+			if (!getInsComStates().containsKey(psnIDs.get(pk_psndoc))) {
+				getInsComStates().put(psnIDs.get(pk_psndoc), new HashMap<String, UFDouble>());
+			}
+
+			if (!getInsComStates().get(psnIDs.get(pk_psndoc)).containsKey(insuranceCom)) {
+				getInsComStates().get(psnIDs.get(pk_psndoc)).put(insuranceCom, UFDouble.ZERO_DBL);
+			}
+
+			// 只統計個人負擔金額
+			if (setting.getBselfpay().booleanValue()) {
+				getInsComStates().get(psnIDs.get(pk_psndoc)).put(insuranceCom,
+						getInsComStates().get(psnIDs.get(pk_psndoc)).get(insuranceCom).add(psn_sub_amount));
+			}
+		}
+		// end MOD
+
 		if (setting.getBselfpay().booleanValue()) {
 			calcRst.get(pk_psndoc).setiStuffPay(calcRst.get(pk_psndoc).getiStuffPay().add(psn_sub_amount)); // 個人負擔
 		} else {
@@ -651,6 +807,26 @@ public class PsndocSubInfoService4JFSImpl implements IPsndocSubInfoService4JFS {
 					calcRst.get(pk_psndoc).getFayinsurancemoney().add(psn_sub_amount));// 眷屬團保費
 		}
 		// end
+	}
+
+	/**
+	 * 计算投保级距 逻辑： 公式內新增取數來源為員工資訊維護的勞保勞退資訊中的「勞保級距」，取級距的來源是 同個期間開始日期最新的投保級距。
+	 * 
+	 * @param pk_psndoc
+	 * @param cstartdate
+	 * @param cenddate
+	 * @return
+	 * @throws BusinessException
+	 */
+	private double getGrand(String pk_psndoc, String cstartdate, String cenddate) throws BusinessException {
+		String sql = "select h.glbdef4  from hi_psndoc_glbdef1 h where  h.pk_psndoc='" + pk_psndoc
+				+ "' and (h.begindate<='" + cstartdate + "'" + " and (case when h.enddate is null then '9999-12-31' "
+				+ "else  h.enddate end)>='" + cenddate + "'  )  order by h.begindate desc";
+		// sql="select h.glbdef4  from hi_psndoc_glbdef1 h where  h.pk_psndoc='0001X110000000011GVQ' and (h.begindate<='2018-11-01'   ) order by h.begindate desc";
+		IUAPQueryBS service = NCLocator.getInstance().lookup(IUAPQueryBS.class);
+		Object object = service.executeQuery(sql, new ColumnProcessor());
+		Double glbdef4 = Double.parseDouble(object.toString());
+		return null == glbdef4 ? 0 : glbdef4;
 	}
 
 	private GroupInsuranceSettingVO getGroupInsSetting(GroupInsuranceSettingVO[] setVOs, String pk_GroupInsurance,
@@ -837,11 +1013,15 @@ public class PsndocSubInfoService4JFSImpl implements IPsndocSubInfoService4JFS {
 									foreignAndTeachSet.contains(vo.getPk_psndoc()) ? new UFDouble(0) : originValues
 											.get("labor_glbdef8"));
 						}
+						// ssx remarded on 2020-07-12
+						// 取消所有勞退行上的舊制邏輯
 						// Ares.Tank 外籍或建教人员劳退清0 2018-9-12 20:47:26
-						newLaborVO.setAttributeValue(
-								"glbdef9",
-								foreignAndTeachSet.contains(vo.getPk_psndoc()) ? UFBoolean.FALSE : originValues
-										.get("labor_glbdef9"));
+						// newLaborVO.setAttributeValue(
+						// "glbdef9",
+						// foreignAndTeachSet.contains(vo.getPk_psndoc()) ?
+						// UFBoolean.FALSE : originValues
+						// .get("labor_glbdef9"));
+						// end
 						newLaborVO.setAttributeValue("glbdef10", new UFBoolean(isGenLabor));
 						// Ares.Tank 外籍或建教人员劳退清0 2018-9-12 20:47:26
 						newLaborVO.setAttributeValue("glbdef11",
@@ -929,6 +1109,7 @@ public class PsndocSubInfoService4JFSImpl implements IPsndocSubInfoService4JFS {
 	 * @author Ares.Tank
 	 * @date 2018-9-12 20:48:06
 	 */
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	private void initForeignAndTeachSet(NhiCalcVO[] nhiFinalVOs) throws BusinessException {
 		foreignAndTeachSet = new HashSet<>();
 		Set<String> pkPsndoc = new HashSet<>();
@@ -939,8 +1120,9 @@ public class PsndocSubInfoService4JFSImpl implements IPsndocSubInfoService4JFS {
 		String psndocsInSQL = insql.getInSQL(pkPsndoc.toArray(new String[0]));
 		String strSQL = "SELECT psndoc FROM bd_defdoc INNER JOIN "
 				+ "(  SELECT HI_PSNJOB.JOBGLBDEF8 as defdoc,hi_psnjob.PK_PSNDOC as psndoc  FROM  hi_psnjob "
-				+ "WHERE HI_PSNJOB.PK_PSNDOC in ( " + psndocsInSQL
-				+ ") AND lastflag = 'Y')psn ON BD_DEFDOC.PK_DEFDOC=psn.defdoc "
+				+ "inner join hi_psnorg on hi_psnjob.pk_psnorg = hi_psnorg.pk_psnorg  WHERE HI_PSNJOB.PK_PSNDOC in ( "
+				+ psndocsInSQL
+				+ ") AND hi_psnjob.lastflag = 'Y' and hi_psnorg.lastflag = 'Y')psn ON BD_DEFDOC.PK_DEFDOC=psn.defdoc "
 				+ "where (BD_DEFDOC.CODE='F' or BD_DEFDOC.CODE='G') ";
 		List<Map> foreignAndTeachPsndocList = (List<Map>) this.getBaseDao()
 				.executeQuery(strSQL, new MapListProcessor());
@@ -1679,8 +1861,10 @@ public class PsndocSubInfoService4JFSImpl implements IPsndocSubInfoService4JFS {
 			int size = pk_psndoc_subs.size() - 1;
 			for (String pk_psndoc_sub : pk_psndoc_subs) {
 				this.getBaseDao().executeUpdate(
-						"update " + tableName + " set recordnum=" + size + " where pk_psndoc_sub='" + pk_psndoc_sub
-								+ "'");
+						"update " + tableName + " set recordnum=" + size + ", modifiedtime='"
+								+ new UFDateTime().toString() + "', modifier='"
+								+ InvocationInfoProxy.getInstance().getUserId() + "' where pk_psndoc_sub='"
+								+ pk_psndoc_sub + "'");
 				size -= 1;
 			}
 		}
@@ -1726,7 +1910,7 @@ public class PsndocSubInfoService4JFSImpl implements IPsndocSubInfoService4JFS {
 		InSQLCreator insql = new InSQLCreator();
 		String psndocsInSQL = insql.getInSQL(pk_psndocs);
 		String sqlStr = "select psn.* from bd_psndoc psn "
-				+ "left join hi_psnjob job on job.pk_psndoc = psn.pk_psndoc and lastflag = 'Y' and endflag = 'N' "
+				+ "left join hi_psnjob job on job.pk_psndoc = psn.pk_psndoc and lastflag = 'Y' and endflag = 'N' and trnsevent<>4 "
 				+ "where psn.pk_psndoc in (" + psndocsInSQL + ") and "
 				+ "job.jobglbdef8 <> (SELECT pk_defdoc FROM BD_DEFDOCLIST defdoclist , "
 				+ "BD_DEFDOC defdoc WHERE defdoclist.pk_defdoclist= defdoc.pk_defdoclist "
@@ -1820,7 +2004,7 @@ public class PsndocSubInfoService4JFSImpl implements IPsndocSubInfoService4JFS {
 			if (backBeginDate != null && backBeginDate.after(earlist)) {
 				earlist = backBeginDate;
 			}
-			String pk_jobrank = getLastJobRank(pk_psndoc);
+			String pk_jobrank = getJobRankByPsnDate(pk_psndoc, earlist);
 
 			PsndocVO psnVO = null;
 			for (PsndocVO psnvo : psndocVOs) {
@@ -2021,7 +2205,7 @@ public class PsndocSubInfoService4JFSImpl implements IPsndocSubInfoService4JFS {
 			GroupInsuranceSettingVO[] setting, GroupInsuranceGradeVO[] grades) throws BusinessException {
 		// 根據人員查找進入日期
 		UFLiteralDate earlist = addDate;
-		String pk_jobrank = getLastJobRank(pk_psndoc);
+		String pk_jobrank = getJobRankByPsnDate(pk_psndoc, addDate);
 		PsndocVO psnVO = null;
 		for (PsndocVO psnvo : psndocVOs) {
 			if (psnvo.getPk_psndoc().equals(pk_psndoc)) {
@@ -2072,18 +2256,18 @@ public class PsndocSubInfoService4JFSImpl implements IPsndocSubInfoService4JFS {
 		return earlist;
 	}
 
-	private String getLastJobRank(String pk_psndoc) throws BusinessException {
-		Collection<PsnJobVO> psnjobVOs = this.getBaseDao().retrieveByClause(PsnJobVO.class,
-				"pk_psndoc='" + pk_psndoc + "'");
+	private String getJobRankByPsnDate(String pk_psndoc, UFLiteralDate checkDate) throws BusinessException {
+		Collection<PsnJobVO> psnjobVOs = this.getBaseDao().retrieveByClause(
+				PsnJobVO.class,
+				"pk_psndoc='" + pk_psndoc + "' and '" + checkDate
+						+ "' between begindate and  isnull(enddate, '9999-12-31') and ismainjob='Y' and trnsevent<>4");
 
 		String pk_jobrank = "";
-		UFLiteralDate date = new UFLiteralDate("0000-01-01");
-		for (PsnJobVO vo : psnjobVOs) {
-			if (vo.getBegindate().after(date)) {
-				date = vo.getBegindate();
-				pk_jobrank = vo.getPk_jobrank();
-			}
+
+		if (psnjobVOs != null && psnjobVOs.size() > 0) {
+			pk_jobrank = psnjobVOs.toArray(new PsnJobVO[0])[0].getPk_jobrank();
 		}
+
 		return pk_jobrank;
 	}
 
@@ -2224,8 +2408,9 @@ public class PsndocSubInfoService4JFSImpl implements IPsndocSubInfoService4JFS {
 		}
 
 		String strSQL = "UPDATE " + infosetCode + " SET glbdef7='Y', enddate='" + enddate.toString()
-				+ "' WHERE ISNULL(enddate, '9999-12-31') > '" + enddate.toString() + "' AND dr=0 AND pk_psndoc = '"
-				+ pk_psndoc + "'";
+				+ "',modifiedtime='" + new UFDateTime().toString() + "', modifier='"
+				+ InvocationInfoProxy.getInstance().getUserId() + "' WHERE ISNULL(enddate, '9999-12-31') > '"
+				+ enddate.toString() + "' AND dr=0 AND pk_psndoc = '" + pk_psndoc + "'";
 		this.getBaseDao().executeUpdate(strSQL);
 	}
 
@@ -2307,17 +2492,18 @@ public class PsndocSubInfoService4JFSImpl implements IPsndocSubInfoService4JFS {
 					// 更新原有團保設定行
 					updateSQLs.add("update " + PsndocDefTableUtil.getGroupInsuranceTablename() + " set enddate = '"
 							+ effectivedate.getDateBefore(1).toLocalString()
-							+ "',glbdef7='Y', lastflag = 'N' where pk_psndoc_sub='"
-							+ (String) groupSet.get("pk_psndoc_sub") + "'");
+							+ "',glbdef7='Y', lastflag = 'N', modifiedtime='" + new UFDateTime().toString()
+							+ "', modifier='" + InvocationInfoProxy.getInstance().getUserId()
+							+ "' where pk_psndoc_sub='" + (String) groupSet.get("pk_psndoc_sub") + "'");
 					updateSQLs.add("update " + PsndocDefTableUtil.getGroupInsuranceTablename()
-							+ " set recordnum=isnull(recordnum,0)+1 where pk_psndoc = '" + pk_psndoc + "'");
+							+ ", set recordnum=isnull(recordnum,0)+1, modifiedtime='" + new UFDateTime().toString()
+							+ "', modifier='" + InvocationInfoProxy.getInstance().getUserId() + "' where pk_psndoc = '"
+							+ pk_psndoc + "'");
 
 					// 如果不是本人，正常加保（家屬延保）
 					// 或者是本人，但不在職等列表中（本人延保）
 					if (!psnOwn.equals(groupSet.get("glbdef4"))
-					// || !containsInOwnVOs((String) groupSet.get("glbdef5"),
-					// ownVOs)
-					) {
+							|| !containsInOwnVOs((String) groupSet.get("glbdef5"), ownVOs)) {
 						// 新增新的團保設定行
 						PsndocDefVO newVO = getNewSubInfoLineByOrigin4GroupIns(groupSet, effectivedate, avgSalary,
 								grades, pk_jobrank);
@@ -2397,8 +2583,18 @@ public class PsndocSubInfoService4JFSImpl implements IPsndocSubInfoService4JFS {
 			throw new BusinessException("没有是否计算劳保健保的薪资项");
 		}
 
+		// ssx added on 2020-04-26
+		// 详见#34655问题描述20200426-01.docx
+		IBasedocPubQuery baseDocQry = NCLocator.getInstance().lookup(IBasedocPubQuery.class);
+		BaseDocVO baseDocVO = baseDocQry.queryBaseDocByCode(pk_org, "TWSP0009");
+
+		if (baseDocVO == null || baseDocVO.getNumbervalue() == null) {
+			throw new BusinessException("未找到臺灣薪資及勞健保參數 [TWSP0009] 關於基本工資(月)的設定。");
+		}
+		//
+
 		// 先获取基准日期，再根据基准日期和平均月数获取开始日期
-		// 获取基准日期往前推的日期,返回的日期即为需要计算的开始日期
+		// 获取基准日期往前推的日期,返回的日期即为需要计算?目既掌?
 		UFDate baseMonthDate = ComdateUtils.calendarclac(cbaseDate, avgMonCount);
 
 		String cumn = "";
@@ -2454,6 +2650,13 @@ public class PsndocSubInfoService4JFSImpl implements IPsndocSubInfoService4JFS {
 									: baseMonthDate.toUFLiteralDate(UFLiteralDate.BASE_TIMEZONE)), waperiodlist,
 							// ssx added on 2020-01-14
 							isMonthAvg);
+
+					// ssx added on 2020-04-26
+					// 详见#34655问题描述20200426-01.docx
+					if (salary.doubleValue() < baseDocVO.getNumbervalue().doubleValue()) {
+						salary = baseDocVO.getNumbervalue();
+					}
+					//
 				} else {
 					// 非月薪
 					UFDouble avgSalary = getAvgSalary(cbaseDate.toUFLiteralDate(UFLiteralDate.BASE_TIMEZONE),
@@ -2545,7 +2748,8 @@ public class PsndocSubInfoService4JFSImpl implements IPsndocSubInfoService4JFS {
 		boolean isBack = false;
 		if (psnJobVOs != null && psnJobVOs.size() > 0) {
 			for (PsnJobVO psnJobVO : psnJobVOs) {
-				if (psnJobVO.getTrnsevent() == 1 && !psnJobVO.getBegindate().isSameDate(startDate)) {
+				if (psnJobVO.getTrnsevent() == 1
+						&& (psnJobVO.getBegindate().isSameDate(startDate) || psnJobVO.getBegindate().after(startDate))) {
 					isIn = true;
 				} else if (psnJobVO.getTrnsevent() == 4) {
 					isOut = true;
@@ -2734,6 +2938,19 @@ public class PsndocSubInfoService4JFSImpl implements IPsndocSubInfoService4JFS {
 		initForeignAndTeachSet(nhiFinalVOs);
 		// mod 回写逻辑修改 Ares.Tank 2018-10-2 10:06:23
 
+		UFDouble nmoney = new UFDouble(
+				String.valueOf(this
+						.getBaseDao()
+						.executeQuery(
+								"SELECT SALARY_ENCRYPT(SUM(SALARY_DECRYPT(wd.NMONEY))) nmoney FROM "
+										+ " hi_psndoc_wadoc wd INNER JOIN  wa_item wi ON  wd.pk_wa_item = wi.pk_wa_item INNER JOIN  twhr_waitem_30 tw ON  tw.pk_wa_item = wi.pk_wa_item WHERE "
+										+ " wd.pk_psndoc = '"
+										+ psnJobVO.getPk_psndoc()
+										+ "' AND '"
+										+ startDate.toString()
+										+ "' BETWEEN wd.begindate AND NVL(wd.enddate, '9999-12-31') AND wd.lastflag = 'Y' AND tw.isnhiitem_30='Y' AND wi.isinhi = 'Y'",
+								new ColumnProcessor())));
+
 		/*
 		 * Ares.Tank 2018-9-22 10:55:54 回寫原本投保紀錄記錄: 開始日期:startDate done done
 		 * 結束日期:9999 done done 投保型態:加保 done done 健保加保原因別:到職起薪 done mod Ares.Tank
@@ -2782,6 +2999,8 @@ public class PsndocSubInfoService4JFSImpl implements IPsndocSubInfoService4JFS {
 
 				// newLaborVO.setAttributeValue("legalpersonorg", pkLegalOrg);
 				newLaborVO.setAttributeValue("insuranceform", ADD_FORM);
+
+				newLaborVO.setAttributeValue("glbdef2", new UFDouble(nmoney));
 				if (savedVOList.size() <= 0) {
 					// 有可能出現臟數據,保證只有一條薪資
 					isLabor = true;
@@ -2810,6 +3029,8 @@ public class PsndocSubInfoService4JFSImpl implements IPsndocSubInfoService4JFS {
 
 				// newLaborVO.setAttributeValue("legalpersonorg", pkLegalOrg);
 				newLaborVO.setAttributeValue("insuranceform", ADD_FORM);
+
+				newLaborVO.setAttributeValue("glbdef2", new UFDouble(nmoney));
 				if (savedVOList.size() <= 0) {
 					// 有可能出現臟數據,保證只有一條薪資
 					isLabor = true;
@@ -2842,19 +3063,21 @@ public class PsndocSubInfoService4JFSImpl implements IPsndocSubInfoService4JFS {
 					 */
 					if (vo != null && vo.getEnddate() != null && healEnddate.isSameDate(vo.getEnddate())) {
 						lastHealthPkList.add(vo.getPk_psndoc_sub());
-						PsndocDefVO newLaborVO = (PsndocDefVO) vo.clone();
+						PsndocDefVO newHealVO = (PsndocDefVO) vo.clone();
 						// 是否健保投保
-						newLaborVO.setAttributeValue("glbdef14", "Y");
-						newLaborVO.setBegindate(startDate);
-						newLaborVO.setEnddate(new UFLiteralDate("9999-12-31"));
+						newHealVO.setAttributeValue("glbdef14", "Y");
+						newHealVO.setBegindate(startDate);
+						newHealVO.setEnddate(new UFLiteralDate("9999-12-31"));
 
 						// newLaborVO.setAttributeValue("legalpersonorg",
 						// pkLegalOrg);
-						newLaborVO.setAttributeValue("insuranceform", ADD_FORM);
-						newLaborVO.setAttributeValue("glbdef17", glbdef17);
+						newHealVO.setAttributeValue("insuranceform", ADD_FORM);
+						newHealVO.setAttributeValue("glbdef17", glbdef17);
+
+						newHealVO.setAttributeValue("glbdef6", new UFDouble(nmoney));
 
 						isHealth = true;
-						savedVOList.add(newLaborVO);
+						savedVOList.add(newHealVO);
 
 					}
 
@@ -2922,6 +3145,40 @@ public class PsndocSubInfoService4JFSImpl implements IPsndocSubInfoService4JFS {
 
 		// 退保
 		delPNI(psnJobVO.getPk_psndoc(), endDate);
+
+	}
+
+	/**
+	 * 删除 健保信息，劳保劳退信息，团保信息开始日期大于离职日期(或停薪日期)信息
+	 * 
+	 * @param pk_psndoc
+	 * @param enddate
+	 * 
+	 * @throws BusinessException
+	 */
+	@Override
+	public void deletePNI(String pk_psndoc, UFLiteralDate enddate) throws BusinessException {
+
+		String strSQL = "delete  from " + PsndocDefTableUtil.getPsnLaborTablename() + "  "
+				+ "   WHERE ISNULL(begindate, '9999-12-31') >= '" + enddate.toString() + "' AND dr=0 AND pk_psndoc = '"
+				+ pk_psndoc + "'";
+		this.getBaseDao().executeUpdate(strSQL);
+
+		//
+		strSQL = "delete  from " + PsndocDefTableUtil.getPsnHealthTablename() + " "
+				+ "  WHERE ISNULL(begindate, '9999-12-31') >= '" + enddate.toString() + "' AND dr=0 AND pk_psndoc = '"
+				+ pk_psndoc + "'";
+		this.getBaseDao().executeUpdate(strSQL);
+
+		String infosetCode = PsndocDefTableUtil.getGroupInsuranceTablename();
+		if (StringUtils.isEmpty(infosetCode)) {
+			throw new BusinessException("無法找到團保子集設置，請檢查自定義項(TWHR000)的設定內容。");
+		}
+
+		strSQL = "delete  from " + infosetCode + " " + " WHERE ISNULL(begindate, '9999-12-31') >= '"
+				+ enddate.toString() + "' AND dr=0 AND pk_psndoc = '" + pk_psndoc + "'";
+		this.getBaseDao().executeUpdate(strSQL);
+
 	}
 
 	/**
@@ -2947,7 +3204,7 @@ public class PsndocSubInfoService4JFSImpl implements IPsndocSubInfoService4JFS {
 				// 調配記錄留職停薪時，不應清除勞保勞退與健保的生效標記 by George 20200304 缺陷Bug #33606
 				// 員工 劳保劳退信息(hi_psndoc_glbdef1) 的 是否劳保投保(glbdef10) 的勾勾不應被勾銷
 				+ " WHERE ISNULL(enddate, '9999-12-31') > '" + endDate.toString() + "' AND dr=0 AND pk_psndoc = '"
-				+ pk_psndoc + "'" + " and lastflag = 'Y'";
+				+ pk_psndoc + "'";
 		resultRow = this.getBaseDao().executeUpdate(strSQL);
 
 		strSQL = "UPDATE " + PsndocDefTableUtil.getPsnLaborTablename() + " SET glbdef15='"
@@ -2955,7 +3212,7 @@ public class PsndocSubInfoService4JFSImpl implements IPsndocSubInfoService4JFS {
 				// 調配記錄留職停薪時，不應清除勞保勞退與健保的生效標記 by George 20200304 缺陷Bug #33606
 				// 員工 劳保劳退信息(hi_psndoc_glbdef1) 的 是否劳退投保(glbdef11) 的勾勾不應被勾銷
 				+ "' WHERE ISNULL(glbdef15, '9999-12-31') > '" + endDate.toString() + "' AND dr=0 AND pk_psndoc = '"
-				+ pk_psndoc + "'" + " and lastflag = 'Y'";
+				+ pk_psndoc + "'";
 		// 外籍和健教生不加劳退
 		if (!foreignAndTeachSet.contains(pk_psndoc)) {
 			resultRow += this.getBaseDao().executeUpdate(strSQL);
@@ -3080,6 +3337,7 @@ public class PsndocSubInfoService4JFSImpl implements IPsndocSubInfoService4JFS {
 				if (basedOnMonth) {
 					sumMonths++;
 					sumSalary += Integer.parseInt(waperiod.get("f_itemkey").toString());
+					//
 				} else {
 					sumDays += days;
 					// 获取薪资期间的天数
@@ -3331,8 +3589,10 @@ public class PsndocSubInfoService4JFSImpl implements IPsndocSubInfoService4JFS {
 	@Override
 	public void delGroupInsByType(UFDate enddate, String pk_defdoc) throws BusinessException {
 
-		String sqlStr = " update hi_psndoc_glbdef6 set glbdef7 = 'Y',enddate = '" + enddate.toStdString() + "' "
-				+ " where glbdef5 = '" + pk_defdoc + "' and isnull(enddate,'9999-12-31') = '9999-12-31'  ";
+		String sqlStr = " update " + PsndocDefTableUtil.getGroupInsuranceTablename() + " set glbdef7 = 'Y',enddate = '"
+				+ enddate.toStdString() + "', modifiedtime='" + new UFDateTime().toString() + "', modifier='"
+				+ InvocationInfoProxy.getInstance().getUserId() + "'  where glbdef5 = '" + pk_defdoc
+				+ "' and isnull(enddate,'9999-12-31') = '9999-12-31'  ";
 		getBaseDao().executeUpdate(sqlStr);
 
 	}
@@ -3356,11 +3616,9 @@ public class PsndocSubInfoService4JFSImpl implements IPsndocSubInfoService4JFS {
 		InSQLCreator insql = new InSQLCreator();
 		String psndocsInSQL = insql.getInSQL(pk_psndocs);
 		String sqlStr = "select psn.* from bd_psndoc psn "
-				+ "left join hi_psnjob job on job.pk_psndoc = psn.pk_psndoc and lastflag = 'Y' "
+				+ "left join hi_psnjob job on job.pk_psndoc = psn.pk_psndoc and ismainjob='Y' and  lastflag = 'Y' and trnsevent<>4 "
 				+ "where psn.pk_psndoc in (" + psndocsInSQL + ") and "
-				+ "((job.PK_PSNCL <> (select pk_psncl from bd_psncl where code='3') and"
-				+ " psn.country <> (select pk_country from bd_countryzone where code='PH')) and "
-				+ "job.jobglbdef8 <> (SELECT pk_defdoc FROM BD_DEFDOCLIST defdoclist , "
+				+ "(job.jobglbdef8 <> (SELECT pk_defdoc FROM BD_DEFDOCLIST defdoclist , "
 				+ "BD_DEFDOC defdoc WHERE defdoclist.pk_defdoclist= defdoc.pk_defdoclist "
 				+ "and defdoclist.code='HR006_0xx' and defdoc.code='C'))";
 		@SuppressWarnings("unchecked")
@@ -3376,9 +3634,11 @@ public class PsndocSubInfoService4JFSImpl implements IPsndocSubInfoService4JFS {
 		// (加保日期相同时才会认定是相同的加保信息,如果是不同的加保日期,则认定为是客户的误操作 --ryan)
 		SimpleDocServiceTemplate service = new SimpleDocServiceTemplate("TWHRGLBDEF");
 		for (String pk_psndoc : pk_psndoclist.toArray(new String[0])) {
-			PsndocDefVO[] vos = service.queryByCondition(PsndocDefUtil.getGroupInsuranceVO().getClass(),
-					" pk_psndoc in ('" + pk_psndoc + "') and begindate = '" + addDate.toStdString()
-							+ "' and glbdef5 ='" + pk_group_ins + "' ");
+			PsndocDefVO[] vos = service.queryByCondition(
+					PsndocDefUtil.getGroupInsuranceVO().getClass(),
+					" pk_psndoc in ('" + pk_psndoc
+							+ "') and begindate <= '9999-12-31' and isnull(enddate, '9999-12-31') >='"
+							+ addDate.toStdString() + "'  and glbdef5 ='" + pk_group_ins + "' ");
 			if (vos != null && vos.length > 0) {
 				throw new BusinessException("員工:"
 						+ (String) getBaseDao().executeQuery(
@@ -3419,7 +3679,7 @@ public class PsndocSubInfoService4JFSImpl implements IPsndocSubInfoService4JFS {
 				PsndocVO[] psndocVOs = psnQry.queryPsndocByPks(pk_psndoclist.toArray(new String[0]));
 
 				for (String pk_psndoc : pk_psndoclist.toArray(new String[0])) {
-					String pk_jobrank = getLastJobRank(pk_psndoc);
+					String pk_jobrank = getJobRankByPsnDate(pk_psndoc, earlist);
 
 					PsndocVO psnVO = null;
 					for (PsndocVO psnvo : psndocVOs) {
@@ -3435,8 +3695,13 @@ public class PsndocSubInfoService4JFSImpl implements IPsndocSubInfoService4JFS {
 					// .setScale(0, UFDouble.ROUND_HALF_UP).multiply(1000);
 					GroupInsuranceSettingVO[] setting = { set };
 
+					String groupInsID = set.getId();
+					Collection<?> cols = this.getBaseDao().retrieveByClause(GroupInsuranceGradeVO.class,
+							GroupInsuranceGradeVO.PK_GROUPINSURANCE + "='" + groupInsID + "'");
+
 					// 入職自動加保--參照職等
-					if (set.getBautoreg() != null && set.getBautoreg().booleanValue()) {
+					if (set.getBautoreg() != null && set.getBautoreg().booleanValue() && cols != null
+							&& cols.size() > 0) {
 						// 新建團保資料
 						// MOD 補充補充將getNewGroupInsVO方法改為 List<PsndocDefVO>型態
 						// 因此可加到 savedVOs的List列表中by Andy on 2019-01-24
@@ -3591,7 +3856,7 @@ public class PsndocSubInfoService4JFSImpl implements IPsndocSubInfoService4JFS {
 		// #34337 不排除菲律賓，只需要排除派遣
 		// MOD by ssx on 202-04-13
 		String sqlStr = "select psn.* from bd_psndoc psn "
-				+ "left join hi_psnjob job on job.pk_psndoc = psn.pk_psndoc and lastflag = 'Y' "
+				+ "left join hi_psnjob job on job.pk_psndoc = psn.pk_psndoc and ismainjob='Y' and lastflag = 'Y' and trnsevent<>4 "
 				+ "where psn.pk_psndoc in ("
 				+ psndocsInSQL
 				+ ") and ("
@@ -3630,7 +3895,7 @@ public class PsndocSubInfoService4JFSImpl implements IPsndocSubInfoService4JFS {
 			psnService.dismissPsnGroupIns(pk_org, pk_psndoc, specificStartDate.getDateBefore(1));
 			// 根據人員查找進入日期
 			UFLiteralDate earlist = getOrgEnterDateByPsndoc(specificStartDate, pk_psndoc);
-			String pk_jobrank = getLastJobRank(pk_psndoc);
+			String pk_jobrank = getJobRankByPsnDate(pk_psndoc, earlist);
 
 			PsndocVO psnVO = null;
 			for (PsndocVO psnvo : psndocVOs) {
@@ -3664,52 +3929,227 @@ public class PsndocSubInfoService4JFSImpl implements IPsndocSubInfoService4JFS {
 	/**
 	 * 离职审核后回写劳健保及團保子集结束日期
 	 */
+	@SuppressWarnings("unchecked")
 	@Override
 	public void finishInsurance(AggStapply[] aggvos) throws BusinessException {
-		List<String> psndoclist = new ArrayList<String>();
+		String pk_psndoc = null;
 		UFLiteralDate effectdate = null;
-		for (AggStapply vo : aggvos) {
-			if (null != vo.getParentVO().getAttributeValue("approve_state")) {
-				if (null != vo.getParentVO().getAttributeValue("pk_psndoc")
-						&& (vo.getParentVO().getAttributeValue("approve_state").toString().equals("102") || vo
-								.getParentVO().getAttributeValue("approve_state").toString().equals("1"))) {
-					psndoclist.add(String.valueOf(vo.getParentVO().getAttributeValue("pk_psndoc")));
-					effectdate = vo.getParentVO().getAttributeValue("effectdate") == null ? null : new UFLiteralDate(vo
-							.getParentVO().getAttributeValue("effectdate").toString());
+		for (AggStapply applyvo : aggvos) {
+			// ssx modified on 2020-06-12
+			// 不能按批执行，因为可能同一批次可能有不同的离职生效日期
+			// Redmine #35706
+			if (null != applyvo.getParentVO().getAttributeValue("approve_state")) {
+				if ((applyvo.getParentVO().getAttributeValue("approve_state").toString().equals("102") || applyvo
+						.getParentVO().getAttributeValue("approve_state").toString().equals("1"))) {
+					pk_psndoc = String.valueOf(applyvo.getParentVO().getAttributeValue("pk_psndoc"));
+					effectdate = applyvo.getParentVO().getAttributeValue("effectdate") == null ? null
+							: new UFLiteralDate(applyvo.getParentVO().getAttributeValue("effectdate").toString());
 				}
 			}
-		}
-		if (psndoclist.size() > 0 && null != effectdate) {
-			InSQLCreator insql = new InSQLCreator();
-			String psndocs = insql.getInSQL(psndoclist.toArray(new String[0]));
-			// 查询出这批人员的劳健保子集信息
-			// 劳保劳退
-			List<Glbdef1VO> glbdef1vos = (List<Glbdef1VO>) this.getBaseDao().retrieveByClause(Glbdef1VO.class,
-					" pk_psndoc in(" + psndocs + ") and isnull(enddate, '9999-12-31')='9999-12-31'");
-			for (Glbdef1VO vo : glbdef1vos) {
-				vo.setAttributeValue("enddate", effectdate.getDateBefore(1));
 
-				if (vo.getAttributeValue("glbdef14") != null) {
-					vo.setAttributeValue("glbdef15", effectdate.getDateBefore(1));
+			if (!StringUtils.isEmpty(pk_psndoc) && null != effectdate) {
+				// 查询出人员的劳健保子集信息
+				// 劳保劳退
+				List<Glbdef1VO> glbdef1vos = (List<Glbdef1VO>) this.getBaseDao().retrieveByClause(Glbdef1VO.class,
+						" pk_psndoc ='" + pk_psndoc + "' and isnull(enddate, '9999-12-31')='9999-12-31'");
+				for (Glbdef1VO vo : glbdef1vos) {
+					vo.setAttributeValue("enddate", effectdate.getDateBefore(1));
+
+					if (vo.getAttributeValue("glbdef14") != null) {
+						vo.setAttributeValue("glbdef15", effectdate.getDateBefore(1));
+					}
 				}
-			}
-			this.getBaseDao().updateVOList(glbdef1vos);
+				this.getBaseDao().updateVOList(glbdef1vos);
 
-			// 健保
-			List<Glbdef2VO> glbdef2vos = (List<Glbdef2VO>) this.getBaseDao().retrieveByClause(Glbdef2VO.class,
-					" pk_psndoc in(" + psndocs + ") and isnull(enddate, '9999-12-31')='9999-12-31'");
-			for (Glbdef2VO vo : glbdef2vos) {
-				vo.setAttributeValue("enddate", effectdate.getDateBefore(1));
-			}
-			this.getBaseDao().updateVOList(glbdef2vos);
+				// 健保
+				List<Glbdef2VO> glbdef2vos = (List<Glbdef2VO>) this.getBaseDao().retrieveByClause(Glbdef2VO.class,
+						" pk_psndoc ='" + pk_psndoc + "' and isnull(enddate, '9999-12-31')='9999-12-31'");
+				for (Glbdef2VO vo : glbdef2vos) {
+					vo.setAttributeValue("enddate", effectdate.getDateBefore(1));
+				}
+				this.getBaseDao().updateVOList(glbdef2vos);
 
-			// 團保
-			List<Glbdef6VO> glbdef6vos = (List<Glbdef6VO>) this.getBaseDao().retrieveByClause(Glbdef6VO.class,
-					" pk_psndoc in(" + psndocs + ") and isnull(enddate, '9999-12-31')='9999-12-31'");
-			for (Glbdef6VO vo : glbdef6vos) {
-				vo.setAttributeValue("enddate", effectdate.getDateBefore(1));
+				// 團保
+				List<Glbdef6VO> glbdef6vos = (List<Glbdef6VO>) this.getBaseDao().retrieveByClause(Glbdef6VO.class,
+						" pk_psndoc ='" + pk_psndoc + "' and isnull(enddate, '9999-12-31')='9999-12-31'");
+				for (Glbdef6VO vo : glbdef6vos) {
+					vo.setAttributeValue("enddate", effectdate.getDateBefore(1));
+				}
+				this.getBaseDao().updateVOList(glbdef6vos);
 			}
-			this.getBaseDao().updateVOList(glbdef6vos);
 		}
 	}
+
+	/**
+	 * 计算投保级距 逻辑： 公式內新增取數來源為員工資訊維護的勞保勞退資訊中的「勞保級距」，取級距的來源是 同個期間開始日期最新的投保級距。
+	 * 
+	 * @param pk_psndoc
+	 * @param cstartdate
+	 * @param cenddate
+	 * @return
+	 * @throws BusinessException
+	 */
+	private Map<String, Double> getGrand(List<String> pk_psndocs, String cstartdate, String cenddate)
+			throws BusinessException {
+
+		String sql = "select pk_psndoc, SALARY_DECRYPT(h.glbdef4) glbdef4  from hi_psndoc_glbdef1 h where  "
+				+ "  ((h.begindate<='" + cstartdate + "'" + " and (case when h.enddate is null then '9999-12-31' "
+				+ "else  h.enddate end)>='" + cstartdate + "'  )  " + " or (h.begindate>='" + cstartdate
+				+ "' and h.begindate<='" + cenddate + "' ))  " + " and h.pk_psndoc in ("
+				+ new InSQLCreator().getInSQL(pk_psndocs.toArray(new String[0])) + ")" + " order by h.begindate asc";
+		List<Map> idmaps = (List<Map>) this.getBaseDao().executeQuery(sql, new MapListProcessor());
+		Map<String, Double> rtn = new HashMap<String, Double>();
+		if (idmaps != null && idmaps.size() > 0) {
+			for (Map idmap : idmaps) {
+				String pkpsndoc = (String) idmap.get("pk_psndoc");
+				Double glbdef = null == idmap.get("glbdef4") ? 0 : Double.parseDouble(idmap.get("glbdef4").toString());
+				rtn.put(pkpsndoc, glbdef);
+			}
+		}
+
+		return rtn;
+	}
+
+	@Override
+	public Map<String, Map<String, UFDouble>> recalculateGroupIns(String pk_org, String pk_wa_class, String cYear,
+			String cPeriod) throws BusinessException {
+		calculateGroupIns(pk_org, pk_wa_class, cYear, cPeriod, null, true);
+		return getInsComStates();
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public DataSet dsRecalculateGroupIns(SmartContext context) throws BusinessException {
+
+		String pk_org = (String) context.getParameterValue("pk_org");
+		String pk_wa_class = (String) context.getParameterValue("pk_wa_class");
+		String cYear = (String) context.getParameterValue("cYear");
+		String cPeriod = (String) context.getParameterValue("cPeriod");
+		if (cYear == null || cYear.length() > 4) {
+			String yearPeriod = (String) context.getParameterValue("sdate");
+			if (!yearPeriod.isEmpty()) {
+				cYear = yearPeriod.substring(0, 4);
+				cPeriod = yearPeriod.substring(5, 7);
+			}
+		}
+
+		DataSet result = new DataSet();
+
+		Map<String, Map<String, UFDouble>> getInsComStates = new HashMap<String, Map<String, UFDouble>>();
+
+		MetaData metaData = builderMetaData();
+		result.setMetaData(metaData);
+
+		if (pk_org == null || pk_wa_class == null || cYear == null || cPeriod == null) {
+			return result;
+		}
+
+		calculateGroupIns(pk_org, pk_wa_class, cYear, cPeriod, null, true);
+		getInsComStates = getInsComStates();
+		if (getInsComStates == null || getInsComStates.size() == 0) {
+			return result;
+		}
+
+		// ssx added on 2020-10-21
+		// 取id-pk_psndoc對照Map
+		String sql = "";
+
+		sql = "select distinct ins.glbdef2, ins.pk_psndoc from hi_psndoc_glbdef6 ins,"
+				+ " (select cstartdate, cenddate from wa_waclass wc inner join wa_period pd on wc.pk_periodscheme=pd.pk_periodscheme where wc.pk_wa_class = '"
+				+ pk_wa_class + "' and pd.cyear='" + cYear + "' and pd.cperiod='" + cPeriod + "') psd " + " where "
+				+ " ins.begindate <= psd.cenddate and NVL(ins.enddate,'9999-12-31') >= psd.cstartdate";
+		List<Map<String, Object>> id_psndoc_MapList = (List<Map<String, Object>>) this.getBaseDao().executeQuery(sql,
+				new MapListProcessor());
+		Map<String, String> id_psndoc_Map = new HashMap<String, String>();
+		if (id_psndoc_MapList != null && id_psndoc_MapList.size() > 0) {
+			for (Map<String, Object> id_psndoc_map : id_psndoc_MapList) {
+				String id = id_psndoc_map.values().toArray(new String[0])[1];
+				String pk_psndoc = id_psndoc_map.values().toArray(new String[0])[0];
+				id_psndoc_Map.put(id, pk_psndoc);
+			}
+		}
+		// end
+
+		// ssx added on 2020-10-21
+		// 按pk_psndoc+保險公司彙總
+		// Map<pk_psndoc, Map<保險公司PK, 保費合計>>
+		Map<String, Map<String, UFDouble>> resultMap = new HashMap<String, Map<String, UFDouble>>();
+		for (Entry<String, Map<String, UFDouble>> row : getInsComStates.entrySet()) {
+			String id = row.getKey();
+			String pk_psndoc = id_psndoc_Map.get(id);
+			if (id == null || pk_psndoc == null) {
+				continue;
+			}
+			for (Entry<String, UFDouble> rows : getInsComStates.get(row.getKey()).entrySet()) {
+				String com_pk = rows.getKey();
+				UFDouble amount = rows.getValue();
+
+				if (!resultMap.containsKey(pk_psndoc)) {
+					// 不存在該員工時，新增員工
+					resultMap.put(pk_psndoc, new HashMap<String, UFDouble>());
+				}
+
+				if (!resultMap.get(pk_psndoc).containsKey(com_pk)) {
+					// 不存在該員工的保險公司時，新增保險公司
+					resultMap.get(pk_psndoc).put(com_pk, amount);
+				} else {
+					// 存在該員工、該保險公司時，累加金額
+					resultMap.get(pk_psndoc).put(com_pk, amount.add(resultMap.get(pk_psndoc).get(com_pk)));
+				}
+			}
+		}
+		// end
+
+		int com_size = 0;
+		for (Entry<String, Map<String, UFDouble>> row : resultMap.entrySet()) {
+			for (Entry<String, UFDouble> rows : resultMap.get(row.getKey()).entrySet()) {
+				com_size++;
+			}
+		}
+
+		Object[][] objs = new Object[com_size][3];
+		int i = 0;
+
+		// Map<身份證字號, Map<保險公司PK, 保費合計>>
+		for (Entry<String, Map<String, UFDouble>> row : resultMap.entrySet()) {
+			for (Entry<String, UFDouble> rows : resultMap.get(row.getKey()).entrySet()) {
+				objs[i][0] = row.getKey();
+				objs[i][1] = rows.getKey();
+				objs[i][2] = rows.getValue();
+				i++;
+			}
+		}
+		result.setDatas(objs);
+		return result;
+	}
+
+	// 設置元數據
+	private MetaData builderMetaData() {
+		MetaData metaData = new MetaData();
+
+		Field fld = new Field();
+		fld.setCaption("人員編號PK");
+		fld.setFldname("pk_psndoc");
+		fld.setDbColumnType(12);
+		fld.setPrecision(100);
+		metaData.addField(new Field[] { fld });
+
+		fld = new Field();
+		fld.setCaption("保險公司PK");
+		fld.setFldname("pk_company");
+		fld.setPrecision(100);
+		fld.setDbColumnType(12);
+		metaData.addField(new Field[] { fld });
+
+		fld = new Field();
+		fld.setCaption("保費合計");
+		fld.setFldname("money_sum");
+		fld.setPrecision(10);
+		fld.setDbColumnType(4);
+		fld.setScale(0);
+		metaData.addField(new Field[] { fld });
+
+		return metaData;
+	}
+
 }

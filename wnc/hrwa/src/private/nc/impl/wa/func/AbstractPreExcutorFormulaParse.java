@@ -6,6 +6,7 @@ import java.util.Map;
 
 import nc.bs.dao.BaseDAO;
 import nc.bs.dao.DAOException;
+import nc.jdbc.framework.processor.ColumnProcessor;
 import nc.jdbc.framework.processor.MapListProcessor;
 import nc.vo.dataitem.pub.DataVOUtils;
 import nc.vo.hi.psndoc.PsnJobVO;
@@ -58,6 +59,15 @@ public abstract class AbstractPreExcutorFormulaParse extends AbstractWAFormulaPa
 		return fvo;
 	}
 
+	// Result<pk_psndoc, UFDouble[]>:
+	// value[0]: taxfree_comp_amount
+	// value[1]: tabfree_nocomp_amount
+	// value[2]: taxable_comp_amount
+	// value[3]: taxable_nocomp_amount
+	// value[4]: taxfree_comp_hour
+	// value[5]: taxable_comp_hour
+	// value[6]: taxfree_nocomp_hour
+	// value[7]: taxable_nocomp_hour
 	protected void writeToWaOTTempData(String pk_wa_class, String creator, Map<String, UFDouble[]> ovtFeeResult,
 			boolean isLeave) {
 		// 批量更新
@@ -65,86 +75,262 @@ public abstract class AbstractPreExcutorFormulaParse extends AbstractWAFormulaPa
 			for (String pk_psndoc : ovtFeeResult.keySet()) {
 				if (!isLeave) {
 					// 轉調休
-					UFDouble amountTaxFree = (ovtFeeResult.get(pk_psndoc) == null || ovtFeeResult.get(pk_psndoc).length < 1) ? UFDouble.ZERO_DBL
-							: ovtFeeResult.get(pk_psndoc)[0];
-					UFDouble amountTaxable = (ovtFeeResult.get(pk_psndoc) == null || ovtFeeResult.get(pk_psndoc).length < 3) ? UFDouble.ZERO_DBL
-							: ovtFeeResult.get(pk_psndoc)[2];
-					getBaseDao().executeUpdate(
-							"delete from wa_cacu_overtimefee where pk_wa_class='" + pk_wa_class + "' and creator='"
-									+ creator + "' and pk_psndoc='" + pk_psndoc + "' and intcomp=0;");
-					getBaseDao().executeUpdate(
-							"insert into wa_cacu_overtimefee (pk_wa_class, creator, pk_psndoc, intcomp, amounttaxfree, amounttaxable) values ('"
-									+ pk_wa_class + "','" + creator + "','" + pk_psndoc + "'," + String.valueOf(0)
-									+ "," + amountTaxFree.toString() + "," + amountTaxable.toString() + ");");
+					UFDouble amountTaxFree = (ovtFeeResult.get(pk_psndoc) == null) ? UFDouble.ZERO_DBL : ovtFeeResult
+							.get(pk_psndoc)[0];
+					UFDouble amountTaxable = (ovtFeeResult.get(pk_psndoc) == null) ? UFDouble.ZERO_DBL : ovtFeeResult
+							.get(pk_psndoc)[2];
+					UFDouble taxfreeHours = (ovtFeeResult.get(pk_psndoc) == null) ? UFDouble.ZERO_DBL : ovtFeeResult
+							.get(pk_psndoc)[4];
+					UFDouble taxableHours = (ovtFeeResult.get(pk_psndoc) == null) ? UFDouble.ZERO_DBL : ovtFeeResult
+							.get(pk_psndoc)[5];
+					Integer cnt = (Integer) getBaseDao().executeQuery(
+							"select count(*) from wa_cacu_overtimefee where pk_wa_class='" + pk_wa_class
+									+ "' and creator='" + creator + "' and pk_psndoc='" + pk_psndoc
+									+ "' and intcomp=0;", new ColumnProcessor());
+
+					if (cnt > 0) {
+						getBaseDao().executeUpdate(
+								"update wa_cacu_overtimefee set amounttaxfree=" + amountTaxFree.toString()
+										+ ", amounttaxable=" + amountTaxable.toString() + ", taxfreehours="
+										+ taxfreeHours.toString() + ", taxablehours=" + taxableHours.toString()
+										+ " where pk_wa_class='" + pk_wa_class + "' and creator='" + creator
+										+ "' and pk_psndoc='" + pk_psndoc + "' and intcomp=0;");
+					} else {
+						getBaseDao()
+								.executeUpdate(
+										"insert into wa_cacu_overtimefee (pk_wa_class, creator, pk_psndoc, intcomp, amounttaxfree, amounttaxable, taxfreehours, taxablehours) values ('"
+												+ pk_wa_class
+												+ "','"
+												+ creator
+												+ "','"
+												+ pk_psndoc
+												+ "',"
+												+ String.valueOf(0)
+												+ ","
+												+ amountTaxFree.toString()
+												+ ","
+												+ amountTaxable.toString()
+												+ ", "
+												+ taxfreeHours.toString()
+												+ ", "
+												+ taxableHours.toString() + ");");
+					}
 
 					// 非轉調休
-					amountTaxFree = (ovtFeeResult.get(pk_psndoc) == null || ovtFeeResult.get(pk_psndoc).length < 2) ? UFDouble.ZERO_DBL
-							: ovtFeeResult.get(pk_psndoc)[1];
-					amountTaxable = (ovtFeeResult.get(pk_psndoc) == null || ovtFeeResult.get(pk_psndoc).length < 4) ? UFDouble.ZERO_DBL
-							: ovtFeeResult.get(pk_psndoc)[3];
-					getBaseDao().executeUpdate(
-							"delete from wa_cacu_overtimefee where pk_wa_class='" + pk_wa_class + "' and creator='"
-									+ creator + "' and pk_psndoc='" + pk_psndoc + "' and intcomp=1;");
-					getBaseDao().executeUpdate(
-							"insert into wa_cacu_overtimefee (pk_wa_class, creator, pk_psndoc, intcomp, amounttaxfree, amounttaxable) values ('"
-									+ pk_wa_class + "','" + creator + "','" + pk_psndoc + "'," + String.valueOf(1)
-									+ "," + amountTaxFree.toString() + "," + amountTaxable.toString() + ");");
+					amountTaxFree = (ovtFeeResult.get(pk_psndoc) == null) ? UFDouble.ZERO_DBL : ovtFeeResult
+							.get(pk_psndoc)[1];
+					amountTaxable = (ovtFeeResult.get(pk_psndoc) == null) ? UFDouble.ZERO_DBL : ovtFeeResult
+							.get(pk_psndoc)[3];
+					taxfreeHours = (ovtFeeResult.get(pk_psndoc) == null) ? UFDouble.ZERO_DBL : ovtFeeResult
+							.get(pk_psndoc)[6];
+					taxableHours = (ovtFeeResult.get(pk_psndoc) == null) ? UFDouble.ZERO_DBL : ovtFeeResult
+							.get(pk_psndoc)[7];
+					cnt = (Integer) getBaseDao().executeQuery(
+							"select count(*) from wa_cacu_overtimefee where pk_wa_class='" + pk_wa_class
+									+ "' and creator='" + creator + "' and pk_psndoc='" + pk_psndoc
+									+ "' and intcomp=1;", new ColumnProcessor());
+
+					if (cnt > 0) {
+						getBaseDao().executeUpdate(
+								"update wa_cacu_overtimefee set amounttaxfree=" + amountTaxFree.toString()
+										+ ", amounttaxable=" + amountTaxable.toString() + ", taxfreehours="
+										+ taxfreeHours.toString() + ", taxablehours=" + taxableHours.toString()
+										+ " where pk_wa_class='" + pk_wa_class + "' and creator='" + creator
+										+ "' and pk_psndoc='" + pk_psndoc + "' and intcomp=1;");
+					} else {
+						getBaseDao()
+								.executeUpdate(
+										"insert into wa_cacu_overtimefee (pk_wa_class, creator, pk_psndoc, intcomp, amounttaxfree, amounttaxable, taxfreehours, taxablehours) values ('"
+												+ pk_wa_class
+												+ "','"
+												+ creator
+												+ "','"
+												+ pk_psndoc
+												+ "',"
+												+ String.valueOf(1)
+												+ ","
+												+ amountTaxFree.toString()
+												+ ","
+												+ amountTaxable.toString()
+												+ ", "
+												+ taxfreeHours.toString()
+												+ ", "
+												+ taxableHours.toString() + ");");
+					}
 
 					// 合計
-					amountTaxFree = ((ovtFeeResult.get(pk_psndoc) == null || ovtFeeResult.get(pk_psndoc).length < 1) ? UFDouble.ZERO_DBL
-							: ovtFeeResult.get(pk_psndoc)[0]).add((ovtFeeResult.get(pk_psndoc) == null || ovtFeeResult
-							.get(pk_psndoc).length < 2) ? UFDouble.ZERO_DBL : ovtFeeResult.get(pk_psndoc)[1]);
-					amountTaxable = ((ovtFeeResult.get(pk_psndoc) == null || ovtFeeResult.get(pk_psndoc).length < 3) ? UFDouble.ZERO_DBL
-							: ovtFeeResult.get(pk_psndoc)[2]).add((ovtFeeResult.get(pk_psndoc) == null || ovtFeeResult
-							.get(pk_psndoc).length < 4) ? UFDouble.ZERO_DBL : ovtFeeResult.get(pk_psndoc)[3]);
-					getBaseDao().executeUpdate(
-							"delete from wa_cacu_overtimefee where pk_wa_class='" + pk_wa_class + "' and creator='"
-									+ creator + "' and pk_psndoc='" + pk_psndoc + "' and intcomp=2;");
-					getBaseDao().executeUpdate(
-							"insert into wa_cacu_overtimefee (pk_wa_class, creator, pk_psndoc, intcomp, amounttaxfree, amounttaxable) values ('"
-									+ pk_wa_class + "','" + creator + "','" + pk_psndoc + "'," + String.valueOf(2)
-									+ "," + amountTaxFree.toString() + "," + amountTaxable.toString() + ");");
+					amountTaxFree = ((ovtFeeResult.get(pk_psndoc) == null) ? UFDouble.ZERO_DBL : ovtFeeResult
+							.get(pk_psndoc)[0]).add((ovtFeeResult.get(pk_psndoc) == null) ? UFDouble.ZERO_DBL
+							: ovtFeeResult.get(pk_psndoc)[1]);
+					amountTaxable = ((ovtFeeResult.get(pk_psndoc) == null) ? UFDouble.ZERO_DBL : ovtFeeResult
+							.get(pk_psndoc)[2]).add((ovtFeeResult.get(pk_psndoc) == null) ? UFDouble.ZERO_DBL
+							: ovtFeeResult.get(pk_psndoc)[3]);
+					taxfreeHours = ((ovtFeeResult.get(pk_psndoc) == null) ? UFDouble.ZERO_DBL : ovtFeeResult
+							.get(pk_psndoc)[4]).add((ovtFeeResult.get(pk_psndoc) == null) ? UFDouble.ZERO_DBL
+							: ovtFeeResult.get(pk_psndoc)[6]);
+					taxableHours = ((ovtFeeResult.get(pk_psndoc) == null) ? UFDouble.ZERO_DBL : ovtFeeResult
+							.get(pk_psndoc)[5]).add((ovtFeeResult.get(pk_psndoc) == null) ? UFDouble.ZERO_DBL
+							: ovtFeeResult.get(pk_psndoc)[7]);
+					cnt = (Integer) getBaseDao().executeQuery(
+							"select count(*) from wa_cacu_overtimefee where pk_wa_class='" + pk_wa_class
+									+ "' and creator='" + creator + "' and pk_psndoc='" + pk_psndoc
+									+ "' and intcomp=2;", new ColumnProcessor());
+					if (cnt > 0) {
+						getBaseDao().executeUpdate(
+								"update wa_cacu_overtimefee set amounttaxfree=" + amountTaxFree.toString()
+										+ ", amounttaxable=" + amountTaxable.toString() + ", taxfreehours="
+										+ taxfreeHours.toString() + ", taxablehours=" + taxableHours.toString()
+										+ " where pk_wa_class='" + pk_wa_class + "' and creator='" + creator
+										+ "' and pk_psndoc='" + pk_psndoc + "' and intcomp=2;");
+					} else {
+						getBaseDao()
+								.executeUpdate(
+										"insert into wa_cacu_overtimefee (pk_wa_class, creator, pk_psndoc, intcomp, amounttaxfree, amounttaxable, taxfreehours, taxablehours) values ('"
+												+ pk_wa_class
+												+ "','"
+												+ creator
+												+ "','"
+												+ pk_psndoc
+												+ "',"
+												+ String.valueOf(2)
+												+ ","
+												+ amountTaxFree.toString()
+												+ ","
+												+ amountTaxable.toString()
+												+ ", "
+												+ taxfreeHours.toString()
+												+ ", "
+												+ taxableHours.toString() + ");");
+					}
 				} else {
 					// 轉調休
-					UFDouble amountTaxFree = (ovtFeeResult.get(pk_psndoc) == null || ovtFeeResult.get(pk_psndoc).length < 1) ? UFDouble.ZERO_DBL
-							: ovtFeeResult.get(pk_psndoc)[0];
-					UFDouble amountTaxable = (ovtFeeResult.get(pk_psndoc) == null || ovtFeeResult.get(pk_psndoc).length < 3) ? UFDouble.ZERO_DBL
-							: ovtFeeResult.get(pk_psndoc)[2];
-					getBaseDao().executeUpdate(
-							"delete from wa_cacu_overtimefee where pk_wa_class='" + pk_wa_class + "' and creator='"
-									+ creator + "' and pk_psndoc='" + pk_psndoc + "' and intcomp=-2;");
-					getBaseDao().executeUpdate(
-							"insert into wa_cacu_overtimefee (pk_wa_class, creator, pk_psndoc, intcomp, amounttaxfree, amounttaxable) values ('"
-									+ pk_wa_class + "','" + creator + "','" + pk_psndoc + "'," + String.valueOf(-2)
-									+ "," + amountTaxFree.toString() + "," + amountTaxable.toString() + ");");
+					UFDouble amountTaxFree = (ovtFeeResult.get(pk_psndoc) == null) ? UFDouble.ZERO_DBL : ovtFeeResult
+							.get(pk_psndoc)[0];
+					UFDouble amountTaxable = (ovtFeeResult.get(pk_psndoc) == null) ? UFDouble.ZERO_DBL : ovtFeeResult
+							.get(pk_psndoc)[2];
+					UFDouble taxfreeHours = (ovtFeeResult.get(pk_psndoc) == null) ? UFDouble.ZERO_DBL : ovtFeeResult
+							.get(pk_psndoc)[4];
+					UFDouble taxableHours = (ovtFeeResult.get(pk_psndoc) == null) ? UFDouble.ZERO_DBL : ovtFeeResult
+							.get(pk_psndoc)[5];
+					Integer cnt = (Integer) getBaseDao().executeQuery(
+							"select count(*) from wa_cacu_overtimefee where pk_wa_class='" + pk_wa_class
+									+ "' and creator='" + creator + "' and pk_psndoc='" + pk_psndoc
+									+ "' and intcomp=-2;", new ColumnProcessor());
+
+					if (cnt > 0) {
+						getBaseDao().executeUpdate(
+								"update wa_cacu_overtimefee set amounttaxfree=" + amountTaxFree.toString()
+										+ ", amounttaxable=" + amountTaxable.toString() + ", taxfreehours="
+										+ taxfreeHours.toString() + ", taxablehours=" + taxableHours.toString()
+										+ " where pk_wa_class='" + pk_wa_class + "' and creator='" + creator
+										+ "' and pk_psndoc='" + pk_psndoc + "' and intcomp=-2;");
+					} else {
+						getBaseDao()
+								.executeUpdate(
+										"insert into wa_cacu_overtimefee (pk_wa_class, creator, pk_psndoc, intcomp, amounttaxfree, amounttaxable, taxfreehours, taxablehours) values ('"
+												+ pk_wa_class
+												+ "','"
+												+ creator
+												+ "','"
+												+ pk_psndoc
+												+ "',"
+												+ String.valueOf(-2)
+												+ ","
+												+ amountTaxFree.toString()
+												+ ","
+												+ amountTaxable.toString()
+												+ ", "
+												+ taxfreeHours.toString()
+												+ ", "
+												+ taxableHours.toString() + ");");
+					}
 
 					// 非轉調休
-					amountTaxFree = (ovtFeeResult.get(pk_psndoc) == null || ovtFeeResult.get(pk_psndoc).length < 2) ? UFDouble.ZERO_DBL
-							: ovtFeeResult.get(pk_psndoc)[1];
-					amountTaxable = (ovtFeeResult.get(pk_psndoc) == null || ovtFeeResult.get(pk_psndoc).length < 4) ? UFDouble.ZERO_DBL
-							: ovtFeeResult.get(pk_psndoc)[3];
-					getBaseDao().executeUpdate(
-							"delete from wa_cacu_overtimefee where pk_wa_class='" + pk_wa_class + "' and creator='"
-									+ creator + "' and pk_psndoc='" + pk_psndoc + "' and intcomp=-3;");
-					getBaseDao().executeUpdate(
-							"insert into wa_cacu_overtimefee (pk_wa_class, creator, pk_psndoc, intcomp, amounttaxfree, amounttaxable) values ('"
-									+ pk_wa_class + "','" + creator + "','" + pk_psndoc + "'," + String.valueOf(-3)
-									+ "," + amountTaxFree.toString() + "," + amountTaxable.toString() + ");");
+					amountTaxFree = (ovtFeeResult.get(pk_psndoc) == null) ? UFDouble.ZERO_DBL : ovtFeeResult
+							.get(pk_psndoc)[1];
+					amountTaxable = (ovtFeeResult.get(pk_psndoc) == null) ? UFDouble.ZERO_DBL : ovtFeeResult
+							.get(pk_psndoc)[3];
+					taxfreeHours = (ovtFeeResult.get(pk_psndoc) == null) ? UFDouble.ZERO_DBL : ovtFeeResult
+							.get(pk_psndoc)[6];
+					taxableHours = (ovtFeeResult.get(pk_psndoc) == null) ? UFDouble.ZERO_DBL : ovtFeeResult
+							.get(pk_psndoc)[7];
+					cnt = (Integer) getBaseDao().executeQuery(
+							"select count(*) from wa_cacu_overtimefee where pk_wa_class='" + pk_wa_class
+									+ "' and creator='" + creator + "' and pk_psndoc='" + pk_psndoc
+									+ "' and intcomp=-3;", new ColumnProcessor());
+
+					if (cnt > 0) {
+						getBaseDao().executeUpdate(
+								"update wa_cacu_overtimefee set amounttaxfree=" + amountTaxFree.toString()
+										+ ", amounttaxable=" + amountTaxable.toString() + ", taxfreehours="
+										+ taxfreeHours.toString() + ", taxablehours=" + taxableHours.toString()
+										+ " where pk_wa_class='" + pk_wa_class + "' and creator='" + creator
+										+ "' and pk_psndoc='" + pk_psndoc + "' and intcomp=-3;");
+					} else {
+						getBaseDao()
+								.executeUpdate(
+										"insert into wa_cacu_overtimefee (pk_wa_class, creator, pk_psndoc, intcomp, amounttaxfree, amounttaxable, taxfreehours, taxablehours) values ('"
+												+ pk_wa_class
+												+ "','"
+												+ creator
+												+ "','"
+												+ pk_psndoc
+												+ "',"
+												+ String.valueOf(-3)
+												+ ","
+												+ amountTaxFree.toString()
+												+ ","
+												+ amountTaxable.toString()
+												+ ", "
+												+ taxfreeHours.toString()
+												+ ", "
+												+ taxableHours.toString() + ");");
+					}
 
 					// 合計
-					amountTaxFree = ((ovtFeeResult.get(pk_psndoc) == null || ovtFeeResult.get(pk_psndoc).length < 1) ? UFDouble.ZERO_DBL
-							: ovtFeeResult.get(pk_psndoc)[0]).add((ovtFeeResult.get(pk_psndoc) == null || ovtFeeResult
-							.get(pk_psndoc).length < 2) ? UFDouble.ZERO_DBL : ovtFeeResult.get(pk_psndoc)[1]);
-					amountTaxable = ((ovtFeeResult.get(pk_psndoc) == null || ovtFeeResult.get(pk_psndoc).length < 3) ? UFDouble.ZERO_DBL
-							: ovtFeeResult.get(pk_psndoc)[2]).add((ovtFeeResult.get(pk_psndoc) == null || ovtFeeResult
-							.get(pk_psndoc).length < 4) ? UFDouble.ZERO_DBL : ovtFeeResult.get(pk_psndoc)[3]);
-					getBaseDao().executeUpdate(
-							"delete from wa_cacu_overtimefee where pk_wa_class='" + pk_wa_class + "' and creator='"
-									+ creator + "' and pk_psndoc='" + pk_psndoc + "' and intcomp=-1;");
-					getBaseDao().executeUpdate(
-							"insert into wa_cacu_overtimefee (pk_wa_class, creator, pk_psndoc, intcomp, amounttaxfree, amounttaxable) values ('"
-									+ pk_wa_class + "','" + creator + "','" + pk_psndoc + "'," + String.valueOf(-1)
-									+ "," + amountTaxFree.toString() + "," + amountTaxable.toString() + ");");
+					amountTaxFree = ((ovtFeeResult.get(pk_psndoc) == null) ? UFDouble.ZERO_DBL : ovtFeeResult
+							.get(pk_psndoc)[0]).add((ovtFeeResult.get(pk_psndoc) == null) ? UFDouble.ZERO_DBL
+							: ovtFeeResult.get(pk_psndoc)[1]);
+					amountTaxable = ((ovtFeeResult.get(pk_psndoc) == null) ? UFDouble.ZERO_DBL : ovtFeeResult
+							.get(pk_psndoc)[2]).add((ovtFeeResult.get(pk_psndoc) == null) ? UFDouble.ZERO_DBL
+							: ovtFeeResult.get(pk_psndoc)[3]);
+					taxfreeHours = ((ovtFeeResult.get(pk_psndoc) == null) ? UFDouble.ZERO_DBL : ovtFeeResult
+							.get(pk_psndoc)[4]).add((ovtFeeResult.get(pk_psndoc) == null) ? UFDouble.ZERO_DBL
+							: ovtFeeResult.get(pk_psndoc)[6]);
+					taxableHours = ((ovtFeeResult.get(pk_psndoc) == null) ? UFDouble.ZERO_DBL : ovtFeeResult
+							.get(pk_psndoc)[5]).add((ovtFeeResult.get(pk_psndoc) == null) ? UFDouble.ZERO_DBL
+							: ovtFeeResult.get(pk_psndoc)[7]);
+					cnt = (Integer) getBaseDao().executeQuery(
+							"select count(*) from wa_cacu_overtimefee where pk_wa_class='" + pk_wa_class
+									+ "' and creator='" + creator + "' and pk_psndoc='" + pk_psndoc
+									+ "' and intcomp=-1;", new ColumnProcessor());
+					if (cnt > 0) {
+						getBaseDao().executeUpdate(
+								"update wa_cacu_overtimefee set amounttaxfree=" + amountTaxFree.toString()
+										+ ", amounttaxable=" + amountTaxable.toString() + ", taxfreehours="
+										+ taxfreeHours.toString() + ", taxablehours=" + taxableHours.toString()
+										+ " where pk_wa_class='" + pk_wa_class + "' and creator='" + creator
+										+ "' and pk_psndoc='" + pk_psndoc + "' and intcomp=-1;");
+					} else {
+						getBaseDao()
+								.executeUpdate(
+										"insert into wa_cacu_overtimefee (pk_wa_class, creator, pk_psndoc, intcomp, amounttaxfree, amounttaxable, taxfreehours, taxablehours) values ('"
+												+ pk_wa_class
+												+ "','"
+												+ creator
+												+ "','"
+												+ pk_psndoc
+												+ "',"
+												+ String.valueOf(-1)
+												+ ","
+												+ amountTaxFree.toString()
+												+ ","
+												+ amountTaxable.toString()
+												+ ", "
+												+ taxfreeHours.toString()
+												+ ", "
+												+ taxableHours.toString() + ");");
+					}
 				}
 			}
 		} catch (BusinessException e) {

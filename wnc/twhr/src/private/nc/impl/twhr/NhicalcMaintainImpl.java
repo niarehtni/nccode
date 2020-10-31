@@ -2,6 +2,7 @@ package nc.impl.twhr;
 
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -498,8 +499,7 @@ public class NhicalcMaintainImpl extends AceNhicalcPubServiceImpl implements INh
 					newVO.setAttributeValue("glbdef21",
 							getUFDouble(vo.getHealthgov()).add(getUFDouble(vo.getLastmonthhealthgov())));
 					// glbdef22,健保费应缴金额
-					newVO.setAttributeValue("glbdef22",
-							getUFDouble(vo.getHealthstuffact()).add(getUFDouble(vo.getLastmonthhealthstuffact())));
+					newVO.setAttributeValue("glbdef22", getUFDouble(vo.getHealthpersamount()));
 					// glbdef24,是否包含上月健保
 					newVO.setAttributeValue("glbdef24", vo.getIncludelastmonth());
 				}
@@ -543,6 +543,7 @@ public class NhicalcMaintainImpl extends AceNhicalcPubServiceImpl implements INh
 	 * @return
 	 * @throws BusinessException
 	 */
+	@SuppressWarnings("unchecked")
 	private List<PsnHeaDetail> getNhiHealthDetailVOs() throws BusinessException {
 		List<PsnHeaDetail> psnHealthInfoVOs = new ArrayList<PsnHeaDetail>();
 		if (this.getNhiDataList() != null && this.getNhiDataList().size() > 0) {
@@ -576,6 +577,25 @@ public class NhicalcMaintainImpl extends AceNhicalcPubServiceImpl implements INh
 					// 法人组织
 					newVO.setAttributeValue("legalpersonorg", vo.getPk_corp());
 
+					Collection<PsndocDefVO> healDetailVOs = this.getBaseDao().retrieveByClause(
+							PsndocDefUtil.getPsnHealthVO().getClass(),
+							"pk_psndoc='" + vo.getPk_psndoc() + "' and isnull(glbdef8,'~')<>'~' and glbdef2='本人'");
+					if (healDetailVOs != null && healDetailVOs.size() > 0) {
+						for (PsndocDefVO detailvo : healDetailVOs) {
+							if (vo.getBegindate()
+									.toUFLiteralDate(UFLiteralDate.BASE_TIMEZONE)
+									.before(detailvo.getAttributeValue("enddate") == null ? new UFLiteralDate(
+											"9999-12-31") : new UFLiteralDate(detailvo.getAttributeValue("enddate")
+											.toString()))
+									&& vo.getEnddate()
+											.toUFLiteralDate(UFLiteralDate.BASE_TIMEZONE)
+											.after(new UFLiteralDate(detailvo.getAttributeValue("begindate").toString()))) {
+								newVO.setAttributeValue("subsidyid", detailvo.getAttributeValue("glbdef8"));
+								break;
+							}
+						}
+					}
+
 					List<EpyfamilyVO> list = this.getEpyList();
 					for (int i = 0; i < list.size(); i++) {
 						EpyfamilyVO epyfamilyVO = list.get(i);
@@ -589,6 +609,7 @@ public class NhicalcMaintainImpl extends AceNhicalcPubServiceImpl implements INh
 							newVO2.setAttributeValue("surname", epyfamilyVO.getName());
 							// 补助身份
 							newVO2.setAttributeValue("subsidyid", epyfamilyVO.getSub_identity1());
+							newVO2.setAttributeValue("subsidyid2", epyfamilyVO.getSub_identity2());
 							newVO2.setRecordnum(--recordnum);
 							psnHealthInfoVOs.add(newVO2);
 						}

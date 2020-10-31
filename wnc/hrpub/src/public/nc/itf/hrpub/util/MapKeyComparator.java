@@ -6,7 +6,7 @@ import java.util.TreeMap;
 
 import org.apache.commons.lang.math.NumberUtils;
 
-public class MapKeyComparator implements Comparator<String> {
+public class MapKeyComparator<T> implements Comparator<String> {
 	@Override
 	public int compare(String str1, String str2) {
 		if (NumberUtils.isDigits(str1) && (NumberUtils.isDigits(str2))) {
@@ -22,13 +22,12 @@ public class MapKeyComparator implements Comparator<String> {
 	 * @param unSortedMap
 	 * @return
 	 */
-	public Map<String, String> sortMapByKey(Map<String, String> unSortedMap) {
+	public Map<String, T> sortMapByKey(Map<String, T> unSortedMap) {
 		if (unSortedMap == null || unSortedMap.isEmpty()) {
 			return null;
 		}
 
-		Map<String, String> sortMap = new TreeMap<String, String>(
-				new MapKeyComparator());
+		Map<String, T> sortMap = new TreeMap<String, T>(new MapKeyComparator());
 
 		sortMap.putAll(unSortedMap);
 

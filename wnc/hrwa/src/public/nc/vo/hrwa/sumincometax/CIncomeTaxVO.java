@@ -14,7 +14,7 @@ import nc.vo.pubapp.pattern.model.meta.entity.vo.VOMetaFactory;
  * @date 20180126
  * @version v1.0
  * @功能描述 申报明细档汇总单据子表VO
- *
+ * 
  */
 public class CIncomeTaxVO extends SuperVO {
 	/**
@@ -137,6 +137,19 @@ public class CIncomeTaxVO extends SuperVO {
 	 * 时间戳
 	 */
 	public UFDateTime ts;
+
+	/**
+	 * 是否外籍员工离境申报
+	 */
+	public UFBoolean isforeigndeprdec;
+
+	public UFBoolean getIsforeigndeprdec() {
+		return isforeigndeprdec;
+	}
+
+	public void setIsforeigndeprdec(UFBoolean isforeigndeprdec) {
+		this.isforeigndeprdec = isforeigndeprdec;
+	}
 
 	public String getPk_incometaxdetail() {
 		return pk_incometaxdetail;

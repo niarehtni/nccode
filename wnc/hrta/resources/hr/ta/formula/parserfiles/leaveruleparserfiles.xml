@@ -27,6 +27,8 @@
 		<!--部分工时特休年假  yejk  2018-09-18 -->
 		<parser classname="nc.impl.ta.formula.parser.func.PartWHLeavePercentFuncParser">
 		</parser>
-		
+		<!--在职已满月数 ssx  2020-06-10 -->
+		<parser classname="nc.impl.ta.formula.parser.func.OnDutyMonthsFuncParser">
+		</parser>
 	</extraparsers>
 </parserconfig>

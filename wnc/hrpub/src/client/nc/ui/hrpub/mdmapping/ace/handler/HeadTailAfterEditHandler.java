@@ -20,8 +20,7 @@ import nc.vo.pub.lang.UFDateTime;
 import nc.vo.pubapp.pattern.exception.ExceptionUtils;
 import nc.vo.uif2.LoginContext;
 
-public class HeadTailAfterEditHandler implements
-		IAppEventHandler<CardHeadTailAfterEditEvent> {
+public class HeadTailAfterEditHandler implements IAppEventHandler<CardHeadTailAfterEditEvent> {
 
 	private BillForm editor;
 	private LoginContext context;
@@ -30,8 +29,7 @@ public class HeadTailAfterEditHandler implements
 	public void handleAppEvent(CardHeadTailAfterEditEvent e) {
 		if (e.getKey().equals("pk_class")) {
 			BillCardPanel card = this.getEditor().getBillCardPanel();
-			AggregatedValueObject aggVO = card.getBillValueVO(
-					AggMDClassVO.class.getName(), MDClassVO.class.getName(),
+			AggregatedValueObject aggVO = card.getBillValueVO(AggMDClassVO.class.getName(), MDClassVO.class.getName(),
 					MDPropertyVO.class.getName());
 
 			try {
@@ -42,12 +40,10 @@ public class HeadTailAfterEditHandler implements
 		}
 	}
 
-	private void generateProperties(BillCardPanel card,
-			AggregatedValueObject aggVO) throws BusinessException {
+	private void generateProperties(BillCardPanel card, AggregatedValueObject aggVO) throws BusinessException {
 		MDClassVO headVO = (MDClassVO) aggVO.getParentVO();
 
-		IBusinessEntity entity = MDQueryService.lookupMDInnerQueryService()
-				.getBusinessEntityByID(headVO.getPk_class());
+		IBusinessEntity entity = MDQueryService.lookupMDInnerQueryService().getBusinessEntityByID(headVO.getPk_class());
 
 		List<IAttribute> attribs = entity.getAttributes();
 		List<MDPropertyVO> lines = new ArrayList<MDPropertyVO>();
@@ -55,9 +51,9 @@ public class HeadTailAfterEditHandler implements
 			if (attribs.get(i).getName().equals("status")
 					|| attribs.get(i).getName().equals("dr")
 					|| attribs.get(i).getName().equals("ts")
-					|| (attribs.get(i).getAccessStrategy() != null && attribs
-							.get(i).getAccessStrategy().getClass().getName()
-							.equals("nc.md.model.access.BodyOfAggVOAccessor"))) {
+					|| (attribs.get(i).getAccessStrategy() != null && attribs.get(i).getAccessStrategy().getClass()
+							.getName().equals("nc.md.model.access.BodyOfAggVOAccessor"))
+					|| attribs.get(i).isCalculation()) {
 				continue;
 			}
 			MDPropertyVO newline = new MDPropertyVO();
@@ -77,18 +73,14 @@ public class HeadTailAfterEditHandler implements
 			String id = (String) card.getBodyValueAt(i, "pk_property");
 			for (IAttribute attrib : attribs) {
 				if (attrib.getID().equals(id)) {
-					card.setBodyValueAt(attrib.getDisplayName(), i,
-							"displayname");
+					card.setBodyValueAt(attrib.getDisplayName(), i, "displayname");
 					card.setBodyValueAt(
-							attrib.getDataType().getClass().getName()
-									.equals("nc.md.model.type.impl.RefType") ? ((nc.md.model.type.impl.RefType) attrib
-									.getDataType()).getRefType()
-									.getDisplayName() : attrib.getDataType()
+							attrib.getDataType().getClass().getName().equals("nc.md.model.type.impl.RefType") ? ((nc.md.model.type.impl.RefType) attrib
+									.getDataType()).getRefType().getDisplayName() : attrib.getDataType()
 									.getDisplayName(), i, "datatype");
 					card.setBodyValueAt(attrib.getLength(), i, "length");
 					card.setBodyValueAt(attrib.getPrecise(), i, "precision");
-					if (entity.getPrimaryKey().getPKColumn().getName()
-							.equals(attrib.getName())) {
+					if (entity.getPrimaryKey().getPKColumn().getName().equals(attrib.getName())) {
 						card.setBodyValueAt(UFBoolean.TRUE, i, "iskey");
 					} else {
 						card.setBodyValueAt(UFBoolean.FALSE, i, "iskey");

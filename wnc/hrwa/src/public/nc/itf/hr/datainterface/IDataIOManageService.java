@@ -14,7 +14,6 @@ import nc.vo.pub.SuperVO;
 import nc.vo.uif2.LoginContext;
 import nc.vo.wa.datainterface.BonusOthBuckVO;
 import nc.vo.wa.datainterface.MappingFieldVO;
-import nc.vo.wa.datainterface.SalaryOthBuckVO;
 import nc.vo.wa.paydata.DataVO;
 
 /**
@@ -81,7 +80,7 @@ public interface IDataIOManageService {
 
 	<T extends SuperVO> T[] insertPayDetail(T[] vos, T[] delVos) throws BusinessException;
 
-	void importPayDataSD(DataVO[] SDVos, SalaryOthBuckVO[] SODVos) throws BusinessException;
+	void importPayDataSD(DataVO[] SDVos) throws BusinessException;
 
 	void importPayDataBD(DataVO[] BDVos, BonusOthBuckVO[] BODVos) throws BusinessException;
 

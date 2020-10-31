@@ -58,11 +58,7 @@ public class ExportBankDetailInfoAction extends HrAction {
 	}
 
 	public String getPk_wa_class() {
-		if (StringUtils.isEmpty(pk_wa_class)) {
-			pk_wa_class = ((nc.ui.wa.datainterface.model.DataIOAppModel) this.getModel()).getWaLoginContext()
-					.getPk_wa_class();
-		}
-		return pk_wa_class;
+		return ((nc.ui.wa.datainterface.model.DataIOAppModel) this.getModel()).getWaLoginContext().getPk_wa_class();
 	}
 
 	public String getPk_org() {

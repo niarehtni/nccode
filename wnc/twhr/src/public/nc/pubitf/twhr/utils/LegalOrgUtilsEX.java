@@ -324,6 +324,47 @@ public class LegalOrgUtilsEX {
 			}
 		}
 	}
+	/**
+	 * 查找该法人组织下,所有的人力资源组织
+	 * @param pk_legal_org
+	 * @return
+	 */
+	@SuppressWarnings("unchecked")
+	public static Set<String> getHROrgsByLegalOrg(String pk_legal_org) {
+		Set<String> resultSet = new HashSet<>();
+		if (null == pk_legal_org) {
+			return resultSet;
+		}
+		// 先查询当前用户所有查看组织的权限
+		List<Map<String, String>> mapList;
+
+		// 查询人力资源组织下的所有法人组织信息
+		String sqlStr = "select pk_org from org_orgs "
+				+ " where innercode like (select innercode from org_orgs "
+				+ " where org_orgs.pk_org = '"
+				+ pk_legal_org
+				+ "') || '%' "
+				+ " and dr = 0 and org_orgs.orgtype4 = 'Y' and countryzone = (select pk_country from bd_countryzone where codeth = 'TWN')";
+		
+		try {
+			IUAPQueryBS iUAPQueryBS = (IUAPQueryBS) NCLocator.getInstance().lookup(IUAPQueryBS.class.getName());
+			mapList = (List<Map<String, String>>) iUAPQueryBS.executeQuery(sqlStr, new MapListProcessor());
+		} catch (BusinessException e) {
+			Debug.debug(e.getMessage());
+			mapList = new ArrayList<>();
+		}
+		if (null != mapList && mapList.size() > 0) {
+			//
+			orgMap = new HashMap<>();
+
+			for (Map<String, String> map : mapList) {
+				if (null != map.get("pk_org")) {
+					resultSet.add(map.get("pk_org"));
+				}
+			}
+		}
+		return resultSet;
+	}
 }
 
 // 临时封装一下递归所需的数据结构

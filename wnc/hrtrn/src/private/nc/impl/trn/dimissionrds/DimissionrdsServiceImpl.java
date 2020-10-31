@@ -5,6 +5,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
@@ -2769,7 +2770,11 @@ public class DimissionrdsServiceImpl extends SingleBaseService<PsndocVO> impleme
 		newVO.setPk_tbm_psndoc(null);
 		newVO.setPk_team(job.getBegindate().after(tvo.getEnddate()) ? (String) job.getAttributeValue("jobglbdef7")
 				: tvo.getPk_team());
-		newVO.setNotsyncal(tvo.getNotsyncal());
+		// ssx modified on 2020-07-21
+		// 上一條結束日期非空才帶上一條
+		newVO.setNotsyncal(tvo.getEnddate().before(new UFLiteralDate("9999-12-01")) ? UFBoolean.FALSE : tvo
+				.getNotsyncal());
+		// end ssx
 		newVO.setStatus(VOStatus.NEW);
 		rtnList.add(newVO);
 
@@ -2801,6 +2806,7 @@ public class DimissionrdsServiceImpl extends SingleBaseService<PsndocVO> impleme
 	 * @param psnjob
 	 * @throws BusinessException
 	 */
+	@SuppressWarnings("unchecked")
 	private void updateTeamInfo(PsnJobVO prejob, PsnJobVO psnjob) throws BusinessException {
 		// 修改上一筆記錄
 		if (prejob != null) {
@@ -2812,11 +2818,15 @@ public class DimissionrdsServiceImpl extends SingleBaseService<PsndocVO> impleme
 				@SuppressWarnings("unchecked")
 				List<TeamItemVO> toDealList = (List<TeamItemVO>) getBaseDAO().executeQuery(sql,
 						new BeanListProcessor(TeamItemVO.class));
-				// 啟基的每條班組信息和調配記錄是一一對應的
+				// MOD: 啟基的每條班組信息和調配記錄是一一對應的
+				// ssx modified on 2020-07-20
+				// 上述MOD內容有例外，當手工增加了考勤檔案並修改為不同步班組工作記錄，
+				// 會產生無工作記錄對應的班組記錄，此時不能按一一對應同步結束時間
 				if (toDealList != null && toDealList.size() > 0) {
 					List<SuperVO> updateList = new ArrayList<>();
 					for (TeamItemVO vo : toDealList) {
-						if (vo.getDstartdate().isSameDate(prejob.getBegindate())) {
+						if (vo.getDstartdate().isSameDate(prejob.getBegindate()) && vo.getDenddate() != null
+								&& vo.getDenddate().after(psnjob.getBegindate().getDateBefore(1))) {
 							vo.setDenddate(psnjob.getBegindate().getDateBefore(1));
 							vo.setStatus(VOStatus.UPDATED);
 							updateList.add(vo);
@@ -2830,7 +2840,15 @@ public class DimissionrdsServiceImpl extends SingleBaseService<PsndocVO> impleme
 		if (psnjob.getEnddate() != null) {
 			NCLocator.getInstance().lookup(IPsndocwadocManageService.class).generateTeamItemForInsertPsn(psnjob);
 		} else {
-			NCLocator.getInstance().lookup(IPsndocwadocManageService.class).generateTeamItem(psnjob);
+			// MOD by ssx on 2020-04-27
+			// 當有進程已經就該任職記錄增加了考勤檔案時，就不再增加了，保留此處是擔心有什麼進
+			// 程還需要在此增加考勤檔案，不會走到其他新增邏輯裏，導致增加失敗。
+			Collection<TBMPsndocVO> psndocvos = this.getBaseDAO().retrieveByClause(TBMPsndocVO.class,
+					"pk_psnjob='" + psnjob.getPk_psnjob() + "' and dr=0");
+			if (psndocvos == null || psndocvos.size() == 0) {
+				NCLocator.getInstance().lookup(IPsndocwadocManageService.class).generateTeamItem(psnjob);
+			}
+			// end MOD
 		}
 	}
 

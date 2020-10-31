@@ -19,16 +19,20 @@ import nc.ui.wa.payfile.common.PayfileUtil;
 import nc.ui.wa.payfile.model.PayfileAppModel;
 import nc.ui.wa.payfile.model.PayfileModelDataManager;
 import nc.ui.wa.payfile.model.PayfileWizardModel;
-import nc.ui.wa.payfile.view.PayfileFormEditor;
+import nc.vo.bd.defdoc.DefdocVO;
 import nc.vo.pub.BusinessException;
 import nc.vo.pub.bill.BillTempletVO;
+import nc.vo.pub.lang.UFBoolean;
 import nc.vo.wa.category.WaClassVO;
 import nc.vo.wa.payfile.PayfileConstant;
 import nc.vo.wa.payfile.PayfileVO;
 import nc.vo.wa.payfile.Taxtype;
- 
+
+import org.apache.commons.lang3.StringUtils;
+
 /**
  * 批量增加 第三步
+ * 
  * @author: zhoucx
  * @date: 2009-12-1 下午02:37:06
  * @since: eHR V6.0
@@ -37,24 +41,32 @@ import nc.vo.wa.payfile.Taxtype;
  * @修改人:
  * @修改日期:
  */
-public class BatchAddWizardThirdStep extends WizardStep implements IWizardStepListener,BillEditListener {
+public class BatchAddWizardThirdStep extends WizardStep implements IWizardStepListener, BillEditListener {
 
 	private PayfileAppModel model = null;
 	private BillCardPanel billCardPanel = null;
 	private String nodekey = "payfileBatchadd";
 	private boolean isTaxTableMust = false;
-	
-	private static String DF9A="1001ZZ1000000001NEGQ";//业务代号
-	private static String DF9B="1001ZZ1000000001NEGR";//费用别代号
-	private static String DF92="1001ZZ1000000001NEGT";//项目代号
+
+	private static String DF9A = "1001ZZ1000000001NEGQ";// 业务代号
+	private static String DF9B = "1001ZZ1000000001NEGR";// 费用别代号
+	private static String DF92 = "1001ZZ1000000001NEGT";// 项目代号
+
 	/**
 	 * @author zhoucx on 2009-12-1
 	 */
 	public BatchAddWizardThirdStep(PayfileAppModel model, PayfileModelDataManager dataManager) {
 		super();
 		this.model = model;
-		setTitle(ResHelper.getString("60130payfile","060130payfile0330")/*@res "批量增加"*/);
-		setDescription(ResHelper.getString("60130payfile","060130payfile0296")/*@res "设置薪资档案信息"*/);
+		setTitle(ResHelper.getString("60130payfile", "060130payfile0330")/*
+																		 * @res
+																		 * "批量增加"
+																		 */);
+		setDescription(ResHelper.getString("60130payfile", "060130payfile0296")/*
+																				 * @
+																				 * res
+																				 * "设置薪资档案信息"
+																				 */);
 		setComp(getBillCardPanel());
 		addListener(this);
 		getBillCardPanel().addEditListener(this);
@@ -71,71 +83,111 @@ public class BatchAddWizardThirdStep extends WizardStep implements IWizardStepLi
 			billCardPanel.setOperator(model.getContext().getPk_loginUser());
 			billCardPanel.setCorp(model.getContext().getPk_group());
 
-			template = billCardPanel.getDefaultTemplet(billCardPanel.getBillType(), null, billCardPanel
-					.getOperator(), billCardPanel.getCorp(),nodekey, null);
+			template = billCardPanel.getDefaultTemplet(billCardPanel.getBillType(), null, billCardPanel.getOperator(),
+					billCardPanel.getCorp(), nodekey, null);
 
-			if(template == null){
+			if (template == null) {
 				Logger.error("没有找到nodekey：" + nodekey + "对应的卡片模板");
-				throw new IllegalArgumentException(ResHelper.getString("60130payfile","060130payfile0272")/*@res "没有找到设置的单据模板信息"*/);
+				throw new IllegalArgumentException(ResHelper.getString("60130payfile", "060130payfile0272")/*
+																											 * @
+																											 * res
+																											 * "没有找到设置的单据模板信息"
+																											 */);
 			}
 
 			billCardPanel.setBillData(new BillData(template));
-			billCardPanel.setPreferredSize(new Dimension(600,400));
+			billCardPanel.setPreferredSize(new Dimension(600, 400));
 			// 扣税方式为不扣税,税率表不可编辑
-			BillItem taxtype=billCardPanel.getBillData().getHeadItem(PayfileConstant.NODE_TAXTYPE);
-			BillItem taxtableid=billCardPanel.getBillData().getHeadItem("taxtableid");
-            if(taxtype!=null && taxtableid!=null ){
-            	if(taxtype.getDefaultValue().equals(PayfileConstant.TAXTYPE_FREETAX)){
-            		taxtableid.setEdit(false);
-            	}
-             }
-            // 把单据模板上设置的默认值再重新赋值到界面上 by wangqim
-            BillItem[] items = billCardPanel.getBillData().getHeadTailItems();
-            if (items != null)
-            {
-                for (BillItem item : items)
-                {
-                    Object value2 = item.getDefaultValueObject();
-                    if (value2 != null)
+			BillItem taxtype = billCardPanel.getBillData().getHeadItem(PayfileConstant.NODE_TAXTYPE);
+			BillItem taxtableid = billCardPanel.getBillData().getHeadItem("taxtableid");
+			if (taxtype != null && taxtableid != null) {
+				if (taxtype.getDefaultValue().equals(PayfileConstant.TAXTYPE_FREETAX)) {
+					taxtableid.setEdit(false);
+				}
+			}
+			// 把单据模板上设置的默认值再重新赋值到界面上 by wangqim
+			BillItem[] items = billCardPanel.getBillData().getHeadTailItems();
+			if (items != null) {
+				for (BillItem item : items) {
+					Object value2 = item.getDefaultValueObject();
+					if (value2 != null)
 
-                    {
-                        item.setValue(value2);
-                    }
-                }
-            }
+					{
+						item.setValue(value2);
+					}
+				}
+			}
 		}
-		
+
 		// {MOD:个税申报}
 		// begin
 		IUAPQueryBS query = (IUAPQueryBS) NCLocator.getInstance().lookup(IUAPQueryBS.class.getName());
-		String wa_class = model.getWaContext().getPk_wa_class();//getModel().getSelectedData();
+		String wa_class = model.getWaContext().getPk_wa_class();// getModel().getSelectedData();
 		try {
 			WaClassVO vo = (WaClassVO) query.retrieveByPK(WaClassVO.class, wa_class);
-			String declaretype = vo==null?"":vo.getDeclareform();
-			if(DF9A.equals(declaretype)){
-				billCardPanel.getHeadItem("biztype").setEnabled(true);//业务代号
-				billCardPanel.getHeadItem("feetype").setEnabled(false);//费用别代号
-				billCardPanel.getHeadItem("projectcode").setEnabled(false);//项目代号
-			}else if(DF9B.equals(declaretype)){
-				billCardPanel.getHeadItem("biztype").setEnabled(false);//业务代号
-				billCardPanel.getHeadItem("feetype").setEnabled(true);//费用别代号
-				billCardPanel.getHeadItem("projectcode").setEnabled(false);//项目代号
-			}else if(DF92.equals(declaretype)){
-				billCardPanel.getHeadItem("biztype").setEnabled(false);//业务代号
-				billCardPanel.getHeadItem("feetype").setEnabled(false);//费用别代号
-				billCardPanel.getHeadItem("projectcode").setEnabled(true);//项目代号
-			}else{
-				billCardPanel.getHeadItem("biztype").setEnabled(false);//业务代号
-				billCardPanel.getHeadItem("feetype").setEnabled(false);//费用别代号
-				billCardPanel.getHeadItem("projectcode").setEnabled(false);//项目代号
+			String declaretype = vo == null ? "" : vo.getDeclareform();
+			if (DF9A.equals(declaretype)) {
+				billCardPanel.getHeadItem("biztype").setEnabled(true);// 业务代号
+				billCardPanel.getHeadItem("feetype").setEnabled(false);// 费用别代号
+				billCardPanel.getHeadItem("projectcode").setEnabled(false);// 项目代号
+
+				billCardPanel.getHeadItem(PayfileVO.EXNHITYPE).setEnabled(false); // 補充保費計算方式
+			} else if (DF9B.equals(declaretype)) {
+				billCardPanel.getHeadItem("biztype").setEnabled(false);// 业务代号
+				billCardPanel.getHeadItem("feetype").setEnabled(true);// 费用别代号
+				billCardPanel.getHeadItem("projectcode").setEnabled(false);// 项目代号
+
+				billCardPanel.getHeadItem(PayfileVO.EXNHITYPE).setEnabled(false); // 補充保費計算方式
+			} else if (DF92.equals(declaretype)) {
+				billCardPanel.getHeadItem("biztype").setEnabled(false);// 业务代号
+				billCardPanel.getHeadItem("feetype").setEnabled(false);// 费用别代号
+				billCardPanel.getHeadItem("projectcode").setEnabled(true);// 项目代号
+
+				billCardPanel.getHeadItem(PayfileVO.EXNHITYPE).setEnabled(false); // 補充保費計算方式
+			} else {
+				billCardPanel.getHeadItem("biztype").setEnabled(false);// 业务代号
+				billCardPanel.getHeadItem("feetype").setEnabled(false);// 费用别代号
+				billCardPanel.getHeadItem("projectcode").setEnabled(false);// 项目代号
+
+				setExNhiTypeEnabled();// 補充保費計算方式
 			}
 		} catch (BusinessException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		
+
 		// end
 		return billCardPanel;
+	}
+
+	private void setExNhiTypeEnabled() {
+		boolean exnhiEnabled = false;
+		if (!StringUtils.isEmpty(model.getWaContext().getPk_wa_class())) {
+			IUAPQueryBS query = NCLocator.getInstance().lookup(IUAPQueryBS.class);
+			try {
+				WaClassVO waClassVO = (WaClassVO) query.retrieveByPK(WaClassVO.class, model.getWaContext()
+						.getPk_wa_class());
+
+				if (waClassVO != null) {
+					String pk_defdoc = waClassVO.getDeclareform();
+
+					if (!StringUtils.isEmpty(pk_defdoc)) {
+						DefdocVO defdocvo = (DefdocVO) query.retrieveByPK(DefdocVO.class, pk_defdoc);
+
+						if (defdocvo != null) {
+							if (defdocvo.getCode().equals("50") && !UFBoolean.TRUE.equals(waClassVO.getIsferry())) {
+								exnhiEnabled = true;
+							}
+						}
+					}
+				}
+
+			} catch (BusinessException e) {
+				// TODO 自動產生的 catch 區塊
+				e.printStackTrace();
+			}
+		}
+		billCardPanel.getHeadItem(PayfileVO.EXNHITYPE).setEnabled(exnhiEnabled);
 	}
 
 	/**
@@ -164,32 +216,33 @@ public class BatchAddWizardThirdStep extends WizardStep implements IWizardStepLi
 
 	@Override
 	public void stepDisactived(WizardStepEvent event) {
-		PayfileVO vo=(PayfileVO) getBillCardPanel().getBillData().getHeaderValueVO(PayfileVO.class.getName());
+		PayfileVO vo = (PayfileVO) getBillCardPanel().getBillData().getHeaderValueVO(PayfileVO.class.getName());
 		getModel().setBatchitemvo(vo);
 	}
 
 	/**
 	 * 批增项目编辑状态控制
+	 * 
 	 * @author liangxr on 2010-1-25
 	 * @see nc.ui.pub.bill.BillEditListener#afterEdit(nc.ui.pub.bill.BillEditEvent)
 	 */
 	@Override
 	public void afterEdit(BillEditEvent e) {
 		PayfileUtil.afterEditAddMode(e, getBillCardPanel());
-		if (PayfileVO.TAXTYPE.equals(e.getKey())){
+		if (PayfileVO.TAXTYPE.equals(e.getKey())) {
 			if (getBillCardPanel().getHeadItem(PayfileVO.TAXTYPE).getValue().equals(Taxtype.TAXFREE.toStringValue())) {
 				getBillCardPanel().getHeadItem(PayfileVO.TAXTABLEID).setNull(false);
-			}else{
+			} else {
 				getBillCardPanel().getHeadItem(PayfileVO.TAXTABLEID).setNull(isTaxTableMust);
 			}
 		}
 	}
-
 
 	/**
 	 * @author liangxr on 2010-1-25
 	 * @see nc.ui.pub.bill.BillEditListener#bodyRowChange(nc.ui.pub.bill.BillEditEvent)
 	 */
 	@Override
-	public void bodyRowChange(BillEditEvent e) {}
+	public void bodyRowChange(BillEditEvent e) {
+	}
 }

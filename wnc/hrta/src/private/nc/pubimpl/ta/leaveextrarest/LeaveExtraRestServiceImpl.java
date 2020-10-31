@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -20,7 +21,6 @@ import nc.bs.dao.DAOException;
 import nc.bs.framework.common.InvocationInfoProxy;
 import nc.bs.framework.common.NCLocator;
 import nc.bs.logging.Logger;
-import nc.hr.utils.InSQLCreator;
 import nc.impl.pub.OTLeaveBalanceUtils;
 import nc.impl.ta.psncalendar.PsnCalendarDAO;
 import nc.itf.hrta.ILeaveextrarestMaintain;
@@ -40,9 +40,7 @@ import nc.vo.ta.leaveextrarest.AggLeaveExtraRestVO;
 import nc.vo.ta.leaveextrarest.LeaveExtraRestVO;
 import nc.vo.ta.overtime.OTBalanceDetailVO;
 import nc.vo.ta.overtime.OTLeaveBalanceVO;
-import nc.vo.ta.overtime.SegDetailVO;
 import nc.vo.ta.overtime.SoureBillTypeEnum;
-import nc.vo.ta.psndoc.TBMPsndocVO;
 
 import org.apache.commons.lang.StringUtils;
 
@@ -83,102 +81,62 @@ public class LeaveExtraRestServiceImpl implements ILeaveExtraRestService {
 			if (StringUtils.isEmpty(pk_org)) {
 				throw new BusinessException("結算錯誤：結算組織和結算人員不能同時為空。");
 			} else {
-				strSQL = "select distinct pk_psndoc from " + SegDetailVO.getDefaultTableName() + " where "
+				strSQL = "select distinct pk_psndoc from " + LeaveExtraRestVO.getDefaultTableName() + " where "
 						+ strCondition;
 				List<String> psnpks = (List<String>) this.getBaseDao().executeQuery(strSQL, new ColumnListProcessor());
 				pk_psndocs = psnpks.toArray(new String[0]);
 			}
 		}
 
-		List<String> psnBeSettled = new ArrayList<String>();
+		Map<String, UFLiteralDate> psnBeSettledMap = new HashMap<String, UFLiteralDate>();
 		for (String pk_psndoc : pk_psndocs) {
 			// 取未结算外加補休（PK，單據日期，最长可休日期）
-			strSQL = "select " + LeaveExtraRestVO.PK_EXTRAREST + ", " + LeaveExtraRestVO.DATEBEFORECHANGE + ", "
-					+ LeaveExtraRestVO.EXPIREDATE + " from " + LeaveExtraRestVO.getDefaultTableName()
-					+ " where isnull(dr, 0) = 0 and (isnull(" + LeaveExtraRestVO.ISSETTLED + ", 'N') = 'N' or "
-					+ LeaveExtraRestVO.ISSETTLED + "='~') and isnull(" + LeaveExtraRestVO.EXPIREDATE
-					+ ", '~')!='~' and isnull(" + LeaveExtraRestVO.DATEBEFORECHANGE + ", '~')!='~' and "
-					+ LeaveExtraRestVO.PK_PSNDOC + " = '" + pk_psndoc + "'";
+			strSQL = "select " + LeaveExtraRestVO.PK_ORG + "," + LeaveExtraRestVO.PK_EXTRAREST + ", "
+					+ LeaveExtraRestVO.DATEBEFORECHANGE + ", " + LeaveExtraRestVO.EXPIREDATE + " from "
+					+ LeaveExtraRestVO.getDefaultTableName() + " where isnull(dr, 0) = 0 and (isnull("
+					+ LeaveExtraRestVO.ISSETTLED + ", 'N') = 'N' or " + LeaveExtraRestVO.ISSETTLED
+					+ "='~') and isnull(" + LeaveExtraRestVO.EXPIREDATE + ", '~')!='~' and isnull("
+					+ LeaveExtraRestVO.DATEBEFORECHANGE + ", '~')!='~' and " + LeaveExtraRestVO.PK_PSNDOC + " = '"
+					+ pk_psndoc + "'";
 			List<Map> extraLeave = (List<Map>) this.getBaseDao().executeQuery(strSQL, new MapListProcessor());
 
 			if (extraLeave == null || extraLeave.size() == 0) {
 				continue;
 			}
 
-			// 取考勤档案（pk_psnorg, 开始日期，结束日期）
-			strSQL = "select pk_psnorg, begindate, isnull(enddate,'9999-12-01') enddate from "
-					+ TBMPsndocVO.getDefaultTableName() + " where pk_psndoc = '" + pk_psndoc + "' and dr=0;";
-			List<Map> tbmPsndocVOs = (List<Map>) this.getBaseDao().executeQuery(strSQL, new MapListProcessor());
-
-			if (tbmPsndocVOs == null || tbmPsndocVOs.size() == 0) {
-				continue;
-			}
-
-			// 是否离职: 如果已经没有生效中考勤档案,那么結算日可結算.
-			boolean isleave = true;
-			for (Map tbmPsndocVo : tbmPsndocVOs) {
-				UFLiteralDate psnBeginDate = new UFLiteralDate((String) tbmPsndocVo.get("begindate"));
-				UFLiteralDate psnEndDate = new UFLiteralDate((String) tbmPsndocVo.get("enddate"));
-				if ((settleDate.isSameDate(psnBeginDate) || settleDate.after(psnBeginDate))
-						&& (settleDate.isSameDate(psnEndDate) || settleDate.before(psnEndDate))) {
-					isleave = false;
-				}
-			}
+			pk_org = (pk_org == null ? (String) extraLeave.get(0).get("pk_org") : pk_org);
+			// ssx modified on 2020-09-11
+			// 結算時不能只看是否有生效中的考勤檔案，因為考勤檔案可能會手工關閉而沒有創建新的記錄，但此人並沒有離職或留停
+			// 應從離職或留停（離職/留停生效日期在結算日所在考勤期間.起始日期~結算日前一日）的記錄中判斷
+			String leaveRecBeginDate = OTLeaveBalanceUtils.getLeaveBeginDate(pk_org, settleDate, pk_psndoc);
+			// end
 
 			for (Map extraleave : extraLeave) {
-				if (isleave) {
-					psnBeSettled.add((String) extraleave.get(LeaveExtraRestVO.PK_EXTRAREST));
+				if (!StringUtils.isEmpty(leaveRecBeginDate)) {
+					psnBeSettledMap.put((String) extraleave.get(LeaveExtraRestVO.PK_EXTRAREST), new UFLiteralDate(
+							leaveRecBeginDate));
 					continue;
 				}
 
-				// MOD by ssx on 2020-04-16
-				// 作废：業務日期發生的考勤期間，考勤檔案已關閉的，一定要可結算
-				// 改判断业务日期为判断审核日期为年度可休日期之后
-				// UFLiteralDate regDate = new UFLiteralDate((String)
-				// extraleave.get(LeaveExtraRestVO.DATEBEFORECHANGE));
 				UFLiteralDate expiryDate = new UFLiteralDate((String) extraleave.get(LeaveExtraRestVO.EXPIREDATE));
-				// boolean canBeSettled = false;
 
 				if (expiryDate.before(settleDate)) {
-					psnBeSettled.add((String) extraleave.get(LeaveExtraRestVO.PK_EXTRAREST));
+					psnBeSettledMap.put((String) extraleave.get(LeaveExtraRestVO.PK_EXTRAREST),
+							expiryDate.getDateAfter(1));
 				}
-				// for (Map psn : tbmPsndocVOs) {
-				// UFLiteralDate psnBeginDate = new UFLiteralDate((String)
-				// psn.get("begindate"));
-				// UFLiteralDate psnEndDate = new UFLiteralDate((String)
-				// psn.get("enddate"));
-				// if ((regDate.isSameDate(psnBeginDate) ||
-				// regDate.after(psnBeginDate))
-				// && (regDate.isSameDate(psnEndDate) ||
-				// regDate.before(psnEndDate))) {
-				// if ((isForce && ((psnEndDate.isSameDate(settleDate) ||
-				// psnEndDate.before(settleDate)) && psnEndDate
-				// .before(new UFLiteralDate("9999-12-01"))))
-				// || (expiryDate.isSameDate(settleDate) ||
-				// expiryDate.before(settleDate))) {
-				// canBeSettled = true;
-				// }
-				//
-				// if (canBeSettled) {
-				// psnBeSettled.add((String)
-				// extraleave.get(LeaveExtraRestVO.PK_EXTRAREST));
-				// break;
-				// }
-				// }
-				// }
-				// end
 			}
 
 		}
 
-		if (psnBeSettled.size() > 0) {
-			this.getBaseDao().executeUpdate(
-					"update " + LeaveExtraRestVO.getDefaultTableName() + " set " + LeaveExtraRestVO.ISSETTLED
-							+ "='Y', " + LeaveExtraRestVO.SETTLEDATE + "='" + settleDate.toString() + "', modifier='"
-							+ InvocationInfoProxy.getInstance().getUserId() + "', modifiedtime='"
-							+ new UFDateTime().toString() + "', ts='" + new UFDateTime().toString() + "' where "
-							+ LeaveExtraRestVO.PK_EXTRAREST + " in ("
-							+ new InSQLCreator().getInSQL(psnBeSettled.toArray(new String[0])) + ");");
+		if (psnBeSettledMap.size() > 0) {
+			for (Entry<String, UFLiteralDate> settleEntry : psnBeSettledMap.entrySet()) {
+				this.getBaseDao().executeUpdate(
+						"update " + LeaveExtraRestVO.getDefaultTableName() + " set " + LeaveExtraRestVO.ISSETTLED
+								+ "='Y', " + LeaveExtraRestVO.SETTLEDATE + "='" + settleEntry.getValue().toString()
+								+ "', modifier='" + InvocationInfoProxy.getInstance().getUserId() + "', modifiedtime='"
+								+ new UFDateTime().toString() + "', ts='" + new UFDateTime().toString() + "' where "
+								+ LeaveExtraRestVO.PK_EXTRAREST + " = '" + settleEntry.getKey() + "'");
+			}
 		}
 	}
 
@@ -207,7 +165,13 @@ public class LeaveExtraRestServiceImpl implements ILeaveExtraRestService {
 							String.valueOf(beginDate.getYear()), psnWorkStartDate.get(pk_psndoc));
 					UFLiteralDate psnEndDate = OTLeaveBalanceUtils.getEndDateByWorkAgeStartDate(
 							String.valueOf(beginDate.getYear()), psnWorkStartDate.get(pk_psndoc));
-					if (psnBeginDate.after(beginDate)) {
+					if (psnBeginDate.isSameDate(beginDate)) {
+						psnBeginDate = OTLeaveBalanceUtils.getBeginDateByWorkAgeStartDate(
+								String.valueOf(beginDate.getYear() - 1), psnWorkStartDate.get(pk_psndoc));
+						psnEndDate = OTLeaveBalanceUtils.getEndDateByWorkAgeStartDate(
+								String.valueOf(beginDate.getYear() - 1), psnWorkStartDate.get(pk_psndoc)).getDateAfter(
+								1);
+					} else if (psnBeginDate.after(beginDate)) {
 						psnBeginDate = OTLeaveBalanceUtils.getBeginDateByWorkAgeStartDate(
 								String.valueOf(beginDate.getYear() - 1), psnWorkStartDate.get(pk_psndoc));
 						psnEndDate = OTLeaveBalanceUtils.getEndDateByWorkAgeStartDate(
@@ -223,12 +187,11 @@ public class LeaveExtraRestServiceImpl implements ILeaveExtraRestService {
 						psnLeaveBeginDate = endDate.getDateAfter(1);
 						psnLeaveEndDate = psnLeaveBeginDate.getDateAfter(psnLeaveBeginDate.getDaysMonth()
 								- psnLeaveBeginDate.getDay() + 1); // 月末最後一天
-
 						// 離職日期在期間後至當月最後一天（實際檢查到下月1日生效）之間，否則不計算
 						int isleavepsn = (int) this.getBaseDao().executeQuery(
-								"select count(*) from hi_psnjob where trnsevent=4 and pk_psndoc = '" + pk_psndoc
-										+ "' and begindate between '" + psnLeaveBeginDate.toString() + "' and '"
-										+ psnLeaveEndDate.toString() + "';", new ColumnProcessor());
+								"select count(*) from hi_psnjob where (trnsevent = 4 or trnstype = '1001X110000000003O5G') and pk_psndoc = '"
+										+ pk_psndoc + "' and begindate between '" + psnLeaveBeginDate.toString()
+										+ "' and '" + psnLeaveEndDate.toString() + "';", new ColumnProcessor());
 						if (isleavepsn <= 0) {
 							continue;
 						}
@@ -405,8 +368,11 @@ public class LeaveExtraRestServiceImpl implements ILeaveExtraRestService {
 		// 反結算
 		this.getBaseDao().executeUpdate(
 				"update " + LeaveExtraRestVO.getDefaultTableName() + " set " + LeaveExtraRestVO.ISSETTLED + "='N', "
-						+ LeaveExtraRestVO.SETTLEDATE + "=null where  " + LeaveExtraRestVO.PK_PSNDOC + "='" + pk_psndoc
-						+ "' and " + LeaveExtraRestVO.EXPIREDATE + "= '" + lastSettledDate + "'");
+						+ LeaveExtraRestVO.SETTLEDATE + "=null, modifier='"
+						+ InvocationInfoProxy.getInstance().getUserId() + "', modifiedtime='"
+						+ new UFDateTime().toString() + "', ts='" + new UFDateTime().toString() + "' where  "
+						+ LeaveExtraRestVO.PK_PSNDOC + "='" + pk_psndoc + "' and " + LeaveExtraRestVO.EXPIREDATE
+						+ "= '" + lastSettledDate + "'");
 	}
 
 	@Override

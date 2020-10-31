@@ -160,6 +160,14 @@ public interface IPsndocwadocManageService {
 	void generateTeamItem(PsnJobVO newPsnJob) throws BusinessException;
 
 	/**
+	 * 根據工作記錄同步所屬班組工作日曆
+	 * 
+	 * @param newPsnJob
+	 * @throws BusinessException
+	 */
+	void sync2TeamCalendar(PsnJobVO newPsnJob) throws BusinessException;
+
+	/**
 	 * 更新班組
 	 * 
 	 * @param headVO
@@ -170,20 +178,25 @@ public interface IPsndocwadocManageService {
 
 	/**
 	 * 此方法用於插入工作記錄的情況,只會同步新增的那條工作記錄時間段的排班
+	 * 
 	 * @param insertPsnJob
 	 * @throws BusinessException
 	 */
 	void generateTeamItemForInsertPsn(PsnJobVO insertPsnJob) throws BusinessException;
+
 	/**
 	 * 获取该人员某种异动类型开始日期的前一天
+	 * 
 	 * @param pk_org
-	 * @param begindate 基准日期(离该日期最最近的)
-	 * @param refTransType 异动类型
+	 * @param begindate
+	 *            基准日期(离该日期最最近的)
+	 * @param refTransType
+	 *            异动类型
 	 * @param pk_psndoc
 	 * @return
 	 * @throws BusinessException
 	 */
 	UFLiteralDate getTransTypeEndDate(String pk_org, UFLiteralDate begindate, String refTransType, String pk_psndoc)
-		throws BusinessException;
+			throws BusinessException;
 
 }

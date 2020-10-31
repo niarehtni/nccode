@@ -4,6 +4,8 @@ import java.util.Map;
 import java.util.Set;
 
 import nc.itf.hr.hi.InsuranceTypeEnum;
+import nc.pub.smart.context.SmartContext;
+import nc.pub.smart.data.DataSet;
 import nc.vo.hi.psndoc.PsnJobVO;
 import nc.vo.pub.BusinessException;
 import nc.vo.pub.lang.UFDate;
@@ -142,10 +144,46 @@ public interface IPsndocSubInfoService4JFS {
 	 *            期间年
 	 * @param cPeriod
 	 *            期间号
+	 * @param pk_psndocs
+	 *            指定人員PK數組
+	 * @param onlyCalculate
+	 *            只計算不回寫
 	 * @throws BusinessException
 	 */
-	public void calculateGroupIns(String pk_org, String pk_wa_class, String cYear, String cPeriod)
-			throws BusinessException;
+	public void calculateGroupIns(String pk_org, String pk_wa_class, String cYear, String cPeriod, String[] pk_psndocs,
+			boolean onlyCalculate) throws BusinessException;
+
+	/**
+	 * 重新計算員工團保（按保險公司統計）
+	 * 
+	 * @param pk_org
+	 *            組織PK
+	 * @param pk_wa_class
+	 *            薪資方案PK
+	 * @param cYear
+	 *            期間年
+	 * @param cPeriod
+	 *            期間號
+	 * @return
+	 */
+	public Map<String, Map<String, UFDouble>> recalculateGroupIns(String pk_org, String pk_wa_class, String cYear,
+			String cPeriod) throws BusinessException;
+
+	/**
+	 * 重新計算員工團保（按保險公司統計）
+	 * 
+	 * @param pk_org
+	 *            組織PK
+	 * @param pk_wa_class
+	 *            薪資方案PK
+	 * @param cYear
+	 *            期間年
+	 * @param cPeriod
+	 *            期間號
+	 * @return
+	 */
+
+	public DataSet dsRecalculateGroupIns(SmartContext context) throws BusinessException;
 
 	/**
 	 * 指定员工设定是否存在团保计算结果
@@ -332,4 +370,15 @@ public interface IPsndocSubInfoService4JFS {
 	 * 离职审核后回写劳健保子集结束日期
 	 */
 	void finishInsurance(AggStapply[] aggvos) throws BusinessException;
+
+	/**
+	 * 删除 健保信息，劳保劳退信息，团保信息开始日期大于离职日期(或停薪日期)信息
+	 * 
+	 * @param pk_psndoc
+	 * @param enddate
+	 * 
+	 * @throws BusinessException
+	 */
+	void deletePNI(String pk_psndoc, UFLiteralDate enddate) throws BusinessException;
+
 }

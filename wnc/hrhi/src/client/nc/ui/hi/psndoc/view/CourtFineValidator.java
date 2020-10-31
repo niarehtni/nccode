@@ -72,19 +72,21 @@ public class CourtFineValidator implements Validator {
 				List<String> debtlist = new ArrayList<String>();
 				Map<String, String> maps = new HashMap<String, String>();
 				for (DebtFileVO dfvo : debtFileVOs) {
-					//已经停止了的不校验
-					if(dfvo.getAttributeValue("stopflag")==null || dfvo.getAttributeValue("stopflag")==UFBoolean.FALSE){
+					// 已经停止了的不校验
+					if (dfvo.getAttributeValue("stopflag") == null
+							|| dfvo.getAttributeValue("stopflag") == UFBoolean.FALSE) {
 						maps.put((String) dfvo.getAttributeValue("dfilenumber"), null);
 					}
-					
+
 				}
 				for (String map : maps.keySet()) {
 					UFDouble sumrepaymentratio = UFDouble.ZERO_DBL;
 					for (DebtFileVO dfvo : debtFileVOs) {
 						if (map.equals((String) dfvo.getAttributeValue("dfilenumber"))
 								&& !((UFBoolean) dfvo.getAttributeValue("stopflag")).booleanValue()) {
-							sumrepaymentratio = sumrepaymentratio.add((UFDouble) dfvo
-									.getAttributeValue("repaymentratio"));
+							sumrepaymentratio = sumrepaymentratio.add((UFDouble) (dfvo
+									.getAttributeValue("repaymentratio") == null ? UFDouble.ZERO_DBL : dfvo
+									.getAttributeValue("repaymentratio")));
 						}
 					}
 					if (sumrepaymentratio.sub(UFDouble.ONE_DBL).doubleValue() != 0) {

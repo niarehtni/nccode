@@ -350,7 +350,12 @@ public class PsndocwadocManageServiceImpl implements IPsndocwadocManageService, 
 		PsndocWadocMainVO[] vos = null;
 		StringBuffer sbSelStr = new StringBuffer();
 		sbSelStr.append(" select distinct ");
-		sbSelStr.append("    hi_psndoc_wadoc.nmoney, ");
+		// ssx added on 2020-08-18
+		// 增加已失效定調資項目的過濾
+		sbSelStr.append("    case when hi_psndoc_wadoc.enddate is null or "
+				+ "(select count(pk_psnjob) from hi_psnjob where pk_psnorg = hi_psnorg.pk_psnorg and lastflag='Y' and (trnsevent=4 or trnstype='1001X110000000003O5G') and hi_psndoc_wadoc.enddate = to_char(to_date(begindate, 'yyyy-MM-dd') - 1, 'yyyy-MM-dd')) > 0 "
+				+ "then hi_psndoc_wadoc.nmoney else 0 end nmoney, ");
+		// end
 		sbSelStr.append("    bd_psndoc.code as psncode , ");
 		sbSelStr.append("     " + SQLHelper.getMultiLangNameColumn("bd_psndoc.name") + "  as psnname , ");
 		sbSelStr.append("    org_dept.code as deptcode , ");
@@ -2104,6 +2109,7 @@ public class PsndocwadocManageServiceImpl implements IPsndocwadocManageService, 
 			if (newPsnJob == null) {
 				continue;
 			}
+
 			// 校验考勤档案和定调资记录
 			if (newPsnJob.getEnddate() != null) {
 				validateTbmAndWadoc(newPsnJob);
@@ -2152,6 +2158,24 @@ public class PsndocwadocManageServiceImpl implements IPsndocwadocManageService, 
 			if (refReturnType == null || refReturnType.equals("~")) {
 				throw new BusinessException("系統參數 [TWHR12] 未指定用於留停複職的異動類型。");
 			}
+
+			// ssx added on 20200-06-26
+			// 留停期间产生的异动不生成定调资记录
+			if (!refReturnType.equals(newPsnJob.getTrnstype())) {
+				String isTermLeave = (String) this.getBaseDao().executeQuery(
+						"SELECT CASE WHEN LeaveCount > ReturnCount  THEN 'Y' ELSE 'N' END ISTERMLEAVE FROM  (SELECT  SUM(CASE WHEN trnstype='"
+								+ refTransType + "' THEN 1 ELSE 0 END) LeaveCount, SUM(CASE WHEN trnstype='"
+								+ refReturnType
+								+ "'  THEN 1  ELSE 0 END) ReturnCount FROM hi_psnjob WHERE  pk_psndoc = '"
+								+ newPsnJob.getPk_psndoc() + "' AND begindate < '"
+								+ newPsnJob.getBegindate().toString() + "' AND pk_psnorg = '"
+								+ newPsnJob.getPk_psnorg() + "' GROUP BY pk_psndoc, pk_psnorg) tmp",
+						new ColumnProcessor());
+				if ("Y".equals(isTermLeave)) {
+					continue;
+				}
+			}
+			// end
 
 			// 處理停薪留職影響定調資，返回值為TRUE時，不再繼續處理後續定調資項目生成邏輯，用於停薪留職
 			if (!dealWithStopWageRemainPos(newPsnJob)) {
@@ -2258,8 +2282,13 @@ public class PsndocwadocManageServiceImpl implements IPsndocwadocManageService, 
 						// 當前工作記錄已存在定調資項目，更新原有記錄
 						if (!aggvo.getParentVO().getPk_wa_grd().equals(existWadoc.getPk_wa_grd())
 								|| !gradeSalary.equals(existWadoc.getNmoney())
-								|| !pkFoundClass.equals(existWadoc.getPk_wa_prmlv())
-								|| !pkFoundLevel.equals(existWadoc.getPk_wa_seclv())) { // 薪資標準中有任意一項不匹配就更新
+								// ssx added on 2020-05-28 for #35546
+								// pkFoundClass及pkFoundLevel未判空
+								|| (pkFoundClass != null && !pkFoundClass.equals(existWadoc.getPk_wa_prmlv()))
+								|| (pkFoundLevel != null && !pkFoundLevel.equals(existWadoc.getPk_wa_seclv())))
+						// end ssx
+						{
+							// 薪資標準中有任意一項不匹配就更新
 							existWadoc.setPk_wa_grd(aggvo.getParentVO().getPk_wa_grd());
 							existWadoc.setPk_wa_crt(pk_wa_crt);
 							existWadoc.setPk_wa_prmlv(pkFoundClass);
@@ -2294,13 +2323,19 @@ public class PsndocwadocManageServiceImpl implements IPsndocwadocManageService, 
 						}
 
 						if (gradeSalary.doubleValue() > 0) {
-							this.getPsndocWadocDao()
-									.getBaseDao()
-									.executeUpdate(
-											"update hi_psndoc_wadoc set recordnum=recordnum+1 where pk_psndoc='"
-													+ newPsnJob.getPk_psndoc() + "'");
+							// MOD by ssx on 2020-05-04
+							// #34774，insertPsndocWadocVO()已回寫recordnum，不需要顯性回寫
+							// this.getPsndocWadocDao()
+							// .getBaseDao()
+							// .executeUpdate(
+							// "update hi_psndoc_wadoc set recordnum=recordnum+1 where pk_psndoc='"
+							// + newPsnJob.getPk_psndoc() +
+							// "' and pk_wa_item = '" + pk_wa_item
+							// + "' and assgid=" +
+							// String.valueOf(newPsnJob.getAssgid()));
+							// end MOD
 
-							PsndocWadocVO newVO = creatNewPsndocWadocVO(newPsnJob, aggvo.getParentVO().getPk_wa_grd(),
+							PsndocWadocVO newVO = createNewPsndocWadocVO(newPsnJob, aggvo.getParentVO().getPk_wa_grd(),
 									pk_wa_item, pkFoundClass, pkFoundLevel, gradeSalary, pk_wa_crt);
 							getPsndocwadocManageService().insertPsndocWadocVO(newVO);
 						}
@@ -2310,7 +2345,7 @@ public class PsndocwadocManageServiceImpl implements IPsndocwadocManageService, 
 		}
 	}
 
-	private PsndocWadocVO creatNewPsndocWadocVO(PsnJobVO newPsnJob, String pk_wa_grd, String pk_wa_item,
+	private PsndocWadocVO createNewPsndocWadocVO(PsnJobVO newPsnJob, String pk_wa_grd, String pk_wa_item,
 			String pkFoundClass, String pkFoundLevel, UFDouble gradeSalary, String pk_wa_crt) {
 		PsndocWadocVO newVO = new PsndocWadocVO();
 		newVO.setPk_group(newPsnJob.getPk_group());
@@ -2680,20 +2715,26 @@ public class PsndocwadocManageServiceImpl implements IPsndocwadocManageService, 
 
 			updateShiftGroup(headVO, insertItemVOs);
 
-			String maxTeamDate = (String) this.getBaseDao().executeQuery(
-					"select max(calendar) cl from bd_teamcalendar where pk_team = '" + newShift + "'",
-					new ColumnProcessor());
-			if (!StringUtils.isEmpty(maxTeamDate)) {
-				((IPsnCalendarManageService) NCLocator.getInstance().lookup(IPsnCalendarManageService.class))
-						.sync2TeamCalendar(headVO.getPk_org(), newShift, new String[] { newPsnJob.getPk_psndoc() },
-								newPsnJob.getBegindate(), new UFLiteralDate(maxTeamDate));
-			}
+			sync2TeamCalendar(newPsnJob);
 		}
 
 	}
-	
+
+	public void sync2TeamCalendar(PsnJobVO newPsnJob) throws BusinessException {
+		String maxTeamDate = (String) this.getBaseDao().executeQuery(
+				"select max(calendar) cl from bd_teamcalendar where pk_team = '"
+						+ ((String) newPsnJob.getAttributeValue("jobglbdef7")) + "'", new ColumnProcessor());
+		if (!StringUtils.isEmpty(maxTeamDate)) {
+			((IPsnCalendarManageService) NCLocator.getInstance().lookup(IPsnCalendarManageService.class))
+					.sync2TeamCalendar(newPsnJob.getPk_org(), ((String) newPsnJob.getAttributeValue("jobglbdef7")),
+							new String[] { newPsnJob.getPk_psndoc() }, newPsnJob.getBegindate(), new UFLiteralDate(
+									maxTeamDate));
+		}
+	}
+
 	/**
 	 * 此方法用於插入工作記錄的情況,只會同步新增的那條工作記錄時間段的排班
+	 * 
 	 * @param insertPsnJob
 	 * @throws BusinessException
 	 */
@@ -2725,9 +2766,9 @@ public class PsndocwadocManageServiceImpl implements IPsndocwadocManageService, 
 			insertItemVOs.add(newMemberVO);
 
 			updateShiftGroup(headVO, insertItemVOs);
-        	    ((IPsnCalendarManageService) NCLocator.getInstance().lookup(IPsnCalendarManageService.class))
-        		    .sync2TeamCalendar(headVO.getPk_org(), newShift, new String[] { insertPsnJob.getPk_psndoc() },
-        			    insertPsnJob.getBegindate(), insertPsnJob.getEnddate());
+			((IPsnCalendarManageService) NCLocator.getInstance().lookup(IPsnCalendarManageService.class))
+					.sync2TeamCalendar(headVO.getPk_org(), newShift, new String[] { insertPsnJob.getPk_psndoc() },
+							insertPsnJob.getBegindate(), insertPsnJob.getEnddate());
 		}
 
 	}

@@ -1,14 +1,7 @@
 package nc.impl.pub.ace;
-import nc.bs.twhr.twhr_declaration.ace.bp.AceTwhr_declarationInsertBP;
-import nc.bs.twhr.twhr_declaration.ace.bp.AceTwhr_declarationUpdateBP;
-import nc.hr.utils.InSQLCreator;
-import nc.bs.twhr.twhr_declaration.ace.bp.AceTwhr_declarationDeleteBP;
-import nc.bs.twhr.twhr_declaration.ace.bp.AceTwhr_declarationSendApproveBP;
-import nc.bs.twhr.twhr_declaration.ace.bp.AceTwhr_declarationUnSendApproveBP;
-import nc.vo.logging.Debug;
-import nc.vo.pubapp.query2.sql.process.QueryCondition;
 
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -17,48 +10,53 @@ import java.util.Set;
 
 import nc.bs.dao.BaseDAO;
 import nc.bs.twhr.twhr_declaration.ace.bp.AceTwhr_declarationApproveBP;
+import nc.bs.twhr.twhr_declaration.ace.bp.AceTwhr_declarationDeleteBP;
+import nc.bs.twhr.twhr_declaration.ace.bp.AceTwhr_declarationInsertBP;
+import nc.bs.twhr.twhr_declaration.ace.bp.AceTwhr_declarationSendApproveBP;
 import nc.bs.twhr.twhr_declaration.ace.bp.AceTwhr_declarationUnApproveBP;
+import nc.bs.twhr.twhr_declaration.ace.bp.AceTwhr_declarationUnSendApproveBP;
+import nc.bs.twhr.twhr_declaration.ace.bp.AceTwhr_declarationUpdateBP;
+import nc.hr.utils.InSQLCreator;
 import nc.impl.pubapp.pattern.data.bill.tool.BillTransferTool;
 import nc.jdbc.framework.processor.BeanListProcessor;
 import nc.pubitf.twhr.utils.LegalOrgUtilsEX;
 import nc.ui.querytemplate.querytree.IQueryScheme;
+import nc.vo.logging.Debug;
+import nc.vo.pub.BusinessException;
+import nc.vo.pub.VOStatus;
+import nc.vo.pub.lang.UFDate;
+import nc.vo.pub.lang.UFLiteralDate;
+import nc.vo.pubapp.pattern.exception.CarrierRuntimeException;
+import nc.vo.pubapp.pattern.exception.ExceptionUtils;
+import nc.vo.pubapp.query2.sql.process.QueryCondition;
 import nc.vo.twhr.twhr_declaration.AggDeclarationVO;
 import nc.vo.twhr.twhr_declaration.BusinessBVO;
+import nc.vo.twhr.twhr_declaration.CompanyAdjustBVO;
 import nc.vo.twhr.twhr_declaration.CompanyBVO;
 import nc.vo.twhr.twhr_declaration.DeclarationHVO;
 import nc.vo.twhr.twhr_declaration.NonPartTimeBVO;
 import nc.vo.twhr.twhr_declaration.PartTimeBVO;
-import nc.vo.pub.BusinessException;
-import nc.vo.pub.VOStatus;
-import nc.vo.pub.lang.UFDate;
-import nc.vo.pub.lang.UFDateTime;
-import nc.vo.pub.lang.UFLiteralDate;
-import nc.vo.pubapp.pattern.exception.CarrierRuntimeException;
-import nc.vo.pubapp.pattern.exception.ExceptionUtils;
 
 public abstract class AceTwhr_declarationPubServiceImpl {
 	private BaseDAO dao = null;
-	
-	
+
 	// 新增
-	public AggDeclarationVO[] pubinsertBills(AggDeclarationVO[] clientFullVOs,
-			AggDeclarationVO[] originBills) throws BusinessException {
-		//新增之前先删除所有的主表以防主表的主键冲突 Ares.Tank 2018-10-26 17:23:49
-		//注:此节点中主表的数据是没有任何实际意义的,主表的主要功能是连接四个子表构成聚合VO
+	public AggDeclarationVO[] pubinsertBills(AggDeclarationVO[] clientFullVOs, AggDeclarationVO[] originBills)
+			throws BusinessException {
+		// 新增之前先删除所有的主表以防主表的主键冲突 Ares.Tank 2018-10-26 17:23:49
+		// 注:此节点中主表的数据是没有任何实际意义的,主表的主要功能是连接四个子表构成聚合VO
 		String sqlStr = "delete from twhr_declaration ";
 		getDao().executeUpdate(sqlStr);
-		
-		
+
 		try {
 			// 数据库中数据和前台传递过来的差异VO合并后的结果
-			BillTransferTool<AggDeclarationVO> transferTool = new BillTransferTool<AggDeclarationVO>(
-					clientFullVOs);
+			BillTransferTool<AggDeclarationVO> transferTool = new BillTransferTool<AggDeclarationVO>(clientFullVOs);
 			// 调用BP
 			AceTwhr_declarationInsertBP action = new AceTwhr_declarationInsertBP();
 			AggDeclarationVO[] retvos = clientFullVOs;
-			try{
+			try {
 				retvos = action.insert(clientFullVOs);
-			}catch(CarrierRuntimeException e2){
+			} catch (CarrierRuntimeException e2) {
 				Debug.debug(e2.getMessage());
 			}
 			// 构造返回数据
@@ -70,8 +68,8 @@ public abstract class AceTwhr_declarationPubServiceImpl {
 	}
 
 	// 删除
-	public void pubdeleteBills(AggDeclarationVO[] clientFullVOs,
-			AggDeclarationVO[] originBills) throws BusinessException {
+	public void pubdeleteBills(AggDeclarationVO[] clientFullVOs, AggDeclarationVO[] originBills)
+			throws BusinessException {
 		try {
 			// 调用BP
 			new AceTwhr_declarationDeleteBP().delete(clientFullVOs);
@@ -81,12 +79,11 @@ public abstract class AceTwhr_declarationPubServiceImpl {
 	}
 
 	// 修改
-	public AggDeclarationVO[] pubupdateBills(AggDeclarationVO[] clientFullVOs,
-			AggDeclarationVO[] originBills) throws BusinessException {
+	public AggDeclarationVO[] pubupdateBills(AggDeclarationVO[] clientFullVOs, AggDeclarationVO[] originBills)
+			throws BusinessException {
 		try {
 			// 加锁 + 检查ts
-			BillTransferTool<AggDeclarationVO> transferTool = new BillTransferTool<AggDeclarationVO>(
-					clientFullVOs);
+			BillTransferTool<AggDeclarationVO> transferTool = new BillTransferTool<AggDeclarationVO>(clientFullVOs);
 			AceTwhr_declarationUpdateBP bp = new AceTwhr_declarationUpdateBP();
 			AggDeclarationVO[] retvos = bp.update(clientFullVOs, originBills);
 			// 构造返回数据
@@ -99,17 +96,17 @@ public abstract class AceTwhr_declarationPubServiceImpl {
 
 	/**
 	 * 对前端的条件进行聚合查询,查出需要的主子结构
+	 * 
 	 * @Date 2018-10-4 11:53:22
 	 * @param queryScheme
 	 * @return
 	 * @throws BusinessException
-	 * @author Ares.Tank 
+	 * @author Ares.Tank
 	 * @date 2018年10月4日 下午12:07:17
 	 * @description
 	 */
 	@SuppressWarnings("unchecked")
-	public AggDeclarationVO[] pubquerybills(IQueryScheme queryScheme)
-			throws BusinessException {
+	public AggDeclarationVO[] pubquerybills(IQueryScheme queryScheme) throws BusinessException {
 		AggDeclarationVO[] bills = null;
 		try {
 			Map<String, QueryCondition> conds = (Map<String, QueryCondition>) queryScheme.get("all_condition");
@@ -118,28 +115,28 @@ public abstract class AceTwhr_declarationPubServiceImpl {
 			Set<String> pk_waperiod_tempSet = new HashSet<>();
 			Set<String> pk_dept_tempSet = new HashSet<>();
 			String pk_hrorg_temp = null;
-			
-			//String maxdate = "";
+
+			// String maxdate = "";
 			if (conds != null && conds.size() > 0) {
 				for (Entry<String, QueryCondition> cond : conds.entrySet()) {
 					String strKey = cond.getKey();
 					QueryCondition condition = cond.getValue();
 					if (strKey.equals("legal_org_temp")) {
 						if (condition.getValues() != null && condition.getValues().length > 0) {
-							for(String s : condition.getValues()){
+							for (String s : condition.getValues()) {
 								legal_org_tempSet.add(s);
 							}
 						}
 					} else if (strKey.equals("pk_psndoc_temp")) {
 						if (condition.getValues() != null && condition.getValues().length > 0) {
-							for(String s : condition.getValues()){
+							for (String s : condition.getValues()) {
 								pk_psndoc_tempSet.add(s);
 							}
 						}
 					} else if (strKey.equals("pk_waperiod_temp")) {
 						if (condition.getValues() != null && condition.getValues().length > 0) {
 							if (condition.getValues() != null && condition.getValues().length > 0) {
-								for(String s : condition.getValues()){
+								for (String s : condition.getValues()) {
 									pk_waperiod_tempSet.add(s);
 								}
 							}
@@ -147,7 +144,7 @@ public abstract class AceTwhr_declarationPubServiceImpl {
 					} else if (strKey.equals("pk_dept_temp")) {
 						if (condition.getValues() != null && condition.getValues().length > 0) {
 							if (condition.getValues() != null && condition.getValues().length > 0) {
-								for(String s : condition.getValues()){
+								for (String s : condition.getValues()) {
 									pk_dept_tempSet.add(s);
 								}
 							}
@@ -156,10 +153,11 @@ public abstract class AceTwhr_declarationPubServiceImpl {
 						if (condition.getValues() != null && condition.getValues().length > 0) {
 							pk_hrorg_temp = condition.getValues()[0];
 						}
-					} 
+					}
 				}
 
-				bills = queryBillsByConditions(legal_org_tempSet, pk_psndoc_tempSet, pk_waperiod_tempSet, pk_dept_tempSet, pk_hrorg_temp);
+				bills = queryBillsByConditions(legal_org_tempSet, pk_psndoc_tempSet, pk_waperiod_tempSet,
+						pk_dept_tempSet, pk_hrorg_temp);
 			}
 		} catch (Exception e) {
 			ExceptionUtils.marsh(e);
@@ -168,138 +166,175 @@ public abstract class AceTwhr_declarationPubServiceImpl {
 		return bills;
 	}
 
-	
-
 	@SuppressWarnings("unchecked")
 	private AggDeclarationVO[] queryBillsByConditions(Set<String> legal_org_tempSet, Set<String> pk_psndoc_tempSet,
 			Set<String> pk_waperiod_temp, Set<String> pk_dept_temp, String pk_hrorg_temp) throws BusinessException {
-		AggDeclarationVO  resultVO = new AggDeclarationVO();
-		DeclarationHVO parentVO = new DeclarationHVO();
-		parentVO.setTs(new UFDateTime());
-		parentVO.setApprovestatus(0);
+		AggDeclarationVO resultVO = new AggDeclarationVO();
+
+		Collection<DeclarationHVO> hvos = this.getDao().retrieveByClause(DeclarationHVO.class,
+				"pk_org='" + legal_org_tempSet.toArray(new String[0])[0] + "'");
+
+		if (hvos == null || hvos.size() == 0) {
+			return null;
+		}
+
+		DeclarationHVO parentVO = hvos.toArray(new DeclarationHVO[0])[0];
 		resultVO.setParent(parentVO);
-		//拼装子VO
-		//处理where 语句
+
+		if ((pk_psndoc_tempSet == null || pk_psndoc_tempSet.size() == 0)
+				&& (pk_waperiod_temp == null || pk_waperiod_temp.size() == 0)
+				&& (pk_dept_temp == null || pk_dept_temp.size() == 0)) {
+			parentVO.setPk_declaration(null);
+		}
+
+		// 拼装子VO
+		// 处理where 语句
 		String whereSql = " where 11=11 ";
+		String whereSqlEx = " where 1=1 ";
 		InSQLCreator insql = new InSQLCreator();
-		
-		if(null != legal_org_tempSet && legal_org_tempSet.size() > 0){
+
+		if (null != legal_org_tempSet && legal_org_tempSet.size() > 0) {
 			String legalOrgStr = insql.getInSQL(legal_org_tempSet.toArray(new String[0]));
 			whereSql += " and vbdef1 in ( " + legalOrgStr + " ) ";
-		}else{
-			//如果法人组织未选,则选择人力资源组织上的所有法人组织
-			Map<String,String> hr2LegalMap = LegalOrgUtilsEX.getLegalOrgByOrgs(new String[]{pk_hrorg_temp});
-			if(null != hr2LegalMap && hr2LegalMap.size() > 0){
+			whereSqlEx += " and pk_org in ( " + legalOrgStr + " ) ";
+		} else {
+			// 如果法人组织未选,则选择人力资源组织上的所有法人组织
+			Map<String, String> hr2LegalMap = LegalOrgUtilsEX.getLegalOrgByOrgs(new String[] { pk_hrorg_temp });
+			if (null != hr2LegalMap && hr2LegalMap.size() > 0) {
 				String legalOrgStr = insql.getInSQL(hr2LegalMap.values().toArray(new String[0]));
 				whereSql += " and vbdef1 in ( " + legalOrgStr + " ) ";
+				whereSqlEx += " and pk_org in ( " + legalOrgStr + " ) ";
 			}
 		}
-		
-		
-		if(null != pk_dept_temp && pk_dept_temp.size() > 0){
+
+		if (null != pk_dept_temp && pk_dept_temp.size() > 0) {
 			String deptStr = insql.getInSQL(pk_dept_temp.toArray(new String[0]));
 			whereSql += " and pk_dept in ( " + deptStr + " ) ";
+			whereSqlEx += " and pk_psndoc in (select distinct pk_psndoc from hi_psnjob where  pk_dept in (" + deptStr
+					+ " )) ";
 		}
-		
-		if(null != pk_waperiod_temp && pk_waperiod_temp.size() > 0){
-			//String waperiodStr = insql.getInSQL(pk_waperiod_temp.toArray(new String[0]));
-			//whereSql += " and vbdef3 in ( " +  + " ) ";
+
+		if (null != pk_waperiod_temp && pk_waperiod_temp.size() > 0) {
+			// String waperiodStr = insql.getInSQL(pk_waperiod_temp.toArray(new
+			// String[0]));
+			// whereSql += " and vbdef3 in ( " + + " ) ";
 			boolean isFirstFlag = true;
 			whereSql += " and (";
-			for(String s : pk_waperiod_temp){
-				if(null != s){
-					if(isFirstFlag){
-						whereSql += " ( pay_date >= '" + dealDate(s,0) + "' and pay_date < '" + dealDate(s,1)+"') ";
+			whereSqlEx += " and (";
+			for (String s : pk_waperiod_temp) {
+				if (null != s) {
+					if (isFirstFlag) {
+						whereSql += " ( pay_date >= '" + dealDate(s, 0) + "' and pay_date < '" + dealDate(s, 1) + "') ";
+						whereSqlEx += " ( adjustdate >= '"
+								+ dealDate(s, 0).toUFLiteralDate(UFLiteralDate.BASE_TIMEZONE) + "' and adjustdate < '"
+								+ dealDate(s, 1).toUFLiteralDate(UFLiteralDate.BASE_TIMEZONE) + "') ";
 						isFirstFlag = false;
-					}else{
-						whereSql += " or ( pay_date >= '" + dealDate(s,0) + "' and pay_date < '" + dealDate(s,1)+"') "; 
+					} else {
+						whereSql += " or ( pay_date >= '" + dealDate(s, 0) + "' and pay_date < '" + dealDate(s, 1)
+								+ "') ";
+						whereSqlEx += " or ( adjustdate >= '"
+								+ dealDate(s, 0).toUFLiteralDate(UFLiteralDate.BASE_TIMEZONE) + "' and adjustdate < '"
+								+ dealDate(s, 1).toUFLiteralDate(UFLiteralDate.BASE_TIMEZONE) + "') ";
 					}
 				}
 			}
 			whereSql += " ) ";
+			whereSqlEx += ") ";
 		}
-		
-		if(null != pk_psndoc_tempSet && pk_psndoc_tempSet.size() > 0){
+
+		if (null != pk_psndoc_tempSet && pk_psndoc_tempSet.size() > 0) {
 			String psnStr = insql.getInSQL(pk_psndoc_tempSet.toArray(new String[0]));
 			whereSql += " and  vbdef4 in ( " + psnStr + " ) ";
+			whereSqlEx += " and pk_psndoc in (" + psnStr + ")";
 		}
 		whereSql += " and dr = 0 ";
-		//查询子表
+		whereSqlEx += " and dr=0 ";
+
+		// 查询子表
 		String sqlStr = " select db.* from declaration_business db " + whereSql;
-		List<BusinessBVO> businessBVOList 
-			= (List<BusinessBVO>) (getDao().executeQuery(sqlStr, new BeanListProcessor(BusinessBVO.class)));
-		if(null != businessBVOList && businessBVOList.size() > 0){
+		List<BusinessBVO> businessBVOList = (List<BusinessBVO>) (getDao().executeQuery(sqlStr, new BeanListProcessor(
+				BusinessBVO.class)));
+		if (null != businessBVOList && businessBVOList.size() > 0) {
 			resultVO.setChildren(BusinessBVO.class, businessBVOList.toArray(new BusinessBVO[0]));
 		}
-		
+
 		sqlStr = " select dc.* from declaration_company dc " + whereSql;
-		List<CompanyBVO> companyBVOList 
-			= (List<CompanyBVO>) (getDao().executeQuery(sqlStr, new BeanListProcessor(CompanyBVO.class)));
-		if(null != companyBVOList && companyBVOList.size() > 0){
+		List<CompanyBVO> companyBVOList = (List<CompanyBVO>) (getDao().executeQuery(sqlStr, new BeanListProcessor(
+				CompanyBVO.class)));
+		if (null != companyBVOList && companyBVOList.size() > 0) {
 			resultVO.setChildren(CompanyBVO.class, companyBVOList.toArray(new CompanyBVO[0]));
 		}
-		
+
 		sqlStr = " select dn.* from declaration_nonparttime dn " + whereSql;
-		List<NonPartTimeBVO> nonpartTimeBVOList 
-			= (List<NonPartTimeBVO>) (getDao().executeQuery(sqlStr, new BeanListProcessor(NonPartTimeBVO.class)));
-		if(null != nonpartTimeBVOList && nonpartTimeBVOList.size() > 0){
+		List<NonPartTimeBVO> nonpartTimeBVOList = (List<NonPartTimeBVO>) (getDao().executeQuery(sqlStr,
+				new BeanListProcessor(NonPartTimeBVO.class)));
+		if (null != nonpartTimeBVOList && nonpartTimeBVOList.size() > 0) {
 			resultVO.setChildren(NonPartTimeBVO.class, nonpartTimeBVOList.toArray(new NonPartTimeBVO[0]));
 		}
-		
+
 		sqlStr = " select dp.* from declaration_parttime dp " + whereSql;
-		List<PartTimeBVO> partTimeBVOList 
-			= (List<PartTimeBVO>) (getDao().executeQuery(sqlStr, new BeanListProcessor(PartTimeBVO.class)));
-		if(null != partTimeBVOList && partTimeBVOList.size() > 0){
+		List<PartTimeBVO> partTimeBVOList = (List<PartTimeBVO>) (getDao().executeQuery(sqlStr, new BeanListProcessor(
+				PartTimeBVO.class)));
+		if (null != partTimeBVOList && partTimeBVOList.size() > 0) {
 			resultVO.setChildren(PartTimeBVO.class, partTimeBVOList.toArray(new PartTimeBVO[0]));
 		}
-		//String sqlStr = " select * form ";
-		if((partTimeBVOList != null && partTimeBVOList.size() >0) ||
-				(nonpartTimeBVOList != null && nonpartTimeBVOList.size() > 0) ||
-				(companyBVOList != null && companyBVOList.size() > 0) ||
-				(businessBVOList != null && businessBVOList.size() > 0)){
-			//有一个有数据,则返回
-			AggDeclarationVO[] results = {resultVO};
+
+		sqlStr = " select dj.* from declaration_companyadj dj " + whereSqlEx;
+		List<CompanyAdjustBVO> companyAdjBVOList = (List<CompanyAdjustBVO>) (getDao().executeQuery(sqlStr,
+				new BeanListProcessor(CompanyAdjustBVO.class)));
+		if (null != companyAdjBVOList && companyAdjBVOList.size() > 0) {
+			resultVO.setChildren(CompanyAdjustBVO.class, companyAdjBVOList.toArray(new CompanyAdjustBVO[0]));
+		}
+
+		// String sqlStr = " select * form ";
+		if ((partTimeBVOList != null && partTimeBVOList.size() > 0)
+				|| (nonpartTimeBVOList != null && nonpartTimeBVOList.size() > 0)
+				|| (companyBVOList != null && companyBVOList.size() > 0)
+				|| (businessBVOList != null && businessBVOList.size() > 0)
+				|| (companyAdjBVOList != null && companyAdjBVOList.size() > 0)) {
+			// 有一个有数据,则返回
+			AggDeclarationVO[] results = { resultVO };
 			return results;
 		}
-		
-		
+
 		return new AggDeclarationVO[0];
 	}
 
 	/**
 	 * 月份字符串生成 , 月的开始时间和月的结束时间
+	 * 
 	 * @param s
 	 * @param i
 	 * @return
-	 * @author Ares.Tank 
+	 * @author Ares.Tank
 	 * @date 2018年10月4日 下午8:44:51
 	 * @description
 	 */
 	private UFDate dealDate(String dateStr, int i) {
 		UFDate sDate = new UFDate(dateStr + "-01 00:00:00");
-		if(i == 0){
+		if (i == 0) {
 			return sDate;
 		}
 		Calendar calendar = Calendar.getInstance();
 		calendar.setTime(sDate.toDate());
-		calendar.set(Calendar.DAY_OF_MONTH,1);
+		calendar.set(Calendar.DAY_OF_MONTH, 1);
 		calendar.add(Calendar.MONTH, 1);
-		
+
 		return new UFDate(calendar.getTime());
 	}
 
 	/**
 	 * 由子类实现，查询之前对queryScheme进行加工，加入自己的逻辑
+	 * 
 	 * @param queryScheme
 	 */
 	protected void preQuery(IQueryScheme queryScheme) {
 		// 查询之前对queryScheme进行加工，加入自己的逻辑
-		
+
 	}
 
 	// 提交
-	public AggDeclarationVO[] pubsendapprovebills(
-			AggDeclarationVO[] clientFullVOs, AggDeclarationVO[] originBills)
+	public AggDeclarationVO[] pubsendapprovebills(AggDeclarationVO[] clientFullVOs, AggDeclarationVO[] originBills)
 			throws BusinessException {
 		AceTwhr_declarationSendApproveBP bp = new AceTwhr_declarationSendApproveBP();
 		AggDeclarationVO[] retvos = bp.sendApprove(clientFullVOs, originBills);
@@ -307,8 +342,7 @@ public abstract class AceTwhr_declarationPubServiceImpl {
 	}
 
 	// 收回
-	public AggDeclarationVO[] pubunsendapprovebills(
-			AggDeclarationVO[] clientFullVOs, AggDeclarationVO[] originBills)
+	public AggDeclarationVO[] pubunsendapprovebills(AggDeclarationVO[] clientFullVOs, AggDeclarationVO[] originBills)
 			throws BusinessException {
 		AceTwhr_declarationUnSendApproveBP bp = new AceTwhr_declarationUnSendApproveBP();
 		AggDeclarationVO[] retvos = bp.unSend(clientFullVOs, originBills);
@@ -316,8 +350,8 @@ public abstract class AceTwhr_declarationPubServiceImpl {
 	};
 
 	// 审批
-	public AggDeclarationVO[] pubapprovebills(AggDeclarationVO[] clientFullVOs,
-			AggDeclarationVO[] originBills) throws BusinessException {
+	public AggDeclarationVO[] pubapprovebills(AggDeclarationVO[] clientFullVOs, AggDeclarationVO[] originBills)
+			throws BusinessException {
 		for (int i = 0; clientFullVOs != null && i < clientFullVOs.length; i++) {
 			clientFullVOs[i].getParentVO().setStatus(VOStatus.UPDATED);
 		}
@@ -328,8 +362,8 @@ public abstract class AceTwhr_declarationPubServiceImpl {
 
 	// 弃审
 
-	public AggDeclarationVO[] pubunapprovebills(AggDeclarationVO[] clientFullVOs,
-			AggDeclarationVO[] originBills) throws BusinessException {
+	public AggDeclarationVO[] pubunapprovebills(AggDeclarationVO[] clientFullVOs, AggDeclarationVO[] originBills)
+			throws BusinessException {
 		for (int i = 0; clientFullVOs != null && i < clientFullVOs.length; i++) {
 			clientFullVOs[i].getParentVO().setStatus(VOStatus.UPDATED);
 		}
@@ -339,7 +373,7 @@ public abstract class AceTwhr_declarationPubServiceImpl {
 	}
 
 	public BaseDAO getDao() {
-		if(null == dao){
+		if (null == dao) {
 			dao = new BaseDAO();
 		}
 		return dao;

@@ -13,8 +13,11 @@ import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -24,6 +27,8 @@ import nc.itf.wa.datainterface.IExcelRowReader;
 import nc.jdbc.framework.processor.MapListProcessor;
 import nc.pub.wa.datainterface.DataItfConst;
 import nc.pub.wa.datainterface.FileUtils;
+import nc.pubitf.twhr.utils.LegalOrgUtilsEX;
+import nc.vo.org.OrgVO;
 import nc.vo.pub.BusinessException;
 import nc.vo.pub.VOStatus;
 import nc.vo.pub.lang.UFDouble;
@@ -205,32 +210,46 @@ public class DataItfFileReaderAccount {
 		}
 	}
 
-	public static BaoAccountVO[] readhealthTxtFileSD(String pk_org, String waperiod, String filePath,
-			LoginContext waContext) throws BusinessException {
-		List<BaoAccountVO> baoaccountlist = txthealthString(filePath, waperiod, waContext);
+	public static BaoAccountVO[] readhealthTxtFileSD(String waperiod, String filePath) throws BusinessException {
+		List<BaoAccountVO> baoaccountlist = txthealthString(filePath, waperiod);
 		return baoaccountlist.toArray(new BaoAccountVO[baoaccountlist.size()]);
 	}
 
-	public static BaoAccountVO[] readTxtFileSD(String pk_org, String waperiod, String filePath, LoginContext waContext)
+	public static BaoAccountVO[] readTxtFileSD(String waperiod, String filePath)
 			throws BusinessException {
-		List<BaoAccountVO> baoaccountlist = txtlaborString(filePath, waperiod, waContext);
+		List<BaoAccountVO> baoaccountlist = txtlaborString(filePath, waperiod);
 		return baoaccountlist.toArray(new BaoAccountVO[baoaccountlist.size()]);
 	}
 
-	public static BaoAccountVO[] readRetireTxtFileSD(String pk_org, String waperiod, String filePath,
-			LoginContext waContext) throws BusinessException {
-		List<BaoAccountVO> baoaccountlist = txtretireString(filePath, waContext, waperiod);
+	public static BaoAccountVO[] readRetireTxtFileSD(String waperiod, String filePath) throws BusinessException {
+		List<BaoAccountVO> baoaccountlist = txtretireString(filePath,waperiod);
 		return baoaccountlist.toArray(new BaoAccountVO[baoaccountlist.size()]);
 	}
 
-	private static List<BaoAccountVO> txtlaborString(String file, String waperiod, LoginContext waContext) {
+	private static List<BaoAccountVO> txtlaborString(String file, String waperiod) {
 		List<BaoAccountVO> list = new ArrayList<BaoAccountVO>();
 		IUAPQueryBS iUAPQueryBS = (IUAPQueryBS) NCLocator.getInstance().lookup(IUAPQueryBS.class.getName());
+		//查詢法人組織下所有的人力资源组织
+		//Set<String> hrorgSet = LegalOrgUtilsEX.getOrgsByLegal(pk_legal_org);
 		try {
+			@SuppressWarnings("unchecked")
 			List<Map<String, String>> personlist = (List<Map<String, String>>) iUAPQueryBS
 					.executeQuery(
-							"SELECT psndoc.name,cert.id,cert.pk_psndoc,cert.isstart FROM hi_psndoc_cert cert,bd_psndoc psndoc where cert.pk_psndoc=psndoc.pk_psndoc and  cert.ISEFFECT = 'Y' and cert.dr=0",
+							" select id id,pk_psndoc from hi_psndoc_cert "
+									+" union all "
+									+" select idnumber id,pk_psndoc from hi_psndoc_family where idnumber is not null and dr = 0 ",
 							new MapListProcessor());
+			Map<String,String> id2PsnMap = new HashMap<>();
+			if(personlist==null || personlist.size() <= 0){
+				throw new BusinessException("未找到員工證件信息,請維護!");
+			}
+			for(Map<String, String> map : personlist){
+				id2PsnMap.put(map.get("id"), map.get("pk_psndoc"));
+			}
+			//人员对应的组织信息
+			//Map<String,String> psn2OrgSetMap = getPsnOrgInfo(id2PsnMap.values(),hrorgSet);
+			//Map<String,OrgVO> orgMap = getOrgInfo(hrorgSet);
+			
 			BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(file), "BIG5_HKSCS"));
 			// BufferedReader br = new BufferedReader(new FileReader(file));//
 			// 构造一个BufferedReader类来读取文件
@@ -244,11 +263,12 @@ public class DataItfFileReaderAccount {
 					// // 劳保投保金额
 					dvo.setName(strs[1]);
 					dvo.setPk_period(waperiod);
-					dvo.setPk_org(waContext.getPk_org());
-					dvo.setPk_group(waContext.getPk_group());
+					//dvo.setPk_org(waContext.getPk_org());
+					//dvo.setPk_group(waContext.getPk_group());
 					dvo.setLaborid(strs[2].replaceAll(" ", ""));
-					dvo.setDr(0);
-					for (Map<String, String> map : personlist) {
+					dvo.setIdno(dvo.getLaborid());
+					dvo.setPk_psndoc(id2PsnMap.get(dvo.getLaborid()));
+					/*for (Map<String, String> map : personlist) {
 						if (map.get("id").equals(dvo.getLaborid())) {
 							if (map.get("isstart").equals("Y")) {
 								dvo.setIdno(dvo.getLaborid());
@@ -261,7 +281,7 @@ public class DataItfFileReaderAccount {
 								}
 							}
 						}
-					}
+					}*/
 					list.add(dvo);
 				}
 
@@ -274,15 +294,25 @@ public class DataItfFileReaderAccount {
 
 	}
 
-	public static List<BaoAccountVO> txthealthString(String file, String waperiod, LoginContext waContext)
+	public static List<BaoAccountVO> txthealthString(String file, String waperiod)
 			throws BusinessException {
 		List<BaoAccountVO> list = new ArrayList<BaoAccountVO>();
 		IUAPQueryBS iUAPQueryBS = (IUAPQueryBS) NCLocator.getInstance().lookup(IUAPQueryBS.class.getName());
 		try {
+			@SuppressWarnings("unchecked")
 			List<Map<String, String>> personlist = (List<Map<String, String>>) iUAPQueryBS
 					.executeQuery(
-							"SELECT psndoc.name,cert.id,cert.pk_psndoc,cert.isstart FROM hi_psndoc_cert cert,bd_psndoc psndoc where cert.pk_psndoc=psndoc.pk_psndoc and  cert.ISEFFECT = 'Y' and cert.dr=0",
+							"select id id,pk_psndoc from hi_psndoc_cert "
+									+" union all "
+									+" select idnumber id,pk_psndoc from hi_psndoc_family where idnumber is not null and dr = 0 ",
 							new MapListProcessor());
+			Map<String,String> id2PsnMap = new HashMap<>();
+			if(personlist==null || personlist.size() <= 0){
+				throw new BusinessException("未找到員工證件信息,請維護!");
+			}
+			for(Map<String, String> map : personlist){
+				id2PsnMap.put(map.get("id"), map.get("pk_psndoc"));
+			}
 			BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(file), "BIG5_HKSCS"));
 			// BufferedReader br = new BufferedReader(new FileReader(file));//
 			// 构造一个BufferedReader类来读取文件
@@ -302,7 +332,10 @@ public class DataItfFileReaderAccount {
 					boolean rs = matcher.matches();
 					if (rs) {
 						BaoAccountVO dvo = new BaoAccountVO();
-						for (Map<String, String> map : personlist) {
+						dvo.setIdno(id);
+						dvo.setPk_psndoc(id2PsnMap.get(id));
+						dvo.setPk_period(waperiod);
+					/*	for (Map<String, String> map : personlist) {
 							if (map.get("id").equals(id)) {
 								if (map.get("isstart").equals("Y")) {
 									dvo.setIdno(id);
@@ -316,7 +349,7 @@ public class DataItfFileReaderAccount {
 									}
 								}
 							}
-						}
+						}*/
 						if (("".equals(substringByte(str, 8, 8).replaceAll(" ", "")) || null == substringByte(str, 8, 8)
 								.replaceAll(" ", "")) && j == 1) {
 							dvo.setName(englishname);
@@ -325,11 +358,10 @@ public class DataItfFileReaderAccount {
 							dvo.setName(substringByte(str, 9, 8).replaceAll(" ", ""));
 							// dvo.setName(map.get("name"));
 						}
-						dvo.setDr(0);
 						dvo.setPk_period(waperiod);
 						dvo.setHealthid(id);
-						dvo.setPk_org(waContext.getPk_org());
-						dvo.setPk_group(waContext.getPk_group());
+						//dvo.setPk_org(waContext.getPk_org());
+						//dvo.setPk_group(waContext.getPk_group());
 						if (null != str.substring(0, 8).replaceAll(" ", "")
 								&& !"".equals(str.substring(0, 8).replaceAll(" ", ""))) {
 							avgmoney = new UFDouble(str.substring(0, 8).replaceAll(" ", ""));
@@ -379,22 +411,35 @@ public class DataItfFileReaderAccount {
 		return list;
 	}
 
-	public static List<BaoAccountVO> txtretireString(String file, LoginContext waContext, String waperiod) {
+	public static List<BaoAccountVO> txtretireString(String file,String waperiod) {
 		List<BaoAccountVO> list = new ArrayList<BaoAccountVO>();
 		IUAPQueryBS iUAPQueryBS = (IUAPQueryBS) NCLocator.getInstance().lookup(IUAPQueryBS.class.getName());
 		try {
-			List<Map<String, String>> personlist = (List<Map<String, String>>) iUAPQueryBS.executeQuery(
-					"select id,pk_psndoc,isstart from hi_psndoc_cert where ISEFFECT = 'Y' and dr=0",
-					new MapListProcessor());
+			@SuppressWarnings("unchecked")
+			List<Map<String, String>> personlist = (List<Map<String, String>>) iUAPQueryBS
+					.executeQuery(
+							"select id id,pk_psndoc from hi_psndoc_cert "
+							+" union all "
+							+" select idnumber id,pk_psndoc from hi_psndoc_family where idnumber is not null and dr = 0 ",
+							new MapListProcessor());
+			Map<String,String> id2PsnMap = new HashMap<>();
+			if(personlist==null || personlist.size() <= 0){
+				throw new BusinessException("未找到員工證件信息,請維護!");
+			}
+			for(Map<String, String> map : personlist){
+				id2PsnMap.put(map.get("id"), map.get("pk_psndoc"));
+			}
 			BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(file), "BIG5_HKSCS"));
 			// BufferedReader br = new BufferedReader(new FileReader(file));//
 			// 构造一个BufferedReader类来读取文件
 			String str = null;
 			while ((str = br.readLine()) != null) {// 使用readLine方法，一次读一行
 				String[] strs = str.split(",");
-				if (strs.length >= 16 && !strs[13].replaceAll("　", "").contains("停繳")) {
+				if (strs.length >= 16) {
 					BaoAccountVO dvo = new BaoAccountVO();
-					for (Map<String, String> map : personlist) {
+					dvo.setIdno(strs[6]);
+					dvo.setPk_psndoc(id2PsnMap.get(strs[6]));
+					/*for (Map<String, String> map : personlist) {
 						if (map.get("id").equals(strs[6].replaceAll(" ", ""))) {
 							if (map.get("isstart").equals("Y")) {
 								dvo.setIdno(strs[6]);
@@ -407,7 +452,7 @@ public class DataItfFileReaderAccount {
 								}
 							}
 						}
-					}
+					}*/
 					// dvo.setIdno(strs[6]);// 身份证字号
 					if (strs[3].equals("91")) {
 						// 91雇主
@@ -421,10 +466,9 @@ public class DataItfFileReaderAccount {
 					// 劳退提交薪资总额
 					dvo.setRetire_amount(new UFDouble(strs[7].replaceAll(" ", "")));
 					dvo.setPk_period(waperiod);
-					dvo.setPk_org(waContext.getPk_org());
+					//dvo.setPk_org(waContext.getPk_org());
 					dvo.setRetiredid(strs[6].replaceAll(" ", ""));
-					dvo.setPk_group(waContext.getPk_group());
-					dvo.setDr(0);
+					//dvo.setPk_group(waContext.getPk_group());
 					list.add(dvo);
 				}
 

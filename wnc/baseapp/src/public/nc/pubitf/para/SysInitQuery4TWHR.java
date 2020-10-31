@@ -45,7 +45,7 @@ public class SysInitQuery4TWHR {
 		List qryResultList = (List) iUAPQueryBS.executeQuery(sqlStr, new ColumnListProcessor());
 		for (Object obj : qryResultList) {
 			try {
-				return new UFDouble(obj.toString());
+				return new UFDouble(obj == null ? "0" : obj.toString());
 			} catch (Exception e) {
 				throw new BusinessException(e);
 			}
@@ -62,7 +62,7 @@ public class SysInitQuery4TWHR {
 		List qryResultList = (List) iUAPQueryBS.executeQuery(sqlStr, new ColumnListProcessor());
 		for (Object obj : qryResultList) {
 			try {
-				return obj.toString();
+				return (obj == null ? null : obj.toString());
 			} catch (Exception e) {
 				throw new BusinessException(e);
 			}
@@ -79,7 +79,7 @@ public class SysInitQuery4TWHR {
 		List qryResultList = (List) iUAPQueryBS.executeQuery(sqlStr, new ColumnListProcessor());
 		for (Object obj : qryResultList) {
 			try {
-				return obj.toString();
+				return (obj == null ? null : obj.toString());
 			} catch (Exception e) {
 				throw new BusinessException(e);
 			}
@@ -96,7 +96,7 @@ public class SysInitQuery4TWHR {
 		List qryResultList = (List) iUAPQueryBS.executeQuery(sqlStr, new ColumnListProcessor());
 		for (Object obj : qryResultList) {
 			try {
-				return new UFBoolean(obj.toString());
+				return new UFBoolean(obj == null ? "N" : obj.toString());
 			} catch (Exception e) {
 				throw new BusinessException(e);
 			}

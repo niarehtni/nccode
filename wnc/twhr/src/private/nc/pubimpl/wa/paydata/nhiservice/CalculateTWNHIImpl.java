@@ -128,15 +128,15 @@ public class CalculateTWNHIImpl implements ICalculateTWNHI {
 			if (DECLAREFORM_50 == waclassType) {
 				// 50薪资
 				// 区分兼职人员和非兼职人员
-				Map<String, Set<String>> checkPartTimePsn = checkPartTimePsn(pk_psndocs, payDate, pk_wa_period);
+				Map<String, Set<String>> psnGroupsMap = checkPartTimePsn(pk_psndocs, payDate, pk_wa_class, pk_wa_period);
 
-				if (null != checkPartTimePsn.get(NOT_PART_TIME_PSN_MAP_KEY)) {
+				if (null != psnGroupsMap.get(NOT_PART_TIME_PSN_MAP_KEY)) {
 					// 非兼职人员的计算
 					Map<String, UFDouble> curAmountMap = getCurrentPeriodAmount4NotPartTimePsn(pk_group, pk_org,
 							pk_wa_class, pk_wa_period,
-							checkPartTimePsn.get(NOT_PART_TIME_PSN_MAP_KEY).toArray(new String[0]), payDate);
+							psnGroupsMap.get(NOT_PART_TIME_PSN_MAP_KEY).toArray(new String[0]), payDate);
 
-					for (String pk_psndoc : checkPartTimePsn.get(NOT_PART_TIME_PSN_MAP_KEY)) {
+					for (String pk_psndoc : psnGroupsMap.get(NOT_PART_TIME_PSN_MAP_KEY)) {
 						if (null == pk_psndoc) {
 							continue;
 						}
@@ -145,7 +145,7 @@ public class CalculateTWNHIImpl implements ICalculateTWNHI {
 						curAmount = curAmount == null ? UFDouble.ZERO_DBL : curAmount;
 
 						// 排除不需要扣二代健保的人员
-						if (needUpdateExNHI(pk_group, pk_org, pk_wa_period, pk_psndoc, curAmount)) {
+						if (needUpdateExNHI(pk_group, pk_org, pk_wa_period, pk_psndoc, payDate, curAmount)) {
 							// updatedPsn.add(pk_psndoc);
 							// 加上本期的全年累计金额
 							UFDouble annaAmount = curAmount.add(getLastPeriodAnnualSum(pk_group, pk_org, pk_wa_class,
@@ -172,11 +172,10 @@ public class CalculateTWNHIImpl implements ICalculateTWNHI {
 				// List<PsndocDefVO> laborInfo4PartTimeInfoVOs = new
 				// ArrayList<PsndocDefVO>();
 				// 兼职人员的计算逻辑
-				if (null != checkPartTimePsn.get(PART_TIME_PSN_MAP_KEY)) {
+				if (null != psnGroupsMap.get(PART_TIME_PSN_MAP_KEY)) {
 					Map<String, UFDouble> curAmountMap = getCurrentPeriodAmount4PartTimePsn(pk_group, pk_org,
-							pk_wa_class, pk_wa_period,
-							checkPartTimePsn.get(PART_TIME_PSN_MAP_KEY).toArray(new String[0]));
-					for (String pk_psndoc : checkPartTimePsn.get(PART_TIME_PSN_MAP_KEY)) {
+							pk_wa_class, pk_wa_period, psnGroupsMap.get(PART_TIME_PSN_MAP_KEY).toArray(new String[0]));
+					for (String pk_psndoc : psnGroupsMap.get(PART_TIME_PSN_MAP_KEY)) {
 
 						if (null == pk_psndoc) {
 							continue;
@@ -722,8 +721,8 @@ public class CalculateTWNHIImpl implements ICalculateTWNHI {
 	 * @description
 	 */
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	private Map<String, Set<String>> checkPartTimePsn(String[] pk_psndocs, UFDate payDate, String pk_wa_period)
-			throws BusinessException {
+	private Map<String, Set<String>> checkPartTimePsn(String[] pk_psndocs, UFDate payDate, String pk_wa_class,
+			String pk_wa_period) throws BusinessException {
 		Set<String> allPsndoc = new HashSet<>();// 所有人去重
 		allPsndoc.addAll(Arrays.asList(pk_psndocs));
 
@@ -734,13 +733,11 @@ public class CalculateTWNHIImpl implements ICalculateTWNHI {
 		InSQLCreator insql = new InSQLCreator();
 		String psndocsInSQL = insql.getInSQL(pk_psndocs);
 
-		// 健保投保於瑞光 2019年12月還在保 不應計算出補充保費 by George 20200212 缺陷Bug #33125
-		// 同年度是否有投保健保，取员工最新的健保记录的信息
-		String sqlStr = " select pk_psndoc, max(ISNULL(enddate,'9999-12-31')) enddate " + " from "
-				+ PsndocDefTableUtil.getPsnHealthTablename() + " g2 " + " where g2.pk_psndoc in  (" + psndocsInSQL
-				+ ") " + " and g2.begindate <= '" + Integer.toString(payDate.getYear()) + "-12-31' "
-				+ " and isnull(g2.enddate,'9999-12-31') >= '" + Integer.toString(payDate.getYear()) + "-01-01' "
-				+ " and g2.glbdef2 = '本人' and g2.dr = 0 group by pk_psndoc ";
+		// ssx modified on 2020-10-21
+		// 如相同年度的自然年年度中有同個法人組織的投保紀錄，並且薪資檔案中「非兼職退保補充保計
+		// 算方式」設定為「所得視為補充保費費基者」則視為非兼職員工
+		String sqlStr = getPsndocCurYearWithHealIns(psndocsInSQL, payDate, pk_wa_class, pk_wa_period);
+
 		List<Map> mapList = (List<Map>) dao.executeQuery(sqlStr, new MapListProcessor());
 		for (Map map : mapList) {
 			if (null != map && null != map.get("pk_psndoc")) {
@@ -766,7 +763,7 @@ public class CalculateTWNHIImpl implements ICalculateTWNHI {
 	 * @throws BusinessException
 	 */
 	private boolean needUpdateExNHI(String pk_group, String pk_org, String pk_wa_period, String pk_psndoc,
-			UFDouble curAmount) throws BusinessException {
+			UFDate payDate, UFDouble curAmount) throws BusinessException {
 		boolean needs = true;
 		String strSQL = "";
 		// 1. 勾選「免扣補充保費」
@@ -788,6 +785,12 @@ public class CalculateTWNHIImpl implements ICalculateTWNHI {
 		if (rtn == null || StringUtils.isEmpty(rtn.toString()) || rtn.toString().equals("0E-8")
 				|| (Double.valueOf(rtn.toString())) == 0) {
 			needs = false;
+		}
+
+		strSQL = this.getDutyOffPsnByPaydate("('" + pk_psndoc + "')", payDate);
+		String leavePsndoc = (String) dao.executeQuery(strSQL, new ColumnProcessor());
+		if (leavePsndoc != null && !StringUtils.isEmpty(leavePsndoc.toString())) {
+			needs = true;
 		}
 
 		// 3. 二代健保累計項目為0或是所發放的薪資項無二代健保項目
@@ -846,14 +849,36 @@ public class CalculateTWNHIImpl implements ICalculateTWNHI {
 		UFDouble rtn = UFDouble.ZERO_DBL;
 		// glbdef5 上一期的当年累计,同一個月的會有多個薪資方案,取最新的那個
 		// (其实全部都一样,回写的时候会把全部薪资方案的年度累计都置为最新的)
-		String strSQL = " SELECT nonpt.totalbonusforyear FROM declaration_nonparttime nonpt "
+		String strSQL = " SELECT max(nonpt.totalbonusforyear) FROM declaration_nonparttime nonpt "
 				+ " left join wa_period wap on wap.pk_wa_period = nonpt.vbdef3 " + " WHERE wap.cyear = '"
-				+ String.valueOf(payDate.getYear()) + "' and wap.cperiod = ( "
+				+ String.valueOf(payDate.getYear())
+				+ "' and wap.cperiod = ( "
 				+ " select max(wap.cperiod) from declaration_nonparttime subnonpt "
-				+ " left join wa_period wap on wap.pk_wa_period = subnonpt.vbdef3 " + " where wap.cyear = '"
-				+ String.valueOf(payDate.getYear()) + "' and subnonpt.dr = 0 AND vbdef4 = '" + pk_psndoc
-				+ "' and vbdef1 = '" + pk_org + "'" + ") " + " and vbdef1 = '" + pk_org + "'" + " and vbdef4 = '"
-				+ pk_psndoc + "' order by nonpt.ts";
+				+ " left join wa_period wap on wap.pk_wa_period = subnonpt.vbdef3 "
+				+ " where wap.cyear = '"
+				+ String.valueOf(payDate.getYear())
+				+ "' and subnonpt.dr = 0 AND vbdef4 = '"
+				+ pk_psndoc
+				+ "' and vbdef1 = '"
+				+ pk_org
+				+ "'"
+				+ ") "
+				+ "and nonpt.totalbonusforyear = ( "
+				+ " select max(totalbonusforyear) from declaration_nonparttime subnonpt "
+				+ " left join wa_period wap on wap.pk_wa_period = subnonpt.vbdef3 "
+				+ " where wap.cyear = '"
+				+ String.valueOf(payDate.getYear())
+				+ "' and subnonpt.dr = 0 AND vbdef4 = '"
+				+ pk_psndoc
+				+ "' and vbdef1 = '"
+				+ pk_org
+				+ "'"
+				+ ") and vbdef1 = '"
+				+ pk_org
+				+ "'"
+				+ " and vbdef4 = '"
+				+ pk_psndoc
+				+ "' order by nonpt.ts";
 		String lastPeriodSumPSN = String.valueOf(dao.executeQuery(strSQL, new ColumnProcessor()));
 		if (lastPeriodSumPSN != null && !lastPeriodSumPSN.equals("null")) {
 			rtn = new UFDouble(lastPeriodSumPSN);
@@ -941,55 +966,24 @@ public class CalculateTWNHIImpl implements ICalculateTWNHI {
 	 * @date 2018年9月21日 上午11:34:42
 	 * @description
 	 */
-	@SuppressWarnings({ "unchecked", "rawtypes" })
+	@SuppressWarnings({ "rawtypes" })
 	private Map<String, UFDouble> getCurrentPeriodAmount4NotPartTimePsn(String pk_group, String pk_org,
 			String pk_wa_class, String pk_wa_period, String[] pk_psndocs, UFDate payDate) throws BusinessException {
 		Map<String, UFDouble> rtn = new HashMap<String, UFDouble>();
-		List<Map> curAmountPSN = new ArrayList<Map>();
 		List<String> noNhiPsns = new ArrayList<String>(Arrays.asList(pk_psndocs));
 
-		String sqlStr = " select distinct pk_psndoc from " + PsndocDefTableUtil.getPsnHealthTablename() + " g2"
-				+ " where g2.pk_psndoc in (" + new InSQLCreator().getInSQL(pk_psndocs) + ") "
-				+ " and g2.begindate <= '" + payDate.toUFLiteralDate(UFLiteralDate.BASE_TIMEZONE).toString()
-				+ "' and isnull(g2.enddate,'9999-12-31')>='"
-				+ payDate.toUFLiteralDate(UFLiteralDate.BASE_TIMEZONE).toString()
-				+ "'  and g2.glbdef2 = '本人' and dr = 0";
+		InSQLCreator insql = new InSQLCreator();
+		String psndocsInSQL = insql.getInSQL(pk_psndocs);
+
+		// ssx modified on 2020-09-27
+		// 通過發放日期取有健保的在職人員
+		String sqlStr = getPsndocCurYearWithHealIns(psndocsInSQL, payDate, pk_wa_class, pk_wa_period);
+		// end
 		List psnList = (List) dao.executeQuery(sqlStr, new ColumnListProcessor());
 
+		List<Map> curAmountPSN = new ArrayList<Map>();
 		if (psnList != null && psnList.size() > 0) {
-			// 找出所有勾选'二代健保累计项目'的薪资项
-			String strSQL = "select cls.itemkey, wi.iproperty from wa_classitem cls inner join twhr_waitem_30 tw on cls.pk_wa_item = tw.pk_wa_item "
-					+ " inner join wa_item wi on cls.pk_wa_item = wi.pk_wa_item "
-					+ " where cls.pk_org='"
-					+ pk_org
-					+ "' and pk_wa_class='"
-					+ pk_wa_class
-					+ "' and cyear=((select cyear from wa_period where pk_wa_period='"
-					+ pk_wa_period
-					+ "')) and cperiod=((select cperiod from wa_period where pk_wa_period='"
-					+ pk_wa_period
-					+ "')) and  tw.ishealthinsexsum_30 = 'Y' ";
-
-			List<Map> itemKeys = (List<Map>) dao.executeQuery(strSQL, new MapListProcessor());
-			if (itemKeys != null && itemKeys.size() > 0) {
-				strSQL = "";
-				for (Map<String, Object> itemkey : itemKeys) {
-					if (!StringUtils.isEmpty(strSQL)) {
-						strSQL = strSQL + "+";
-					}
-					strSQL = strSQL + ((Integer) itemkey.get("iproperty") == 1 ? "(-1)*" : "")
-							+ "isnull( SALARY_DECRYPT(" + (String) itemkey.get("itemkey") + "),0)";
-				}
-
-				// 批量取本次獎金金額
-				strSQL = "select (" + strSQL + ") curamount, pk_psndoc from wa_data where pk_psndoc in ("
-						+ new InSQLCreator().getInSQL((String[]) psnList.toArray(new String[0])) + ") and pk_org='"
-						+ pk_org + "' and pk_wa_class='" + pk_wa_class
-						+ "' and cyear=((select cyear from wa_period where pk_wa_period='" + pk_wa_period
-						+ "')) and cperiod=((select cperiod from wa_period where pk_wa_period='" + pk_wa_period
-						+ "')) ";
-				curAmountPSN = (List<Map>) dao.executeQuery(strSQL, new MapListProcessor());
-			}
+			curAmountPSN = getPsnAmount(pk_org, pk_wa_class, pk_wa_period, psnList);
 
 			if (curAmountPSN != null && curAmountPSN.size() > 0) {
 				for (Map curAmount : curAmountPSN) {
@@ -1008,6 +1002,68 @@ public class CalculateTWNHIImpl implements ICalculateTWNHI {
 		}
 
 		return rtn;
+	}
+
+	private String getPsndocCurYearWithHealIns(String psnInSQL, UFDate payDate, String pk_wa_class, String pk_wa_period)
+			throws BusinessException {
+		// 如相同年度的自然年年度中有同個法人組織的投保紀錄，並且薪資檔案中「非兼職退保補充保計
+		// 算方式」設定為「所得視為補充保費費基者」則視為非兼職員工
+		String sqlStr = " select g2.pk_psndoc from " + PsndocDefTableUtil.getPsnHealthTablename() + " g2 "
+				+ " inner join wa_period pd on pk_wa_period = '" + pk_wa_period + "' "
+				+ " inner join wa_data wd on wd.pk_psndoc = g2.pk_psndoc and wd.pk_wa_class = '" + pk_wa_class
+				+ "' and wd.cyear = pd.cyear and wd.cperiod = pd.cperiod "
+				+ " where wd.exnhitype <> 2 and g2.pk_psndoc in  (" + psnInSQL + ") " + " and g2.begindate <= '"
+				+ Integer.toString(payDate.getYear()) + "-12-31' " + " and isnull(g2.enddate,'9999-12-31') >= '"
+				+ Integer.toString(payDate.getYear()) + "-01-01' "
+				+ " and g2.glbdef2 = '本人' and g2.dr = 0 group by g2.pk_psndoc ";
+		return sqlStr;
+	}
+
+	private String getDutyOffPsnByPaydate(String psndocsInSQL, UFDate payDate) {
+		String strSQL = "select po.pk_psndoc from hi_psnorg po where po.pk_psndoc in  ("
+				+ psndocsInSQL
+				+ ") and po.begindate = (select max(begindate) from hi_psnorg where pk_psndoc=po.pk_psndoc) and "
+				+ "(select pj.trnsevent from hi_psnjob pj where pj.pk_psnorg=po.pk_psnorg and pj.ismainjob='Y' and pj.begindate = (select max(begindate) begindate from hi_psnjob where pk_psnorg = po.pk_psnorg)) = 4 and "
+				+ "exists(select pk_psndoc_sub from hi_psndoc_glbdef2 where po.enddate between begindate and enddate and glbdef2 = '本人' )";
+		return strSQL;
+	}
+
+	private List<Map> getPsnAmount(String pk_org, String pk_wa_class, String pk_wa_period, List psnList)
+			throws DAOException, BusinessException {
+		List<Map> curAmountPSN = new ArrayList<Map>();
+		// 找出所有勾选'二代健保累计项目'的薪资项
+		String strSQL = "select cls.itemkey, wi.iproperty from wa_classitem cls inner join twhr_waitem_30 tw on cls.pk_wa_item = tw.pk_wa_item "
+				+ " inner join wa_item wi on cls.pk_wa_item = wi.pk_wa_item "
+				+ " where cls.pk_org='"
+				+ pk_org
+				+ "' and pk_wa_class='"
+				+ pk_wa_class
+				+ "' and cyear=((select cyear from wa_period where pk_wa_period='"
+				+ pk_wa_period
+				+ "')) and cperiod=((select cperiod from wa_period where pk_wa_period='"
+				+ pk_wa_period
+				+ "')) and  tw.ishealthinsexsum_30 = 'Y' ";
+
+		List<Map> itemKeys = (List<Map>) dao.executeQuery(strSQL, new MapListProcessor());
+		if (itemKeys != null && itemKeys.size() > 0) {
+			strSQL = "";
+			for (Map<String, Object> itemkey : itemKeys) {
+				if (!StringUtils.isEmpty(strSQL)) {
+					strSQL = strSQL + "+";
+				}
+				strSQL = strSQL + ((Integer) itemkey.get("iproperty") == 1 ? "(-1)*" : "") + "isnull( SALARY_DECRYPT("
+						+ (String) itemkey.get("itemkey") + "),0)";
+			}
+
+			// 批量取本次獎金金額
+			strSQL = "select (" + strSQL + ") curamount, pk_psndoc from wa_data where pk_psndoc in ("
+					+ new InSQLCreator().getInSQL((String[]) psnList.toArray(new String[0])) + ") and pk_org='"
+					+ pk_org + "' and pk_wa_class='" + pk_wa_class
+					+ "' and cyear=((select cyear from wa_period where pk_wa_period='" + pk_wa_period
+					+ "')) and cperiod=((select cperiod from wa_period where pk_wa_period='" + pk_wa_period + "')) ";
+			curAmountPSN = (List<Map>) dao.executeQuery(strSQL, new MapListProcessor());
+		}
+		return curAmountPSN;
 	}
 
 	/**
@@ -1059,8 +1115,10 @@ public class CalculateTWNHIImpl implements ICalculateTWNHI {
 
 		if (curAmountPSN != null && curAmountPSN.size() > 0) {
 			for (Map curAmount : curAmountPSN) {
-				rtn.put((String) curAmount.get("pk_psndoc"),
-						new UFDouble(Double.parseDouble(curAmount.get("curamount").toString())));
+				if (Double.parseDouble(curAmount.get("curamount").toString()) > 0) {
+					rtn.put((String) curAmount.get("pk_psndoc"),
+							new UFDouble(Double.parseDouble(curAmount.get("curamount").toString())));
+				}
 			}
 		}
 
@@ -1245,7 +1303,7 @@ public class CalculateTWNHIImpl implements ICalculateTWNHI {
 	private Map<String, Object> getBaseInfo(String psndoc, String pk_org, UFDate payDate, String pk_hrorg,
 			String pk_wa_class, String pk_wa_period) throws BusinessException {
 		// Map<String,Object> resultMap = new HashMap<>();
-		String sqlStr = "SELECT "
+		String sqlStr = "SELECT distinct "
 				+ SQLHelper.getMultiLangNameColumn("psn.name")
 				+ " as beneficiary_name, hi_psndoc_cert.id as beneficiary_id, "
 				+ " doc.textvalue as insurance_unit_code ,job.pk_dept as pk_dept"
@@ -1259,7 +1317,10 @@ public class CalculateTWNHIImpl implements ICalculateTWNHI {
 				+ " inner join bd_psnidtype on hi_psndoc_cert.idtype = bd_psnidtype.pk_identitype and "
 				+ " 	( ( isnull(psn.glbdef7,'N')='Y' AND ( heal.glbdef5= ( SELECT  pk_defdoc FROM bd_defdoc WHERE code = 'HT01' "
 				+ " AND pk_defdoclist =  ( SELECT pk_defdoclist  FROM bd_defdoclist WHERE  code = 'TWHR007')) AND bd_psnidtype.code='TW03')) or"
-				+ " (heal.glbdef5=(select pk_defdoc from bd_defdoc where code = 'HT08' and pk_defdoclist = (select pk_defdoclist from bd_defdoclist where code = 'TWHR007')) and bd_psnidtype.code='TW03') or bd_psnidtype.code = 'TW01') "
+				// MOD by ssx on 2020-05-04
+				// #34819, 健保身份增加陸籍配偶，從 = 'HT08' 改為 in ('HT08','HT09')
+				+ " (heal.glbdef5 in (select pk_defdoc from bd_defdoc where code in ('HT08','HT09') and pk_defdoclist = (select pk_defdoclist from bd_defdoclist where code = 'TWHR007')) and bd_psnidtype.code='TW03') or bd_psnidtype.code = 'TW01') "
+				// end MOD
 				+ " left join twhr_basedoc doc on (doc.pk_org = '" + pk_org
 				+ "' and doc.code = 'TWNHHI03' and doc.dr = 0) " + " left join hi_psnjob job on job.pk_psnjob in "
 				+ " ( SELECT  wa_data.pk_psnjob " + " FROM wa_data " + " LEFT JOIN wa_period ON pk_wa_period = '"
@@ -1270,7 +1331,7 @@ public class CalculateTWNHIImpl implements ICalculateTWNHI {
 		List<Map> sqlResultMapList = (List<Map>) dao.executeQuery(sqlStr, new MapListProcessor());
 
 		if (sqlResultMapList == null || sqlResultMapList.size() == 0) {
-			sqlStr = "SELECT "
+			sqlStr = "SELECT distinct "
 					+ SQLHelper.getMultiLangNameColumn("psn.name")
 					+ " as beneficiary_name, hi_psndoc_cert.id as beneficiary_id, "
 					+ " doc.textvalue as insurance_unit_code ,job.pk_dept as pk_dept"
@@ -1287,7 +1348,10 @@ public class CalculateTWNHIImpl implements ICalculateTWNHI {
 					+ " inner join bd_psnidtype on hi_psndoc_cert.idtype = bd_psnidtype.pk_identitype and "
 					+ " 	( ( isnull(psn.glbdef7,'N')='Y' AND ( heal.glbdef5 is null or heal.glbdef5= ( SELECT  pk_defdoc FROM bd_defdoc WHERE code = 'HT01' "
 					+ " AND pk_defdoclist =  ( SELECT pk_defdoclist  FROM bd_defdoclist WHERE  code = 'TWHR007')) AND bd_psnidtype.code='TW03')) or"
-					+ " (heal.glbdef5=(select pk_defdoc from bd_defdoc where code = 'HT08' and pk_defdoclist = (select pk_defdoclist from bd_defdoclist where code = 'TWHR007')) and bd_psnidtype.code='TW03') or bd_psnidtype.code = 'TW01') "
+					// MOD by ssx on 2020-05-04
+					// #34819, 健保身份增加陸籍配偶，從 = 'HT08' 改為 in ('HT08','HT09')
+					+ " (heal.glbdef5 in (select pk_defdoc from bd_defdoc where code in ('HT08','HT09') and pk_defdoclist = (select pk_defdoclist from bd_defdoclist where code = 'TWHR007')) and bd_psnidtype.code='TW03') or bd_psnidtype.code = 'TW01') "
+					// end MOD
 					+ " left join twhr_basedoc doc on (doc.pk_org = '" + pk_org
 					+ "' and doc.code = 'TWNHHI03' and doc.dr = 0) " + " left join hi_psnjob job on job.pk_psnjob in "
 					+ " ( SELECT  wa_data.pk_psnjob " + " FROM wa_data " + " LEFT JOIN wa_period ON pk_wa_period = '"

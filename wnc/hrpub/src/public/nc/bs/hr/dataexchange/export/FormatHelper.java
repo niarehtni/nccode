@@ -23,7 +23,7 @@ public class FormatHelper {
 		return str;
 	}
 
-	public static String getLengthNameEx(String str, int lengthB) throws BusinessException {
+	public static String getLengthNameEx(String str, String appchar, int lengthB) throws BusinessException {
 		// for CTBC new requirement.
 		// If any word unknown, return blank string
 		str = getChtString(str, str.length());
@@ -42,17 +42,17 @@ public class FormatHelper {
 				}
 			}
 
-			if (strRtn.length() * 2 < lengthB) {
-				strRtn = strRtn + StringUtils.rightPad("", lengthB - strRtn.getBytes(TEXTENCODING).length, " ");
+			if (!StringUtils.isEmpty(appchar) && strRtn.length() * 2 < lengthB) {
+				strRtn = strRtn + StringUtils.rightPad("", lengthB - strRtn.getBytes(TEXTENCODING).length, appchar);
 			}
 		} catch (Exception e) {
 			throw new BusinessException(e.getMessage());
 		}
 
-		if (strRtn.contains("£¿"))
-			return StringUtils.rightPad("", lengthB, " ");
-		else
-			return strRtn;
+		// if (strRtn.contains("£¿"))
+		// return StringUtils.rightPad("", lengthB, " ");
+		// else
+		return strRtn;
 	}
 
 	public static String getChtString(String str, int lengthW) throws BusinessException {
@@ -103,7 +103,7 @@ public class FormatHelper {
 		convertMap.put("9", "£¹");
 		convertMap.put("¡ª", "£­");
 		convertMap.put("¡ù", "£ª");
-		convertMap.put(String.valueOf((char) 63), "£ß");
+		convertMap.put(String.valueOf((char) 63), "£¿");
 
 		try {
 			byte[] bytStr = str.getBytes(TEXTENCODING);
@@ -176,7 +176,7 @@ public class FormatHelper {
 				v = "";
 			} else {
 				if (v.getBytes(TEXTENCODING).length != v.length() || forceChinese) {
-					v = getLengthNameEx(v, length);
+					v = getLengthNameEx(v, appchar, length);
 				} else {
 					if (v.length() < length) {
 						v = getLengthString(v, length, appchar, left_right);

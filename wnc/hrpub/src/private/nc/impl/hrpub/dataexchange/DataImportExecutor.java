@@ -15,6 +15,7 @@ import nc.bs.uap.oid.OidGenerator;
 import nc.itf.hrpub.IDataExchangeExternalExecutor;
 import nc.itf.hrpub.IMDExchangePersistService;
 import nc.itf.hrpub.util.MapKeyComparator;
+import nc.jdbc.framework.SQLParameter;
 import nc.jdbc.framework.processor.ColumnProcessor;
 import nc.jdbc.framework.processor.MapListProcessor;
 import nc.jdbc.framework.processor.MapProcessor;
@@ -23,6 +24,7 @@ import nc.md.model.IColumn;
 import nc.md.model.type.IType;
 import nc.vo.hrpub.mdmapping.AggMDClassVO;
 import nc.vo.hrpub.mdmapping.MDPropertyVO;
+import nc.vo.jcom.security.Base64;
 import nc.vo.pub.BusinessException;
 import nc.vo.pub.lang.UFBoolean;
 import nc.vo.pub.lang.UFDate;
@@ -256,14 +258,15 @@ public class DataImportExecutor extends AbstractExecutor {
 
 	private void doUpdate() throws BusinessException {
 		if (this.getNcValueObjects() != null && this.getNcValueObjects().size() > 0) {
-			Map<String, String> statMap = new HashMap<String, String>();
-			String strSQL = "";
+			Map<String, Map<String, SQLParameter>> statMap = new HashMap<String, Map<String, SQLParameter>>();
+			Map<String, SQLParameter> sqlMap = null;
 			String rowno = "";
 			try {
 				for (Map<String, Object> rowNCMap : this.getNcValueObjects()) {
 					// 清除含有保留属性的项目
 					Map<String, Object> clearedNCMap = clearReservedNCMap(rowNCMap);
 					Map<String, Object> rowMap = new HashMap<String, Object>();
+					sqlMap = new HashMap<String, SQLParameter>();
 					if (clearedNCMap != null && clearedNCMap.size() > 0) {
 						for (Entry<String, Object> kv : clearedNCMap.entrySet()) {
 							rowMap.put(kv.getKey().split(":")[1], kv.getValue());
@@ -278,7 +281,7 @@ public class DataImportExecutor extends AbstractExecutor {
 						if (isExists) {
 							// 檢查是否設定跳過更新
 							if (this.getUpdateSkip().contains(rowno)) {
-								statMap.put(rowno, ""); // 增加空字符，為保留在路過的時候還有額外SQL要執行
+								statMap.put(rowno, new HashMap<String, SQLParameter>()); // 增加空字符，為保留在路過的時候還有額外SQL要執行
 								continue;
 							}
 
@@ -289,7 +292,7 @@ public class DataImportExecutor extends AbstractExecutor {
 								}
 
 								// 已存在，執行更新操作
-								strSQL = getUpdateSQL(rowMap);
+								sqlMap.putAll(getUpdateSQLMap(rowMap));
 							} else if (this.getActionOnDataExists().equals(ExecuteActionEnum.ERROR)) {
 								throw new BusinessException("要保存的记录已存在");
 							} else if (this.getActionOnDataExists().equals(ExecuteActionEnum.SKIP)) {
@@ -298,7 +301,7 @@ public class DataImportExecutor extends AbstractExecutor {
 						} else {
 							// 檢查是否設定跳過新增
 							if (this.getInsertSkip().contains(rowno)) {
-								statMap.put(rowno, "");// 增加空字符，為保留在路過的時候還有額外SQL要執行
+								statMap.put(rowno, new HashMap<String, SQLParameter>());// 增加空對象，為保留在路過的時候還有額外SQL要執行
 								continue;
 							}
 
@@ -313,22 +316,22 @@ public class DataImportExecutor extends AbstractExecutor {
 							}
 
 							// 不存在，執行插入操作
-							strSQL = getInsertSQL(rowMap, rowno);
+							sqlMap.putAll(getInsertSQL(rowMap, rowno));
 						}
 					}
 
-					if (!StringUtils.isEmpty(strSQL)) {
-						statMap.put(rowno, strSQL);
+					if (!sqlMap.isEmpty()) {
+						statMap.put(rowno, sqlMap);
 					}
 				}
 			} catch (Exception e) {
 				getErrorMessages().put(rowno, e.getMessage());
 			}
 
-			MapKeyComparator mapCmp = new MapKeyComparator();
+			MapKeyComparator<Map<String, SQLParameter>> mapCmp = new MapKeyComparator<Map<String, SQLParameter>>();
 			statMap = mapCmp.sortMapByKey(statMap);
 			if (statMap != null) {
-				for (Entry<String, String> sqlObj : statMap.entrySet()) {
+				for (Entry<String, Map<String, SQLParameter>> sqlObj : statMap.entrySet()) {
 					try {
 						List<String> sqls = new ArrayList<String>();
 						if (this.getExtendSQLs().containsKey(sqlObj.getKey())) {
@@ -350,21 +353,31 @@ public class DataImportExecutor extends AbstractExecutor {
 							}
 						}
 
-						String s = sqlObj.getValue();
-						if (s.contains("$NEWID$")) {
-							s = s.replace("$NEWID$", this.getNewIDMap().get(sqlObj.getKey()));
-						}
+						Set<String> sqlSet = sqlObj.getValue().keySet();
+						if (sqlSet != null && sqlSet.size() > 0) {
+							for (String s : sqlSet) {
+								SQLParameter sqlPamam = sqlObj.getValue().get(s);
 
-						if (s.contains("$NEWVID$")) {
-							s = s.replace("$NEWVID$", this.getNewVIDMap().get(sqlObj.getKey()));
-						}
+								if (s.contains("$NEWID$")) {
+									s = s.replace("$NEWID$", this.getNewIDMap().get(sqlObj.getKey()));
+								}
 
-						if (!StringUtils.isEmpty(s)) {
-							sqls.add(s);
-						}
+								if (s.contains("$NEWVID$")) {
+									s = s.replace("$NEWVID$", this.getNewVIDMap().get(sqlObj.getKey()));
+								}
 
-						if (sqls.size() > 0) {
-							this.getSaveService().executeQueryWithNoCMT(sqls.toArray(new String[0]));
+								if (!StringUtils.isEmpty(s)) {
+									sqls.add(s);
+								}
+
+								if (sqlPamam == null) {
+									if (sqls.size() > 0) {
+										this.getSaveService().executeQueryWithNoCMT(sqls.toArray(new String[0]));
+									}
+								} else {
+									this.getSaveService().executeQueryWithNoCMT(s, sqlPamam);
+								}
+							}
 						}
 					} catch (Exception e) {
 						getErrorMessages().put(sqlObj.getKey(), e.getMessage());
@@ -390,11 +403,12 @@ public class DataImportExecutor extends AbstractExecutor {
 		return clearedMap;
 	}
 
-	private String getUpdateSQL(Map<String, Object> rowMap) throws BusinessException {
+	private Map<String, SQLParameter> getUpdateSQLMap(Map<String, Object> rowMap) throws BusinessException {
 		String strSQL = "update " + this.getBusinessEntity().getTable().getName() + " set ";
 		String codeValue = "";
 		String pkValue = "";
 		String keyvalueList = "";
+		SQLParameter params = null;
 		for (Entry<String, Object> kv : rowMap.entrySet()) {
 			IAttribute attr = this.getBusinessEntity().getAttributeByName(kv.getKey());
 
@@ -441,11 +455,31 @@ public class DataImportExecutor extends AbstractExecutor {
 			case IType.TYPE_UFDate_END: // 日期（结束）
 			case IType.TYPE_UFDATE_LITERAL: // 模糊日期
 				kv.setValue(getDateString((String) kv.getValue()));
+				if (kv.getValue() == null) {
+					keyvalueList += "null";
+				} else {
+					keyvalueList += "'" + String.valueOf(kv.getValue()) + "'";
+				}
+				break;
+			case IType.TYPE_BLOB: // BLOB
+			case IType.TYPE_CLOB: // CLOB
+			case IType.TYPE_IMAGE: // 图片类型
+				kv.setValue(convertBLOBValue(kv.getValue()));
+				if (kv.getValue() == null) {
+					keyvalueList += "null";
+				} else {
+					if (params == null) {
+						params = new SQLParameter();
+					}
+
+					params.addBlobParam(kv.getValue());
+					keyvalueList += "?";
+				}
+				break;
 			case IType.TYPE_String: // 字符
 			case IType.TYPE_MEMO: // 备注
 			case IType.TYPE_UFTime: // 时间
 			case IType.TYPE_UFID: // 主键
-			case IType.TYPE_IMAGE: // 图片类型
 			case IType.TYPE_CUSTOM: // 自定义项
 			case IType.MULTILANGUAGE: // 多语文本
 			case IType.TYPE_FREE: // 自由项
@@ -510,7 +544,26 @@ public class DataImportExecutor extends AbstractExecutor {
 			strSQL += " where " + this.getEntityPK() + "='" + pkValue + "'";
 		}
 
-		return strSQL;
+		Map<String, SQLParameter> rtnMap = new HashMap<String, SQLParameter>();
+		rtnMap.put(strSQL, params);
+		return rtnMap;
+	}
+
+	private Object convertBLOBValue(Object base64Data) {
+		if (base64Data instanceof String) {
+			byte[] retvalue = Base64.decode(getBinaryBytes((String) base64Data));
+			return retvalue;
+		} else {
+			return base64Data;
+		}
+	}
+
+	private static byte[] getBinaryBytes(String str) {
+		byte[] b = new byte[str.length()];
+		for (int i = 0; i < b.length; i++) {
+			b[i] = ((byte) str.charAt(i));
+		}
+		return b;
 	}
 
 	private String appendUniqueCheckCondition(Map<String, Object> rowMap, String strSQL) {
@@ -539,10 +592,11 @@ public class DataImportExecutor extends AbstractExecutor {
 		return strSQL;
 	}
 
-	private String getInsertSQL(Map<String, Object> rowMap, String rowno) throws BusinessException {
+	private Map<String, SQLParameter> getInsertSQL(Map<String, Object> rowMap, String rowno) throws BusinessException {
 		String strSQL = "insert into " + this.getBusinessEntity().getTable().getName();
 		String fieldList = "";
 		String valueList = "";
+		SQLParameter params = null;
 		for (Entry<String, Object> kv : rowMap.entrySet()) {
 			IAttribute attr = this.getBusinessEntity().getAttributeByName(kv.getKey());
 			if (StringUtils.isEmpty(fieldList)) {
@@ -575,11 +629,41 @@ public class DataImportExecutor extends AbstractExecutor {
 			case IType.TYPE_UFDate_END: // 日期（结束）
 			case IType.TYPE_UFDATE_LITERAL: // 模糊日期
 				kv.setValue(getDateString((String) kv.getValue()));
+				if (StringUtils.isEmpty(valueList)) {
+					if (kv.getValue() == null) {
+						valueList = "null";
+					} else {
+						valueList = "'" + String.valueOf(kv.getValue()) + "'";
+					}
+				} else {
+					if (kv.getValue() == null) {
+						valueList += ",null";
+					} else {
+						valueList += ",'" + String.valueOf(kv.getValue()) + "'";
+					}
+				}
+				break;
+			case IType.TYPE_BLOB: // BLOB
+			case IType.TYPE_CLOB: // CLOB
+			case IType.TYPE_IMAGE: // 图片类型
+				kv.setValue(convertBLOBValue(kv.getValue()));
+
+				if (StringUtils.isEmpty(valueList)) {
+					valueList = "?";
+				} else {
+					valueList += ", ?";
+				}
+
+				if (params == null) {
+					params = new SQLParameter();
+				}
+
+				params.addBlobParam(kv.getValue());
+				break;
 			case IType.TYPE_String: // 字符
 			case IType.TYPE_MEMO: // 备注
 			case IType.TYPE_UFTime: // 时间
 			case IType.TYPE_UFID: // 主键
-			case IType.TYPE_IMAGE: // 图片类型
 			case IType.TYPE_CUSTOM: // 自定义项
 			case IType.MULTILANGUAGE: // 多语文本
 			case IType.TYPE_FREE: // 自由项
@@ -660,7 +744,9 @@ public class DataImportExecutor extends AbstractExecutor {
 		strSQL += " (" + fieldList + ")";
 		strSQL += " values (" + valueList + ")";
 
-		return strSQL;
+		Map<String, SQLParameter> rtnMap = new HashMap<String, SQLParameter>();
+		rtnMap.put(strSQL, params);
+		return rtnMap;
 	}
 
 	public String getDateString(String dateString) {

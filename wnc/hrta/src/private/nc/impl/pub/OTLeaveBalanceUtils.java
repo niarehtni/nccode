@@ -10,6 +10,7 @@ import nc.bs.dao.DAOException;
 import nc.bs.framework.common.InvocationInfoProxy;
 import nc.hr.utils.InSQLCreator;
 import nc.jdbc.framework.processor.ColumnListProcessor;
+import nc.jdbc.framework.processor.ColumnProcessor;
 import nc.jdbc.framework.processor.MapListProcessor;
 import nc.pubitf.para.SysInitQuery;
 import nc.vo.hi.psndoc.PsnOrgVO;
@@ -234,5 +235,22 @@ public class OTLeaveBalanceUtils {
 			psnWorkStartDate.put(psnorg.getPk_psndoc(), (UFLiteralDate) psnorg.getAttributeValue("workagestartdate"));
 		}
 		return psnWorkStartDate;
+	}
+
+	public static String getLeaveBeginDate(String pk_org, UFLiteralDate settleDate, String pk_psndoc)
+			throws BusinessException {
+		String strSQL = "SELECT MAX(hi_psnjob.begindate) begindate "
+				+ " FROM hi_psnjob "
+				+ " inner join hi_psnorg on hi_psnjob.pk_psnorg = hi_psnorg.pk_psnorg "
+				+ " WHERE  hi_psnjob.pk_psndoc='"
+				+ pk_psndoc
+				+ "' AND '"
+				+ settleDate
+				+ "' BETWEEN hi_psnorg.begindate AND NVL(hi_psnorg.enddate, '9999-12-31') AND hi_psnjob.ismainjob='Y' AND hi_psnjob.pk_org = '"
+				+ pk_org
+				+ "' AND ( trnsevent = 4 OR  trnstype = '1001X110000000003O5G')"
+				+ " and (select count(pk_psnjob) from hi_psnjob where pk_psnorg = hi_psnorg.pk_psndoc and trnstype = '1001X110000000003O5G') > (select count(pk_psnjob) from hi_psnjob where pk_psnorg = hi_psnorg.pk_psndoc and trnstype = '1001X110000000003O5I')";
+		String leaveDate = (String) new BaseDAO().executeQuery(strSQL, new ColumnProcessor());
+		return leaveDate;
 	}
 }

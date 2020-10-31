@@ -35,9 +35,16 @@ public class LeaveRulePsnjobVarParser extends HIVarParser {
 					+ "."
 					+ getPrimaryKeyName()
 					+ "="
-					+ "(select pk_psnjob from hi_psnjob where pk_psndoc=tbm_leavebalance.pk_psndoc and begindate = (select max(job.begindate) from hi_psnjob job inner join hi_psnorg org on job.pk_psnorg = org.pk_psnorg and nvl(job.enddate, '9999-12-31') >= '"
-					+ calYear + "' || '-' || substr(org.workagestartdate, 6) and job.begindate < '" + nextYear
-					+ "' || '-' || substr(org.workagestartdate, 6) where job.pk_psndoc = tbm_leavebalance.pk_psndoc))";
+					+ "(select pk_psnjob from hi_psnjob where pk_psndoc=tbm_leavebalance.pk_psndoc "
+					// MOD by ssx on 2020-04-30
+					// 同日离职入职过滤掉离职记录
+					+ " and trnsevent<>4 "
+					// end MOD
+					+ " and begindate = (select max(job.begindate) from hi_psnjob job inner join hi_psnorg org on job.pk_psnorg = org.pk_psnorg and nvl(job.enddate, '9999-12-31') >= '"
+					+ calYear
+					+ "' || '-' || substr(org.workagestartdate, 6) and job.begindate < '"
+					+ nextYear
+					+ "' || '-' || substr(org.workagestartdate, 6) where job.trnsevent<>4 and job.pk_psndoc = tbm_leavebalance.pk_psndoc)  )";
 		}
 		// end
 		else {

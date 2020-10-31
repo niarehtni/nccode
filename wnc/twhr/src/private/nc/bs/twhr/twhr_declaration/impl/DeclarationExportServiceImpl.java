@@ -23,7 +23,7 @@ public class DeclarationExportServiceImpl implements IDeclarationExportService {
 
 	@Override
 	public List<Map<String, String[]>> getIITXTextReport(String pk_group, String pk_org, UFDate startdate,
-			UFDate enddate, String name, String email, String tel,String handle) throws BusinessException {
+			UFDate enddate, String name, String email, String tel, String handle) throws BusinessException {
 		List<Map<String, String[]>> rtns = new ArrayList<Map<String, String[]>>();
 		Set<String> orgsByLegal = LegalOrgUtilsEX.getOrgsByLegal(pk_org, pk_group);
 		// 通过法人公司找到所有的统编
@@ -61,15 +61,14 @@ public class DeclarationExportServiceImpl implements IDeclarationExportService {
 							+ startdate.toString().substring(5, 7));
 					formatter.setEndPeriod(enddate.toString().substring(0, 4) + enddate.toString().substring(5, 7));
 					String[] rtn = formatter.getData();
-					/*if(rtn!=null&&rtn.length>0){
-						String[] splits = rtn[0].split("null");
-						StringBuffer sb = new StringBuffer();
-						sb.append(splits[0]);
-						for (int j = 1; j < splits.length; j++) {
-							sb.append("    ").append(splits[j]);
-						}
-						rtn[0] = sb.toString();
-					}*/
+					/*
+					 * if(rtn!=null&&rtn.length>0){ String[] splits =
+					 * rtn[0].split("null"); StringBuffer sb = new
+					 * StringBuffer(); sb.append(splits[0]); for (int j = 1; j <
+					 * splits.length; j++) {
+					 * sb.append("    ").append(splits[j]); } rtn[0] =
+					 * sb.toString(); }
+					 */
 					if (rtn.length > 0) {
 						// 檔案名稱DPR+申報單位統一編號(8碼)+處理/申報日期(yyymmdd)+序號3碼
 						// 当前年
@@ -96,15 +95,14 @@ public class DeclarationExportServiceImpl implements IDeclarationExportService {
 					formatter.getRefsMap().put("CONTACTNAME", name);
 					formatter.setiYear(date.getYear());
 					String[] rtn = formatter.getData();
-					/*if(rtn!=null&&rtn.length>0){
-						String[] splits = rtn[0].split("null");
-						StringBuffer sb = new StringBuffer();
-						sb.append(splits[0]);
-						for (int j = 1; j < splits.length; j++) {
-							sb.append("    ").append(splits[j]);
-						}
-						rtn[0] = sb.toString();
-					}*/
+					/*
+					 * if(rtn!=null&&rtn.length>0){ String[] splits =
+					 * rtn[0].split("null"); StringBuffer sb = new
+					 * StringBuffer(); sb.append(splits[0]); for (int j = 1; j <
+					 * splits.length; j++) {
+					 * sb.append("    ").append(splits[j]); } rtn[0] =
+					 * sb.toString(); }
+					 */
 					if (rtn.length > 0) {
 						// 檔案名稱DPR+申報單位統一編號(8碼)+處理/申報日期(yyymmdd)+序號3碼
 						// 当前年
@@ -131,15 +129,14 @@ public class DeclarationExportServiceImpl implements IDeclarationExportService {
 					formatter.getRefsMap().put("CONTACTNAME", name);
 					formatter.setiYear(date.getYear());
 					String[] rtn = formatter.getData();
-					/*if(rtn!=null&&rtn.length>0){
-						String[] splits = rtn[0].split("null");
-						StringBuffer sb = new StringBuffer();
-						sb.append(splits[0]);
-						for (int j = 1; j < splits.length; j++) {
-							sb.append("    ").append(splits[j]);
-						}
-						rtn[0] = sb.toString();
-					}*/
+					/*
+					 * if(rtn!=null&&rtn.length>0){ String[] splits =
+					 * rtn[0].split("null"); StringBuffer sb = new
+					 * StringBuffer(); sb.append(splits[0]); for (int j = 1; j <
+					 * splits.length; j++) {
+					 * sb.append("    ").append(splits[j]); } rtn[0] =
+					 * sb.toString(); }
+					 */
 					if (rtn.length > 0) {
 						// 檔案名稱DPR+申報單位統一編號(8碼)+處理/申報日期(yyymmdd)+序號3碼
 						// 当前年

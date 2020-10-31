@@ -38,6 +38,8 @@ import nc.vo.pub.lang.UFLiteralDate;
 import nc.vo.trn.pub.TRNConst;
 import nc.vo.twhr.nhicalc.PsndocDefTableUtil;
 
+import org.apache.commons.lang.StringUtils;
+
 public class SaveAction extends RdsBaseAction {
 
 	private boolean isdisablepsn = Boolean.FALSE;
@@ -527,10 +529,28 @@ public class SaveAction extends RdsBaseAction {
 			return;
 		}
 
+		int editRow = getCurBillModel().getEditRow();
+
+		// ssx modified on 2020-06-24
+		// 前臺編輯部門版本後，同步部門PK
+		PsnJobVO selectedVO = (PsnJobVO) getListView().getBodySelectVO();
+		if (!StringUtils.isEmpty(selectedVO.getPk_dept_v())) {
+			String pk_dept = (String) NCLocator
+					.getInstance()
+					.lookup(IUAPQueryBS.class)
+					.executeQuery("select pk_dept from org_dept_v where pk_vid='" + selectedVO.getPk_dept_v() + "'",
+							new ColumnProcessor());
+			if (!StringUtils.isEmpty(pk_dept) && !pk_dept.equals(selectedVO.getPk_dept())) {
+				selectedVO.setPk_dept(pk_dept);
+				getListView().getBillListPanel().getBodyBillModel(curTabCode).setBodyRowVO(selectedVO, editRow);
+				getListView().getBillListPanel().getBodyBillModel().loadLoadRelationItemValue();
+			}
+		}
+		// end
+
 		// 非空校验
 		getListView().dataNotNullValidate();
 		// 开始结束时间的校验
-		int editRow = getCurBillModel().getEditRow();
 		SuperVO vo = (SuperVO) getListView().getBillListPanel().getBodyBillModel(curTabCode)
 				.getBodyValueRowVO(editRow, getListView().getCurClassName());
 		checkDataForTableType(getModel().getEditType(), curTabCode, vo);
@@ -654,31 +674,37 @@ public class SaveAction extends RdsBaseAction {
 
 		}
 
-		boolean isSynWork = (TRNConst.Table_NAME_DEPTCHG.equals(curTabCode) || TRNConst.Table_NAME_PART
-				.equals(curTabCode))
-				&& UIDialog.ID_YES == MessageDialog.showYesNoDlg(getEntranceUI(),
-						ResHelper.getString("6009tran", "06009tran0207")/*
-																		 * @ res
-																		 * "确认同步"
-																		 */,
-						ResHelper.getString("6009tran", "06009tran0063")/*
-																		 * @res
-																		 * "是否同步履历?"
-																		 */);
+		// ssx modified on 2020-08-11
+		// 異動時不需要保留WNC內履歷，默認設為N，不再提示
+		boolean isSynWork = false;
+		// boolean isSynWork = (TRNConst.Table_NAME_DEPTCHG.equals(curTabCode)
+		// || TRNConst.Table_NAME_PART
+		// .equals(curTabCode))
+		// && UIDialog.ID_YES == MessageDialog.showYesNoDlg(getEntranceUI(),
+		// ResHelper.getString("6009tran", "06009tran0207")/*
+		// * @ res
+		// * "确认同步"
+		// */,
+		// ResHelper.getString("6009tran", "06009tran0063")/*
+		// * @res
+		// * "是否同步履历?"
+		// */);
 
 		if (TRNConst.Table_NAME_TRIAL.equals(curTabCode)) {
 			TrialVO trail = (TrialVO) aggVO.getTableVO(curTabCode)[0];
 			if (trail.getEndflag() != null && trail.getEndflag().booleanValue() && trail.getTrialresult() != null
 					&& trail.getTrialresult() == TRNConst.TRIALRESULT_PASS) {
-				isSynWork = UIDialog.ID_YES == MessageDialog.showYesNoDlg(getEntranceUI(),
-						ResHelper.getString("6009tran", "06009tran0207")/*
-																		 * @ res
-																		 * "确认同步"
-																		 */,
-						ResHelper.getString("6009tran", "06009tran0063")/*
-																		 * @res
-																		 * "是否同步履历?"
-																		 */);
+				isSynWork = false;
+				// isSynWork = UIDialog.ID_YES ==
+				// MessageDialog.showYesNoDlg(getEntranceUI(),
+				// ResHelper.getString("6009tran", "06009tran0207")/*
+				// * @ res
+				// * "确认同步"
+				// */,
+				// ResHelper.getString("6009tran", "06009tran0063")/*
+				// * @res
+				// * "是否同步履历?"
+				// */);
 			}
 		}
 		if (TRNConst.Table_NAME_DEPTCHG.equals(curTabCode) || TRNConst.Table_NAME_DIMISSION.equals(curTabCode)) {
@@ -934,6 +960,7 @@ public class SaveAction extends RdsBaseAction {
 			// 处理团保
 			nhiService.dismissPsnGroupIns(selData.getParentVO().getPk_org(), selData.getParentVO().getPk_psndoc(),
 					beginDate.getDateBefore(1));
+			nhiService.deletePNI(selData.getParentVO().getPk_org(), beginDate);
 		} catch (BusinessException e) {
 			MessageDialog.showHintDlg(getModel().getContext().getEntranceUI(), "提示", e.getMessage());
 		}
@@ -1043,17 +1070,21 @@ public class SaveAction extends RdsBaseAction {
 	}
 
 	private boolean savePartchg(PsndocAggVO aggVO) throws BusinessException {
-
-		boolean isSynWork = UIDialog.ID_YES == MessageDialog
-				.showYesNoDlg(getEntranceUI(), ResHelper.getString("6009tran", "06009tran0207")/*
-																								 * @
-																								 * res
-																								 * "确认同步"
-																								 */,
-						ResHelper.getString("6009tran", "06009tran0063")/*
-																		 * @res
-																		 * "是否同步履历?"
-																		 */);
+		// ssx modified on 2020-08-11
+		// 異動時不需要保留WNC內履歷，默認設為N，不再提示
+		boolean isSynWork = false;
+		// boolean isSynWork = UIDialog.ID_YES == MessageDialog
+		// .showYesNoDlg(getEntranceUI(), ResHelper.getString("6009tran",
+		// "06009tran0207")/*
+		// * @
+		// * res
+		// * "确认同步"
+		// */,
+		// ResHelper.getString("6009tran", "06009tran0063")/*
+		// * @res
+		// * "是否同步履历?"
+		// */);
+		// end
 		aggVO.setTableVO(PartTimeVO.getDefaultTableName(), aggVO.getTableVO(curTabCode));
 		PsndocAggVO retVO = getIRdsService().savePartchg(aggVO, curTabCode, isSynWork, getContext().getPk_org());
 		setRetData(retVO, curTabCode);
@@ -1061,31 +1092,37 @@ public class SaveAction extends RdsBaseAction {
 	}
 
 	private boolean saveUpdateData(PsndocAggVO aggVO, ActionEvent event) throws Exception {
-
-		boolean isSynWork = (TRNConst.Table_NAME_DEPTCHG.equals(curTabCode) || TRNConst.Table_NAME_PART
-				.equals(curTabCode))
-				&& UIDialog.ID_YES == MessageDialog.showYesNoDlg(getEntranceUI(),
-						ResHelper.getString("6009tran", "06009tran0207")/*
-																		 * @ res
-																		 * "确认同步"
-																		 */,
-						ResHelper.getString("6009tran", "06009tran0063")/*
-																		 * @res
-																		 * "是否同步履历?"
-																		 */);
+		// ssx modified on 2020-08-11
+		// 異動時不需要保留WNC內履歷，默認設為N，不再提示
+		boolean isSynWork = false;
+		// boolean isSynWork = (TRNConst.Table_NAME_DEPTCHG.equals(curTabCode)
+		// || TRNConst.Table_NAME_PART
+		// .equals(curTabCode))
+		// && UIDialog.ID_YES == MessageDialog.showYesNoDlg(getEntranceUI(),
+		// ResHelper.getString("6009tran", "06009tran0207")/*
+		// * @ res
+		// * "确认同步"
+		// */,
+		// ResHelper.getString("6009tran", "06009tran0063")/*
+		// * @res
+		// * "是否同步履历?"
+		// */);
 		if (TRNConst.Table_NAME_TRIAL.equals(curTabCode)) {
 			TrialVO trail = (TrialVO) aggVO.getTableVO(curTabCode)[0];
 			if (trail.getEndflag() != null && trail.getEndflag().booleanValue() && trail.getTrialresult() != null
 					&& trail.getTrialresult() == TRNConst.TRIALRESULT_PASS) {
-				isSynWork = UIDialog.ID_YES == MessageDialog.showYesNoDlg(getEntranceUI(),
-						ResHelper.getString("6009tran", "06009tran0207")/*
-																		 * @ res
-																		 * "确认同步"
-																		 */,
-						ResHelper.getString("6009tran", "06009tran0063")/*
-																		 * @res
-																		 * "是否同步履历?"
-																		 */);
+				isSynWork = false;
+				// isSynWork = UIDialog.ID_YES ==
+				// MessageDialog.showYesNoDlg(getEntranceUI(),
+				// ResHelper.getString("6009tran", "06009tran0207")/*
+				// * @ res
+				// * "确认同步"
+				// */,
+				// ResHelper.getString("6009tran", "06009tran0063")/*
+				// * @res
+				// * "是否同步履历?"
+				// */);
+				// end
 			}
 		}
 		if (TRNConst.Table_NAME_DEPTCHG.equals(curTabCode) || TRNConst.Table_NAME_DIMISSION.equals(curTabCode)) {

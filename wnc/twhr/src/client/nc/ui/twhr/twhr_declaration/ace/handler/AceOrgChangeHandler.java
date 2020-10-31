@@ -5,9 +5,10 @@ import nc.ui.pubapp.uif2app.event.OrgChangedEvent;
 import nc.ui.pubapp.uif2app.view.BillForm;
 import nc.ui.pubapp.uif2app.view.util.BillPanelUtils;
 import nc.vo.uif2.LoginContext;
+
 /**
  * <b> 组织切换事件 </b>
- *
+ * 
  * @author author
  * @version tempProject version
  */
@@ -21,10 +22,10 @@ public class AceOrgChangeHandler implements IAppEventHandler<OrgChangedEvent> {
 			// 在编辑状态下，主组织切换时，清空界面数据，自动表体增行，并设置行号
 			this.billForm.addNew();
 		}
+		getBillForm().getModel().getContext().setPk_org(e.getNewPkOrg());
 		LoginContext context = this.billForm.getModel().getContext();
 		// 进行参照过滤
-		BillPanelUtils.setOrgForAllRef(this.billForm.getBillCardPanel(),
-				context);
+		BillPanelUtils.setOrgForAllRef(this.billForm.getBillCardPanel(), context);
 	}
 
 	public BillForm getBillForm() {

@@ -1,9 +1,10 @@
+package nc.impl.ta.formula.parser.func;
 /**
  * @Description: TODO
  * @author yejk
  * @date 2018-9-18 
  */
-package nc.impl.ta.formula.parser.func;
+
 
 import nc.impl.hr.formula.parser.FormulaParseHelper;
 import nc.impl.hr.formula.parser.IFormulaParser;

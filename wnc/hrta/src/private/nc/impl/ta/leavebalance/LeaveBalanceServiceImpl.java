@@ -30,6 +30,7 @@ import nc.itf.ta.PeriodServiceFacade;
 import nc.itf.ta.algorithm.IDateScope;
 import nc.itf.ta.algorithm.impl.DefaultDateScope;
 import nc.md.persist.framework.MDPersistenceService;
+import nc.pubitf.para.SysInitQuery;
 import nc.vo.bd.pub.IPubEnumConst;
 import nc.vo.hi.psndoc.PsnOrgVO;
 import nc.vo.ml.MultiLangUtil;
@@ -101,6 +102,10 @@ public class LeaveBalanceServiceImpl implements ILeaveBalanceQueryService, ILeav
 		// 将分组后的数据批量处理
 		Map<String, LeaveTypeCopyVO> typeMap = NCLocator.getInstance().lookup(ITimeItemQueryService.class)
 				.queryLeaveCopyTypeMapByOrg(pk_org);
+
+		String initotleavetype = SysInitQuery.getParaString(pk_org, "TWHRT08");
+		String initexleavetype = SysInitQuery.getParaString(pk_org, "TWHRT10");
+
 		Map<String, LeaveBalanceVO> resultMap = new HashMap<String, LeaveBalanceVO>();
 		for (String key : balanceMap.keySet()) {
 			SuperVO[] vos = balanceMap.get(key).toArray(new SuperVO[0]);
@@ -111,7 +116,10 @@ public class LeaveBalanceServiceImpl implements ILeaveBalanceQueryService, ILeav
 			String month = isReg ? ((LeaveRegVO) vos[0]).getLeavemonth() : ((LeavehVO) vos[0]).getLeavemonth();
 			// 不需要处理结余时长
 			Map<String, LeaveBalanceVO> calMap = queryAndCalLeaveBalanceVO(pk_org, typeVO, pk_psnorgs, year, month, vos);
-			if (MapUtils.isEmpty(calMap))
+			// jimmy20200513 add 年度補休 & 加班轉補休，不處理結餘判斷
+			if (MapUtils.isEmpty(calMap)
+					|| ((!StringUtils.isEmpty(initotleavetype) && initotleavetype.equals(typeVO.getPk_timeitemcopy())) || (!StringUtils
+							.isEmpty(initexleavetype) && initexleavetype.equals(typeVO.getPk_timeitemcopy()))))
 				continue;
 			resultMap.putAll(calMap);
 		}
@@ -554,6 +562,14 @@ public class LeaveBalanceServiceImpl implements ILeaveBalanceQueryService, ILeav
 					continue;
 				balanceVOs = maintainImpl.calculate(pk_org, typeVO, year, null, balanceVOs, calculateTime, true);
 				// 对于入职日结算的类型，当年不可能有可以结算的
+
+				// ssx added on 2020-05-19
+				// 對於以年資起算日結算的，當年有可能有可以結算的
+				if (setPeriod == TimeItemCopyVO.LEAVESETPERIOD_STARTDATE) {
+					maintainImpl.secondSettlement4HireDate(pk_org, typeVO, year, balanceVOs, calDate, false, false,
+							false, true, salaryYear, salaryMonth);
+				}
+				// end
 				continue;
 			}
 			if (periodVO == null)

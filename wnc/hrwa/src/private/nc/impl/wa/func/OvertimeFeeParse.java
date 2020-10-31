@@ -108,9 +108,10 @@ public class OvertimeFeeParse extends AbstractPreExcutorFormulaParse {
 		String[] psndocArr = psndocList.toArray(new String[0]);
 		/* 获取计算人员集合 end */
 
-		int rows = (int) basedao.executeQuery(
-				"select count(*) from wa_cacu_overtimefee where pk_wa_class='" + pk_wa_class + "' and creator='"
-						+ this.getContext().getPk_loginUser() + "' and intComp=" + String.valueOf(intComp),
+		int rows = (int) basedao.executeQuery("select case when (sum("
+				+ ("null".equals(pk_group_item) ? "taxfreehours+taxablehours" : "amounttaxfree+amounttaxable")
+				+ ")) > 0 then 1 else 0 end cnt from wa_cacu_overtimefee where pk_wa_class='" + pk_wa_class
+				+ "' and creator='" + this.getContext().getPk_loginUser() + "' and intComp=" + String.valueOf(intComp),
 				new ColumnProcessor());
 		if (rows == 0) {
 			// 调用接口返回应税或免税加班费
@@ -123,7 +124,7 @@ public class OvertimeFeeParse extends AbstractPreExcutorFormulaParse {
 			 */
 			// ssx modified for Multi-Thread Calculation
 			Map<String, UFDouble[]> ovtFeeResult = segDetailService.calculateOvertimeFeeByDate(pk_org, psndocArr,
-					startDate, endDate, null, null, pk_group_item, false);
+					startDate, endDate, null, null, (pk_group_item.equals("null") ? null : pk_group_item), false);
 			// end
 			if (null == ovtFeeResult || ovtFeeResult.size() == 0) {
 				throw new BusinessException("调用接口ISegDetailService获取应税(免税)加班费为空");
@@ -155,8 +156,15 @@ public class OvertimeFeeParse extends AbstractPreExcutorFormulaParse {
 		if (m.find()) {
 			isTaxFreeFlag = Integer.valueOf(m.group());
 		}
+
+		// 薪资项目分组
+		String pk_group_item = String.valueOf(arguments[2]).replaceAll("\'", "");
+
 		fvo.setAliTableName("wa_cacu_data");
-		fvo.setReplaceStr("coalesce(" + "(select " + (isTaxFreeFlag == 0 ? "amounttaxable" : "amounttaxfree")
+		fvo.setReplaceStr("coalesce("
+				+ "(select "
+				+ ((pk_group_item == null || pk_group_item.equals("null")) ? (isTaxFreeFlag == 0 ? "taxablehours"
+						: "taxfreehours") : (isTaxFreeFlag == 0 ? "amounttaxable" : "amounttaxfree"))
 				+ " from wa_cacu_overtimefee where pk_wa_class=wa_cacu_data.pk_wa_class and creator='"
 				+ this.getContext().getPk_loginUser() + "' and intcomp=" + String.valueOf(intComp)
 				+ " and pk_psndoc=wa_cacu_data.pk_psndoc)" + ", 0)");

@@ -52,7 +52,7 @@ import org.apache.commons.lang.ArrayUtils;
 
 /**
  * 薪资档案批量修改Action
- *
+ * 
  * @author: zhoucx
  * @date: 2009-11-30 下午05:02:17
  * @since: eHR V6.0
@@ -65,19 +65,31 @@ public class BatchEditPayfileAction extends PayfileBaseAction implements IWizard
 
 	private static final long serialVersionUID = 3762858219065755582L;
 
-	private final String actionName = ResHelper.getString("60130payfile","060130payfile0331")/*@res "批量修改"*/;
+	private final String actionName = ResHelper.getString("60130payfile", "060130payfile0331")/*
+																							 * @
+																							 * res
+																							 * "批量修改"
+																							 */;
 
 	private PayfileWizardModel wizardModel = null;
-	
-	private Map<String,String> psnCodes=null;
+
+	private Map<String, String> psnCodes = null;
 
 	public BatchEditPayfileAction() {
 		super();
 		ActionInitializer.initializeAction(this, IActionCode.BROW);
 		putValue(AbstractAction.SMALL_ICON, ImageIconAccessor.getIcon("uapde/edit.gif"));
-		setBtnName(ResHelper.getString("60130payfile","060130payfile0331")/*@res "批量修改"*/);
+		setBtnName(ResHelper.getString("60130payfile", "060130payfile0331")/*
+																			 * @res
+																			 * "批量修改"
+																			 */);
 		putValue(Action.ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_E, Event.CTRL_MASK + Event.SHIFT_MASK));
-		putValue(Action.SHORT_DESCRIPTION, ResHelper.getString("60130payfile","060130payfile0331")/*@res "批量修改"*/+"(Ctrl+Shift+E)");
+		putValue(Action.SHORT_DESCRIPTION, ResHelper.getString("60130payfile", "060130payfile0331")/*
+																									 * @
+																									 * res
+																									 * "批量修改"
+																									 */
+				+ "(Ctrl+Shift+E)");
 	}
 
 	public PayfileAppModel getPayfileModel() {
@@ -92,8 +104,8 @@ public class BatchEditPayfileAction extends PayfileBaseAction implements IWizard
 	public void doActionForExtend(ActionEvent e) throws Exception {
 
 		// 批量修改向导对话框
-		WizardDialog wizardDialog = new WizardDialog(getModel().getContext().getEntranceUI(),
-				newWizardModel(), getSteps(), null);
+		WizardDialog wizardDialog = new WizardDialog(getModel().getContext().getEntranceUI(), newWizardModel(),
+				getSteps(), null);
 		wizardDialog.setWizardDialogListener(this);
 		wizardDialog.setResizable(true);
 		wizardDialog.setSize(new Dimension(800, 620));
@@ -104,8 +116,8 @@ public class BatchEditPayfileAction extends PayfileBaseAction implements IWizard
 		PayfileModelDataManager dataManager = (PayfileModelDataManager) super.getDataManager();
 
 		// 第一步 查询人员
-		WizardStep step1 = new SearchPsnWizardFirstStep(getPayfileModel(), dataManager,
-				WizardActionType.UPDATE, actionName);
+		WizardStep step1 = new SearchPsnWizardFirstStep(getPayfileModel(), dataManager, WizardActionType.UPDATE,
+				actionName);
 		// 第二步 选择人员
 		WizardStep step2 = new SearchPsnWizardSecondStep(getPayfileModel(), dataManager, actionName);
 		// 第三步 修改项目
@@ -144,9 +156,9 @@ public class BatchEditPayfileAction extends PayfileBaseAction implements IWizard
 		Vector<PayfileVO> v_add2Prnt = new Vector<PayfileVO>();
 
 		PayfileVO[] cannotEdits = getWizardModel().getCannotEditVOs();
-		//如果存在不能修改的记录。（多次发放其他子方案已存在的记录）
-		if(!ArrayUtils.isEmpty(cannotEdits)){
-			for(PayfileVO vo : cannotEdits){
+		// 如果存在不能修改的记录。（多次发放其他子方案已存在的记录）
+		if (!ArrayUtils.isEmpty(cannotEdits)) {
+			for (PayfileVO vo : cannotEdits) {
 				v_cannotEdit.add(vo.getPk_psndoc());
 			}
 		}
@@ -160,31 +172,35 @@ public class BatchEditPayfileAction extends PayfileBaseAction implements IWizard
 			// Logger.error(e1.getMessage(), e1);
 			// throw new WizardActionException(e1);
 			// }
-			//add by ward 20180112
-			Map<String,String> isForeginMap=null;
-			TaxBaseVO taxBaseVO=new TaxBaseVO();
-			if(null!=batchvo.getTaxtableid()&&!"".equals(batchvo.getTaxtableid())){
+			// add by ward 20180112
+			Map<String, String> isForeginMap = null;
+			TaxBaseVO taxBaseVO = new TaxBaseVO();
+			if (null != batchvo.getTaxtableid() && !"".equals(batchvo.getTaxtableid())) {
 				try {
 					taxBaseVO = (TaxBaseVO) getUAPQueryBS().retrieveByPK(TaxBaseVO.class, batchvo.getTaxtableid());
 				} catch (BusinessException e2) {
-					Logger.error(e2.getMessage(),e2);
+					Logger.error(e2.getMessage(), e2);
 				}
 			}
-			if(Integer.valueOf(3).equals(taxBaseVO.getItbltype())){
+			if (Integer.valueOf(3).equals(taxBaseVO.getItbltype())) {
 				try {
-					isForeginMap=getIsForegin(addPsntemp);
+					isForeginMap = getIsForegin(addPsntemp);
 				} catch (BusinessException e) {
 					Logger.error(e.getMessage(), e);
 					WizardActionException e1 = new WizardActionException(e);
-					e1.addMsg(ResHelper.getString("60130payfile","060130payfile0245")/*@res "提示"*/, e.getMessage());
+					e1.addMsg(ResHelper.getString("60130payfile", "060130payfile0245")/*
+																					 * @
+																					 * res
+																					 * "提示"
+																					 */, e.getMessage());
 					throw e1;
 				}
 			}
-			List<PayfileVO> listPayfileVOs=new ArrayList<PayfileVO>();//能够保存的数据
-			List<PayfileVO> errorList=new ArrayList<PayfileVO>();//存在问题的数据
+			List<PayfileVO> listPayfileVOs = new ArrayList<PayfileVO>();// 能够保存的数据
+			List<PayfileVO> errorList = new ArrayList<PayfileVO>();// 存在问题的数据
 			for (PayfileVO element : addPsntemp) {
 				element.setPk_prnt_class(getWaLoginVO().getPk_prnt_class());
-				if(!v_cannotEdit.contains(element.getPk_psndoc())){
+				if (!v_cannotEdit.contains(element.getPk_psndoc())) {
 					// 界面的填写数据。
 					if (batchvo.getTaxedit().booleanValue()) {
 						element.setTaxtype(batchvo.getTaxtype());
@@ -207,44 +223,49 @@ public class BatchEditPayfileAction extends PayfileBaseAction implements IWizard
 						element.setLibdeptvid(batchvo.getLibdeptvid());
 					}
 
+					// ssx added on 2020-10-22
+					// 設置補充保費計算方式
+					element.setExnhitype(batchvo.getExnhitype());
+					//
+
 					// 如果vo中有“不扣税”,但批改时只修改了减免税，未修改扣税方式可能引起数据的不一致，重置这部分数据
 					if (Taxtype.TAXFREE.equalsValue(element.getTaxtype()) && element.getIsderate().booleanValue()) {
 						element.setIsderate(UFBoolean.valueOf(false));
 						element.setDerateptg(null);
 					}
-					//多次发放中，其他子方案已经存在的数据（其他子方案中为停发），只有停发标志是可以修改的
+					// 多次发放中，其他子方案已经存在的数据（其他子方案中为停发），只有停发标志是可以修改的
 					if (batchvo.getStopedit().booleanValue()) {
 						element.setStopflag(batchvo.getStopflag());
 					}
-					if(WaLoginVOHelper.isSubClass(getWaLoginVO())){//多次发放
+					if (WaLoginVOHelper.isSubClass(getWaLoginVO())) {// 多次发放
 						v_add2Prnt.add(element);
 					}
 				}
-				//多次发放中，其他子方案已经存在的数据，只有停发标志是可以修改的
+				// 多次发放中，其他子方案已经存在的数据，只有停发标志是可以修改的
 				if (batchvo.getStopedit().booleanValue()) {
 					element.setStopflag(batchvo.getStopflag());
 				}
-				if(Integer.valueOf(3).equals(taxBaseVO.getItbltype())){
-					if("N".equals(isForeginMap.get(element.getPk_psndoc()))){
+				if (Integer.valueOf(3).equals(taxBaseVO.getItbltype())) {
+					if ("N".equals(isForeginMap.get(element.getPk_psndoc()))) {
 						errorList.add(element);
-					}else{
+					} else {
 						listPayfileVOs.add(element);
 					}
-				}else{
+				} else {
 					listPayfileVOs.add(element);
 				}
 
 			}
 			PayfileVO[] add2total = null;
-			if(v_add2Prnt.size()>0){
+			if (v_add2Prnt.size() > 0) {
 				add2total = new PayfileVO[v_add2Prnt.size()];
 				v_add2Prnt.copyInto(add2total);
 			}
 			// 批量修改。
 			try {
-//				WADelegator.getPayfile().update(addPsntemp,add2total);
-				if(listPayfileVOs!=null&&listPayfileVOs.size()>0)
-					WADelegator.getPayfile().update(listPayfileVOs.toArray(new PayfileVO[0]),add2total);	
+				// WADelegator.getPayfile().update(addPsntemp,add2total);
+				if (listPayfileVOs != null && listPayfileVOs.size() > 0)
+					WADelegator.getPayfile().update(listPayfileVOs.toArray(new PayfileVO[0]), add2total);
 			} catch (BusinessException e) {
 				Logger.error(e.getMessage(), e);
 				throw new WizardActionException(e);
@@ -254,27 +275,44 @@ public class BatchEditPayfileAction extends PayfileBaseAction implements IWizard
 			getWizardModel().setSelectVOs(null);
 			// 刷新页面
 			try {
-				((PayfileModelDataManager) getDataManager()).getPaginationModel().setObjectPks(((PayfileModelDataManager) getDataManager()).getPks());
+				((PayfileModelDataManager) getDataManager()).getPaginationModel().setObjectPks(
+						((PayfileModelDataManager) getDataManager()).getPks());
 			} catch (BusinessException e) {
 				Logger.error(e.getMessage());
 			}
-			if(errorList!=null&&errorList.size()>0){
-				String msg=ResHelper.getString("notice","2notice-tw-000002")/*人员编码为*/;
+			if (errorList != null && errorList.size() > 0) {
+				String msg = ResHelper.getString("notice", "2notice-tw-000002")/* 人员编码为 */;
 				for (int i = 0; i < errorList.size(); i++) {
-					String code=psnCodes.get(errorList.get(i).getPk_psndoc());
-					if(i==errorList.size()-1)
-						msg+=code;
+					String code = psnCodes.get(errorList.get(i).getPk_psndoc());
+					if (i == errorList.size() - 1)
+						msg += code;
 					else
-						msg+=code+"、";
+						msg += code + "、";
 				}
-				msg+=ResHelper.getString("notice","2notice-tw-000003")/*的员工不是外籍员工，请确认员工咨询维护中是否正确维护是否外籍员工。*/;
-				MessageDialog.showErrorDlg(null, ResHelper.getString("60130payfile","060130payfile0245"), msg);
-			}else{
-				putValue(HrAction.MESSAGE_AFTER_ACTION, ResHelper.getString("60130payfile","060130payfile0351")/*@res "批量修改操作成功。"*/);
+				msg += ResHelper.getString("notice", "2notice-tw-000003")/*
+																		 * 的员工不是外籍员工
+																		 * ，
+																		 * 请确认员工咨询维护中是否正确维护是否外籍员工
+																		 * 。
+																		 */;
+				MessageDialog.showErrorDlg(null, ResHelper.getString("60130payfile", "060130payfile0245"), msg);
+			} else {
+				putValue(HrAction.MESSAGE_AFTER_ACTION, ResHelper.getString("60130payfile", "060130payfile0351")/*
+																												 * @
+																												 * res
+																												 * "批量修改操作成功。"
+																												 */);
 			}
-		}else{
+		} else {
 			WizardActionException e = new WizardActionException(new BusinessException());
-			e.addMsg(ResHelper.getString("60130payfile","060130payfile0245")/*@res "提示"*/, ResHelper.getString("60130payfile","060130payfile0281")/*@res "请选择人员!"*/);
+			e.addMsg(ResHelper.getString("60130payfile", "060130payfile0245")/*
+																			 * @res
+																			 * "提示"
+																			 */,
+					ResHelper.getString("60130payfile", "060130payfile0281")/*
+																			 * @res
+																			 * "请选择人员!"
+																			 */);
 			throw e;
 		}
 	}
@@ -296,30 +334,35 @@ public class BatchEditPayfileAction extends PayfileBaseAction implements IWizard
 		// TODO Auto-generated method stub
 
 	}
+
 	/**
 	 * 根据要插入的薪资档案VO，查询所有员工是否为外籍员工
+	 * 
 	 * @param vos
 	 * @return
 	 * @throws BusinessException
 	 */
-	public Map<String,String> getIsForegin(PayfileVO[] vos) throws BusinessException{
-			String[] pks = SQLHelper.getStrArray(vos, PayfileVO.PK_PSNDOC);
-			InSQLCreator isc = new InSQLCreator();
-			String inPsndocSql = isc.getInSQL(pks);
-			String where = PayfileVO.PK_PSNDOC+" in("+inPsndocSql+")";
-			IUAPQueryBS queryBS=NCLocator.getInstance().lookup(IUAPQueryBS.class);
-			@SuppressWarnings("unchecked")
-			List<PsndocVO> list=(ArrayList<PsndocVO>) queryBS.retrieveByClause(PsndocVO.class, where);
-			Map<String,String> SLOMap=new HashMap<String, String>();
-			psnCodes=new HashMap<String,String>();
-			for (PsndocVO psndocVO : list) {
-				SLOMap.put(psndocVO.getPk_psndoc(), psndocVO.getAttributeValue(LocalizationSysinitUtil.getTwhrlPsn("TWHRLPSN01"))!=null?psndocVO.getAttributeValue(LocalizationSysinitUtil.getTwhrlPsn("TWHRLPSN01")).toString():"N");
-				psnCodes.put(psndocVO.getPk_psndoc(), psndocVO.getCode());
-			}
-			return SLOMap;
+	public Map<String, String> getIsForegin(PayfileVO[] vos) throws BusinessException {
+		String[] pks = SQLHelper.getStrArray(vos, PayfileVO.PK_PSNDOC);
+		InSQLCreator isc = new InSQLCreator();
+		String inPsndocSql = isc.getInSQL(pks);
+		String where = PayfileVO.PK_PSNDOC + " in(" + inPsndocSql + ")";
+		IUAPQueryBS queryBS = NCLocator.getInstance().lookup(IUAPQueryBS.class);
+		@SuppressWarnings("unchecked")
+		List<PsndocVO> list = (ArrayList<PsndocVO>) queryBS.retrieveByClause(PsndocVO.class, where);
+		Map<String, String> SLOMap = new HashMap<String, String>();
+		psnCodes = new HashMap<String, String>();
+		for (PsndocVO psndocVO : list) {
+			SLOMap.put(psndocVO.getPk_psndoc(),
+					psndocVO.getAttributeValue(LocalizationSysinitUtil.getTwhrlPsn("TWHRLPSN01")) != null ? psndocVO
+							.getAttributeValue(LocalizationSysinitUtil.getTwhrlPsn("TWHRLPSN01")).toString() : "N");
+			psnCodes.put(psndocVO.getPk_psndoc(), psndocVO.getCode());
+		}
+		return SLOMap;
 	}
+
 	private IUAPQueryBS queryBS = null;
-	
+
 	public IUAPQueryBS getUAPQueryBS() {
 		if (queryBS == null) {
 			queryBS = NCLocator.getInstance().lookup(IUAPQueryBS.class);

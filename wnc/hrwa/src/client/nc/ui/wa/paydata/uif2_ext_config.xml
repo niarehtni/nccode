@@ -1,23 +1,45 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE beans PUBLIC "-//SPRING//DTD BEAN//EN" "http://www.springframework.org/dtd/spring-beans.dtd">
 <beans>
-<bean id="ActionExt_mediator" class="nc.ui.uif2.uiextend.ActionExtPreprocessor"
-  init-method="process">
-  <property name="actionExtList">
-   <list>
-	<bean class="nc.ui.uif2.uiextend.ActionExtInfo">
-		<property name="actionContainer" ref="listViewActions" />
-		<property name="uistate" value="NOTEDIT_STATE" />
-		<property name="targetAction" ref="CaculateAction" /> 
-		<property name="position" value="BEFORE_POSITION" />
-		<property name="extType" value="INSERT_EXTTYPE"	/>
-		<property name="action"	ref="GroupInsCaclAction" />
+	<bean id="ActionExt_mediator" class="nc.ui.uif2.uiextend.ActionExtPreprocessor"
+	  init-method="process">
+	  <property name="actionExtList">
+	   <list>
+		<bean class="nc.ui.uif2.uiextend.ActionExtInfo">
+			<property name="actionContainer" ref="listViewActions" />
+			<property name="uistate" value="NOTEDIT_STATE" />
+			<property name="targetAction" ref="CaculateAction" /> 
+			<property name="position" value="BEFORE_POSITION" />
+			<property name="extType" value="INSERT_EXTTYPE"	/>
+			<property name="action"	ref="GroupInsCaclAction" />
+		</bean>
+		<bean class="nc.ui.uif2.uiextend.ActionExtInfo">
+			<property name="actionContainer" ref="listViewActions" />
+			<property name="uistate" value="NOTEDIT_STATE" />
+			<property name="targetAction" ref="ExportXlsAction" /> 
+			<property name="position" value="BEFORE_POSITION" />
+			<property name="extType" value="REPLACE_EXTTYPE"	/>
+			<property name="action"	ref="ExportGroupAction" />
+		</bean>
+	   </list>  
+	  </property>
 	</bean>
-   </list>  
-  </property>
-</bean>
-<bean id="GroupInsCaclAction" class="nc.ui.wa.paydata.action.GroupInsCaclAction">
-	<property name="model" ref="ManageAppModel" />
-	<property name="dataManager" ref="modelDataManager"></property>
-</bean>
+	<bean id="GroupInsCaclAction" class="nc.ui.wa.paydata.action.GroupInsCaclAction">
+		<property name="model" ref="ManageAppModel" />
+		<property name="dataManager" ref="modelDataManager"></property>
+	</bean>
+	<bean id="PDFEmailSendAction" class="nc.ui.wa.paydata.action.PDFEmailSendAction">
+		<property name="model" ref="ManageAppModel" />
+		<property name="dataManager" ref="modelDataManager"></property>
+	</bean>
+	<bean id="ExportGroupAction" class="nc.funcnode.ui.action.GroupAction">
+		<property name="code" value="exportgroup"></property>
+		<property name="name" value="導出" />
+		<property name="actions">
+			<list>
+				<ref bean="ExportXlsAction" />
+				<ref bean="PDFEmailSendAction" />
+			</list>
+		</property>
+	</bean>
 </beans>

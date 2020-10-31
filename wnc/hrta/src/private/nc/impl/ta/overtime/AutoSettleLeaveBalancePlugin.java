@@ -14,7 +14,7 @@ public class AutoSettleLeaveBalancePlugin implements IBackgroundWorkPlugin {
 	@Override
 	public PreAlertObject executeTask(BgWorkingContext context) throws BusinessException {
 		// 结算日期：当前日期前一日
-		UFLiteralDate settleDate = new UFLiteralDate().getDateBefore(1);
+		UFLiteralDate settleDate = new UFLiteralDate(new UFLiteralDate().toString() + " 00:00:00");// .getDateBefore(1);
 		String[] pk_orgs = context.getPk_orgs();
 
 		if (pk_orgs != null && pk_orgs.length > 0) {

@@ -392,7 +392,25 @@
 		<property name="context"><ref bean="context" /></property>
 	</bean>
 	
-	<bean id="exportApplyAction" class="nc.ui.hrwa.sumincometax.action.ExportApplyAction">
+	<bean id="exportApplyAction" class="nc.funcnode.ui.action.GroupAction">
+		<property name="code" value="exportApply"></property>
+		<property name="name" value="®a³öÉêˆó™n"></property>
+		<property name="actions">
+			<list>
+			    <ref bean="taxApplyAction" />
+				<ref bean="fDTaxApplyAction" />
+			</list>
+		</property>
+	</bean>
+	
+	<bean id="taxApplyAction" class="nc.ui.hrwa.sumincometax.action.ExportApplyAction">
+		<property name="model"><ref bean="bmModel"/></property>
+		<property name="dataManager"><ref bean="bmModelModelDataManager"/></property>
+		<property name="billForm"><ref bean="billForm"/></property>
+		<property name="exceptionHandler"><ref bean="exceptionHandler" /></property>
+	</bean>
+	
+	<bean id="fDTaxApplyAction" class="nc.ui.hrwa.sumincometax.action.FDExportApplyAction">
 		<property name="model"><ref bean="bmModel"/></property>
 		<property name="dataManager"><ref bean="bmModelModelDataManager"/></property>
 		<property name="billForm"><ref bean="billForm"/></property>

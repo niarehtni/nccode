@@ -763,10 +763,16 @@ public class TaiwanNHICalculator extends BaseDAOManager {
 									// 應付保費
 									healVO.setHealthAmount(healVO.getHealthAmount().add(line.getEmployeeamount())
 											.setScale(0, UFDouble.ROUND_HALF_UP));
+
 									// 应付健保费个人承担部分
-									healVO.setHealthAmount_Psn(healVO.getHealthAmount_Psn()
-											.add(line.getEmployeeamount().sub(gvmHelpAmount))
-											.setScale(0, UFDouble.ROUND_HALF_UP));
+									// mod 个人健保费不算眷属 tank 2019年5月30日11:20:05
+									// 勞健保拆分問題 by George 20200514 缺陷Bug #35078
+									// 從本地化合併代碼過來WNC，個人健保費算到眷屬的，應區分
+									if (((String) data.get("psndocid")).equals(healthid)) {
+										healVO.setHealthAmount_Psn(healVO.getHealthAmount_Psn()
+												.add(line.getEmployeeamount().sub(gvmHelpAmount))
+												.setScale(0, UFDouble.ROUND_HALF_UP));
+									}
 
 									// 不是本人時，健保費為應付保費
 									if (!((String) data.get("psndocid")).equals(healthid)) {
@@ -850,7 +856,10 @@ public class TaiwanNHICalculator extends BaseDAOManager {
 				for (Map<String, Object> healdata : healDataByPsn) {
 					if (!insertedSubPK.contains((String) healdata.get("pk_psndoc_sub"))) {
 						String healid = (String) healdata.get("healthid");
-						if (help.getKey().equals(healid)) {
+
+						// 勞健保拆分問題 by George 20200515 缺陷Bug #35078
+						// 條件要過濾"本人"，計算勞健保底下不應有稱謂="本人"
+						if (help.getKey().equals(healid) && !"本人".equals(healdata.get("relation"))) {
 							insertedSubPK.add((String) healdata.get("pk_psndoc_sub"));
 							String pk_nhicalc = (String) healdata.get("pk_nhicalc");
 							EpyfamilyVO newvo = new EpyfamilyVO();
@@ -1325,43 +1334,46 @@ public class TaiwanNHICalculator extends BaseDAOManager {
 						vo.setNhiBeginDate(vo.getRetireBegin());
 						vo.setNhiEndDate(vo.getRetireEnd());
 					}
-					// 舊制
-					if (vo.getIfOldRetire().booleanValue()) {
-						vo.setRetireWthAmount_Psn(UFDouble.ZERO_DBL);
-						vo.setRetireWthAmount_Org(UFDouble.ZERO_DBL);
-						vo.setRetireDays(UFDouble.ZERO_DBL);
-					} else {
-						// 現制
-						// vo.getRetireWthAmount_Psn() = 員工自身設定的：勞退自提比例(%)
-						// vo.getRetireWthRate_Psn() = 參數指定員工自提比例（作為上限使用）
-						if (vo.getRetireWthAmount_Psn() == null) {
-							vo.setRetireWthAmount_Psn(UFDouble.ZERO_DBL);
-						} else {
-							if (SalaryDecryptUtil.decrypt(vo.getRetireWthAmount_Psn().doubleValue()) > vo
-									.getRetireWthRate_Psn().multiply(100).doubleValue()) {
-								throw new BusinessException(NCLangResOnserver.getInstance().getStrByID(
-										"twhr_paydata",
-										"TaiwanNHICalculator-0013",
-										null,
-										new String[] {
-												vo.getPsnCode(),
-												vo.getRetireWthRate_Psn().multiply(100)
-														.setScale(2, UFDouble.ROUND_HALF_UP).toString() })/*
-																										 * 員工xxx設定的自提比例超出法規允許的最大比例xx
-																										 */
-								);
-							} else {
-								// MOD 重新封装针对UFDouble的解密方法 by ssx on 2019-01-15
-								// MOD 补充解密方法的调用 by Andy on 2019-01-14
-								vo.setRetireWthAmount_Psn(vo.getRetireRange()
-										.multiply(SalaryDecryptUtil.decrypt(vo.getRetireWthAmount_Psn()).div(100))
-										.multiply(vo.getRetireDays()).div(30).setScale(0, UFDouble.ROUND_HALF_UP));
-							}
-						}
+					// remarked by ssx on 2020-07-08
+					// Jessie要求全部舊制邏輯都拿掉 for Redmine#36383
+					// // 舊制
+					// if (vo.getIfOldRetire().booleanValue()) {
+					// vo.setRetireWthAmount_Psn(UFDouble.ZERO_DBL);
+					// vo.setRetireWthAmount_Org(UFDouble.ZERO_DBL);
+					// vo.setRetireDays(UFDouble.ZERO_DBL);
+					// } else {
 
-						vo.setRetireWthAmount_Org(vo.getRetireRange().multiply(vo.getRetireWthRate_Org())
-								.multiply(vo.getRetireDays()).div(30).setScale(0, UFDouble.ROUND_HALF_UP));
+					// 現制
+					// vo.getRetireWthAmount_Psn() = 員工自身設定的：勞退自提比例(%)
+					// vo.getRetireWthRate_Psn() = 參數指定員工自提比例（作為上限使用）
+					if (vo.getRetireWthAmount_Psn() == null) {
+						vo.setRetireWthAmount_Psn(UFDouble.ZERO_DBL);
+					} else {
+						if (SalaryDecryptUtil.decrypt(vo.getRetireWthAmount_Psn().doubleValue()) > vo
+								.getRetireWthRate_Psn().multiply(100).doubleValue()) {
+							throw new BusinessException(NCLangResOnserver.getInstance().getStrByID(
+									"twhr_paydata",
+									"TaiwanNHICalculator-0013",
+									null,
+									new String[] {
+											vo.getPsnCode(),
+											vo.getRetireWthRate_Psn().multiply(100).setScale(2, UFDouble.ROUND_HALF_UP)
+													.toString() })/*
+																 * 員工xxx設定的自提比例超出法規允許的最大比例xx
+																 */
+							);
+						} else {
+							// MOD 重新封装针对UFDouble的解密方法 by ssx on 2019-01-15
+							// MOD 补充解密方法的调用 by Andy on 2019-01-14
+							vo.setRetireWthAmount_Psn(vo.getRetireRange()
+									.multiply(SalaryDecryptUtil.decrypt(vo.getRetireWthAmount_Psn()).div(100))
+									.multiply(vo.getRetireDays()).div(30).setScale(0, UFDouble.ROUND_HALF_UP));
+						}
 					}
+
+					vo.setRetireWthAmount_Org(vo.getRetireRange().multiply(vo.getRetireWthRate_Org())
+							.multiply(vo.getRetireDays()).div(30).setScale(0, UFDouble.ROUND_HALF_UP));
+					// } end for Redmine#36383
 				}
 			}
 		}

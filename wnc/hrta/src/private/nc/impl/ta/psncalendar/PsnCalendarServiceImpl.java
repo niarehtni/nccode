@@ -2326,9 +2326,9 @@ public class PsnCalendarServiceImpl implements IPsnCalendarQueryService, IPsnCal
 		// 考勤档案的map
 		Map<String, List<TBMPsndocVO>> psndocMap = NCLocator.getInstance().lookup(ITBMPsndocQueryService.class)
 				.queryTBMPsndocMapByPsndocsBU(pk_hrorg, pk_psndocs, beginDate, endDate, true);
-        	// 已有工作日历
-        	Map<String, Map<String, String>> existsPsnCalendarMap = new PsnCalendarDAO().queryPkShiftMapByPsndocs(pk_hrorg,
-        		pk_psndocs, beginDate, endDate);
+		// 已有工作日历
+		Map<String, Map<String, String>> existsPsnCalendarMap = new PsnCalendarDAO().queryPkShiftMapByPsndocs(pk_hrorg,
+				pk_psndocs, beginDate, endDate);
 		for (PsnJobCalendarVO psnCalendarVO : psnCalendarVOs) {
 			String pk_psndoc = psnCalendarVO.getPk_psndoc();
 			List<TBMPsndocVO> psndocList = psndocMap.get(pk_psndoc);
@@ -2341,17 +2341,17 @@ public class PsnCalendarServiceImpl implements IPsnCalendarQueryService, IPsnCal
 				if (vo == null)
 					continue;
 				if (vo.getPk_team() == null || !vo.getPk_team().equals(pk_team)) {
-					vo.setPk_team((String)psnCalendarVO.getAttributeValue("jobglbdef7"));
+					vo.setPk_team((String) psnCalendarVO.getAttributeValue("jobglbdef7"));
 					new BaseDAO().updateVO(vo, new String[] { TBMPsndocVO.PK_TEAM });
 				}
-				//mod tank 考勤档案如果设定了 "不同步班組工作日曆"则不同步 TODO 判断是否排班
-				if(vo.getNotsyncal()!=null && vo.getNotsyncal().booleanValue()){
+				// mod tank 考勤档案如果设定了 "不同步班組工作日曆"则不同步 TODO 判断是否排班
+				if (vo.getNotsyncal() != null && vo.getNotsyncal().booleanValue()) {
 
-					    if (existsPsnCalendarMap != null && existsPsnCalendarMap.containsKey(pk_psndoc)
+					if (existsPsnCalendarMap != null && existsPsnCalendarMap.containsKey(pk_psndoc)
 							&& existsPsnCalendarMap.get(pk_psndoc).containsKey(date.toString()))
 						continue;
 				}
-				//mod end
+				// mod end
 				String dateStr = date.toString();
 				// Ares.Tank 2018-9-7 22:18:23 班次和日历天类型都不同就不同步班次
 				if (StringUtils.equals(teamCalendarVO.getCalendarMap().get(dateStr), psnCalendarVO.getCalendarMap()

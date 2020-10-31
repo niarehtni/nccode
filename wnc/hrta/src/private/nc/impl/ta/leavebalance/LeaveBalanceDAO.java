@@ -76,10 +76,10 @@ public class LeaveBalanceDAO {
 				TBMPsndocVO tbmpsndocVO = psndocVOs[i];
 				String pk_psnorg = tbmpsndocVO.getPk_psnorg();
 				UFLiteralDate hireDate = hireDateMap.get(pk_psnorg);
-				// String hireYear = hireDate.toString().substring(0, 4);
+				String hireYear = hireDate.toString().substring(0, 4);
 				// ssx modified on 2019-09-26
 				// 沒插入過就插入一條，以免後續查不到數據
-				if (addedPsnorgs.contains(pk_psnorg))
+				if (addedPsnorgs.contains(pk_psnorg) || Integer.valueOf(hireYear) > Integer.valueOf(year))
 					// end
 					continue;
 				String pk = pks[i];

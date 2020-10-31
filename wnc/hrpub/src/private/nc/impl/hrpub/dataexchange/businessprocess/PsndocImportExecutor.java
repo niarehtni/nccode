@@ -1,6 +1,7 @@
 package nc.impl.hrpub.dataexchange.businessprocess;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -11,6 +12,7 @@ import nc.impl.hrpub.dataexchange.DataImportExecutor;
 import nc.itf.hrpub.IDataExchangeExternalExecutor;
 import nc.jdbc.framework.processor.ColumnProcessor;
 import nc.jdbc.framework.processor.MapListProcessor;
+import nc.vo.hi.psndoc.PsndocVO;
 import nc.vo.org.OrgQueryUtil;
 import nc.vo.org.OrgVO;
 import nc.vo.org.util.OrgPubUtil;
@@ -52,10 +54,11 @@ public class PsndocImportExecutor extends DataImportExecutor implements IDataExc
 		return "218971f0-e5dc-408b-9a32-56529dddd4db";
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
 	public void beforeUpdate() throws BusinessException {
 		// 增加额外的唯一性检查条件，基類在插入數據之前，增加該條件的檢查，以確保業務主鍵不重複
-		this.setUniqueCheckExtraCondition("id='$id$'");
+		this.setUniqueCheckExtraCondition("pk_psndoc='$pk_psndoc$'");
 		// 增加排他的唯一性检查条件，基類在插入數據之前，用此條件替換檢查條件，不再以基類的按Code轉PK加額外條件檢查
 		this.setUniqueCheckExclusiveCondition(this.getUniqueCheckExtraCondition());
 
@@ -65,6 +68,19 @@ public class PsndocImportExecutor extends DataImportExecutor implements IDataExc
 				loadCountryRegion();
 				for (Map<String, Object> rowNCMap : this.getNcValueObjects()) {
 					rowNo = rowNCMap.keySet().toArray(new String[0])[0].split(":")[0];
+
+					String psndocKey = rowNo + ":pk_psndoc";
+					if (!StringUtils.isEmpty((String) rowNCMap.get(psndocKey))) {
+						String psnCode = (String) rowNCMap.get(psndocKey);
+						Collection<PsndocVO> psnvos = this.getBaseDAO().retrieveByClause(PsndocVO.class,
+								"code = '" + psnCode + "'");
+
+						if (psnvos != null && psnvos.size() > 0) {
+							rowNCMap.remove(psndocKey);
+							rowNCMap.put(psndocKey, psnvos.toArray(new PsndocVO[0])[0].getPk_psndoc());
+							continue;
+						}
+					}
 
 					// 资料为空检查
 					checkNull(rowNo, rowNCMap);
